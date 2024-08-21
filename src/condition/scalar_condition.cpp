@@ -3,11 +3,27 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <memory>
+#include <optional>
+#include <span>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <utility>
 
-#include "scalar_condition.hpp"
+#include "clock.hpp"
+#include "condition/base.hpp"
+#include "ddwaf.h"
 #include "exception.hpp"
+#include "exclusion/common.hpp"
 #include "iterator.hpp"
+#include "log.hpp"
+#include "matcher/base.hpp"
+#include "object_store.hpp"
+#include "scalar_condition.hpp"
+#include "transformer/base.hpp"
 #include "transformer/manager.hpp"
+#include "utils.hpp"
 
 using namespace std::literals;
 

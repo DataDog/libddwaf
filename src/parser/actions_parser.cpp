@@ -4,7 +4,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <exception>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <utility>
+
+#include "action_mapper.hpp"
 #include "log.hpp"
+#include "parameter.hpp"
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
 #include "uri_utils.hpp"

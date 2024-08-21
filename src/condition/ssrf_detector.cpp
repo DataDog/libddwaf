@@ -3,11 +3,27 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <array>
+#include <cstddef>
+#include <memory>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
-#include "condition/ssrf_detector.hpp"
+#include "argument_retriever.hpp"
+#include "clock.hpp"
+#include "condition/base.hpp"
 #include "condition/match_iterator.hpp"
+#include "condition/ssrf_detector.hpp"
+#include "condition/structured_condition.hpp"
+#include "ddwaf.h"
 #include "exception.hpp"
-#include "iterator.hpp"
+#include "exclusion/common.hpp"
+#include "log.hpp"
+#include "matcher/ip_match.hpp"
 #include "uri_utils.hpp"
 #include "utils.hpp"
 
@@ -183,7 +199,7 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
             //
             //  scheme://userinfo@host:port/path?query#fragment
             //                   <────>
-            bool host_fully_injected =
+            const bool host_fully_injected =
                 param_index <= uri.authority.host_index &&
                 param_index + param.size() >= uri.authority.host_index + uri.authority.host.size();
 
@@ -252,7 +268,7 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
             dangerous_ip_matcher_, authorised_schemes_, deadline);
         if (res.has_value()) {
             std::vector<std::string> uri_kp{uri.key_path.begin(), uri.key_path.end()};
-            bool ephemeral = uri.ephemeral || param.ephemeral;
+            const bool ephemeral = uri.ephemeral || param.ephemeral;
 
             auto &[highlight, param_kp] = res.value();
 

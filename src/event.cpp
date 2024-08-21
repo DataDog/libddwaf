@@ -4,11 +4,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <string>
+#include <string_view>
 #include <unordered_set>
+#include <vector>
 
 #include "action_mapper.hpp"
+#include "condition/base.hpp"
 #include "ddwaf.h"
 #include "event.hpp"
+#include "obfuscator.hpp"
 #include "rule.hpp"
 #include "uuid.hpp"
 
@@ -58,7 +63,7 @@ void serialize_match(const condition_match &match, ddwaf_object &match_map, auto
     ddwaf_object param;
     ddwaf_object_map(&param);
 
-    bool redact = redact_match(obfuscator, match);
+    const bool redact = redact_match(obfuscator, match);
 
     ddwaf_object highlight_arr;
     ddwaf_object_array(&highlight_arr);
@@ -114,15 +119,16 @@ void serialize_match(const condition_match &match, ddwaf_object &match_map, auto
 struct action_tracker {
     // The blocking action refers to either a block_request or redirect_request
     // action, the latter having precedence over the former.
-    std::string_view blocking_action{};
+    std::string_view blocking_action;
     action_type blocking_action_type{action_type::none};
 
     // Stack trace ID
-    std::string stack_id{};
+    std::string stack_id;
 
     // This set contains all remaining actions other than the blocking action
-    std::unordered_set<std::string_view> non_blocking_actions{};
+    std::unordered_set<std::string_view> non_blocking_actions;
 
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const action_mapper &mapper;
 };
 

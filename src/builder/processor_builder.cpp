@@ -4,11 +4,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <concepts>
+#include <memory>
+#include <set>
+#include <vector>
 
 #include "builder/processor_builder.hpp"
+#include "indexer.hpp"
+#include "parser/specification.hpp"
+#include "processor/base.hpp"
 #include "processor/extract_schema.hpp"
 #include "processor/fingerprint.hpp"
+#include "scanner.hpp"
 
 namespace ddwaf {
 

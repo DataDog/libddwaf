@@ -4,10 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <cstddef>
-#include <iostream>
+#include <cstdint>
 #include <list>
+#include <utility>
 
+#include "ddwaf.h"
 #include "utils.hpp"
 
 namespace ddwaf::object {

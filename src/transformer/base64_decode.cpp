@@ -5,8 +5,12 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <array>
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
 
 #include "transformer/base64_decode.hpp"
+#include "transformer/common/cow_string.hpp"
 #include "utils.hpp"
 
 namespace ddwaf::transformer {
