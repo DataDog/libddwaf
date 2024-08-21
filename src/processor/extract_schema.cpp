@@ -22,6 +22,7 @@
 #include "ddwaf.h"
 #include "exception.hpp"
 #include "object_store.hpp"
+#include "processor/base.hpp"
 #include "processor/extract_schema.hpp"
 #include "scanner.hpp"
 

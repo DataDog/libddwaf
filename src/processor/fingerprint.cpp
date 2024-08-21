@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <new>
+#include <optional>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -23,9 +24,9 @@
 #include "exception.hpp"
 #include "log.hpp"
 #include "object_store.hpp"
+#include "processor/base.hpp"
 #include "processor/fingerprint.hpp"
 #include "sha256.hpp"
-#include "traits.hpp"
 #include "transformer/common/cow_string.hpp"
 #include "transformer/lowercase.hpp"
 #include "utils.hpp"
@@ -79,12 +80,15 @@ std::string str_lowercase(std::string_view str)
 {
     auto buffer = std::string{str};
 
+    // By initialising the cow_string with the underlying data
+    // contained within the std::string, we ensure a new one won't be
+    // allocated once the string is modified.
     cow_string str_lc{buffer.data(), buffer.size()};
     transformer::lowercase::transform(str_lc);
 
     str_lc.move(); // move to avoid freeing the string
 
-    return buffer;
+    return buffer; // NOLINT(clang-analyzer-unix.Malloc)
 }
 
 // Return true if the first argument is less than (i.e. is ordered before) the second
@@ -248,7 +252,7 @@ struct key_hash_field : field_generator<key_hash_field> {
         for (unsigned i = 0; i < value->nbEntries; ++i) {
             const auto &child = value->array[i];
 
-            std::string_view key{
+            const std::string_view key{
                 child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
             if (max_string_size > key.size()) {
                 max_string_size = key.size();
@@ -266,7 +270,7 @@ struct key_hash_field : field_generator<key_hash_field> {
 
         sha256_hash hasher;
         for (unsigned i = 0; i < keys.size(); ++i) {
-            bool trailing_comma = ((i + 1) < keys.size());
+            const bool trailing_comma = ((i + 1) < keys.size());
             normalize_key(keys[i], normalized, trailing_comma);
             hasher << normalized;
         }
@@ -320,7 +324,7 @@ struct kv_hash_fields : field_generator<kv_hash_fields, std::pair<std::string, s
         for (std::size_t i = 0; i < value->nbEntries; ++i) {
             const auto &child = value->array[i];
 
-            std::string_view key{
+            const std::string_view key{
                 child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
 
             std::string_view val;
@@ -349,7 +353,7 @@ struct kv_hash_fields : field_generator<kv_hash_fields, std::pair<std::string, s
         for (unsigned i = 0; i < kv_sorted.size(); ++i) {
             auto [key, val] = kv_sorted[i];
 
-            bool trailing_comma = ((i + 1) < kv_sorted.size());
+            const bool trailing_comma = ((i + 1) < kv_sorted.size());
 
             normalize_key(key, normalized, trailing_comma);
             key_hasher << normalized;
