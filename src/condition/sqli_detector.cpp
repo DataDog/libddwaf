@@ -508,6 +508,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
 
 } // namespace internal
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[nodiscard]] eval_result sqli_detector::eval_impl(const unary_argument<std::string_view> &sql,
     const variadic_argument<const ddwaf_object *> &params,
     const unary_argument<std::string_view> &db_type, condition_cache &cache,

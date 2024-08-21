@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 #include <exception>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 
@@ -20,8 +21,6 @@
 #include "ruleset_info.hpp"
 #include "utils.hpp"
 #include "waf.hpp"
-#include "parser/parser.hpp"
-#include "version.hpp"
 
 namespace ddwaf {
 

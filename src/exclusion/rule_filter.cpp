@@ -19,6 +19,7 @@
 #include "matcher/base.hpp"
 #include "object_store.hpp"
 #include "rule.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::exclusion {
 

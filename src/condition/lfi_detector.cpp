@@ -122,6 +122,7 @@ lfi_result lfi_impl(std::string_view path, const ddwaf_object &params,
 }
 } // namespace
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path,
     const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,

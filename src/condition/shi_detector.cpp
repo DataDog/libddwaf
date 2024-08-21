@@ -86,6 +86,7 @@ shi_detector::shi_detector(std::vector<condition_parameter> args)
     : base_impl<shi_detector>(std::move(args))
 {}
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 eval_result shi_detector::eval_impl(const unary_argument<std::string_view> &resource,
     const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,

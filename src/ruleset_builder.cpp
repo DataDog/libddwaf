@@ -6,6 +6,7 @@
 //
 #include <exception>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string_view>
 #include <type_traits>
@@ -26,6 +27,7 @@
 #include "ruleset.hpp"
 #include "ruleset_builder.hpp"
 #include "ruleset_info.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 
