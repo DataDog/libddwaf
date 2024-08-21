@@ -3,21 +3,22 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-
-#include "context.hpp"
-#include "clock.hpp"
-#include "collection.hpp"
-#include "ddwaf.h"
-#include "event.hpp"
-#include "exception.hpp"
-#include "log.hpp"
-#include "object_store.hpp"
-#include "processor/base.hpp"
-#include "utils.hpp"
 #include <chrono>
 #include <cstdint>
 #include <string_view>
 #include <vector>
+
+#include "clock.hpp"
+#include "collection.hpp"
+#include "context.hpp"
+#include "ddwaf.h"
+#include "event.hpp"
+#include "exception.hpp"
+#include "exclusion/common.hpp"
+#include "log.hpp"
+#include "object_store.hpp"
+#include "processor/base.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 

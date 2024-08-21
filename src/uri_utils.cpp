@@ -230,8 +230,6 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
                     // If we find ourselves in this token, the @ is guaranteed
                     // to be present.
                     decomposed.authority.userinfo = uri.substr(token_begin, i - token_begin - 1);
-
-                    token_begin = i;
                     if (i == authority_end) {
                         expected_token = lookahead_token;
                     } else {

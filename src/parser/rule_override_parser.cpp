@@ -3,17 +3,17 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <exception>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "exception.hpp"
 #include "log.hpp"
 #include "parameter.hpp"
 #include "parser/common.hpp"
 #include "parser/specification.hpp"
-#include <exception>
-#include <string>
-#include <unordered_map>
-#include <utility>
-#include <vector>
 
 namespace ddwaf::parser::v2 {
 
@@ -59,8 +59,8 @@ std::pair<override_spec, reference_type> parse_override(const parameter::map &no
         }
     } else {
         // Since the rules_target array is empty, the ID is mandatory
-        current.targets.emplace_back(
-            reference_spec{reference_type::id, at<std::string>(node, "id"), {}});
+        current.targets.emplace_back(reference_type::id, at<std::string>(node, "id"),
+            std::unordered_map<std::string, std::string>{});
         type = reference_type::id;
     }
 

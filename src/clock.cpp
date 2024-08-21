@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "clock.hpp"
 #include <atomic>
 #include <cerrno>
 #include <chrono>
@@ -15,7 +14,9 @@
 #  define _GNU_SOURCE 1
 #  include <ctime>
 #  include <dlfcn.h>
-#  include <log.hpp>
+
+#  include "clock.hpp"
+#  include "log.hpp"
 
 namespace ddwaf {
 namespace {

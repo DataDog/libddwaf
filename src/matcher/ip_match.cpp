@@ -51,7 +51,7 @@ ip_match::ip_match(const std::vector<std::pair<std::string_view, uint64_t>> &ip_
 {
     // Initialize the radix structure to check if the IP exist
     prefix_t radix_ip;
-    // NOLINTNEXTLINE(hicpp-no-array-decay,cppcoreguidelines-pro-bounds-array-to-pointer-decay, cppcoreguidelines-pro-type-const-cast)
+    // NOLINTNEXTLINE(hicpp-no-array-decay,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-const-cast)
     radix_prefix_init(FAMILY_IPv6, const_cast<uint8_t *>(ip.data), radix_tree_bits, &radix_ip);
 
     // Run the check
