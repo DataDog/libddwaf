@@ -5,11 +5,13 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "ruleset_info.hpp"
-#include "ddwaf.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
 #include <utility>
+
+#include "ddwaf.h"
 
 namespace ddwaf {
 
