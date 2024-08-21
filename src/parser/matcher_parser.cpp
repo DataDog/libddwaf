@@ -9,8 +9,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <cstdint>
 #include <memory>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
+#include "ddwaf.h"
+#include "exception.hpp"
+#include "matcher/base.hpp"
 #include "matcher/equals.hpp"
 #include "matcher/exact_match.hpp"
 #include "matcher/greater_than.hpp"

@@ -3,10 +3,15 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <cstddef>
+#include <cstdint>
+#include <iostream>
+#include <optional>
+#include <string_view>
 
+#include "ip_utils.hpp"
 #include "uri_utils.hpp"
 #include "utils.hpp"
-#include <iostream>
 
 /*
    URI           = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
@@ -225,8 +230,6 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
                     // If we find ourselves in this token, the @ is guaranteed
                     // to be present.
                     decomposed.authority.userinfo = uri.substr(token_begin, i - token_begin - 1);
-
-                    token_begin = i;
                     if (i == authority_end) {
                         expected_token = lookahead_token;
                     } else {
@@ -331,7 +334,7 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
                 // path which has to be kept
                 expected_token = lookahead_token;
             } else if (i < uri.size() && uri[i] == ':') {
-                token_begin = ++i; // Skip the ':'
+                ++i; // Skip the ':'
                 expected_token = token_type::port;
             } else {
                 // Unexpected characters after IPv6 terminator

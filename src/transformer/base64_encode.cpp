@@ -5,9 +5,13 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
 #include <limits>
 
 #include "transformer/base64_encode.hpp"
+#include "transformer/common/cow_string.hpp"
 
 namespace ddwaf::transformer {
 
@@ -19,6 +23,7 @@ bool base64_encode::transform_impl(cow_string &str)
 
     // We need to allocate a buffer to contain the base64 encoded string
     const size_t encoded_length = (str.length() + 2) / 3 * 4;
+    // NOLINTNEXTLINE(cppcoreguidelines-no-malloc,hicpp-no-malloc)
     auto *new_string = static_cast<char *>(malloc(encoded_length + 1));
 
     // We don't have a good way to make this test fail in the CI, thus crapping on the coverage

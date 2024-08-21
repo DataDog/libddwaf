@@ -3,10 +3,22 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <cstddef>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
+#include "argument_retriever.hpp"
+#include "clock.hpp"
+#include "condition/base.hpp"
 #include "condition/lfi_detector.hpp"
+#include "ddwaf.h"
 #include "exception.hpp"
+#include "exclusion/common.hpp"
 #include "iterator.hpp"
+#include "log.hpp"
 #include "platform.hpp"
 #include "utils.hpp"
 
@@ -63,9 +75,9 @@ bool lfi_impl_windows(std::string_view path, std::string_view param)
         return false;
     }
 
-    bool is_absolute = param[0] == '/' || param[0] == '\\' ||
-                       (param.size() >= 3 && (ddwaf::isalpha(param[0]) && param[1] == ':' &&
-                                                 (param[2] == '/' || param[2] == '\\')));
+    const bool is_absolute = param[0] == '/' || param[0] == '\\' ||
+                             (param.size() >= 3 && (ddwaf::isalpha(param[0]) && param[1] == ':' &&
+                                                       (param[2] == '/' || param[2] == '\\')));
     return (is_absolute && param == path) || find_directory_escape(param, "/\\");
 }
 
@@ -100,7 +112,7 @@ lfi_result lfi_impl(std::string_view path, const ddwaf_object &params,
             continue;
         }
 
-        std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
+        const std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
         if (lfi_fn(path, value)) {
             return {{std::string(value), it.get_current_path()}};
         }
@@ -118,7 +130,7 @@ eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path
         auto res = lfi_impl(path.value, *param.value, objects_excluded, limits_, deadline);
         if (res.has_value()) {
             std::vector<std::string> path_kp{path.key_path.begin(), path.key_path.end()};
-            bool ephemeral = path.ephemeral || param.ephemeral;
+            const bool ephemeral = path.ephemeral || param.ephemeral;
 
             auto &[highlight, param_kp] = res.value();
 

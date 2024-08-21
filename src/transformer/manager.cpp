@@ -3,16 +3,20 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <cstddef>
+#include <span>
 
-#include "transformer/manager.hpp"
 #include "ddwaf.h"
+#include "transformer/base.hpp"
 #include "transformer/base64_decode.hpp"
 #include "transformer/base64_encode.hpp"
+#include "transformer/common/cow_string.hpp"
 #include "transformer/compress_whitespace.hpp"
 #include "transformer/css_decode.hpp"
 #include "transformer/html_entity_decode.hpp"
 #include "transformer/js_decode.hpp"
 #include "transformer/lowercase.hpp"
+#include "transformer/manager.hpp"
 #include "transformer/normalize_path.hpp"
 #include "transformer/remove_comments.hpp"
 #include "transformer/remove_nulls.hpp"
