@@ -3,11 +3,26 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <chrono>
+#include <cstdint>
+#include <exception>
+#include <memory>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
+#include "exception.hpp"
+#include "global_context.hpp"
+#include "log.hpp"
+#include "parameter.hpp"
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
-#include "parser/specification.hpp"
+#include "rule/base.hpp"
 #include "rule/threshold_rule.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::parser::v2 {
 
@@ -120,7 +135,7 @@ std::shared_ptr<global_context> parse_global_rules(
         auto rule_map = static_cast<parameter::map>(rule_param);
         std::string id;
         try {
-            address_container addresses;
+            const address_container addresses;
             id = at<std::string>(rule_map, "id");
             if (ids.find(id) != ids.end()) {
                 DDWAF_WARN("Duplicate global rule {}", id);

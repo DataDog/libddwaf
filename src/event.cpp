@@ -14,7 +14,7 @@
 #include "ddwaf.h"
 #include "event.hpp"
 #include "obfuscator.hpp"
-#include "rule/rule.hpp"
+#include "rule/rule.hpp" // IWYU pragma: keep
 #include "uuid.hpp"
 
 namespace ddwaf {

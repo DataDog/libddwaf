@@ -3,9 +3,23 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <utility>
 
+#include "clock.hpp"
+#include "condition/base.hpp"
+#include "ddwaf.h"
+#include "event.hpp"
+#include "expression.hpp"
+#include "object_store.hpp"
 #include "rule/threshold_rule.hpp"
 #include "transformer/manager.hpp"
+#include "utils.hpp"
 
 using namespace std::literals;
 
@@ -58,9 +72,9 @@ std::optional<event> threshold_rule::eval(const object_store &store, cache_type 
     auto count = counter_->add_timepoint_and_count(ms);
     if (count > criteria_.threshold) {
         // Match should be generated differently
-        // Match should be generated differently
         auto matches = expression::get_matches(cache);
-        matches.emplace_back(condition_match{{}, {}, "threshold", threshold_str_, false});
+        condition_match match{{}, {}, "threshold", threshold_str_, false};
+        matches.emplace_back(std::move(match));
         return {ddwaf::event{this, std::move(matches), false, {}}};
     }
 
@@ -94,7 +108,7 @@ std::optional<event> indexed_threshold_rule::eval(const object_store &store, cac
 
     uint64_t count = 0;
     if (filtered_key.empty()) {
-        std::string_view key{obj->stringValue, static_cast<std::size_t>(obj->nbEntries)};
+        const std::string_view key{obj->stringValue, static_cast<std::size_t>(obj->nbEntries)};
         count = counter_->add_timepoint_and_count(key, ms);
     } else {
         count = counter_->add_timepoint_and_count(std::move(filtered_key), ms);
@@ -103,9 +117,9 @@ std::optional<event> indexed_threshold_rule::eval(const object_store &store, cac
     if (count > criteria_.threshold) {
         // Match should be generated differently
         auto matches = expression::get_matches(cache);
-        matches.emplace_back(
-            condition_match{{{"input"sv, object_to_string(*obj), criteria_.filter.name, {}}}, {},
-                "threshold", threshold_str_, false});
+        condition_match match{{{"input"sv, object_to_string(*obj), criteria_.filter.name, {}}}, {},
+            "threshold", threshold_str_, false};
+        matches.emplace_back(std::move(match));
         return {ddwaf::event{this, std::move(matches), false, {}}};
     }
 

@@ -3,9 +3,15 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <utility>
+#include <vector>
 
+#include "clock.hpp"
+#include "event.hpp"
 #include "global_context.hpp"
-#include "rule/rule.hpp"
+#include "log.hpp"
+#include "object_store.hpp"
+#include "rule/base.hpp"
 
 namespace ddwaf {
 void global_context::eval(std::vector<event> &events, const object_store &store, cache_type &cache,

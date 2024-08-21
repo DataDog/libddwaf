@@ -22,7 +22,7 @@
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
 #include "parser/specification.hpp"
-#include "rule.hpp"
+#include "rule/rule.hpp"
 #include "ruleset.hpp"
 #include "ruleset_builder.hpp"
 #include "ruleset_info.hpp"
