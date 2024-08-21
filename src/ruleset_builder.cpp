@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "action_mapper.hpp"
 #include "exception.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"

@@ -44,14 +44,11 @@ struct node_scalar {
 using base_node = std::variant<std::monostate, node_scalar, node_array_ptr, node_record_ptr>;
 
 struct node_hash {
-    constexpr std::size_t operator()(const std::monostate & /*node*/) const noexcept
-    {
-        return 0x9e3779b9;
-    }
-    std::size_t operator()(const node_scalar &node) const noexcept;
-    std::size_t operator()(const node_array_ptr &node) const noexcept;
-    std::size_t operator()(const node_record_ptr &node) const noexcept;
-    std::size_t operator()(const base_node &node) const noexcept;
+    constexpr std::size_t operator()(const std::monostate & /*node*/) const { return 0x9e3779b9; }
+    std::size_t operator()(const node_scalar &node) const;
+    std::size_t operator()(const node_array_ptr &node) const;
+    std::size_t operator()(const node_record_ptr &node) const;
+    std::size_t operator()(const base_node &node) const;
 };
 
 struct node_equal {
@@ -84,12 +81,12 @@ struct node_array {
     std::unordered_set<base_node, node_hash, node_equal> children;
 };
 
-std::size_t node_hash::operator()(const base_node &node) const noexcept
+std::size_t node_hash::operator()(const base_node &node) const
 {
     return std::visit(node_hash{}, node);
 }
 
-std::size_t node_hash::operator()(const node_scalar &node) const noexcept
+std::size_t node_hash::operator()(const node_scalar &node) const
 {
     // Accept the risk of collision with the hash value 0
     if (node.hash == 0) {
@@ -103,7 +100,8 @@ std::size_t node_hash::operator()(const node_scalar &node) const noexcept
     return node.hash;
 }
 
-std::size_t node_hash::operator()(const node_array_ptr &node) const noexcept
+// NOLINTNEXLINE(misc-no-recursion)
+std::size_t node_hash::operator()(const node_array_ptr &node) const
 {
     if (node->hash == 0) {
         std::size_t value =
@@ -114,7 +112,8 @@ std::size_t node_hash::operator()(const node_array_ptr &node) const noexcept
     return node->hash;
 }
 
-std::size_t node_hash::operator()(const node_record_ptr &node) const noexcept
+// NOLINTNEXLINE(misc-no-recursion)
+std::size_t node_hash::operator()(const node_record_ptr &node) const
 {
     if (node->hash == 0) {
         std::size_t value = std::hash<bool>{}(node->truncated);

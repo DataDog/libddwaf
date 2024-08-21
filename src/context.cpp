@@ -122,6 +122,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
         }
 
         eval_postprocessors(derived, deadline);
+        // NOLINTNEXTLINE(bugprone-empty-catch)
     } catch (const ddwaf::timeout_exception &) {}
 
     const DDWAF_RET_CODE code = events.empty() ? DDWAF_OK : DDWAF_MATCH;

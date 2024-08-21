@@ -8,6 +8,7 @@
 #include "argument_retriever.hpp"
 #include "clock.hpp"
 #include "ddwaf.h"
+#include "exception.hpp"
 #include "log.hpp"
 #include "object_store.hpp"
 #include "sha256.hpp"
@@ -20,6 +21,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <new>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -105,11 +107,12 @@ struct string_buffer {
 
     void append(char c) { append(std::string_view{&c, 1}); }
 
-    std::pair<char *, std::size_t> move()
+    ddwaf_object move()
     {
-        auto *ptr = buffer;
+        ddwaf_object res;
+        ddwaf_object_stringl_nc(&res, buffer, index);
         buffer = nullptr;
-        return {ptr, index};
+        return res;
     }
 
     char *buffer{nullptr};
@@ -255,11 +258,8 @@ ddwaf_object generate_fragment(std::string_view header, Generators... generators
 
     generate_fragment_field(buffer, generators...);
 
-    ddwaf_object res;
-    auto [ptr, size] = buffer.move();
-    ddwaf_object_stringl_nc(&res, ptr, size);
-
-    return res;
+    // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
+    return buffer.move();
 }
 
 // Return true if the first argument is less than (i.e. is ordered before) the second
