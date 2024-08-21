@@ -10,7 +10,6 @@
 #include <cstring>
 #include <string>
 #include <string_view>
-#include <sys/socket.h>
 
 #include "ip_utils.hpp"
 
@@ -28,6 +27,7 @@
 #else
 #  include <arpa/inet.h>
 #  include <netinet/in.h>
+#  include <sys/socket.h>
 #endif
 
 namespace ddwaf {

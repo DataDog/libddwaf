@@ -6,11 +6,8 @@
 
 #include "clock.hpp"
 #include <atomic>
-#include <bits/time.h>
-#include <bits/types/clockid_t.h>
 #include <cerrno>
 #include <chrono>
-#include <time.h>
 
 #ifdef __linux__
 
