@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 #include <chrono>
 #include <cstddef>
-#include <cstdint>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -93,8 +93,7 @@ std::optional<event> threshold_rule::eval(const object_store &store, cache_type 
     }
 
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
-    auto count = counter_->add_timepoint_and_count(ms);
-    if (count > criteria_.threshold) {
+    if (counter_->add_timepoint_and_count(ms)) {
         // Match should be generated differently
         auto matches = expression::get_matches(cache);
         condition_match match{{}, {}, "threshold", threshold_str_, false};
@@ -128,17 +127,18 @@ std::optional<event> indexed_threshold_rule::eval(const object_store &store, cac
     std::string filtered_key;
     if (criteria_.filter.matcher) {
         filtered_key = filter_with_matcher(*obj, criteria_.filter);
-    }
-
-    uint64_t count = 0;
-    if (filtered_key.empty()) {
-        const std::string_view key{obj->stringValue, static_cast<std::size_t>(obj->nbEntries)};
-        count = counter_->add_timepoint_and_count(key, ms);
     } else {
-        count = counter_->add_timepoint_and_count(std::move(filtered_key), ms);
+        filtered_key = {obj->stringValue, static_cast<std::size_t>(obj->nbEntries)};
     }
 
-    if (count > criteria_.threshold) {
+    bool match = false;
+    {
+        const std::unique_lock<std::mutex> lock{mtx_};
+        auto &counter = counter_cache_.emplace_or_retrieve(filtered_key, ms);
+        match = counter.add_timepoint_and_count(ms);
+    }
+
+    if (match) {
         // Match should be generated differently
         auto matches = expression::get_matches(cache);
         condition_match match{{{"input"sv, object_to_string(*obj), criteria_.filter.name, {}}}, {},

@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <tuple>
 
 // Generate a tuple containing a subset of the arguments
@@ -49,3 +50,6 @@ function_traits<N, Class, Args...> make_traits(Result (Class::*)(Args...) const)
 
 template <std::size_t N, typename Result, typename Class, typename... Args>
 function_traits<N, Class, Args...> make_traits(Result (Class::*)(Args...));
+
+template <typename T>
+concept is_duration = std::is_same_v<std::chrono::duration<typename T::rep, typename T::period>, T>;

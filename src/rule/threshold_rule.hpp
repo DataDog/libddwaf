@@ -15,6 +15,7 @@
 #include "event.hpp"
 #include "exclusion/common.hpp"
 #include "expression.hpp"
+#include "lru_cache.hpp"
 #include "matcher/base.hpp"
 #include "monitor.hpp"
 #include "object_store.hpp"
@@ -23,11 +24,42 @@
 
 namespace ddwaf {
 
+class threshold_counter {
+public:
+    threshold_counter(std::chrono::milliseconds period, uint64_t threshold,
+        std::chrono::milliseconds threshold_duration)
+        : threshold_(threshold), counter_{period, threshold * 2},
+          threshold_duration_(threshold_duration)
+    {}
+
+    bool add_timepoint_and_count(std::chrono::milliseconds ms)
+    {
+        if (expiration_ > ms) {
+            return true;
+        }
+
+        auto count = counter_.add_timepoint_and_count(ms);
+        if (count > threshold_) {
+            expiration_ = ms + threshold_duration_;
+            return true;
+        }
+
+        return false;
+    }
+
+protected:
+    uint64_t threshold_;
+    sliding_window_counter_ms counter_;
+    std::chrono::milliseconds threshold_duration_;
+    std::chrono::milliseconds expiration_{0};
+};
+
 class threshold_rule : public base_threshold_rule {
 public:
     struct evaluation_criteria {
         uint64_t threshold;
         std::chrono::milliseconds period{};
+        std::chrono::milliseconds duration{};
     };
 
     threshold_rule(std::string id, std::string name,
@@ -35,7 +67,8 @@ public:
         evaluation_criteria criteria, std::vector<std::string> actions = {}, bool enabled = true)
         : base_threshold_rule(std::move(id), std::move(name), std::move(tags), std::move(expr),
               std::move(actions), enabled),
-          criteria_(criteria), counter_(criteria_.period, criteria_.threshold * 2),
+          criteria_(criteria),
+          counter_(criteria_.period, criteria_.threshold * 2, criteria_.duration),
           threshold_str_(to_string<std::string>(criteria_.threshold))
     {}
 
@@ -50,7 +83,7 @@ public:
 
 protected:
     evaluation_criteria criteria_;
-    monitor<sliding_window_counter_ms> counter_;
+    monitor<threshold_counter> counter_;
     std::string threshold_str_;
 };
 
@@ -59,6 +92,7 @@ public:
     struct evaluation_criteria {
         uint64_t threshold;
         std::chrono::milliseconds period;
+        std::chrono::milliseconds duration{};
         struct {
             std::string name;
             target_index target;
@@ -73,7 +107,10 @@ public:
         evaluation_criteria criteria, std::vector<std::string> actions = {}, bool enabled = true)
         : base_threshold_rule(std::move(id), std::move(name), std::move(tags), std::move(expr),
               std::move(actions), enabled),
-          criteria_(std::move(criteria)), counter_(criteria_.period, 128, criteria_.threshold * 2),
+          criteria_(std::move(criteria)),
+          counter_cache_(threshold_counter_constructor{criteria_.period, criteria_.threshold,
+                             criteria_.duration},
+              128),
           threshold_str_(to_string<std::string>(criteria_.threshold))
     {}
 
@@ -87,9 +124,21 @@ public:
         monotonic_clock::time_point now, ddwaf::timer &deadline) override;
 
 protected:
+    struct threshold_counter_constructor {
+        std::chrono::milliseconds period;
+        uint64_t threshold;
+        std::chrono::milliseconds threshold_duration;
+
+        threshold_counter operator()() const
+        {
+            return threshold_counter{period, threshold, threshold_duration};
+        }
+    };
+
     evaluation_criteria criteria_;
-    monitor<indexed_sliding_window_counter_ms> counter_;
+    lru_cache_ms<threshold_counter, threshold_counter_constructor> counter_cache_;
     std::string threshold_str_;
+    std::mutex mtx_;
 };
 
 } // namespace ddwaf
