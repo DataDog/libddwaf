@@ -130,7 +130,6 @@ public:
                 remove_oldest_entry(point);
             }
 
-            std::cout << key << '\n';
             auto [new_it, res] = index_.emplace(
                 Key{key}, sliding_window_counter<Duration>{period_, max_window_size_});
             if (!res) {

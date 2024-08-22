@@ -57,6 +57,7 @@ std::unique_ptr<base_threshold_rule> parse_indexed_threshold_rule(
     auto input_map = at<parameter::map>(filter_map, "input");
     criteria.filter.name = at<std::string>(input_map, "address");
     criteria.filter.target = get_target_index(criteria.filter.name);
+    criteria.filter.key_path = at<std::vector<std::string>>(input_map, "key_path", {});
 
     if (input_map.contains("transformers")) {
         auto input_transformers = at<parameter::vector>(input_map, "transformers");

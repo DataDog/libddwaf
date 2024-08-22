@@ -16,6 +16,7 @@
 #include "ddwaf.h"
 #include "event.hpp"
 #include "expression.hpp"
+#include "iterator.hpp"
 #include "object_store.hpp"
 #include "rule/threshold_rule.hpp"
 #include "transformer/manager.hpp"
@@ -27,7 +28,7 @@ namespace ddwaf {
 
 namespace {
 
-std::string filter_with_matcher(ddwaf_object &src, auto &filter)
+std::string filter_with_matcher(const ddwaf_object &src, auto &filter)
 {
     if (!filter.transformers.empty()) {
         ddwaf_object dst;
@@ -51,6 +52,29 @@ std::string filter_with_matcher(ddwaf_object &src, auto &filter)
         return {};
     }
     return highlight;
+}
+
+const ddwaf_object *get_object(const object_store &store, const auto &filter)
+{
+    auto [obj, attr] = store.get_target(filter.target);
+    if (obj == nullptr) {
+        return nullptr;
+    }
+
+    if (filter.key_path.empty()) {
+        if (obj->type != DDWAF_OBJ_STRING) {
+            return nullptr;
+        }
+
+        return obj;
+    }
+
+    object::value_iterator it{obj, filter.key_path, {}};
+    if (!it || it.type() != DDWAF_OBJ_STRING) {
+        return nullptr;
+    }
+
+    return *it;
 }
 
 } // namespace
@@ -89,8 +113,8 @@ std::optional<event> indexed_threshold_rule::eval(const object_store &store, cac
         return std::nullopt;
     }
 
-    auto [obj, attr] = store.get_target(criteria_.filter.target);
-    if (obj == nullptr || obj->type != DDWAF_OBJ_STRING) {
+    const auto *obj = get_object(store, criteria_.filter);
+    if (obj == nullptr) {
         return std::nullopt;
     }
 
@@ -103,7 +127,7 @@ std::optional<event> indexed_threshold_rule::eval(const object_store &store, cac
 
     std::string filtered_key;
     if (criteria_.filter.matcher) {
-        filter_with_matcher(*obj, criteria_.filter);
+        filtered_key = filter_with_matcher(*obj, criteria_.filter);
     }
 
     uint64_t count = 0;
