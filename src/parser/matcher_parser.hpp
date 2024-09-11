@@ -42,7 +42,7 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
     }
 }
 
-inline std::pair<std::string, std::unique_ptr<matcher::base>> parse_all_matchers(
+inline std::pair<std::string, std::unique_ptr<matcher::base>> parse_any_matcher(
     std::string_view name, const parameter::map &params)
 {
     return parse_matcher<
