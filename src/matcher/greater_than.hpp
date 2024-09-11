@@ -9,6 +9,7 @@
 #include <string_view>
 #include <type_traits>
 #include <unordered_map>
+#include <utility>
 
 #include "ddwaf.h"
 #include "matcher/base.hpp"
@@ -30,25 +31,22 @@ public:
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
     static constexpr std::string_view name_impl() { return "greater_than"; }
-
-    static constexpr DDWAF_OBJ_TYPE supported_type_impl()
+    static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
     {
-        if constexpr (std::is_same_v<T, int64_t>) {
-            return DDWAF_OBJ_SIGNED;
-        }
-        if constexpr (std::is_same_v<T, uint64_t>) {
-            return DDWAF_OBJ_UNSIGNED;
-        }
-        if constexpr (std::is_same_v<T, double>) {
-            return DDWAF_OBJ_FLOAT;
-        }
+        return type == DDWAF_OBJ_SIGNED || type == DDWAF_OBJ_UNSIGNED || type == DDWAF_OBJ_FLOAT;
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match_impl(const T &obtained) const
+    template <typename U>
+    [[nodiscard]] std::pair<bool, std::string> match_impl(const U &obtained) const
+        requires(!std::is_floating_point_v<T>)
     {
-        return {minimum_ < obtained, {}};
+        return {std::cmp_greater(obtained, minimum_), {}};
     }
 
+    [[nodiscard]] std::pair<bool, std::string> match_impl(double obtained) const
+    {
+        return {obtained > minimum_, {}};
+    }
     T minimum_;
 
     friend class base_impl<greater_than<T>>;

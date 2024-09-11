@@ -33,7 +33,7 @@ public:
     [[nodiscard]] virtual std::string_view to_string() const = 0;
 
     // Scalar matcher methods
-    [[nodiscard]] virtual DDWAF_OBJ_TYPE supported_type() const = 0;
+    [[nodiscard]] virtual bool is_supported_type(DDWAF_OBJ_TYPE type) const = 0;
 
     [[nodiscard]] virtual std::pair<bool, std::string> match(const ddwaf_object &obj) const = 0;
 };
@@ -54,9 +54,9 @@ public:
         return static_cast<const T *>(this)->to_string_impl();
     }
 
-    [[nodiscard]] DDWAF_OBJ_TYPE supported_type() const override
+    [[nodiscard]] bool is_supported_type(DDWAF_OBJ_TYPE type) const override
     {
-        return T::supported_type_impl();
+        return T::is_supported_type_impl(type);
     }
 
     // Helper used for testing purposes
@@ -68,31 +68,31 @@ public:
     [[nodiscard]] std::pair<bool, std::string> match(const ddwaf_object &obj) const override
     {
         const auto *ptr = static_cast<const T *>(this);
-        if constexpr (T::supported_type_impl() == DDWAF_OBJ_STRING) {
+        if constexpr (T::is_supported_type_impl(DDWAF_OBJ_STRING)) {
             if (obj.type == DDWAF_OBJ_STRING && obj.stringValue != nullptr) {
                 return ptr->match_impl({obj.stringValue, static_cast<std::size_t>(obj.nbEntries)});
             }
         }
 
-        if constexpr (T::supported_type_impl() == DDWAF_OBJ_SIGNED) {
+        if constexpr (T::is_supported_type_impl(DDWAF_OBJ_SIGNED)) {
             if (obj.type == DDWAF_OBJ_SIGNED) {
                 return ptr->match_impl(obj.intValue);
             }
         }
 
-        if constexpr (T::supported_type_impl() == DDWAF_OBJ_UNSIGNED) {
+        if constexpr (T::is_supported_type_impl(DDWAF_OBJ_UNSIGNED)) {
             if (obj.type == DDWAF_OBJ_UNSIGNED) {
                 return ptr->match_impl(obj.uintValue);
             }
         }
 
-        if constexpr (T::supported_type_impl() == DDWAF_OBJ_BOOL) {
+        if constexpr (T::is_supported_type_impl(DDWAF_OBJ_BOOL)) {
             if (obj.type == DDWAF_OBJ_BOOL) {
                 return ptr->match_impl(obj.boolean);
             }
         }
 
-        if constexpr (T::supported_type_impl() == DDWAF_OBJ_FLOAT) {
+        if constexpr (T::is_supported_type_impl(DDWAF_OBJ_FLOAT)) {
             if (obj.type == DDWAF_OBJ_FLOAT) {
                 return ptr->match_impl(obj.f64);
             }

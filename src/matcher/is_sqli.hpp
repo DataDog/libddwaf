@@ -26,7 +26,10 @@ protected:
 
     static constexpr std::string_view to_string_impl() { return ""; }
     static constexpr std::string_view name_impl() { return "is_sqli"; }
-    static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_STRING; }
+    static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
+    {
+        return type == DDWAF_OBJ_STRING;
+    }
 
     static std::pair<bool, std::string> match_impl(std::string_view pattern);
 

@@ -95,7 +95,7 @@ ResultType eval_target(Iterator &it, std::string_view address, bool ephemeral,
             throw ddwaf::timeout_exception();
         }
 
-        if (it.type() != matcher.supported_type()) {
+        if (!matcher.is_supported_type(it.type())) {
             continue;
         }
 

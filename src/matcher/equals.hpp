@@ -9,6 +9,7 @@
 #include <string_view>
 #include <type_traits>
 #include <unordered_map>
+#include <utility>
 
 #include "matcher/base.hpp"
 #include "utils.hpp"
@@ -30,29 +31,30 @@ public:
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
     static constexpr std::string_view name_impl() { return "equals"; }
-
-    static constexpr DDWAF_OBJ_TYPE supported_type_impl()
+    static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
     {
-        if constexpr (std::is_same_v<T, int64_t>) {
-            return DDWAF_OBJ_SIGNED;
-        }
-        if constexpr (std::is_same_v<T, uint64_t>) {
-            return DDWAF_OBJ_UNSIGNED;
+        if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t>) {
+            return type == DDWAF_OBJ_SIGNED || type == DDWAF_OBJ_UNSIGNED;
         }
 
         if constexpr (std::is_same_v<T, bool>) {
-            return DDWAF_OBJ_BOOL;
+            return type == DDWAF_OBJ_BOOL;
         }
 
         if constexpr (std::is_same_v<T, std::string>) {
-            return DDWAF_OBJ_STRING;
+            return type == DDWAF_OBJ_STRING;
         }
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match_impl(const T &obtained) const
+    template <typename U>
+    [[nodiscard]] std::pair<bool, std::string> match_impl(const U &obtained) const
         requires(!std::is_same_v<T, std::string>)
     {
-        return {expected_ == obtained, {}};
+        if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t>) {
+            return {std::cmp_equal(expected_, obtained), {}};
+        } else {
+            return {expected_ == obtained, {}};
+        }
     }
 
     [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view obtained) const
@@ -79,7 +81,10 @@ public:
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
     static constexpr std::string_view name_impl() { return "equals"; }
-    static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_FLOAT; }
+    static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
+    {
+        return type == DDWAF_OBJ_FLOAT;
+    }
 
     [[nodiscard]] std::pair<bool, std::string> match_impl(double obtained) const
     {
