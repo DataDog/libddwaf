@@ -22,6 +22,7 @@
 #include "log.hpp"
 #include "parameter.hpp"
 #include "parser/common.hpp"
+#include "parser/matcher_parser.hpp"
 #include "parser/parser.hpp"
 #include "transformer/base.hpp"
 #include "utils.hpp"
@@ -147,7 +148,7 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
                 operator_name = operator_name.substr(1);
             }
 
-            auto [data_id, matcher] = parse_matcher(operator_name, params);
+            auto [data_id, matcher] = parse_all_matchers(operator_name, params);
 
             if (!matcher && !data_id.empty()) {
                 data_ids_to_type.emplace(data_id, operator_name);

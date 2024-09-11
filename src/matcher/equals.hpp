@@ -8,16 +8,16 @@
 
 #include <string_view>
 #include <type_traits>
-#include <unordered_map>
 #include <utility>
 
 #include "matcher/base.hpp"
-#include "utils.hpp"
 
 namespace ddwaf::matcher {
 
-template <typename T> class equals : public base_impl<equals<T>> {
+template <typename T = void> class equals : public base_impl<equals<T>> {
 public:
+    static constexpr std::string_view matcher_name = "equals";
+
     explicit equals(T expected)
         requires(!std::is_floating_point_v<T>)
         : expected_(std::move(expected))
@@ -30,7 +30,6 @@ public:
 
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
-    static constexpr std::string_view name_impl() { return "equals"; }
     static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
     {
         if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t>) {
@@ -70,6 +69,8 @@ protected:
 
 template <> class equals<double> : public base_impl<equals<double>> {
 public:
+    static constexpr std::string_view matcher_name = "equals";
+
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     equals(double expected, double delta) : expected_(expected), delta_(delta) {}
     ~equals() override = default;
@@ -80,7 +81,6 @@ public:
 
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
-    static constexpr std::string_view name_impl() { return "equals"; }
     static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
     {
         return type == DDWAF_OBJ_FLOAT;
@@ -95,6 +95,27 @@ protected:
     double delta_;
 
     friend class base_impl<equals<double>>;
+};
+
+template <> class equals<void> : public base_impl<equals<void>> {
+public:
+    static constexpr std::string_view matcher_name = "equals";
+
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    ~equals() override = default;
+
+protected:
+    equals() = default;
+    equals(const equals &) = default;
+    equals(equals &&) noexcept = default;
+    equals &operator=(const equals &) = default;
+    equals &operator=(equals &&) noexcept = default;
+
+    static constexpr std::string_view to_string_impl() { return ""; }
+    static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE /*type*/) { return false; }
+    [[nodiscard]] static std::pair<bool, std::string> match_impl() { return {}; }
+
+    friend class base_impl<equals<void>>;
 };
 
 } // namespace ddwaf::matcher

@@ -16,6 +16,8 @@ namespace ddwaf::matcher {
 
 class phrase_match : public base_impl<phrase_match> {
 public:
+    static constexpr std::string_view matcher_name = "phrase_match";
+
     phrase_match(std::vector<const char *> pattern, std::vector<uint32_t> lengths,
         bool enforce_word_boundary = false);
     ~phrase_match() override = default;
@@ -26,7 +28,6 @@ public:
 
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
-    static constexpr std::string_view name_impl() { return "phrase_match"; }
     static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
     {
         return type == DDWAF_OBJ_STRING;

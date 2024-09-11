@@ -8,20 +8,22 @@
 
 #include <string_view>
 #include <type_traits>
-#include <unordered_map>
 #include <utility>
 
 #include "ddwaf.h"
 #include "matcher/base.hpp"
-#include "utils.hpp"
 
 namespace ddwaf::matcher {
 
-template <typename T>
-    requires std::is_same_v<T, uint64_t> || std::is_same_v<T, int64_t> || std::is_same_v<T, double>
-class lower_than : public base_impl<lower_than<T>> {
+template <typename T = void> class lower_than : public base_impl<lower_than<T>> {
 public:
-    explicit lower_than(T maximum) : maximum_(std::move(maximum)) {}
+    static constexpr std::string_view matcher_name = "lower_than";
+
+    explicit lower_than(T maximum)
+        requires std::is_same_v<T, uint64_t> || std::is_same_v<T, int64_t> ||
+                 std::is_same_v<T, double>
+        : maximum_(std::move(maximum))
+    {}
     ~lower_than() override = default;
     lower_than(const lower_than &) = default;
     lower_than(lower_than &&) noexcept = default;
@@ -30,7 +32,6 @@ public:
 
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
-    static constexpr std::string_view name_impl() { return "lower_than"; }
     static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
     {
         return type == DDWAF_OBJ_SIGNED || type == DDWAF_OBJ_UNSIGNED || type == DDWAF_OBJ_FLOAT;
@@ -51,6 +52,27 @@ protected:
     T maximum_;
 
     friend class base_impl<lower_than<T>>;
+};
+
+template <> class lower_than<void> : public base_impl<lower_than<void>> {
+public:
+    static constexpr std::string_view matcher_name = "lower_than";
+
+    ~lower_than() override = default;
+
+protected:
+    lower_than() = default;
+    lower_than(const lower_than &) = default;
+    lower_than(lower_than &&) noexcept = default;
+    lower_than &operator=(const lower_than &) = default;
+    lower_than &operator=(lower_than &&) noexcept = default;
+
+    static constexpr std::string_view to_string_impl() { return ""; }
+    static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE /*type*/) { return false; }
+
+    [[nodiscard]] static std::pair<bool, std::string> match_impl() { return {}; }
+
+    friend class base_impl<lower_than<void>>;
 };
 
 } // namespace ddwaf::matcher

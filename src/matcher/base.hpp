@@ -47,7 +47,7 @@ public:
     base_impl &operator=(const base_impl &) = default;
     base_impl &operator=(base_impl &&) noexcept = default;
 
-    [[nodiscard]] std::string_view name() const override { return T::name_impl(); }
+    [[nodiscard]] std::string_view name() const override { return T::matcher_name; }
 
     [[nodiscard]] std::string_view to_string() const override
     {

@@ -14,6 +14,8 @@ namespace ddwaf::matcher {
 
 class is_sqli : public base_impl<is_sqli> {
 public:
+    static constexpr std::string_view matcher_name = "is_sqli";
+
     is_sqli() = default;
     ~is_sqli() override = default;
     is_sqli(const is_sqli &) = delete;
@@ -25,7 +27,6 @@ protected:
     static constexpr unsigned fingerprint_length = 16;
 
     static constexpr std::string_view to_string_impl() { return ""; }
-    static constexpr std::string_view name_impl() { return "is_sqli"; }
     static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
     {
         return type == DDWAF_OBJ_STRING;

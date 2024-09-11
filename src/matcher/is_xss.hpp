@@ -14,6 +14,8 @@ namespace ddwaf::matcher {
 
 class is_xss : public base_impl<is_xss> {
 public:
+    static constexpr std::string_view matcher_name = "is_xss";
+
     is_xss() = default;
     ~is_xss() override = default;
     is_xss(const is_xss &) = delete;
@@ -23,7 +25,6 @@ public:
 
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
-    static constexpr std::string_view name_impl() { return "is_xss"; }
     static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
     {
         return type == DDWAF_OBJ_STRING;

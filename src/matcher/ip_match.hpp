@@ -19,6 +19,8 @@ class ip_match : public base_impl<ip_match> {
 public:
     using data_type = std::vector<std::pair<std::string_view, uint64_t>>;
 
+    static constexpr std::string_view matcher_name = "ip_match";
+
     ip_match() = default;
     explicit ip_match(const std::vector<std::string_view> &ip_list);
     template <std::size_t N>
@@ -43,7 +45,6 @@ public:
 
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
-    static constexpr std::string_view name_impl() { return "ip_match"; }
     static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
     {
         return type == DDWAF_OBJ_STRING;
