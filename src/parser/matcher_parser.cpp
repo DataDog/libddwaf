@@ -30,7 +30,7 @@
 #include "matcher/regex_match.hpp"
 #include "parameter.hpp"
 #include "parser/common.hpp"
-#include "parser/matcher_parser.hpp"
+#include "parser/matcher_parser.hpp" // IWYU pragma: keep
 
 namespace ddwaf::parser::v2 {
 
@@ -39,7 +39,6 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::ph
     const parameter::map &params)
 {
     parameter::map options;
-    std::unique_ptr<matcher::base> matcher;
 
     auto list = at<parameter::vector>(params, "list");
     options = at<parameter::map>(params, "options", options);
@@ -69,7 +68,6 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::re
     const parameter::map &params)
 {
     parameter::map options;
-    std::unique_ptr<matcher::base> matcher;
 
     auto regex = at<std::string>(params, "regex");
     options = at<parameter::map>(params, "options", options);

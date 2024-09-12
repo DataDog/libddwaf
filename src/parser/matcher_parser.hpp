@@ -26,7 +26,7 @@ namespace ddwaf::parser::v2 {
 
 template <typename Matcher>
 std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(const parameter::map &params);
-    
+
 template <typename Matcher, typename... Rest>
 std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
     std::string_view name, const parameter::map &params)
@@ -45,8 +45,9 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
 inline std::pair<std::string, std::unique_ptr<matcher::base>> parse_any_matcher(
     std::string_view name, const parameter::map &params)
 {
-    return parse_matcher<
-        matcher::equals<>, matcher::exact_match, matcher::greater_than<>, matcher::ip_match, matcher::is_sqli, matcher::is_xss, matcher::lower_than<>, matcher::phrase_match, matcher::regex_match>(name, params);
+    return parse_matcher<matcher::equals<>, matcher::exact_match, matcher::greater_than<>,
+        matcher::ip_match, matcher::is_sqli, matcher::is_xss, matcher::lower_than<>,
+        matcher::phrase_match, matcher::regex_match>(name, params);
 }
 
 } // namespace ddwaf::parser::v2
