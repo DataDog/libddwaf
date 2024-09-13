@@ -26,7 +26,8 @@
 auto parse_args(int argc, char *argv[])
 {
     const std::map<std::string, std::string, std::less<>> arg_mapping{
-        {"-r", "--ruleset"}, {"-i", "--input"}, {"--ruleset", "--ruleset"}, {"--input", "--input"}};
+        {"-r", "--ruleset"}, {"-i", "--input"}, {"--ruleset", "--ruleset"},
+        {"--input", "--input"}, {"-v", "--verbose"}, {"--verbose", "--verbose"}};
 
     std::unordered_map<std::string, std::vector<std::string>> args;
     auto last_arg = args.end();
@@ -53,9 +54,13 @@ const char *value_regex = R"((?i)(?:p(?:ass)?w(?:or)?d|pass(?:[_-]?phrase)?|secr
 
 int main(int argc, char *argv[])
 {
-    ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
-
     auto args = parse_args(argc, argv);
+
+    if (args.contains("--verbose")) {
+        ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
+    } else {
+        ddwaf_set_log_cb(log_cb, DDWAF_LOG_OFF);
+    }
 
     const std::vector<std::string> rulesets = args["--ruleset"];
     const std::vector<std::string> inputs = args["--input"];

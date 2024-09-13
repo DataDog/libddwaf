@@ -41,8 +41,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
+    processor_cache cache;
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &header}, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, &header}, cache, deadline);
 
     ddwaf_object_free(&header);
     ddwaf_object_free(&output);

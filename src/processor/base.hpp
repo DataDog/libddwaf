@@ -33,14 +33,41 @@ struct processor_mapping {
     processor_target output;
 };
 
+struct resolved_argument_count {
+    std::size_t all{0};
+    std::size_t optional{0};
+};
+
 struct processor_cache {
     expression::cache_type expr_cache;
     std::unordered_set<target_index> generated;
+
+    std::vector<resolved_argument_count> evaluated;
+
+    // Fingerprinting cache
+    struct {
+        std::vector<std::optional<std::string>> fragment_fields;
+    } fingerprint;
 };
 
 template <typename Class, typename... Args>
 function_traits<Class::param_names.size(), Class, Args...> make_eval_traits(
     std::pair<ddwaf_object, object_store::attribute> (Class::*)(Args...) const);
+
+template <typename... Ts> constexpr std::size_t count_optionals()
+{
+    return (is_optional_argument<Ts>::value + ...);
+}
+template <typename T> struct tuple_optionals_trait : std::false_type {};
+
+template <typename... Ts>
+struct tuple_optionals_trait<std::tuple<Ts...>>
+    : std::bool_constant<(count_optionals<Ts...>() > 0)> {
+    static constexpr std::size_t count = count_optionals<Ts...>();
+};
+
+template <typename T>
+concept is_tuple_with_optional = tuple_optionals_trait<T>::value;
 
 class base_processor {
 public:
@@ -91,34 +118,69 @@ public:
         }
 
         using func_traits = decltype(make_eval_traits(&Self::eval_impl));
+        using tuple_type = typename func_traits::tuple_type;
         static_assert(func_traits::nargs == Self::param_names.size());
 
-        for (const auto &mapping : mappings_) {
+        if constexpr (is_tuple_with_optional<tuple_type>) {
+            // If the processor has optional parameters, initialise the cache to
+            // ensure that we can keep track of the number of optional arguments
+            // seen and reevaluate as necessary.
+            if (cache.evaluated.size() < mappings_.size()) {
+                cache.evaluated.resize(mappings_.size());
+            }
+        }
+
+        for (std::size_t i = 0; i < mappings_.size(); ++i) {
+            const auto &mapping = mappings_[i];
             if (deadline.expired()) {
                 throw ddwaf::timeout_exception();
             }
 
             if (store.has_target(mapping.output.index) ||
                 cache.generated.find(mapping.output.index) != cache.generated.end()) {
-                continue;
+                if constexpr (is_tuple_with_optional<tuple_type>) {
+                    // When the processor has optional arguments, these should still be
+                    // resolved as there could be new ones available
+                    if (cache.evaluated[i].optional == tuple_optionals_trait<tuple_type>::count) {
+                        continue;
+                    }
+                } else {
+                    continue;
+                }
             }
 
-            typename func_traits::tuple_type args;
-            if (!resolve_arguments(
-                    mapping, store, args, std::make_index_sequence<func_traits::nargs>{})) {
-                continue;
+            tuple_type args;
+            auto arg_count = resolve_arguments(
+                mapping, store, args, std::make_index_sequence<func_traits::nargs>{});
+            if constexpr (is_tuple_with_optional<tuple_type>) {
+                // If there are no new optional arguments, or no arguments at all, skip
+                if (arg_count.all == 0 || (arg_count.all == cache.evaluated[i].all &&
+                                              arg_count.optional == cache.evaluated[i].optional)) {
+                    continue;
+                }
+            } else {
+                if (arg_count.all == 0) {
+                    continue;
+                }
             }
 
             auto [object, attr] = std::apply(
                 [&](auto &&...args) {
                     return static_cast<const Self *>(this)->eval_impl(
-                        std::forward<decltype(args)>(args)..., deadline);
+                        std::forward<decltype(args)>(args)..., cache, deadline);
                 },
                 std::move(args));
-
             if (attr != object_store::attribute::ephemeral) {
                 // Whatever the outcome, we don't want to try and generate it again
                 cache.generated.emplace(mapping.output.index);
+
+                // We update the number of optionals evaluated so that we can
+                // eventually determine whether the processor should be called
+                // again or not. The number of optionals found should increase
+                // on every call, hence why we simply replace the value.
+                if constexpr (is_tuple_with_optional<tuple_type>) {
+                    cache.evaluated[i] = arg_count;
+                }
             }
 
             if (object.type == DDWAF_OBJ_INVALID) {
@@ -177,31 +239,40 @@ public:
 
 protected:
     template <size_t I, size_t... Is, typename Args>
-    bool resolve_arguments(const processor_mapping &mapping, const object_store &store, Args &args,
-        std::index_sequence<I, Is...> /*unused*/) const
+    resolved_argument_count resolve_arguments(const processor_mapping &mapping,
+        const object_store &store, Args &args, std::index_sequence<I, Is...> /*unused*/,
+        resolved_argument_count count = {}) const
     {
         using TupleElement = std::tuple_element_t<I, Args>;
         auto arg = resolve_argument<I>(mapping, store);
         if constexpr (is_unary_argument<TupleElement>::value) {
             if (!arg.has_value()) {
-                return false;
+                return {};
             }
 
+            ++count.all;
             std::get<I>(args) = std::move(arg.value());
         } else if constexpr (is_variadic_argument<TupleElement>::value) {
             if (arg.empty()) {
-                return false;
+                return {};
             }
 
+            ++count.all;
             std::get<I>(args) = std::move(arg);
         } else {
+            // If an optional value is not available, the resolution of said
+            // argument doesn't increase the number of arguments resolsved.
+            // This ensures that when all arguments in a method are optional,
+            // we can prevent calling it if none of the arguments are available.
+            count.all += static_cast<std::size_t>(arg.has_value());
+            count.optional += static_cast<std::size_t>(arg.has_value());
             std::get<I>(args) = std::move(arg);
         }
 
         if constexpr (sizeof...(Is) > 0) {
-            return resolve_arguments(mapping, store, args, std::index_sequence<Is...>{});
+            return resolve_arguments(mapping, store, args, std::index_sequence<Is...>{}, count);
         } else {
-            return true;
+            return count;
         }
     }
 

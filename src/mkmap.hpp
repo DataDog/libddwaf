@@ -12,7 +12,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "type_traits.hpp"
+#include "traits.hpp"
 
 namespace ddwaf {
 template <typename Key, typename T, class Compare = std::less<Key>,
