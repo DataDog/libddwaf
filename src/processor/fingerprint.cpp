@@ -37,7 +37,7 @@ namespace {
 struct string_buffer {
     explicit string_buffer(std::size_t length)
         // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
-        : buffer(reinterpret_cast<char *>(malloc(sizeof(char) * length))), length(length)
+        : buffer(reinterpret_cast<char *>(malloc(sizeof(char) * (length + 1)))), length(length)
     {
         if (buffer == nullptr) {
             throw std::bad_alloc{};
@@ -55,16 +55,23 @@ struct string_buffer {
 
     void append(std::string_view str)
     {
-        if (!str.empty() && (index + str.size()) < length) [[likely]] {
+        if (!str.empty() && (index + str.size()) <= length) [[likely]] {
             memcpy(&buffer[index], str.data(), str.size());
             index += str.size();
         }
     }
 
-    void append(char c) { buffer[index++] = c; }
+    void append(char c)
+    {
+        if (index < length) [[likely]] {
+            buffer[index++] = c;
+        }
+    }
 
     ddwaf_object to_object()
     {
+        buffer[index] = '\0';
+
         ddwaf_object object;
         ddwaf_object_stringl_nc(&object, buffer, index);
         buffer = nullptr;
@@ -442,7 +449,7 @@ ddwaf_object generate_fragment(std::string_view header, Generators... generators
     auto length =
         generate_fragment_field(std::span<std::string, num_fields>{fields}, generators...);
 
-    string_buffer buffer{length + header.size() + num_fields + 1};
+    string_buffer buffer{length + header.size() + num_fields};
     buffer.append(header);
     for (const auto &field : fields) {
         buffer.append('-');
@@ -500,7 +507,7 @@ ddwaf_object generate_fragment_cached(std::string_view header,
 
     auto length = generate_fragment_field_cached(cache, generators...);
 
-    string_buffer buffer{length + header.size() + num_fields + 1};
+    string_buffer buffer{length + header.size() + num_fields};
     buffer.append(header);
     for (const auto &field : cache) {
         buffer.append('-');

@@ -54,20 +54,16 @@ template <typename Class, typename... Args>
 function_traits<Class::param_names.size(), Class, Args...> make_eval_traits(
     std::pair<ddwaf_object, object_store::attribute> (Class::*)(Args...) const);
 
-template <typename T, typename... Ts> constexpr std::size_t count_optionals()
+template <typename... Ts> constexpr std::size_t count_optionals()
 {
-    if constexpr (sizeof...(Ts) == 0) {
-        return static_cast<std::size_t>(is_optional_argument<T>::value);
-    } else {
-        return is_optional_argument<T>::value + count_optionals<Ts...>();
-    }
+    return (is_optional_argument<Ts>::value + ...);
 }
+template <typename T> struct tuple_optionals_trait : std::false_type {};
 
-template <typename T> struct tuple_optionals_trait;
-
-template <typename... Ts> struct tuple_optionals_trait<std::tuple<Ts...>> {
+template <typename... Ts>
+struct tuple_optionals_trait<std::tuple<Ts...>>
+    : std::bool_constant<(count_optionals<Ts...>() > 0)> {
     static constexpr std::size_t count = count_optionals<Ts...>();
-    static constexpr bool value = count > 0;
 };
 
 template <typename T>
