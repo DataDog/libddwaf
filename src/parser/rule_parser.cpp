@@ -16,7 +16,7 @@
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
 #include "parser/specification.hpp"
-#include "rule.hpp"
+#include "rule/rule.hpp"
 #include "transformer/base.hpp"
 #include "utils.hpp"
 
