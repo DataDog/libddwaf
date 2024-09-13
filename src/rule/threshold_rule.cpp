@@ -141,7 +141,7 @@ std::optional<event> indexed_threshold_rule::eval(const object_store &store, cac
     if (match) {
         // Match should be generated differently
         auto matches = expression::get_matches(cache);
-        condition_match match{{{"input"sv, object_to_string(*obj), criteria_.filter.name, {}}}, {},
+        condition_match match{{{"input"sv, object_to_string(*obj), criteria_.filter.name, criteria_.filter.key_path}}, {},
             "threshold", threshold_str_, false};
         matches.emplace_back(std::move(match));
         return {ddwaf::event{this, std::move(matches), false, {}}};
