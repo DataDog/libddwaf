@@ -59,7 +59,7 @@ public:
     MOCK_METHOD(std::optional<event>, match,
         (const object_store &, rule::cache_type &, (const exclusion::object_set_ref &objects),
             (const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &),
-            ddwaf::timer &),
+            const object_limits &, ddwaf::timer &),
         (const override));
 };
 
@@ -76,7 +76,7 @@ public:
     MOCK_METHOD(std::optional<ddwaf::exclusion::rule_filter::excluded_set>, match,
         (const object_store &store, cache_type &cache,
             (const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &),
-            ddwaf::timer &deadline),
+            const object_limits &, ddwaf::timer &),
         (const override));
 };
 
@@ -94,7 +94,7 @@ public:
     MOCK_METHOD(std::optional<excluded_set>, match,
         (const object_store &store, cache_type &cache,
             (const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &),
-            ddwaf::timer &deadline),
+            const object_limits &, ddwaf::timer &),
         (const override));
 };
 
@@ -107,7 +107,7 @@ public:
         void, get_addresses, ((std::unordered_map<target_index, std::string> &)), (const override));
     MOCK_METHOD(void, eval,
         (object_store & store, optional_ref<ddwaf_object> &, processor_cache &,
-            ddwaf::timer &deadline),
+            const object_limits &, ddwaf::timer &),
         (const override));
     MOCK_METHOD(const std::string &, get_id, (), (const override));
 };
@@ -129,8 +129,8 @@ TEST(TestContext, PreprocessorEval)
 
     Sequence seq;
 
-    EXPECT_CALL(*proc, eval(_, _, _, _)).InSequence(seq);
-    EXPECT_CALL(*rule, match(_, _, _, _, _)).InSequence(seq).WillOnce(Return(std::nullopt));
+    EXPECT_CALL(*proc, eval(_, _, _, _, _)).InSequence(seq);
+    EXPECT_CALL(*rule, match(_, _, _, _, _, _)).InSequence(seq).WillOnce(Return(std::nullopt));
 
     auto ruleset = test::get_default_ruleset();
     ruleset->insert_rule(rule);
@@ -161,8 +161,8 @@ TEST(TestContext, PostprocessorEval)
 
     Sequence seq;
 
-    EXPECT_CALL(*rule, match(_, _, _, _, _)).InSequence(seq).WillOnce(Return(std::nullopt));
-    EXPECT_CALL(*proc, eval(_, _, _, _)).InSequence(seq);
+    EXPECT_CALL(*rule, match(_, _, _, _, _, _)).InSequence(seq).WillOnce(Return(std::nullopt));
+    EXPECT_CALL(*proc, eval(_, _, _, _, _)).InSequence(seq);
 
     auto ruleset = test::get_default_ruleset();
     ruleset->insert_rule(rule);
@@ -193,7 +193,7 @@ TEST(TestContext, SkipRuleNoTargets)
     auto ruleset = test::get_default_ruleset();
     ruleset->insert_rule(rule);
 
-    EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
+    EXPECT_CALL(*rule, match(_, _, _, _, _, _)).Times(0);
 
     ddwaf::context ctx(ruleset);
 
@@ -1026,8 +1026,8 @@ TEST(TestContext, SkipRuleFilterNoTargets)
         ruleset->insert_filter<exclusion::rule_filter>(filter);
     }
 
-    EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
-    EXPECT_CALL(*filter, match(_, _, _, _)).Times(0);
+    EXPECT_CALL(*rule, match(_, _, _, _, _, _)).Times(0);
+    EXPECT_CALL(*filter, match(_, _, _, _, _)).Times(0);
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -1075,8 +1075,8 @@ TEST(TestContext, SkipRuleButNotRuleFilterNoTargets)
         ruleset->insert_filter<exclusion::rule_filter>(filter);
     }
 
-    EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
-    EXPECT_CALL(*filter, match(_, _, _, _)).WillOnce(Return(std::nullopt));
+    EXPECT_CALL(*rule, match(_, _, _, _, _, _)).Times(0);
+    EXPECT_CALL(*filter, match(_, _, _, _, _)).WillOnce(Return(std::nullopt));
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -1842,8 +1842,8 @@ TEST(TestContext, SkipInputFilterNoTargets)
         ruleset->insert_filter<exclusion::input_filter>(filter);
     }
 
-    EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
-    EXPECT_CALL(*filter, match(_, _, _, _)).Times(0);
+    EXPECT_CALL(*rule, match(_, _, _, _, _, _)).Times(0);
+    EXPECT_CALL(*filter, match(_, _, _, _, _)).Times(0);
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -1888,8 +1888,8 @@ TEST(TestContext, SkipRuleButNotInputFilterNoTargets)
         ruleset->insert_filter<exclusion::input_filter>(filter);
     }
 
-    EXPECT_CALL(*rule, match(_, _, _, _, _)).Times(0);
-    EXPECT_CALL(*filter, match(_, _, _, _)).WillOnce(Return(std::nullopt));
+    EXPECT_CALL(*rule, match(_, _, _, _, _, _)).Times(0);
+    EXPECT_CALL(*filter, match(_, _, _, _, _)).WillOnce(Return(std::nullopt));
 
     ddwaf_object root;
     ddwaf_object tmp;

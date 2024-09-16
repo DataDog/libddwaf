@@ -187,7 +187,7 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
     {
         auto overrides = yaml_to_object(
             R"({actions: [{id: block, type: redirect_request, parameters: {location: http://google.com, status_code: 303}}]})");
-        auto *new_handle = ddwaf_update(handle, &overrides, nullptr);
+        auto *new_handle = ddwaf_update(handle, &overrides, nullptr, nullptr);
         ddwaf_object_free(&overrides);
         ASSERT_NE(new_handle, nullptr);
 
@@ -267,7 +267,7 @@ TEST(TestActionsIntegration, AddNewAction)
     {
         auto overrides = yaml_to_object(
             R"({actions: [{id: unblock, type: unblock_request, parameters: {code: 303}}]})");
-        auto *new_handle = ddwaf_update(handle, &overrides, nullptr);
+        auto *new_handle = ddwaf_update(handle, &overrides, nullptr, nullptr);
         ddwaf_object_free(&overrides);
         ASSERT_NE(new_handle, nullptr);
 

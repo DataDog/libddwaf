@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 #include <exception>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 
@@ -53,8 +54,8 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
 
     if (version == 2) {
         DDWAF_DEBUG("Parsing ruleset with schema version 2.x");
-        builder_ = std::make_shared<ruleset_builder>(limits, free_fn, std::move(event_obfuscator));
-        ruleset_ = builder_->build(input, info);
+        builder_ = std::make_shared<ruleset_builder>(free_fn, std::move(event_obfuscator));
+        ruleset_ = builder_->build(input, info, limits);
         if (!ruleset_) {
             throw std::runtime_error("failed to instantiate WAF");
         }
@@ -66,10 +67,11 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
     throw unsupported_version();
 }
 
-waf *waf::update(ddwaf::parameter input, ddwaf::base_ruleset_info &info)
+waf *waf::update(
+    ddwaf::parameter input, ddwaf::base_ruleset_info &info, std::optional<object_limits> limits)
 {
     if (builder_) {
-        auto ruleset = builder_->build(input, info);
+        auto ruleset = builder_->build(input, info, limits);
         if (ruleset) {
             return new waf{builder_, std::move(ruleset)};
         }

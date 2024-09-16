@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
             auto ip_set = generate_ip_set(size);
 
             auto update = generate_rule_data(ip_set);
-            ddwaf_handle updated_handle = ddwaf_update(handle, &update, nullptr);
+            ddwaf_handle updated_handle = ddwaf_update(handle, &update, nullptr, nullptr);
             ddwaf_object_free(&update);
 
             if (updated_handle == nullptr) {

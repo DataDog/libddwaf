@@ -50,7 +50,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, store, cache, {}, {}, deadline);
+        rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
@@ -64,7 +64,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
         store.insert(root);
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, store, cache, {}, {}, deadline);
+        rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -119,7 +119,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, store, cache, {}, {}, deadline);
+        rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
@@ -133,7 +133,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, store, cache, {}, {}, deadline);
+        rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -188,7 +188,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, store, cache, {}, {}, deadline);
+        rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -202,7 +202,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, store, cache, {}, {}, deadline);
+        rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
@@ -241,7 +241,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, store, cache, {}, {}, deadline);
+        rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -257,7 +257,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        rule_collection.match(events, store, cache, {}, {}, deadline);
+        rule_collection.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
     }
@@ -314,7 +314,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        priority.match(events, store, cache, {}, {}, deadline);
+        priority.match(events, store, cache, {}, {}, {}, deadline);
 
         ASSERT_EQ(events.size(), 1);
         ASSERT_EQ(events[0].rule->get_actions().size(), 1);
@@ -329,7 +329,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        regular.match(events, store, cache, {}, {}, deadline);
+        regular.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 0);
     }
@@ -387,7 +387,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        regular.match(events, store, cache, {}, {}, deadline);
+        regular.match(events, store, cache, {}, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(events[0].rule->get_actions().empty());
@@ -402,7 +402,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        priority.match(events, store, cache, {}, {}, deadline);
+        priority.match(events, store, cache, {}, {}, {}, deadline);
 
         ASSERT_EQ(events.size(), 1);
         ASSERT_EQ(events[0].rule->get_actions().size(), 1);
@@ -461,7 +461,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        priority.match(events, store, cache, {}, {}, deadline);
+        priority.match(events, store, cache, {}, {}, {}, deadline);
 
         ASSERT_EQ(events.size(), 1);
         ASSERT_EQ(events[0].rule->get_actions().size(), 1);
@@ -477,7 +477,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        priority.match(events, store, cache, {}, {}, deadline);
+        priority.match(events, store, cache, {}, {}, {}, deadline);
 
         ASSERT_EQ(events.size(), 0);
     }
@@ -536,7 +536,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterEphemeralPriorityMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        priority.match(events, store, cache, {}, {}, deadline);
+        priority.match(events, store, cache, {}, {}, {}, deadline);
 
         ASSERT_EQ(events.size(), 1);
         ASSERT_EQ(events[0].rule->get_actions().size(), 1);
@@ -554,7 +554,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterEphemeralPriorityMatch)
 
         std::vector<event> events;
         ddwaf::timer deadline{2s};
-        priority.match(events, store, cache, {}, {}, deadline);
+        priority.match(events, store, cache, {}, {}, {}, deadline);
 
         ASSERT_EQ(events.size(), 1);
     }
@@ -621,7 +621,7 @@ TEST(TestPriorityCollection, EphemeralPriorityMatchNoOtherMatches)
     }
 
     std::vector<event> events;
-    priority.match(events, store, cache, {}, {}, deadline);
+    priority.match(events, store, cache, {}, {}, {}, deadline);
 
     ASSERT_EQ(events.size(), 1);
     ASSERT_EQ(events[0].rule->get_actions().size(), 1);

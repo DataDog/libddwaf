@@ -52,7 +52,7 @@ TEST(TestSHIDetector, NoMatchAndFalsePositives)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << resource;
     }
 }
@@ -87,7 +87,7 @@ TEST(TestSHIDetector, ExecutablesAndRedirections)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
         EXPECT_FALSE(res.ephemeral);
 
@@ -135,7 +135,7 @@ TEST(TestSHIDetector, InjectionsWithinCommandSubstitution)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
         EXPECT_FALSE(res.ephemeral);
 
@@ -176,7 +176,7 @@ TEST(TestSHIDetector, InjectionsWithinProcessSubstitution)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
         EXPECT_FALSE(res.ephemeral);
 
@@ -219,7 +219,7 @@ TEST(TestSHIDetector, OffByOnePayloadsMatch)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
         EXPECT_FALSE(res.ephemeral);
 
@@ -285,7 +285,7 @@ TEST(TestSHIDetector, MultipleArgumentsMatch)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
         EXPECT_FALSE(res.ephemeral);
 

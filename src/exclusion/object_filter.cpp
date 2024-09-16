@@ -101,8 +101,8 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
 
 } // namespace
 
-object_set object_filter::match(
-    const object_store &store, cache_type &cache, bool ephemeral, ddwaf::timer &deadline) const
+object_set object_filter::match(const object_store &store, cache_type &cache, bool ephemeral,
+    const object_limits &limits, ddwaf::timer &deadline) const
 {
     object_set objects_to_exclude;
     for (const auto &[target, filter] : target_paths_) {
@@ -117,9 +117,9 @@ object_set object_filter::match(
 
         if (!ephemeral && attr != object_store::attribute::ephemeral) {
             cache.emplace(object);
-            iterate_object(filter.get_traverser(), object, objects_to_exclude.persistent, limits_);
+            iterate_object(filter.get_traverser(), object, objects_to_exclude.persistent, limits);
         } else {
-            iterate_object(filter.get_traverser(), object, objects_to_exclude.ephemeral, limits_);
+            iterate_object(filter.get_traverser(), object, objects_to_exclude.ephemeral, limits);
         }
     }
 

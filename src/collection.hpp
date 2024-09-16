@@ -47,7 +47,7 @@ public:
     void match(std::vector<event> &events, object_store &store, collection_cache &cache,
         const exclusion::context_policy &exclusion,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-        ddwaf::timer &deadline) const;
+        const object_limits &limits, ddwaf::timer &deadline) const;
 
 protected:
     std::vector<rule *> rules_{};

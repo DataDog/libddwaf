@@ -6,6 +6,7 @@
 //
 #include <exception>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string_view>
 #include <type_traits>
@@ -26,6 +27,7 @@
 #include "ruleset.hpp"
 #include "ruleset_builder.hpp"
 #include "ruleset_info.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -73,8 +75,13 @@ std::set<rule *> references_to_rules(
 
 } // namespace
 
-std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_ruleset_info &info)
+std::shared_ptr<ruleset> ruleset_builder::build(
+    parameter::map &root, base_ruleset_info &info, std::optional<object_limits> limits)
 {
+    if (limits.has_value()) {
+        limits_ = limits.value();
+    }
+
     // Load new rules, overrides and exclusions
     auto state = load(root, info);
 
@@ -215,6 +222,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     rs->actions = actions_;
     rs->free_fn = free_fn_;
     rs->event_obfuscator = event_obfuscator_;
+    rs->limits = limits_;
 
     // Since disabled rules aren't added to the final ruleset, we must check
     // again that there are rules available.

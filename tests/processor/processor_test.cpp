@@ -72,7 +72,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
     optional_ref<ddwaf_object> derived{output_map};
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 1);
     const auto *obtained = ddwaf_object_get_index(&output_map, 0);
@@ -125,7 +125,7 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
     optional_ref<ddwaf_object> derived{output_map};
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 2);
     {
@@ -185,7 +185,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
     optional_ref<ddwaf_object> derived{output_map};
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 1);
     const auto *obtained = ddwaf_object_get_index(&output_map, 0);
@@ -233,7 +233,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     optional_ref<ddwaf_object> derived{output_map};
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
 
     ddwaf_object input;
@@ -245,7 +245,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     store.insert(input_map);
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
     EXPECT_EQ(ddwaf_object_size(&output_map), 1);
 
     const auto *obtained = ddwaf_object_get_index(&output_map, 0);
@@ -293,7 +293,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
     optional_ref<ddwaf_object> derived{output_map};
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
 
@@ -337,7 +337,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
         EXPECT_EQ(obtained, nullptr);
     }
 
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
 
     {
         auto *obtained = store.get_target(get_target_index("output_address")).first;
@@ -387,7 +387,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
 
     EXPECT_EQ(store.get_target(get_target_index("output_address")).first, nullptr);
 
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
 
     {
         auto *obtained = store.get_target(get_target_index("output_address")).first;
@@ -432,7 +432,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
     optional_ref<ddwaf_object> derived{std::nullopt};
 
     EXPECT_EQ(store.get_target(get_target_index("output_address")).first, nullptr);
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
 
     EXPECT_EQ(store.get_target(get_target_index("output_address")).first, nullptr);
 
@@ -481,7 +481,7 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
     EXPECT_EQ(store.get_target(get_target_index("output_address.first")).first, nullptr);
     EXPECT_EQ(store.get_target(get_target_index("output_address.second")).first, nullptr);
 
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
 
     {
         auto *obtained = store.get_target(get_target_index("output_address.first")).first;
@@ -536,7 +536,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
         EXPECT_EQ(ddwaf_object_size(&output_map), 0);
     }
 
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
 
     {
         auto *obtained = store.get_target(get_target_index("output_address")).first;
@@ -583,7 +583,7 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
     optional_ref<ddwaf_object> derived{output_map};
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
 
     ddwaf_object_free(&output_map);
 }
@@ -617,8 +617,8 @@ TEST(TestProcessor, OutputAlreadyGenerated)
     optional_ref<ddwaf_object> derived{output_map};
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-    proc.eval(store, derived, cache, deadline);
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
 
     ddwaf_object_free(&output_map);
 }
@@ -649,7 +649,7 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
     timer deadline{2s};
     optional_ref<ddwaf_object> derived{};
 
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
 }
 
 TEST(TestProcessor, OutputWithoutDerivedMap)
@@ -677,7 +677,7 @@ TEST(TestProcessor, OutputWithoutDerivedMap)
     timer deadline{2s};
     optional_ref<ddwaf_object> derived{};
 
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
 }
 
 TEST(TestProcessor, OutputEvalWithoutDerivedMap)
@@ -716,7 +716,7 @@ TEST(TestProcessor, OutputEvalWithoutDerivedMap)
         EXPECT_EQ(obtained, nullptr);
     }
 
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
 
     {
         auto *obtained = store.get_target(get_target_index("output_address")).first;
@@ -742,7 +742,7 @@ TEST(TestProcessor, Timeout)
     timer deadline{0s};
     optional_ref<ddwaf_object> derived{};
 
-    EXPECT_THROW(proc.eval(store, derived, cache, deadline), ddwaf::timeout_exception);
+    EXPECT_THROW(proc.eval(store, derived, cache, {}, deadline), ddwaf::timeout_exception);
 }
 
 } // namespace

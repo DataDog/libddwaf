@@ -136,7 +136,7 @@ TEST(TestParserV2Interface, BasicWithUpdate)
         ddwaf_object_free(&diagnostics);
     }
 
-    ddwaf_handle new_handle = ddwaf_update(handle, &rule, &diagnostics);
+    ddwaf_handle new_handle = ddwaf_update(handle, &rule, nullptr, &diagnostics);
     ASSERT_NE(handle, nullptr);
 
     {

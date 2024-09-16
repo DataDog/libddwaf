@@ -236,7 +236,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
     auto update = read_file("custom_rules.yaml", base_dir);
     ASSERT_TRUE(update.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr);
+    ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr, nullptr);
     ASSERT_NE(handle2, nullptr);
     ddwaf_object_free(&update);
 
@@ -316,7 +316,7 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
 
     ASSERT_TRUE(update.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr);
+    ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr, nullptr);
     ASSERT_NE(handle2, nullptr);
     ddwaf_object_free(&update);
 
@@ -391,7 +391,7 @@ TEST(TestCustomRulesIntegration, UpdateWithEmptyRules)
     auto update = yaml_to_object(R"({custom_rules: []})");
     ASSERT_TRUE(update.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr);
+    ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr, nullptr);
     ASSERT_EQ(handle2, nullptr);
     ddwaf_object_free(&update);
 
@@ -414,7 +414,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
     auto update = yaml_to_object(R"({custom_rules: []})");
     ASSERT_TRUE(update.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr);
+    ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr, nullptr);
     ASSERT_NE(handle2, nullptr);
     ddwaf_object_free(&update);
 
@@ -493,7 +493,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
         R"({rules_override: [{rules_target: [{tags: {category: category4}}], enabled: false}]})");
     ASSERT_TRUE(update.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr);
+    ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr, nullptr);
     ASSERT_NE(handle2, nullptr);
     ddwaf_object_free(&update);
 
@@ -572,14 +572,14 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
         R"({rules_override: [{rules_target: [{tags: {category: category4}}], enabled: false}]})");
     ASSERT_TRUE(update.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr);
+    ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr, nullptr);
     ASSERT_NE(handle2, nullptr);
     ddwaf_object_free(&update);
 
     auto rules_update = read_file("custom_rules.yaml", base_dir);
     ASSERT_TRUE(rules_update.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle3 = ddwaf_update(handle2, &rules_update, nullptr);
+    ddwaf_handle handle3 = ddwaf_update(handle2, &rules_update, nullptr, nullptr);
     ASSERT_NE(handle3, nullptr);
     ddwaf_object_free(&rules_update);
 
@@ -672,7 +672,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
         R"({exclusions: [{id: custom_rule4_exclude, rules_target: [{rule_id: custom_rule4}]}]})");
     ASSERT_TRUE(update.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr);
+    ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr, nullptr);
     ASSERT_NE(handle2, nullptr);
     ddwaf_object_free(&update);
 
@@ -751,14 +751,14 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
         R"({exclusions: [{id: custom_rule4_exclude, rules_target: [{tags: {category: category4}}]}]})");
     ASSERT_TRUE(update.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr);
+    ddwaf_handle handle2 = ddwaf_update(handle1, &update, nullptr, nullptr);
     ASSERT_NE(handle2, nullptr);
     ddwaf_object_free(&update);
 
     auto rules_update = read_file("custom_rules.yaml", base_dir);
     ASSERT_TRUE(rules_update.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle3 = ddwaf_update(handle2, &rules_update, nullptr);
+    ddwaf_handle handle3 = ddwaf_update(handle2, &rules_update, nullptr, nullptr);
     ASSERT_NE(handle3, nullptr);
     ddwaf_object_free(&rules_update);
 

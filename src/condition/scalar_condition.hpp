@@ -13,8 +13,8 @@ namespace ddwaf {
 class scalar_condition : public base_condition {
 public:
     scalar_condition(std::unique_ptr<matcher::base> &&matcher, std::string data_id,
-        std::vector<condition_parameter> args, const object_limits &limits = {})
-        : matcher_(std::move(matcher)), data_id_(std::move(data_id)), limits_(limits)
+        std::vector<condition_parameter> args)
+        : matcher_(std::move(matcher)), data_id_(std::move(data_id))
     {
         if (args.size() > 1) {
             throw std::invalid_argument("Matcher initialised with more than one argument");
@@ -30,7 +30,7 @@ public:
     eval_result eval(condition_cache &cache, const object_store &store,
         const exclusion::object_set_ref &objects_excluded,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-        ddwaf::timer &deadline) const override;
+        const object_limits &limits, ddwaf::timer &deadline) const override;
 
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const override
     {
@@ -50,7 +50,6 @@ protected:
     std::unique_ptr<matcher::base> matcher_;
     std::string data_id_;
     std::vector<condition_target> targets_;
-    const object_limits limits_;
 };
 
 } // namespace ddwaf

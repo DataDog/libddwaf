@@ -62,7 +62,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
         auto root = yaml_to_object(
             R"({exclusion_data: [{id: usr_data, type: data_with_expiration, data: [{value: admin, expiration: 0}]}]})");
 
-        handle2 = ddwaf_update(handle1, &root, nullptr);
+        handle2 = ddwaf_update(handle1, &root, nullptr, nullptr);
         ASSERT_NE(handle2, nullptr);
         ddwaf_object_free(&root);
     }
@@ -97,7 +97,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
     {
         auto root = yaml_to_object(R"({exclusion_data: []})");
 
-        handle3 = ddwaf_update(handle1, &root, nullptr);
+        handle3 = ddwaf_update(handle1, &root, nullptr, nullptr);
         ASSERT_NE(handle3, nullptr);
         ddwaf_object_free(&root);
     }
@@ -193,7 +193,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
         auto root = yaml_to_object(
             R"({exclusion_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.0.1, expiration: 0}]}]})");
 
-        handle2 = ddwaf_update(handle1, &root, nullptr);
+        handle2 = ddwaf_update(handle1, &root, nullptr, nullptr);
         ASSERT_NE(handle2, nullptr);
         ddwaf_object_free(&root);
     }
@@ -228,7 +228,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
     {
         auto root = yaml_to_object(R"({exclusion_data: []})");
 
-        handle3 = ddwaf_update(handle1, &root, nullptr);
+        handle3 = ddwaf_update(handle1, &root, nullptr, nullptr);
         ASSERT_NE(handle3, nullptr);
         ddwaf_object_free(&root);
     }
@@ -323,7 +323,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
         auto root = yaml_to_object(
             R"({exclusion_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.0.1, expiration: 0}]}]})");
 
-        handle2 = ddwaf_update(handle1, &root, nullptr);
+        handle2 = ddwaf_update(handle1, &root, nullptr, nullptr);
         ASSERT_NE(handle2, nullptr);
         ddwaf_object_free(&root);
     }
@@ -359,7 +359,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
         auto root =
             yaml_to_object(R"({exclusion_data: [{id: ip_data, type: unknown_data, data: [{}]}]})");
 
-        handle3 = ddwaf_update(handle1, &root, nullptr);
+        handle3 = ddwaf_update(handle1, &root, nullptr, nullptr);
         ASSERT_NE(handle3, nullptr);
         ddwaf_object_free(&root);
     }
@@ -454,7 +454,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
         auto root = yaml_to_object(
             R"({exclusion_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.0.1, expiration: 0}]}]})");
 
-        handle2 = ddwaf_update(handle1, &root, nullptr);
+        handle2 = ddwaf_update(handle1, &root, nullptr, nullptr);
         ASSERT_NE(handle2, nullptr);
         ddwaf_object_free(&root);
     }
@@ -489,7 +489,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
     {
         auto root = yaml_to_object(R"({exclusion_data: []})");
 
-        handle3 = ddwaf_update(handle1, &root, nullptr);
+        handle3 = ddwaf_update(handle1, &root, nullptr, nullptr);
         ASSERT_NE(handle3, nullptr);
         ddwaf_object_free(&root);
     }

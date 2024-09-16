@@ -46,7 +46,7 @@ TEST(TestLFIDetector, MatchBasicUnix)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
         EXPECT_FALSE(res.ephemeral);
 
@@ -115,7 +115,7 @@ TEST(TestLFIDetector, MatchBasicWindows)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         EXPECT_TRUE(res.outcome) << path;
         EXPECT_FALSE(res.ephemeral);
 
@@ -145,7 +145,7 @@ TEST(TestLFIDetector, MatchWithKeyPath)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
     EXPECT_FALSE(res.ephemeral);
 
@@ -186,7 +186,7 @@ TEST(TestLFIDetector, PartiallyEphemeralMatch)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
     EXPECT_TRUE(res.ephemeral);
 
@@ -220,7 +220,7 @@ TEST(TestLFIDetector, EphemeralMatch)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
     EXPECT_TRUE(res.ephemeral);
 
@@ -264,7 +264,7 @@ TEST(TestLFIDetector, NoMatchUnix)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         EXPECT_FALSE(res.outcome) << path;
         EXPECT_FALSE(res.ephemeral) << path;
         EXPECT_FALSE(cache.match);
@@ -303,7 +303,7 @@ TEST(TestLFIDetector, NoMatchWindows)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         EXPECT_FALSE(res.outcome) << path;
         EXPECT_FALSE(res.ephemeral) << path;
         EXPECT_FALSE(cache.match);
@@ -334,7 +334,7 @@ TEST(TestLFIDetector, NoMatchExcludedPath)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, exclusion, {}, deadline);
+    auto res = cond.eval(cache, store, exclusion, {}, {}, deadline);
     EXPECT_FALSE(res.outcome);
     EXPECT_FALSE(res.ephemeral);
     EXPECT_FALSE(cache.match);
@@ -364,7 +364,7 @@ TEST(TestLFIDetector, NoMatchExcludedAddress)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, exclusion, {}, deadline);
+    auto res = cond.eval(cache, store, exclusion, {}, {}, deadline);
     EXPECT_FALSE(res.outcome);
     EXPECT_FALSE(res.ephemeral);
     EXPECT_FALSE(cache.match);
@@ -394,7 +394,7 @@ TEST(TestLFIDetector, Timeout)
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, exclusion, {}, deadline);
+    auto res = cond.eval(cache, store, exclusion, {}, {}, deadline);
     EXPECT_FALSE(res.outcome);
     EXPECT_FALSE(res.ephemeral);
     EXPECT_FALSE(cache.match);
@@ -419,7 +419,7 @@ TEST(TestLFIDetector, NoParams)
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, exclusion, {}, deadline);
+    auto res = cond.eval(cache, store, exclusion, {}, {}, deadline);
     EXPECT_FALSE(res.outcome);
     EXPECT_FALSE(res.ephemeral);
     EXPECT_FALSE(cache.match);

@@ -38,7 +38,7 @@ public:
 
     virtual std::optional<excluded_set> match(const object_store &store, cache_type &cache,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-        ddwaf::timer &deadline) const;
+        const object_limits &limits, ddwaf::timer &deadline) const;
 
     std::string_view get_id() const { return id_; }
 
