@@ -27,6 +27,28 @@ namespace {
 
 enum class search_outcome { found, not_found, unknown };
 
+const ddwaf_object *find_key(
+    const ddwaf_object &parent, std::string_view key, const object_limits &limits)
+{
+    const std::size_t size =
+        std::min(static_cast<uint32_t>(parent.nbEntries), limits.max_container_size);
+    for (std::size_t i = 0; i < size; ++i) {
+        const auto &child = parent.array[i];
+
+        if (child.parameterName == nullptr) [[unlikely]] {
+            continue;
+        }
+        const std::string_view child_key{
+            child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
+
+        if (key == child_key) {
+            return &child;
+        }
+    }
+
+    return nullptr;
+}
+
 search_outcome exists(const ddwaf_object *root, std::span<const std::string> key_path,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits)
 {
@@ -39,41 +61,23 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
         return search_outcome::not_found;
     }
 
-    const ddwaf_object *parent = root;
     auto it = key_path.begin();
-
-    std::size_t size = parent->nbEntries;
 
     // The parser ensures that the key path is within the limits specified by
     // the user, hence we don't need to check for depth
-    for (std::size_t i = 0; i < size;) {
-        const auto &child = parent->array[i++];
-
-        if (child.parameterName == nullptr) [[unlikely]] {
-            continue;
+    while ((root = find_key(*root, *it, limits)) != nullptr) {
+        if (objects_excluded.contains(root)) {
+            // We found the next root but it has been excluded, so we
+            // can't know for sure if the required key path exists
+            return search_outcome::unknown;
         }
-        const std::string_view key{
-            child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
 
-        if (key == *it) {
-            if (objects_excluded.contains(&child)) {
-                // We found the next child but it has been excluded, so we
-                // can't know for sure if the required key path exists
-                return search_outcome::unknown;
-            }
+        if (++it == key_path.end()) {
+            return search_outcome::found;
+        }
 
-            if (++it == key_path.end()) {
-                return search_outcome::found;
-            }
-
-            if (child.type != DDWAF_OBJ_MAP) {
-                return search_outcome::not_found;
-            }
-
-            // Reset the loop and iterate child
-            parent = &child;
-            i = 0;
-            size = std::min(static_cast<uint32_t>(child.nbEntries), limits.max_container_size);
+        if (root->type != DDWAF_OBJ_MAP) {
+            return search_outcome::not_found;
         }
     }
 
