@@ -7,6 +7,8 @@
 #pragma once
 
 #include "condition/structured_condition.hpp"
+#include "exception.hpp"
+#include "iterator.hpp"
 
 namespace ddwaf {
 
@@ -21,19 +23,27 @@ public:
 
 protected:
     [[nodiscard]] eval_result eval_impl(const variadic_argument<const ddwaf_object *> &inputs,
-        condition_cache &cache, const exclusion::object_set_ref & /*objects_excluded*/,
-        ddwaf::timer & /*deadline*/) const
-    {
-        if (inputs.empty()) {
-            return {false, false};
-        }
-        // We only care about the first input
-        auto input = inputs.front();
-        cache.match = {{{{"input", {}, input.address, {}}}, {}, "exists", {}, input.ephemeral}};
-        return {true, input.ephemeral};
-    }
+        condition_cache &cache, const exclusion::object_set_ref &objects_excluded,
+        ddwaf::timer &deadline) const;
 
     friend class base_impl<exists_condition>;
+};
+
+class exists_negated_condition : public base_impl<exists_negated_condition> {
+public:
+    static constexpr std::array<std::string_view, 1> param_names{"inputs"};
+
+    explicit exists_negated_condition(
+        std::vector<condition_parameter> args, const object_limits &limits = {})
+        : base_impl<exists_negated_condition>(std::move(args), limits)
+    {}
+
+protected:
+    [[nodiscard]] eval_result eval_impl(const unary_argument<const ddwaf_object *> &input,
+        condition_cache &cache, const exclusion::object_set_ref &objects_excluded,
+        ddwaf::timer & /*deadline*/) const;
+
+    friend class base_impl<exists_negated_condition>;
 };
 
 } // namespace ddwaf
