@@ -1,0 +1,36 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1-exists
+    tags:
+      type: flow
+      category: category
+    conditions:
+      - operator: exists
+        parameters:
+          inputs:
+            - address: input-1
+  - id: 2
+    name: rule2-exists-kp
+    tags:
+      type: flow
+      category: category
+    conditions:
+      - operator: exists
+        parameters:
+          inputs:
+            - address: input-2
+              key_path: ["path"]
+  - id: 3
+    name: rule3-exists-multi
+    tags:
+      type: flow
+      category: category
+    conditions:
+      - operator: exists
+        parameters:
+          inputs:
+            - address: input-3-1
+            - address: input-3-2
+              key_path: ["path"]
+
