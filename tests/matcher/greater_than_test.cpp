@@ -19,6 +19,19 @@ TEST(TestGreaterThanInt, Basic)
     EXPECT_FALSE(matcher.match(5).first);
     EXPECT_FALSE(matcher.match(1).first);
     EXPECT_FALSE(matcher.match(-1).first);
+
+    EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_FLOAT));
+    EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_SIGNED));
+    EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_UNSIGNED));
+
+    ddwaf_object tmp;
+    EXPECT_TRUE(matcher.match(*ddwaf_object_signed(&tmp, 6)).first);
+    EXPECT_TRUE(matcher.match(*ddwaf_object_unsigned(&tmp, 6)).first);
+    EXPECT_TRUE(matcher.match(*ddwaf_object_float(&tmp, 6.0)).first);
+
+    EXPECT_FALSE(matcher.match(*ddwaf_object_signed(&tmp, 5)).first);
+    EXPECT_FALSE(matcher.match(*ddwaf_object_unsigned(&tmp, 5)).first);
+    EXPECT_FALSE(matcher.match(*ddwaf_object_float(&tmp, 5.0)).first);
 }
 
 TEST(TestGreaterThanUint, Basic)
@@ -28,6 +41,19 @@ TEST(TestGreaterThanUint, Basic)
     EXPECT_TRUE(matcher.match(2132133).first);
     EXPECT_FALSE(matcher.match(2132132).first);
     EXPECT_FALSE(matcher.match(1).first);
+
+    EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_FLOAT));
+    EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_SIGNED));
+    EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_UNSIGNED));
+
+    ddwaf_object tmp;
+    EXPECT_TRUE(matcher.match(*ddwaf_object_signed(&tmp, 2132133)).first);
+    EXPECT_TRUE(matcher.match(*ddwaf_object_unsigned(&tmp, 2132133)).first);
+    EXPECT_TRUE(matcher.match(*ddwaf_object_float(&tmp, 2132133.1)).first);
+
+    EXPECT_FALSE(matcher.match(*ddwaf_object_signed(&tmp, 5)).first);
+    EXPECT_FALSE(matcher.match(*ddwaf_object_unsigned(&tmp, 5)).first);
+    EXPECT_FALSE(matcher.match(*ddwaf_object_float(&tmp, 5.0)).first);
 }
 
 TEST(TestGreaterThanDouble, Basic)
@@ -38,6 +64,19 @@ TEST(TestGreaterThanDouble, Basic)
     EXPECT_FALSE(matcher.match(5.1).first);
     EXPECT_FALSE(matcher.match(5.09).first);
     EXPECT_FALSE(matcher.match(-5.1).first);
+
+    EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_FLOAT));
+    EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_SIGNED));
+    EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_UNSIGNED));
+
+    ddwaf_object tmp;
+    EXPECT_TRUE(matcher.match(*ddwaf_object_signed(&tmp, 6)).first);
+    EXPECT_TRUE(matcher.match(*ddwaf_object_unsigned(&tmp, 6)).first);
+    EXPECT_TRUE(matcher.match(*ddwaf_object_float(&tmp, 5.12)).first);
+
+    EXPECT_FALSE(matcher.match(*ddwaf_object_signed(&tmp, 5)).first);
+    EXPECT_FALSE(matcher.match(*ddwaf_object_unsigned(&tmp, 5)).first);
+    EXPECT_FALSE(matcher.match(*ddwaf_object_float(&tmp, 5.0)).first);
 }
 
 } // namespace

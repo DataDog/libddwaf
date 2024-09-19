@@ -41,7 +41,7 @@ rules:
             - "192.188.0.0/16"
             - "abcd::1234:0:0:0/96"
   - id: "3"
-    name: rule3-ip-match-negated-with-cidr
+    name: rule3-negated-ip-match
     tags:
       type: flow3
       category: category

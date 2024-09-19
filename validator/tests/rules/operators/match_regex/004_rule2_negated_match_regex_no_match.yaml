@@ -1,0 +1,11 @@
+{
+  name: "Basic run with negated match_regex operator and no match",
+  runs: [
+    {
+      persistent-input: {
+        rule2-input: "Arachni"
+      },
+      code: ok
+    }
+  ]
+}

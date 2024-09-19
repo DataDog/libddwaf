@@ -29,7 +29,7 @@ rules:
           options:
             enforce_word_boundary: true
   - id: "3"
-    name: rule3-phrase-match
+    name: rule3-negated-phrase-match
     tags:
       type: flow
       category: category
