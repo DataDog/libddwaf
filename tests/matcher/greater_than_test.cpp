@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "../test.hpp"
+#include "ddwaf.h"
 #include "matcher/greater_than.hpp"
 
 using namespace ddwaf;
@@ -23,6 +24,12 @@ TEST(TestGreaterThanInt, Basic)
     EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_FLOAT));
     EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_SIGNED));
     EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_UNSIGNED));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_STRING));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_MAP));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_ARRAY));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_NULL));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_INVALID));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_BOOL));
 
     ddwaf_object tmp;
     EXPECT_TRUE(matcher.match(*ddwaf_object_signed(&tmp, 6)).first);
@@ -45,6 +52,12 @@ TEST(TestGreaterThanUint, Basic)
     EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_FLOAT));
     EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_SIGNED));
     EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_UNSIGNED));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_STRING));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_MAP));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_ARRAY));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_NULL));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_INVALID));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_BOOL));
 
     ddwaf_object tmp;
     EXPECT_TRUE(matcher.match(*ddwaf_object_signed(&tmp, 2132133)).first);
@@ -68,6 +81,12 @@ TEST(TestGreaterThanDouble, Basic)
     EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_FLOAT));
     EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_SIGNED));
     EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_UNSIGNED));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_STRING));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_MAP));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_ARRAY));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_NULL));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_INVALID));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_BOOL));
 
     ddwaf_object tmp;
     EXPECT_TRUE(matcher.match(*ddwaf_object_signed(&tmp, 6)).first);
