@@ -33,7 +33,6 @@ TEST(TestlowerThanInt, Basic)
     EXPECT_FALSE(matcher.match(*ddwaf_object_signed(&tmp, 5)).first);
     EXPECT_FALSE(matcher.match(*ddwaf_object_unsigned(&tmp, 5)).first);
     EXPECT_FALSE(matcher.match(*ddwaf_object_float(&tmp, 5.0)).first);
-
 }
 
 TEST(TestlowerThanUint, Basic)
