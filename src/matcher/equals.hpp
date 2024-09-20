@@ -47,14 +47,15 @@ protected:
 
     template <typename U>
     [[nodiscard]] std::pair<bool, std::string> match_impl(const U &obtained) const
-        requires(!std::is_same_v<T, std::string>)
+        requires(std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t>) && std::is_integral_v<U>
     {
-        if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t>) {
-            return {std::cmp_equal(expected_, obtained), {}};
-        }
-        if constexpr (std::is_same_v<T, bool>) {
-            return {expected_ == obtained, {}};
-        }
+        return {std::cmp_equal(expected_, obtained), {}};
+    }
+
+    [[nodiscard]] std::pair<bool, std::string> match_impl(bool obtained) const
+        requires std::is_same_v<T, bool>
+    {
+        return {expected_ == obtained, {}};
     }
 
     [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view obtained) const
