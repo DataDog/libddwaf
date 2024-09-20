@@ -82,13 +82,12 @@ TEST(TestScalarCondition, CachedMatch)
 
     ddwaf_object tmp;
     ddwaf_object root;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.uri_raw", ddwaf_object_string(&tmp, "hello"));
 
     {
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "server.request.uri_raw", ddwaf_object_string(&tmp, "hello"));
-
         object_store store;
-        store.insert(root);
+        store.insert(root, object_store::attribute::none, nullptr);
 
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
@@ -96,16 +95,15 @@ TEST(TestScalarCondition, CachedMatch)
     }
 
     {
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "server.request.uri_raw", ddwaf_object_string(&tmp, "hello"));
-
         object_store store;
-        store.insert(root);
+        store.insert(root, object_store::attribute::none, nullptr);
 
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome);
         ASSERT_FALSE(res.ephemeral);
     }
+
+    ddwaf_object_free(&root);
 }
 
 } // namespace
