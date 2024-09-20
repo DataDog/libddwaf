@@ -196,10 +196,7 @@ eval_result scalar_negated_condition::eval(condition_cache &cache, const object_
         cache.targets.assign(1, nullptr);
     }
 
-    // This type of scalar condition only accepts a single target
-    const auto &target = targets_[0];
-
-    auto [object, attr] = store.get_target(target.index);
+    auto [object, attr] = store.get_target(target_.index);
     if (object == nullptr || object == cache.targets[0]) {
         return {};
     }
@@ -210,19 +207,19 @@ eval_result scalar_negated_condition::eval(condition_cache &cache, const object_
     }
 
     bool match = false;
-    if (target.source == data_source::keys) {
-        object::key_iterator it(object, target.key_path, objects_excluded, limits_);
+    if (target_.source == data_source::keys) {
+        object::key_iterator it(object, target_.key_path, objects_excluded, limits_);
         match = eval_target<bool>(
-            it, target.name, ephemeral, *matcher, target.transformers, limits_, deadline);
+            it, target_.name, ephemeral, *matcher, target_.transformers, limits_, deadline);
     } else {
-        object::value_iterator it(object, target.key_path, objects_excluded, limits_);
+        object::value_iterator it(object, target_.key_path, objects_excluded, limits_);
         match = eval_target<bool>(
-            it, target.name, ephemeral, *matcher, target.transformers, limits_, deadline);
+            it, target_.name, ephemeral, *matcher, target_.transformers, limits_, deadline);
     }
 
     if (!match) {
-        cache.match = {{{{"input"sv, object_to_string(*object), target.name,
-                            {target.key_path.begin(), target.key_path.end()}}},
+        cache.match = {{{{"input"sv, object_to_string(*object), target_.name,
+                            {target_.key_path.begin(), target_.key_path.end()}}},
             {}, matcher_name_, matcher->to_string(), ephemeral}};
         return {true, ephemeral};
     }

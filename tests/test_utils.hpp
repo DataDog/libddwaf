@@ -66,21 +66,32 @@ public:
 
     void start_condition() { arguments_.clear(); }
 
-    template <typename T, typename... Args>
+    template <typename T, bool Expected = true, typename... Args>
     void end_condition(Args... args)
         requires std::is_base_of_v<matcher::base, T>
     {
-        conditions_.emplace_back(
-            std::make_unique<scalar_condition>(std::make_unique<T>(std::forward<Args>(args)...),
-                std::string{}, std::move(arguments_)));
+        if constexpr (Expected) {
+            conditions_.emplace_back(
+                std::make_unique<scalar_condition>(std::make_unique<T>(std::forward<Args>(args)...),
+                    std::string{}, std::move(arguments_)));
+        } else {
+            conditions_.emplace_back(std::make_unique<scalar_negated_condition>(
+                std::make_unique<T>(std::forward<Args>(args)...), std::string{},
+                std::move(arguments_), "!" + std::string{T::matcher_name}));
+        }
     }
 
-    template <typename T>
+    template <typename T, bool Expected = true>
     void end_condition_with_data(std::string data_id)
         requires std::is_base_of_v<matcher::base, T>
     {
-        conditions_.emplace_back(std::make_unique<scalar_condition>(
-            std::unique_ptr<matcher::base>{}, std::move(data_id), std::move(arguments_)));
+        if constexpr (Expected) {
+            conditions_.emplace_back(std::make_unique<scalar_condition>(
+                std::unique_ptr<matcher::base>{}, std::move(data_id), std::move(arguments_)));
+        } else {
+            conditions_.emplace_back(std::make_unique<scalar_negated_condition>(
+                std::unique_ptr<matcher::base>{}, std::move(data_id), std::move(arguments_)));
+        }
     }
 
     template <typename T>

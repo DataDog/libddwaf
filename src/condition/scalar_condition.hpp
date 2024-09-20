@@ -65,7 +65,11 @@ public:
             throw std::invalid_argument("Matcher initialised without arguments");
         }
 
-        targets_ = std::move(args[0].targets);
+        if (args[0].targets.size() > 1) {
+            throw std::invalid_argument("Negated matchers don't support variadic arguments");
+        }
+
+        target_ = std::move(args[0].targets[0]);
     }
 
     eval_result eval(condition_cache &cache, const object_store &store,
@@ -75,7 +79,7 @@ public:
 
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const override
     {
-        for (const auto &target : targets_) { addresses.emplace(target.index, target.name); }
+        addresses.emplace(target_.index, target_.name);
     }
 
     static constexpr auto arguments()
@@ -86,7 +90,7 @@ public:
 protected:
     std::unique_ptr<matcher::base> matcher_;
     std::string data_id_;
-    std::vector<condition_target> targets_;
+    condition_target target_;
     std::string matcher_name_;
     const object_limits limits_;
 };
