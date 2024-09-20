@@ -51,7 +51,8 @@ protected:
     {
         if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t>) {
             return {std::cmp_equal(expected_, obtained), {}};
-        } else {
+        }
+        if constexpr (std::is_same_v<T, bool>) {
             return {expected_ == obtained, {}};
         }
     }
