@@ -6,6 +6,7 @@
 
 #include "../test.hpp"
 #include "condition/scalar_condition.hpp"
+#include "exception.hpp"
 #include "matcher/regex_match.hpp"
 #include "utils.hpp"
 
@@ -51,6 +52,24 @@ TEST(TestScalarCondition, NoMatch)
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
+}
+
+TEST(TestScalarCondition, Timeout)
+{
+    scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
+        {gen_variadic_param("server.request.uri.raw")}};
+
+    ddwaf_object tmp;
+    ddwaf_object root;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_invalid(&tmp));
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{0s};
+    condition_cache cache;
+    EXPECT_THROW(cond.eval(cache, store, {}, {}, deadline), ddwaf::timeout_exception);
 }
 
 TEST(TestScalarCondition, SimpleMatch)
@@ -167,6 +186,8 @@ TEST(TestScalarCondition, SimpleEphemeralMatch)
         ASSERT_TRUE(res.outcome);
         ASSERT_TRUE(res.ephemeral);
     }
+
+    ddwaf_object_free(&root);
 }
 
 } // namespace
