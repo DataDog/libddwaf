@@ -37,7 +37,7 @@ TEST(TestExpression, SimpleMatch)
     EXPECT_TRUE(res.outcome);
     EXPECT_FALSE(res.ephemeral);
 
-    auto matches = expr->get_matches(cache);
+    auto matches = ddwaf::expression::get_matches(cache);
     EXPECT_EQ(matches.size(), 1);
     EXPECT_FALSE(matches[0].ephemeral);
     EXPECT_MATCHES(matches, {.op = "match_regex",

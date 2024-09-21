@@ -23,7 +23,7 @@ TEST(TestScalarNegatedCondition, VariadicTargetInConstructor)
 {
     EXPECT_THROW(
         (scalar_negated_condition{std::make_unique<matcher::regex_match>(".*", 0, true), {},
-            {gen_variadic_param("server.request.uri_raw", "server.request.query")}, {}}),
+            {gen_variadic_param("server.request.uri.raw", "server.request.query")}, {}}),
         std::invalid_argument);
 }
 
@@ -31,7 +31,7 @@ TEST(TestScalarNegatedCondition, TooManyAddressesInConstructor)
 {
     EXPECT_THROW(
         (scalar_negated_condition{std::make_unique<matcher::regex_match>(".*", 0, true), {},
-            {gen_variadic_param("server.request.uri_raw"),
+            {gen_variadic_param("server.request.uri.raw"),
                 gen_variadic_param("server.request.query")},
             {}}),
         std::invalid_argument);
@@ -47,12 +47,12 @@ TEST(TestScalarNegatedCondition, NoAddressesInConstructor)
 TEST(TestScalarNegatedCondition, NoMatch)
 {
     scalar_negated_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
-        {gen_variadic_param("server.request.uri_raw")}, {}};
+        {gen_variadic_param("server.request.uri.raw")}, {}};
 
     ddwaf_object tmp;
     ddwaf_object root;
     ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri_raw", ddwaf_object_string(&tmp, "hello"));
+    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_string(&tmp, "hello"));
 
     object_store store;
     store.insert(root);
@@ -67,12 +67,12 @@ TEST(TestScalarNegatedCondition, NoMatch)
 TEST(TestScalarNegatedCondition, SimpleMatch)
 {
     scalar_negated_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
-        {gen_variadic_param("server.request.uri_raw")}, {}};
+        {gen_variadic_param("server.request.uri.raw")}, {}};
 
     ddwaf_object tmp;
     ddwaf_object root;
     ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri_raw", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_invalid(&tmp));
 
     object_store store;
     store.insert(root);
@@ -87,7 +87,7 @@ TEST(TestScalarNegatedCondition, SimpleMatch)
 TEST(TestScalarNegatedCondition, CachedMatch)
 {
     scalar_negated_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
-        {gen_variadic_param("server.request.uri_raw")}, {}};
+        {gen_variadic_param("server.request.uri.raw")}, {}};
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -95,7 +95,7 @@ TEST(TestScalarNegatedCondition, CachedMatch)
     ddwaf_object tmp;
     ddwaf_object root;
     ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri_raw", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_invalid(&tmp));
 
     {
         object_store store;
@@ -116,6 +116,68 @@ TEST(TestScalarNegatedCondition, CachedMatch)
     }
 
     ddwaf_object_free(&root);
+}
+
+TEST(TestScalarNegatedCondition, SimpleMatchOnKeys)
+{
+    auto target = gen_variadic_param("server.request.uri.raw");
+    target.targets[0].source = data_source::keys;
+
+    scalar_negated_condition cond{
+        std::make_unique<matcher::regex_match>("hello", 0, true), {}, {std::move(target)}, {}};
+
+    ddwaf_object tmp;
+    ddwaf_object root;
+    ddwaf_object map;
+    ddwaf_object_map(&map);
+    ddwaf_object_map_add(&map, "bye", ddwaf_object_string(&tmp, "hello"));
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.uri.raw", &map);
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, deadline);
+    ASSERT_TRUE(res.outcome);
+    ASSERT_FALSE(res.ephemeral);
+}
+
+TEST(TestScalarNegatedCondition, SimpleEphemeralMatch)
+{
+    scalar_negated_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
+        {gen_variadic_param("server.request.uri.raw")}, {}};
+
+    ddwaf_object tmp;
+    ddwaf_object root;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_invalid(&tmp));
+
+    object_store store;
+    {
+        auto scope = store.get_eval_scope();
+
+        store.insert(root, object_store::attribute::ephemeral, nullptr);
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        ASSERT_TRUE(res.outcome);
+        ASSERT_TRUE(res.ephemeral);
+    }
+
+    {
+        auto scope = store.get_eval_scope();
+
+        store.insert(root, object_store::attribute::ephemeral, nullptr);
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        ASSERT_TRUE(res.outcome);
+        ASSERT_TRUE(res.ephemeral);
+    }
 }
 
 } // namespace

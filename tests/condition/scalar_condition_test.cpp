@@ -18,10 +18,11 @@ template <typename... Args> condition_parameter gen_variadic_param(Args... addre
 {
     return {{{std::string{addresses}, get_target_index(addresses)}...}};
 }
+
 TEST(TestScalarCondition, TooManyAddressesInConstructor)
 {
     EXPECT_THROW((scalar_condition{std::make_unique<matcher::regex_match>(".*", 0, true), {},
-                     {gen_variadic_param("server.request.uri_raw"),
+                     {gen_variadic_param("server.request.uri.raw"),
                          gen_variadic_param("server.request.query")}}),
         std::invalid_argument);
 }
@@ -35,12 +36,12 @@ TEST(TestScalarCondition, NoAddressesInConstructor)
 TEST(TestScalarCondition, NoMatch)
 {
     scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
-        {gen_variadic_param("server.request.uri_raw")}};
+        {gen_variadic_param("server.request.uri.raw")}};
 
     ddwaf_object tmp;
     ddwaf_object root;
     ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri_raw", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_invalid(&tmp));
 
     object_store store;
     store.insert(root);
@@ -55,12 +56,12 @@ TEST(TestScalarCondition, NoMatch)
 TEST(TestScalarCondition, SimpleMatch)
 {
     scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
-        {gen_variadic_param("server.request.uri_raw")}};
+        {gen_variadic_param("server.request.uri.raw")}};
 
     ddwaf_object tmp;
     ddwaf_object root;
     ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri_raw", ddwaf_object_string(&tmp, "hello"));
+    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_string(&tmp, "hello"));
 
     object_store store;
     store.insert(root);
@@ -75,7 +76,7 @@ TEST(TestScalarCondition, SimpleMatch)
 TEST(TestScalarCondition, CachedMatch)
 {
     scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
-        {gen_variadic_param("server.request.uri_raw")}, {}};
+        {gen_variadic_param("server.request.uri.raw")}, {}};
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -83,7 +84,7 @@ TEST(TestScalarCondition, CachedMatch)
     ddwaf_object tmp;
     ddwaf_object root;
     ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri_raw", ddwaf_object_string(&tmp, "hello"));
+    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_string(&tmp, "hello"));
 
     {
         object_store store;
@@ -104,6 +105,68 @@ TEST(TestScalarCondition, CachedMatch)
     }
 
     ddwaf_object_free(&root);
+}
+
+TEST(TestScalarCondition, SimpleMatchOnKeys)
+{
+    auto param = gen_variadic_param("server.request.uri.raw");
+    param.targets[0].source = data_source::keys;
+
+    scalar_condition cond{
+        std::make_unique<matcher::regex_match>(".*", 0, true), {}, {std::move(param)}};
+
+    ddwaf_object tmp;
+    ddwaf_object root;
+    ddwaf_object map;
+    ddwaf_object_map(&map);
+    ddwaf_object_map_add(&map, "hello", ddwaf_object_string(&tmp, "hello"));
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.uri.raw", &map);
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, deadline);
+    ASSERT_TRUE(res.outcome);
+    ASSERT_FALSE(res.ephemeral);
+}
+
+TEST(TestScalarCondition, SimpleEphemeralMatch)
+{
+    scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
+        {gen_variadic_param("server.request.uri.raw")}};
+
+    ddwaf_object tmp;
+    ddwaf_object root;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_string(&tmp, "hello"));
+
+    object_store store;
+    {
+        auto scope = store.get_eval_scope();
+
+        store.insert(root, object_store::attribute::ephemeral, nullptr);
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        ASSERT_TRUE(res.outcome);
+        ASSERT_TRUE(res.ephemeral);
+    }
+
+    {
+        auto scope = store.get_eval_scope();
+
+        store.insert(root, object_store::attribute::ephemeral, nullptr);
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        ASSERT_TRUE(res.outcome);
+        ASSERT_TRUE(res.ephemeral);
+    }
 }
 
 } // namespace

@@ -17,11 +17,11 @@ public:
         : matcher_(std::move(matcher)), data_id_(std::move(data_id)), limits_(limits)
     {
         if (args.size() > 1) {
-            throw std::invalid_argument("Matcher initialised with more than one argument");
+            throw std::invalid_argument("matcher initialised with more than one argument");
         }
 
         if (args.empty()) {
-            throw std::invalid_argument("Matcher initialised without arguments");
+            throw std::invalid_argument("matcher initialised without arguments");
         }
 
         targets_ = std::move(args[0].targets);
@@ -39,14 +39,15 @@ public:
 
     static constexpr auto arguments()
     {
-        return std::array<parameter_specification, 1>{{{"inputs", /*variadic*/ true, false}}};
+        return std::array<parameter_specification, 1>{
+            {{.name = "inputs", .variadic = true, .optional = false}}};
     }
 
 protected:
     std::unique_ptr<matcher::base> matcher_;
     std::string data_id_;
     std::vector<condition_target> targets_;
-    const object_limits limits_;
+    object_limits limits_;
 };
 
 class scalar_negated_condition : public base_condition {
@@ -58,15 +59,15 @@ public:
           matcher_name_(std::move(matcher_name)), limits_(limits)
     {
         if (args.size() > 1) {
-            throw std::invalid_argument("Matcher initialised with more than one argument");
+            throw std::invalid_argument("matcher initialised with more than one argument");
         }
 
         if (args.empty()) {
-            throw std::invalid_argument("Matcher initialised without arguments");
+            throw std::invalid_argument("matcher initialised without arguments");
         }
 
         if (args[0].targets.size() > 1) {
-            throw std::invalid_argument("Negated matchers don't support variadic arguments");
+            throw std::invalid_argument("negated matchers don't support variadic arguments");
         }
 
         target_ = std::move(args[0].targets[0]);
@@ -84,7 +85,8 @@ public:
 
     static constexpr auto arguments()
     {
-        return std::array<parameter_specification, 1>{{{"inputs", /*variadic*/ false, false}}};
+        return std::array<parameter_specification, 1>{
+            {{.name = "inputs", .variadic = false, .optional = false}}};
     }
 
 protected:
@@ -92,7 +94,7 @@ protected:
     std::string data_id_;
     condition_target target_;
     std::string matcher_name_;
-    const object_limits limits_;
+    object_limits limits_;
 };
 
 } // namespace ddwaf
