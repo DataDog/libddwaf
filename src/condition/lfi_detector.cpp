@@ -101,13 +101,13 @@ lfi_result lfi_impl(std::string_view path, const ddwaf_object &params,
         lfi_fn = &lfi_impl_windows;
     }
 
-    object::kv_iterator it(&params, {}, objects_excluded, limits);
+    kv_iterator it(&params, {}, objects_excluded, limits);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const ddwaf_object &param = *(*it);
+        const ddwaf_object &param = *((*it).ptr());
         if (param.type != DDWAF_OBJ_STRING) {
             continue;
         }

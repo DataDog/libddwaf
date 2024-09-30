@@ -84,9 +84,7 @@ template <> struct typed_processor_builder<session_fingerprint> {
 template <typename T, typename Spec, typename Scanners>
 concept has_build_with_scanners =
     requires(typed_processor_builder<T> b, Spec spec, Scanners scanners) {
-        {
-            b.build(spec, scanners)
-        } -> std::same_as<std::shared_ptr<base_processor>>;
+        { b.build(spec, scanners) } -> std::same_as<std::shared_ptr<base_processor>>;
     };
 
 template <typename T>

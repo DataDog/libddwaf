@@ -24,7 +24,7 @@ protected:
 
 class unsupported_version : public exception {
 public:
-    unsupported_version() : exception(std::string()){};
+    unsupported_version() : exception(std::string()) {};
 };
 
 class parsing_error : public exception {
