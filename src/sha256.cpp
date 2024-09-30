@@ -46,7 +46,7 @@ namespace {
         (l) |= ((static_cast<uint32_t>(*((c)++))));                                                \
     }
 
-#define UINT8_TO_HEX_CHAR(u) static_cast<char>((u) < 10 ? (u) + '0' : (u)-10 + 'a')
+#define UINT8_TO_HEX_CHAR(u) static_cast<char>((u) < 10 ? (u) + '0' : (u) - 10 + 'a')
 
 /*
  * FIPS specification refers to right rotations, while our ROTATE macro
