@@ -13,10 +13,9 @@
 #include "ddwaf.h"
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
-#include "object_view.hpp"
 #include "utils.hpp"
 
-namespace ddwaf {
+namespace ddwaf::object {
 
 template <typename T>
 iterator_base<T>::iterator_base(
@@ -28,17 +27,17 @@ iterator_base<T>::iterator_base(
 
 template <typename T> bool iterator_base<T>::operator++()
 {
-    if (*static_cast<T *>(this)) {
+    if (current_.second.has_value()) {
         T &derived = static_cast<T &>(*this);
         derived.set_cursor_to_next_object();
     }
-    return static_cast<bool>(*static_cast<T *>(this));
+    return current_.second.has_value();
 }
 
 // TODO: return string_view as this will be immediately copied after
 template <typename T> std::vector<std::string> iterator_base<T>::get_current_path() const
 {
-    if (!*static_cast<const T *>(this)) {
+    if (current_.second.has_value()) {
         return {};
     }
 
@@ -53,31 +52,37 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
         return keys;
     }
 
-    for (auto it : stack_) {
-        // TODO make this return an std::string_view
-        detail::object_iterator current = it;
-        if (current.index > 0) {
-            --current.index;
+    auto [parent_key, parent, parent_index] = stack_.front();
+    for (unsigned i = 1; i < stack_.size(); i++) {
+        if (parent.type() == object_type::map && !parent_key.empty()) {
+            keys.emplace_back(std::string{parent_key});
+        } else if (parent.type() == object_type::array) {
+            keys.emplace_back(to_string<std::string>(parent_index - 1));
         }
-        if (auto key = current.key(); !key.empty()) {
-            keys.emplace_back(key);
-        } else {
-            // TODO intern these strings or use std::variant in the return
-            keys.emplace_back(to_string<std::string>(current.index));
-        }
+
+        auto [child_key, child, child_index] = stack_[i];
+        parent_key = child_key;
+        parent = child;
+        parent_index = child_index;
+    }
+
+    if (parent.type() == object_type::map && !current_.first.empty()) {
+        keys.emplace_back(std::string{current_.first});
+    } else if (parent->type == DDWAF_OBJ_ARRAY) {
+        keys.emplace_back(to_string<std::string>(parent_index - 1));
     }
 
     return keys;
 }
 
-value_iterator::value_iterator(object_view obj, std::span<const std::string> path,
+value_iterator::value_iterator(object_view obj, const std::span<const std::string> &path,
     const exclusion::object_set_ref &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
 }
 
-void value_iterator::initialise_cursor(object_view obj, std::span<const std::string> path)
+void value_iterator::initialise_cursor(object_view obj, const std::span<const std::string> &path)
 {
     if (excluded_.contains(obj.ptr())) {
         return;
@@ -85,7 +90,7 @@ void value_iterator::initialise_cursor(object_view obj, std::span<const std::str
 
     if (path.empty()) {
         if (obj.is_scalar()) {
-            current_ = obj.ptr();
+            current_.second = obj;
             return;
         }
 
@@ -96,8 +101,7 @@ void value_iterator::initialise_cursor(object_view obj, std::span<const std::str
 
         // Add container to stack and find next scalar
         if (limits_.max_container_depth > 0) {
-            stack_.emplace_back(
-                detail::object_iterator::construct(obj.ptr(), 0, limits_.max_container_size));
+            stack_.emplace_back(stack_node{{}, obj, 0});
             set_cursor_to_next_object();
         }
     } else {
@@ -105,7 +109,8 @@ void value_iterator::initialise_cursor(object_view obj, std::span<const std::str
     }
 }
 
-void value_iterator::initialise_cursor_with_path(object_view obj, std::span<const std::string> path)
+void value_iterator::initialise_cursor_with_path(
+    object_view obj, const std::span<const std::string> &path)
 {
     // An object with a path should always start with a container
     if (!obj.is_container()) {
@@ -117,32 +122,38 @@ void value_iterator::initialise_cursor_with_path(object_view obj, std::span<cons
     }
 
     // Add container to stack and find next scalar within the given path
-    stack_.emplace_back(
-        detail::object_iterator::construct(obj.ptr(), 0, limits_.max_container_size));
+    stack_.emplace_back(stack_node{{}, obj, 0});
 
     for (std::size_t i = 0; i < path.size(); i++) {
         const std::string_view key = path[i];
-        auto &it = stack_.back();
+        auto &[parent_key, parent, index] = stack_.back();
 
         std::pair<std::string_view, object_view> child;
-        for (; it.is_valid(); ++it) {
-            std::pair<std::string_view, object_view> possible_child = *it;
+        if (parent.type() == object_type::map) {
+            auto size = parent.size() > limits_.max_container_size ? limits_.max_container_size
+                                                                   : parent.size();
+            for (std::size_t j = 0; j < size; j++) {
+                auto possible_child = parent.at_unchecked(j);
+                if (possible_child.first.empty()) {
+                    continue;
+                }
 
-            if (excluded_.contains(possible_child.second.ptr())) {
-                continue;
-            }
+                if (excluded_.contains(possible_child.second.ptr())) {
+                    continue;
+                }
 
-            if (possible_child.first == key) {
-                child = possible_child;
-                ++it;
-                break;
+                if (possible_child.first == key) {
+                    child = possible_child;
+                    index = j + 1;
+                    break;
+                }
             }
         }
 
         // If we find a scalar and it's the last element,
         // we found a valid element within the path.
         if (child.second.is_scalar() && (i + 1) == path.size()) {
-            current_ = child.second.ptr();
+            current_ = child;
             // We want to keep the stack pointing to the container
             // in the last key of the key path, since the last element
             // of the key path is a scalar, we clear the stack.
@@ -153,8 +164,7 @@ void value_iterator::initialise_cursor_with_path(object_view obj, std::span<cons
             }
 
             // Replace the stack top
-            stack_.back() = detail::object_iterator::construct(
-                child.second.ptr(), 0, limits_.max_container_size);
+            stack_.back() = {child.first, child.second, 0};
 
             if ((i + 1) < path.size()) {
                 continue;
@@ -169,7 +179,7 @@ void value_iterator::initialise_cursor_with_path(object_view obj, std::span<cons
     }
 
     // Once we reach this point, if current_is valid, we found the key path
-    if (current_ != nullptr) {
+    if (current_.second.has_value()) {
         for (const auto &p : path) { path_.emplace_back(p); }
     }
 }
@@ -179,67 +189,57 @@ void value_iterator::set_cursor_to_next_object()
     current_ = nullptr;
 
     while (!stack_.empty() && current_ == nullptr) {
-        auto &it = stack_.back();
+        auto &[parent, index] = stack_.back();
 
-        if (it.index >= it.size) {
+        if (index >= parent->nbEntries || index >= limits_.max_container_size) {
             // Pop can invalidate the parent references so after this point
             // they should not be used.
             stack_.pop_back();
             continue;
         }
 
-        const auto *child = it.value();
-        if (excluded_.contains(child)) {
-            ++it.index;
+        if (excluded_.contains(&parent->array[index])) {
+            ++index;
             continue;
         }
 
-        if (is_container(static_cast<object_type>(child->type))) {
+        if (is_container(&parent->array[index])) {
             if (depth() < limits_.max_container_depth) {
                 // Push can invalidate the current references to the parent
                 // so we increment the index before a potential reallocation
                 // and prevent any further use of the references.
-                ++it.index;
-                stack_.emplace_back(detail::object_iterator{
-                    .ptr = child->array,
-                    .index = 0,
-                    .size = child->nbEntries < limits_.max_container_size
-                                ? static_cast<std::size_t>(child->nbEntries)
-                                : limits_.max_container_size,
-                    .type = child->type,
-                });
+                stack_.emplace_back(&parent->array[index++], 0);
                 continue;
             }
-        } else if (is_scalar(static_cast<object_type>(child->type))) {
-            current_ = child;
+        } else if (is_scalar(&parent->array[index])) {
+            current_ = &parent->array[index];
         }
 
-        ++it.index;
+        ++index;
     }
 }
 
-key_iterator::key_iterator(object_view obj, std::span<const std::string> path,
+key_iterator::key_iterator(object_view obj, const std::span<const std::string> &path,
     const exclusion::object_set_ref &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
 }
 
-void key_iterator::initialise_cursor(object_view obj, std::span<const std::string> path)
+void key_iterator::initialise_cursor(object_view obj, const std::span<const std::string> &path)
 {
-    if (excluded_.contains(obj.ptr())) {
+    if (excluded_.contains(obj)) {
         return;
     }
 
-    if (!obj.is_container()) {
+    if (!is_container(obj)) {
         return;
     }
 
     if (path.empty()) {
         // Add container to stack and find next scalar
         if (limits_.max_container_depth > 0) {
-            stack_.emplace_back(
-                detail::object_iterator::construct(obj.ptr(), 0, limits_.max_container_size));
+            stack_.emplace_back(obj, 0);
             set_cursor_to_next_object();
         }
     } else {
@@ -247,42 +247,47 @@ void key_iterator::initialise_cursor(object_view obj, std::span<const std::strin
     }
 }
 
-void key_iterator::initialise_cursor_with_path(object_view obj, std::span<const std::string> path)
+void key_iterator::initialise_cursor_with_path(
+    object_view obj, const std::span<const std::string> &path)
 {
     if (path.size() >= limits_.max_container_depth) {
         return;
     }
 
     // Add container to stack and find next scalar within the given path
-    stack_.emplace_back(
-        detail::object_iterator::construct(obj.ptr(), 0, limits_.max_container_size));
+    stack_.emplace_back(obj, 0);
 
     for (std::size_t i = 0; i < path.size(); i++) {
         const std::string_view key = path[i];
-        auto &it = stack_.back();
+        auto &[parent, index] = stack_.back();
 
-        std::pair<std::string_view, object_view> child;
-        if (static_cast<object_type>(it.type) == object_type::map) {
-            for (; it.is_valid(); ++it) {
-                std::pair<std::string_view, object_view> possible_child = *it;
-                if (possible_child.first.empty()) {
+        ddwaf_object *child = nullptr;
+        if (parent->type == DDWAF_OBJ_MAP) {
+            auto size = parent->nbEntries > limits_.max_container_size ? limits_.max_container_size
+                                                                       : parent->nbEntries;
+            for (std::size_t j = 0; j < size; j++) {
+                auto *possible_child = &parent->array[j];
+                if (possible_child->parameterName == nullptr) {
                     continue;
                 }
 
-                if (excluded_.contains(possible_child.second.ptr())) {
+                if (excluded_.contains(possible_child)) {
                     continue;
                 }
 
-                if (possible_child.first == key) {
+                const std::string_view child_key(
+                    possible_child->parameterName, possible_child->parameterNameLength);
+
+                if (child_key == key) {
                     child = possible_child;
+                    index = j;
                     break;
                 }
             }
         }
 
-        if (child.second.is_container()) {
-            stack_.back() = detail::object_iterator::construct(
-                child.second.ptr(), 0, limits_.max_container_size);
+        if (is_container(child)) {
+            stack_.back() = {child, 0};
 
             if ((i + 1) < path.size()) {
                 continue;
@@ -295,35 +300,36 @@ void key_iterator::initialise_cursor_with_path(object_view obj, std::span<const 
     }
 
     // Once we reach this point, if current_ is valid, we found the key path
-    if (current_.second.has_value()) {
+    if (current_ != nullptr) {
         for (const auto &p : path) { path_.emplace_back(p); }
     }
 }
 
 void key_iterator::set_cursor_to_next_object()
 {
-    auto previous = current_;
-    current_ = {};
+    object_view previous = current_;
+    current_ = nullptr;
 
-    while (!stack_.empty() && !current_.second.has_value()) {
-        auto &it = stack_.back();
+    while (!stack_.empty() && current_ == nullptr) {
+        auto &[parent, index] = stack_.back();
 
-        if (!it.is_valid()) {
+        if (index >= parent->nbEntries || index >= limits_.max_container_size) {
             // Pop can invalidate the parent references so after this point
             // they should not be used.
             stack_.pop_back();
             continue;
         }
 
-        std::pair<std::string_view, object_view> child = *it;
-        if (excluded_.contains(child.second.ptr())) {
-            ++it;
+        ddwaf_object *child = &parent->array[index];
+
+        if (excluded_.contains(child)) {
+            ++index;
             continue;
         }
 
-        if (child.second.is_container()) {
-            if (previous.second != child.second && !child.first.empty()) {
-                current_ = {child.first, child.second};
+        if (is_container(child)) {
+            if (previous != child && child->parameterName != nullptr) {
+                current_ = child;
                 // Break to ensure the index isn't increased and this container
                 // is fully iterated.
                 break;
@@ -333,48 +339,46 @@ void key_iterator::set_cursor_to_next_object()
                 // Push can invalidate the current references to the parent
                 // so we increment the index before a potential reallocation
                 // and prevent any further use of the references.
-                ++it;
-                stack_.emplace_back(detail::object_iterator::construct(
-                    child.second.ptr(), 0, limits_.max_container_size));
+                ++index;
+                stack_.emplace_back(child, 0);
                 continue;
             }
-        } else if (!child.first.empty()) {
-            current_ = {child.first, child.second};
+        } else if (child->parameterName != nullptr) {
+            current_ = child;
         }
 
-        ++it;
+        ++index;
     }
 }
 
-kv_iterator::kv_iterator(object_view obj, std::span<const std::string> path,
+kv_iterator::kv_iterator(object_view obj, const std::span<const std::string> &path,
     const exclusion::object_set_ref &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
 }
 
-void kv_iterator::initialise_cursor(object_view obj, std::span<const std::string> path)
+void kv_iterator::initialise_cursor(object_view obj, const std::span<const std::string> &path)
 {
-    if (excluded_.contains(obj.ptr())) {
+    if (excluded_.contains(obj)) {
         return;
     }
 
     if (path.empty()) {
-        if (obj.is_scalar()) {
-            current_ = {{}, obj};
+        if (is_scalar(obj)) {
+            current_ = obj;
             scalar_value_ = true;
             return;
         }
 
         // Uninitialised object...? We should throw an exception at some point
-        if (!obj.is_container()) {
+        if (!is_container(obj)) {
             return;
         }
 
         // Add container to stack and find next scalar
         if (limits_.max_container_depth > 0) {
-            stack_.emplace_back(
-                detail::object_iterator::construct(obj.ptr(), 0, limits_.max_container_size));
+            stack_.emplace_back(obj, 0);
             set_cursor_to_next_object();
         }
     } else {
@@ -382,35 +386,40 @@ void kv_iterator::initialise_cursor(object_view obj, std::span<const std::string
     }
 }
 
-void kv_iterator::initialise_cursor_with_path(object_view obj, std::span<const std::string> path)
+void kv_iterator::initialise_cursor_with_path(
+    object_view obj, const std::span<const std::string> &path)
 {
     if (path.size() >= limits_.max_container_depth) {
         return;
     }
 
     // Add container to stack and find next scalar within the given path
-    stack_.emplace_back(
-        detail::object_iterator::construct(obj.ptr(), 0, limits_.max_container_size));
+    stack_.emplace_back(obj, 0);
 
     for (std::size_t i = 0; i < path.size(); i++) {
         const std::string_view key = path[i];
-        auto &it = stack_.back();
+        auto &[parent, index] = stack_.back();
 
-        std::pair<std::string_view, object_view> child;
-        if (static_cast<object_type>(it.type) == object_type::map) {
-            for (; it.is_valid(); ++it) {
-                std::pair<std::string_view, object_view> possible_child = *it;
-
-                if (possible_child.first.empty()) {
+        ddwaf_object *child = nullptr;
+        if (parent->type == DDWAF_OBJ_MAP) {
+            auto size = parent->nbEntries > limits_.max_container_size ? limits_.max_container_size
+                                                                       : parent->nbEntries;
+            for (std::size_t j = 0; j < size; j++) {
+                auto *possible_child = &parent->array[j];
+                if (possible_child->parameterName == nullptr) {
                     continue;
                 }
 
-                if (excluded_.contains(possible_child.second.ptr())) {
+                if (excluded_.contains(possible_child)) {
                     continue;
                 }
 
-                if (possible_child.first == key) {
+                const std::string_view child_key(
+                    possible_child->parameterName, possible_child->parameterNameLength);
+
+                if (child_key == key) {
                     child = possible_child;
+                    index = j;
                     break;
                 }
             }
@@ -418,21 +427,20 @@ void kv_iterator::initialise_cursor_with_path(object_view obj, std::span<const s
 
         // If we find a scalar and it's the last element,
         // we found a valid element within the path.
-        if (child.second.is_scalar() && (i + 1) == path.size()) {
+        if (is_scalar(child) && (i + 1) == path.size()) {
             current_ = child;
             scalar_value_ = true;
             // We want to keep the stack pointing to the container
             // in the last key of the key path, since the last element
             // of the key path is a scalar, we clear the stack.
             stack_.clear();
-        } else if (child.second.is_container()) {
+        } else if (is_container(child)) {
             if ((i + 1) == limits_.max_container_depth) {
                 break;
             }
 
             // Replace the stack top
-            stack_.back() = detail::object_iterator::construct(
-                child.second.ptr(), 0, limits_.max_container_size);
+            stack_.back() = {child, 0};
 
             if ((i + 1) < path.size()) {
                 continue;
@@ -446,35 +454,36 @@ void kv_iterator::initialise_cursor_with_path(object_view obj, std::span<const s
     }
 
     // Once we reach this point, if current_ is valid, we found the key path
-    if (current_.second.is_valid()) {
+    if (current_ != nullptr) {
         for (const auto &p : path) { path_.emplace_back(p); }
     }
 }
 
 void kv_iterator::set_cursor_to_next_object()
 {
-    auto previous = current_;
-    current_ = {};
+    object_view previous = current_;
+    current_ = nullptr;
 
-    while (!stack_.empty() && current_.second.is_invalid()) {
-        auto &it = stack_.back();
+    while (!stack_.empty() && current_ == nullptr) {
+        auto &[parent, index] = stack_.back();
 
-        if (!it.is_valid()) {
+        if (index >= parent->nbEntries || index >= limits_.max_container_size) {
             // Pop can invalidate the parent references so after this point
             // they should not be used.
             stack_.pop_back();
             continue;
         }
 
-        std::pair<std::string_view, object_view> child = *it;
-        if (excluded_.contains(child.second.ptr())) {
-            ++it;
+        ddwaf_object *child = &parent->array[index];
+
+        if (excluded_.contains(child)) {
+            ++index;
             continue;
         }
 
-        if (child.second.is_container()) {
-            if (previous.second != child.second && !child.first.empty()) {
-                current_ = {child.first, child.second};
+        if (is_container(child)) {
+            if (previous != child && child->parameterName != nullptr) {
+                current_ = child;
                 scalar_value_ = false;
                 // Break to ensure the index isn't increased and this container
                 // is fully iterated.
@@ -485,16 +494,15 @@ void kv_iterator::set_cursor_to_next_object()
                 // Push can invalidate the current references to the parent
                 // so we increment the index before a potential reallocation
                 // and prevent any further use of the references.
-                ++it;
-                stack_.emplace_back(detail::object_iterator::construct(
-                    child.second.ptr(), 0, limits_.max_container_size));
+                ++index;
+                stack_.emplace_back(child, 0);
                 continue;
             }
-        } else if (child.second.is_scalar()) {
-            if (previous.second != child.second) {
-                current_ = {child.first, child.second};
-                if (child.first.empty()) {
-                    ++it;
+        } else if (is_scalar(child)) {
+            if (previous != child) {
+                current_ = child;
+                if (current_->parameterName == nullptr) {
+                    ++index;
                     scalar_value_ = true;
                 } else {
                     scalar_value_ = false;
@@ -503,20 +511,20 @@ void kv_iterator::set_cursor_to_next_object()
             }
 
             if (!scalar_value_) {
-                current_ = {child.first, child.second};
+                current_ = child;
                 scalar_value_ = true;
                 break;
             }
-        } else if (!child.first.empty()) {
-            current_ = {child.first, child.second};
+        } else if (child->parameterName != nullptr) {
+            current_ = child;
             scalar_value_ = false;
         }
 
-        ++it;
+        ++index;
     }
 }
 template class iterator_base<value_iterator>;
 template class iterator_base<key_iterator>;
 template class iterator_base<kv_iterator>;
 
-} // namespace ddwaf
+} // namespace ddwaf::object

@@ -23,7 +23,7 @@ public:
 
     class eval_scope {
     public:
-        explicit eval_scope(object_store &store) : store_(store) {};
+        explicit eval_scope(object_store &store) : store_(store){};
         eval_scope(const eval_scope &) = delete;
         eval_scope(eval_scope &&) = delete;
         eval_scope &operator=(const eval_scope &) = delete;

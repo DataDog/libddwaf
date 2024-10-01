@@ -58,17 +58,15 @@ constexpr bool operator==(object_type left, T right)
 }
 
 // Null is not considered a scalar, but also not considered invalid
-constexpr inline object_type scalar_object_type = object_type::boolean | object_type::int64 | object_type::uint64 | object_type::float64 | object_type::string;
+constexpr inline object_type scalar_object_type = object_type::boolean | object_type::int64 |
+                                                  object_type::uint64 | object_type::float64 |
+                                                  object_type::string;
 
 constexpr inline object_type container_object_type = object_type::array | object_type::map;
 
-inline bool is_scalar(object_type type) {
-    return (type & scalar_object_type) != 0;
-}
+inline bool is_scalar(object_type type) { return (type & scalar_object_type) != 0; }
 
-inline bool is_container(object_type type) {
-    return (type & container_object_type) != 0;
-}
+inline bool is_container(object_type type) { return (type & container_object_type) != 0; }
 
 template <typename T> inline bool is_compatible_type(object_type /*type*/) { return false; }
 
