@@ -59,7 +59,7 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
         if (current.index > 0) {
             --current.index;
         }
-        if (auto key = current.key(); key.empty()) {
+        if (auto key = current.key(); !key.empty()) {
             keys.emplace_back(key);
         } else {
             // TODO intern these strings or use std::variant in the return
