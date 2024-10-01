@@ -8,10 +8,13 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
+#include "object_type.hpp"
+#include "object_view.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
@@ -100,7 +103,8 @@ void value_iterator::initialise_cursor(object_view obj, const std::span<const st
 
         // Add container to stack and find next scalar
         if (limits_.max_container_depth > 0) {
-            stack_.emplace_back(stack_node{.key = {}, .value = obj, .index = 0});
+            const stack_node node{.key = {}, .value = obj, .index = 0};
+            stack_.emplace_back(node);
             set_cursor_to_next_object();
         }
     } else {
@@ -121,7 +125,8 @@ void value_iterator::initialise_cursor_with_path(
     }
 
     // Add container to stack and find next scalar within the given path
-    stack_.emplace_back(stack_node{.key = {}, .value = obj, .index = 0});
+    const stack_node node{.key = {}, .value = obj, .index = 0};
+    stack_.emplace_back(node);
 
     for (std::size_t i = 0; i < path.size(); i++) {
         const std::string_view key = path[i];
@@ -238,7 +243,8 @@ void key_iterator::initialise_cursor(object_view obj, const std::span<const std:
     if (path.empty()) {
         // Add container to stack and find next scalar
         if (limits_.max_container_depth > 0) {
-            stack_.emplace_back(stack_node{.key = {}, .value = obj, .index = 0});
+            const stack_node node{.key = {}, .value = obj, .index = 0};
+            stack_.emplace_back(node);
             set_cursor_to_next_object();
         }
     } else {
@@ -254,7 +260,8 @@ void key_iterator::initialise_cursor_with_path(
     }
 
     // Add container to stack and find next scalar within the given path
-    stack_.emplace_back(stack_node{.key = {}, .value = obj, .index = 0});
+    const stack_node node{.key = {}, .value = obj, .index = 0};
+    stack_.emplace_back(node);
 
     for (std::size_t i = 0; i < path.size(); i++) {
         const std::string_view key = path[i];
@@ -373,7 +380,8 @@ void kv_iterator::initialise_cursor(object_view obj, const std::span<const std::
 
         // Add container to stack and find next scalar
         if (limits_.max_container_depth > 0) {
-            stack_.emplace_back(stack_node{.key = {}, .value = obj, .index = 0});
+            const stack_node node{.key = {}, .value = obj, .index = 0};
+            stack_.emplace_back(node);
             set_cursor_to_next_object();
         }
     } else {
@@ -389,7 +397,8 @@ void kv_iterator::initialise_cursor_with_path(
     }
 
     // Add container to stack and find next scalar within the given path
-    stack_.emplace_back(stack_node{.key = {}, .value = obj, .index = 0});
+    const stack_node node{.key = {}, .value = obj, .index = 0};
+    stack_.emplace_back(node);
 
     for (std::size_t i = 0; i < path.size(); i++) {
         const std::string_view key = path[i];
