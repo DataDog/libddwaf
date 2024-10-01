@@ -21,20 +21,20 @@ namespace detail {
 using object = ddwaf_object;
 /*struct object*/
 /*{*/
-    /*const char* parameterName;*/
-    /*uint64_t parameterNameLength;*/
-    /*// uintValue should be at least as wide as the widest type on the platform.*/
-    /*union*/
-    /*{*/
-        /*const char* stringValue;*/
-        /*uint64_t uintValue;*/
-        /*int64_t intValue;*/
-        /*object* array;*/
-        /*bool boolean;*/
-        /*double f64;*/
-    /*};*/
-    /*uint64_t nbEntries;*/
-    /*object_type type;*/
+/*const char* parameterName;*/
+/*uint64_t parameterNameLength;*/
+/*// uintValue should be at least as wide as the widest type on the platform.*/
+/*union*/
+/*{*/
+/*const char* stringValue;*/
+/*uint64_t uintValue;*/
+/*int64_t intValue;*/
+/*object* array;*/
+/*bool boolean;*/
+/*double f64;*/
+/*};*/
+/*uint64_t nbEntries;*/
+/*object_type type;*/
 /*};*/
 
 struct object_iterator {
@@ -52,7 +52,8 @@ struct object_iterator {
             return {
                 .ptr = obj->array,
                 .index = index < obj->nbEntries ? index : static_cast<std::size_t>(obj->nbEntries),
-                .size = obj->nbEntries < max_size ? static_cast<std::size_t>(obj->nbEntries) : max_size,
+                .size =
+                    obj->nbEntries < max_size ? static_cast<std::size_t>(obj->nbEntries) : max_size,
                 .type = obj->type,
             };
         }
@@ -92,8 +93,8 @@ struct object_iterator {
 
     [[nodiscard]] std::string_view key() const noexcept
     {
-        if (type != DDWAF_OBJ_MAP || index >= size) { [[unlikely]]
-            return {};
+        if (type != DDWAF_OBJ_MAP || index >= size) {
+            [[unlikely]] return {};
         }
         const auto &slot = ptr[index];
         return {slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
@@ -101,8 +102,8 @@ struct object_iterator {
 
     [[nodiscard]] const object *value() const noexcept
     {
-        if (index >= size) { [[unlikely]]
-            return nullptr;
+        if (index >= size) {
+            [[unlikely]] return nullptr;
         }
         return &ptr[index];
     }
@@ -153,25 +154,16 @@ public:
     {
         return is_compatible_type<T>(type());
     }
-    [[nodiscard]] bool is_valid() const noexcept
-    {
-        return type() != object_type::invalid;
-    }
-    [[nodiscard]] bool is_invalid() const noexcept
-    {
-        return type() == object_type::invalid;
-    }
+    [[nodiscard]] bool is_valid() const noexcept { return type() != object_type::invalid; }
+    [[nodiscard]] bool is_invalid() const noexcept { return type() == object_type::invalid; }
     [[nodiscard]] bool is_container() const noexcept
     {
-        return (type() & container_object_type) != 0;
+        return (type() & container_object_type) != 0 && obj_->array != nullptr;
     }
-    [[nodiscard]] bool is_scalar() const noexcept
-    {
-        return (type() & scalar_object_type) != 0;
-    }
+    [[nodiscard]] bool is_scalar() const noexcept { return (type() & scalar_object_type) != 0; }
     [[nodiscard]] bool is_string() const noexcept
     {
-        return type() == object_type::string;
+        return type() == object_type::string && obj_->stringValue != nullptr;
     }
     bool operator==(const object_view other) const { return ptr() == other.ptr(); }
     bool operator!=(const object_view other) const { return ptr() != other.ptr(); }
@@ -186,11 +178,13 @@ public:
         return at_unchecked(index);
     }
 
-    [[nodiscard]] std::pair<std::string_view, object_view> at_unchecked(std::size_t index) const noexcept
+    [[nodiscard]] std::pair<std::string_view, object_view> at_unchecked(
+        std::size_t index) const noexcept
     {
         if (type() == object_type::map) {
             auto &slot = obj_->array[index];
-            std::string_view key{slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
+            std::string_view key{
+                slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
             return {key, object_view{&slot}};
         }
 
@@ -263,6 +257,65 @@ public:
     }
 
     template <typename T> T convert() const { return converter<T>{*this}(); }
+
+    class iterator {
+    public:
+        iterator() = default;
+
+        explicit iterator(object_view view, size_t index = 0) : type(view.type())
+        {
+            if (view.is_container()) {
+                end_ = view.obj_->array + view.size();
+                if (index >= view.size()) {
+                    current_ = end_;
+                } else {
+                    current_ = view.obj_->array + index;
+                }
+            }
+        }
+
+        bool operator!=(const iterator &rhs) const noexcept { return current_ != rhs.current_; }
+
+        [[nodiscard]] std::string_view key() const noexcept
+        {
+            if (current_ == end_ || type != object_type::map) {
+                return {};
+            }
+            return {
+                current_->parameterName, static_cast<std::size_t>(current_->parameterNameLength)};
+        }
+
+        std::pair<std::string_view, object_view> operator*() const noexcept
+        {
+            if (current_ == end_) {
+                return {{}, nullptr};
+            }
+            return {key(), value()};
+        }
+
+        [[nodiscard]] object_view value() const noexcept
+        {
+            if (current_ == end_) {
+                return nullptr;
+            }
+            return {current_};
+        }
+
+        iterator &operator++() noexcept
+        {
+            if (current_ != end_) {
+                current_++;
+            }
+            return *this;
+        }
+
+        [[nodiscard]] bool is_valid() const noexcept { return current_ != end_; }
+
+    protected:
+        object_type type{object_type::invalid};
+        detail::object *current_{nullptr};
+        detail::object *end_{nullptr};
+    };
 
     class array {
     public:
@@ -416,7 +469,8 @@ public:
         {
             for (std::size_t i = 0; i < size(); ++i) {
                 auto &slot = obj_->array[i];
-                std::string_view current_key{slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
+                std::string_view current_key{
+                    slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
                 if (current_key == key) {
                     return {&slot};
                 }
@@ -443,7 +497,8 @@ public:
                      std::is_same_v<KeyType, object_view>
         {
             auto &slot = obj_->array[index];
-            std::string_view key{slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
+            std::string_view key{
+                slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
             return {key, object_view{&slot}};
         }
 
@@ -466,7 +521,8 @@ public:
                 if (current_ == end_) {
                     return {};
                 }
-                return {current_->parameterName, static_cast<std::size_t>(current_->parameterNameLength)};
+                return {current_->parameterName,
+                    static_cast<std::size_t>(current_->parameterNameLength)};
             }
 
             std::pair<std::string_view, object_view> operator*() const noexcept

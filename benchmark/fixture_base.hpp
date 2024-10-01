@@ -26,7 +26,7 @@ public:
     virtual void warmup() = 0;
     virtual uint64_t test_main() = 0;
 
-    virtual void tear_down() {};
+    virtual void tear_down(){};
 };
 
 } // namespace ddwaf::benchmark
