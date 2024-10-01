@@ -214,7 +214,8 @@ void value_iterator::set_cursor_to_next_object()
                 // Push can invalidate the current references to the parent
                 // so we increment the index before a potential reallocation
                 // and prevent any further use of the references.
-                stack_.emplace_back(child.first, child.second, 0);
+                const stack_node node{.key = child.first, .value = child.second, .index = 0};
+                stack_.emplace_back(node);
                 continue;
             }
         } else if (child.second.is_scalar()) {
@@ -342,7 +343,8 @@ void key_iterator::set_cursor_to_next_object()
                 // so we increment the index before a potential reallocation
                 // and prevent any further use of the references.
                 ++index;
-                stack_.emplace_back(child.first, child.second, 0);
+                const stack_node node{.key = child.first, .value = child.second, .index = 0};
+                stack_.emplace_back(node);
                 continue;
             }
         } else if (!child.first.empty()) {
@@ -495,7 +497,8 @@ void kv_iterator::set_cursor_to_next_object()
                 // so we increment the index before a potential reallocation
                 // and prevent any further use of the references.
                 ++index;
-                stack_.emplace_back(child.first, child.second, 0);
+                const stack_node node{.key = child.first, .value = child.second, .index = 0};
+                stack_.emplace_back(node);
                 continue;
             }
         } else if (child.second.is_scalar()) {
