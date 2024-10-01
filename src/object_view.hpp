@@ -181,14 +181,13 @@ public:
     [[nodiscard]] std::pair<std::string_view, object_view> at_unchecked(
         std::size_t index) const noexcept
     {
-        if (type() == object_type::map) {
-            auto &slot = obj_->array[index];
+        auto &slot = obj_->array[index];
+        if (type() == object_type::map && slot.parameterName != nullptr) {
             std::string_view key{
                 slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
             return {key, object_view{&slot}};
         }
 
-        auto &slot = obj_->array[index];
         return {{}, object_view{&slot}};
     }
 
