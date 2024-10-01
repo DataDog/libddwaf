@@ -18,7 +18,7 @@
 #include "utils.hpp"
 
 // Eventually object will be a class rather than a namespace
-namespace ddwaf::object {
+namespace ddwaf {
 
 template <typename T> class iterator_base {
 public:
@@ -178,4 +178,4 @@ protected:
     friend class iterator_base<kv_iterator>;
 };
 
-} // namespace ddwaf::object
+} // namespace ddwaf
