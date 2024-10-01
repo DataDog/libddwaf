@@ -14,6 +14,7 @@
 
 #include "context_allocator.hpp"
 #include "exclusion/common.hpp"
+#include "object_type.hpp"
 #include "object_view.hpp"
 #include "utils.hpp"
 

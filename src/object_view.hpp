@@ -19,95 +19,6 @@ namespace ddwaf {
 
 namespace detail {
 using object = ddwaf_object;
-/*struct object*/
-/*{*/
-/*const char* parameterName;*/
-/*uint64_t parameterNameLength;*/
-/*// uintValue should be at least as wide as the widest type on the platform.*/
-/*union*/
-/*{*/
-/*const char* stringValue;*/
-/*uint64_t uintValue;*/
-/*int64_t intValue;*/
-/*object* array;*/
-/*bool boolean;*/
-/*double f64;*/
-/*};*/
-/*uint64_t nbEntries;*/
-/*object_type type;*/
-/*};*/
-
-struct object_iterator {
-    const object *ptr;
-    std::size_t index;
-    std::size_t size;
-    DDWAF_OBJ_TYPE type;
-    // 1 byte of padding to spare
-
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    static object_iterator construct(
-        const detail::object *obj, std::size_t index, std::size_t max_size)
-    {
-        if (obj->type == DDWAF_OBJ_MAP || obj->type == DDWAF_OBJ_ARRAY) {
-            return {
-                .ptr = obj->array,
-                .index = index < obj->nbEntries ? index : static_cast<std::size_t>(obj->nbEntries),
-                .size =
-                    obj->nbEntries < max_size ? static_cast<std::size_t>(obj->nbEntries) : max_size,
-                .type = obj->type,
-            };
-        }
-
-        return {
-            .ptr = nullptr,
-            .index = 0,
-            .size = 0,
-            .type = DDWAF_OBJ_INVALID,
-        };
-    }
-
-    object_iterator &operator++() noexcept
-    {
-        if (index < size) {
-            ++index;
-        }
-        return *this;
-    }
-
-    std::pair<std::string_view, const detail::object *> operator*() const noexcept
-    {
-        if (index < size) {
-            const auto &slot = ptr[index];
-            std::string_view key;
-            if (type == DDWAF_OBJ_MAP) {
-                key = {slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
-            }
-
-            return {key, &slot};
-        }
-
-        [[unlikely]] return {};
-    }
-
-    [[nodiscard]] bool is_valid() const noexcept { return index < size; }
-
-    [[nodiscard]] std::string_view key() const noexcept
-    {
-        if (type != DDWAF_OBJ_MAP || index >= size) {
-            [[unlikely]] return {};
-        }
-        const auto &slot = ptr[index];
-        return {slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
-    }
-
-    [[nodiscard]] const object *value() const noexcept
-    {
-        if (index >= size) {
-            [[unlikely]] return nullptr;
-        }
-        return &ptr[index];
-    }
-};
 } // namespace detail
 
 template <typename T> struct converter;
@@ -130,26 +41,20 @@ public:
 
     [[nodiscard]] object_type type() const noexcept
     {
-        if (obj_ == nullptr) {
-            [[unlikely]] return object_type::invalid;
-        }
-        return static_cast<object_type>(obj_->type);
+        return obj_ != nullptr ? static_cast<object_type>(obj_->type) : object_type::invalid;
     }
     [[nodiscard]] std::size_t size() const noexcept
     {
-        if (!is_container()) {
-            [[unlikely]] return 0;
-        }
-        return static_cast<std::size_t>(obj_->nbEntries);
+        return obj_ != nullptr ? static_cast<std::size_t>(obj_->nbEntries) : 0;
     }
     [[nodiscard]] std::size_t capacity() const noexcept
     {
-        if (!is_container()) {
-            [[unlikely]] return 0;
-        }
-        return static_cast<std::size_t>(obj_->nbEntries);
+        return obj_ != nullptr ? static_cast<std::size_t>(obj_->nbEntries) : 0;
     }
-    [[nodiscard]] bool empty() const noexcept { return size() == 0; }
+    [[nodiscard]] bool empty() const noexcept
+    {
+        return obj_ != nullptr ? obj_->nbEntries == 0 : true;
+    }
     template <typename T> [[nodiscard]] bool is() const noexcept
     {
         return is_compatible_type<T>(type());
@@ -172,7 +77,7 @@ public:
 
     [[nodiscard]] std::pair<std::string_view, object_view> at(std::size_t index) const noexcept
     {
-        if (!is_container() || index > size()) {
+        if (!is_container() || index > static_cast<std::size_t>(obj_->nbEntries)) {
             [[unlikely]] return {};
         }
         return at_unchecked(index);
@@ -187,7 +92,6 @@ public:
                 slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
             return {key, object_view{&slot}};
         }
-
         return {{}, object_view{&slot}};
     }
 
@@ -588,6 +492,7 @@ protected:
 };
 
 } // namespace ddwaf
+
 namespace std {
 
 template <> struct hash<ddwaf::object_view> {
