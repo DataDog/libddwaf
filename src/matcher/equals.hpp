@@ -17,6 +17,7 @@ namespace ddwaf::matcher {
 template <typename T = void> class equals : public base_impl<equals<T>> {
 public:
     static constexpr std::string_view matcher_name = "equals";
+    static constexpr std::string_view negated_matcher_name = "!equals";
 
     explicit equals(T expected)
         requires(!std::is_floating_point_v<T>)
@@ -72,6 +73,7 @@ protected:
 template <> class equals<double> : public base_impl<equals<double>> {
 public:
     static constexpr std::string_view matcher_name = "equals";
+    static constexpr std::string_view negated_matcher_name = "!equals";
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     equals(double expected, double delta) : expected_(expected), delta_(delta) {}
@@ -102,6 +104,7 @@ protected:
 template <> class equals<void> : public base_impl<equals<void>> {
 public:
     static constexpr std::string_view matcher_name = "equals";
+    static constexpr std::string_view negated_matcher_name = "!equals";
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     ~equals() override = default;

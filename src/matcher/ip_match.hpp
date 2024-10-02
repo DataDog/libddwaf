@@ -20,6 +20,7 @@ public:
     using data_type = std::vector<std::pair<std::string_view, uint64_t>>;
 
     static constexpr std::string_view matcher_name = "ip_match";
+    static constexpr std::string_view negated_matcher_name = "!ip_match";
 
     ip_match() = default;
     explicit ip_match(const std::vector<std::string_view> &ip_list);

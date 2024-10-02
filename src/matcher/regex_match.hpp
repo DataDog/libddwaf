@@ -17,6 +17,7 @@ namespace ddwaf::matcher {
 class regex_match : public base_impl<regex_match> {
 public:
     static constexpr std::string_view matcher_name = "match_regex";
+    static constexpr std::string_view negated_matcher_name = "!match_regex";
 
     regex_match(const std::string &regex_str, std::size_t minLength, bool case_sensitive);
     ~regex_match() override = default;

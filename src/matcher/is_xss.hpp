@@ -15,6 +15,7 @@ namespace ddwaf::matcher {
 class is_xss : public base_impl<is_xss> {
 public:
     static constexpr std::string_view matcher_name = "is_xss";
+    static constexpr std::string_view negated_matcher_name = "!is_xss";
 
     is_xss() = default;
     ~is_xss() override = default;

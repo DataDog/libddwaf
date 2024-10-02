@@ -77,7 +77,7 @@ public:
         } else {
             conditions_.emplace_back(std::make_unique<scalar_negated_condition>(
                 std::make_unique<T>(std::forward<Args>(args)...), std::string{},
-                std::move(arguments_), "!" + std::string{T::matcher_name}));
+                std::move(arguments_)));
         }
     }
 

@@ -28,6 +28,7 @@ public:
     // for example, through a constexpr class static string_view initialised
     // with a literal.
     [[nodiscard]] virtual std::string_view name() const = 0;
+    [[nodiscard]] virtual std::string_view negated_name() const = 0;
     // Returns a string representing this particular instance of the operator, for example,
     // an operator matching regexes could provide the regex as its string representation.
     [[nodiscard]] virtual std::string_view to_string() const = 0;
@@ -48,6 +49,7 @@ public:
     base_impl &operator=(base_impl &&) noexcept = default;
 
     [[nodiscard]] std::string_view name() const override { return T::matcher_name; }
+    [[nodiscard]] std::string_view negated_name() const override { return T::negated_matcher_name; }
 
     [[nodiscard]] std::string_view to_string() const override
     {

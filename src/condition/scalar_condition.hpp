@@ -53,10 +53,8 @@ protected:
 class scalar_negated_condition : public base_condition {
 public:
     scalar_negated_condition(std::unique_ptr<matcher::base> &&matcher, std::string data_id,
-        std::vector<condition_parameter> args, std::string matcher_name,
-        const object_limits &limits = {})
-        : matcher_(std::move(matcher)), data_id_(std::move(data_id)),
-          matcher_name_(std::move(matcher_name)), limits_(limits)
+        std::vector<condition_parameter> args, const object_limits &limits = {})
+        : matcher_(std::move(matcher)), data_id_(std::move(data_id)), limits_(limits)
     {
         if (args.size() > 1) {
             throw std::invalid_argument("matcher initialised with more than one argument");
@@ -93,7 +91,6 @@ protected:
     std::unique_ptr<matcher::base> matcher_;
     std::string data_id_;
     condition_target target_;
-    std::string matcher_name_;
     object_limits limits_;
 };
 

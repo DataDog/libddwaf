@@ -175,11 +175,11 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
 
         if (match.has_value()) {
             cache.match = std::move(match);
-            return {true, ephemeral};
+            return {.outcome = true, .ephemeral = ephemeral};
         }
     }
 
-    return {false, false};
+    return {.outcome = false, .ephemeral = false};
 }
 
 eval_result scalar_negated_condition::eval(condition_cache &cache, const object_store &store,
@@ -224,11 +224,11 @@ eval_result scalar_negated_condition::eval(condition_cache &cache, const object_
     if (!match) {
         cache.match = {{{{"input"sv, object_to_string(*object), target_.name,
                             {target_.key_path.begin(), target_.key_path.end()}}},
-            {}, matcher_name_, matcher->to_string(), ephemeral}};
-        return {true, ephemeral};
+            {}, matcher->negated_name(), matcher->to_string(), ephemeral}};
+        return {.outcome = true, .ephemeral = ephemeral};
     }
 
-    return {false, false};
+    return {.outcome = false, .ephemeral = false};
 }
 
 } // namespace ddwaf

@@ -19,6 +19,7 @@ public:
     using data_type = std::vector<std::pair<std::string_view, uint64_t>>;
 
     static constexpr std::string_view matcher_name = "exact_match";
+    static constexpr std::string_view negated_matcher_name = "!exact_match";
 
     exact_match() = default;
     explicit exact_match(std::vector<std::string> &&data);

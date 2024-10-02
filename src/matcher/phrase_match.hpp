@@ -17,6 +17,7 @@ namespace ddwaf::matcher {
 class phrase_match : public base_impl<phrase_match> {
 public:
     static constexpr std::string_view matcher_name = "phrase_match";
+    static constexpr std::string_view negated_matcher_name = "!phrase_match";
 
     phrase_match(std::vector<const char *> pattern, std::vector<uint32_t> lengths,
         bool enforce_word_boundary = false);

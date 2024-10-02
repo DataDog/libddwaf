@@ -15,6 +15,7 @@ namespace ddwaf::matcher {
 class is_sqli : public base_impl<is_sqli> {
 public:
     static constexpr std::string_view matcher_name = "is_sqli";
+    static constexpr std::string_view negated_matcher_name = "!is_sqli";
 
     is_sqli() = default;
     ~is_sqli() override = default;
