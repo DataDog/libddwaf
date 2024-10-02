@@ -37,41 +37,52 @@ public:
     object_view &operator=(const object_view &) = default;
     object_view &operator=(object_view &&) = default;
 
+    [[nodiscard]] const detail::object *ptr() const { return obj_; }
+    bool operator==(const object_view other) const { return ptr() == other.ptr(); }
+    bool operator!=(const object_view other) const { return ptr() != other.ptr(); }
+
+    // The unchecked API assumes that the caller has already verified that the
+    // method preconditions are met:
+    //   - The underlying object is non-null
+    //   - When using at, the accessed indexed is within bounds
+    //   - When using as, the accessed field matches the underlying object type
+    //
+    // The checked API (without suffix), always validates preconditions so it is
+    // safer but introduces small overheads.
+
     [[nodiscard]] bool has_value() const noexcept { return obj_ != nullptr; }
 
-    [[nodiscard]] object_type type() const noexcept
-    {
-        return obj_ != nullptr ? static_cast<object_type>(obj_->type) : object_type::invalid;
-    }
-    // Return the type without checking whether the internal object is NULL,
-    // this function should only be called if the object_view is known to have
-    // a non-null object, or after checking for nullability with has_value
     [[nodiscard]] object_type type_unchecked() const noexcept
     {
         return static_cast<object_type>(obj_->type);
     }
-    [[nodiscard]] std::size_t size() const noexcept
+
+    [[nodiscard]] object_type type() const noexcept
     {
-        return obj_ != nullptr ? static_cast<std::size_t>(obj_->nbEntries) : 0;
+        return obj_ != nullptr ? type_unchecked() : object_type::invalid;
     }
+
     [[nodiscard]] std::size_t size_unchecked() const noexcept
     {
         return static_cast<std::size_t>(obj_->nbEntries);
     }
-    [[nodiscard]] std::size_t capacity() const noexcept
+
+    [[nodiscard]] std::size_t size() const noexcept
     {
-        return obj_ != nullptr ? static_cast<std::size_t>(obj_->nbEntries) : 0;
+        return obj_ != nullptr ? size_unchecked() : 0;
     }
-    [[nodiscard]] bool empty() const noexcept
-    {
-        return obj_ != nullptr ? obj_->nbEntries == 0 : true;
-    }
+
+    [[nodiscard]] bool empty_unchecked() const noexcept { return obj_->nbEntries == 0; }
+
+    [[nodiscard]] bool empty() const noexcept { return obj_ != nullptr ? empty_unchecked() : true; }
+
     template <typename T> [[nodiscard]] bool is() const noexcept
     {
         return is_compatible_type<T>(type());
     }
-    [[nodiscard]] bool is_valid() const noexcept { return type() != object_type::invalid; }
-    [[nodiscard]] bool is_invalid() const noexcept { return type() == object_type::invalid; }
+
+    // These is_* methods provide further checks for consistency, albeit these
+    // perhaps should be replaced by assertions.
     [[nodiscard]] bool is_container() const noexcept
     {
         return (type() & container_object_type) != 0 && obj_->array != nullptr;
@@ -80,18 +91,6 @@ public:
     [[nodiscard]] bool is_string() const noexcept
     {
         return type() == object_type::string && obj_->stringValue != nullptr;
-    }
-    bool operator==(const object_view other) const { return ptr() == other.ptr(); }
-    bool operator!=(const object_view other) const { return ptr() != other.ptr(); }
-
-    [[nodiscard]] const detail::object *ptr() const { return obj_; }
-
-    [[nodiscard]] std::pair<std::string_view, object_view> at(std::size_t index) const noexcept
-    {
-        if (!is_container() || index > static_cast<std::size_t>(obj_->nbEntries)) {
-            [[unlikely]] return {};
-        }
-        return at_unchecked(index);
     }
 
     [[nodiscard]] std::pair<std::string_view, object_view> at_unchecked(
@@ -104,6 +103,14 @@ public:
             return {key, object_view{&slot}};
         }
         return {{}, object_view{&slot}};
+    }
+
+    [[nodiscard]] std::pair<std::string_view, object_view> at(std::size_t index) const noexcept
+    {
+        if (!is_container() || index > static_cast<std::size_t>(obj_->nbEntries)) {
+            [[unlikely]] return {};
+        }
+        return at_unchecked(index);
     }
 
     template <typename T> [[nodiscard]] std::optional<T> as() const noexcept
@@ -171,65 +178,6 @@ public:
     }
 
     template <typename T> T convert() const { return converter<T>{*this}(); }
-
-    class iterator {
-    public:
-        iterator() = default;
-
-        explicit iterator(object_view view, size_t index = 0) : type(view.type())
-        {
-            if (view.is_container()) {
-                end_ = view.obj_->array + view.size();
-                if (index >= view.size()) {
-                    current_ = end_;
-                } else {
-                    current_ = view.obj_->array + index;
-                }
-            }
-        }
-
-        bool operator!=(const iterator &rhs) const noexcept { return current_ != rhs.current_; }
-
-        [[nodiscard]] std::string_view key() const noexcept
-        {
-            if (current_ == end_ || type != object_type::map) {
-                return {};
-            }
-            return {
-                current_->parameterName, static_cast<std::size_t>(current_->parameterNameLength)};
-        }
-
-        std::pair<std::string_view, object_view> operator*() const noexcept
-        {
-            if (current_ == end_) {
-                return {{}, nullptr};
-            }
-            return {key(), value()};
-        }
-
-        [[nodiscard]] object_view value() const noexcept
-        {
-            if (current_ == end_) {
-                return nullptr;
-            }
-            return {current_};
-        }
-
-        iterator &operator++() noexcept
-        {
-            if (current_ != end_) {
-                current_++;
-            }
-            return *this;
-        }
-
-        [[nodiscard]] bool is_valid() const noexcept { return current_ != end_; }
-
-    protected:
-        object_type type{object_type::invalid};
-        detail::object *current_{nullptr};
-        detail::object *end_{nullptr};
-    };
 
     class array {
     public:
