@@ -79,21 +79,21 @@ inline bool is_compatible_type(object_type type)
 
 template <typename T>
 inline bool is_compatible_type(object_type type)
-    requires std::is_unsigned_v<T> && (!std::is_same_v<T, bool>)
+    requires std::is_same_v<T, uint64_t>
 {
     return type == object_type::uint64;
 }
 
 template <typename T>
 inline bool is_compatible_type(object_type type)
-    requires std::is_integral_v<T> && std::is_signed_v<T> && (!std::is_same_v<T, bool>)
+    requires std::is_same_v<T, int64_t>
 {
     return type == object_type::int64;
 }
 
 template <typename T>
 inline bool is_compatible_type(object_type type)
-    requires std::is_floating_point_v<T>
+    requires std::is_same_v<T, double>
 {
     return type == object_type::float64;
 }
