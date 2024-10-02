@@ -43,9 +43,20 @@ public:
     {
         return obj_ != nullptr ? static_cast<object_type>(obj_->type) : object_type::invalid;
     }
+    // Return the type without checking whether the internal object is NULL,
+    // this function should only be called if the object_view is known to have
+    // a non-null object, or after checking for nullability with has_value
+    [[nodiscard]] object_type type_unchecked() const noexcept
+    {
+        return static_cast<object_type>(obj_->type);
+    }
     [[nodiscard]] std::size_t size() const noexcept
     {
         return obj_ != nullptr ? static_cast<std::size_t>(obj_->nbEntries) : 0;
+    }
+    [[nodiscard]] std::size_t size_unchecked() const noexcept
+    {
+        return static_cast<std::size_t>(obj_->nbEntries);
     }
     [[nodiscard]] std::size_t capacity() const noexcept
     {

@@ -133,9 +133,10 @@ void value_iterator::initialise_cursor_with_path(
         auto &[parent_key, parent, index] = stack_.back();
 
         std::pair<std::string_view, object_view> child;
-        if (parent.type() == object_type::map) {
-            auto size = parent.size() > limits_.max_container_size ? limits_.max_container_size
-                                                                   : parent.size();
+        if (parent.type_unchecked() == object_type::map) {
+            auto size = parent.size_unchecked() > limits_.max_container_size
+                            ? limits_.max_container_size
+                            : parent.size();
             for (std::size_t j = 0; j < size; j++) {
                 auto possible_child = parent.at_unchecked(j);
                 if (possible_child.first.empty()) {
@@ -192,10 +193,10 @@ void value_iterator::set_cursor_to_next_object()
 {
     current_ = {};
 
-    while (!stack_.empty() && !current_.second.has_value()) {
+    while (!stack_.empty()) {
         auto &[parent_key, parent, index] = stack_.back();
 
-        if (index >= parent.size() || index >= limits_.max_container_size) {
+        if (index >= parent.size_unchecked() || index >= limits_.max_container_size) {
             // Pop can invalidate the parent references so after this point
             // they should not be used.
             stack_.pop_back();
@@ -220,6 +221,7 @@ void value_iterator::set_cursor_to_next_object()
             }
         } else if (child.second.is_scalar()) {
             current_ = child;
+            break;
         }
     }
 }
@@ -407,9 +409,10 @@ void kv_iterator::initialise_cursor_with_path(
         auto &[parent_key, parent, index] = stack_.back();
 
         std::pair<std::string_view, object_view> child;
-        if (parent.type() == object_type::map) {
-            auto size = parent.size() > limits_.max_container_size ? limits_.max_container_size
-                                                                   : parent.size();
+        if (parent.type_unchecked() == object_type::map) {
+            auto size = parent.size_unchecked() > limits_.max_container_size
+                            ? limits_.max_container_size
+                            : parent.size();
             for (std::size_t j = 0; j < size; j++) {
                 auto possible_child = parent.at_unchecked(j);
                 if (possible_child.first.empty()) {
