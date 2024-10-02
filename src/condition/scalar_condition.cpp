@@ -35,6 +35,8 @@ template <typename ResultType, typename Iterator>
 ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
     const matcher::base &matcher, const std::span<const transformer_id> &transformers,
     const object_limits &limits)
+    requires(std::is_same_v<ResultType, bool> ||
+             std::is_same_v<ResultType, std::optional<condition_match>>)
 {
     // The iterator is guaranteed to be valid at this point, which means the
     // object pointer should not be nullptr
@@ -89,6 +91,8 @@ template <typename ResultType, typename Iterator>
 ResultType eval_target(Iterator &it, std::string_view address, bool ephemeral,
     const matcher::base &matcher, const std::span<const transformer_id> &transformers,
     const object_limits &limits, ddwaf::timer &deadline)
+    requires(std::is_same_v<ResultType, bool> ||
+             std::is_same_v<ResultType, std::optional<condition_match>>)
 {
     for (; it; ++it) {
         if (deadline.expired()) {
