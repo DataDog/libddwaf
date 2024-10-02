@@ -26,10 +26,23 @@ TEST(TestObjectView, InvalidObject)
     EXPECT_TRUE(view.empty());
 
     EXPECT_FALSE(view.as<bool>());
+
+    EXPECT_FALSE(view.as<int8_t>());
+    EXPECT_FALSE(view.as<int16_t>());
+    EXPECT_FALSE(view.as<int32_t>());
     EXPECT_FALSE(view.as<int64_t>());
+
+    EXPECT_FALSE(view.as<uint8_t>());
+    EXPECT_FALSE(view.as<uint16_t>());
+    EXPECT_FALSE(view.as<uint32_t>());
     EXPECT_FALSE(view.as<uint64_t>());
+
+    EXPECT_FALSE(view.as<float>());
     EXPECT_FALSE(view.as<double>());
+
     EXPECT_FALSE(view.as<std::string>());
+    EXPECT_FALSE(view.as<std::string_view>());
+    EXPECT_FALSE(view.as<const char *>());
 }
 
 TEST(TestObjectView, NullObject)
@@ -47,10 +60,23 @@ TEST(TestObjectView, NullObject)
     EXPECT_TRUE(view.empty());
 
     EXPECT_FALSE(view.as<bool>());
+
+    EXPECT_FALSE(view.as<int8_t>());
+    EXPECT_FALSE(view.as<int16_t>());
+    EXPECT_FALSE(view.as<int32_t>());
     EXPECT_FALSE(view.as<int64_t>());
+
+    EXPECT_FALSE(view.as<uint8_t>());
+    EXPECT_FALSE(view.as<uint16_t>());
+    EXPECT_FALSE(view.as<uint32_t>());
     EXPECT_FALSE(view.as<uint64_t>());
+
+    EXPECT_FALSE(view.as<float>());
     EXPECT_FALSE(view.as<double>());
+
     EXPECT_FALSE(view.as<std::string>());
+    EXPECT_FALSE(view.as<std::string_view>());
+    EXPECT_FALSE(view.as<const char *>());
 }
 
 TEST(TestObjectView, BooleanObject)
@@ -72,10 +98,22 @@ TEST(TestObjectView, BooleanObject)
 
     EXPECT_EQ(view.as_unchecked<bool>(), true);
 
+    EXPECT_FALSE(view.as<int8_t>());
+    EXPECT_FALSE(view.as<int16_t>());
+    EXPECT_FALSE(view.as<int32_t>());
     EXPECT_FALSE(view.as<int64_t>());
+
+    EXPECT_FALSE(view.as<uint8_t>());
+    EXPECT_FALSE(view.as<uint16_t>());
+    EXPECT_FALSE(view.as<uint32_t>());
     EXPECT_FALSE(view.as<uint64_t>());
+
+    EXPECT_FALSE(view.as<float>());
     EXPECT_FALSE(view.as<double>());
+
     EXPECT_FALSE(view.as<std::string>());
+    EXPECT_FALSE(view.as<std::string_view>());
+    EXPECT_FALSE(view.as<const char *>());
 }
 
 TEST(TestObjectView, SignedObject)
@@ -98,9 +136,22 @@ TEST(TestObjectView, SignedObject)
     EXPECT_EQ(view.as_unchecked<int64_t>(), -20);
 
     EXPECT_FALSE(view.as<bool>());
+
+    EXPECT_FALSE(view.as<int8_t>());
+    EXPECT_FALSE(view.as<int16_t>());
+    EXPECT_FALSE(view.as<int32_t>());
+
+    EXPECT_FALSE(view.as<uint8_t>());
+    EXPECT_FALSE(view.as<uint16_t>());
+    EXPECT_FALSE(view.as<uint32_t>());
     EXPECT_FALSE(view.as<uint64_t>());
+
+    EXPECT_FALSE(view.as<float>());
     EXPECT_FALSE(view.as<double>());
+
     EXPECT_FALSE(view.as<std::string>());
+    EXPECT_FALSE(view.as<std::string_view>());
+    EXPECT_FALSE(view.as<const char *>());
 }
 
 TEST(TestObjectView, UnsignedObject)
@@ -123,9 +174,87 @@ TEST(TestObjectView, UnsignedObject)
     EXPECT_EQ(view.as_unchecked<uint64_t>(), 20);
 
     EXPECT_FALSE(view.as<bool>());
+
+    EXPECT_FALSE(view.as<uint8_t>());
+    EXPECT_FALSE(view.as<uint16_t>());
+    EXPECT_FALSE(view.as<uint32_t>());
+
+    EXPECT_FALSE(view.as<int8_t>());
+    EXPECT_FALSE(view.as<int16_t>());
+    EXPECT_FALSE(view.as<int32_t>());
     EXPECT_FALSE(view.as<int64_t>());
+
+    EXPECT_FALSE(view.as<float>());
     EXPECT_FALSE(view.as<double>());
+
     EXPECT_FALSE(view.as<std::string>());
+    EXPECT_FALSE(view.as<std::string_view>());
+    EXPECT_FALSE(view.as<const char *>());
+}
+
+TEST(TestObjectView, FloatObject)
+{
+    detail::object original;
+    ddwaf_object_float(&original, 20.1);
+
+    object_view view(&original);
+    EXPECT_TRUE(view.has_value());
+
+    EXPECT_EQ(view.type(), object_type::float64);
+    EXPECT_EQ(view.type_unchecked(), object_type::float64);
+
+    EXPECT_EQ(view.size(), 0);
+    EXPECT_TRUE(view.empty());
+
+    EXPECT_TRUE(view.as<double>());
+    EXPECT_EQ(view.as<double>().value(), 20.1);
+
+    EXPECT_EQ(view.as_unchecked<double>(), 20.1);
+
+    EXPECT_FALSE(view.as<bool>());
+
+    EXPECT_FALSE(view.as<uint8_t>());
+    EXPECT_FALSE(view.as<uint16_t>());
+    EXPECT_FALSE(view.as<uint32_t>());
+
+    EXPECT_FALSE(view.as<int8_t>());
+    EXPECT_FALSE(view.as<int16_t>());
+    EXPECT_FALSE(view.as<int32_t>());
+    EXPECT_FALSE(view.as<int64_t>());
+
+    EXPECT_FALSE(view.as<float>());
+
+    EXPECT_FALSE(view.as<std::string>());
+    EXPECT_FALSE(view.as<std::string_view>());
+    EXPECT_FALSE(view.as<const char *>());
+}
+
+TEST(TestObjectView, ArrayObject)
+{
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+
+    for (unsigned i = 0; i < 20; i++) {
+        ddwaf_object_map_add(&root, std::to_string(i).c_str(),
+            ddwaf_object_string(&tmp, std::to_string(i + 100).c_str()));
+    }
+
+    object_view view(&root);
+    EXPECT_EQ(view.size(), 20);
+
+    for (unsigned i = 0; i < 20; i++) {
+        auto [key, value] = view.at_unchecked(i);
+        EXPECT_STREQ(value.as_unchecked<const char *>(), std::to_string(100 + i).c_str());
+    }
+
+    auto array_view = view.as_unchecked<object_view::array>();
+    unsigned i = 0;
+    for (auto value : array_view) {
+        EXPECT_STREQ(value.as_unchecked<const char *>(), std::to_string(100 + i++).c_str());
+    }
+
+    ddwaf_object_free(&root);
 }
 
 } // namespace
