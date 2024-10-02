@@ -57,9 +57,9 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
     auto [parent_key, parent, parent_index] = stack_.front();
     for (unsigned i = 1; i < stack_.size(); i++) {
         auto [child_key, child, child_index] = stack_[i];
-        if (parent.type() == object_type::map && !child_key.empty()) {
+        if (parent.type_unchecked() == object_type::map && !child_key.empty()) {
             keys.emplace_back(child_key);
-        } else if (parent.type() == object_type::array) {
+        } else if (parent.type_unchecked() == object_type::array) {
             keys.emplace_back(to_string<std::string>(parent_index - 1));
         }
 
@@ -68,9 +68,9 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
         parent_index = child_index;
     }
 
-    if (parent.type() == object_type::map && !current_.first.empty()) {
+    if (parent.type_unchecked() == object_type::map && !current_.first.empty()) {
         keys.emplace_back(current_.first);
-    } else if (parent.type() == object_type::array) {
+    } else if (parent.type_unchecked() == object_type::array) {
         keys.emplace_back(to_string<std::string>(parent_index - 1));
     }
 
@@ -136,7 +136,7 @@ void value_iterator::initialise_cursor_with_path(
         if (parent.type_unchecked() == object_type::map) {
             auto size = parent.size_unchecked() > limits_.max_container_size
                             ? limits_.max_container_size
-                            : parent.size();
+                            : parent.size_unchecked();
             for (std::size_t j = 0; j < size; j++) {
                 auto possible_child = parent.at_unchecked(j);
                 if (possible_child.first.empty()) {
@@ -271,9 +271,10 @@ void key_iterator::initialise_cursor_with_path(
         auto &[parent_key, parent, index] = stack_.back();
 
         std::pair<std::string_view, object_view> child;
-        if (parent.type() == object_type::map) {
-            auto size = parent.size() > limits_.max_container_size ? limits_.max_container_size
-                                                                   : parent.size();
+        if (parent.type_unchecked() == object_type::map) {
+            auto size = parent.size_unchecked() > limits_.max_container_size
+                            ? limits_.max_container_size
+                            : parent.size_unchecked();
             for (std::size_t j = 0; j < size; j++) {
                 auto possible_child = parent.at_unchecked(j);
                 if (possible_child.first.empty()) {
@@ -319,7 +320,7 @@ void key_iterator::set_cursor_to_next_object()
     while (!stack_.empty() && !current_.second.has_value()) {
         auto &[parent_key, parent, index] = stack_.back();
 
-        if (index >= parent.size() || index >= limits_.max_container_size) {
+        if (index >= parent.size_unchecked() || index >= limits_.max_container_size) {
             // Pop can invalidate the parent references so after this point
             // they should not be used.
             stack_.pop_back();
@@ -412,7 +413,7 @@ void kv_iterator::initialise_cursor_with_path(
         if (parent.type_unchecked() == object_type::map) {
             auto size = parent.size_unchecked() > limits_.max_container_size
                             ? limits_.max_container_size
-                            : parent.size();
+                            : parent.size_unchecked();
             for (std::size_t j = 0; j < size; j++) {
                 auto possible_child = parent.at_unchecked(j);
                 if (possible_child.first.empty()) {
@@ -473,7 +474,7 @@ void kv_iterator::set_cursor_to_next_object()
     while (!stack_.empty() && !current_.second.has_value()) {
         auto &[parent_key, parent, index] = stack_.back();
 
-        if (index >= parent.size() || index >= limits_.max_container_size) {
+        if (index >= parent.size_unchecked() || index >= limits_.max_container_size) {
             // Pop can invalidate the parent references so after this point
             // they should not be used.
             stack_.pop_back();
