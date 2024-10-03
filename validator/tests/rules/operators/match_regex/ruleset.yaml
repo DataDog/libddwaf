@@ -1,30 +1,30 @@
 version: '2.1'
 rules:
   - id: "1"
-    name: rule1-exact-match
+    name: rule1-match_regex
     tags:
       type: flow1
       category: category
     conditions:
-      - operator: exact_match
+      - operator: match_regex
         parameters:
           inputs:
             - address: rule1-input
-          list:
-            - "string"
-            - "other"
-            - "something else"
+          regex: "Arachni"
+          options:
+            min_length: 7
+            case_sensitive: false
   - id: "2"
-    name: rule2-negated-exact-match
+    name: rule2-ip-match
     tags:
       type: flow2
       category: category
     conditions:
-      - operator: "!exact_match"
+      - operator: "!match_regex"
         parameters:
           inputs:
             - address: rule2-input
-          list:
-            - "string"
-            - "other"
-            - "something else"
+          regex: "Arachni"
+          options:
+            min_length: 7
+            case_sensitive: false

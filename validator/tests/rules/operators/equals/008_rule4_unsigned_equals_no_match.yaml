@@ -1,0 +1,11 @@
+{
+  name: "Basic run with equals operator",
+  runs: [
+    {
+      persistent-input: {
+        rule4-input: 43
+      },
+      code: ok
+    }
+  ]
+}

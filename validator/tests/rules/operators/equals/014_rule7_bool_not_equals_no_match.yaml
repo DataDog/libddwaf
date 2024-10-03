@@ -1,0 +1,11 @@
+{
+  name: "Basic run with not equals operator and no match",
+  runs: [
+    {
+      persistent-input: {
+        rule7-input: false
+      },
+      code: ok
+    }
+  ]
+}
