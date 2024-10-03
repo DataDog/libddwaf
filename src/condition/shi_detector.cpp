@@ -34,7 +34,105 @@ struct shi_result {
     std::vector<std::string> key_path;
 };
 
-std::optional<shi_result> shi_string_impl(std::string_view resource,
+struct shell_argument_array {
+    static constexpr std::size_t npos = std::string_view::npos;
+
+    explicit shell_argument_array(const ddwaf_object &root)
+    {
+        // Since the type check is performed elsewhere, we don't need to check again
+        auto argc = static_cast<std::size_t>(root.nbEntries);
+        if (argc == 0) {
+            return;
+        }
+
+        // Calculate the final resource length
+        std::size_t resource_len = 0;
+        for (std::size_t i = 0; i < argc; ++i) {
+            const auto &child = root.array[i];
+            if (child.type == DDWAF_OBJ_STRING && child.stringValue != nullptr &&
+                child.nbEntries > 0) {
+                // if the string is valid or non-empty, increase the resource
+                // length + 1 for the extra space when relevant
+                resource_len +=
+                    static_cast<std::size_t>(child.nbEntries) + static_cast<std::size_t>(i > 0);
+            }
+        }
+
+        indices.reserve(argc);
+        resource.reserve(resource_len);
+
+        std::size_t index = 0;
+        for (std::size_t i = 0; i < argc; ++i) {
+            const auto &child = root.array[i];
+            if (child.type != DDWAF_OBJ_STRING || child.stringValue == nullptr ||
+                child.nbEntries == 0) {
+                continue;
+            }
+
+            const std::string_view str{
+                child.stringValue, static_cast<std::size_t>(child.nbEntries)};
+
+            indices.emplace_back(index, index + str.size() - 1);
+
+            index += str.size() + 1;
+
+            if (!resource.empty()) {
+                resource.append(" "sv);
+            }
+            resource.append(str);
+        }
+    }
+
+    std::size_t find(std::string_view str, std::size_t start = 0)
+    {
+        while ((start = resource.find(str, start)) != npos) {
+            auto end = start + str.size() - 1;
+
+            // Ensure that both start and end are within the same argument
+            std::size_t low = 0;
+            std::size_t high = indices.size() - 1;
+            while (high >= low) {
+                auto mid = low + (high - low) / 2;
+                auto [arg_start, arg_end] = indices[mid];
+
+                // If the end of the current argument is after the start,
+                // search the remaining arguments to the right of this one
+                if (arg_end < start) {
+                    low = mid + 1;
+                    continue;
+                }
+
+                // If the start of the current argument is before the end,
+                // search the remaining arguments to the left of this one.
+                if (arg_start > end) {
+                    high = mid - 1;
+                    continue;
+                }
+
+                // If the start and end are within the boundaries of this
+                // argument, we have determined that there is no overlap
+                if (arg_start <= start && arg_end >= end) {
+                    return start;
+                }
+
+                // Otherwise, there's overlap and it's not a valid match.
+                break;
+            }
+
+            // Attempt the next match
+            start += 1;
+        }
+        return npos;
+    }
+
+    [[nodiscard]] bool empty() const { return resource.empty(); }
+
+    std::vector<std::pair<std::size_t, std::size_t>> indices;
+    std::string resource;
+};
+
+template <typename ResourceType>
+std::optional<shi_result> shi_impl(const ResourceType &resource,
     std::vector<shell_token> &resource_tokens, const ddwaf_object &params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
@@ -48,8 +146,13 @@ std::optional<shi_result> shi_string_impl(std::string_view resource,
         const auto [param, param_index] = *it;
 
         if (resource_tokens.empty()) {
-            shell_tokenizer tokenizer(resource);
-            resource_tokens = tokenizer.tokenize();
+            if constexpr (std::is_same_v<ResourceType, shell_argument_array>) {
+                shell_tokenizer tokenizer(resource.resource);
+                resource_tokens = tokenizer.tokenize();
+            } else {
+                shell_tokenizer tokenizer(resource);
+                resource_tokens = tokenizer.tokenize();
+            }
         }
 
         auto end_index = param_index + param.size();
@@ -82,19 +185,22 @@ std::optional<shi_result> shi_string_impl(std::string_view resource,
 
 } // namespace
 
-shi_detector::shi_detector(std::vector<condition_parameter> args, const object_limits &limits)
-    : base_impl<shi_detector>(std::move(args), limits)
-{}
-
-eval_result shi_detector::eval_impl(const unary_argument<std::string_view> &resource,
+eval_result shi_detector::eval_string(const unary_argument<const ddwaf_object *> &resource,
     const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
-    std::vector<shell_token> resource_tokens;
+    if (resource.value->nbEntries == 0 || resource.value->stringValue == nullptr) {
+        return {};
+    }
 
+    std::string_view resource_sv;
+    resource_sv = {
+        resource.value->stringValue, static_cast<std::size_t>(resource.value->nbEntries)};
+
+    std::vector<shell_token> resource_tokens;
     for (const auto &param : params) {
-        auto res = shi_string_impl(
-            resource.value, resource_tokens, *param.value, objects_excluded, limits_, deadline);
+        auto res = shi_impl(
+            resource_sv, resource_tokens, *param.value, objects_excluded, limits_, deadline);
         if (res.has_value()) {
             std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
@@ -105,12 +211,65 @@ eval_result shi_detector::eval_impl(const unary_argument<std::string_view> &reso
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
 
             cache.match = condition_match{
-                {{"resource"sv, std::string{resource.value}, resource.address, resource_kp},
+                {{"resource"sv, std::string{resource_sv}, resource.address, resource_kp},
                     {"params"sv, highlight, param.address, param_kp}},
                 {std::move(highlight)}, "shi_detector", {}, ephemeral};
 
             return {true, ephemeral};
         }
+    }
+
+    return {};
+}
+
+eval_result shi_detector::eval_array(const unary_argument<const ddwaf_object *> &resource,
+    const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
+    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
+{
+    shell_argument_array arguments{*resource.value};
+    if (arguments.empty()) {
+        return {};
+    }
+
+    std::vector<shell_token> resource_tokens;
+    for (const auto &param : params) {
+        auto res =
+            shi_impl(arguments, resource_tokens, *param.value, objects_excluded, limits_, deadline);
+        if (res.has_value()) {
+            std::vector<std::string> resource_kp{
+                resource.key_path.begin(), resource.key_path.end()};
+            const bool ephemeral = resource.ephemeral || param.ephemeral;
+
+            auto &[highlight, param_kp] = res.value();
+
+            DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
+
+            cache.match = condition_match{
+                {{"resource"sv, std::move(arguments.resource), resource.address, resource_kp},
+                    {"params"sv, highlight, param.address, param_kp}},
+                {std::move(highlight)}, "shi_detector", {}, ephemeral};
+
+            return {true, ephemeral};
+        }
+    }
+
+    return {};
+}
+
+shi_detector::shi_detector(std::vector<condition_parameter> args, const object_limits &limits)
+    : base_impl<shi_detector>(std::move(args), limits)
+{}
+
+eval_result shi_detector::eval_impl(const unary_argument<const ddwaf_object *> &resource,
+    const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
+    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
+{
+    if (resource.value->type == DDWAF_OBJ_STRING) {
+        return eval_string(resource, params, cache, objects_excluded, deadline);
+    }
+
+    if (resource.value->type == DDWAF_OBJ_ARRAY) {
+        return eval_array(resource, params, cache, objects_excluded, deadline);
     }
 
     return {};
