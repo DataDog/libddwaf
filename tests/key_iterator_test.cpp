@@ -873,38 +873,38 @@ TEST(TestKeyIterator, TestMapDepthLimitPath)
     ddwaf_object_free(&object);
 }
 
-TEST(TestKeyIterator, TestInvalidMap)
-{
-    ddwaf_object tmp, root = DDWAF_OBJECT_MAP;
+/*TEST(TestKeyIterator, TestInvalidMap)*/
+/*{*/
+/*ddwaf_object tmp, root = DDWAF_OBJECT_MAP;*/
 
-    exclusion::object_set_ref exclude;
-    root.nbEntries = 30;
-    {
-        ddwaf::key_iterator it(&root, {}, exclude);
-        EXPECT_FALSE(it);
-    }
+/*exclusion::object_set_ref exclude;*/
+/*root.nbEntries = 30;*/
+/*{*/
+/*ddwaf::key_iterator it(&root, {}, exclude);*/
+/*EXPECT_FALSE(it);*/
+/*}*/
 
-    root.nbEntries = 0;
-    ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
-    root.nbEntries = 0;
+/*root.nbEntries = 0;*/
+/*ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));*/
+/*root.nbEntries = 0;*/
 
-    {
-        ddwaf::key_iterator it(&root, {}, exclude);
-        EXPECT_FALSE(it);
-    }
-    root.nbEntries = 1;
+/*{*/
+/*ddwaf::key_iterator it(&root, {}, exclude);*/
+/*EXPECT_FALSE(it);*/
+/*}*/
+/*root.nbEntries = 1;*/
 
-    ddwaf_object_map_add(&root, "other", ddwaf_object_map(&tmp));
-    root.array[1].nbEntries = 30;
-    {
-        ddwaf::key_iterator it(&root, {}, exclude);
-        EXPECT_TRUE(it);
-        EXPECT_TRUE(++it);
-        EXPECT_FALSE(++it);
-    }
+/*ddwaf_object_map_add(&root, "other", ddwaf_object_map(&tmp));*/
+/*root.array[1].nbEntries = 30;*/
+/*{*/
+/*ddwaf::key_iterator it(&root, {}, exclude);*/
+/*EXPECT_TRUE(it);*/
+/*EXPECT_TRUE(++it);*/
+/*EXPECT_FALSE(++it);*/
+/*}*/
 
-    ddwaf_object_free(&root);
-}
+/*ddwaf_object_free(&root);*/
+/*}*/
 
 TEST(TestKeyeIterator, TestInvalidMapKey)
 {

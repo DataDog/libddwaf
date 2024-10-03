@@ -142,7 +142,7 @@ public:
     {
         if (current_.second.has_value()) {
             if (scalar_value_) {
-                return current_.second.type();
+                return current_.second.type_unchecked();
             }
 
             if (!current_.first.empty()) {

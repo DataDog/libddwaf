@@ -85,13 +85,9 @@ public:
     // perhaps should be replaced by assertions.
     [[nodiscard]] bool is_container() const noexcept
     {
-        return (type() & container_object_type) != 0 && obj_->array != nullptr;
+        return (type() & container_object_type) != 0;
     }
     [[nodiscard]] bool is_scalar() const noexcept { return (type() & scalar_object_type) != 0; }
-    [[nodiscard]] bool is_string() const noexcept
-    {
-        return type() == object_type::string && obj_->stringValue != nullptr;
-    }
 
     [[nodiscard]] std::pair<std::string_view, object_view> at_unchecked(
         std::size_t index) const noexcept
