@@ -17,6 +17,7 @@
 #include "matcher/base.hpp"
 #include "parameter.hpp"
 #include "parser/common.hpp"
+#include "parser/matcher_parser.hpp"
 #include "parser/parser.hpp"
 #include "scanner.hpp"
 
@@ -29,7 +30,7 @@ std::unique_ptr<matcher::base> parse_scanner_matcher(const parameter::map &root)
     auto matcher_name = at<std::string_view>(root, "operator");
     auto matcher_params = at<parameter::map>(root, "parameters");
 
-    auto [rule_data_id, matcher] = parse_matcher(matcher_name, matcher_params);
+    auto [rule_data_id, matcher] = parse_any_matcher(matcher_name, matcher_params);
     if (!rule_data_id.empty()) {
         throw ddwaf::parsing_error("dynamic data on scanner condition");
     }

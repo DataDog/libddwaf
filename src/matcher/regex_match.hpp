@@ -16,6 +16,9 @@ namespace ddwaf::matcher {
 
 class regex_match : public base_impl<regex_match> {
 public:
+    static constexpr std::string_view matcher_name = "match_regex";
+    static constexpr std::string_view negated_matcher_name = "!match_regex";
+
     regex_match(const std::string &regex_str, std::size_t minLength, bool case_sensitive);
     ~regex_match() override = default;
     regex_match(const regex_match &) = delete;
@@ -25,8 +28,10 @@ public:
 
 protected:
     [[nodiscard]] std::string_view to_string_impl() const { return regex->pattern(); }
-    static constexpr std::string_view name_impl() { return "match_regex"; }
-    static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_STRING; }
+    static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
+    {
+        return type == DDWAF_OBJ_STRING;
+    }
 
     [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view pattern) const;
 

@@ -18,6 +18,9 @@ class exact_match : public base_impl<exact_match> {
 public:
     using data_type = std::vector<std::pair<std::string_view, uint64_t>>;
 
+    static constexpr std::string_view matcher_name = "exact_match";
+    static constexpr std::string_view negated_matcher_name = "!exact_match";
+
     exact_match() = default;
     explicit exact_match(std::vector<std::string> &&data);
     explicit exact_match(const data_type &data);
@@ -29,8 +32,10 @@ public:
 
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
-    static constexpr std::string_view name_impl() { return "exact_match"; }
-    static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_STRING; }
+    static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
+    {
+        return type == DDWAF_OBJ_STRING;
+    }
 
     [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view str) const;
 

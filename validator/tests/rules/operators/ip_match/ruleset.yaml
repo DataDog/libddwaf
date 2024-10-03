@@ -40,3 +40,16 @@ rules:
           list:
             - "192.188.0.0/16"
             - "abcd::1234:0:0:0/96"
+  - id: "3"
+    name: rule3-negated-ip-match
+    tags:
+      type: flow3
+      category: category
+    conditions:
+      - operator: "!ip_match"
+        parameters:
+          inputs:
+            - address: rule3-input
+          list:
+            - "192.188.0.0/16"
+            - "abcd::1234:0:0:0/96"
