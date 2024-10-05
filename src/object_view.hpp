@@ -14,6 +14,7 @@
 
 #include "ddwaf.h"
 #include "object_type.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -174,6 +175,84 @@ public:
     }
 
     template <typename T> T convert() const { return converter<T>{*this}(); }
+
+    class iterator {
+    public:
+        explicit iterator(const detail::object *obj, const object_limits &limits, uint32_t idx = 0)
+            : obj_(obj), size_(limits.max_container_size < obj->nbEntries
+                                   ? limits.max_container_size
+                                   : static_cast<uint32_t>(obj->nbEntries)),
+              index_(idx < size_ ? idx : size_)
+        {}
+
+        ~iterator() = default;
+        iterator(const iterator &) = default;
+        iterator(iterator &&) = default;
+        iterator &operator=(const iterator &) = default;
+        iterator &operator=(iterator &&) = default;
+
+        [[nodiscard]] object_type type() const noexcept
+        {
+            return static_cast<object_type>(obj_->type);
+        }
+
+        bool operator!=(const iterator &rhs) const noexcept
+        {
+            return obj_ != rhs.obj_ || index_ != rhs.index_;
+        }
+
+        [[nodiscard]] std::string_view key() const
+        {
+            if (obj_->type == DDWAF_OBJ_MAP) {
+                auto &slot = obj_->array[index_];
+                std::string_view key{
+                    slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
+                return key;
+            }
+
+            return {};
+        }
+
+        [[nodiscard]] object_view value() const { return &obj_->array[index_]; }
+
+        std::pair<std::string_view, object_view> operator*() const
+        {
+            auto &slot = obj_->array[index_];
+            if (obj_->type == DDWAF_OBJ_MAP) {
+                std::string_view key{
+                    slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
+                return {key, &slot};
+            }
+            return {{}, &slot};
+        }
+
+        operator bool() const noexcept { return index_ < size_; }
+        [[nodiscard]] std::size_t index() const { return static_cast<std::size_t>(index_); }
+        iterator &operator++() noexcept
+        {
+            if (index_ < size_) {
+                ++index_;
+            }
+            return *this;
+        }
+        iterator &operator--() noexcept
+        {
+            if (index_ > 0) {
+                --index_;
+            }
+            return *this;
+        }
+
+    protected:
+        const detail::object *obj_;
+        std::uint32_t size_;
+        std::uint32_t index_;
+    };
+
+    static_assert(sizeof(iterator) == 16);
+
+    iterator begin(const object_limits &limits = {}) { return iterator{obj_, limits}; }
+    iterator end() { return iterator{obj_, {}, obj_->nbEntries}; }
 
     class array {
     public:
@@ -445,6 +524,8 @@ public:
 protected:
     const detail::object *obj_{nullptr};
 };
+
+static_assert(sizeof(object_view) == sizeof(void *));
 
 } // namespace ddwaf
 
