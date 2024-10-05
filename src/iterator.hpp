@@ -50,13 +50,7 @@ protected:
     // can later provide the accurate full key path.
     std::vector<std::string> path_;
 
-    struct stack_node {
-        std::string_view key;
-        object_view value;
-        std::size_t index{};
-    };
-
-    std::vector<stack_node> stack_;
+    std::vector<object_view::iterator> stack_;
     std::pair<std::string_view, object_view> current_;
 
     const exclusion::object_set_ref &excluded_;

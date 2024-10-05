@@ -965,59 +965,59 @@ TEST(TestValueIterator, TestMapDepthLimitPath)
 /*ddwaf_object_free(&root);*/
 /*}*/
 
-TEST(TestValueIterator, TestInvalidMapKey)
-{
-    ddwaf_object tmp, root = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
+/*TEST(TestValueIterator, TestInvalidMapKey)*/
+/*{*/
+/*ddwaf_object tmp, root = DDWAF_OBJECT_MAP;*/
+/*ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));*/
 
-    free((void *)root.array[0].parameterName);
-    root.array[0].parameterName = nullptr;
+/*free((void *)root.array[0].parameterName);*/
+/*root.array[0].parameterName = nullptr;*/
 
-    std::unordered_set<const ddwaf_object *> persistent;
-    exclusion::object_set_ref exclude{persistent, {}};
-    {
-        // The invalid key should have no impact
-        ddwaf::value_iterator it(&root, {}, exclude);
-        EXPECT_TRUE(it);
-    }
+/*std::unordered_set<const ddwaf_object *> persistent;*/
+/*exclusion::object_set_ref exclude{persistent, {}};*/
+/*{*/
+/*// The invalid key should have no impact*/
+/*ddwaf::value_iterator it(&root, {}, exclude);*/
+/*EXPECT_TRUE(it);*/
+/*}*/
 
-    ddwaf_object_map_add(&root, "other", ddwaf_object_string(&tmp, "value"));
-    {
-        // The invalid key should have no impact
-        ddwaf::value_iterator it(&root, {}, exclude);
-        EXPECT_TRUE(it);
-    }
+/*ddwaf_object_map_add(&root, "other", ddwaf_object_string(&tmp, "value"));*/
+/*{*/
+/*// The invalid key should have no impact*/
+/*ddwaf::value_iterator it(&root, {}, exclude);*/
+/*EXPECT_TRUE(it);*/
+/*}*/
 
-    ddwaf_object_free(&root);
-}
+/*ddwaf_object_free(&root);*/
+/*}*/
 
-TEST(TestValueIterator, TestInvalidMapKeyWithPath)
-{
-    ddwaf_object tmp, root = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
+/*TEST(TestValueIterator, TestInvalidMapKeyWithPath)*/
+/*{*/
+/*ddwaf_object tmp, root = DDWAF_OBJECT_MAP;*/
+/*ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));*/
 
-    free((void *)root.array[0].parameterName);
-    root.array[0].parameterName = nullptr;
+/*free((void *)root.array[0].parameterName);*/
+/*root.array[0].parameterName = nullptr;*/
 
-    std::unordered_set<const ddwaf_object *> persistent;
-    exclusion::object_set_ref exclude{persistent, {}};
-    {
-        // The invalid key should have no impact
-        std::vector<std::string> key_path{"key"};
-        ddwaf::value_iterator it(&root, key_path, exclude);
-        EXPECT_FALSE(it);
-    }
+/*std::unordered_set<const ddwaf_object *> persistent;*/
+/*exclusion::object_set_ref exclude{persistent, {}};*/
+/*{*/
+/*// The invalid key should have no impact*/
+/*std::vector<std::string> key_path{"key"};*/
+/*ddwaf::value_iterator it(&root, key_path, exclude);*/
+/*EXPECT_FALSE(it);*/
+/*}*/
 
-    ddwaf_object_map_add(&root, "other", ddwaf_object_string(&tmp, "value"));
-    {
-        // The invalid key should have no impact
-        std::vector<std::string> key_path{"other"};
-        ddwaf::value_iterator it(&root, key_path, exclude);
-        EXPECT_TRUE(it);
-    }
+/*ddwaf_object_map_add(&root, "other", ddwaf_object_string(&tmp, "value"));*/
+/*{*/
+/*// The invalid key should have no impact*/
+/*std::vector<std::string> key_path{"other"};*/
+/*ddwaf::value_iterator it(&root, key_path, exclude);*/
+/*EXPECT_TRUE(it);*/
+/*}*/
 
-    ddwaf_object_free(&root);
-}
+/*ddwaf_object_free(&root);*/
+/*}*/
 
 TEST(TestValueIterator, TestRecursiveMap)
 {

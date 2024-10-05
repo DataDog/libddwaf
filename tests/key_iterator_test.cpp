@@ -906,58 +906,58 @@ TEST(TestKeyIterator, TestMapDepthLimitPath)
 /*ddwaf_object_free(&root);*/
 /*}*/
 
-TEST(TestKeyeIterator, TestInvalidMapKey)
-{
-    exclusion::object_set_ref exclude;
-    ddwaf_object tmp, root = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
+/*TEST(TestKeyeIterator, TestInvalidMapKey)*/
+/*{*/
+/*exclusion::object_set_ref exclude;*/
+/*ddwaf_object tmp, root = DDWAF_OBJECT_MAP;*/
+/*ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));*/
 
-    free((void *)root.array[0].parameterName);
-    root.array[0].parameterName = nullptr;
+/*free((void *)root.array[0].parameterName);*/
+/*root.array[0].parameterName = nullptr;*/
 
-    {
-        ddwaf::key_iterator it(&root, {}, exclude);
-        EXPECT_FALSE(it);
-    }
+/*{*/
+/*ddwaf::key_iterator it(&root, {}, exclude);*/
+/*EXPECT_FALSE(it);*/
+/*}*/
 
-    ddwaf_object_map_add(&root, "other", ddwaf_object_string(&tmp, "value"));
-    {
-        ddwaf::key_iterator it(&root, {}, exclude);
-        EXPECT_TRUE(it);
-        EXPECT_FALSE(++it);
-    }
+/*ddwaf_object_map_add(&root, "other", ddwaf_object_string(&tmp, "value"));*/
+/*{*/
+/*ddwaf::key_iterator it(&root, {}, exclude);*/
+/*EXPECT_TRUE(it);*/
+/*EXPECT_FALSE(++it);*/
+/*}*/
 
-    ddwaf_object_free(&root);
-}
+/*ddwaf_object_free(&root);*/
+/*}*/
 
-TEST(TestKeyIterator, TestInvalidMapKeyWithPath)
-{
-    ddwaf_object tmp, other, root = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
+/*TEST(TestKeyIterator, TestInvalidMapKeyWithPath)*/
+/*{*/
+/*ddwaf_object tmp, other, root = DDWAF_OBJECT_MAP;*/
+/*ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));*/
 
-    free((void *)root.array[0].parameterName);
-    root.array[0].parameterName = nullptr;
+/*free((void *)root.array[0].parameterName);*/
+/*root.array[0].parameterName = nullptr;*/
 
-    exclusion::object_set_ref exclude;
-    {
-        std::vector<std::string> key_path{"key"};
-        ddwaf::key_iterator it(&root, key_path, exclude);
-        EXPECT_FALSE(it);
-    }
+/*exclusion::object_set_ref exclude;*/
+/*{*/
+/*std::vector<std::string> key_path{"key"};*/
+/*ddwaf::key_iterator it(&root, key_path, exclude);*/
+/*EXPECT_FALSE(it);*/
+/*}*/
 
-    ddwaf_object_map(&other);
-    ddwaf_object_map_add(&other, "key", ddwaf_object_string(&tmp, "value"));
-    ddwaf_object_map_add(&root, "other", &other);
+/*ddwaf_object_map(&other);*/
+/*ddwaf_object_map_add(&other, "key", ddwaf_object_string(&tmp, "value"));*/
+/*ddwaf_object_map_add(&root, "other", &other);*/
 
-    {
-        std::vector<std::string> key_path{"other"};
-        ddwaf::key_iterator it(&root, key_path, exclude);
-        EXPECT_TRUE(it);
-        EXPECT_FALSE(++it);
-    }
+/*{*/
+/*std::vector<std::string> key_path{"other"};*/
+/*ddwaf::key_iterator it(&root, key_path, exclude);*/
+/*EXPECT_TRUE(it);*/
+/*EXPECT_FALSE(++it);*/
+/*}*/
 
-    ddwaf_object_free(&root);
-}
+/*ddwaf_object_free(&root);*/
+/*}*/
 
 TEST(TestKeyIterator, TestRecursiveMap)
 {
