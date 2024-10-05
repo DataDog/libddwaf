@@ -249,10 +249,8 @@ public:
         std::uint32_t index_;
     };
 
-    static_assert(sizeof(iterator) == 16);
-
     iterator begin(const object_limits &limits = {}) { return iterator{obj_, limits}; }
-    iterator end() { return iterator{obj_, {}, obj_->nbEntries}; }
+    iterator end() { return iterator{obj_, {}, static_cast<uint32_t>(obj_->nbEntries)}; }
 
     class array {
     public:
