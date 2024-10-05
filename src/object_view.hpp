@@ -230,16 +230,12 @@ public:
         [[nodiscard]] std::size_t index() const { return static_cast<std::size_t>(index_); }
         iterator &operator++() noexcept
         {
-            //if (index_ < size_) {
-                ++index_;
-            //}
+            index_ += static_cast<unsigned>(index_ < size_);
             return *this;
         }
         iterator &operator--() noexcept
         {
-            //if (index_ > 0) {
-                --index_;
-            //}
+            index_ -= static_cast<unsigned>(index_ > 0);
             return *this;
         }
 
