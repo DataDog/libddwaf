@@ -177,10 +177,11 @@ public:
 
     class iterator {
     public:
-        explicit iterator(const detail::object *obj, const object_limits &limits, uint32_t idx = 0)
-            : obj_(obj),
-              size_(std::min(limits.max_container_size, static_cast<uint32_t>(obj->nbEntries))),
-              index_(std::min(idx, size_))
+        explicit iterator(const detail::object *obj, const object_limits &limits, uint16_t idx = 0)
+            : obj_(obj), size_(std::min(static_cast<uint16_t>(limits.max_container_size),
+                             static_cast<uint16_t>(obj->nbEntries))),
+              index_(std::min(idx, size_)),
+              type_(obj != nullptr ? static_cast<object_type>(obj->type) : object_type::invalid)
         {}
 
         ~iterator() = default;
@@ -189,10 +190,7 @@ public:
         iterator &operator=(const iterator &) = default;
         iterator &operator=(iterator &&) = default;
 
-        [[nodiscard]] object_type type() const noexcept
-        {
-            return static_cast<object_type>(obj_->type);
-        }
+        [[nodiscard]] object_type container_type() const noexcept { return type_; }
 
         bool operator!=(const iterator &rhs) const noexcept
         {
@@ -201,16 +199,31 @@ public:
 
         [[nodiscard]] std::string_view key() const
         {
+            if (!operator bool()) {
+                [[unlikely]] return {};
+            }
+
             auto &slot = obj_->array[index_];
             std::string_view key{
                 slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
             return key;
         }
 
-        [[nodiscard]] object_view value() const { return &obj_->array[index_]; }
+        [[nodiscard]] object_view value() const
+        {
+            if (!operator bool()) {
+                [[unlikely]] return {};
+            }
+
+            return &obj_->array[index_];
+        }
 
         std::pair<std::string_view, object_view> operator*() const
         {
+            if (!operator bool()) {
+                [[unlikely]] return {};
+            }
+
             auto &slot = obj_->array[index_];
             std::string_view key{
                 slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
@@ -219,24 +232,33 @@ public:
 
         // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
         operator bool() const noexcept { return index_ < size_; }
+
         [[nodiscard]] std::size_t index() const { return static_cast<std::size_t>(index_); }
+
         iterator &operator++() noexcept
         {
             // Saturated increment (to size)
             index_ += static_cast<uint32_t>(index_ < size_);
             return *this;
         }
-        iterator &operator--() noexcept
+
+        [[nodiscard]] iterator prev() const noexcept
         {
             // Saturated decrement (to 0)
-            index_ -= static_cast<uint32_t>(index_ > 0);
-            return *this;
+            return {obj_, size_, index_ - static_cast<uint16_t>(index_ > 0), type_};
         }
 
     protected:
+        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+        iterator(
+            const detail::object *obj, std::uint16_t size, std::uint16_t index, object_type type)
+            : obj_(obj), size_(size), index_(index), type_(type)
+        {}
+
         const detail::object *obj_;
-        std::uint32_t size_;
-        std::uint32_t index_;
+        std::uint16_t size_;
+        std::uint16_t index_;
+        object_type type_;
     };
 
     iterator begin(const object_limits &limits = {}) { return iterator{obj_, limits}; }
