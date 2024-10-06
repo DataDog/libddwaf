@@ -29,9 +29,12 @@ public:
     class map;
     class array;
 
+    // The default constructor results in a view without value
     object_view() = default;
+
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     object_view(const detail::object *underlying_object) : obj_(underlying_object) {}
+
     ~object_view() = default;
     object_view(const object_view &) = default;
     object_view(object_view &&) = default;
@@ -44,9 +47,9 @@ public:
 
     // The unchecked API assumes that the caller has already verified that the
     // method preconditions are met:
-    //   - The underlying object is non-null
-    //   - When using at, the accessed indexed is within bounds
-    //   - When using as, the accessed field matches the underlying object type
+    //   - The underlying object is non-null (using has_value());
+    //   - When using at, the accessed indexed is within bounds (using size*())
+    //   - When using as, the accessed field matches the underlying object type (using is*())
     //
     // The checked API (without suffix), always validates preconditions so it is
     // safer but introduces small overheads.
@@ -58,27 +61,33 @@ public:
         return static_cast<object_type>(obj_->type);
     }
 
-    [[nodiscard]] std::size_t size_unchecked() const noexcept
-    {
-        return static_cast<std::size_t>(obj_->nbEntries);
-    }
-    [[nodiscard]] bool empty_unchecked() const noexcept { return obj_->nbEntries == 0; }
-
     [[nodiscard]] object_type type() const noexcept
     {
         return obj_ != nullptr ? type_unchecked() : object_type::invalid;
     }
 
+    // Size and empty methods apply to both containers and strings
+    [[nodiscard]] std::size_t size_unchecked() const noexcept
+    {
+        return static_cast<std::size_t>(obj_->nbEntries);
+    }
     [[nodiscard]] std::size_t size() const noexcept
     {
         return obj_ != nullptr ? size_unchecked() : 0;
     }
 
+    [[nodiscard]] bool empty_unchecked() const noexcept { return obj_->nbEntries == 0; }
+
     [[nodiscard]] bool empty() const noexcept { return obj_ != nullptr ? empty_unchecked() : true; }
 
+
+    // is<T> check whether the underlying type is compatible with the required
+    // type. When it comes to numeric types, the request type must match the
+    // one used within ddwaf_object, i.e. the type will not be cast to one of
+    // a smaller size.
     template <typename T> [[nodiscard]] bool is() const noexcept
     {
-        return is_compatible_type<T>(type());
+        return obj_ != nullptr && is_compatible_type<T>(type_unchecked());
     }
 
     // These is_* methods provide further checks for consistency, albeit these
@@ -92,6 +101,8 @@ public:
         return obj_ != nullptr && (type_unchecked() & scalar_object_type) != 0;
     }
 
+    // Access the key and value at index. If the container is an array, the key
+    // will be an empty string.
     [[nodiscard]] std::pair<std::string_view, object_view> at_unchecked(
         std::size_t index) const noexcept
     {
@@ -109,6 +120,7 @@ public:
         return at_unchecked(index);
     }
 
+    // Access the underlying value based on the required type
     template <typename T>
     [[nodiscard]] T as_unchecked() const noexcept
         requires std::is_same_v<T, object_view>
@@ -158,6 +170,9 @@ public:
         return obj_->stringValue;
     }
 
+    // Access the underlying value based on the required type, these methods
+    // return an optional which will have no value if the requested type doesn't
+    // match the underlying type of this object_view.
     template <typename T> [[nodiscard]] std::optional<T> as() const noexcept
     {
         if (!is_compatible_type<T>(type())) {
@@ -173,17 +188,11 @@ public:
         return {*this};
     }
 
+    // Convert the underlying type to the requested type
     template <typename T> T convert() const { return converter<T>{*this}(); }
 
     class iterator {
     public:
-        explicit iterator(const detail::object *obj, const object_limits &limits, uint16_t idx = 0)
-            : obj_(obj), size_(std::min(static_cast<uint16_t>(limits.max_container_size),
-                             static_cast<uint16_t>(obj->nbEntries))),
-              index_(std::min(idx, size_)),
-              type_(obj != nullptr ? static_cast<object_type>(obj->type) : object_type::invalid)
-        {}
-
         ~iterator() = default;
         iterator(const iterator &) = default;
         iterator(iterator &&) = default;
@@ -192,6 +201,9 @@ public:
 
         [[nodiscard]] object_type container_type() const noexcept { return type_; }
 
+        // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
+        operator bool() const noexcept { return index_ < size_; }
+
         bool operator!=(const iterator &rhs) const noexcept
         {
             return obj_ != rhs.obj_ || index_ != rhs.index_;
@@ -199,7 +211,7 @@ public:
 
         [[nodiscard]] std::string_view key() const
         {
-            if (!operator bool()) {
+            if (index_ >= size_) {
                 [[unlikely]] return {};
             }
 
@@ -211,7 +223,7 @@ public:
 
         [[nodiscard]] object_view value() const
         {
-            if (!operator bool()) {
+            if (index_ >= size_) {
                 [[unlikely]] return {};
             }
 
@@ -220,7 +232,7 @@ public:
 
         std::pair<std::string_view, object_view> operator*() const
         {
-            if (!operator bool()) {
+            if (index_ >= size_) {
                 [[unlikely]] return {};
             }
 
@@ -229,9 +241,6 @@ public:
                 slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
             return {key, &slot};
         }
-
-        // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-        operator bool() const noexcept { return index_ < size_; }
 
         [[nodiscard]] std::size_t index() const { return static_cast<std::size_t>(index_); }
 
@@ -249,21 +258,46 @@ public:
         }
 
     protected:
-        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+        iterator() = default;
+
+        explicit iterator(const detail::object *obj, const object_limits &limits = {}, uint16_t idx = 0)
+            : obj_(obj), size_(std::min(static_cast<uint16_t>(limits.max_container_size),
+                             static_cast<uint16_t>(obj->nbEntries))),
+              index_(std::min(idx, size_)),
+              type_(static_cast<object_type>(obj->type))
+        {}
+
+
         iterator(
+            // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
             const detail::object *obj, std::uint16_t size, std::uint16_t index, object_type type)
             : obj_(obj), size_(size), index_(index), type_(type)
         {}
 
-        const detail::object *obj_;
-        std::uint16_t size_;
-        std::uint16_t index_;
-        object_type type_;
+        const detail::object *obj_{nullptr};
+        std::uint16_t size_{0};
+        std::uint16_t index_{0};
+        object_type type_{object_type::invalid};
+
+        friend class object_view;
     };
 
-    iterator begin(const object_limits &limits = {}) { return iterator{obj_, limits}; }
-    iterator end() { return iterator{obj_, {}, static_cast<uint32_t>(obj_->nbEntries)}; }
+    iterator begin(const object_limits &limits = {}) {
+        if (is_container()) { [[likely]]
+            // This check guarantees that the object is a container and not null
+            return iterator{obj_, limits};
+        }
+        return {};
+    }
 
+    iterator end() {
+        if (is_container()) { [[likely]]
+            return iterator{obj_, {}, static_cast<uint16_t>(obj_->nbEntries)};
+        }
+        return {};
+    }
+
+    // Container abstractions, for convenience
     class array {
     public:
         array() = default;
