@@ -179,10 +179,9 @@ public:
     class iterator {
     public:
         explicit iterator(const detail::object *obj, const object_limits &limits, uint32_t idx = 0)
-            : obj_(obj), size_(limits.max_container_size < obj->nbEntries
-                                   ? limits.max_container_size
-                                   : static_cast<uint32_t>(obj->nbEntries)),
-              index_(idx < size_ ? idx : size_)
+            : obj_(obj),
+              size_(std::min(limits.max_container_size, static_cast<uint32_t>(obj->nbEntries))),
+              index_(std::min(idx, size_))
         {}
 
         ~iterator() = default;
@@ -203,14 +202,10 @@ public:
 
         [[nodiscard]] std::string_view key() const
         {
-            if (obj_->type == DDWAF_OBJ_MAP) {
-                auto &slot = obj_->array[index_];
-                std::string_view key{
-                    slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
-                return key;
-            }
-
-            return {};
+            auto &slot = obj_->array[index_];
+            std::string_view key{
+                slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
+            return key;
         }
 
         [[nodiscard]] object_view value() const { return &obj_->array[index_]; }
@@ -218,24 +213,24 @@ public:
         std::pair<std::string_view, object_view> operator*() const
         {
             auto &slot = obj_->array[index_];
-            if (obj_->type == DDWAF_OBJ_MAP) {
-                std::string_view key{
-                    slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
-                return {key, &slot};
-            }
-            return {{}, &slot};
+            std::string_view key{
+                slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
+            return {key, &slot};
         }
 
+        // NOLINTNEXTLINE(google-explicit-constructor)
         operator bool() const noexcept { return index_ < size_; }
         [[nodiscard]] std::size_t index() const { return static_cast<std::size_t>(index_); }
         iterator &operator++() noexcept
         {
-            index_ += static_cast<unsigned>(index_ < size_);
+            // Saturated increment (to size)
+            index_ += static_cast<uint32_t>(index_ < size_);
             return *this;
         }
         iterator &operator--() noexcept
         {
-            index_ -= static_cast<unsigned>(index_ > 0);
+            // Saturated decrement (to 0)
+            index_ -= static_cast<uint32_t>(index_ > 0);
             return *this;
         }
 
