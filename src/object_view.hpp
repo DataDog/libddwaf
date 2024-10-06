@@ -26,9 +26,6 @@ template <typename T> struct converter;
 
 class object_view {
 public:
-    class map;
-    class array;
-
     // The default constructor results in a view without value
     object_view() = default;
 
@@ -79,7 +76,6 @@ public:
     [[nodiscard]] bool empty_unchecked() const noexcept { return obj_->nbEntries == 0; }
 
     [[nodiscard]] bool empty() const noexcept { return obj_ != nullptr ? empty_unchecked() : true; }
-
 
     // is<T> check whether the underlying type is compatible with the required
     // type. When it comes to numeric types, the request type must match the
@@ -254,19 +250,19 @@ public:
         [[nodiscard]] iterator prev() const noexcept
         {
             // Saturated decrement (to 0)
-            return {obj_, size_, index_ - static_cast<uint16_t>(index_ > 0), type_};
+            return {obj_, size_, static_cast<uint16_t>(index_ - static_cast<uint16_t>(index_ > 0)),
+                type_};
         }
 
     protected:
         iterator() = default;
 
-        explicit iterator(const detail::object *obj, const object_limits &limits = {}, uint16_t idx = 0)
+        explicit iterator(
+            const detail::object *obj, const object_limits &limits = {}, uint16_t idx = 0)
             : obj_(obj), size_(std::min(static_cast<uint16_t>(limits.max_container_size),
                              static_cast<uint16_t>(obj->nbEntries))),
-              index_(std::min(idx, size_)),
-              type_(static_cast<object_type>(obj->type))
+              index_(std::min(idx, size_)), type_(static_cast<object_type>(obj->type))
         {}
-
 
         iterator(
             // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
@@ -282,22 +278,27 @@ public:
         friend class object_view;
     };
 
-    iterator begin(const object_limits &limits = {}) {
-        if (is_container()) { [[likely]]
+    iterator begin(const object_limits &limits = {})
+    {
+        if (is_container()) {
+            [[likely]]
             // This check guarantees that the object is a container and not null
             return iterator{obj_, limits};
         }
         return {};
     }
 
-    iterator end() {
-        if (is_container()) { [[likely]]
-            return iterator{obj_, {}, static_cast<uint16_t>(obj_->nbEntries)};
+    iterator end()
+    {
+        if (is_container()) {
+            [[likely]] return iterator{obj_, {}, static_cast<uint16_t>(obj_->nbEntries)};
         }
         return {};
     }
 
     // Container abstractions, for convenience
+
+    // Array abstraction, allows access only to values, but not keys
     class array {
     public:
         array() = default;
@@ -307,43 +308,57 @@ public:
         array &operator=(const array &) = default;
         array &operator=(array &&) = default;
 
+        [[nodiscard]] bool has_value() const noexcept { return obj_ != nullptr; }
+
+        // Size and empty methods apply to both containers and strings
+        [[nodiscard]] std::size_t size_unchecked() const noexcept
+        {
+            return static_cast<std::size_t>(obj_->nbEntries);
+        }
         [[nodiscard]] std::size_t size() const noexcept
         {
-            if (obj_ == nullptr) {
-                return 0;
-            }
-            return static_cast<std::size_t>(obj_->nbEntries);
+            return obj_ != nullptr ? size_unchecked() : 0;
         }
-        [[nodiscard]] std::size_t capacity() const noexcept
+
+        [[nodiscard]] bool empty_unchecked() const noexcept { return obj_->nbEntries == 0; }
+
+        [[nodiscard]] bool empty() const noexcept
         {
-            if (obj_ == nullptr) {
-                return 0;
-            }
-            return static_cast<std::size_t>(obj_->nbEntries);
+            return obj_ != nullptr ? empty_unchecked() : true;
         }
 
-        [[nodiscard]] bool empty() const { return size() == 0; }
+        [[nodiscard]] const detail::object *ptr() const noexcept { return obj_; }
 
-        [[nodiscard]] const detail::object *ptr() const { return obj_; }
+        // Access the key and value at index. If the container is an array, the key
+        // will be an empty string.
+        [[nodiscard]] object_view at_unchecked(std::size_t index) const noexcept
+        {
+            return &obj_->array[index];
+        }
 
         [[nodiscard]] object_view at(std::size_t index) const noexcept
         {
-            if (index >= size()) {
+            if (obj_ != nullptr || index > size_unchecked()) {
                 [[unlikely]] return {};
             }
             return at_unchecked(index);
         }
 
-        [[nodiscard]] object_view at_unchecked(std::size_t index) const noexcept
-        {
-            if (obj_ == nullptr) {
-                return {};
-            }
-            return &obj_->array[index];
-        }
-
         class iterator {
         public:
+            bool operator!=(const iterator &rhs) const noexcept { return current_ != rhs.current_; }
+
+            object_view operator*() const noexcept { return current_ != end_ ? current_ : nullptr; }
+
+            iterator &operator++() noexcept
+            {
+                if (current_ != end_) {
+                    current_++;
+                }
+                return *this;
+            }
+
+        protected:
             iterator() = default;
             explicit iterator(array &ov, size_t index = 0)
                 : current_(ov.obj_->array), end_(ov.obj_->array + ov.size())
@@ -355,51 +370,26 @@ public:
                 }
             }
 
-            bool operator!=(const iterator &rhs) const noexcept { return current_ != rhs.current_; }
-
-            object_view operator*() const noexcept
-            {
-                if (current_ == end_) {
-                    return nullptr;
-                }
-                return {current_};
-            }
-
-            iterator &operator++() noexcept
-            {
-                if (current_ != end_) {
-                    current_++;
-                }
-                return *this;
-            }
-
-        protected:
             detail::object *current_{nullptr};
             detail::object *end_{nullptr};
+
+            friend class array;
         };
 
-        iterator begin()
-        {
-            if (obj_ == nullptr) {
-                return {};
-            }
-            return iterator{*this, 0};
-        }
+        iterator begin() { return obj_ != nullptr ? iterator{*this, 0} : iterator{}; }
         iterator end()
         {
-            if (obj_ == nullptr) {
-                return {};
-            }
-            return iterator{*this, static_cast<std::size_t>(obj_->nbEntries)};
+            return obj_ != nullptr ? iterator{*this, static_cast<std::size_t>(obj_->nbEntries)}
+                                   : iterator{};
         }
 
     protected:
-        friend class object_view;
-
         // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
         explicit array(const detail::object *underlying_object) : obj_(underlying_object) {}
 
         const detail::object *obj_{nullptr};
+
+        friend class object_view;
     };
 
     template <typename T>
@@ -421,33 +411,38 @@ public:
 
     class map {
     public:
+        map() = default;
         ~map() = default;
         map(const map &) = default;
         map(map &&) = default;
         map &operator=(const map &) = default;
         map &operator=(map &&) = default;
 
+        // Size and empty methods apply to both containers and strings
+        [[nodiscard]] std::size_t size_unchecked() const noexcept
+        {
+            return static_cast<std::size_t>(obj_->nbEntries);
+        }
         [[nodiscard]] std::size_t size() const noexcept
         {
-            if (obj_ == nullptr) {
-                return 0;
-            }
-            return static_cast<std::size_t>(obj_->nbEntries);
+            return obj_ != nullptr ? size_unchecked() : 0;
         }
-        [[nodiscard]] std::size_t capacity() const noexcept
+
+        [[nodiscard]] bool empty_unchecked() const noexcept { return obj_->nbEntries == 0; }
+
+        [[nodiscard]] bool empty() const noexcept
         {
-            if (obj_ == nullptr) {
-                return 0;
-            }
-            return static_cast<std::size_t>(obj_->nbEntries);
+            return obj_ != nullptr ? empty_unchecked() : true;
         }
 
-        [[nodiscard]] bool empty() const { return size() == 0; }
-
-        [[nodiscard]] const detail::object *ptr() const { return obj_; }
+        [[nodiscard]] const detail::object *ptr() const noexcept { return obj_; }
 
         [[nodiscard]] object_view at(std::string_view key) const
         {
+            if (obj_ == nullptr) {
+                [[unlikely]] return {};
+            }
+
             for (std::size_t i = 0; i < size(); ++i) {
                 auto &slot = obj_->array[i];
                 std::string_view current_key{
@@ -465,7 +460,7 @@ public:
                      std::is_same_v<KeyType, std::string_view> ||
                      std::is_same_v<KeyType, object_view>
         {
-            if (index > size()) {
+            if (obj_ == nullptr || index > size_unchecked()) {
                 [[unlikely]] return {};
             }
             return at_unchecked<KeyType>(index);
@@ -485,16 +480,6 @@ public:
 
         class iterator {
         public:
-            explicit iterator(map &ov, size_t index = 0)
-                : current_(ov.obj_->array), end_(ov.obj_->array + ov.size())
-            {
-                if (index >= ov.size()) {
-                    current_ = end_;
-                } else {
-                    current_ += index;
-                }
-            }
-
             bool operator!=(const iterator &rhs) const noexcept { return current_ != rhs.current_; }
 
             [[nodiscard]] std::string_view key() const noexcept
@@ -531,21 +516,38 @@ public:
             }
 
         protected:
+            iterator() = default;
+            explicit iterator(map &ov, size_t index = 0)
+                : current_(ov.obj_->array), end_(ov.obj_->array + ov.size())
+            {
+                if (index >= ov.size()) {
+                    current_ = end_;
+                } else {
+                    current_ += index;
+                }
+            }
+
             detail::object *current_{nullptr};
             detail::object *end_{nullptr};
+
+            friend class map;
         };
 
-        iterator begin() { return iterator{*this, 0}; }
+        iterator begin() { return obj_ != nullptr ? iterator{*this, 0} : iterator{}; }
 
-        iterator end() { return iterator{*this, static_cast<std::size_t>(obj_->nbEntries)}; }
+        iterator end()
+        {
+            return obj_ != nullptr ? iterator{*this, static_cast<std::size_t>(obj_->nbEntries)}
+                                   : iterator{};
+        }
 
     protected:
-        friend class object_view;
-
         // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
         explicit map(const detail::object *underlying_object) : obj_(underlying_object) {}
 
-        const detail::object *obj_;
+        const detail::object *obj_{nullptr};
+
+        friend class object_view;
     };
 
     template <typename T>
