@@ -172,7 +172,7 @@ public:
     template <typename T> [[nodiscard]] std::optional<T> as() const noexcept
     {
         if (!is_compatible_type<T>(type())) {
-            return std::nullopt;
+            [[unlikely]] return std::nullopt;
         }
         return as_unchecked<T>();
     }
@@ -250,8 +250,8 @@ public:
         [[nodiscard]] iterator prev() const noexcept
         {
             // Saturated decrement (to 0)
-            return {obj_, size_, static_cast<uint16_t>(index_ - static_cast<uint16_t>(index_ > 0)),
-                type_};
+            auto new_index = static_cast<uint16_t>(index_ - static_cast<uint16_t>(index_ > 0));
+            return {obj_, size_, new_index, type_};
         }
 
     protected:
@@ -280,20 +280,20 @@ public:
 
     iterator begin(const object_limits &limits = {})
     {
-        if (is_container()) {
-            [[likely]]
-            // This check guarantees that the object is a container and not null
-            return iterator{obj_, limits};
+        // This check guarantees that the object is a container and not null
+        if (!is_container()) {
+            [[unlikely]] return {};
         }
-        return {};
+        return iterator{obj_, limits};
     }
 
     iterator end()
     {
-        if (is_container()) {
-            [[likely]] return iterator{obj_, {}, static_cast<uint16_t>(obj_->nbEntries)};
+        // This check guarantees that the object is a container and not null
+        if (!is_container()) {
+            [[unlikely]] return {};
         }
-        return {};
+        return iterator{obj_, {}, size_unchecked()};
     }
 
     // Container abstractions, for convenience
@@ -353,7 +353,7 @@ public:
             iterator &operator++() noexcept
             {
                 if (current_ != end_) {
-                    current_++;
+                    [[likely]] current_++;
                 }
                 return *this;
             }
@@ -376,12 +376,8 @@ public:
             friend class array;
         };
 
-        iterator begin() { return obj_ != nullptr ? iterator{*this, 0} : iterator{}; }
-        iterator end()
-        {
-            return obj_ != nullptr ? iterator{*this, static_cast<std::size_t>(obj_->nbEntries)}
-                                   : iterator{};
-        }
+        iterator begin() { return obj_ != nullptr ? iterator{*this} : iterator{}; }
+        iterator end() { return obj_ != nullptr ? iterator{*this, size_unchecked()} : iterator{}; }
 
     protected:
         // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
@@ -396,8 +392,8 @@ public:
     [[nodiscard]] std::optional<T> as() const noexcept
         requires std::is_same_v<T, object_view::array>
     {
-        if (type() == object_type::array) {
-            return std::nullopt;
+        if (type() != object_type::array) {
+            [[unlikely]] return std::nullopt;
         }
         return as_unchecked<object_view::array>();
     }
@@ -461,7 +457,7 @@ public:
                      std::is_same_v<KeyType, object_view>
         {
             if (obj_ == nullptr || index > size_unchecked()) {
-                [[unlikely]] return {};
+                [[unlikely]] return std::nullopt;
             }
             return at_unchecked<KeyType>(index);
         }
@@ -485,7 +481,7 @@ public:
             [[nodiscard]] std::string_view key() const noexcept
             {
                 if (current_ == end_) {
-                    return {};
+                    [[unlikely]] return {};
                 }
                 return {current_->parameterName,
                     static_cast<std::size_t>(current_->parameterNameLength)};
@@ -494,7 +490,7 @@ public:
             std::pair<std::string_view, object_view> operator*() const noexcept
             {
                 if (current_ == end_) {
-                    return {{}, nullptr};
+                    [[unlikely]] return {{}, nullptr};
                 }
                 return {key(), value()};
             }
@@ -502,7 +498,7 @@ public:
             [[nodiscard]] object_view value() const noexcept
             {
                 if (current_ == end_) {
-                    return nullptr;
+                    [[unlikely]] return nullptr;
                 }
                 return {current_};
             }
@@ -510,7 +506,7 @@ public:
             iterator &operator++() noexcept
             {
                 if (current_ != end_) {
-                    current_++;
+                    [[likely]] current_++;
                 }
                 return *this;
             }
@@ -533,13 +529,9 @@ public:
             friend class map;
         };
 
-        iterator begin() { return obj_ != nullptr ? iterator{*this, 0} : iterator{}; }
+        iterator begin() { return obj_ != nullptr ? iterator{*this} : iterator{}; }
 
-        iterator end()
-        {
-            return obj_ != nullptr ? iterator{*this, static_cast<std::size_t>(obj_->nbEntries)}
-                                   : iterator{};
-        }
+        iterator end() { return obj_ != nullptr ? iterator{*this, size_unchecked()} : iterator{}; }
 
     protected:
         // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
@@ -554,8 +546,8 @@ public:
     [[nodiscard]] std::optional<T> as() const noexcept
         requires std::is_same_v<T, object_view::map>
     {
-        if (type() == object_type::map) {
-            return std::nullopt;
+        if (type() != object_type::map) {
+            [[unlikely]] return std::nullopt;
         }
         return as_unchecked<object_view::map>();
     }
