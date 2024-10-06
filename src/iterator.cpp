@@ -185,7 +185,7 @@ void value_iterator::set_cursor_to_next_object()
 {
     current_ = {};
 
-    while (!stack_.empty()) {
+    while (!stack_.empty() && !current_.second.has_value()) {
         auto &parent_it = stack_.back();
         if (!parent_it) {
             // Pop can invalidate the parent references so after this point
@@ -194,25 +194,26 @@ void value_iterator::set_cursor_to_next_object()
             continue;
         }
 
-        auto child = *parent_it;
-        if (excluded_.contains(child.second.ptr())) {
+        auto child = parent_it.value();
+        if (excluded_.contains(child.ptr())) {
             ++parent_it;
             continue;
         }
 
-        ++parent_it;
-        if (child.second.is_container()) {
+        if (child.is_container()) {
             if (depth() < limits_.max_container_depth) {
+                ++parent_it;
                 // Push can invalidate the current references to the parent
                 // so we increment the index before a potential reallocation
                 // and prevent any further use of the references.
-                stack_.emplace_back(child.second.begin(limits_));
+                stack_.emplace_back(child.begin(limits_));
                 continue;
             }
-        } else if (child.second.is_scalar()) {
-            current_ = child;
-            break;
+        } else if (child.is_scalar()) {
+            current_.first = parent_it.key();
+            current_.second = child;
         }
+        ++parent_it;
     }
 }
 
