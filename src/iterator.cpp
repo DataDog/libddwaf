@@ -54,21 +54,20 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
         return keys;
     }
 
-    auto parent = stack_[0];
+    auto parent = stack_[0].prev();
     for (unsigned i = 0; i < (stack_.size() - 1); i++) {
-        --parent;
-        if (parent.type() == object_type::map) {
+        if (parent.container_type() == object_type::map) {
             keys.emplace_back(parent.key());
-        } else if (parent.type() == object_type::array) {
+        } else if (parent.container_type() == object_type::array) {
             keys.emplace_back(to_string<std::string>(parent.index()));
         }
-        parent = stack_[i + 1];
+        parent = stack_[i + 1].prev();
     }
 
-    if (parent.type() == object_type::map) {
+    if (parent.container_type() == object_type::map) {
         keys.emplace_back(current_.first);
-    } else if (parent.type() == object_type::array) {
-        keys.emplace_back(to_string<std::string>(parent.index() - 1));
+    } else if (parent.container_type() == object_type::array) {
+        keys.emplace_back(to_string<std::string>(parent.index()));
     }
 
     return keys;
@@ -128,7 +127,7 @@ void value_iterator::initialise_cursor_with_path(
         auto &parent_it = stack_.back();
 
         std::pair<std::string_view, object_view> child;
-        if (parent_it.type() == object_type::map) {
+        if (parent_it.container_type() == object_type::map) {
             for (; parent_it; ++parent_it) {
                 auto possible_child = *parent_it;
                 if (possible_child.first.empty()) {
@@ -260,7 +259,7 @@ void key_iterator::initialise_cursor_with_path(
         auto &parent_it = stack_.back();
 
         std::pair<std::string_view, object_view> child;
-        if (parent_it.type() == object_type::map) {
+        if (parent_it.container_type() == object_type::map) {
             for (; parent_it; ++parent_it) {
                 auto possible_child = *parent_it;
                 if (possible_child.first.empty()) {
@@ -392,7 +391,7 @@ void kv_iterator::initialise_cursor_with_path(
         auto &parent_it = stack_.back();
 
         std::pair<std::string_view, object_view> child;
-        if (parent_it.type() == object_type::map) {
+        if (parent_it.container_type() == object_type::map) {
             for (; parent_it; ++parent_it) {
                 auto possible_child = *parent_it;
                 if (possible_child.first.empty()) {
