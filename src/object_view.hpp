@@ -133,21 +133,21 @@ public:
 
     template <typename T>
     [[nodiscard]] T as_unchecked() const noexcept
-        requires std::is_integral_v<T> && std::is_signed_v<T> && (!std::is_same_v<T, bool>)
+        requires std::is_same_v<T, int64_t>
     {
         return static_cast<T>(obj_->intValue);
     }
 
     template <typename T>
     [[nodiscard]] T as_unchecked() const noexcept
-        requires std::is_unsigned_v<T> && (!std::is_same_v<T, bool>)
+        requires std::is_same_v<T, uint64_t>
     {
         return static_cast<T>(obj_->uintValue);
     }
 
     template <typename T>
     [[nodiscard]] T as_unchecked() const noexcept
-        requires std::is_floating_point_v<T>
+        requires std::is_same_v<T, double>
     {
         return static_cast<T>(obj_->f64);
     }
