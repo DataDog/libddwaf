@@ -293,7 +293,7 @@ public:
         if (!is_container()) {
             [[unlikely]] return {};
         }
-        return iterator{obj_, {}, size_unchecked()};
+        return iterator{obj_, {}, static_cast<uint16_t>(obj_->nbEntries)};
     }
 
     // Container abstractions, for convenience
@@ -377,7 +377,11 @@ public:
         };
 
         iterator begin() { return obj_ != nullptr ? iterator{*this} : iterator{}; }
-        iterator end() { return obj_ != nullptr ? iterator{*this, size_unchecked()} : iterator{}; }
+        iterator end()
+        {
+            return obj_ != nullptr ? iterator{*this, static_cast<uint16_t>(obj_->nbEntries)}
+                                   : iterator{};
+        }
 
     protected:
         // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
@@ -531,7 +535,11 @@ public:
 
         iterator begin() { return obj_ != nullptr ? iterator{*this} : iterator{}; }
 
-        iterator end() { return obj_ != nullptr ? iterator{*this, size_unchecked()} : iterator{}; }
+        iterator end()
+        {
+            return obj_ != nullptr ? iterator{*this, static_cast<uint16_t>(obj_->nbEntries)}
+                                   : iterator{};
+        }
 
     protected:
         // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
