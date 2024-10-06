@@ -58,22 +58,21 @@ public:
         return static_cast<object_type>(obj_->type);
     }
 
-    [[nodiscard]] object_type type() const noexcept
-    {
-        return obj_ != nullptr ? type_unchecked() : object_type::invalid;
-    }
-
     [[nodiscard]] std::size_t size_unchecked() const noexcept
     {
         return static_cast<std::size_t>(obj_->nbEntries);
+    }
+    [[nodiscard]] bool empty_unchecked() const noexcept { return obj_->nbEntries == 0; }
+
+    [[nodiscard]] object_type type() const noexcept
+    {
+        return obj_ != nullptr ? type_unchecked() : object_type::invalid;
     }
 
     [[nodiscard]] std::size_t size() const noexcept
     {
         return obj_ != nullptr ? size_unchecked() : 0;
     }
-
-    [[nodiscard]] bool empty_unchecked() const noexcept { return obj_->nbEntries == 0; }
 
     [[nodiscard]] bool empty() const noexcept { return obj_ != nullptr ? empty_unchecked() : true; }
 
@@ -86,20 +85,20 @@ public:
     // perhaps should be replaced by assertions.
     [[nodiscard]] bool is_container() const noexcept
     {
-        return (type() & container_object_type) != 0;
+        return obj_ != nullptr && (type_unchecked() & container_object_type) != 0;
     }
-    [[nodiscard]] bool is_scalar() const noexcept { return (type() & scalar_object_type) != 0; }
+    [[nodiscard]] bool is_scalar() const noexcept
+    {
+        return obj_ != nullptr && (type_unchecked() & scalar_object_type) != 0;
+    }
 
     [[nodiscard]] std::pair<std::string_view, object_view> at_unchecked(
         std::size_t index) const noexcept
     {
         auto &slot = obj_->array[index];
-        if (type() == object_type::map && slot.parameterName != nullptr) {
-            std::string_view key{
-                slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
-            return {key, object_view{&slot}};
-        }
-        return {{}, object_view{&slot}};
+        std::string_view key{
+            slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
+        return {key, object_view{&slot}};
     }
 
     [[nodiscard]] std::pair<std::string_view, object_view> at(std::size_t index) const noexcept
@@ -108,21 +107,6 @@ public:
             [[unlikely]] return {};
         }
         return at_unchecked(index);
-    }
-
-    template <typename T> [[nodiscard]] std::optional<T> as() const noexcept
-    {
-        if (!is_compatible_type<T>(type())) {
-            return std::nullopt;
-        }
-        return as_unchecked<T>();
-    }
-
-    template <typename T>
-    [[nodiscard]] std::optional<T> as() const noexcept
-        requires std::is_same_v<T, object_view>
-    {
-        return {*this};
     }
 
     template <typename T>
@@ -174,6 +158,21 @@ public:
         return obj_->stringValue;
     }
 
+    template <typename T> [[nodiscard]] std::optional<T> as() const noexcept
+    {
+        if (!is_compatible_type<T>(type())) {
+            return std::nullopt;
+        }
+        return as_unchecked<T>();
+    }
+
+    template <typename T>
+    [[nodiscard]] std::optional<T> as() const noexcept
+        requires std::is_same_v<T, object_view>
+    {
+        return {*this};
+    }
+
     template <typename T> T convert() const { return converter<T>{*this}(); }
 
     class iterator {
@@ -218,7 +217,7 @@ public:
             return {key, &slot};
         }
 
-        // NOLINTNEXTLINE(google-explicit-constructor)
+        // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
         operator bool() const noexcept { return index_ < size_; }
         [[nodiscard]] std::size_t index() const { return static_cast<std::size_t>(index_); }
         iterator &operator++() noexcept
