@@ -1,0 +1,11 @@
+{
+  name: "Basic run with match_regex operator and no match",
+  runs: [
+    {
+      persistent-input: {
+        rule1-input: "something"
+      },
+      code: ok
+    }
+  ]
+}

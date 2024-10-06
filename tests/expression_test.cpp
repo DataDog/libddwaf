@@ -37,7 +37,7 @@ TEST(TestExpression, SimpleMatch)
     EXPECT_TRUE(res.outcome);
     EXPECT_FALSE(res.ephemeral);
 
-    auto matches = expr->get_matches(cache);
+    auto matches = ddwaf::expression::get_matches(cache);
     EXPECT_EQ(matches.size(), 1);
     EXPECT_FALSE(matches[0].ephemeral);
     EXPECT_MATCHES(matches, {.op = "match_regex",
@@ -45,6 +45,43 @@ TEST(TestExpression, SimpleMatch)
                                 .highlight = "value",
                                 .args = {{
                                     .value = "value",
+                                    .address = "server.request.query",
+                                }}});
+}
+
+TEST(TestExpression, SimpleNegatedMatch)
+{
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
+    builder.add_target("server.request.query");
+    builder.end_condition<matcher::regex_match, false>(".*", 5, true);
+
+    auto expr = builder.build();
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "val"));
+
+    ddwaf::object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+
+    expression::cache_type cache;
+    auto res = expr->eval(cache, store, {}, {}, deadline);
+    EXPECT_TRUE(res.outcome);
+    EXPECT_FALSE(res.ephemeral);
+
+    auto matches = expr->get_matches(cache);
+    EXPECT_EQ(matches.size(), 1);
+    EXPECT_FALSE(matches[0].ephemeral);
+    EXPECT_MATCHES(matches, {.op = "!match_regex",
+                                .op_value = ".*",
+                                .highlight = "",
+                                .args = {{
+                                    .value = "val",
                                     .address = "server.request.query",
                                 }}});
 }

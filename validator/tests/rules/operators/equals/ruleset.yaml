@@ -60,3 +60,63 @@ rules:
             - address: rule5-input
           type: float
           value: 4.2
+  - id: "6"
+    name: rule6-string-not-equals
+    tags:
+      type: flow1
+      category: category
+    conditions:
+      - operator: "!equals"
+        parameters:
+          inputs:
+            - address: rule6-input
+          type: string
+          value: arachni
+  - id: "7"
+    name: rule7-bool-not-equals
+    tags:
+      type: flow1
+      category: category
+    conditions:
+      - operator: "!equals"
+        parameters:
+          inputs:
+            - address: rule7-input
+          type: boolean
+          value: false
+  - id: "8"
+    name: rule8-signed-not-equals
+    tags:
+      type: flow1
+      category: category
+    conditions:
+      - operator: "!equals"
+        parameters:
+          inputs:
+            - address: rule8-input
+          type: signed
+          value: -42
+  - id: "9"
+    name: rule9-unsigned-not-equals
+    tags:
+      type: flow1
+      category: category
+    conditions:
+      - operator: "!equals"
+        parameters:
+          inputs:
+            - address: rule9-input
+          type: unsigned
+          value: 42
+  - id: "10"
+    name: rule10-float-not-equals
+    tags:
+      type: flow1
+      category: category
+    conditions:
+      - operator: "!equals"
+        parameters:
+          inputs:
+            - address: rule10-input
+          type: float
+          value: 4.2

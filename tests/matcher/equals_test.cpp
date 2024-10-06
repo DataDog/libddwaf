@@ -14,11 +14,25 @@ namespace {
 
 TEST(TestEqualsBool, Basic)
 {
+    ddwaf_object tmp;
     {
         matcher::equals<bool> matcher(false);
 
         EXPECT_TRUE(matcher.match(false).first);
         EXPECT_FALSE(matcher.match(true).first);
+
+        EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_BOOL));
+        EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_FLOAT));
+        EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_SIGNED));
+        EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_UNSIGNED));
+        EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_STRING));
+        EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_MAP));
+        EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_ARRAY));
+        EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_NULL));
+        EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_INVALID));
+
+        EXPECT_TRUE(matcher.match(*ddwaf_object_bool(&tmp, false)).first);
+        EXPECT_FALSE(matcher.match(*ddwaf_object_bool(&tmp, true)).first);
     }
 
     {
@@ -26,6 +40,19 @@ TEST(TestEqualsBool, Basic)
 
         EXPECT_TRUE(matcher.match(true).first);
         EXPECT_FALSE(matcher.match(false).first);
+
+        EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_BOOL));
+        EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_FLOAT));
+        EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_SIGNED));
+        EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_UNSIGNED));
+        EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_STRING));
+        EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_MAP));
+        EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_ARRAY));
+        EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_NULL));
+        EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_INVALID));
+
+        EXPECT_TRUE(matcher.match(*ddwaf_object_bool(&tmp, true)).first);
+        EXPECT_FALSE(matcher.match(*ddwaf_object_bool(&tmp, false)).first);
     }
 }
 
@@ -36,6 +63,23 @@ TEST(TestEqualsInt, Basic)
     EXPECT_TRUE(matcher.match(5).first);
     EXPECT_FALSE(matcher.match(1).first);
     EXPECT_FALSE(matcher.match(-1).first);
+
+    EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_SIGNED));
+    EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_UNSIGNED));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_FLOAT));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_STRING));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_MAP));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_ARRAY));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_NULL));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_INVALID));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_BOOL));
+
+    ddwaf_object tmp;
+    EXPECT_TRUE(matcher.match(*ddwaf_object_signed(&tmp, 5)).first);
+    EXPECT_TRUE(matcher.match(*ddwaf_object_unsigned(&tmp, 5)).first);
+
+    EXPECT_FALSE(matcher.match(*ddwaf_object_signed(&tmp, 6)).first);
+    EXPECT_FALSE(matcher.match(*ddwaf_object_unsigned(&tmp, 6)).first);
 }
 
 TEST(TestEqualsUint, Basic)
@@ -44,15 +88,46 @@ TEST(TestEqualsUint, Basic)
 
     EXPECT_TRUE(matcher.match(2132132).first);
     EXPECT_FALSE(matcher.match(1).first);
+
+    EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_SIGNED));
+    EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_UNSIGNED));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_FLOAT));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_STRING));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_MAP));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_ARRAY));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_NULL));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_INVALID));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_BOOL));
+
+    ddwaf_object tmp;
+    EXPECT_TRUE(matcher.match(*ddwaf_object_signed(&tmp, 2132132)).first);
+    EXPECT_TRUE(matcher.match(*ddwaf_object_unsigned(&tmp, 2132132)).first);
+
+    EXPECT_FALSE(matcher.match(*ddwaf_object_signed(&tmp, 6)).first);
+    EXPECT_FALSE(matcher.match(*ddwaf_object_unsigned(&tmp, 6)).first);
 }
 
 TEST(TestEqualsDouble, Basic)
 {
-    matcher::equals<double> matcher(5.1, 0.0001);
+    matcher::equals<double> matcher(5.01, 0.1);
 
-    EXPECT_TRUE(matcher.match(5.1).first);
-    EXPECT_FALSE(matcher.match(5.11).first);
+    EXPECT_TRUE(matcher.match(5.01).first);
+    EXPECT_FALSE(matcher.match(5.12).first);
     EXPECT_FALSE(matcher.match(-5.1).first);
+
+    EXPECT_TRUE(matcher.is_supported_type(DDWAF_OBJ_FLOAT));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_SIGNED));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_UNSIGNED));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_STRING));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_MAP));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_ARRAY));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_NULL));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_INVALID));
+    EXPECT_FALSE(matcher.is_supported_type(DDWAF_OBJ_BOOL));
+
+    ddwaf_object tmp;
+    EXPECT_TRUE(matcher.match(*ddwaf_object_float(&tmp, 5.01)).first);
+    EXPECT_FALSE(matcher.match(*ddwaf_object_float(&tmp, 5.5)).first);
 }
 
 TEST(TestEqualsString, Basic)

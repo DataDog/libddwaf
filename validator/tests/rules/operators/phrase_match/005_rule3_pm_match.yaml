@@ -1,0 +1,21 @@
+{
+  name: "Basic run with negated phrase_match",
+  runs: [
+    {
+      persistent-input: {
+        rule3-input: "asjkdansdasdkjasndk"
+      },
+      rules: [
+        {
+          3: [
+            {
+              address: rule3-input,
+              value: "asjkdansdasdkjasndk",
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

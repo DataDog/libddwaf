@@ -22,7 +22,7 @@ rules:
             - address: rule2-input
               key_path: ["path", "to", "object"]
   - id: "3"
-    name: rule3-does-not-exist-keypath
+    name: rule3-negated-exists-keypath
     tags:
       type: flow3
       category: category
@@ -33,7 +33,7 @@ rules:
             - address: rule3-input
               key_path: ["path", "to", "object"]
   - id: "4"
-    name: rule4-does-not-exist-invalid
+    name: rule4-negated-exists-invalid
     tags:
       type: flow4
       category: category

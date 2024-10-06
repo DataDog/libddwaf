@@ -8,15 +8,17 @@
 
 #include <string_view>
 #include <type_traits>
-#include <unordered_map>
+#include <utility>
 
 #include "matcher/base.hpp"
-#include "utils.hpp"
 
 namespace ddwaf::matcher {
 
-template <typename T> class equals : public base_impl<equals<T>> {
+template <typename T = void> class equals : public base_impl<equals<T>> {
 public:
+    static constexpr std::string_view matcher_name = "equals";
+    static constexpr std::string_view negated_matcher_name = "!equals";
+
     explicit equals(T expected)
         requires(!std::is_floating_point_v<T>)
         : expected_(std::move(expected))
@@ -29,28 +31,30 @@ public:
 
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
-    static constexpr std::string_view name_impl() { return "equals"; }
-
-    static constexpr DDWAF_OBJ_TYPE supported_type_impl()
+    static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
     {
-        if constexpr (std::is_same_v<T, int64_t>) {
-            return DDWAF_OBJ_SIGNED;
-        }
-        if constexpr (std::is_same_v<T, uint64_t>) {
-            return DDWAF_OBJ_UNSIGNED;
+        if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t>) {
+            return type == DDWAF_OBJ_SIGNED || type == DDWAF_OBJ_UNSIGNED;
         }
 
         if constexpr (std::is_same_v<T, bool>) {
-            return DDWAF_OBJ_BOOL;
+            return type == DDWAF_OBJ_BOOL;
         }
 
         if constexpr (std::is_same_v<T, std::string>) {
-            return DDWAF_OBJ_STRING;
+            return type == DDWAF_OBJ_STRING;
         }
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match_impl(const T &obtained) const
-        requires(!std::is_same_v<T, std::string>)
+    template <typename U>
+    [[nodiscard]] std::pair<bool, std::string> match_impl(const U &obtained) const
+        requires(std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t>) && std::is_integral_v<U>
+    {
+        return {std::cmp_equal(expected_, obtained), {}};
+    }
+
+    [[nodiscard]] std::pair<bool, std::string> match_impl(bool obtained) const
+        requires std::is_same_v<T, bool>
     {
         return {expected_ == obtained, {}};
     }
@@ -68,6 +72,9 @@ protected:
 
 template <> class equals<double> : public base_impl<equals<double>> {
 public:
+    static constexpr std::string_view matcher_name = "equals";
+    static constexpr std::string_view negated_matcher_name = "!equals";
+
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     equals(double expected, double delta) : expected_(expected), delta_(delta) {}
     ~equals() override = default;
@@ -78,8 +85,10 @@ public:
 
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
-    static constexpr std::string_view name_impl() { return "equals"; }
-    static constexpr DDWAF_OBJ_TYPE supported_type_impl() { return DDWAF_OBJ_FLOAT; }
+    static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
+    {
+        return type == DDWAF_OBJ_FLOAT;
+    }
 
     [[nodiscard]] std::pair<bool, std::string> match_impl(double obtained) const
     {
@@ -90,6 +99,28 @@ protected:
     double delta_;
 
     friend class base_impl<equals<double>>;
+};
+
+template <> class equals<void> : public base_impl<equals<void>> {
+public:
+    static constexpr std::string_view matcher_name = "equals";
+    static constexpr std::string_view negated_matcher_name = "!equals";
+
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    ~equals() override = default;
+
+protected:
+    equals() = default;
+    equals(const equals &) = default;
+    equals(equals &&) noexcept = default;
+    equals &operator=(const equals &) = default;
+    equals &operator=(equals &&) noexcept = default;
+
+    static constexpr std::string_view to_string_impl() { return ""; }
+    static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE /*type*/) { return false; }
+    [[nodiscard]] static std::pair<bool, std::string> match_impl() { return {}; }
+
+    friend class base_impl<equals<void>>;
 };
 
 } // namespace ddwaf::matcher

@@ -20,8 +20,18 @@
 #include "exception.hpp"
 #include "expression.hpp"
 #include "log.hpp"
+#include "matcher/equals.hpp"
+#include "matcher/exact_match.hpp"
+#include "matcher/greater_than.hpp"
+#include "matcher/ip_match.hpp"
+#include "matcher/is_sqli.hpp"
+#include "matcher/is_xss.hpp"
+#include "matcher/lower_than.hpp"
+#include "matcher/phrase_match.hpp"
+#include "matcher/regex_match.hpp"
 #include "parameter.hpp"
 #include "parser/common.hpp"
+#include "parser/matcher_parser.hpp"
 #include "parser/parser.hpp"
 #include "transformer/base.hpp"
 #include "utils.hpp"
@@ -100,6 +110,20 @@ std::vector<condition_parameter> parse_arguments(const parameter::map &params, d
     return definitions;
 }
 
+template <typename T, typename... Matchers>
+auto build_condition(auto operator_name, auto &params, auto &data_ids_to_type, auto source,
+    auto &transformers, auto &addresses, auto &limits)
+{
+    auto [data_id, matcher] = parse_matcher<Matchers...>(operator_name, params);
+
+    if (!matcher && !data_id.empty()) {
+        data_ids_to_type.emplace(data_id, operator_name);
+    }
+
+    auto arguments = parse_arguments<T>(params, source, transformers, addresses, limits);
+    return std::make_unique<T>(std::move(matcher), data_id, std::move(arguments), limits);
+}
+
 } // namespace
 
 std::shared_ptr<expression> parse_expression(const parameter::vector &conditions_array,
@@ -140,18 +164,19 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
                 params, source, transformers, addresses, limits);
             conditions.emplace_back(
                 std::make_unique<exists_negated_condition>(std::move(arguments), limits));
+        } else if (operator_name.starts_with('!')) {
+            conditions.emplace_back(
+                build_condition<scalar_negated_condition, matcher::ip_match, matcher::exact_match,
+                    matcher::regex_match, matcher::phrase_match, matcher::equals<>>(
+                    operator_name.substr(1), params, data_ids_to_type, source, transformers,
+                    addresses, limits));
         } else {
-            auto [data_id, matcher] = parse_matcher(operator_name, params);
-
-            if (!matcher && !data_id.empty()) {
-                data_ids_to_type.emplace(data_id, operator_name);
-            }
-
-            auto arguments =
-                parse_arguments<scalar_condition>(params, source, transformers, addresses, limits);
-
-            conditions.emplace_back(std::make_unique<scalar_condition>(
-                std::move(matcher), data_id, std::move(arguments), limits));
+            conditions.emplace_back(
+                build_condition<scalar_condition, matcher::equals<>, matcher::exact_match,
+                    matcher::greater_than<>, matcher::ip_match, matcher::is_sqli, matcher::is_xss,
+                    matcher::lower_than<>, matcher::phrase_match, matcher::regex_match>(
+                    operator_name, params, data_ids_to_type, source, transformers, addresses,
+                    limits));
         }
     }
 

@@ -1,0 +1,21 @@
+{
+  name: "negated ip_match operator, match IPv6 CIDR",
+  runs: [
+    {
+      persistent-input: {
+        rule3-input: "abce::1234:0:ab11:0"
+      },
+      rules: [
+        {
+          3: [
+            {
+              address: rule3-input,
+              value: "abce::1234:0:ab11:0"
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}
