@@ -179,12 +179,6 @@ TEST(TestObjectView, ArrayObject)
         EXPECT_STREQ(value->as_unchecked<const char *>(), std::to_string(100 + i).c_str());
     }
 
-/*    auto array_view = view.as_unchecked<object_view::array>();*/
-    /*unsigned i = 0;*/
-    /*for (auto value : array_view) {*/
-        /*EXPECT_STREQ(value.as_unchecked<const char *>(), std::to_string(100 + i++).c_str());*/
-    /*}*/
-
     ddwaf_object_free(&root);
 }
 
