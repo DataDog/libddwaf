@@ -24,23 +24,70 @@ using object = ddwaf_object;
 
 template <typename T> struct converter;
 
-class object_view {
+class object_view;
+
+class optional_object_view {
 public:
     // The default constructor results in a view without value
-    object_view() = default;
-
+    optional_object_view() = default;
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-    object_view(const detail::object *underlying_object) : obj_(underlying_object) {}
+    optional_object_view(object_view view);
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    optional_object_view(const detail::object *underlying_object) : obj_(underlying_object) {}
+
+    ~optional_object_view() = default;
+    optional_object_view(const optional_object_view &) = default;
+    optional_object_view(optional_object_view &&) = default;
+    optional_object_view &operator=(const optional_object_view &) = default;
+    optional_object_view &operator=(optional_object_view &&) = default;
+
+    [[nodiscard]] const detail::object &ref() const noexcept { return *obj_; }
+    [[nodiscard]] const detail::object *ptr() const noexcept { return obj_; }
+
+    template <typename T> bool operator==(const T &other) const
+    {
+        if constexpr (std::is_same_v<T, std::nullptr_t>) {
+            return ptr() == nullptr;
+        } else if constexpr (std::is_same_v<T, ddwaf_object *>) {
+            return ptr() == other;
+        } else {
+            return ptr() == other.ptr();
+        }
+    }
+    template <typename T> bool operator!=(const T &other) const
+    {
+        if constexpr (std::is_same_v<T, std::nullptr_t>) {
+            return ptr() != nullptr;
+        } else if constexpr (std::is_same_v<T, ddwaf_object *>) {
+            return ptr() != other;
+        } else {
+            return ptr() != other.ptr();
+        }
+    }
+
+    [[nodiscard]] bool has_value() const noexcept { return obj_ != nullptr; }
+
+    // This method should only be called if the presence of a value has been
+    // checked by using has_value();
+    [[nodiscard]] object_view operator->() const noexcept;
+
+protected:
+    const detail::object *obj_{nullptr};
+};
+
+class object_view {
+public:
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    object_view(const detail::object &underlying_object) : obj_(underlying_object) {}
 
     ~object_view() = default;
     object_view(const object_view &) = default;
     object_view(object_view &&) = default;
-    object_view &operator=(const object_view &) = default;
-    object_view &operator=(object_view &&) = default;
+    object_view &operator=(const object_view &) = delete;
+    object_view &operator=(object_view &&) = delete;
 
-    [[nodiscard]] const detail::object *ptr() const { return obj_; }
-    bool operator==(const object_view other) const { return ptr() == other.ptr(); }
-    bool operator!=(const object_view other) const { return ptr() != other.ptr(); }
+    [[nodiscard]] const detail::object *ptr() const noexcept { return &obj_; }
+    [[nodiscard]] const detail::object &ref() const noexcept { return obj_; }
 
     // The unchecked API assumes that the caller has already verified that the
     // method preconditions are met:
@@ -51,31 +98,43 @@ public:
     // The checked API (without suffix), always validates preconditions so it is
     // safer but introduces small overheads.
 
-    [[nodiscard]] bool has_value() const noexcept { return obj_ != nullptr; }
-
-    [[nodiscard]] object_type type_unchecked() const noexcept
+    template <typename T> bool operator==(const T &other) const
     {
-        return static_cast<object_type>(obj_->type);
+        if constexpr (std::is_same_v<T, std::nullptr_t>) {
+            return false;
+        } else if constexpr (std::is_same_v<T, ddwaf_object *>) {
+            return ptr() == other;
+        } else {
+            return ptr() == other.ptr();
+        }
+    }
+    template <typename T> bool operator!=(const T &other) const
+    {
+        if constexpr (std::is_same_v<T, std::nullptr_t>) {
+            return true;
+        } else if constexpr (std::is_same_v<T, ddwaf_object *>) {
+            return ptr() != other;
+        } else {
+            return ptr() != other.ptr();
+        }
     }
 
-    [[nodiscard]] object_type type() const noexcept
-    {
-        return obj_ != nullptr ? type_unchecked() : object_type::invalid;
-    }
+    [[nodiscard]] object_type type() const noexcept { return static_cast<object_type>(obj_.type); }
 
-    // Size and empty methods apply to both containers and strings
-    [[nodiscard]] std::size_t size_unchecked() const noexcept
-    {
-        return static_cast<std::size_t>(obj_->nbEntries);
-    }
     [[nodiscard]] std::size_t size() const noexcept
     {
-        return obj_ != nullptr ? size_unchecked() : 0;
+        return static_cast<std::size_t>(obj_.nbEntries);
     }
 
-    [[nodiscard]] bool empty_unchecked() const noexcept { return obj_->nbEntries == 0; }
+    [[nodiscard]] bool empty() const noexcept { return obj_.nbEntries == 0; }
 
-    [[nodiscard]] bool empty() const noexcept { return obj_ != nullptr ? empty_unchecked() : true; }
+    // These is_* methods provide further checks for consistency, albeit these
+    // perhaps should be replaced by assertions.
+    [[nodiscard]] bool is_container() const noexcept
+    {
+        return (type() & container_object_type) != 0;
+    }
+    [[nodiscard]] bool is_scalar() const noexcept { return (type() & scalar_object_type) != 0; }
 
     // is<T> check whether the underlying type is compatible with the required
     // type. When it comes to numeric types, the request type must match the
@@ -83,34 +142,24 @@ public:
     // a smaller size.
     template <typename T> [[nodiscard]] bool is() const noexcept
     {
-        return obj_ != nullptr && is_compatible_type<T>(type_unchecked());
-    }
-
-    // These is_* methods provide further checks for consistency, albeit these
-    // perhaps should be replaced by assertions.
-    [[nodiscard]] bool is_container() const noexcept
-    {
-        return obj_ != nullptr && (type_unchecked() & container_object_type) != 0;
-    }
-    [[nodiscard]] bool is_scalar() const noexcept
-    {
-        return obj_ != nullptr && (type_unchecked() & scalar_object_type) != 0;
+        return is_compatible_type<T>(type());
     }
 
     // Access the key and value at index. If the container is an array, the key
     // will be an empty string.
-    [[nodiscard]] std::pair<std::string_view, object_view> at_unchecked(
+    [[nodiscard]] std::pair<std::string_view, optional_object_view> at_unchecked(
         std::size_t index) const noexcept
     {
-        auto &slot = obj_->array[index];
+        const auto &slot = obj_.array[index];
         std::string_view key{
             slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
-        return {key, object_view{&slot}};
+        return {key, optional_object_view{&slot}};
     }
 
-    [[nodiscard]] std::pair<std::string_view, object_view> at(std::size_t index) const noexcept
+    [[nodiscard]] std::pair<std::string_view, optional_object_view> at(
+        std::size_t index) const noexcept
     {
-        if (!is_container() || index > static_cast<std::size_t>(obj_->nbEntries)) {
+        if (!is_container() || index > size()) {
             [[unlikely]] return {};
         }
         return at_unchecked(index);
@@ -128,42 +177,42 @@ public:
     [[nodiscard]] T as_unchecked() const noexcept
         requires std::is_same_v<T, bool>
     {
-        return obj_->boolean;
+        return obj_.boolean;
     }
 
     template <typename T>
     [[nodiscard]] T as_unchecked() const noexcept
         requires std::is_same_v<T, int64_t>
     {
-        return static_cast<T>(obj_->intValue);
+        return static_cast<T>(obj_.intValue);
     }
 
     template <typename T>
     [[nodiscard]] T as_unchecked() const noexcept
         requires std::is_same_v<T, uint64_t>
     {
-        return static_cast<T>(obj_->uintValue);
+        return static_cast<T>(obj_.uintValue);
     }
 
     template <typename T>
     [[nodiscard]] T as_unchecked() const noexcept
         requires std::is_same_v<T, double>
     {
-        return static_cast<T>(obj_->f64);
+        return static_cast<T>(obj_.f64);
     }
 
     template <typename T>
     [[nodiscard]] T as_unchecked() const noexcept
         requires std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>
     {
-        return {obj_->stringValue, size()};
+        return {obj_.stringValue, size()};
     }
 
     template <typename T>
     [[nodiscard]] T as_unchecked() const noexcept
         requires std::is_same_v<T, const char *>
     {
-        return obj_->stringValue;
+        return obj_.stringValue;
     }
 
     // Access the underlying value based on the required type, these methods
@@ -217,7 +266,7 @@ public:
             return key;
         }
 
-        [[nodiscard]] object_view value() const
+        [[nodiscard]] optional_object_view value() const
         {
             if (index_ >= size_) {
                 [[unlikely]] return {};
@@ -226,7 +275,7 @@ public:
             return &obj_->array[index_];
         }
 
-        std::pair<std::string_view, object_view> operator*() const
+        std::pair<std::string_view, optional_object_view> operator*() const
         {
             if (index_ >= size_) {
                 [[unlikely]] return {};
@@ -284,7 +333,7 @@ public:
         if (!is_container()) {
             [[unlikely]] return {};
         }
-        return iterator{obj_, limits};
+        return iterator{&obj_, limits};
     }
 
     iterator end()
@@ -293,285 +342,22 @@ public:
         if (!is_container()) {
             [[unlikely]] return {};
         }
-        return iterator{obj_, {}, static_cast<uint16_t>(obj_->nbEntries)};
+        return iterator{&obj_, {}, static_cast<uint16_t>(obj_.nbEntries)};
     }
 
-    // Container abstractions, for convenience
-
-    // Array abstraction, allows access only to values, but not keys
-    class array {
-    public:
-        array() = default;
-        ~array() = default;
-        array(const array &) = default;
-        array(array &&) = default;
-        array &operator=(const array &) = default;
-        array &operator=(array &&) = default;
-
-        [[nodiscard]] bool has_value() const noexcept { return obj_ != nullptr; }
-
-        // Size and empty methods apply to both containers and strings
-        [[nodiscard]] std::size_t size_unchecked() const noexcept
-        {
-            return static_cast<std::size_t>(obj_->nbEntries);
-        }
-        [[nodiscard]] std::size_t size() const noexcept
-        {
-            return obj_ != nullptr ? size_unchecked() : 0;
-        }
-
-        [[nodiscard]] bool empty_unchecked() const noexcept { return obj_->nbEntries == 0; }
-
-        [[nodiscard]] bool empty() const noexcept
-        {
-            return obj_ != nullptr ? empty_unchecked() : true;
-        }
-
-        [[nodiscard]] const detail::object *ptr() const noexcept { return obj_; }
-
-        // Access the key and value at index. If the container is an array, the key
-        // will be an empty string.
-        [[nodiscard]] object_view at_unchecked(std::size_t index) const noexcept
-        {
-            return &obj_->array[index];
-        }
-
-        [[nodiscard]] object_view at(std::size_t index) const noexcept
-        {
-            if (obj_ != nullptr || index > size_unchecked()) {
-                [[unlikely]] return {};
-            }
-            return at_unchecked(index);
-        }
-
-        class iterator {
-        public:
-            bool operator!=(const iterator &rhs) const noexcept { return current_ != rhs.current_; }
-
-            object_view operator*() const noexcept { return current_ != end_ ? current_ : nullptr; }
-
-            iterator &operator++() noexcept
-            {
-                if (current_ != end_) {
-                    [[likely]] current_++;
-                }
-                return *this;
-            }
-
-        protected:
-            iterator() = default;
-            explicit iterator(array &ov, size_t index = 0)
-                : current_(ov.obj_->array), end_(ov.obj_->array + ov.size())
-            {
-                if (index >= ov.size()) {
-                    current_ = end_;
-                } else {
-                    current_ += index;
-                }
-            }
-
-            detail::object *current_{nullptr};
-            detail::object *end_{nullptr};
-
-            friend class array;
-        };
-
-        iterator begin() { return obj_ != nullptr ? iterator{*this} : iterator{}; }
-        iterator end()
-        {
-            return obj_ != nullptr ? iterator{*this, static_cast<uint16_t>(obj_->nbEntries)}
-                                   : iterator{};
-        }
-
-    protected:
-        // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-        explicit array(const detail::object *underlying_object) : obj_(underlying_object) {}
-
-        const detail::object *obj_{nullptr};
-
-        friend class object_view;
-    };
-
-    template <typename T>
-    [[nodiscard]] std::optional<T> as() const noexcept
-        requires std::is_same_v<T, object_view::array>
-    {
-        if (type() != object_type::array) {
-            [[unlikely]] return std::nullopt;
-        }
-        return as_unchecked<object_view::array>();
-    }
-
-    template <typename T>
-    [[nodiscard]] T as_unchecked() const noexcept
-        requires std::is_same_v<T, array>
-    {
-        return T{obj_};
-    }
-
-    class map {
-    public:
-        map() = default;
-        ~map() = default;
-        map(const map &) = default;
-        map(map &&) = default;
-        map &operator=(const map &) = default;
-        map &operator=(map &&) = default;
-
-        // Size and empty methods apply to both containers and strings
-        [[nodiscard]] std::size_t size_unchecked() const noexcept
-        {
-            return static_cast<std::size_t>(obj_->nbEntries);
-        }
-        [[nodiscard]] std::size_t size() const noexcept
-        {
-            return obj_ != nullptr ? size_unchecked() : 0;
-        }
-
-        [[nodiscard]] bool empty_unchecked() const noexcept { return obj_->nbEntries == 0; }
-
-        [[nodiscard]] bool empty() const noexcept
-        {
-            return obj_ != nullptr ? empty_unchecked() : true;
-        }
-
-        [[nodiscard]] const detail::object *ptr() const noexcept { return obj_; }
-
-        [[nodiscard]] object_view at(std::string_view key) const
-        {
-            if (obj_ == nullptr) {
-                [[unlikely]] return {};
-            }
-
-            for (std::size_t i = 0; i < size(); ++i) {
-                auto &slot = obj_->array[i];
-                std::string_view current_key{
-                    slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
-                if (current_key == key) {
-                    return {&slot};
-                }
-            }
-            return {};
-        }
-
-        template <typename KeyType = std::string_view>
-        std::optional<std::pair<KeyType, object_view>> at(std::size_t index)
-            requires std::is_same_v<KeyType, std::string> ||
-                     std::is_same_v<KeyType, std::string_view> ||
-                     std::is_same_v<KeyType, object_view>
-        {
-            if (obj_ == nullptr || index > size_unchecked()) {
-                [[unlikely]] return std::nullopt;
-            }
-            return at_unchecked<KeyType>(index);
-        }
-
-        template <typename KeyType = std::string_view>
-        std::pair<KeyType, object_view> at_unchecked(std::size_t index)
-            requires std::is_same_v<KeyType, std::string> ||
-                     std::is_same_v<KeyType, std::string_view> ||
-                     std::is_same_v<KeyType, object_view>
-        {
-            auto &slot = obj_->array[index];
-            std::string_view key{
-                slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
-            return {key, object_view{&slot}};
-        }
-
-        class iterator {
-        public:
-            bool operator!=(const iterator &rhs) const noexcept { return current_ != rhs.current_; }
-
-            [[nodiscard]] std::string_view key() const noexcept
-            {
-                if (current_ == end_) {
-                    [[unlikely]] return {};
-                }
-                return {current_->parameterName,
-                    static_cast<std::size_t>(current_->parameterNameLength)};
-            }
-
-            std::pair<std::string_view, object_view> operator*() const noexcept
-            {
-                if (current_ == end_) {
-                    [[unlikely]] return {{}, nullptr};
-                }
-                return {key(), value()};
-            }
-
-            [[nodiscard]] object_view value() const noexcept
-            {
-                if (current_ == end_) {
-                    [[unlikely]] return nullptr;
-                }
-                return {current_};
-            }
-
-            iterator &operator++() noexcept
-            {
-                if (current_ != end_) {
-                    [[likely]] current_++;
-                }
-                return *this;
-            }
-
-        protected:
-            iterator() = default;
-            explicit iterator(map &ov, size_t index = 0)
-                : current_(ov.obj_->array), end_(ov.obj_->array + ov.size())
-            {
-                if (index >= ov.size()) {
-                    current_ = end_;
-                } else {
-                    current_ += index;
-                }
-            }
-
-            detail::object *current_{nullptr};
-            detail::object *end_{nullptr};
-
-            friend class map;
-        };
-
-        iterator begin() { return obj_ != nullptr ? iterator{*this} : iterator{}; }
-
-        iterator end()
-        {
-            return obj_ != nullptr ? iterator{*this, static_cast<uint16_t>(obj_->nbEntries)}
-                                   : iterator{};
-        }
-
-    protected:
-        // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-        explicit map(const detail::object *underlying_object) : obj_(underlying_object) {}
-
-        const detail::object *obj_{nullptr};
-
-        friend class object_view;
-    };
-
-    template <typename T>
-    [[nodiscard]] std::optional<T> as() const noexcept
-        requires std::is_same_v<T, object_view::map>
-    {
-        if (type() != object_type::map) {
-            [[unlikely]] return std::nullopt;
-        }
-        return as_unchecked<object_view::map>();
-    }
-
-    template <typename T>
-    [[nodiscard]] T as_unchecked() const noexcept
-        requires std::is_same_v<T, object_view::map>
-    {
-        return T{obj_};
-    }
+    [[nodiscard]] const object_view *operator->() const noexcept { return this; }
+    [[nodiscard]] object_view *operator->() noexcept { return this; }
 
 protected:
-    const detail::object *obj_{nullptr};
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
+    const detail::object &obj_;
 };
 
 static_assert(sizeof(object_view) == sizeof(void *));
+
+inline optional_object_view::optional_object_view(object_view view) : obj_(view.ptr()) {}
+
+inline class object_view optional_object_view::operator->() const noexcept { return *obj_; }
 
 } // namespace ddwaf
 

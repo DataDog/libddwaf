@@ -18,7 +18,7 @@ TEST(TestMatchIterator, InvalidIterator)
 
     std::string resource = "this is the resource";
     exclusion::object_set_ref exclude;
-    ddwaf::match_iterator it(resource, &object, exclude);
+    ddwaf::match_iterator it(resource, object, exclude);
     EXPECT_FALSE((bool)it);
 
     auto path = it.get_current_path();
@@ -34,7 +34,7 @@ TEST(TestMatchIterator, NoMatch)
 
     std::string resource = "this is the resource";
     exclusion::object_set_ref exclude;
-    ddwaf::match_iterator it(resource, &object, exclude);
+    ddwaf::match_iterator it(resource, object, exclude);
     EXPECT_FALSE((bool)it);
 
     auto path = it.get_current_path();
@@ -52,7 +52,7 @@ TEST(TestMatchIterator, SingleMatch)
 
     std::string resource = "this is the resource";
     exclusion::object_set_ref exclude;
-    ddwaf::match_iterator it(resource, &object, exclude);
+    ddwaf::match_iterator it(resource, object, exclude);
     EXPECT_TRUE((bool)it);
 
     auto [param, index] = *it;
@@ -74,7 +74,7 @@ TEST(TestMatchIterator, MultipleMatches)
 
     std::string resource = "resource resource resource resource";
     exclusion::object_set_ref exclude;
-    ddwaf::match_iterator it(resource, &object, exclude);
+    ddwaf::match_iterator it(resource, object, exclude);
 
     for (std::size_t i = 0; i < 4; ++i) {
         EXPECT_TRUE((bool)it);
@@ -100,7 +100,7 @@ TEST(TestMatchIterator, OverlappingMatches)
 
     std::string resource = "eeeeeeeeee";
     exclusion::object_set_ref exclude;
-    ddwaf::match_iterator it(resource, &object, exclude);
+    ddwaf::match_iterator it(resource, object, exclude);
     EXPECT_TRUE((bool)it);
 
     for (std::size_t i = 0; i < 9; ++i) {

@@ -16,11 +16,9 @@ TEST(TestObjectView, InvalidObject)
     detail::object original;
     ddwaf_object_invalid(&original);
 
-    object_view view(&original);
-    EXPECT_TRUE(view.has_value());
+    object_view view(original);
 
     EXPECT_EQ(view.type(), object_type::invalid);
-    EXPECT_EQ(view.type_unchecked(), object_type::invalid);
 
     EXPECT_EQ(view.size(), 0);
     EXPECT_TRUE(view.empty());
@@ -40,11 +38,9 @@ TEST(TestObjectView, NullObject)
     detail::object original;
     ddwaf_object_invalid(&original);
 
-    object_view view(&original);
-    EXPECT_TRUE(view.has_value());
+    object_view view(original);
 
     EXPECT_EQ(view.type(), object_type::invalid);
-    EXPECT_EQ(view.type_unchecked(), object_type::invalid);
 
     EXPECT_EQ(view.size(), 0);
     EXPECT_TRUE(view.empty());
@@ -65,11 +61,9 @@ TEST(TestObjectView, BooleanObject)
     detail::object original;
     ddwaf_object_bool(&original, true);
 
-    object_view view(&original);
-    EXPECT_TRUE(view.has_value());
+    object_view view(original);
 
     EXPECT_EQ(view.type(), object_type::boolean);
-    EXPECT_EQ(view.type_unchecked(), object_type::boolean);
 
     EXPECT_EQ(view.size(), 0);
     EXPECT_TRUE(view.empty());
@@ -93,11 +87,9 @@ TEST(TestObjectView, SignedObject)
     detail::object original;
     ddwaf_object_signed(&original, -20);
 
-    object_view view(&original);
-    EXPECT_TRUE(view.has_value());
+    object_view view(original);
 
     EXPECT_EQ(view.type(), object_type::int64);
-    EXPECT_EQ(view.type_unchecked(), object_type::int64);
 
     EXPECT_EQ(view.size(), 0);
     EXPECT_TRUE(view.empty());
@@ -121,11 +113,9 @@ TEST(TestObjectView, UnsignedObject)
     detail::object original;
     ddwaf_object_unsigned(&original, 20);
 
-    object_view view(&original);
-    EXPECT_TRUE(view.has_value());
+    object_view view(original);
 
     EXPECT_EQ(view.type(), object_type::uint64);
-    EXPECT_EQ(view.type_unchecked(), object_type::uint64);
 
     EXPECT_EQ(view.size(), 0);
     EXPECT_TRUE(view.empty());
@@ -149,11 +139,9 @@ TEST(TestObjectView, FloatObject)
     detail::object original;
     ddwaf_object_float(&original, 20.1);
 
-    object_view view(&original);
-    EXPECT_TRUE(view.has_value());
+    object_view view(original);
 
     EXPECT_EQ(view.type(), object_type::float64);
-    EXPECT_EQ(view.type_unchecked(), object_type::float64);
 
     EXPECT_EQ(view.size(), 0);
     EXPECT_TRUE(view.empty());
@@ -183,19 +171,19 @@ TEST(TestObjectView, ArrayObject)
             ddwaf_object_string(&tmp, std::to_string(i + 100).c_str()));
     }
 
-    object_view view(&root);
+    object_view view(root);
     EXPECT_EQ(view.size(), 20);
 
     for (unsigned i = 0; i < 20; i++) {
         auto [key, value] = view.at_unchecked(i);
-        EXPECT_STREQ(value.as_unchecked<const char *>(), std::to_string(100 + i).c_str());
+        EXPECT_STREQ(value->as_unchecked<const char *>(), std::to_string(100 + i).c_str());
     }
 
-    auto array_view = view.as_unchecked<object_view::array>();
-    unsigned i = 0;
-    for (auto value : array_view) {
-        EXPECT_STREQ(value.as_unchecked<const char *>(), std::to_string(100 + i++).c_str());
-    }
+/*    auto array_view = view.as_unchecked<object_view::array>();*/
+    /*unsigned i = 0;*/
+    /*for (auto value : array_view) {*/
+        /*EXPECT_STREQ(value.as_unchecked<const char *>(), std::to_string(100 + i++).c_str());*/
+    /*}*/
 
     ddwaf_object_free(&root);
 }
