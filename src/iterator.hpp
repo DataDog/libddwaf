@@ -38,7 +38,7 @@ public:
     [[nodiscard]] explicit operator bool() const { return current_.second.has_value(); }
     [[nodiscard]] size_t depth() { return stack_.size() + path_.size(); }
     [[nodiscard]] std::vector<std::string> get_current_path() const;
-    [[nodiscard]] object_view get_underlying_object() { return current_.second; }
+    [[nodiscard]] optional_object_view get_underlying_object() { return current_.second; }
 
 protected:
     static constexpr std::size_t initial_stack_size = 32;
@@ -51,7 +51,7 @@ protected:
     std::vector<std::string> path_;
 
     std::vector<object_view::iterator> stack_;
-    std::pair<std::string_view, object_view> current_;
+    std::pair<std::string_view, optional_object_view> current_;
 
     const exclusion::object_set_ref &excluded_;
 };
@@ -69,9 +69,9 @@ public:
     value_iterator &operator=(const value_iterator &) = delete;
     value_iterator &operator=(value_iterator &&) = delete;
 
-    [[nodiscard]] object_view operator*() { return current_.second; }
+    [[nodiscard]] optional_object_view operator*() { return current_.second; }
 
-    [[nodiscard]] object_type type() const { return current_.second.type(); }
+    [[nodiscard]] object_type type() const { return current_.second->type(); }
 
 protected:
     void initialise_cursor(object_view obj, const std::span<const std::string> &path);
@@ -100,7 +100,7 @@ public:
         return !current_.first.empty() ? object_type::string : object_type::invalid;
     }
 
-    [[nodiscard]] object_view operator*()
+    [[nodiscard]] optional_object_view operator*()
     {
         if (current_.first.empty()) {
             return {};
@@ -136,7 +136,7 @@ public:
     {
         if (current_.second.has_value()) {
             if (scalar_value_) {
-                return current_.second.type_unchecked();
+                return current_.second->type();
             }
 
             if (!current_.first.empty()) {
@@ -146,7 +146,7 @@ public:
         return object_type::invalid;
     }
 
-    [[nodiscard]] object_view operator*()
+    [[nodiscard]] optional_object_view operator*()
     {
         if (current_.second.has_value()) {
             if (scalar_value_) {

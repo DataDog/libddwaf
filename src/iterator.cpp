@@ -126,7 +126,7 @@ void value_iterator::initialise_cursor_with_path(
         const std::string_view key = path[i];
         auto &parent_it = stack_.back();
 
-        std::pair<std::string_view, object_view> child;
+        std::pair<std::string_view, optional_object_view> child;
         if (parent_it.container_type() == object_type::map) {
             for (; parent_it; ++parent_it) {
                 auto possible_child = *parent_it;
@@ -146,21 +146,25 @@ void value_iterator::initialise_cursor_with_path(
             }
         }
 
+        if (!child.second.has_value()) {
+            return;
+        }
+
         // If we find a scalar and it's the last element,
         // we found a valid element within the path.
-        if (child.second.is_scalar() && (i + 1) == path.size()) {
+        if (child.second->is_scalar() && (i + 1) == path.size()) {
             current_ = child;
             // We want to keep the stack pointing to the container
             // in the last key of the key path, since the last element
             // of the key path is a scalar, we clear the stack.
             stack_.clear();
-        } else if (child.second.is_container()) {
+        } else if (child.second->is_container()) {
             if ((i + 1) == limits_.max_container_depth) {
                 break;
             }
 
             // Replace the stack top
-            stack_.back() = child.second.begin(limits_);
+            stack_.back() = child.second->begin(limits_);
 
             if ((i + 1) < path.size()) {
                 continue;
@@ -199,16 +203,16 @@ void value_iterator::set_cursor_to_next_object()
             continue;
         }
 
-        if (child.is_container()) {
+        if (child->is_container()) {
             if (depth() < limits_.max_container_depth) {
                 ++parent_it;
                 // Push can invalidate the current references to the parent
                 // so we increment the index before a potential reallocation
                 // and prevent any further use of the references.
-                stack_.emplace_back(child.begin(limits_));
+                stack_.emplace_back(child->begin(limits_));
                 continue;
             }
-        } else if (child.is_scalar()) {
+        } else if (child->is_scalar()) {
             current_.first = parent_it.key();
             current_.second = child;
         }
@@ -258,7 +262,7 @@ void key_iterator::initialise_cursor_with_path(
         const std::string_view key = path[i];
         auto &parent_it = stack_.back();
 
-        std::pair<std::string_view, object_view> child;
+        std::pair<std::string_view, optional_object_view> child;
         if (parent_it.container_type() == object_type::map) {
             for (; parent_it; ++parent_it) {
                 auto possible_child = *parent_it;
@@ -277,8 +281,12 @@ void key_iterator::initialise_cursor_with_path(
             }
         }
 
-        if (child.second.is_container()) {
-            stack_.back() = child.second.begin(limits_);
+        if (!child.second.has_value()) {
+            return;
+        }
+
+        if (child.second->is_container()) {
+            stack_.back() = child.second->begin(limits_);
 
             if ((i + 1) < path.size()) {
                 continue;
@@ -317,7 +325,7 @@ void key_iterator::set_cursor_to_next_object()
             continue;
         }
 
-        if (child.second.is_container()) {
+        if (child.second->is_container()) {
             if (previous.second != child.second && !child.first.empty()) {
                 current_ = child;
                 // Break to ensure the index isn't increased and this container
@@ -330,7 +338,7 @@ void key_iterator::set_cursor_to_next_object()
                 // so we increment the index before a potential reallocation
                 // and prevent any further use of the references.
                 ++parent_it;
-                stack_.emplace_back(child.second.begin(limits_));
+                stack_.emplace_back(child.second->begin(limits_));
                 continue;
             }
         } else if (!child.first.empty()) {
@@ -390,7 +398,7 @@ void kv_iterator::initialise_cursor_with_path(
         const std::string_view key = path[i];
         auto &parent_it = stack_.back();
 
-        std::pair<std::string_view, object_view> child;
+        std::pair<std::string_view, optional_object_view> child;
         if (parent_it.container_type() == object_type::map) {
             for (; parent_it; ++parent_it) {
                 auto possible_child = *parent_it;
@@ -409,22 +417,26 @@ void kv_iterator::initialise_cursor_with_path(
             }
         }
 
+        if (!child.second.has_value()) {
+            return;
+        }
+
         // If we find a scalar and it's the last element,
         // we found a valid element within the path.
-        if (child.second.is_scalar() && (i + 1) == path.size()) {
+        if (child.second->is_scalar() && (i + 1) == path.size()) {
             current_ = child;
             scalar_value_ = true;
             // We want to keep the stack pointing to the container
             // in the last key of the key path, since the last element
             // of the key path is a scalar, we clear the stack.
             stack_.clear();
-        } else if (child.second.is_container()) {
+        } else if (child.second->is_container()) {
             if ((i + 1) == limits_.max_container_depth) {
                 break;
             }
 
             // Replace the stack top
-            stack_.back() = child.second.begin(limits_);
+            stack_.back() = child.second->begin(limits_);
 
             if ((i + 1) < path.size()) {
                 continue;
@@ -464,7 +476,7 @@ void kv_iterator::set_cursor_to_next_object()
             continue;
         }
 
-        if (child.second.is_container()) {
+        if (child.second->is_container()) {
             if (previous.second != child.second && !child.first.empty()) {
                 current_ = child;
                 scalar_value_ = false;
@@ -478,10 +490,10 @@ void kv_iterator::set_cursor_to_next_object()
                 // so we increment the index before a potential reallocation
                 // and prevent any further use of the references.
                 ++parent_it;
-                stack_.emplace_back(child.second.begin(limits_));
+                stack_.emplace_back(child.second->begin(limits_));
                 continue;
             }
-        } else if (child.second.is_scalar()) {
+        } else if (child.second->is_scalar()) {
             if (previous.second != child.second) {
                 current_ = child;
                 if (current_.first.empty()) {

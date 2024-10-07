@@ -14,7 +14,7 @@ template <std::size_t MinLength = 2, typename Iterator = kv_iterator> class matc
 public:
     static constexpr std::size_t npos = std::string_view::npos;
 
-    explicit match_iterator(std::string_view resource, const ddwaf_object *obj,
+    explicit match_iterator(std::string_view resource, const ddwaf_object &obj,
         const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits())
         : resource_(resource), it_(obj, {}, exclude, limits)
     {
