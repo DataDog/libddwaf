@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <cstring>
 #include <optional>
@@ -67,10 +68,40 @@ public:
 
     [[nodiscard]] bool has_value() const noexcept { return obj_ != nullptr; }
 
+    [[nodiscard]] object_type type() const noexcept {
+        assert (obj_ != nullptr);
+        return static_cast<object_type>(obj_->type);
+    }
+
+    [[nodiscard]] std::size_t size() const noexcept
+    {
+        assert (obj_ != nullptr);
+        return static_cast<std::size_t>(obj_->nbEntries);
+    }
+
+    [[nodiscard]] bool empty() const noexcept {
+        assert (obj_ != nullptr);
+        return obj_->nbEntries == 0;
+    }
+
+    // These is_* methods provide further checks for consistency, albeit these
+    // perhaps should be replaced by assertions.
+    [[nodiscard]] bool is_container() const noexcept
+    {
+        assert (obj_ != nullptr);
+        return (type() & container_object_type) != 0;
+    }
+    [[nodiscard]] bool is_scalar() const noexcept {
+        assert (obj_ != nullptr);
+        return (type() & scalar_object_type) != 0;
+    }
+
+
     // This method should only be called if the presence of a value has been
     // checked by using has_value();
     [[nodiscard]] object_view operator->() const noexcept;
 
+    [[nodiscard]] object_view value() const noexcept;
 protected:
     const detail::object *obj_{nullptr};
 };
@@ -147,13 +178,15 @@ public:
 
     // Access the key and value at index. If the container is an array, the key
     // will be an empty string.
-    [[nodiscard]] std::pair<std::string_view, optional_object_view> at_unchecked(
+    [[nodiscard]] std::pair<std::string_view, object_view> at_unchecked(
         std::size_t index) const noexcept
     {
+        assert(index < size() && obj_.array != nullptr);
+
         const auto &slot = obj_.array[index];
         std::string_view key{
             slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
-        return {key, optional_object_view{&slot}};
+        return {key, slot};
     }
 
     [[nodiscard]] std::pair<std::string_view, optional_object_view> at(
@@ -256,9 +289,7 @@ public:
 
         [[nodiscard]] std::string_view key() const
         {
-            if (index_ >= size_) {
-                [[unlikely]] return {};
-            }
+            assert(obj_ != nullptr && obj_->array != nullptr && index_ < size_);
 
             auto &slot = obj_->array[index_];
             std::string_view key{
@@ -266,25 +297,21 @@ public:
             return key;
         }
 
-        [[nodiscard]] optional_object_view value() const
+        [[nodiscard]] object_view value() const
         {
-            if (index_ >= size_) {
-                [[unlikely]] return {};
-            }
+            assert(obj_ != nullptr && obj_->array != nullptr && index_ < size_);
 
-            return &obj_->array[index_];
+            return obj_->array[index_];
         }
 
-        std::pair<std::string_view, optional_object_view> operator*() const
+        std::pair<std::string_view, object_view> operator*() const
         {
-            if (index_ >= size_) {
-                [[unlikely]] return {};
-            }
+            assert(obj_ != nullptr && obj_->array != nullptr && index_ < size_);
 
             auto &slot = obj_->array[index_];
             std::string_view key{
                 slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
-            return {key, &slot};
+            return {key, slot};
         }
 
         [[nodiscard]] std::size_t index() const { return static_cast<std::size_t>(index_); }
@@ -357,8 +384,12 @@ static_assert(sizeof(object_view) == sizeof(void *));
 
 inline optional_object_view::optional_object_view(object_view view) : obj_(view.ptr()) {}
 
-inline class object_view optional_object_view::operator->() const noexcept { return *obj_; }
+inline object_view optional_object_view::operator->() const noexcept { return *obj_; }
 
+inline object_view optional_object_view::value() const noexcept {
+    assert (obj_ != nullptr);
+    return *obj_;
+}
 } // namespace ddwaf
 
 namespace std {

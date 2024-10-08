@@ -71,7 +71,7 @@ public:
 
     [[nodiscard]] optional_object_view operator*() { return current_.second; }
 
-    [[nodiscard]] object_type type() const { return current_.second->type(); }
+    [[nodiscard]] object_type type() const { return current_.second.type(); }
 
 protected:
     void initialise_cursor(object_view obj, const std::span<const std::string> &path);
@@ -136,7 +136,7 @@ public:
     {
         if (current_.second.has_value()) {
             if (scalar_value_) {
-                return current_.second->type();
+                return current_.second.type();
             }
 
             if (!current_.first.empty()) {
