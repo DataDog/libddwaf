@@ -51,7 +51,7 @@ protected:
     std::vector<std::string> path_;
 
     std::vector<object_view::iterator> stack_;
-    std::pair<std::string_view, optional_object_view> current_;
+    std::pair<object_key, optional_object_view> current_;
 
     const exclusion::object_set_ref &excluded_;
 };

@@ -41,6 +41,10 @@ public:
     object_key &operator=(const object_key &) = default;
     object_key &operator=(object_key &&) = default;
 
+    [[nodiscard]] const char * data() const noexcept {
+        return obj_ != nullptr ? obj_->parameterName : nullptr;
+    }
+
     [[nodiscard]] std::size_t size() const noexcept
     {
         if (obj_ == nullptr || obj_->parameterName == nullptr) {
@@ -51,13 +55,19 @@ public:
 
     [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
-    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-    operator std::string_view() const noexcept
+    explicit operator std::string_view() const noexcept
     {
         if (obj_ == nullptr || obj_->parameterName == nullptr) {
             [[unlikely]] return {};
         }
         return {obj_->parameterName, static_cast<std::size_t>(obj_->parameterNameLength)};
+    }
+
+    template <typename T> bool operator==(const T &other) const
+        requires (std::is_same_v<T, std::string_view> || std::is_same_v<T, object_key>)
+    {
+        auto s = size();
+        return s == other.size() && memcmp(data(), other.data(), s) == 0;
     }
 
 protected:
