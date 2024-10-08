@@ -27,6 +27,43 @@ template <typename T> struct converter;
 
 class object_view;
 
+// Temporary abstraction
+class object_key {
+public:
+    // The default constructor results in a view without value
+    object_key() = default;
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    object_key(const detail::object *underlying_object) : obj_(underlying_object) {}
+
+    ~object_key() = default;
+    object_key(const object_key &) = default;
+    object_key(object_key &&) = default;
+    object_key &operator=(const object_key &) = default;
+    object_key &operator=(object_key &&) = default;
+
+    [[nodiscard]] std::size_t size() const noexcept
+    {
+        if (obj_ == nullptr || obj_->parameterName == nullptr) {
+            [[unlikely]] return 0;
+        }
+        return static_cast<std::size_t>(obj_->parameterNameLength);
+    }
+
+    [[nodiscard]] bool empty() const noexcept { return size() == 0; }
+
+    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
+    operator std::string_view() const noexcept
+    {
+        if (obj_ == nullptr || obj_->parameterName == nullptr) {
+            [[unlikely]] return {};
+        }
+        return {obj_->parameterName, static_cast<std::size_t>(obj_->parameterNameLength)};
+    }
+
+protected:
+    const detail::object *obj_{nullptr};
+};
+
 class optional_object_view {
 public:
     // The default constructor results in a view without value
@@ -68,40 +105,31 @@ public:
 
     [[nodiscard]] bool has_value() const noexcept { return obj_ != nullptr; }
 
-    [[nodiscard]] object_type type() const noexcept {
-        assert (obj_ != nullptr);
-        return static_cast<object_type>(obj_->type);
-    }
-
-    [[nodiscard]] std::size_t size() const noexcept
+    [[nodiscard]] object_type type() const noexcept
     {
-        assert (obj_ != nullptr);
-        return static_cast<std::size_t>(obj_->nbEntries);
-    }
-
-    [[nodiscard]] bool empty() const noexcept {
-        assert (obj_ != nullptr);
-        return obj_->nbEntries == 0;
+        assert(obj_ != nullptr);
+        return static_cast<object_type>(obj_->type);
     }
 
     // These is_* methods provide further checks for consistency, albeit these
     // perhaps should be replaced by assertions.
     [[nodiscard]] bool is_container() const noexcept
     {
-        assert (obj_ != nullptr);
+        assert(obj_ != nullptr);
         return (type() & container_object_type) != 0;
     }
-    [[nodiscard]] bool is_scalar() const noexcept {
-        assert (obj_ != nullptr);
+    [[nodiscard]] bool is_scalar() const noexcept
+    {
+        assert(obj_ != nullptr);
         return (type() & scalar_object_type) != 0;
     }
-
 
     // This method should only be called if the presence of a value has been
     // checked by using has_value();
     [[nodiscard]] object_view operator->() const noexcept;
 
     [[nodiscard]] object_view value() const noexcept;
+
 protected:
     const detail::object *obj_{nullptr};
 };
@@ -119,15 +147,6 @@ public:
 
     [[nodiscard]] const detail::object *ptr() const noexcept { return &obj_; }
     [[nodiscard]] const detail::object &ref() const noexcept { return obj_; }
-
-    // The unchecked API assumes that the caller has already verified that the
-    // method preconditions are met:
-    //   - The underlying object is non-null (using has_value());
-    //   - When using at, the accessed indexed is within bounds (using size*())
-    //   - When using as, the accessed field matches the underlying object type (using is*())
-    //
-    // The checked API (without suffix), always validates preconditions so it is
-    // safer but introduces small overheads.
 
     template <typename T> bool operator==(const T &other) const
     {
@@ -176,21 +195,25 @@ public:
         return is_compatible_type<T>(type());
     }
 
+    // The unchecked API assumes that the caller has already verified that the
+    // method preconditions are met:
+    //   - When using at, the accessed indexed is within bounds (using size*())
+    //   - When using as, the accessed field matches the underlying object type (using is*())
+    //
+    // The checked API (without suffix), always validates preconditions so it is
+    // safer but introduces small overheads.
+
     // Access the key and value at index. If the container is an array, the key
     // will be an empty string.
-    [[nodiscard]] std::pair<std::string_view, object_view> at_unchecked(
-        std::size_t index) const noexcept
+    [[nodiscard]] std::pair<object_key, object_view> at_unchecked(std::size_t index) const noexcept
     {
         assert(index < size() && obj_.array != nullptr);
 
         const auto &slot = obj_.array[index];
-        std::string_view key{
-            slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
-        return {key, slot};
+        return {&slot, slot};
     }
 
-    [[nodiscard]] std::pair<std::string_view, optional_object_view> at(
-        std::size_t index) const noexcept
+    [[nodiscard]] std::pair<object_key, optional_object_view> at(std::size_t index) const noexcept
     {
         if (!is_container() || index > size()) {
             [[unlikely]] return {};
@@ -287,14 +310,11 @@ public:
             return obj_ != rhs.obj_ || index_ != rhs.index_;
         }
 
-        [[nodiscard]] std::string_view key() const
+        [[nodiscard]] object_key key() const
         {
             assert(obj_ != nullptr && obj_->array != nullptr && index_ < size_);
 
-            auto &slot = obj_->array[index_];
-            std::string_view key{
-                slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
-            return key;
+            return &obj_->array[index_];
         }
 
         [[nodiscard]] object_view value() const
@@ -304,14 +324,12 @@ public:
             return obj_->array[index_];
         }
 
-        std::pair<std::string_view, object_view> operator*() const
+        std::pair<object_key, object_view> operator*() const
         {
             assert(obj_ != nullptr && obj_->array != nullptr && index_ < size_);
 
             auto &slot = obj_->array[index_];
-            std::string_view key{
-                slot.parameterName, static_cast<std::size_t>(slot.parameterNameLength)};
-            return {key, slot};
+            return {&slot, slot};
         }
 
         [[nodiscard]] std::size_t index() const { return static_cast<std::size_t>(index_); }
@@ -386,8 +404,9 @@ inline optional_object_view::optional_object_view(object_view view) : obj_(view.
 
 inline object_view optional_object_view::operator->() const noexcept { return *obj_; }
 
-inline object_view optional_object_view::value() const noexcept {
-    assert (obj_ != nullptr);
+inline object_view optional_object_view::value() const noexcept
+{
+    assert(obj_ != nullptr);
     return *obj_;
 }
 } // namespace ddwaf
