@@ -1,5 +1,25 @@
 # libddwaf release
 
+## v1.20.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+### New features
+#### Fingerprint regeneration
+#### New \& Negated operators
+
+### Release changelog
+#### Changes
+- Fingerprint regeneration based on availability of optional arguments ([#331](https://github.com/DataDog/libddwaf/pull/#331))
+- Expand detections per parameter ([#332](https://github.com/DataDog/libddwaf/pull/#332))
+- Extend exists operator to support key paths and negation ([#334](https://github.com/DataDog/libddwaf/pull/#334))
+- Negated scalar condition for matchers ([#335](https://github.com/DataDog/libddwaf/pull/#335))
+- Greater and lower than matchers ([#336](https://github.com/DataDog/libddwaf/pull/#336))
+
+#### Fixes
+- Fix false positive on SQLi EOL comments ([#330](https://github.com/DataDog/libddwaf/pull/#330))
+
+#### Miscellaneous
+- Fix many, but not all, clang-tidy complaints ([#339](https://github.com/DataDog/libddwaf/pull/#339))
+- Set content:write permissions on release job ([#340](https://github.com/DataDog/libddwaf/pull/#340))
+
 ## v1.19.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Fixes
 - Split collections by module ([#328](https://github.com/DataDog/libddwaf/pull/328))
