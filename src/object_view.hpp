@@ -41,7 +41,8 @@ public:
     object_key &operator=(const object_key &) = default;
     object_key &operator=(object_key &&) = default;
 
-    [[nodiscard]] const char * data() const noexcept {
+    [[nodiscard]] const char *data() const noexcept
+    {
         return obj_ != nullptr ? obj_->parameterName : nullptr;
     }
 
@@ -63,8 +64,9 @@ public:
         return {obj_->parameterName, static_cast<std::size_t>(obj_->parameterNameLength)};
     }
 
-    template <typename T> bool operator==(const T &other) const
-        requires (std::is_same_v<T, std::string_view> || std::is_same_v<T, object_key>)
+    template <typename T>
+    bool operator==(const T &other) const
+        requires(std::is_same_v<T, std::string_view> || std::is_same_v<T, object_key>)
     {
         auto s = size();
         return s == other.size() && memcmp(data(), other.data(), s) == 0;
