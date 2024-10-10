@@ -502,4 +502,121 @@ TEST(TestParserV2Processors, ParseDuplicate)
     }
 }
 
+TEST(TestParserV2Processors, IncompatibleMinVersion)
+{
+    ddwaf::object_limits limits;
+
+    auto object = yaml_to_object(
+        R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, min_version: 99.0.0, evaluate: false, output: true}])");
+
+    ddwaf::ruleset_info::section_info section;
+    auto array = static_cast<parameter::vector>(parameter(object));
+    auto processors = parser::v2::parse_processors(array, section, limits);
+    ddwaf_object_free(&object);
+
+    EXPECT_EQ(processors.size(), 0);
+    EXPECT_EQ(processors.pre.size(), 0);
+    EXPECT_EQ(processors.post.size(), 0);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(root_map, "skipped");
+        EXPECT_EQ(skipped.size(), 1);
+        EXPECT_NE(skipped.find("1"), skipped.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+}
+
+TEST(TestParserV2Processors, IncompatibleMaxVersion)
+{
+    ddwaf::object_limits limits;
+
+    auto object = yaml_to_object(
+        R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, max_version: 0.0.99, evaluate: false, output: true}])");
+
+    ddwaf::ruleset_info::section_info section;
+    auto array = static_cast<parameter::vector>(parameter(object));
+    auto processors = parser::v2::parse_processors(array, section, limits);
+    ddwaf_object_free(&object);
+
+    EXPECT_EQ(processors.size(), 0);
+    EXPECT_EQ(processors.pre.size(), 0);
+    EXPECT_EQ(processors.post.size(), 0);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(root_map, "skipped");
+        EXPECT_EQ(skipped.size(), 1);
+        EXPECT_NE(skipped.find("1"), skipped.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+}
+
+TEST(TestParserV2Processors, CompatibleVersion)
+{
+    ddwaf::object_limits limits;
+
+    auto object = yaml_to_object(
+        R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, min_version: 0.0.99, max_version: 2.0.0, evaluate: false, output: true}])");
+
+    ddwaf::ruleset_info::section_info section;
+    auto array = static_cast<parameter::vector>(parameter(object));
+    auto processors = parser::v2::parse_processors(array, section, limits);
+    ddwaf_object_free(&object);
+
+    EXPECT_EQ(processors.size(), 1);
+    EXPECT_EQ(processors.pre.size(), 0);
+    EXPECT_EQ(processors.post.size(), 1);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("1"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(root_map, "skipped");
+        EXPECT_EQ(skipped.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+}
+
 } // namespace

@@ -124,6 +124,18 @@ auto build_condition(auto operator_name, auto &params, auto &data_ids_to_type, a
     return std::make_unique<T>(std::move(matcher), data_id, std::move(arguments), limits);
 }
 
+template <typename T>
+auto build_structured_condition(auto operator_name, auto version, auto &params, auto source,
+    auto &transformers, auto &addresses, auto &limits)
+{
+    if (version > T::version) {
+        throw unsupported_operator_version(operator_name, version, T::version);
+    }
+
+    auto arguments = parse_arguments<T>(params, source, transformers, addresses, limits);
+    return std::make_unique<T>(std::move(arguments), limits);
+}
+
 } // namespace
 
 std::shared_ptr<expression> parse_expression(const parameter::vector &conditions_array,
@@ -138,22 +150,30 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
         auto operator_name = at<std::string_view>(root, "operator");
         auto params = at<parameter::map>(root, "parameters");
 
+        // Exploit Prevention Operators may have a single-digit version
+        unsigned version = 0;
+        auto version_idx = operator_name.find("@v");
+        if (version_idx != std::string_view::npos) {
+            auto version_str = operator_name.substr(version_idx + 2);
+            auto [res, value] = from_string<unsigned>(version_str);
+            if (res) {
+                version = value;
+            }
+            operator_name = operator_name.substr(0, version_idx);
+        }
+
         if (operator_name == "lfi_detector") {
-            auto arguments =
-                parse_arguments<lfi_detector>(params, source, transformers, addresses, limits);
-            conditions.emplace_back(std::make_unique<lfi_detector>(std::move(arguments), limits));
+            conditions.emplace_back(build_structured_condition<lfi_detector>(
+                operator_name, version, params, source, transformers, addresses, limits));
         } else if (operator_name == "ssrf_detector") {
-            auto arguments =
-                parse_arguments<ssrf_detector>(params, source, transformers, addresses, limits);
-            conditions.emplace_back(std::make_unique<ssrf_detector>(std::move(arguments), limits));
+            conditions.emplace_back(build_structured_condition<ssrf_detector>(
+                operator_name, version, params, source, transformers, addresses, limits));
         } else if (operator_name == "sqli_detector") {
-            auto arguments =
-                parse_arguments<sqli_detector>(params, source, transformers, addresses, limits);
-            conditions.emplace_back(std::make_unique<sqli_detector>(std::move(arguments), limits));
+            conditions.emplace_back(build_structured_condition<sqli_detector>(
+                operator_name, version, params, source, transformers, addresses, limits));
         } else if (operator_name == "shi_detector") {
-            auto arguments =
-                parse_arguments<shi_detector>(params, source, transformers, addresses, limits);
-            conditions.emplace_back(std::make_unique<shi_detector>(std::move(arguments), limits));
+            conditions.emplace_back(build_structured_condition<shi_detector>(
+                operator_name, version, params, source, transformers, addresses, limits));
         } else if (operator_name == "exists") {
             auto arguments =
                 parse_arguments<exists_condition>(params, source, transformers, addresses, limits);

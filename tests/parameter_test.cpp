@@ -491,4 +491,36 @@ TEST(TestParameter, ToStringViewSet)
     }
 }
 
+TEST(TestParameter, ToSemanticVersion)
+{
+    {
+        ddwaf_object root;
+        ddwaf_object_string(&root, "1.2.3");
+
+        auto value = static_cast<semantic_version>(ddwaf::parameter(root));
+        EXPECT_EQ(value.number(), 1002003);
+
+        ddwaf_object_free(&root);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_string(&root, "1.2.3");
+        // NOLINTNEXTLINE(hicpp-no-malloc)
+        free((void *)root.stringValue);
+        root.stringValue = nullptr;
+
+        ddwaf::parameter param = root;
+        EXPECT_THROW(param.operator semantic_version(), ddwaf::bad_cast);
+    }
+
+    {
+        ddwaf_object root;
+        ddwaf_object_unsigned(&root, 3);
+
+        ddwaf::parameter param = root;
+        EXPECT_THROW(param.operator semantic_version(), ddwaf::bad_cast);
+    }
+}
+
 } // namespace

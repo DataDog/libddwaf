@@ -58,6 +58,13 @@ void ruleset_info::section_info::add_failed(std::string_view id, std::string_vie
     ddwaf_object_array_add(&failed_, &id_str);
 }
 
+void ruleset_info::section_info::add_skipped(std::string_view id)
+{
+    ddwaf_object id_str;
+    ddwaf_object_stringl(&id_str, id.data(), id.size());
+    ddwaf_object_array_add(&skipped_, &id_str);
+}
+
 void ruleset_info::section_info::add_required_address(std::string_view address)
 {
     if (!required_addresses_set_.contains(address)) {
