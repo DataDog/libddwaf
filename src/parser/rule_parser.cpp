@@ -17,8 +17,10 @@
 #include "parser/parser.hpp"
 #include "parser/specification.hpp"
 #include "rule.hpp"
+#include "semver.hpp"
 #include "transformer/base.hpp"
 #include "utils.hpp"
+#include "version.hpp"
 
 namespace ddwaf::parser::v2 {
 
@@ -71,19 +73,29 @@ rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info
     rule_spec_container rules;
     for (unsigned i = 0; i < rule_array.size(); ++i) {
         const auto &rule_param = rule_array[i];
-        auto rule_map = static_cast<parameter::map>(rule_param);
+        auto node = static_cast<parameter::map>(rule_param);
         std::string id;
         try {
             address_container addresses;
 
-            id = at<std::string>(rule_map, "id");
+            id = at<std::string>(node, "id");
             if (rules.find(id) != rules.end()) {
                 DDWAF_WARN("Duplicate rule {}", id);
                 info.add_failed(id, "duplicate rule");
                 continue;
             }
 
-            auto rule = parse_rule(rule_map, rule_data_ids, limits, source, addresses);
+            // Check version compatibility and fail without diagnostic
+            auto min_version{at<semantic_version>(node, "min_version", semantic_version::min())};
+            auto max_version{at<semantic_version>(node, "max_version", semantic_version::max())};
+            if (min_version > current_version || max_version < current_version) {
+                DDWAF_DEBUG("Rule {} requires a version between [{}, {}]", id, min_version.string(),
+                    max_version.string());
+                info.add_skipped(id);
+                continue;
+            }
+
+            auto rule = parse_rule(node, rule_data_ids, limits, source, addresses);
             DDWAF_DEBUG("Parsed rule {}", id);
             info.add_loaded(id);
             add_addresses_to_info(addresses, info);

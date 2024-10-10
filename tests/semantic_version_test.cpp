@@ -48,6 +48,9 @@ TEST(TestVersion, Parsing)
         {"111.222.3", 111, 222, 3, 111222003},
         {"111.222.33", 111, 222, 33, 111222033},
         {"111.222.333", 111, 222, 333, 111222333},
+
+        {"1.2.3-alpha", 1, 2, 3, 1002003},
+        {"111.222.333-beta", 111, 222, 333, 111222333},
     };
 
     for (auto [str, major, minor, patch, number] : samples) {
@@ -146,6 +149,25 @@ TEST(TestVersion, InvalidVersion)
     EXPECT_THROW(semantic_version{"a.b.c"}, std::invalid_argument);
     EXPECT_THROW(semantic_version{"1.b.c"}, std::invalid_argument);
     EXPECT_THROW(semantic_version{"1.2.c"}, std::invalid_argument);
+
+    EXPECT_THROW(semantic_version{"1a.b.c"}, std::invalid_argument);
+    EXPECT_THROW(semantic_version{"1.2b.c"}, std::invalid_argument);
+    EXPECT_THROW(semantic_version{"1.2.3c"}, std::invalid_argument);
+
+    EXPECT_THROW(semantic_version{"1"}, std::invalid_argument);
+    EXPECT_THROW(semantic_version{"1.2"}, std::invalid_argument);
+    EXPECT_THROW(semantic_version{"1.2.3.4"}, std::invalid_argument);
+}
+
+TEST(TestVersion, OutOfRange)
+{
+    EXPECT_THROW(semantic_version{"1.2.3333"}, std::invalid_argument);
+    EXPECT_THROW(semantic_version{"1.2222.3"}, std::invalid_argument);
+    EXPECT_THROW(semantic_version{"1111.2.3"}, std::invalid_argument);
+
+    EXPECT_THROW(semantic_version{"1000.1.1"}, std::invalid_argument);
+    EXPECT_THROW(semantic_version{"1.1000.1"}, std::invalid_argument);
+    EXPECT_THROW(semantic_version{"1.1.1000"}, std::invalid_argument);
 }
 
 } // namespace
