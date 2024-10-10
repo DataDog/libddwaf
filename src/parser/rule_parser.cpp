@@ -89,8 +89,8 @@ rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info
             auto min_version{at<semantic_version>(node, "min_version", semantic_version::min())};
             auto max_version{at<semantic_version>(node, "max_version", semantic_version::max())};
             if (min_version > current_version || max_version < current_version) {
-                DDWAF_DEBUG("Rule {} requires a version between [{}, {}]", id, min_version.string(),
-                    max_version.string());
+                DDWAF_DEBUG("Skipping rule '{}': version required between [{}, {}]", id,
+                    min_version.string(), max_version.string());
                 info.add_skipped(id);
                 continue;
             }
@@ -101,6 +101,9 @@ rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info
             add_addresses_to_info(addresses, info);
 
             rules.emplace(std::move(id), std::move(rule));
+        } catch (const unsupported_operator_version &e) {
+            DDWAF_WARN("Skipping rule '{}': {}", id, e.what());
+            info.add_skipped(id);
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = index_to_id(i);

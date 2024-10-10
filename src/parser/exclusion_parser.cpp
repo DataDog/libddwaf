@@ -20,6 +20,7 @@
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
 #include "parser/specification.hpp"
+#include "semver.hpp"
 #include "utils.hpp"
 #include "version.hpp"
 
@@ -129,7 +130,7 @@ filter_spec_container parse_filters(parameter::vector &filter_array, base_sectio
             auto min_version{at<semantic_version>(node, "min_version", semantic_version::min())};
             auto max_version{at<semantic_version>(node, "max_version", semantic_version::max())};
             if (min_version > current_version || max_version < current_version) {
-                DDWAF_DEBUG("Filter {} requires a version between [{}, {}]", id,
+                DDWAF_DEBUG("Skipping filter '{}': version required between [{}, {}]", id,
                     min_version.string(), max_version.string());
                 info.add_skipped(id);
                 continue;
@@ -148,6 +149,9 @@ filter_spec_container parse_filters(parameter::vector &filter_array, base_sectio
 
             info.add_loaded(id);
             add_addresses_to_info(addresses, info);
+        } catch (const unsupported_operator_version &e) {
+            DDWAF_WARN("Skipping filter '{}': {}", id, e.what());
+            info.add_skipped(id);
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = index_to_id(i);

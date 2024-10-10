@@ -20,6 +20,7 @@
 #include "parser/matcher_parser.hpp"
 #include "parser/parser.hpp"
 #include "scanner.hpp"
+#include "semver.hpp"
 #include "version.hpp"
 
 namespace ddwaf::parser::v2 {

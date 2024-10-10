@@ -16,6 +16,7 @@
 #include "ddwaf.h"
 #include "exception.hpp"
 #include "parameter.hpp"
+#include "semver.hpp"
 #include "utils.hpp"
 
 namespace {

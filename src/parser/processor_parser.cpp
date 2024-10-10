@@ -20,6 +20,7 @@
 #include "processor/base.hpp"
 #include "processor/extract_schema.hpp"
 #include "processor/fingerprint.hpp"
+#include "semver.hpp"
 #include "utils.hpp"
 #include "version.hpp"
 
@@ -83,11 +84,10 @@ processor_container parse_processors(
             }
 
             // Check version compatibility and fail without diagnostic
-            //
             auto min_version{at<semantic_version>(node, "min_version", semantic_version::min())};
             auto max_version{at<semantic_version>(node, "max_version", semantic_version::max())};
             if (min_version > current_version || max_version < current_version) {
-                DDWAF_DEBUG("Processor {} requires a version between [{}, {}]", id,
+                DDWAF_DEBUG("Skipping processor '{}': version required between [{}, {}]", id,
                     min_version.string(), max_version.string());
                 info.add_skipped(id);
                 continue;
@@ -164,7 +164,9 @@ processor_container parse_processors(
                 processors.post.emplace_back(processor_builder{type, std::move(id), std::move(expr),
                     std::move(mappings), std::move(scanners), eval, output});
             }
-
+        } catch (const unsupported_operator_version &e) {
+            DDWAF_WARN("Skipping processor '{}': {}", id, e.what());
+            info.add_skipped(id);
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = index_to_id(i);
