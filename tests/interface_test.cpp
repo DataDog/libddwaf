@@ -21,7 +21,10 @@ TEST(TestInterface, Empty)
     ddwaf_object_free(&rule);
 }
 
-TEST(TestInterface, ddwaf_get_version) { EXPECT_STREQ(ddwaf_get_version(), LIBDDWAF_VERSION); }
+TEST(TestInterface, ddwaf_get_version)
+{
+    EXPECT_STREQ(ddwaf_get_version(), ddwaf::current_version.cstring());
+}
 
 TEST(TestInterface, HandleBad)
 {
