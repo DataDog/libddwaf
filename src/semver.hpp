@@ -66,34 +66,26 @@ public:
     }
 
     [[nodiscard]] unsigned number() const noexcept { return number_; }
-    [[nodiscard]] const char *cstring() const noexcept
-    {
-        if (std::holds_alternative<std::string>(str_)) {
-            return std::get<std::string>(str_).c_str();
-        }
-        // Since the string_view variant can only be constructured through
-        // a literal, and only internally, this should be nul-terminated.
-        return std::get<std::string_view>(str_).data();
-    }
-
-    [[nodiscard]] std::string_view string() const noexcept
-    {
-        if (std::holds_alternative<std::string>(str_)) {
-            return std::get<std::string>(str_);
-        }
-        return std::get<std::string_view>(str_);
-    }
-
+    [[nodiscard]] const char *cstring() const noexcept { return str_.c_str(); }
+    [[nodiscard]] std::string_view string() const noexcept { return str_; }
     [[nodiscard]] uint16_t major() const noexcept { return major_; }
     [[nodiscard]] uint16_t minor() const noexcept { return minor_; }
     [[nodiscard]] uint16_t patch() const noexcept { return patch_; }
 
-    static constexpr semantic_version max() { return {"999.999.999", 999, 999, 999, 999999999}; }
+    static semantic_version max()
+    {
+        static semantic_version v{"999.999.999", 999, 999, 999, 999999999};
+        return v;
+    }
 
-    static constexpr semantic_version min() { return {"0.0.0", 0, 0, 0, 0}; }
+    static semantic_version min()
+    {
+        static semantic_version v{"0.0.0", 0, 0, 0, 0};
+        return v;
+    }
 
 protected:
-    constexpr semantic_version(
+    semantic_version(
         // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
         std::string_view str, uint16_t major, uint16_t minor, uint16_t patch, uint32_t number)
         : str_(str), major_(major), minor_(minor), patch_(patch), number_(number)
@@ -108,7 +100,7 @@ protected:
         return false;
     }
 
-    std::variant<std::string, std::string_view> str_;
+    std::string str_;
     uint16_t major_{0};
     uint16_t minor_{0};
     uint16_t patch_{0};
