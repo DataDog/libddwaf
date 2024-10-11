@@ -71,20 +71,20 @@ In addition, this release includes a new version of the `sqli_detector` operator
 
 ### Release changelog
 #### Changes
-- Fingerprint regeneration based on availability of optional arguments ([#331](https://github.com/DataDog/libddwaf/pull/#331))
-- Expand detections per parameter ([#332](https://github.com/DataDog/libddwaf/pull/#332))
-- Extend exists operator to support key paths and negation ([#334](https://github.com/DataDog/libddwaf/pull/#334))
-- Negated scalar condition for matchers ([#335](https://github.com/DataDog/libddwaf/pull/#335))
-- Greater and lower than matchers 
-- Support min_version and max_version on evaluation primitives and RASP operator versioning ([#343](https://github.com/DataDog/libddwaf/pull/#343))
-- Introduce `sqli_detector@v2` ([#343](https://github.com/DataDog/libddwaf/pull/#343))
+- Fingerprint regeneration based on availability of optional arguments ([#331](https://github.com/DataDog/libddwaf/pull/331))
+- Expand detections per parameter ([#332](https://github.com/DataDog/libddwaf/pull/332))
+- Extend exists operator to support key paths and negation ([#334](https://github.com/DataDog/libddwaf/pull/334))
+- Negated scalar condition for matchers ([#335](https://github.com/DataDog/libddwaf/pull/335))
+- Greater and lower than matchers  ([#336](https://github.com/DataDog/libddwaf/pull/336))
+- Support min_version and max_version on evaluation primitives and RASP operator versioning ([#343](https://github.com/DataDog/libddwaf/pull/343))
+- Introduce `sqli_detector@v2` ([#343](https://github.com/DataDog/libddwaf/pull/343))
   
 #### Fixes
-- Fix false positive on SQLi EOL comments ([#330](https://github.com/DataDog/libddwaf/pull/#330))
+- Fix false positive on SQLi EOL comments ([#330](https://github.com/DataDog/libddwaf/pull/330))
 
 #### Miscellaneous
-- Fix many, but not all, clang-tidy complaints ([#339](https://github.com/DataDog/libddwaf/pull/#339))
-- Set content:write permissions on release job ([#340](https://github.com/DataDog/libddwaf/pull/#340))
+- Fix many, but not all, clang-tidy complaints ([#339](https://github.com/DataDog/libddwaf/pull/339))
+- Set content:write permissions on release job ([#340](https://github.com/DataDog/libddwaf/pull/340))
 
 ## v1.19.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Fixes
