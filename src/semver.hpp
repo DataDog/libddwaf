@@ -9,6 +9,7 @@
 #include <fmt/format.h>
 #include <stdexcept>
 #include <string_view>
+#include <variant>
 
 #include "utils.hpp"
 
@@ -65,8 +66,23 @@ public:
     }
 
     [[nodiscard]] unsigned number() const noexcept { return number_; }
-    [[nodiscard]] const char *cstring() const noexcept { return str_.c_str(); }
-    [[nodiscard]] std::string_view string() const noexcept { return str_; }
+    [[nodiscard]] const char *cstring() const noexcept
+    {
+        if (std::holds_alternative<std::string>(str_)) {
+            return std::get<std::string>(str_).c_str();
+        }
+        // Since the string_view variant can only be constructured through
+        // a literal, and only internally, this should be nul-terminated.
+        return std::get<std::string_view>(str_).data();
+    }
+
+    [[nodiscard]] std::string_view string() const noexcept
+    {
+        if (std::holds_alternative<std::string>(str_)) {
+            return std::get<std::string>(str_);
+        }
+        return std::get<std::string_view>(str_);
+    }
 
     [[nodiscard]] uint16_t major() const noexcept { return major_; }
     [[nodiscard]] uint16_t minor() const noexcept { return minor_; }
@@ -92,7 +108,7 @@ protected:
         return false;
     }
 
-    std::string str_;
+    std::variant<std::string, std::string_view> str_;
     uint16_t major_{0};
     uint16_t minor_{0};
     uint16_t patch_{0};
