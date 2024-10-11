@@ -72,28 +72,20 @@ public:
     [[nodiscard]] uint16_t minor() const noexcept { return minor_; }
     [[nodiscard]] uint16_t patch() const noexcept { return patch_; }
 
-    static semantic_version max()
-    {
-        static semantic_version v{"999.999.999", 999, 999, 999, 999999999};
-        return v;
-    }
+    static constexpr semantic_version max() { return {"999.999.999", 999, 999, 999, 999999999}; }
 
-    static semantic_version min()
-    {
-        static semantic_version v{"0.0.0", 0, 0, 0, 0};
-        return v;
-    }
+    static constexpr semantic_version min() { return {"0.0.0", 0, 0, 0, 0}; }
 
 protected:
-    semantic_version(
+    constexpr semantic_version(
         // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
         std::string_view str, uint16_t major, uint16_t minor, uint16_t patch, uint32_t number)
         : str_(str), major_(major), minor_(minor), patch_(patch), number_(number)
     {}
 
-    template <typename T> bool parse_number(std::string_view str, T &output)
+    static bool parse_number(std::string_view str, uint16_t &output)
     {
-        if (auto [res, value] = from_string<unsigned>(str); res) {
+        if (auto [res, value] = from_string<uint16_t>(str); res) {
             output = value;
             return true;
         }
