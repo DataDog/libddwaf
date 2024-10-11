@@ -2,8 +2,31 @@
 
 ## v1.20.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 ### New features
+This new version of `libddwaf` introduces a small set of convenience features and expands some of the existing functionality.
+
 #### Fingerprint regeneration
-#### New \& Negated operators
+Some of the existing fingerprinting processors have been expanded with the ability to regenerate fingerprints as new data becomes available over subsequent evaluations, specifically:
+- The `body` parameter of the `http_endpoint_fingerprint` is now optional.
+- All the parameters of the `session_fingerprint` are now optional (`cookies`, `session_id`, `user_id`), however a session fingerprint will only be generated if at least one argument is present.
+
+API users must take into consideration that the same fingerprint may be provided in the `derivatives` section of `ddwaf_result` over subsequent calls, which should override the previously generated one.
+
+#### New \& negated operators
+New operators have now been included in this version of `libddwaf`, and some others have been expanded:
+- `greater_than`: asserts whether a numeric value in the input data is greater than a specified one.
+- `lower_than`: asserts whether a numeric value in the input data is lower than a specified one.
+- `exists` for key paths: the `exists` operator is already available to assert the presence of an address, but it has not been expanded to assert the presence of a key path within an address;
+
+In addition, some operators can now be negated, with the following caveats:
+- Matches can only be performed on available addresses, as there isn't sufficient information to determine if an address will be provided on a subsequent evaluation. As a consequence, conditions using negated operators can only specify a single address.
+- Due to the above, the negated version of the exists operator can only assert the absence of a key path, rather than an address.
+
+The following are the new negated operators: `!match_regex`, `!phrase_match`, `!exact_match`, `!ip_match`, `!equals` and `!exists`.
+
+#### Min and max version for evaluation primitives
+To 
+
+#### RASP operator versioning
 
 ### Release changelog
 #### Changes
@@ -11,7 +34,8 @@
 - Expand detections per parameter ([#332](https://github.com/DataDog/libddwaf/pull/#332))
 - Extend exists operator to support key paths and negation ([#334](https://github.com/DataDog/libddwaf/pull/#334))
 - Negated scalar condition for matchers ([#335](https://github.com/DataDog/libddwaf/pull/#335))
-- Greater and lower than matchers ([#336](https://github.com/DataDog/libddwaf/pull/#336))
+- Greater and lower than matchers 
+- Support min_version and max_version on evaluation primitives and RASP operator versioning ([#343](https://github.com/DataDog/libddwaf/pull/#343))
 
 #### Fixes
 - Fix false positive on SQLi EOL comments ([#330](https://github.com/DataDog/libddwaf/pull/#330))
