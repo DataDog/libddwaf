@@ -15,11 +15,11 @@ API users must take into consideration that the same fingerprint may be provided
 New operators have now been included in this version of `libddwaf`, and some others have been expanded:
 - `greater_than`: asserts whether a numeric value in the input data is greater than a specified one.
 - `lower_than`: asserts whether a numeric value in the input data is lower than a specified one.
-- `exists` for key paths: the `exists` operator is already available to assert the presence of an address, but it has not been expanded to assert the presence of a key path within an address;
+- `exists` for key paths: the `exists` operator is already available to assert the presence of an address, but it has now been expanded to assert the presence of a key path within an address;
 
 In addition, some operators can now be negated, with the following caveats:
-- Matches can only be performed on available addresses, as there isn't sufficient information to determine if an address will be provided on a subsequent evaluation. As a consequence, conditions using negated operators can only specify a single address.
-- Due to the above, the negated version of the exists operator can only assert the absence of a key path, rather than an address.
+- Matches can only be performed on available addresses, as there isn't sufficient information to determine if an address will be provided in a subsequent evaluation. As a consequence, conditions using negated operators can only specify a single input address.
+- Due to the above, the negated version of the `exists` operator (`!exists`) can only assert the absence of a key path, rather than an address.
 
 The following are the new negated operators: `!match_regex`, `!phrase_match`, `!exact_match`, `!ip_match`, `!equals` and `!exists`.
 
@@ -30,7 +30,7 @@ In order to allow for a single ruleset to be used throughout multiple versions o
 
 Both fields follow the semantic versioning schema `x.y.z` without a `v` in front nor any subsequent labels or hashes, the minimum allowed version is `0.0.0` and the maximum `999.999.999`. Each new field can be provided in isolation or in combination with its counterpart. 
 
-The evaluation primitives support this new field are: rules, exclusion filters, processors and scanners. An example of a rule using a minimum and maximum version can be seen below:
+The evaluation primitives supporting this new fields are: rules, exclusion filters, processors and scanners. An example of a rule using a minimum and maximum version can be seen below:
 
 ```yaml
   - id: rsp-930-004
@@ -65,9 +65,9 @@ Finally, in order to distinguish multiple versions of our exploit prevention heu
 Operator versioning works as follows:
 - When the existing operator version is higher or equal to the required version, the available operator is compatible.
 - When the existing operator version is lower than the required version, the operator is incompatible.
-- When the operator is incompatible, the is silently skipped and added to the `skipped` section of the diagnostics.
+- When the operator is incompatible, the rule is silently skipped and added to the `skipped` section of the diagnostics.
 
-In addition, this new release includes a new version of the `sqli_detector` operator, specifically `sqli_detector@v2`.
+In addition, this release includes a new version of the `sqli_detector` operator, specifically `sqli_detector@v2`.
 
 ### Release changelog
 #### Changes
