@@ -10,6 +10,8 @@
 #include <string>
 #include <utility>
 
+#include "fmt/format.h"
+
 namespace ddwaf {
 
 class exception : public std::exception {
@@ -25,6 +27,15 @@ protected:
 class unsupported_version : public exception {
 public:
     unsupported_version() : exception(std::string()){};
+};
+
+class unsupported_operator_version : public exception {
+public:
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    unsupported_operator_version(std::string_view name, unsigned expected, unsigned current)
+        : exception(ddwaf::fmt::format(
+              "unsupported operator version {}@{}, current {}@{}", name, expected, name, current))
+    {}
 };
 
 class parsing_error : public exception {

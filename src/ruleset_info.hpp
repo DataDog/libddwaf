@@ -30,6 +30,7 @@ public:
         virtual void set_error(std::string_view error) = 0;
         virtual void add_loaded(std::string_view id) = 0;
         virtual void add_failed(std::string_view id, std::string_view error) = 0;
+        virtual void add_skipped(std::string_view id) = 0;
         virtual void add_required_address(std::string_view address) = 0;
         virtual void add_optional_address(std::string_view address) = 0;
     };
@@ -61,6 +62,7 @@ public:
         void set_error(std::string_view /*error*/) override {}
         void add_loaded(std::string_view /*id*/) override {}
         void add_failed(std::string_view /*id*/, std::string_view /*error*/) override {}
+        void add_skipped(std::string_view /*id*/) override {}
         void add_required_address(std::string_view /*address*/) override {}
         void add_optional_address(std::string_view /*address*/) override {}
     };
@@ -91,6 +93,7 @@ public:
         {
             ddwaf_object_array(&loaded_);
             ddwaf_object_array(&failed_);
+            ddwaf_object_array(&skipped_);
             ddwaf_object_map(&errors_);
             ddwaf_object_array(&required_addresses_);
             ddwaf_object_array(&optional_addresses_);
@@ -100,6 +103,7 @@ public:
         {
             ddwaf_object_free(&loaded_);
             ddwaf_object_free(&failed_);
+            ddwaf_object_free(&skipped_);
             ddwaf_object_free(&errors_);
             ddwaf_object_free(&required_addresses_);
             ddwaf_object_free(&optional_addresses_);
@@ -113,6 +117,7 @@ public:
         void set_error(std::string_view error) override { error_ = error; }
         void add_loaded(std::string_view id) override;
         void add_failed(std::string_view id, std::string_view error) override;
+        void add_skipped(std::string_view id) override;
         void add_required_address(std::string_view address) override;
         void add_optional_address(std::string_view address) override;
 
@@ -128,6 +133,7 @@ public:
             } else {
                 ddwaf_object_map_add(&output, "loaded", &loaded_);
                 ddwaf_object_map_add(&output, "failed", &failed_);
+                ddwaf_object_map_add(&output, "skipped", &skipped_);
                 ddwaf_object_map_add(&output, "errors", &errors_);
 
                 if (!required_addresses_set_.empty() || !optional_addresses_set_.empty()) {
@@ -140,6 +146,7 @@ public:
 
                 ddwaf_object_invalid(&loaded_);
                 ddwaf_object_invalid(&failed_);
+                ddwaf_object_invalid(&skipped_);
 
                 ddwaf_object_invalid(&errors_);
                 error_obj_cache_.clear();
@@ -158,6 +165,8 @@ public:
         ddwaf_object loaded_{};
         /** Array of failed elements */
         ddwaf_object failed_{};
+        /** Array of skipped elements */
+        ddwaf_object skipped_{};
         /** Map from an error string to an array of all the ids for which
          *  that error was raised. {error: [ids]} **/
         ddwaf_object errors_{};
