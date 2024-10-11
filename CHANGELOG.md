@@ -1,5 +1,91 @@
 # libddwaf release
 
+## v1.20.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+### New features
+This new version of `libddwaf` introduces a small set of convenience features and expands some of the existing functionality.
+
+#### Fingerprint regeneration
+Some of the existing fingerprinting processors have been expanded with the ability to regenerate fingerprints as new data becomes available over subsequent evaluations, specifically:
+- The `body` parameter of the `http_endpoint_fingerprint` is now optional.
+- All the parameters of the `session_fingerprint` are now optional (`cookies`, `session_id`, `user_id`), however a session fingerprint will only be generated if at least one argument is present.
+
+API users must take into consideration that the same fingerprint may be provided in the `derivatives` section of `ddwaf_result` over subsequent calls, which should override the previously generated one.
+
+#### New \& negated operators
+New operators have now been included in this version of `libddwaf`, and some others have been expanded:
+- `greater_than`: asserts whether a numeric value in the input data is greater than a specified one.
+- `lower_than`: asserts whether a numeric value in the input data is lower than a specified one.
+- `exists` for key paths: the `exists` operator is already available to assert the presence of an address, but it has now been expanded to assert the presence of a key path within an address;
+
+In addition, some operators can now be negated, with the following caveats:
+- Matches can only be performed on available addresses, as there isn't sufficient information to determine if an address will be provided in a subsequent evaluation. As a consequence, conditions using negated operators can only specify a single input address.
+- Due to the above, the negated version of the `exists` operator (`!exists`) can only assert the absence of a key path, rather than an address.
+
+The following are the new negated operators: `!match_regex`, `!phrase_match`, `!exact_match`, `!ip_match`, `!equals` and `!exists`.
+
+#### Min and max version for evaluation primitives
+In order to allow for a single ruleset to be used throughout multiple versions of `libddwaf`, while taking advantage of new features and / or changes to the evaluation primitives schema, two new fields have been added:
+- `min_version`: this can be used to specify the minimum version of `libddwaf` required to support this evaluation primitive.
+- `max_version`: this can be used to specify the maximum version of `libddwaf` required to support this evaluation primitive.
+
+Both fields follow the semantic versioning schema `x.y.z` without a `v` in front nor any subsequent labels or hashes, the minimum allowed version is `0.0.0` and the maximum `999.999.999`. Each new field can be provided in isolation or in combination with its counterpart. 
+
+The evaluation primitives supporting this new fields are: rules, exclusion filters, processors and scanners. An example of a rule using a minimum and maximum version can be seen below:
+
+```yaml
+  - id: rsp-930-004
+    name: SHi Exploit detection
+    tags:
+      type: shi
+      category: exploit_detection
+      module: rasp
+    min_version: 1.19.0
+    max_version  1.19.999
+    conditions:
+      - parameters:
+          resource:
+            - address: server.sys.shell.cmd
+          params:
+            - address: server.request.query
+        operator: shi_detector
+```
+
+Finally, when an evaluation primitive doesn't meet the required version criteria, its ID is included in a new diagnostic field called `skipped`, within the relevant section, e.g.
+```yaml
+
+rules:
+  skipped:
+    - rsp-930-004
+  loaded: ...
+```
+#### RASP operator versioning
+
+Finally, in order to distinguish multiple versions of our exploit prevention heuristics, RASP operators can now be versioned. Versioning is done with the following schema: `operator_name@version`, where the operator name is one of the existing RASP operators (`lfi_detector`, `ssrf_detector`, `sqli_detector`, `shi_detector`) and `version` consists of a single digit preceded by a `v`, e.g. `sqli_detector@v2`. 
+
+Operator versioning works as follows:
+- When the existing operator version is higher or equal to the required version, the available operator is compatible.
+- When the existing operator version is lower than the required version, the operator is incompatible.
+- When the operator is incompatible, the rule is silently skipped and added to the `skipped` section of the diagnostics.
+
+In addition, this release includes a new version of the `sqli_detector` operator, specifically `sqli_detector@v2`.
+
+### Release changelog
+#### Changes
+- Fingerprint regeneration based on availability of optional arguments ([#331](https://github.com/DataDog/libddwaf/pull/331))
+- Expand detections per parameter ([#332](https://github.com/DataDog/libddwaf/pull/332))
+- Extend exists operator to support key paths and negation ([#334](https://github.com/DataDog/libddwaf/pull/334))
+- Negated scalar condition for matchers ([#335](https://github.com/DataDog/libddwaf/pull/335))
+- Greater and lower than matchers  ([#336](https://github.com/DataDog/libddwaf/pull/336))
+- Support min_version and max_version on evaluation primitives and RASP operator versioning ([#343](https://github.com/DataDog/libddwaf/pull/343))
+- Introduce `sqli_detector@v2` ([#343](https://github.com/DataDog/libddwaf/pull/343))
+  
+#### Fixes
+- Fix false positive on SQLi EOL comments ([#330](https://github.com/DataDog/libddwaf/pull/330))
+
+#### Miscellaneous
+- Fix many, but not all, clang-tidy complaints ([#339](https://github.com/DataDog/libddwaf/pull/339))
+- Set content:write permissions on release job ([#340](https://github.com/DataDog/libddwaf/pull/340))
+
 ## v1.19.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Fixes
 - Split collections by module ([#328](https://github.com/DataDog/libddwaf/pull/328))
