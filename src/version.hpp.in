@@ -10,6 +10,6 @@
 
 namespace ddwaf {
 
-static semantic_version current_version{"1.19.1"};
+static semantic_version current_version{"${PROJECT_VERSION}"};
 
 } // namespace ddwaf

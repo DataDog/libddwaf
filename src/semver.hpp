@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <fmt/format.h>
 #include <stdexcept>
 #include <string_view>
 
@@ -104,6 +105,14 @@ protected:
     uint16_t minor_{0};
     uint16_t patch_{0};
     uint32_t number_{0};
+};
+
+template <> struct fmt::formatter<semantic_version> : fmt::formatter<std::string_view> {
+    // Use the parse method from the base class formatter
+    template <typename FormatContext> auto format(semantic_version &v, FormatContext &ctx)
+    {
+        return fmt::formatter<std::string_view>::format(v.string(), ctx);
+    }
 };
 
 } // namespace ddwaf

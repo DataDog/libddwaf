@@ -130,8 +130,8 @@ filter_spec_container parse_filters(parameter::vector &filter_array, base_sectio
             auto min_version{at<semantic_version>(node, "min_version", semantic_version::min())};
             auto max_version{at<semantic_version>(node, "max_version", semantic_version::max())};
             if (min_version > current_version || max_version < current_version) {
-                DDWAF_DEBUG("Skipping filter '{}': version required between [{}, {}]", id,
-                    min_version.string(), max_version.string());
+                DDWAF_DEBUG("Skipping filter '{}': version required between [{}, {}], current {}",
+                    id, min_version, max_version, current_version);
                 info.add_skipped(id);
                 continue;
             }

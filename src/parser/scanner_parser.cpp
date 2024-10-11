@@ -61,8 +61,8 @@ indexer<const scanner> parse_scanners(parameter::vector &scanner_array, base_sec
             auto min_version{at<semantic_version>(node, "min_version", semantic_version::min())};
             auto max_version{at<semantic_version>(node, "max_version", semantic_version::max())};
             if (min_version > current_version || max_version < current_version) {
-                DDWAF_DEBUG("Scanner {} requires a version between [{}, {}]", id,
-                    min_version.string(), max_version.string());
+                DDWAF_DEBUG("Skipping scanner '{}': version required between [{}, {}], current {}",
+                    id, min_version, max_version, current_version);
                 info.add_skipped(id);
                 continue;
             }
