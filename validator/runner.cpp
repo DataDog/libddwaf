@@ -209,7 +209,14 @@ void test_runner::validate_conditions(const YAML::Node &expected, const YAML::No
         auto expected_cond = expected[i];
         auto obtained_cond = obtained[i];
 
-        expect(expected_cond["operator"], obtained_cond["operator"]);
+        // Remove the version of the operator as it is not reported within events
+        auto expected_operator = expected_cond["operator"].as<std::string>();
+        auto version_idx = expected_operator.find("@v");
+        if (version_idx != std::string::npos) {
+            expected_operator = expected_operator.substr(0, version_idx);
+        }
+
+        expect(expected_operator, obtained_cond["operator"].as<std::string>());
 
         auto op = expected_cond["operator"].as<std::string>();
         if (op == "match_regex") {

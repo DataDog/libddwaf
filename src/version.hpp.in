@@ -6,4 +6,10 @@
 
 #pragma once
 
-constexpr const char *LIBDDWAF_VERSION = "${PROJECT_VERSION}";
+#include "semver.hpp"
+
+namespace ddwaf {
+
+static semantic_version current_version{"${PROJECT_VERSION}"};
+
+} // namespace ddwaf

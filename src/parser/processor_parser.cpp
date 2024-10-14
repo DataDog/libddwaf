@@ -20,7 +20,9 @@
 #include "processor/base.hpp"
 #include "processor/extract_schema.hpp"
 #include "processor/fingerprint.hpp"
+#include "semver.hpp"
 #include "utils.hpp"
+#include "version.hpp"
 
 namespace ddwaf::parser::v2 {
 
@@ -78,6 +80,17 @@ processor_container parse_processors(
             if (known_processors.contains(id)) {
                 DDWAF_WARN("Duplicate processor: {}", id);
                 info.add_failed(id, "duplicate processor");
+                continue;
+            }
+
+            // Check version compatibility and fail without diagnostic
+            auto min_version{at<semantic_version>(node, "min_version", semantic_version::min())};
+            auto max_version{at<semantic_version>(node, "max_version", semantic_version::max())};
+            if (min_version > current_version || max_version < current_version) {
+                DDWAF_DEBUG(
+                    "Skipping processor '{}': version required between [{}, {}], current {}", id,
+                    min_version, max_version, current_version);
+                info.add_skipped(id);
                 continue;
             }
 
@@ -152,7 +165,9 @@ processor_container parse_processors(
                 processors.post.emplace_back(processor_builder{type, std::move(id), std::move(expr),
                     std::move(mappings), std::move(scanners), eval, output});
             }
-
+        } catch (const unsupported_operator_version &e) {
+            DDWAF_WARN("Skipping processor '{}': {}", id, e.what());
+            info.add_skipped(id);
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = index_to_id(i);

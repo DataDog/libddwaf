@@ -16,6 +16,7 @@
 #include "ddwaf.h"
 #include "exception.hpp"
 #include "parameter.hpp"
+#include "semver.hpp"
 #include "utils.hpp"
 
 namespace {
@@ -304,6 +305,15 @@ parameter::operator std::unordered_map<std::string, std::string>() const
     }
 
     return data;
+}
+
+parameter::operator semantic_version() const
+{
+    if (type != DDWAF_OBJ_STRING || stringValue == nullptr) {
+        throw bad_cast("string", strtype(type));
+    }
+
+    return semantic_version{{stringValue, static_cast<size_t>(nbEntries)}};
 }
 
 } // namespace ddwaf

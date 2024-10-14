@@ -44,8 +44,7 @@ TEST(TestParserV2Scanner, ParseKeyOnlyScanner)
     EXPECT_EQ(scanners.size(), 1);
     EXPECT_NE(scanners.find_by_id("ecd"), nullptr);
 
-    auto *scnr = scanners.find_by_id("ecd");
-    ;
+    const auto *scnr = scanners.find_by_id("ecd");
     EXPECT_STREQ(scnr->get_id().data(), "ecd");
     std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
     EXPECT_EQ(scnr->get_tags(), tags);
@@ -93,8 +92,7 @@ TEST(TestParserV2Scanner, ParseValueOnlyScanner)
     EXPECT_EQ(scanners.size(), 1);
     EXPECT_NE(scanners.find_by_id("ecd"), nullptr);
 
-    auto *scnr = scanners.find_by_id("ecd");
-    ;
+    const auto *scnr = scanners.find_by_id("ecd");
     EXPECT_STREQ(scnr->get_id().data(), "ecd");
     std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
     EXPECT_EQ(scnr->get_tags(), tags);
@@ -142,8 +140,7 @@ TEST(TestParserV2Scanner, ParseKeyValueScanner)
     EXPECT_EQ(scanners.size(), 1);
     EXPECT_NE(scanners.find_by_id("ecd"), nullptr);
 
-    auto *scnr = scanners.find_by_id("ecd");
-    ;
+    const auto *scnr = scanners.find_by_id("ecd");
     EXPECT_STREQ(scnr->get_id().data(), "ecd");
     std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
     EXPECT_EQ(scnr->get_tags(), tags);
@@ -539,4 +536,110 @@ TEST(TestParserV2Scanner, ParseRuleDataID)
 
     EXPECT_EQ(scanners.size(), 0);
 }
+
+TEST(TestParserV2Scanner, IncompatibleMinVersion)
+{
+    auto definition = json_to_object(
+        R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}, "min_version": "99.0.0"}])");
+    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+
+    ddwaf::ruleset_info::section_info section;
+    auto scanners = parser::v2::parse_scanners(scanners_array, section);
+    ddwaf_object_free(&definition);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(root_map, "skipped");
+        EXPECT_EQ(skipped.size(), 1);
+        EXPECT_TRUE(skipped.contains("ecd"));
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(scanners.size(), 0);
+}
+
+TEST(TestParserV2Scanner, IncompatibleMaxVersion)
+{
+    auto definition = json_to_object(
+        R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}, "max_version": "0.0.99"}])");
+    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+
+    ddwaf::ruleset_info::section_info section;
+    auto scanners = parser::v2::parse_scanners(scanners_array, section);
+    ddwaf_object_free(&definition);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(root_map, "skipped");
+        EXPECT_EQ(skipped.size(), 1);
+        EXPECT_TRUE(skipped.contains("ecd"));
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(scanners.size(), 0);
+}
+
+TEST(TestParserV2Scanner, CompatibleVersion)
+{
+    auto definition = json_to_object(
+        R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}, "min_version": "0.0.99", "max_version": "2.0.0"}])");
+    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+
+    ddwaf::ruleset_info::section_info section;
+    auto scanners = parser::v2::parse_scanners(scanners_array, section);
+    ddwaf_object_free(&definition);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_TRUE(loaded.contains("ecd"));
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(root_map, "skipped");
+        EXPECT_EQ(skipped.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(scanners.size(), 1);
+}
+
 } // namespace

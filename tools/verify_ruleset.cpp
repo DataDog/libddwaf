@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
     int retval = EXIT_SUCCESS;
 
     try {
-        ddwaf_set_log_cb(log_cb, DDWAF_LOG_OFF);
+        ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
 
         if (argc < 2) {
             std::cout << "Usage: " << argv[0] << " <json/yaml file>\n";
