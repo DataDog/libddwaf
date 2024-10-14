@@ -14,6 +14,7 @@
 
 #include "ddwaf.h"
 #include "exception.hpp"
+#include "semver.hpp"
 
 namespace ddwaf {
 
@@ -47,6 +48,7 @@ public:
     explicit operator std::vector<std::string>() const;
     explicit operator std::vector<std::string_view>() const;
     explicit operator std::unordered_map<std::string, std::string>() const;
+    explicit operator semantic_version() const;
 
     ~parameter() = default;
 };
@@ -85,6 +87,10 @@ template <> struct parameter_traits<std::vector<std::string_view>> {
 
 template <> struct parameter_traits<std::unordered_map<std::string, std::string>> {
     static const char *name() { return "std::unordered_map<std::string, std::string>"; }
+};
+
+template <> struct parameter_traits<semantic_version> {
+    static const char *name() { return "semantic_version"; }
 };
 
 } // namespace ddwaf

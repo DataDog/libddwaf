@@ -20,6 +20,8 @@
 #include "parser/matcher_parser.hpp"
 #include "parser/parser.hpp"
 #include "scanner.hpp"
+#include "semver.hpp"
+#include "version.hpp"
 
 namespace ddwaf::parser::v2 {
 
@@ -52,6 +54,16 @@ indexer<const scanner> parse_scanners(parameter::vector &scanner_array, base_sec
             if (scanners.find_by_id(id) != nullptr) {
                 DDWAF_WARN("Duplicate scanner: {}", id);
                 info.add_failed(id, "duplicate scanner");
+                continue;
+            }
+
+            // Check version compatibility and fail without diagnostic
+            auto min_version{at<semantic_version>(node, "min_version", semantic_version::min())};
+            auto max_version{at<semantic_version>(node, "max_version", semantic_version::max())};
+            if (min_version > current_version || max_version < current_version) {
+                DDWAF_DEBUG("Skipping scanner '{}': version required between [{}, {}], current {}",
+                    id, min_version, max_version, current_version);
+                info.add_skipped(id);
                 continue;
             }
 

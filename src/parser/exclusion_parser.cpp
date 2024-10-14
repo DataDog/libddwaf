@@ -20,7 +20,9 @@
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
 #include "parser/specification.hpp"
+#include "semver.hpp"
 #include "utils.hpp"
+#include "version.hpp"
 
 namespace ddwaf::parser::v2 {
 
@@ -124,6 +126,16 @@ filter_spec_container parse_filters(parameter::vector &filter_array, base_sectio
                 continue;
             }
 
+            // Check version compatibility and fail without diagnostic
+            auto min_version{at<semantic_version>(node, "min_version", semantic_version::min())};
+            auto max_version{at<semantic_version>(node, "max_version", semantic_version::max())};
+            if (min_version > current_version || max_version < current_version) {
+                DDWAF_DEBUG("Skipping filter '{}': version required between [{}, {}], current {}",
+                    id, min_version, max_version, current_version);
+                info.add_skipped(id);
+                continue;
+            }
+
             if (node.find("inputs") != node.end()) {
                 auto filter = parse_input_filter(node, addresses, filter_data_ids, limits);
                 filters.ids.emplace(id);
@@ -137,6 +149,9 @@ filter_spec_container parse_filters(parameter::vector &filter_array, base_sectio
 
             info.add_loaded(id);
             add_addresses_to_info(addresses, info);
+        } catch (const unsupported_operator_version &e) {
+            DDWAF_WARN("Skipping filter '{}': {}", id, e.what());
+            info.add_skipped(id);
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = index_to_id(i);
