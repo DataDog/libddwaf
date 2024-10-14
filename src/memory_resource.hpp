@@ -17,6 +17,9 @@
 #  include <unordered_set>
 #  include <vector>
 
+namespace std::pmr {
+using memory_resource = std::experimental::pmr::memory_resource;
+} namespace std::pmr
 #  if !defined(__cpp_lib_experimental_memory_resources)
 #    include "libcxx-compat/monotonic_buffer_resource.hpp"
 #  endif
