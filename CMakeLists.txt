@@ -73,7 +73,6 @@ try_compile(STDLIB_MONOTONIC_RESOURCE ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_monotonic_resource.cpp
     CXX_STANDARD 20)
 
-
 message(STATUS "Has recursive unordered_map    : ${STDLIB_MAP_RECURSIVE}")
 message(STATUS "Has memory_resource test macro : ${STDLIB_MEMORY_RESOURCE}")
 message(STATUS "Has monotonic_resource         : ${STDLIB_MONOTONIC_RESOURCE}")
