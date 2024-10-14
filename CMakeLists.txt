@@ -35,9 +35,9 @@ option(LIBDDWAF_VECTORIZED_TRANSFORMERS "Enable vectorization for transformers" 
 option(LIBDDWAF_ENABLE_LTO "Enable link-time optimisation" OFF)
 
 if(NOT MSVC)
-#    if (APPLE)
-        #set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
-    #endif()
+    if (APPLE)
+        set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
+    endif()
 
     add_compile_options(-Wall -Wextra -Wno-narrowing)
     if (CMAKE_BUILD_TYPE MATCHES Debug OR CMAKE_BUILD_TYPE MATCHES RelWithDebInfo)

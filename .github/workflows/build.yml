@@ -81,7 +81,7 @@ jobs:
         run: for file in *.tar.gz; do shasum -a 256 "$file" > "$file.sha256"; done
       - uses: actions/upload-artifact@v4
         with:
-          name: libddwaf-macos-x86_64
+          name: libddwaf-macos-arm64
           path: |
             ${{ github.workspace }}/packages/*.tar.gz
             ${{ github.workspace }}/packages/*.sha256
@@ -111,7 +111,7 @@ jobs:
         run: for file in *.tar.gz; do shasum -a 256 "$file" > "$file.sha256"; done
       - uses: actions/upload-artifact@v4
         with:
-          name: libddwaf-macos-arm64
+          name: libddwaf-macos-x86_64
           path: |
             ${{ github.workspace }}/packages/*.tar.gz
             ${{ github.workspace }}/packages/*.sha256
