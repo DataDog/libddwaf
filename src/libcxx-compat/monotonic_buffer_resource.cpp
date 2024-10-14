@@ -6,8 +6,7 @@
 
 #include <version>
 
-#if !defined(__cpp_lib_memory_resource) && !defined(__cpp_lib_experimental_memory_resources) &&    \
-    !defined(HAS_MEMORY_RESOURCE)
+#if !defined(__cpp_lib_memory_resource) && !defined(__cpp_lib_experimental_memory_resources)
 
 #  include "monotonic_buffer_resource.hpp"
 
