@@ -8,7 +8,7 @@
 
 #include <version>
 
-#if defined(__cpp_lib_memory_resource)
+#if defined(__cpp_lib_memory_resource) || defined(HAS_MEMORY_RESOURCE)
 #  include <memory_resource>
 #else
 #  include <experimental/memory_resource>

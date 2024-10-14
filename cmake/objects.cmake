@@ -132,10 +132,10 @@ function(gen_objects target_name)
         target_compile_definitions(${target_name} PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
     endif()
 
-    if (NOT STDLIB_MEMORY_RESOURCE AND STDLIB_MONOTONIC_RESOURCE)
+    if (STDLIB_MEMORY_RESOURCE OR STDLIB_MONOTONIC_RESOURCE)
         # For some reason __cpp_lib_memory_resource seems to be missing in macos-14 when
         # using the correct CMAKE_OSX_DEPLOYMENT_TARGET
-        target_compile_definitions(${target_name} PRIVATE __cpp_lib_memory_resource)
+        target_compile_definitions(${target_name} PRIVATE HAS_MEMORY_RESOURCE)
     endif()
 
     if (LIBDDWAF_VECTORIZED_TRANSFORMERS)
