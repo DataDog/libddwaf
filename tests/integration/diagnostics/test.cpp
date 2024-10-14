@@ -35,7 +35,7 @@ TEST(TestDiagnosticsIntegration, Rules)
         EXPECT_STR(version, "5.4.2");
 
         auto rules = ddwaf::parser::at<parameter::map>(root_map, "rules");
-        EXPECT_EQ(rules.size(), 4);
+        EXPECT_EQ(rules.size(), 5);
 
         auto loaded = ddwaf::parser::at<parameter::string_set>(rules, "loaded");
         EXPECT_EQ(loaded.size(), 4);
@@ -46,6 +46,9 @@ TEST(TestDiagnosticsIntegration, Rules)
 
         auto failed = ddwaf::parser::at<parameter::string_set>(rules, "failed");
         EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(rules, "skipped");
+        EXPECT_EQ(skipped.size(), 0);
 
         auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
@@ -60,6 +63,163 @@ TEST(TestDiagnosticsIntegration, Rules)
         EXPECT_TRUE(required.contains("value3"));
         EXPECT_TRUE(required.contains("value4"));
         EXPECT_TRUE(required.contains("value34"));
+
+        auto optional = ddwaf::parser::at<parameter::string_set>(addresses, "optional");
+        EXPECT_EQ(optional.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    ddwaf_destroy(handle);
+}
+
+TEST(TestDiagnosticsIntegration, RulesWithMinVersion)
+{
+    auto rule = read_file("rules_min_version.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+
+    ddwaf_object diagnostics;
+    ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf::parameter root = diagnostics;
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version");
+        EXPECT_STR(version, "5.4.2");
+
+        auto rules = ddwaf::parser::at<parameter::map>(root_map, "rules");
+        EXPECT_EQ(rules.size(), 5);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(rules, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_TRUE(loaded.contains("rule1"));
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(rules, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(rules, "skipped");
+        EXPECT_EQ(skipped.size(), 1);
+        EXPECT_TRUE(skipped.contains("rule2"));
+
+        auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        auto addresses = ddwaf::parser::at<parameter::map>(rules, "addresses");
+        EXPECT_EQ(addresses.size(), 2);
+
+        auto required = ddwaf::parser::at<parameter::string_set>(addresses, "required");
+        EXPECT_EQ(required.size(), 1);
+        EXPECT_TRUE(required.contains("value1"));
+
+        auto optional = ddwaf::parser::at<parameter::string_set>(addresses, "optional");
+        EXPECT_EQ(optional.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    ddwaf_destroy(handle);
+}
+
+TEST(TestDiagnosticsIntegration, RulesWithMaxVersion)
+{
+    auto rule = read_file("rules_max_version.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+
+    ddwaf_object diagnostics;
+    ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf::parameter root = diagnostics;
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version");
+        EXPECT_STR(version, "5.4.2");
+
+        auto rules = ddwaf::parser::at<parameter::map>(root_map, "rules");
+        EXPECT_EQ(rules.size(), 5);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(rules, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_TRUE(loaded.contains("rule1"));
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(rules, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(rules, "skipped");
+        EXPECT_EQ(skipped.size(), 1);
+        EXPECT_TRUE(skipped.contains("rule2"));
+
+        auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        auto addresses = ddwaf::parser::at<parameter::map>(rules, "addresses");
+        EXPECT_EQ(addresses.size(), 2);
+
+        auto required = ddwaf::parser::at<parameter::string_set>(addresses, "required");
+        EXPECT_EQ(required.size(), 1);
+        EXPECT_TRUE(required.contains("value1"));
+
+        auto optional = ddwaf::parser::at<parameter::string_set>(addresses, "optional");
+        EXPECT_EQ(optional.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    ddwaf_destroy(handle);
+}
+
+TEST(TestDiagnosticsIntegration, RulesWithMinMaxVersion)
+{
+    auto rule = read_file("rules_min_max_version.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+
+    ddwaf_object diagnostics;
+    ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf::parameter root = diagnostics;
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version");
+        EXPECT_STR(version, "5.4.2");
+
+        auto rules = ddwaf::parser::at<parameter::map>(root_map, "rules");
+        EXPECT_EQ(rules.size(), 5);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(rules, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_TRUE(loaded.contains("rule1"));
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(rules, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(rules, "skipped");
+        EXPECT_EQ(skipped.size(), 2);
+        EXPECT_TRUE(skipped.contains("rule2"));
+        EXPECT_TRUE(skipped.contains("rule3"));
+
+        auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        auto addresses = ddwaf::parser::at<parameter::map>(rules, "addresses");
+        EXPECT_EQ(addresses.size(), 2);
+
+        auto required = ddwaf::parser::at<parameter::string_set>(addresses, "required");
+        EXPECT_EQ(required.size(), 1);
+        EXPECT_TRUE(required.contains("value1"));
 
         auto optional = ddwaf::parser::at<parameter::string_set>(addresses, "optional");
         EXPECT_EQ(optional.size(), 0);
@@ -90,11 +250,14 @@ TEST(TestDiagnosticsIntegration, RulesWithErrors)
         EXPECT_STR(version, "5.4.1");
 
         auto rules = ddwaf::parser::at<parameter::map>(root_map, "rules");
-        EXPECT_EQ(rules.size(), 4);
+        EXPECT_EQ(rules.size(), 5);
 
         auto loaded = ddwaf::parser::at<parameter::string_set>(rules, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_TRUE(loaded.contains("rule1"));
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(rules, "skipped");
+        EXPECT_EQ(skipped.size(), 0);
 
         auto failed = ddwaf::parser::at<parameter::string_set>(rules, "failed");
         EXPECT_EQ(failed.size(), 5);
@@ -180,7 +343,7 @@ TEST(TestDiagnosticsIntegration, CustomRules)
         EXPECT_STR(version, "5.4.3");
 
         auto rules = ddwaf::parser::at<parameter::map>(root_map, "custom_rules");
-        EXPECT_EQ(rules.size(), 4);
+        EXPECT_EQ(rules.size(), 5);
 
         auto loaded = ddwaf::parser::at<parameter::string_set>(rules, "loaded");
         EXPECT_EQ(loaded.size(), 4);
@@ -191,6 +354,9 @@ TEST(TestDiagnosticsIntegration, CustomRules)
 
         auto failed = ddwaf::parser::at<parameter::string_set>(rules, "failed");
         EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(rules, "skipped");
+        EXPECT_EQ(skipped.size(), 0);
 
         auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
@@ -232,7 +398,7 @@ TEST(TestDiagnosticsIntegration, InputFilter)
         auto root_map = static_cast<parameter::map>(root);
 
         auto exclusions = ddwaf::parser::at<parameter::map>(root_map, "exclusions");
-        EXPECT_EQ(exclusions.size(), 4);
+        EXPECT_EQ(exclusions.size(), 5);
 
         auto loaded = ddwaf::parser::at<parameter::string_set>(exclusions, "loaded");
         EXPECT_EQ(loaded.size(), 1);
@@ -240,6 +406,9 @@ TEST(TestDiagnosticsIntegration, InputFilter)
 
         auto failed = ddwaf::parser::at<parameter::string_set>(exclusions, "failed");
         EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(exclusions, "skipped");
+        EXPECT_EQ(skipped.size(), 0);
 
         auto errors = ddwaf::parser::at<parameter::map>(exclusions, "errors");
         EXPECT_EQ(errors.size(), 0);
@@ -279,7 +448,7 @@ TEST(TestDiagnosticsIntegration, RuleData)
         auto root_map = static_cast<parameter::map>(root);
 
         auto rule_data = ddwaf::parser::at<parameter::map>(root_map, "rules_data");
-        EXPECT_EQ(rule_data.size(), 3);
+        EXPECT_EQ(rule_data.size(), 4);
 
         auto loaded = ddwaf::parser::at<parameter::string_set>(rule_data, "loaded");
         EXPECT_EQ(loaded.size(), 2);
@@ -288,6 +457,9 @@ TEST(TestDiagnosticsIntegration, RuleData)
 
         auto failed = ddwaf::parser::at<parameter::string_set>(rule_data, "failed");
         EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(rule_data, "skipped");
+        EXPECT_EQ(skipped.size(), 0);
 
         auto errors = ddwaf::parser::at<parameter::map>(rule_data, "errors");
         EXPECT_EQ(errors.size(), 0);
@@ -315,7 +487,7 @@ TEST(TestDiagnosticsIntegration, Processor)
         auto root_map = static_cast<parameter::map>(root);
 
         auto processor = ddwaf::parser::at<parameter::map>(root_map, "processors");
-        EXPECT_EQ(processor.size(), 4);
+        EXPECT_EQ(processor.size(), 5);
 
         auto loaded = ddwaf::parser::at<parameter::string_set>(processor, "loaded");
         EXPECT_EQ(loaded.size(), 1);
@@ -323,6 +495,9 @@ TEST(TestDiagnosticsIntegration, Processor)
 
         auto failed = ddwaf::parser::at<parameter::string_set>(processor, "failed");
         EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(processor, "skipped");
+        EXPECT_EQ(skipped.size(), 0);
 
         auto errors = ddwaf::parser::at<parameter::map>(processor, "errors");
         EXPECT_EQ(errors.size(), 0);

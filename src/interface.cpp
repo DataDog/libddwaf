@@ -257,7 +257,7 @@ void ddwaf_context_destroy(ddwaf_context context)
     }
 }
 
-const char *ddwaf_get_version() { return LIBDDWAF_VERSION; }
+const char *ddwaf_get_version() { return ddwaf::current_version.cstring(); }
 
 bool ddwaf_set_log_cb(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level)
 {

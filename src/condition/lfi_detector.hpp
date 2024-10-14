@@ -12,6 +12,7 @@ namespace ddwaf {
 
 class lfi_detector : public base_impl<lfi_detector> {
 public:
+    static constexpr unsigned version = 1;
     static constexpr std::array<std::string_view, 2> param_names{"resource", "params"};
 
     explicit lfi_detector(std::vector<condition_parameter> args, const object_limits &limits = {})
