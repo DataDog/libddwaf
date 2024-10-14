@@ -4,6 +4,10 @@ file(READ "version" version)
 
 string(REGEX REPLACE "-(alpha|beta)[0-9]*$" "" mmp_version ${version})
 
+if (APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "12.7" CACHE STRING "Minimum OS X deployment version")
+endif()
+
 project(libddwaf VERSION "${mmp_version}")
 
 # Resetting the version allows for alpha and beta suffix releases
@@ -35,10 +39,6 @@ option(LIBDDWAF_VECTORIZED_TRANSFORMERS "Enable vectorization for transformers" 
 option(LIBDDWAF_ENABLE_LTO "Enable link-time optimisation" OFF)
 
 if(NOT MSVC)
-    if (APPLE)
-        set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
-    endif()
-
     add_compile_options(-Wall -Wextra -Wno-narrowing)
     if (CMAKE_BUILD_TYPE MATCHES Debug OR CMAKE_BUILD_TYPE MATCHES RelWithDebInfo)
         add_compile_options(-ggdb)
