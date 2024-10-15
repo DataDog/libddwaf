@@ -19,6 +19,7 @@
 #include "log.hpp"
 #include "parameter.hpp"
 #include "parser/common.hpp"
+#include "parser/matcher_parser.hpp"
 #include "parser/parser.hpp"
 #include "rule/base.hpp"
 #include "rule/threshold_rule.hpp"
@@ -73,7 +74,7 @@ std::unique_ptr<base_threshold_rule> parse_indexed_threshold_rule(
         auto operator_name = at<std::string_view>(filter_map, "operator");
         auto params = at<parameter::map>(filter_map, "parameters");
 
-        auto [data_id, matcher] = parse_matcher(operator_name, params);
+        auto [data_id, matcher] = parse_any_matcher(operator_name, params);
         if (!data_id.empty()) {
             throw ddwaf::parsing_error("unsupported: global rule filter with data ID");
         }

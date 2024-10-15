@@ -26,10 +26,9 @@ public:
         : constructor_(std::move(constructor)), max_index_size_(max_index_size)
     {}
 
-
     template <typename CompatKeyType>
         requires std::is_constructible_v<CompatKeyType, KeyType>
-    DataType& emplace_or_retrieve(CompatKeyType key, DurationType timepoint)
+    DataType &emplace_or_retrieve(CompatKeyType key, DurationType timepoint)
     {
         auto it = index_.find(key);
         if (it == index_.end()) {
@@ -37,15 +36,15 @@ public:
                 remove_oldest_entry(timepoint);
             }
 
-
-            auto [new_it, res] = index_.emplace(KeyType{key}, cache_entry{timepoint, constructor_()});
+            auto [new_it, res] =
+                index_.emplace(KeyType{key}, cache_entry{timepoint, constructor_()});
             if (!res) {
                 throw std::out_of_range("failed to add element to cache");
             }
             return new_it->second.data;
         }
 
-         it->second.latest_timepoint = std::max(timepoint, it->second.latest_timepoint);
+        it->second.latest_timepoint = std::max(timepoint, it->second.latest_timepoint);
 
         return it->second.data;
     }
