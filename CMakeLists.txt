@@ -65,17 +65,17 @@ try_compile(STDLIB_MAP_RECURSIVE ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_rec_map.cpp
     CXX_STANDARD 20)
 
-try_compile(STDLIB_MEMORY_RESOURCE_FTM ${CMAKE_CURRENT_BINARY_DIR}
-    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_mem_resource_ftm.cpp
-    CXX_STANDARD 20)
+#try_compile(STDLIB_MEMORY_RESOURCE_FTM ${CMAKE_CURRENT_BINARY_DIR}
+    #SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_mem_resource_ftm.cpp
+    #CXX_STANDARD 20)
 
-try_compile(STDLIB_MONOTONIC_RESOURCE ${CMAKE_CURRENT_BINARY_DIR}
-    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_monotonic_resource.cpp
-    CXX_STANDARD 20)
+#try_compile(STDLIB_MONOTONIC_RESOURCE ${CMAKE_CURRENT_BINARY_DIR}
+    #SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_monotonic_resource.cpp
+    #CXX_STANDARD 20)
 
 message(STATUS "Has recursive unordered_map    : ${STDLIB_MAP_RECURSIVE}")
-message(STATUS "Has memory_resource test macro : ${STDLIB_MEMORY_RESOURCE_FTM}")
-message(STATUS "Has monotonic_resource         : ${STDLIB_MONOTONIC_RESOURCE}")
+#message(STATUS "Has memory_resource test macro : ${STDLIB_MEMORY_RESOURCE_FTM}")
+#message(STATUS "Has monotonic_resource         : ${STDLIB_MONOTONIC_RESOURCE}")
 
 # System dependencies
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
