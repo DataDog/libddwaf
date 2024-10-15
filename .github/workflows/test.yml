@@ -264,6 +264,9 @@ jobs:
       - name: Create directories
         run: mkdir Debug
 
+      - name: Install dependencies
+        run: sudo apt update ; sudo apt install -y libreadline-dev
+
       - name: CMake
         env:
           CC: gcc-12

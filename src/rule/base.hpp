@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <atomic>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -16,59 +15,36 @@
 #include "event.hpp"
 #include "exclusion/common.hpp"
 #include "expression.hpp"
-#include "iterator.hpp"
 #include "matcher/base.hpp"
 #include "object_store.hpp"
+#include "sliding_window_counter.hpp"
 
 namespace ddwaf {
 
-class rule {
+class base_rule {
 public:
-    enum class source_type : uint8_t { base = 1, user = 2 };
-
-    using cache_type = expression::cache_type;
-
-    rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
+    base_rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
         std::shared_ptr<expression> expr, std::vector<std::string> actions = {},
-        bool enabled = true, source_type source = source_type::base)
-        : enabled_(enabled), source_(source), id_(std::move(id)), name_(std::move(name)),
-          tags_(std::move(tags)), expr_(std::move(expr)), actions_(std::move(actions))
+        bool enabled = true)
+        : enabled_(enabled), id_(std::move(id)), name_(std::move(name)), tags_(std::move(tags)),
+          expr_(std::move(expr)), actions_(std::move(actions))
     {
         if (!expr_) {
             throw std::invalid_argument("rule constructed with null expression");
         }
     }
 
-    rule(const rule &) = delete;
-    rule &operator=(const rule &) = delete;
+    base_rule(const base_rule &) = delete;
+    base_rule &operator=(const base_rule &) = delete;
 
-    rule(rule &&rhs) noexcept = default;
-    rule &operator=(rule &&rhs) = default;
+    base_rule(base_rule &&rhs) noexcept = default;
+    base_rule &operator=(base_rule &&rhs) noexcept = default;
 
-    virtual ~rule() = default;
-
-    virtual std::optional<event> match(const object_store &store, cache_type &cache,
-        const exclusion::object_set_ref &objects_excluded,
-        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-        ddwaf::timer &deadline) const
-    {
-        if (expression::get_result(cache)) {
-            // An event was already produced, so we skip the rule
-            return std::nullopt;
-        }
-
-        auto res = expr_->eval(cache, store, objects_excluded, dynamic_matchers, deadline);
-        if (!res.outcome) {
-            return std::nullopt;
-        }
-
-        return {ddwaf::event{this, expression::get_matches(cache), res.ephemeral, {}}};
-    }
+    virtual ~base_rule() = default;
 
     [[nodiscard]] bool is_enabled() const { return enabled_; }
     void toggle(bool value) { enabled_ = value; }
 
-    source_type get_source() const { return source_; }
     const std::string &get_id() const { return id_; }
     const std::string &get_name() const { return name_; }
 
@@ -109,13 +85,32 @@ public:
 
 protected:
     bool enabled_{true};
-    source_type source_;
     std::string id_;
     std::string name_;
     std::unordered_map<std::string, std::string> tags_;
     std::unordered_map<std::string, std::string> ancillary_tags_;
     std::shared_ptr<expression> expr_;
     std::vector<std::string> actions_;
+};
+
+class base_threshold_rule : public base_rule {
+public:
+    using cache_type = expression::cache_type;
+
+    base_threshold_rule(std::string id, std::string name,
+        std::unordered_map<std::string, std::string> tags, std::shared_ptr<expression> expr,
+        std::vector<std::string> actions = {}, bool enabled = true)
+        : base_rule(std::move(id), std::move(name), std::move(tags), std::move(expr),
+              std::move(actions), enabled)
+    {}
+    ~base_threshold_rule() override = default;
+    base_threshold_rule(const base_threshold_rule &) = delete;
+    base_threshold_rule &operator=(const base_threshold_rule &) = delete;
+    base_threshold_rule(base_threshold_rule &&rhs) noexcept = default;
+    base_threshold_rule &operator=(base_threshold_rule &&rhs) noexcept = default;
+
+    virtual std::optional<event> eval(const object_store &store, cache_type &cache,
+        monotonic_clock::time_point now, ddwaf::timer &deadline) = 0;
 };
 
 } // namespace ddwaf

@@ -103,6 +103,10 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     try {
         eval_preprocessors(derived, deadline);
 
+        if (ruleset_->gctx) {
+            ruleset_->gctx->eval(events, store_, gctx_cache_, deadline);
+        }
+
         // If no rule targets are available, there is no point in evaluating them
         const bool should_eval_rules = check_new_rule_targets();
         const bool should_eval_filters = should_eval_rules || check_new_filter_targets();
@@ -114,7 +118,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
             const auto &policy = eval_filters(deadline);
 
             if (should_eval_rules) {
-                events = eval_rules(policy, deadline);
+                eval_rules(events, policy, deadline);
                 if (!events.empty()) {
                     set_context_event_address(store_);
                 }
@@ -230,11 +234,9 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
     return exclusion_policy_;
 }
 
-std::vector<event> context::eval_rules(
-    const exclusion::context_policy &policy, ddwaf::timer &deadline)
+void context::eval_rules(std::vector<ddwaf::event> &events, const exclusion::context_policy &policy,
+    ddwaf::timer &deadline)
 {
-    std::vector<ddwaf::event> events;
-
     auto eval_collection = [&](const auto &type, const auto &collection) {
         auto it = collection_cache_.find(type);
         if (it == collection_cache_.end()) {
@@ -267,8 +269,6 @@ std::vector<event> context::eval_rules(
         DDWAF_DEBUG("Evaluating base collection '{}'", type);
         eval_collection(type, collection);
     }
-
-    return events;
 }
 
 } // namespace ddwaf

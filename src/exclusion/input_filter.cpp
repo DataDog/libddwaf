@@ -19,7 +19,7 @@
 #include "log.hpp"
 #include "matcher/base.hpp"
 #include "object_store.hpp"
-#include "rule.hpp"
+#include "rule/rule.hpp"
 
 namespace ddwaf::exclusion {
 

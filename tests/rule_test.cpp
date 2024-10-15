@@ -8,7 +8,7 @@
 #include "matcher/exact_match.hpp"
 #include "matcher/ip_match.hpp"
 #include "object_store.hpp"
-#include "rule.hpp"
+#include "rule/rule.hpp"
 #include "test_utils.hpp"
 
 using namespace ddwaf;

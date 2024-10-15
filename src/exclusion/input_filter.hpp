@@ -13,7 +13,7 @@
 #include "clock.hpp"
 #include "exclusion/object_filter.hpp"
 #include "object_store.hpp"
-#include "rule.hpp"
+#include "rule/rule.hpp"
 
 namespace ddwaf::exclusion {
 

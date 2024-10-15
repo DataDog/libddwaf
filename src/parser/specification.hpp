@@ -14,7 +14,7 @@
 #include "expression.hpp"
 #include "parameter.hpp"
 #include "processor/base.hpp"
-#include "rule.hpp"
+#include "rule/rule.hpp"
 #include "scanner.hpp"
 
 namespace ddwaf::parser {
