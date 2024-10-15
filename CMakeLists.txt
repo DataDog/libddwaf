@@ -4,6 +4,10 @@ file(READ "version" version)
 
 string(REGEX REPLACE "-(alpha|beta)[0-9]*$" "" mmp_version ${version})
 
+if (APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "12.7" CACHE STRING "Minimum OS X deployment version")
+endif()
+
 project(libddwaf VERSION "${mmp_version}")
 
 # Resetting the version allows for alpha and beta suffix releases
@@ -35,10 +39,6 @@ option(LIBDDWAF_VECTORIZED_TRANSFORMERS "Enable vectorization for transformers" 
 option(LIBDDWAF_ENABLE_LTO "Enable link-time optimisation" OFF)
 
 if(NOT MSVC)
-    if (APPLE)
-        set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
-    endif()
-
     add_compile_options(-Wall -Wextra -Wno-narrowing)
     if (CMAKE_BUILD_TYPE MATCHES Debug OR CMAKE_BUILD_TYPE MATCHES RelWithDebInfo)
         add_compile_options(-ggdb)
@@ -64,6 +64,18 @@ set_target_properties(glibc_compat_math PROPERTIES POSITION_INDEPENDENT_CODE 1)
 try_compile(STDLIB_MAP_RECURSIVE ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_rec_map.cpp
     CXX_STANDARD 20)
+
+try_compile(STDLIB_MEMORY_RESOURCE_FTM ${CMAKE_CURRENT_BINARY_DIR}
+    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_mem_resource_ftm.cpp
+    CXX_STANDARD 20)
+
+try_compile(STDLIB_MONOTONIC_RESOURCE ${CMAKE_CURRENT_BINARY_DIR}
+    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_monotonic_resource.cpp
+    CXX_STANDARD 20)
+
+message(STATUS "Has recursive unordered_map    : ${STDLIB_MAP_RECURSIVE}")
+message(STATUS "Has memory_resource test macro : ${STDLIB_MEMORY_RESOURCE_FTM}")
+message(STATUS "Has monotonic_resource         : ${STDLIB_MONOTONIC_RESOURCE}")
 
 # System dependencies
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
