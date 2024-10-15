@@ -39,7 +39,7 @@ std::optional<shi_result> shi_string_impl(std::string_view resource,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
-    match_iterator it(resource, &params, objects_excluded, limits);
+    match_iterator it(resource, params, objects_excluded, limits);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
