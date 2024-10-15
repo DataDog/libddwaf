@@ -14,7 +14,7 @@ if(NOT STDLIB_MAP_RECURSIVE)
     target_compile_definitions(waf_test PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
 endif()
 
-if (STDLIB_MEMORY_RESOURCE OR STDLIB_MONOTONIC_RESOURCE)
+if (NOT STDLIB_MEMORY_RESOURCE_FTM AND STDLIB_MONOTONIC_RESOURCE)
     # For some reason __cpp_lib_memory_resource seems to be missing in macos-14 when
     # using the correct CMAKE_OSX_DEPLOYMENT_TARGET
     target_compile_definitions(waf_test PRIVATE __cpp_lib_memory_resource)
