@@ -3,7 +3,7 @@
 install(FILES ${libddwaf_SOURCE_DIR}/include/ddwaf.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(EXPORT libddwaf-config DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/libddwaf)
 
-if(APPLE AND CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
+if(APPLE AND CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
     set(LIBDDWAF_PACKAGE_PROCESSOR ${CMAKE_OSX_ARCHITECTURES} CACHE STRING "Alternative processor for packaging purposes")
 else()
     set(LIBDDWAF_PACKAGE_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR} CACHE STRING "Alternative processor for packaging purposes")
