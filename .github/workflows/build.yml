@@ -125,11 +125,11 @@ jobs:
 
           echo "--- x86_64 target ---"
           file ./pack-temp/osx-x64/$x64Name/lib/libddwaf.dylib
-          otool -l ./pack-temp/osx-x64/$x64Name/lib/libddwaf.dylib
+          otool -l ./pack-temp/osx-x64/$x64Name/lib/libddwaf.dylib | egrep "(minos|sdk)"
 
           echo "--- arm64 target ---"
           file ./pack-temp/osx-arm64/$arm64Name/lib/libddwaf.dylib
-          otool -l ./pack-temp/osx-arm64/$arm64Name/lib/libddwaf.dylib
+          otool -l ./pack-temp/osx-arm64/$arm64Name/lib/libddwaf.dylib | egrep "(minos|sdk)"
 
           # Create the universal binary for the shared library: libddwaf.dylib
           lipo ./pack-temp/osx-x64/$x64Name/lib/libddwaf.dylib ./pack-temp/osx-arm64/$arm64Name/lib/libddwaf.dylib -create -output ./pack-temp/osx/$universalName/lib/libddwaf.dylib
