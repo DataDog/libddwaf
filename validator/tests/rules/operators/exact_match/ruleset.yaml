@@ -1,7 +1,7 @@
 version: '2.1'
 rules:
   - id: "1"
-    name: rule1-ip-match
+    name: rule1-exact-match
     tags:
       type: flow1
       category: category
@@ -10,6 +10,20 @@ rules:
         parameters:
           inputs:
             - address: rule1-input
+          list:
+            - "string"
+            - "other"
+            - "something else"
+  - id: "2"
+    name: rule2-negated-exact-match
+    tags:
+      type: flow2
+      category: category
+    conditions:
+      - operator: "!exact_match"
+        parameters:
+          inputs:
+            - address: rule2-input
           list:
             - "string"
             - "other"

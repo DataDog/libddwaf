@@ -31,10 +31,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 
     session_fingerprint gen{"id", {}, {}, false, true};
 
+    processor_cache cache;
     ddwaf::timer deadline{2s};
-    auto [output, attr] =
-        gen.eval_impl({{}, {}, false, &cookies}, {{}, {}, false, buffer.get<std::string_view>()},
-            {{}, {}, false, buffer.get<std::string_view>()}, deadline);
+    auto [output, attr] = gen.eval_impl({{{}, {}, false, &cookies}},
+        {{{}, {}, false, buffer.get<std::string_view>()}},
+        {{{}, {}, false, buffer.get<std::string_view>()}}, cache, deadline);
 
     ddwaf_object_free(&cookies);
     ddwaf_object_free(&output);

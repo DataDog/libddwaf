@@ -1,0 +1,23 @@
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1-not-exists-inconsequential
+    tags:
+      type: flow
+      category: category
+    conditions:
+      - operator: "!exists"
+        parameters:
+          inputs:
+            - address: input-1
+  - id: 2
+    name: rule2-not-exists-kp
+    tags:
+      type: flow
+      category: category
+    conditions:
+      - operator: "!exists"
+        parameters:
+          inputs:
+            - address: input-2
+              key_path: ["path"]

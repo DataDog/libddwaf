@@ -10,3 +10,35 @@ rules:
         parameters:
           inputs:
             - address: rule1-input
+  - id: "2"
+    name: rule2-exists-keypath
+    tags:
+      type: flow2
+      category: category
+    conditions:
+      - operator: exists
+        parameters:
+          inputs:
+            - address: rule2-input
+              key_path: ["path", "to", "object"]
+  - id: "3"
+    name: rule3-negated-exists-keypath
+    tags:
+      type: flow3
+      category: category
+    conditions:
+      - operator: "!exists"
+        parameters:
+          inputs:
+            - address: rule3-input
+              key_path: ["path", "to", "object"]
+  - id: "4"
+    name: rule4-negated-exists-invalid
+    tags:
+      type: flow4
+      category: category
+    conditions:
+      - operator: "!exists"
+        parameters:
+          inputs:
+            - address: rule4-input

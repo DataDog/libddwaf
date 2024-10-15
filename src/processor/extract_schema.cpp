@@ -22,6 +22,7 @@
 #include "ddwaf.h"
 #include "exception.hpp"
 #include "object_store.hpp"
+#include "processor/base.hpp"
 #include "processor/extract_schema.hpp"
 #include "scanner.hpp"
 
@@ -349,7 +350,8 @@ ddwaf_object generate(
 } // namespace schema
 
 std::pair<ddwaf_object, object_store::attribute> extract_schema::eval_impl(
-    const unary_argument<const ddwaf_object *> &input, ddwaf::timer &deadline) const
+    const unary_argument<const ddwaf_object *> &input, processor_cache & /*cache*/,
+    ddwaf::timer &deadline) const
 {
     if (input.value == nullptr) {
         return {};

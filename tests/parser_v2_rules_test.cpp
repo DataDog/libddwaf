@@ -368,4 +368,298 @@ TEST(TestParserV2Rules, ParseMultipleRulesOneDuplicate)
         EXPECT_STR(rule.tags["category"], "category1");
     }
 }
+
+TEST(TestParserV2Rules, KeyPathTooLong)
+{
+    ddwaf::object_limits limits;
+    limits.max_container_depth = 2;
+    ddwaf::ruleset_info::section_info section;
+    std::unordered_map<std::string, std::string> rule_data_ids;
+
+    auto rule_object = yaml_to_object(
+        R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x, y, z]}], regex: .*}}]}])");
+
+    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    EXPECT_EQ(rule_array.size(), 1);
+
+    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    ddwaf_object_free(&rule_object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("1"), failed.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+        auto it = errors.find("key_path beyond maximum container depth");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("1"), error_rules.end());
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(rules.size(), 0);
+}
+
+TEST(TestParserV2Rules, NegatedMatcherTooManyParameters)
+{
+    ddwaf::object_limits limits;
+    limits.max_container_depth = 2;
+    ddwaf::ruleset_info::section_info section;
+    std::unordered_map<std::string, std::string> rule_data_ids;
+
+    auto rule_object = yaml_to_object(
+        R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: "!match_regex", parameters: {inputs: [{address: arg1}, {address: arg2}], regex: .*}}]}])");
+
+    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    EXPECT_EQ(rule_array.size(), 1);
+
+    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    ddwaf_object_free(&rule_object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("1"), failed.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+        auto it = errors.find("multiple targets for non-variadic argument");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("1"), error_rules.end());
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(rules.size(), 0);
+}
+
+TEST(TestParserV2Rules, SupportedVersionedOperator)
+{
+    ddwaf::object_limits limits;
+    limits.max_container_depth = 2;
+    ddwaf::ruleset_info::section_info section;
+    std::unordered_map<std::string, std::string> rule_data_ids;
+
+    auto rule_object = yaml_to_object(
+        R"([{"id":"rsp-930-003","name":"SQLi Exploit detection","tags":{"type":"sqli","category":"exploit_detection","module":"rasp"},"conditions":[{"parameters":{"resource":[{"address":"server.db.statement"}],"params":[{"address":"server.request.query"},{"address":"server.request.body"},{"address":"server.request.path_params"},{"address":"grpc.server.request.message"},{"address":"graphql.server.all_resolvers"},{"address":"graphql.server.resolver"}],"db_type":[{"address":"server.db.system"}]},"operator":"sqli_detector@v2"}]}])");
+
+    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    EXPECT_EQ(rule_array.size(), 1);
+
+    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    ddwaf_object_free(&rule_object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_TRUE(loaded.contains("rsp-930-003"));
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(root_map, "skipped");
+        EXPECT_EQ(skipped.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(rules.size(), 1);
+}
+
+TEST(TestParserV2Rules, UnsupportedVersionedOperator)
+{
+    ddwaf::object_limits limits;
+    limits.max_container_depth = 2;
+    ddwaf::ruleset_info::section_info section;
+    std::unordered_map<std::string, std::string> rule_data_ids;
+
+    auto rule_object = yaml_to_object(
+        R"([{"id":"rsp-930-003","name":"SQLi Exploit detection","tags":{"type":"sqli","category":"exploit_detection","module":"rasp"},"conditions":[{"parameters":{"resource":[{"address":"server.db.statement"}],"params":[{"address":"server.request.query"},{"address":"server.request.body"},{"address":"server.request.path_params"},{"address":"grpc.server.request.message"},{"address":"graphql.server.all_resolvers"},{"address":"graphql.server.resolver"}],"db_type":[{"address":"server.db.system"}]},"operator":"sqli_detector@v3"}]}])");
+
+    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    EXPECT_EQ(rule_array.size(), 1);
+
+    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    ddwaf_object_free(&rule_object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(root_map, "skipped");
+        EXPECT_EQ(skipped.size(), 1);
+        EXPECT_TRUE(skipped.contains("rsp-930-003"));
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(rules.size(), 0);
+}
+
+TEST(TestParserV2Rules, IncompatibleMinVersion)
+{
+    ddwaf::object_limits limits;
+    limits.max_container_depth = 2;
+    ddwaf::ruleset_info::section_info section;
+    std::unordered_map<std::string, std::string> rule_data_ids;
+
+    auto rule_object = yaml_to_object(
+        R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, min_version: 99.0.0, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
+
+    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    EXPECT_EQ(rule_array.size(), 1);
+
+    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    ddwaf_object_free(&rule_object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(root_map, "skipped");
+        EXPECT_EQ(skipped.size(), 1);
+        EXPECT_TRUE(skipped.contains("1"));
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(rules.size(), 0);
+}
+
+TEST(TestParserV2Rules, IncompatibleMaxVersion)
+{
+    ddwaf::object_limits limits;
+    limits.max_container_depth = 2;
+    ddwaf::ruleset_info::section_info section;
+    std::unordered_map<std::string, std::string> rule_data_ids;
+
+    auto rule_object = yaml_to_object(
+        R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, max_version: 0.0.99, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
+
+    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    EXPECT_EQ(rule_array.size(), 1);
+
+    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    ddwaf_object_free(&rule_object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(root_map, "skipped");
+        EXPECT_EQ(skipped.size(), 1);
+        EXPECT_TRUE(skipped.contains("1"));
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(rules.size(), 0);
+}
+
+TEST(TestParserV2Rules, CompatibleVersion)
+{
+    ddwaf::object_limits limits;
+    limits.max_container_depth = 2;
+    ddwaf::ruleset_info::section_info section;
+    std::unordered_map<std::string, std::string> rule_data_ids;
+
+    auto rule_object = yaml_to_object(
+        R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, min_version: 0.0.99, max_version: 2.0.0, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
+
+    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    EXPECT_EQ(rule_array.size(), 1);
+
+    auto rules = parser::v2::parse_rules(rule_array, section, rule_data_ids, limits);
+    ddwaf_object_free(&rule_object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_TRUE(loaded.contains("1"));
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(root_map, "skipped");
+        EXPECT_EQ(skipped.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(rules.size(), 1);
+}
+
 } // namespace

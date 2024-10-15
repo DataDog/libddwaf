@@ -1,0 +1,17 @@
+{
+  name: "Basic run with exists operator with key_path and no match",
+  runs: [
+    {
+      persistent-input: {
+        rule2-input: {
+          "path": {
+            "to": {
+              "nowhere": "something else"
+            }
+          }
+        }
+      },
+      code: ok
+    }
+  ]
+}

@@ -8,6 +8,8 @@
 
 #include <chrono>
 #include <tuple>
+#include <type_traits>
+#include <utility>
 
 // Generate a tuple containing a subset of the arguments
 // Reference: https://stackoverflow.com/questions/71301988
@@ -53,3 +55,10 @@ function_traits<N, Class, Args...> make_traits(Result (Class::*)(Args...));
 
 template <typename T>
 concept is_duration = std::is_same_v<std::chrono::duration<typename T::rep, typename T::period>, T>;
+
+// https://stackoverflow.com/questions/43992510/enable-if-to-check-if-value-type-of-iterator-is-a-pair
+template <typename> struct is_pair : std::false_type {};
+template <typename T, typename U> struct is_pair<std::pair<T, U>> : std::true_type {};
+
+template <typename T>
+concept is_pair_v = is_pair<T>::value;

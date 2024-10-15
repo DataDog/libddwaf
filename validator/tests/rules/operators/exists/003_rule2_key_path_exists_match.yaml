@@ -1,0 +1,27 @@
+{
+  name: "Basic run with exists operator with key_path",
+  runs: [
+    {
+      persistent-input: {
+        rule2-input: {
+          "path": {
+            "to": {
+              "object": "something else"
+            }
+          }
+        }
+      },
+      rules: [
+        {
+          2: [
+            {
+              address: rule2-input,
+              key_path: ["path", "to", "object"]
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

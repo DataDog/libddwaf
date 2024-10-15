@@ -50,6 +50,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parser/global_rule_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/processor/extract_schema.cpp
     ${libddwaf_SOURCE_DIR}/src/processor/fingerprint.cpp
+    ${libddwaf_SOURCE_DIR}/src/condition/exists.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/lfi_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/sqli_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/ssrf_detector.cpp
@@ -132,6 +133,12 @@ function(gen_objects target_name)
 
     if(NOT STDLIB_MAP_RECURSIVE)
         target_compile_definitions(${target_name} PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
+    endif()
+
+    if (NOT STDLIB_MEMORY_RESOURCE_FTM AND STDLIB_MONOTONIC_RESOURCE)
+        # For some reason __cpp_lib_memory_resource seems to be missing in macos-14 when
+        # using the correct CMAKE_OSX_DEPLOYMENT_TARGET
+        target_compile_definitions(${target_name} PRIVATE __cpp_lib_memory_resource)
     endif()
 
     if (LIBDDWAF_VECTORIZED_TRANSFORMERS)

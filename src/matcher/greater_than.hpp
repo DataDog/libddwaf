@@ -8,19 +8,23 @@
 
 #include <string_view>
 #include <type_traits>
-#include <unordered_map>
+#include <utility>
 
 #include "ddwaf.h"
 #include "matcher/base.hpp"
-#include "utils.hpp"
 
 namespace ddwaf::matcher {
 
-template <typename T>
-    requires std::is_same_v<T, uint64_t> || std::is_same_v<T, int64_t> || std::is_same_v<T, double>
-class greater_than : public base_impl<greater_than<T>> {
+template <typename T = void> class greater_than : public base_impl<greater_than<T>> {
 public:
-    explicit greater_than(T minimum) : minimum_(std::move(minimum)) {}
+    static constexpr std::string_view matcher_name = "greater_than";
+    static constexpr std::string_view negated_matcher_name = "!greater_than";
+
+    explicit greater_than(T minimum)
+        requires std::is_same_v<T, uint64_t> || std::is_same_v<T, int64_t> ||
+                 std::is_same_v<T, double>
+        : minimum_(std::move(minimum))
+    {}
     ~greater_than() override = default;
     greater_than(const greater_than &) = default;
     greater_than(greater_than &&) noexcept = default;
@@ -29,29 +33,47 @@ public:
 
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
-    static constexpr std::string_view name_impl() { return "greater_than"; }
-
-    static constexpr DDWAF_OBJ_TYPE supported_type_impl()
+    static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
     {
-        if constexpr (std::is_same_v<T, int64_t>) {
-            return DDWAF_OBJ_SIGNED;
-        }
-        if constexpr (std::is_same_v<T, uint64_t>) {
-            return DDWAF_OBJ_UNSIGNED;
-        }
-        if constexpr (std::is_same_v<T, double>) {
-            return DDWAF_OBJ_FLOAT;
-        }
+        return type == DDWAF_OBJ_SIGNED || type == DDWAF_OBJ_UNSIGNED || type == DDWAF_OBJ_FLOAT;
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match_impl(const T &obtained) const
+    template <typename U>
+    [[nodiscard]] std::pair<bool, std::string> match_impl(const U &obtained) const
+        requires(!std::is_floating_point_v<T>)
     {
-        return {minimum_ < obtained, {}};
+        return {std::cmp_greater(obtained, minimum_), {}};
     }
 
+    [[nodiscard]] std::pair<bool, std::string> match_impl(double obtained) const
+    {
+        return {obtained > minimum_, {}};
+    }
     T minimum_;
 
     friend class base_impl<greater_than<T>>;
+};
+
+template <> class greater_than<void> : public base_impl<greater_than<void>> {
+public:
+    static constexpr std::string_view matcher_name = "greater_than";
+    static constexpr std::string_view negated_matcher_name = "!greater_than";
+
+    ~greater_than() override = default;
+
+protected:
+    greater_than() = default;
+    greater_than(const greater_than &) = default;
+    greater_than(greater_than &&) noexcept = default;
+    greater_than &operator=(const greater_than &) = default;
+    greater_than &operator=(greater_than &&) noexcept = default;
+
+    static constexpr std::string_view to_string_impl() { return ""; }
+    static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE /*type*/) { return false; }
+
+    [[nodiscard]] static std::pair<bool, std::string> match_impl() { return {}; }
+
+    friend class base_impl<greater_than<void>>;
 };
 
 } // namespace ddwaf::matcher

@@ -554,4 +554,118 @@ TEST(TestParserV2InputFilters, ParseConditionalMultipleConditions)
     EXPECT_EQ(target.tags.size(), 0);
 }
 
+TEST(TestParserV2InputFilters, IncompatibleMinVersion)
+{
+    ddwaf::object_limits limits;
+
+    auto object =
+        yaml_to_object(R"([{id: 1, inputs: [{address: http.client_ip}], min_version: 99.0.0}])");
+
+    std::unordered_map<std::string, std::string> data_ids;
+    ddwaf::ruleset_info::section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, data_ids, limits);
+    ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(root_map, "skipped");
+        EXPECT_EQ(skipped.size(), 1);
+        EXPECT_NE(skipped.find("1"), skipped.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(filters.rule_filters.size(), 0);
+    EXPECT_EQ(filters.input_filters.size(), 0);
+}
+
+TEST(TestParserV2InputFilters, IncompatibleMaxVersion)
+{
+    ddwaf::object_limits limits;
+
+    auto object =
+        yaml_to_object(R"([{id: 1, inputs: [{address: http.client_ip}], max_version: 0.0.99}])");
+
+    std::unordered_map<std::string, std::string> data_ids;
+    ddwaf::ruleset_info::section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, data_ids, limits);
+    ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(root_map, "skipped");
+        EXPECT_EQ(skipped.size(), 1);
+        EXPECT_NE(skipped.find("1"), skipped.end());
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(filters.rule_filters.size(), 0);
+    EXPECT_EQ(filters.input_filters.size(), 0);
+}
+
+TEST(TestParserV2InputFilters, CompatibleVersion)
+{
+    ddwaf::object_limits limits;
+
+    auto object = yaml_to_object(
+        R"([{id: 1, inputs: [{address: http.client_ip}], min_version: 0.0.99, max_version: 2.0.0}])");
+
+    std::unordered_map<std::string, std::string> data_ids;
+    ddwaf::ruleset_info::section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, data_ids, limits);
+    ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("1"), loaded.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(filters.rule_filters.size(), 0);
+    EXPECT_EQ(filters.input_filters.size(), 1);
+}
+
 } // namespace

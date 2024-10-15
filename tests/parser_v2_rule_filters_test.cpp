@@ -732,4 +732,122 @@ TEST(TestParserV2RuleFilters, ParseInvalidOnMatch)
     EXPECT_EQ(filters.rule_filters.size(), 0);
     EXPECT_EQ(filters.input_filters.size(), 0);
 }
+
+TEST(TestParserV2RuleFilters, IncompatibleMinVersion)
+{
+    ddwaf::object_limits limits;
+
+    auto object = yaml_to_object(
+        R"([{id: 1, rules_target: [{rule_id: 2939}], min_version: 99.0.0, on_match: monitor}])");
+
+    std::unordered_map<std::string, std::string> data_ids;
+    ddwaf::ruleset_info::section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, data_ids, limits);
+    ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(root_map, "skipped");
+        EXPECT_EQ(skipped.size(), 1);
+        EXPECT_NE(skipped.find("1"), skipped.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(filters.rule_filters.size(), 0);
+    EXPECT_EQ(filters.input_filters.size(), 0);
+}
+
+TEST(TestParserV2RuleFilters, IncompatibleMaxVersion)
+{
+    ddwaf::object_limits limits;
+
+    auto object = yaml_to_object(
+        R"([{id: 1, rules_target: [{rule_id: 2939}], max_version: 0.0.99, on_match: monitor}])");
+
+    std::unordered_map<std::string, std::string> data_ids;
+    ddwaf::ruleset_info::section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, data_ids, limits);
+    ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(root_map, "skipped");
+        EXPECT_EQ(skipped.size(), 1);
+        EXPECT_NE(skipped.find("1"), skipped.end());
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(filters.rule_filters.size(), 0);
+    EXPECT_EQ(filters.input_filters.size(), 0);
+}
+
+TEST(TestParserV2RuleFilters, CompatibleVersion)
+{
+    ddwaf::object_limits limits;
+
+    auto object = yaml_to_object(
+        R"([{id: 1, rules_target: [{rule_id: 2939}], min_version: 0.0.99, max_version: 2.0.0, on_match: monitor}])");
+
+    std::unordered_map<std::string, std::string> data_ids;
+    ddwaf::ruleset_info::section_info section;
+    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters = parser::v2::parse_filters(filters_array, section, data_ids, limits);
+    ddwaf_object_free(&object);
+
+    {
+        ddwaf::parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = ddwaf::parser::at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("1"), loaded.end());
+
+        auto skipped = ddwaf::parser::at<parameter::string_set>(root_map, "skipped");
+        EXPECT_EQ(skipped.size(), 0);
+
+        auto failed = ddwaf::parser::at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = ddwaf::parser::at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(filters.rule_filters.size(), 1);
+    EXPECT_EQ(filters.input_filters.size(), 0);
+}
+
 } // namespace

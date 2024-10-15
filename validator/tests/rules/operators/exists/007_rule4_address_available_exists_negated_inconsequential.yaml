@@ -1,0 +1,17 @@
+{
+  name: "Validate that the !exists operator without key path doesn't match when an address is present",
+  runs: [
+    {
+      persistent-input: {
+        rule4-input: {
+          "path": {
+            "to": {
+              "nowhere": "something else"
+            }
+          }
+        }
+      },
+      code: ok
+    }
+  ]
+}
