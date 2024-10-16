@@ -87,37 +87,19 @@ struct shell_argument_array {
     {
         while ((start = resource.find(str, start)) != npos) {
             auto end = start + str.size() - 1;
+            // Lower bound returns the first element where the condition is false,
+            // which must be equivalent to cur < start_pair for the binary search to
+            // work as expected. The condition will match the first iterator where
+            // cur.second >= start.
+            auto res = std::lower_bound(indices.begin(), indices.end(), std::pair{start, 0},
+                [](const auto &cur, const auto &start_pair) {
+                    return cur.second < start_pair.first;
+                });
 
-            // Ensure that both start and end are within the same argument
-            std::size_t low = 0;
-            std::size_t high = indices.size() - 1;
-            while (high >= low) {
-                auto mid = low + (high - low) / 2;
-                auto [arg_start, arg_end] = indices[mid];
-
-                // If the end of the current argument is after the start,
-                // search the remaining arguments to the right of this one
-                if (arg_end < start) {
-                    low = mid + 1;
-                    continue;
-                }
-
-                // If the start of the current argument is before the end,
-                // search the remaining arguments to the left of this one.
-                if (arg_start > end) {
-                    high = mid - 1;
-                    continue;
-                }
-
-                // If the start and end are within the boundaries of this
-                // argument, we have determined that there is no overlap
-                if (arg_start <= start && arg_end >= end) {
-                    return start;
-                }
-
-                // Otherwise, there's overlap and it's not a valid match.
-                break;
+            if (res != indices.end() && res->first <= start && res->second >= end) {
+                return start;
             }
+            // Otherwise, there's overlap and it's not a valid match.
 
             // Attempt the next match
             start += 1;
