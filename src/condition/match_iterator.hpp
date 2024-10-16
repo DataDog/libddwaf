@@ -10,11 +10,13 @@
 
 namespace ddwaf {
 
-template <std::size_t MinLength = 2, typename Iterator = object::kv_iterator> class match_iterator {
+template <std::size_t MinLength = 2, typename IteratorType = object::kv_iterator,
+    typename ResourceType = std::string_view>
+class match_iterator {
 public:
     static constexpr std::size_t npos = std::string_view::npos;
 
-    explicit match_iterator(std::string_view resource, const ddwaf_object *obj,
+    explicit match_iterator(ResourceType resource, const ddwaf_object *obj,
         const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits())
         : resource_(resource), it_(obj, {}, exclude, limits)
     {
@@ -76,10 +78,10 @@ public:
     }
 
 protected:
-    std::string_view resource_;
+    ResourceType resource_;
     std::string_view current_param_{};
     std::size_t current_index_{npos};
-    Iterator it_;
+    IteratorType it_;
 };
 
 } // namespace ddwaf

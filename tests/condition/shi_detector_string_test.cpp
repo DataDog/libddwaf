@@ -17,7 +17,47 @@ template <typename... Args> std::vector<condition_parameter> gen_param_def(Args.
     return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
 }
 
-TEST(TestSHIDetector, NoMatchAndFalsePositives)
+TEST(TestShiDetectorString, InvalidType)
+{
+    shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
+
+    ddwaf_object tmp;
+    ddwaf_object root;
+
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.sys.shell.cmd", ddwaf_object_map(&tmp));
+    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "whatever"));
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, deadline);
+    ASSERT_FALSE(res.outcome);
+}
+
+TEST(TestShiDetectorString, EmptyResource)
+{
+    shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
+
+    ddwaf_object tmp;
+    ddwaf_object root;
+
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.sys.shell.cmd", ddwaf_object_string(&tmp, ""));
+    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "whatever"));
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, deadline);
+    ASSERT_FALSE(res.outcome);
+}
+
+TEST(TestShiDetectorString, NoMatchAndFalsePositives)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
@@ -35,6 +75,7 @@ TEST(TestSHIDetector, NoMatchAndFalsePositives)
             "blabla-bla"},
         {R"(ls -l -r -t)", "-r -t"},
         {R"!({ ( $(echo ls) ) })!", "ls)"},
+        {R"!({ ( $(echo ls) ) } # cat /etc/passwd)!", "cat /etc/passwd"},
     };
 
     for (const auto &[resource, param] : samples) {
@@ -57,7 +98,7 @@ TEST(TestSHIDetector, NoMatchAndFalsePositives)
     }
 }
 
-TEST(TestSHIDetector, ExecutablesAndRedirections)
+TEST(TestShiDetectorString, ExecutablesAndRedirections)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
@@ -104,7 +145,7 @@ TEST(TestSHIDetector, ExecutablesAndRedirections)
     }
 }
 
-TEST(TestSHIDetector, InjectionsWithinCommandSubstitution)
+TEST(TestShiDetectorString, InjectionsWithinCommandSubstitution)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
@@ -152,7 +193,7 @@ TEST(TestSHIDetector, InjectionsWithinCommandSubstitution)
     }
 }
 
-TEST(TestSHIDetector, InjectionsWithinProcessSubstitution)
+TEST(TestShiDetectorString, InjectionsWithinProcessSubstitution)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
@@ -193,7 +234,7 @@ TEST(TestSHIDetector, InjectionsWithinProcessSubstitution)
     }
 }
 
-TEST(TestSHIDetector, OffByOnePayloadsMatch)
+TEST(TestShiDetectorString, OffByOnePayloadsMatch)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
@@ -236,7 +277,7 @@ TEST(TestSHIDetector, OffByOnePayloadsMatch)
     }
 }
 
-TEST(TestSHIDetector, MultipleArgumentsMatch)
+TEST(TestShiDetectorString, MultipleArgumentsMatch)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
