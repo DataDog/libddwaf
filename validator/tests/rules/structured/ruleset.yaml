@@ -19,7 +19,7 @@ rules:
             - address: grpc.server.request.message
             - address: graphql.server.all_resolvers
             - address: graphql.server.resolver
-        operator: lfi_detector@v1
+        operator: lfi_detector@v2
   - id: rsp-930-002
     name: SSRF Exploit detection
     tags:
