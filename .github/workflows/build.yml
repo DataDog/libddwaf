@@ -54,7 +54,7 @@ jobs:
             ${{ github.workspace }}/packages/*.sha256
 
   macos-build:
-    runs-on: macos-13
+    runs-on: macos-12
     strategy:
       fail-fast: false
       matrix:
@@ -93,7 +93,7 @@ jobs:
             ${{ github.workspace }}/packages/*.sha256
 
   macos-universal-package:
-    runs-on: macos-13
+    runs-on: macos-12
     needs: [macos-build]
     steps:
       - uses: actions/checkout@v4
