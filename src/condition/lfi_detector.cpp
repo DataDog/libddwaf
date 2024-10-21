@@ -71,7 +71,7 @@ bool lfi_impl_windows(std::string_view path, std::string_view param)
 {
     static constexpr std::size_t min_str_len = 2;
 
-    if (param.size() < min_str_len && !path.ends_with(param)) {
+    if (param.size() < min_str_len || !path.ends_with(param)) {
         return false;
     }
 

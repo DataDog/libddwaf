@@ -1,5 +1,12 @@
 # libddwaf release
 
+## v1.20.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Changes
+- Shell injection for array-based resources ([#333](https://github.com/DataDog/libddwaf/pull/333))
+
+#### Fixes
+- Fix logic error on `lfi_detector` for windows and introduce `lfi_detector@v2` ([#346](https://github.com/DataDog/libddwaf/pull/346))
+
 ## v1.20.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 ### New features
 This new version of `libddwaf` introduces a small set of convenience features and expands some of the existing functionality.

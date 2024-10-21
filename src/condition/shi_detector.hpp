@@ -20,7 +20,15 @@ public:
 
 protected:
     // TODO support array shell_args
-    [[nodiscard]] eval_result eval_impl(const unary_argument<std::string_view> &resource,
+    [[nodiscard]] eval_result eval_impl(const unary_argument<const ddwaf_object *> &resource,
+        const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
+        const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const;
+
+    [[nodiscard]] eval_result eval_string(const unary_argument<const ddwaf_object *> &resource,
+        const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
+        const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const;
+
+    [[nodiscard]] eval_result eval_array(const unary_argument<const ddwaf_object *> &resource,
         const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
         const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const;
 

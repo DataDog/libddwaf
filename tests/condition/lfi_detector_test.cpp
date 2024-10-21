@@ -273,6 +273,8 @@ TEST(TestLFIDetector, NoMatchUnix)
 
 TEST(TestLFIDetector, NoMatchWindows)
 {
+    system_platform_override spo{platform::windows};
+
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
     std::vector<std::pair<std::string, std::string>> samples{
@@ -282,6 +284,9 @@ TEST(TestLFIDetector, NoMatchWindows)
         {R"(documents\pony.txt)", R"(my\documents\pony.txt)"},
         {R"(XXX\YYY\documents\pony.txt)", R"(documents\pony.txt)"},
         {R"(C:\XXX\YYY\documents\pony.txt)", R"(documents\pony.txt)"},
+        {R"(C:\XXX\YYY\documents\pony.txt)", R"(documents/../pony.txt)"},
+        {R"(C:\XXX\YYY\documents\pony.txt)", R"(documents\..\pony.txt)"},
+        {R"(C:\XXX\YYY\documents\pony.txt)", R"(C:\YYY\XXX\file.txt)"},
         {R"(documents\unicorn)", R"(pony.txt)"},
         {R"(documents\unicorn.jp)", R"(pony.jp)"},
         {R"(C:\documents\unicorn.jp)", R"(pony.jp)"},
