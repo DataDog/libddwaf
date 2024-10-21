@@ -8,8 +8,6 @@
 
 #include <experimental/memory_resource>
 
-#error "Monotonic resource loaded"
-
 namespace std { // NOLINT(cert-dcl58-cpp)
 namespace experimental::pmr {
 

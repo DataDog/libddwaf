@@ -15,15 +15,15 @@
 #include "memory_resource.hpp"
 
 namespace ddwaf::memory {
-extern thread_local std::pmr::memory_resource *local_memory_resource;
+extern thread_local std::experimental::pmr::memory_resource *local_memory_resource;
 
-inline std::pmr::memory_resource *get_local_memory_resource() { return local_memory_resource; }
+inline std::experimental::pmr::memory_resource *get_local_memory_resource() { return local_memory_resource; }
 
-inline void set_local_memory_resource(std::pmr::memory_resource *mr) { local_memory_resource = mr; }
+inline void set_local_memory_resource(std::experimental::pmr::memory_resource *mr) { local_memory_resource = mr; }
 
 // The null memory resource is used as the default onef or the static thread
 // local memory resource. Only exposed for testing purposes.
-class null_memory_resource final : public std::pmr::memory_resource {
+class null_memory_resource final : public std::experimental::pmr::memory_resource {
     void *do_allocate(size_t /*bytes*/, size_t /*alignment*/) override { throw std::bad_alloc(); }
     void do_deallocate(void * /*p*/, size_t /*bytes*/, size_t /*alignment*/) noexcept override {}
     [[nodiscard]] bool do_is_equal(const memory_resource &other) const noexcept override
@@ -37,7 +37,7 @@ class null_memory_resource final : public std::pmr::memory_resource {
 // destruction.
 class memory_resource_guard {
 public:
-    explicit memory_resource_guard(std::pmr::memory_resource *mr) noexcept
+    explicit memory_resource_guard(std::experimental::pmr::memory_resource *mr) noexcept
         : old_mr_(get_local_memory_resource())
     {
         if (mr != nullptr) {
@@ -53,7 +53,7 @@ public:
     memory_resource_guard &operator=(memory_resource_guard &&) = delete;
 
 protected:
-    std::pmr::memory_resource *old_mr_;
+    std::experimental::pmr::memory_resource *old_mr_;
 };
 
 // The context allocator uses the static thread local memory resource to
