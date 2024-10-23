@@ -55,6 +55,11 @@ public:
 
         number_ = major_ * 1000000 + minor_ * 1000 + patch_;
     }
+    semantic_version(semantic_version &&other) = default;
+    semantic_version &operator=(semantic_version &&other) noexcept = default;
+    semantic_version(const semantic_version &other) = default;
+    semantic_version &operator=(const semantic_version &other) noexcept = default;
+    ~semantic_version() = default;
 
     bool operator==(const semantic_version &other) const noexcept
     {

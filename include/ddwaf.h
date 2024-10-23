@@ -312,7 +312,7 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle);
  * @param result Structure containing the result of the operation. (nullable)
  * @param timeout Maximum time budget in microseconds.
  *
- * @return Return code of the operation, also contained in the result structure.
+ * @return Return code of the operation.
  * @error DDWAF_ERR_INVALID_ARGUMENT The context is invalid, the data will not
  *                                   be freed.
  * @error DDWAF_ERR_INVALID_OBJECT The data provided didn't match the desired
