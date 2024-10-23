@@ -6,13 +6,9 @@
 #pragma once
 
 #include "condition/scalar_condition.hpp"
-#include "context_allocator.hpp"
-#include "ddwaf.h"
-#include "event.hpp"
 #include "expression.hpp"
 #include "matcher/base.hpp"
 #include "ruleset.hpp"
-#include "utils.hpp"
 
 // 1s and 1us
 #define LONG_TIME 1000000

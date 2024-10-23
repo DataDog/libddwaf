@@ -7,6 +7,8 @@
 #include "common/gtest/utils.hpp"
 #include "common/base/path.hpp"
 
+#include "utils.hpp"
+
 using namespace std::literals;
 
 namespace ddwaf::test {
