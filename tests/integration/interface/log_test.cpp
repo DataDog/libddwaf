@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "log.hpp"
-#include "test_utils.hpp"
+#include "common/gtest/utils.hpp"
 
 namespace {
 

@@ -5,10 +5,11 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "clock.hpp"
-#include "test.hpp"
 
 #include <chrono>
 #include <thread>
+
+#include "common/gtest/utils.hpp"
 
 using namespace std::literals;
 

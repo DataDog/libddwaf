@@ -6,7 +6,8 @@
 
 #include "parser/common.hpp"
 #include "ruleset_info.hpp"
-#include "test.hpp"
+
+#include "common/gtest/utils.hpp"
 
 using namespace ddwaf;
 

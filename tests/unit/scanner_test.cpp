@@ -7,7 +7,7 @@
 #include "matcher/exact_match.hpp"
 #include "matcher/ip_match.hpp"
 #include "scanner.hpp"
-#include "test_utils.hpp"
+#include "common/gtest/utils.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;

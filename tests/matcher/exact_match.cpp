@@ -5,9 +5,10 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "matcher/exact_match.hpp"
-#include "../test.hpp"
 
 #include <chrono>
+
+#include "common/gtest/utils.hpp"
 
 using namespace ddwaf::matcher;
 

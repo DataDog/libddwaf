@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "obfuscator.hpp"
-#include "test_utils.hpp"
+#include "common/gtest/utils.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;

@@ -10,7 +10,7 @@
 
 #include "semver.hpp"
 
-#include "test_utils.hpp"
+#include "common/gtest/utils.hpp"
 
 using namespace ddwaf;
 

@@ -1,0 +1,237 @@
+// Unless explicitly stated otherwise all files in this repository are
+// dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
+//
+// This product includes software developed at Datadog (https://www.datadoghq.com/).
+// Copyright 2021 Datadog, Inc.
+
+#include "common/json/utils.hpp"
+#include "log.hpp"
+
+#include <fstream>
+
+using namespace std::literals;
+
+namespace {
+class string_buffer {
+public:
+    using Ch = char;
+
+protected:
+    static constexpr std::size_t default_capacity = 1024;
+
+public:
+    string_buffer() { buffer_.reserve(default_capacity); }
+
+    void Put(Ch c) { buffer_.push_back(c); }
+    void PutUnsafe(Ch c) { Put(c); }
+    void Flush() {}
+    void Clear() { buffer_.clear(); }
+    void ShrinkToFit() { buffer_.shrink_to_fit(); }
+    void Reserve(size_t count) { buffer_.reserve(count); }
+
+    [[nodiscard]] const Ch *GetString() const { return buffer_.c_str(); }
+    [[nodiscard]] size_t GetSize() const { return buffer_.size(); }
+
+    [[nodiscard]] size_t GetLength() const { return GetSize(); }
+
+    std::string &get_string_ref() { return buffer_; }
+
+protected:
+    std::string buffer_;
+};
+
+template <typename T>
+// NOLINTNEXTLINE(misc-no-recursion, google-runtime-references)
+void object_to_json_helper(
+    const ddwaf_object &obj, T &output, rapidjson::Document::AllocatorType &alloc)
+{
+    switch (obj.type) {
+    case DDWAF_OBJ_BOOL:
+        output.SetBool(obj.boolean);
+        break;
+    case DDWAF_OBJ_SIGNED:
+        output.SetInt64(obj.intValue);
+        break;
+    case DDWAF_OBJ_UNSIGNED:
+        output.SetUint64(obj.uintValue);
+        break;
+    case DDWAF_OBJ_FLOAT:
+        output.SetDouble(obj.f64);
+        break;
+    case DDWAF_OBJ_STRING: {
+        auto sv = std::string_view(obj.stringValue, obj.nbEntries);
+        output.SetString(sv.data(), sv.size(), alloc);
+    } break;
+    case DDWAF_OBJ_MAP:
+        output.SetObject();
+        for (unsigned i = 0; i < obj.nbEntries; i++) {
+            rapidjson::Value key;
+            rapidjson::Value value;
+
+            auto child = obj.array[i];
+            object_to_json_helper(child, value, alloc);
+
+            key.SetString(child.parameterName, child.parameterNameLength, alloc);
+            output.AddMember(key, value, alloc);
+        }
+        break;
+    case DDWAF_OBJ_ARRAY:
+        output.SetArray();
+        for (unsigned i = 0; i < obj.nbEntries; i++) {
+            rapidjson::Value value;
+            auto child = obj.array[i];
+            object_to_json_helper(child, value, alloc);
+            output.PushBack(value, alloc);
+        }
+        break;
+    case DDWAF_OBJ_NULL:
+    case DDWAF_OBJ_INVALID:
+        output.SetNull();
+        break;
+    };
+}
+
+template <typename T>
+// NOLINTNEXTLINE(misc-no-recursion)
+void json_to_object_helper(ddwaf_object *object, T &doc)
+    requires std::is_same_v<rapidjson::Document, T> || std::is_same_v<rapidjson::Value, T>
+{
+    switch (doc.GetType()) {
+    case rapidjson::kFalseType:
+        ddwaf_object_bool(object, false);
+        break;
+    case rapidjson::kTrueType:
+        ddwaf_object_bool(object, true);
+        break;
+    case rapidjson::kObjectType: {
+        ddwaf_object_map(object);
+        for (auto &kv : doc.GetObject()) {
+            ddwaf_object element;
+            json_to_object_helper(&element, kv.value);
+
+            const std::string_view key = kv.name.GetString();
+            ddwaf_object_map_addl(object, key.data(), key.length(), &element);
+        }
+        break;
+    }
+    case rapidjson::kArrayType: {
+        ddwaf_object_array(object);
+        for (auto &v : doc.GetArray()) {
+            ddwaf_object element;
+            json_to_object_helper(&element, v);
+
+            ddwaf_object_array_add(object, &element);
+        }
+        break;
+    }
+    case rapidjson::kStringType: {
+        const std::string_view str = doc.GetString();
+        ddwaf_object_stringl(object, str.data(), str.size());
+        break;
+    }
+    case rapidjson::kNumberType: {
+        if (doc.IsInt64()) {
+            ddwaf_object_signed(object, doc.GetInt64());
+        } else if (doc.IsUint64()) {
+            ddwaf_object_unsigned(object, doc.GetUint64());
+        } else if (doc.IsDouble()) {
+            ddwaf_object_float(object, doc.GetDouble());
+        }
+        break;
+    }
+    case rapidjson::kNullType:
+        ddwaf_object_null(object);
+        break;
+    default:
+        ddwaf_object_invalid(object);
+        break;
+    }
+}
+
+} // namespace
+
+std::string object_to_json(const ddwaf_object &obj)
+{
+    rapidjson::Document document;
+    rapidjson::Document::AllocatorType &alloc = document.GetAllocator();
+
+    object_to_json_helper(obj, document, alloc);
+
+    string_buffer buffer;
+    rapidjson::Writer<decltype(buffer)> writer(buffer);
+
+    if (document.Accept(writer)) {
+        return std::move(buffer.get_string_ref());
+    }
+
+    return {};
+}
+
+rapidjson::Document object_to_rapidjson(const ddwaf_object &obj)
+{
+    rapidjson::Document document;
+    rapidjson::Document::AllocatorType &alloc = document.GetAllocator();
+
+    object_to_json_helper(obj, document, alloc);
+
+    return document;
+}
+
+std::unordered_map<std::string_view, std::string_view> object_to_map(const ddwaf_object &obj)
+{
+    std::unordered_map<std::string_view, std::string_view> map;
+    for (unsigned i = 0; i < obj.nbEntries; ++i) {
+        const ddwaf_object &child = obj.array[i];
+        map.emplace(std::string_view{child.parameterName,
+                        static_cast<std::size_t>(child.parameterNameLength)},
+            std::string_view{child.stringValue, static_cast<std::size_t>(child.nbEntries)});
+    }
+    return map;
+}
+
+ddwaf_object json_to_object(const std::string &json)
+{
+    rapidjson::Document doc;
+    const rapidjson::ParseResult result = doc.Parse(json.data());
+    if (result.IsError()) {
+        throw std::runtime_error(
+            "invalid json object: "s + rapidjson::GetParseError_En(result.Code()));
+    }
+
+    ddwaf_object output;
+    json_to_object_helper(&output, doc);
+    return output;
+}
+
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameter)
+ddwaf_object read_json_file(std::string_view filename, std::string_view base)
+{
+    std::string base_dir{base};
+    if (*base_dir.end() != '/') {
+        base_dir += '/';
+    }
+
+    auto file_path = base_dir + "ruleset/" + std::string{filename};
+
+    DDWAF_DEBUG("Opening %s", file_path.c_str());
+
+    std::ifstream file(file_path.c_str(), std::ios::in);
+    if (!file) {
+        throw std::system_error(errno, std::generic_category());
+    }
+
+    // Create a buffer equal to the file size
+    std::string buffer;
+    file.ignore(std::numeric_limits<std::streamsize>::max());
+    std::streamsize length = file.gcount();
+    file.clear();
+    buffer.resize(length, '\0');
+    file.seekg(0, std::ios::beg);
+
+    file.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
+    file.close();
+
+    return json_to_object(buffer);
+}
+
+

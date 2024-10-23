@@ -7,7 +7,8 @@
 #include <unordered_map>
 
 #include "action_mapper.hpp"
-#include "test.hpp"
+
+#include "common/gtest/utils.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;

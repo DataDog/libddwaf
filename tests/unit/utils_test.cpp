@@ -6,8 +6,9 @@
 
 #include <unordered_map>
 
-#include "test.hpp"
 #include "utils.hpp"
+
+#include "common/gtest/utils.hpp"
 
 using namespace ddwaf;
 

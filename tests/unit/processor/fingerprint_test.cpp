@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2023 Datadog, Inc.
 
-#include "../test_utils.hpp"
+#include "common/gtest/utils.hpp"
 #include "ddwaf.h"
 #include "matcher/regex_match.hpp"
 #include "processor/fingerprint.hpp"

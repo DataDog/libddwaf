@@ -5,7 +5,8 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "ip_utils.hpp"
-#include "test.hpp"
+
+#include "common/gtest/utils.hpp"
 
 namespace {
 

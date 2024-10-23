@@ -5,26 +5,24 @@
 // Copyright 2021 Datadog, Inc.
 #pragma once
 
-#include <map>
-#include <utility>
-#include <vector>
-
-#include <rapidjson/prettywriter.h>
-#include <rapidjson/schema.h>
-
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <list>
+#include <rapidjson/document.h>
 #include <yaml-cpp/yaml.h>
 
-#include "condition/scalar_condition.hpp"
-#include "context_allocator.hpp"
 #include "ddwaf.h"
-#include "event.hpp"
-#include "expression.hpp"
-#include "matcher/base.hpp"
-#include "ruleset.hpp"
-#include "test.hpp"
-#include "utils.hpp"
+#include "condition/base.hpp"
+
+#include "common/base/utils.hpp"
+#include "common/json/utils.hpp"
+#include "common/yaml/utils.hpp"
+
+#define EXPECT_STR(a, b) EXPECT_STREQ(a.c_str(), b)
+#define EXPECT_STRV(a, b) EXPECT_STR(std::string{a}, b)
 
 namespace ddwaf::test {
+
 struct event {
     struct match {
         struct argument {
@@ -56,79 +54,6 @@ bool operator==(const event &lhs, const event &rhs);
 ::std::ostream &operator<<(::std::ostream &os, const event &e);
 ::std::ostream &operator<<(::std::ostream &os, const event::match &m);
 
-std::string object_to_json(const ddwaf_object &obj);
-rapidjson::Document object_to_rapidjson(const ddwaf_object &obj);
-std::unordered_map<std::string_view, std::string_view> object_to_map(const ddwaf_object &obj);
-
-class expression_builder {
-public:
-    explicit expression_builder(std::size_t num_conditions) { conditions_.reserve(num_conditions); }
-
-    void start_condition() { arguments_.clear(); }
-
-    template <typename T, bool Expected = true, typename... Args>
-    void end_condition(Args... args)
-        requires std::is_base_of_v<matcher::base, T>
-    {
-        if constexpr (Expected) {
-            conditions_.emplace_back(
-                std::make_unique<scalar_condition>(std::make_unique<T>(std::forward<Args>(args)...),
-                    std::string{}, std::move(arguments_)));
-        } else {
-            conditions_.emplace_back(std::make_unique<scalar_negated_condition>(
-                std::make_unique<T>(std::forward<Args>(args)...), std::string{},
-                std::move(arguments_)));
-        }
-    }
-
-    template <typename T, bool Expected = true>
-    void end_condition_with_data(std::string data_id)
-        requires std::is_base_of_v<matcher::base, T>
-    {
-        if constexpr (Expected) {
-            conditions_.emplace_back(std::make_unique<scalar_condition>(
-                std::unique_ptr<matcher::base>{}, std::move(data_id), std::move(arguments_)));
-        } else {
-            conditions_.emplace_back(std::make_unique<scalar_negated_condition>(
-                std::unique_ptr<matcher::base>{}, std::move(data_id), std::move(arguments_)));
-        }
-    }
-
-    template <typename T>
-    void end_condition()
-        requires std::is_base_of_v<base_condition, T>
-    {
-        conditions_.emplace_back(std::make_unique<T>(std::move(arguments_)));
-    }
-
-    void add_argument() { arguments_.emplace_back(); }
-
-    void add_target(const std::string &name, std::vector<std::string> key_path = {},
-        std::vector<transformer_id> transformers = {}, data_source source = data_source::values)
-    {
-        auto &argument = arguments_.back();
-        argument.targets.emplace_back(condition_target{
-            name, get_target_index(name), std::move(key_path), std::move(transformers), source});
-    }
-
-    std::shared_ptr<expression> build()
-    {
-        return std::make_shared<expression>(std::move(conditions_));
-    }
-
-protected:
-    std::vector<condition_parameter> arguments_{};
-    std::vector<std::unique_ptr<base_condition>> conditions_{};
-};
-
-inline std::shared_ptr<ddwaf::ruleset> get_default_ruleset()
-{
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
-    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
-    return ruleset;
-}
-
 // Required by gtest to pretty print relevant types
 void PrintTo(const ddwaf_object &actions, ::std::ostream *os);
 void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os);
@@ -140,21 +65,6 @@ void PrintTo(const std::list<ddwaf::test::event::match> &matches, ::std::ostream
 void PrintTo(const ddwaf::test::action_map &actions, ::std::ostream *os);
 
 namespace YAML {
-
-class parsing_error : public std::exception {
-public:
-    explicit parsing_error(std::string what) : what_(std::move(what)) {}
-    [[nodiscard]] const char *what() const noexcept override { return what_.c_str(); }
-
-protected:
-    const std::string what_;
-};
-
-template <> struct as_if<ddwaf_object, void> {
-    explicit as_if(const Node &node_);
-    ddwaf_object operator()() const;
-    const Node &node;
-};
 
 template <> struct as_if<ddwaf::test::event::match, void> {
     explicit as_if(const Node &node_) : node(node_) {}
@@ -173,22 +83,8 @@ template <> struct as_if<ddwaf::test::action_map, void> {
     ddwaf::test::action_map operator()() const;
     const Node &node;
 };
+
 } // namespace YAML
-
-class schema_validator {
-public:
-    explicit schema_validator(const std::string &path);
-    std::optional<std::string> validate(const char *events);
-    std::optional<std::string> validate(rapidjson::Document &doc);
-
-protected:
-    rapidjson::Document schema_doc_;
-    std::unique_ptr<rapidjson::SchemaDocument> schema_;
-    std::unique_ptr<rapidjson::SchemaValidator> validator_;
-};
-
-// Note that naming conventions (and Pascal case) are kept for functions and
-// classes involved in anything GTest related.
 
 ::testing::AssertionResult ValidateSchema(const std::string &result);
 ::testing::AssertionResult ValidateSchemaSchema(rapidjson::Document &doc);
@@ -302,108 +198,3 @@ std::list<ddwaf::test::event::match> from_matches(
     }
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
-ddwaf_object read_file(std::string_view filename, std::string_view base = "./");
-ddwaf_object read_json_file(std::string_view filename, std::string_view base = "./");
-
-inline ddwaf_object yaml_to_object(const std::string &yaml)
-{
-    return YAML::Load(yaml).as<ddwaf_object>();
-}
-
-ddwaf_object json_to_object(const std::string &json);
-
-template <typename T>
-// NOLINTNEXTLINE(misc-no-recursion)
-bool json_equals(const T &lhs, const T &rhs)
-    requires std::is_same_v<rapidjson::Document, T> || std::is_same_v<rapidjson::Value, T>
-{
-    if (lhs.GetType() != rhs.GetType()) {
-        return false;
-    }
-
-    switch (lhs.GetType()) {
-    case rapidjson::kObjectType: {
-        if (lhs.MemberCount() != rhs.MemberCount()) {
-            return false;
-        }
-
-        std::vector<bool> seen(lhs.MemberCount(), false);
-        for (const auto &lkv : lhs.GetObject()) {
-            bool found = false;
-            const std::string_view lkey = lkv.name.GetString();
-            for (auto it = rhs.MemberBegin(); it != rhs.MemberEnd(); ++it) {
-                auto i = it - rhs.MemberBegin();
-                if (seen[i]) {
-                    continue;
-                }
-
-                const auto &rkv = *it;
-                const std::string_view rkey = rkv.name.GetString();
-                if (lkey != rkey) {
-                    continue;
-                }
-
-                if (json_equals(lkv.value, rkv.value)) {
-                    seen[i] = found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                return false;
-            }
-        }
-        return true;
-    }
-    case rapidjson::kArrayType: {
-        if (lhs.Size() != rhs.Size()) {
-            return false;
-        }
-
-        std::vector<bool> seen(lhs.Size(), false);
-        for (const auto &v : lhs.GetArray()) {
-            bool found = false;
-            for (unsigned i = 0; i < rhs.Size(); ++i) {
-                if (!seen[i] && json_equals(v, rhs[i])) {
-                    seen[i] = found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                return false;
-            }
-        }
-        return true;
-    }
-    case rapidjson::kStringType: {
-        std::string_view lstr = lhs.GetString();
-        std::string_view rstr = rhs.GetString();
-        return lstr == rstr;
-    }
-    case rapidjson::kNumberType: {
-        if (lhs.IsInt()) {
-            return rhs.IsInt() && lhs.GetInt() == rhs.GetInt();
-        }
-        if (lhs.IsUint()) {
-            return rhs.IsUint() && lhs.GetUint() == rhs.GetUint();
-        }
-
-        if (lhs.IsInt64()) {
-            return rhs.IsInt64() && lhs.GetInt64() == rhs.GetInt64();
-        }
-        if (lhs.IsUint64()) {
-            return rhs.IsUint64() && lhs.GetUint64() == rhs.GetUint64();
-        }
-
-        if (lhs.IsDouble()) {
-            return rhs.IsDouble() && std::abs(lhs.GetDouble() - rhs.GetDouble()) < 0.01;
-        }
-        break;
-    }
-    case rapidjson::kTrueType:
-    case rapidjson::kFalseType:
-    case rapidjson::kNullType:
-    default:
-        return true;
-    }
-    return false;
-}

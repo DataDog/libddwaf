@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "../test.hpp"
 #include "transformer/remove_comments.hpp"
 #include "transformer_utils.hpp"
 

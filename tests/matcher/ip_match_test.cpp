@@ -6,8 +6,9 @@
 
 #include <chrono>
 
-#include "../test.hpp"
 #include "matcher/ip_match.hpp"
+
+#include "common/gtest/utils.hpp"
 
 using namespace ddwaf::matcher;
 

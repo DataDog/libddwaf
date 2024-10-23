@@ -12,8 +12,7 @@
 #include "expression.hpp"
 #include "matcher/exact_match.hpp"
 #include "matcher/ip_match.hpp"
-#include "test.hpp"
-#include "test_utils.hpp"
+#include "common/gtest/utils.hpp"
 
 #include <gmock/gmock.h>
 

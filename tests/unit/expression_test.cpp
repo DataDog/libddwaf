@@ -7,7 +7,7 @@
 #include "expression.hpp"
 #include "matcher/regex_match.hpp"
 #include "object_store.hpp"
-#include "test_utils.hpp"
+#include "common/gtest/utils.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;

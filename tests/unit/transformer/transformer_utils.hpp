@@ -5,6 +5,8 @@
 // Copyright 2021 Datadog, Inc.
 #pragma once
 
+#include <gtest/gtest.h>
+
 #include <array>
 #include <string_view>
 #include <transformer/common/cow_string.hpp>

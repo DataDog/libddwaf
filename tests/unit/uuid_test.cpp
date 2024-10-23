@@ -6,8 +6,9 @@
 
 #include <regex>
 
-#include "test.hpp"
 #include "uuid.hpp"
+
+#include "common/gtest/utils.hpp"
 
 namespace {
 

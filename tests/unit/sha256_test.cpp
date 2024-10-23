@@ -5,10 +5,11 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "sha256.hpp"
-#include "test.hpp"
 
 #include <utility>
 #include <vector>
+
+#include "common/gtest/utils.hpp"
 
 TEST(TestSha256, RandomInputTest)
 {
