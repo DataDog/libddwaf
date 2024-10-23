@@ -7,6 +7,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
 #include <list>
 #include <rapidjson/document.h>
 #include <yaml-cpp/yaml.h>
