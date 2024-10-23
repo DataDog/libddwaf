@@ -15,7 +15,7 @@
 #include "parameter.hpp"
 #include "parser/common.hpp"
 #include "parser/specification.hpp"
-#include "rule.hpp"
+#include "rule/rule.hpp"
 #include "ruleset.hpp"
 #include "ruleset_info.hpp"
 
@@ -59,9 +59,13 @@ std::shared_ptr<expression> parse_simplified_expression(const parameter::vector 
     address_container &addresses, const object_limits &limits);
 
 std::vector<transformer_id> parse_transformers(const parameter::vector &root, data_source &source);
+std::vector<transformer_id> parse_transformers(const parameter::vector &root);
 
 // std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
 // std::string_view name, const parameter::map &params);
+
+std::shared_ptr<global_context> parse_global_rules(
+    parameter::vector &rule_array, base_section_info &info, const object_limits &limits);
 
 } // namespace v2
 } // namespace ddwaf::parser

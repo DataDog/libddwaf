@@ -7,7 +7,7 @@
 #include "test_utils.hpp"
 
 #include "event.hpp"
-#include "rule.hpp"
+#include "rule/rule.hpp"
 #include "utils.hpp"
 
 using namespace ddwaf;

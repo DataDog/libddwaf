@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -51,6 +52,9 @@ function_traits<N, Class, Args...> make_traits(Result (Class::*)(Args...) const)
 
 template <std::size_t N, typename Result, typename Class, typename... Args>
 function_traits<N, Class, Args...> make_traits(Result (Class::*)(Args...));
+
+template <typename T>
+concept is_duration = std::is_same_v<std::chrono::duration<typename T::rep, typename T::period>, T>;
 
 // https://stackoverflow.com/questions/43992510/enable-if-to-check-if-value-type-of-iterator-is-a-pair
 template <typename> struct is_pair : std::false_type {};

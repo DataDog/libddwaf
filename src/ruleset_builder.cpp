@@ -22,7 +22,7 @@
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
 #include "parser/specification.hpp"
-#include "rule.hpp"
+#include "rule/rule.hpp"
 #include "ruleset.hpp"
 #include "ruleset_builder.hpp"
 #include "ruleset_info.hpp"
@@ -212,6 +212,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     rs->rule_matchers = rule_matchers_;
     rs->exclusion_matchers = exclusion_matchers_;
     rs->scanners = scanners_.items();
+    rs->gctx = gctx_;
     rs->actions = actions_;
     rs->free_fn = free_fn_;
     rs->event_obfuscator = event_obfuscator_;
@@ -439,6 +440,25 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
             state = state | change_state::scanners;
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse scanners: {}", e.what());
+            section.set_error(e.what());
+        }
+    }
+
+    it = root.find("global_rules");
+    if (it != root.end()) {
+        DDWAF_DEBUG("Parsing global rules");
+        auto &section = info.add_section("global_rules");
+        try {
+            auto global_rules = static_cast<parameter::vector>(it->second);
+            if (!global_rules.empty()) {
+                gctx_ = parser::v2::parse_global_rules(global_rules, section, limits_);
+            } else {
+                DDWAF_DEBUG("Clearing all global rules");
+                gctx_ = nullptr;
+            }
+            state = state | change_state::global_rules;
+        } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse global rules: {}", e.what());
             section.set_error(e.what());
         }
     }
