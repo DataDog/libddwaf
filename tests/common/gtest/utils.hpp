@@ -11,7 +11,7 @@
 #include <rapidjson/document.h>
 #include <yaml-cpp/yaml.h>
 
-#include "condition/base.hpp"
+#include "condition/scalar_condition.hpp"
 #include "ddwaf.h"
 
 #include "common/base/utils.hpp"
