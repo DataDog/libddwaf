@@ -382,7 +382,6 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleset)
     ddwaf_object_free(&diagnostics);
 }
 
-
 TEST(TestDiagnosticsV2Integration, MultipleRules)
 {
     auto rule = read_file("rules.yaml", base_dir);

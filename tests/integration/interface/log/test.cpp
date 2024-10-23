@@ -4,8 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "log.hpp"
 #include "common/gtest/utils.hpp"
+#include "log.hpp"
 
 namespace {
 

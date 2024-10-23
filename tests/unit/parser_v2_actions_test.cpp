@@ -4,10 +4,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "common/gtest/utils.hpp"
 #include "fmt/core.h"
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
-#include "common/gtest/utils.hpp"
 
 using namespace ddwaf;
 

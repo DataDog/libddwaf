@@ -5,10 +5,10 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "collection.hpp"
+#include "common/gtest/utils.hpp"
 #include "condition/scalar_condition.hpp"
 #include "matcher/exact_match.hpp"
 #include "matcher/ip_match.hpp"
-#include "common/gtest/utils.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;

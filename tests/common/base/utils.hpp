@@ -14,7 +14,6 @@
 #include "ruleset.hpp"
 #include "utils.hpp"
 
-
 // 1s and 1us
 #define LONG_TIME 1000000
 #define SHORT_TIME 1
@@ -43,7 +42,6 @@
     {                                                                                              \
         NULL, 0, {string}, length, DDWAF_OBJ_STRING                                                \
     }
-
 
 namespace ddwaf::test {
 
@@ -117,4 +115,3 @@ inline std::shared_ptr<ddwaf::ruleset> get_default_ruleset()
 }
 
 } // namespace ddwaf::test
-

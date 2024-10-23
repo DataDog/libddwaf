@@ -299,4 +299,3 @@ std::optional<std::string> schema_validator::validate(rapidjson::Document &doc)
 
     return std::nullopt;
 }
-

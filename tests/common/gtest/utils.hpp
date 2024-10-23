@@ -11,8 +11,8 @@
 #include <rapidjson/document.h>
 #include <yaml-cpp/yaml.h>
 
-#include "ddwaf.h"
 #include "condition/base.hpp"
+#include "ddwaf.h"
 
 #include "common/base/utils.hpp"
 #include "common/json/utils.hpp"
@@ -197,4 +197,3 @@ std::list<ddwaf::test::event::match> from_matches(
         EXPECT_THAT(obtained, WithActions(__VA_ARGS__));                                           \
     }
 // NOLINTEND(cppcoreguidelines-macro-usage)
-

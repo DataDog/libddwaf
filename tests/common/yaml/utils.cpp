@@ -39,7 +39,6 @@ template <class T> T as(const YAML::Node &node, unsigned key)
     }
 }
 
-
 namespace {
 
 // NOLINTNEXTLINE(misc-no-recursion)
@@ -142,5 +141,3 @@ ddwaf_object read_file(std::string_view filename, std::string_view base)
 
     return yaml_to_object(buffer);
 }
-
-

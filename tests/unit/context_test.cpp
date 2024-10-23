@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "action_mapper.hpp"
+#include "common/gtest/utils.hpp"
 #include "context.hpp"
 #include "exception.hpp"
 #include "exclusion/input_filter.hpp"
@@ -12,7 +13,6 @@
 #include "expression.hpp"
 #include "matcher/exact_match.hpp"
 #include "matcher/ip_match.hpp"
-#include "common/gtest/utils.hpp"
 
 #include <gmock/gmock.h>
 

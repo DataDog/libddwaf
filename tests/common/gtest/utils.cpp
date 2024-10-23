@@ -4,8 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "common/base/path.hpp"
 #include "common/gtest/utils.hpp"
+#include "common/base/path.hpp"
 
 using namespace std::literals;
 
@@ -203,7 +203,6 @@ std::ostream &operator<<(std::ostream &os, const ddwaf::test::action_map &action
 
     return os;
 }
-
 
 void PrintTo(const ddwaf::test::action_map &actions, ::std::ostream *os) { *os << actions; }
 

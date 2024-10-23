@@ -4,8 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "obfuscator.hpp"
 #include "common/gtest/utils.hpp"
+#include "obfuscator.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -80,4 +80,4 @@ TEST(TestObfuscator, TestDefaultObfuscator)
     for (auto &sample : samples) { EXPECT_TRUE(event_obfuscator.is_sensitive_key(sample)); }
 }
 
-}
+} // namespace
