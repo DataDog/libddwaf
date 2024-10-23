@@ -9,7 +9,7 @@
 
 #include "ddwaf.h"
 
-#include "common/base/utils.hpp"
+#include "common/base_utils.hpp"
 
 namespace YAML {
 

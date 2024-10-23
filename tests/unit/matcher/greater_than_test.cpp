@@ -7,7 +7,7 @@
 #include "ddwaf.h"
 #include "matcher/greater_than.hpp"
 
-#include "common/gtest/utils.hpp"
+#include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
 

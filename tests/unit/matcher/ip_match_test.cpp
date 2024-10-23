@@ -8,7 +8,7 @@
 
 #include "matcher/ip_match.hpp"
 
-#include "common/gtest/utils.hpp"
+#include "common/gtest_utils.hpp"
 
 using namespace ddwaf::matcher;
 

@@ -9,7 +9,7 @@
 #include <chrono>
 #include <thread>
 
-#include "common/gtest/utils.hpp"
+#include "common/gtest_utils.hpp"
 
 using namespace std::literals;
 

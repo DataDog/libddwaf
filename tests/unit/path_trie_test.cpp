@@ -6,7 +6,7 @@
 
 #include "exclusion/object_filter.hpp"
 
-#include "common/gtest/utils.hpp"
+#include "common/gtest_utils.hpp"
 
 namespace {
 

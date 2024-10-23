@@ -8,7 +8,7 @@
 
 #include "action_mapper.hpp"
 
-#include "common/gtest/utils.hpp"
+#include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;

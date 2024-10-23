@@ -10,7 +10,7 @@
 
 #include <gmock/gmock.h>
 
-#include "common/gtest/utils.hpp"
+#include "common/gtest_utils.hpp"
 
 using ::testing::_;
 using ::testing::Return;

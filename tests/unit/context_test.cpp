@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "action_mapper.hpp"
-#include "common/gtest/utils.hpp"
+#include "common/gtest_utils.hpp"
 #include "context.hpp"
 #include "exception.hpp"
 #include "exclusion/input_filter.hpp"

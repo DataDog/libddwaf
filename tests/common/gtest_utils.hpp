@@ -15,9 +15,9 @@
 #include "condition/scalar_condition.hpp"
 #include "ddwaf.h"
 
-#include "common/base/utils.hpp"
-#include "common/json/utils.hpp"
-#include "common/yaml/utils.hpp"
+#include "common/base_utils.hpp"
+#include "common/json_utils.hpp"
+#include "common/yaml_utils.hpp"
 
 #define EXPECT_STR(a, b) EXPECT_STREQ(a.c_str(), b)
 #define EXPECT_STRV(a, b) EXPECT_STR(std::string{a}, b)

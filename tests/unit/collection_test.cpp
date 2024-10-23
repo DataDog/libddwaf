@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "collection.hpp"
-#include "common/gtest/utils.hpp"
+#include "common/gtest_utils.hpp"
 #include "condition/scalar_condition.hpp"
 #include "matcher/exact_match.hpp"
 #include "matcher/ip_match.hpp"

@@ -6,7 +6,7 @@
 
 #include "ip_utils.hpp"
 
-#include "common/gtest/utils.hpp"
+#include "common/gtest_utils.hpp"
 
 namespace {
 

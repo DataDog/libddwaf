@@ -3,7 +3,7 @@ include(GoogleTest)
 file(GLOB_RECURSE LIBDDWAF_TEST_SOURCE *.cpp)
 add_executable(waf_test ${LIBDDWAF_TEST_SOURCE})
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/common/base/path.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/common/base/path.hpp)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/common/base_path.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/common/base_path.hpp)
 
 set_target_properties(waf_test PROPERTIES
     CXX_STANDARD 20

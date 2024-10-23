@@ -7,7 +7,7 @@
 #include "context_allocator.hpp"
 #include "log.hpp"
 
-#include "common/gtest/utils.hpp"
+#include "common/gtest_utils.hpp"
 
 const char *level_to_str(DDWAF_LOG_LEVEL level)
 {

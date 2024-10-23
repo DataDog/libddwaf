@@ -4,10 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "common/gtest/utils.hpp"
-#include "common/base/path.hpp"
-
-#include "utils.hpp"
+#include "common/gtest_utils.hpp"
+#include "common/base_path.hpp"
 
 using namespace std::literals;
 

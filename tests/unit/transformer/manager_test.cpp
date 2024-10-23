@@ -7,7 +7,7 @@
 #include "transformer/base.hpp"
 #include "transformer/manager.hpp"
 
-#include "common/gtest/utils.hpp"
+#include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
 

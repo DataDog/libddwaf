@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include "common/gtest/utils.hpp"
+#include "common/gtest_utils.hpp"
 
 TEST(TestSha256, RandomInputTest)
 {
