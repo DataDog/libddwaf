@@ -6,6 +6,8 @@
 
 #include "common/utils.hpp"
 #include "ddwaf.h"
+#include "semver.hpp"
+#include "version.hpp"
 
 #define LONG_TIME 1000000
 
@@ -83,11 +85,28 @@ int main(int argc, char *argv[])
 #endif
         YAML::Node rule = YAML::Load(read_file(argv[fileIndex]));
         rule["enabled"] = true;
+
+        auto max_version = ddwaf::semantic_version::max();
+        auto min_version = ddwaf::semantic_version::min();
+
+        if (rule["max_version"].IsDefined()) {
+            max_version = ddwaf::semantic_version{rule["max_version"].as<std::string>()};
+        }
+
+        if (rule["min_version"].IsDefined()) {
+            min_version = ddwaf::semantic_version{rule["min_version"].as<std::string>()};
+        }
+
+        bool should_skip = ddwaf::current_version < min_version || ddwaf::current_version > max_version;
+
         ddwaf_object convertedRule = convertRuleToRuleset(rule);
         ddwaf_handle handle = ddwaf_init(&convertedRule, nullptr, nullptr);
         ddwaf_object_free(&convertedRule);
 
         if (handle == nullptr) {
+            if (should_skip) { // This rule is expected to fail to load
+                continue;
+            }
             printf("Failed to load rule %s\n", argv[fileIndex]);
             success = false;
             continue;
