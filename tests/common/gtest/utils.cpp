@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "common/base/path.hpp"
 #include "common/gtest/utils.hpp"
 
 using namespace std::literals;
@@ -144,6 +145,32 @@ std::ostream &operator<<(std::ostream &os, const event &e)
     return os;
 }
 
+void PrintTo(const ddwaf_object &actions, ::std::ostream *os)
+{
+    *os << "[";
+    for (unsigned i = 0; i < ddwaf_object_size(&actions); i++) {
+        if (i > 0) {
+            *os << ", ";
+        }
+        const auto *object = ddwaf_object_get_index(actions.array, i);
+        if (ddwaf_object_type(object) == DDWAF_OBJ_STRING) {
+            *os << ddwaf_object_get_string(object, nullptr);
+        }
+    }
+    *os << "]";
+}
+
+void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os)
+{
+    for (const auto &e : events) { *os << e; }
+}
+
+void PrintTo(const std::list<ddwaf::test::event::match> &matches, ::std::ostream *os)
+{
+    for (const auto &m : matches) { *os << m; }
+}
+} // namespace ddwaf::test
+
 std::ostream &operator<<(std::ostream &os, const ddwaf::test::action_map &actions)
 {
     using indent = ddwaf::test::indent;
@@ -177,13 +204,12 @@ std::ostream &operator<<(std::ostream &os, const ddwaf::test::action_map &action
     return os;
 }
 
-void PrintTo(const ddwaf::test::action_map &actions, ::std::ostream *os) { *os << actions; }
 
-} // namespace ddwaf::test
+void PrintTo(const ddwaf::test::action_map &actions, ::std::ostream *os) { *os << actions; }
 
 ::testing::AssertionResult ValidateSchema(const std::string &result)
 {
-    static schema_validator schema("../../schema/events.json");
+    static schema_validator schema(ddwaf::test::test_directory + "/../schema/events.json");
     auto error = schema.validate(result.c_str());
     if (error) {
         return ::testing::AssertionFailure() << *error;
@@ -194,7 +220,7 @@ void PrintTo(const ddwaf::test::action_map &actions, ::std::ostream *os) { *os <
 
 ::testing::AssertionResult ValidateSchemaSchema(rapidjson::Document &doc)
 {
-    static schema_validator schema("../../schema/types.json");
+    static schema_validator schema(ddwaf::test::test_directory + "/../schema/types.json");
     auto error = schema.validate(doc);
     if (error) {
         return ::testing::AssertionFailure() << *error;
@@ -383,4 +409,20 @@ event as_if<event, void>::operator()() const
     return e;
 }
 
+action_map as_if<action_map, void>::operator()() const
+{
+    if (node.Type() != YAML::NodeType::Map) {
+        throw parsing_error("action map should be a map");
+    }
+
+    action_map actions;
+    for (YAML::const_iterator it = node.begin(); it != node.end(); ++it) {
+        auto key = it->first.as<std::string>();
+        auto parameters = it->second.as<std::map<std::string, std::string>>();
+
+        actions.emplace(key, parameters);
+    }
+
+    return actions;
+}
 } // namespace YAML

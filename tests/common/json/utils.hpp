@@ -20,6 +20,7 @@ rapidjson::Document object_to_rapidjson(const ddwaf_object &obj);
 std::unordered_map<std::string_view, std::string_view> object_to_map(const ddwaf_object &obj);
 
 } // namespace ddwaf::test
+
 class schema_validator {
 public:
     explicit schema_validator(const std::string &path);

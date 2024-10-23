@@ -12,6 +12,8 @@ using namespace ddwaf;
 
 namespace {
 
+constexpr std::string_view base_dir = "integration/diagnostics/v1/";
+
 void run_test(ddwaf_handle handle)
 {
     ddwaf_context context = ddwaf_context_init(handle);
@@ -64,7 +66,7 @@ void run_test(ddwaf_handle handle)
     ddwaf_context_destroy(context);
 }
 
-TEST(TestParserV1, Basic)
+TEST(TestTestDiagnosticsV1Integration, Basic)
 {
     auto rule = yaml_to_object(
         R"({version: '1.1', events: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operation: match_regex, parameters: {inputs: [arg1], regex: .*}}, {operation: match_regex, parameters: {inputs: [arg2:x], regex: .*}},{operation: match_regex, parameters: {inputs: [arg2:y], regex: .*}}]}]})");
@@ -99,9 +101,9 @@ TEST(TestParserV1, Basic)
     ddwaf_destroy(handle);
 }
 
-TEST(TestParserV1, TestInvalidRule)
+TEST(TestTestDiagnosticsV1Integration, TestInvalidRule)
 {
-    auto rule = read_file("invalid_single_v1.yaml");
+    auto rule = read_file("invalid_single_v1.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -137,9 +139,9 @@ TEST(TestParserV1, TestInvalidRule)
     ddwaf_object_free(&diagnostics);
 }
 
-TEST(TestParserV1, TestMultipleSameInvalidRules)
+TEST(TestTestDiagnosticsV1Integration, TestMultipleSameInvalidRules)
 {
-    auto rule = read_file("invalid_multiple_same_v1.yaml");
+    auto rule = read_file("invalid_multiple_same_v1.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -176,9 +178,9 @@ TEST(TestParserV1, TestMultipleSameInvalidRules)
     ddwaf_object_free(&diagnostics);
 }
 
-TEST(TestParserV1, TestMultipleDiffInvalidRules)
+TEST(TestTestDiagnosticsV1Integration, TestMultipleDiffInvalidRules)
 {
-    auto rule = read_file("invalid_multiple_diff_v1.yaml");
+    auto rule = read_file("invalid_multiple_diff_v1.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -225,9 +227,9 @@ TEST(TestParserV1, TestMultipleDiffInvalidRules)
     ddwaf_object_free(&diagnostics);
 }
 
-TEST(TestParserV1, TestMultipleMixInvalidRules)
+TEST(TestTestDiagnosticsV1Integration, TestMultipleMixInvalidRules)
 {
-    auto rule = read_file("invalid_multiple_mix_v1.yaml");
+    auto rule = read_file("invalid_multiple_mix_v1.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -285,9 +287,9 @@ TEST(TestParserV1, TestMultipleMixInvalidRules)
     ddwaf_destroy(handle);
 }
 
-TEST(TestParserV1, TestInvalidDuplicate)
+TEST(TestTestDiagnosticsV1Integration, TestInvalidDuplicate)
 {
-    auto rule = read_file("invalid_duplicate_v1.yaml");
+    auto rule = read_file("invalid_duplicate_v1.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -324,9 +326,9 @@ TEST(TestParserV1, TestInvalidDuplicate)
     ddwaf_destroy(handle);
 }
 
-TEST(TestParserV1, TestInvalidTooManyTransformers)
+TEST(TestTestDiagnosticsV1Integration, TestInvalidTooManyTransformers)
 {
-    auto rule = read_file("invalid_too_many_transformers_v1.yaml");
+    auto rule = read_file("invalid_too_many_transformers_v1.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;

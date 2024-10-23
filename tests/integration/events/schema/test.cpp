@@ -10,11 +10,13 @@ using namespace rapidjson;
 
 namespace {
 
-class TestSchemaFixture : public ::testing::Test {
+constexpr std::string_view base_dir = "integration/events/schema/";
+
+class TestSchemaIntegration : public ::testing::Test {
 public:
-    TestSchemaFixture()
+    TestSchemaIntegration()
     {
-        auto rule = read_file("schema.yaml");
+        auto rule = read_file("schema.yaml", base_dir);
         if (rule.type == DDWAF_OBJ_INVALID) {
             throw std::runtime_error("failed to load schema.yaml");
         }
@@ -27,7 +29,7 @@ public:
         ddwaf_object_free(&rule);
     }
 
-    ~TestSchemaFixture() { ddwaf_destroy(handle); }
+    ~TestSchemaIntegration() { ddwaf_destroy(handle); }
 
     void SetUp()
     {
@@ -65,7 +67,7 @@ protected:
     ddwaf_context context{nullptr};
 };
 
-TEST_F(TestSchemaFixture, SimpleResult)
+TEST_F(TestSchemaIntegration, SimpleResult)
 {
     ddwaf_object param, tmp;
     ddwaf_object_map(&param);
@@ -78,7 +80,7 @@ TEST_F(TestSchemaFixture, SimpleResult)
     ddwaf_result_free(&ret);
 }
 
-TEST_F(TestSchemaFixture, SimpleResultWithKeyPath)
+TEST_F(TestSchemaIntegration, SimpleResultWithKeyPath)
 {
     ddwaf_object param, arg2, tmp;
     ddwaf_object_map(&param);
@@ -92,7 +94,7 @@ TEST_F(TestSchemaFixture, SimpleResultWithKeyPath)
     ddwaf_result_free(&ret);
 }
 
-TEST_F(TestSchemaFixture, SimpleResultWithMultiKeyPath)
+TEST_F(TestSchemaIntegration, SimpleResultWithMultiKeyPath)
 {
     ddwaf_object param, arg2, array, tmp;
     ddwaf_object_map(&param);
@@ -109,7 +111,7 @@ TEST_F(TestSchemaFixture, SimpleResultWithMultiKeyPath)
     ddwaf_result_free(&ret);
 }
 
-TEST_F(TestSchemaFixture, ResultWithMultiCondition)
+TEST_F(TestSchemaIntegration, ResultWithMultiCondition)
 {
     ddwaf_object param, arg4, tmp;
     ddwaf_object_map(&param);
@@ -126,7 +128,7 @@ TEST_F(TestSchemaFixture, ResultWithMultiCondition)
     ddwaf_result_free(&ret);
 }
 
-TEST_F(TestSchemaFixture, MultiResultWithMultiCondition)
+TEST_F(TestSchemaIntegration, MultiResultWithMultiCondition)
 {
     ddwaf_object param, arg2, arg4, array, tmp;
     ddwaf_object_map(&param);

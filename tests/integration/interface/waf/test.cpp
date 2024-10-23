@@ -11,7 +11,9 @@ using namespace ddwaf;
 
 namespace {
 
-TEST(TestInterface, Empty)
+constexpr std::string_view base_dir = "integration/interface/waf/";
+
+TEST(TestWafIntegration, Empty)
 {
     auto rule = yaml_to_object("{}");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -21,12 +23,12 @@ TEST(TestInterface, Empty)
     ddwaf_object_free(&rule);
 }
 
-TEST(TestInterface, ddwaf_get_version)
+TEST(TestWafIntegration, ddwaf_get_version)
 {
     EXPECT_STREQ(ddwaf_get_version(), ddwaf::current_version.cstring());
 }
 
-TEST(TestInterface, HandleBad)
+TEST(TestWafIntegration, HandleBad)
 {
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, ddwaf_object_free};
 
@@ -40,7 +42,7 @@ TEST(TestInterface, HandleBad)
     EXPECT_EQ(ddwaf_run(nullptr, &object, nullptr, nullptr, 1), DDWAF_ERR_INVALID_ARGUMENT);
     ddwaf_object_free(&object);
 
-    auto rule = read_file("interface.yaml");
+    auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
@@ -66,9 +68,9 @@ TEST(TestInterface, HandleBad)
     ddwaf_destroy(handle);
 }
 
-TEST(TestInterface, RootAddresses)
+TEST(TestWafIntegration, RootAddresses)
 {
-    auto rule = read_file("interface.yaml");
+    auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -89,9 +91,9 @@ TEST(TestInterface, RootAddresses)
     ddwaf_destroy(handle);
 }
 
-TEST(TestInterface, HandleLifetime)
+TEST(TestWafIntegration, HandleLifetime)
 {
-    auto rule = read_file("interface.yaml");
+    auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -124,9 +126,9 @@ TEST(TestInterface, HandleLifetime)
     ddwaf_context_destroy(context);
 }
 
-TEST(TestInterface, HandleLifetimeMultipleContexts)
+TEST(TestWafIntegration, HandleLifetimeMultipleContexts)
 {
-    auto rule = read_file("interface.yaml");
+    auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -166,7 +168,7 @@ TEST(TestInterface, HandleLifetimeMultipleContexts)
     ddwaf_object_free(&parameter);
 }
 
-TEST(TestInterface, InvalidVersion)
+TEST(TestWafIntegration, InvalidVersion)
 {
     auto rule = yaml_to_object("{version: 3.0, rules: []}");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -178,7 +180,7 @@ TEST(TestInterface, InvalidVersion)
     ddwaf_object_free(&rule);
 }
 
-TEST(TestInterface, InvalidVersionNoRules)
+TEST(TestWafIntegration, InvalidVersionNoRules)
 {
     auto rule = yaml_to_object("{version: 3.0}");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -190,14 +192,14 @@ TEST(TestInterface, InvalidVersionNoRules)
     ddwaf_object_free(&rule);
 }
 
-TEST(TestInterface, UpdateWithNullObject)
+TEST(TestWafIntegration, UpdateWithNullObject)
 {
     EXPECT_EQ(ddwaf_update(nullptr, nullptr, nullptr), nullptr);
 }
 
-TEST(TestInterface, UpdateWithNullHandle)
+TEST(TestWafIntegration, UpdateWithNullHandle)
 {
-    auto rule = read_file("rule_data.yaml");
+    auto rule = read_file("rule_data.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -208,9 +210,9 @@ TEST(TestInterface, UpdateWithNullHandle)
     ddwaf_destroy(handle);
 }
 
-TEST(TestInterface, UpdateEmpty)
+TEST(TestWafIntegration, UpdateEmpty)
 {
-    auto rule = read_file("interface.yaml");
+    auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -227,9 +229,9 @@ TEST(TestInterface, UpdateEmpty)
     ddwaf_destroy(handle);
 }
 
-TEST(TestInterface, PreloadRuleData)
+TEST(TestWafIntegration, PreloadRuleData)
 {
-    auto rule = read_file("rule_data_with_data.yaml");
+    auto rule = read_file("rule_data_with_data.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -307,9 +309,9 @@ TEST(TestInterface, PreloadRuleData)
     ddwaf_destroy(handle);
 }
 
-TEST(TestInterface, UpdateRules)
+TEST(TestWafIntegration, UpdateRules)
 {
-    auto rule = read_file("interface.yaml");
+    auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -321,7 +323,7 @@ TEST(TestInterface, UpdateRules)
     ddwaf_context context1 = ddwaf_context_init(handle);
     ASSERT_NE(context1, nullptr);
 
-    rule = read_file("interface3.yaml");
+    rule = read_file("interface3.yaml", base_dir);
     ddwaf_handle new_handle = ddwaf_update(handle, &rule, nullptr);
     ASSERT_NE(new_handle, nullptr);
     ddwaf_object_free(&rule);
@@ -353,9 +355,9 @@ TEST(TestInterface, UpdateRules)
     ddwaf_context_destroy(context1);
 }
 
-TEST(TestInterface, UpdateInvalidRules)
+TEST(TestWafIntegration, UpdateInvalidRules)
 {
-    auto rule = read_file("interface.yaml");
+    auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -372,9 +374,9 @@ TEST(TestInterface, UpdateInvalidRules)
     ddwaf_destroy(handle);
 }
 
-TEST(TestInterface, UpdateDisableEnableRuleByID)
+TEST(TestWafIntegration, UpdateDisableEnableRuleByID)
 {
-    auto rule = read_file("interface.yaml");
+    auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -443,9 +445,9 @@ TEST(TestInterface, UpdateDisableEnableRuleByID)
     ddwaf_destroy(handle3);
 }
 
-TEST(TestInterface, UpdateDisableEnableRuleByTags)
+TEST(TestWafIntegration, UpdateDisableEnableRuleByTags)
 {
-    auto rule = read_file("interface.yaml");
+    auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -527,9 +529,9 @@ TEST(TestInterface, UpdateDisableEnableRuleByTags)
     ddwaf_destroy(handle3);
 }
 
-TEST(TestInterface, UpdateActionsByID)
+TEST(TestWafIntegration, UpdateActionsByID)
 {
-    auto rule = read_file("interface.yaml");
+    auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -670,9 +672,9 @@ TEST(TestInterface, UpdateActionsByID)
     ddwaf_destroy(handle3);
 }
 
-TEST(TestInterface, UpdateActionsByTags)
+TEST(TestWafIntegration, UpdateActionsByTags)
 {
-    auto rule = read_file("interface.yaml");
+    auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -766,9 +768,9 @@ TEST(TestInterface, UpdateActionsByTags)
     ddwaf_destroy(handle2);
 }
 
-TEST(TestInterface, UpdateTagsByID)
+TEST(TestWafIntegration, UpdateTagsByID)
 {
-    auto rule = read_file("interface.yaml");
+    auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -891,9 +893,9 @@ TEST(TestInterface, UpdateTagsByID)
     ddwaf_destroy(handle3);
 }
 
-TEST(TestInterface, UpdateTagsByTags)
+TEST(TestWafIntegration, UpdateTagsByTags)
 {
-    auto rule = read_file("interface.yaml");
+    auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -1109,9 +1111,9 @@ TEST(TestInterface, UpdateTagsByTags)
     ddwaf_destroy(handle3);
 }
 
-TEST(TestInterface, UpdateOverrideByIDAndTag)
+TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
 {
-    auto rule = read_file("interface.yaml");
+    auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -1276,9 +1278,9 @@ TEST(TestInterface, UpdateOverrideByIDAndTag)
     ddwaf_destroy(handle4);
 }
 
-TEST(TestInterface, UpdateInvalidOverrides)
+TEST(TestWafIntegration, UpdateInvalidOverrides)
 {
-    auto rule = read_file("interface.yaml");
+    auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -1296,9 +1298,9 @@ TEST(TestInterface, UpdateInvalidOverrides)
     ddwaf_destroy(handle2);
 }
 
-TEST(TestInterface, UpdateRuleData)
+TEST(TestWafIntegration, UpdateRuleData)
 {
-    auto rule = read_file("rule_data.yaml");
+    auto rule = read_file("rule_data.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -1365,9 +1367,9 @@ TEST(TestInterface, UpdateRuleData)
     ddwaf_destroy(handle3);
 }
 
-TEST(TestInterface, UpdateAndRevertRuleData)
+TEST(TestWafIntegration, UpdateAndRevertRuleData)
 {
-    auto rule = read_file("rule_data.yaml");
+    auto rule = read_file("rule_data.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -1437,9 +1439,9 @@ TEST(TestInterface, UpdateAndRevertRuleData)
     ddwaf_destroy(handle3);
 }
 
-TEST(TestInterface, UpdateInvalidRuleData)
+TEST(TestWafIntegration, UpdateInvalidRuleData)
 {
-    auto rule = read_file("rule_data.yaml");
+    auto rule = read_file("rule_data.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -1459,9 +1461,9 @@ TEST(TestInterface, UpdateInvalidRuleData)
     ddwaf_destroy(handle2);
 }
 
-TEST(TestInterface, UpdateRuleExclusions)
+TEST(TestWafIntegration, UpdateRuleExclusions)
 {
-    auto rule = read_file("interface.yaml");
+    auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -1550,9 +1552,9 @@ TEST(TestInterface, UpdateRuleExclusions)
     ddwaf_destroy(handle3);
 }
 
-TEST(TestInterface, UpdateInputExclusions)
+TEST(TestWafIntegration, UpdateInputExclusions)
 {
-    auto rule = read_file("interface.yaml");
+    auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -1660,9 +1662,9 @@ TEST(TestInterface, UpdateInputExclusions)
     ddwaf_destroy(handle3);
 }
 
-TEST(TestInterface, UpdateEverything)
+TEST(TestWafIntegration, UpdateEverything)
 {
-    auto rule = read_file("interface_with_data.yaml");
+    auto rule = read_file("interface_with_data.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -1856,7 +1858,7 @@ TEST(TestInterface, UpdateEverything)
     //   - The following rules will be removed: rule3, rule4, rule5
     ddwaf_handle handle5;
     {
-        auto data = read_file("rule_data.yaml");
+        auto data = read_file("rule_data.yaml", base_dir);
         handle5 = ddwaf_update(handle4, &data, nullptr);
         ddwaf_object_free(&data);
     }
@@ -1956,7 +1958,7 @@ TEST(TestInterface, UpdateEverything)
     //   - The following rules be back: rule3, rule4, rule5
     ddwaf_handle handle6;
     {
-        auto data = read_file("interface_with_data.yaml");
+        auto data = read_file("interface_with_data.yaml", base_dir);
         handle6 = ddwaf_update(handle5, &data, nullptr);
         ddwaf_object_free(&data);
     }
@@ -2270,9 +2272,9 @@ TEST(TestInterface, UpdateEverything)
     ddwaf_destroy(handle1);
 }
 
-TEST(TestInterface, KnownAddressesDisabledRule)
+TEST(TestWafIntegration, KnownAddressesDisabledRule)
 {
-    auto rule = read_file("ruleset_with_disabled_rule.yaml");
+    auto rule = read_file("ruleset_with_disabled_rule.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -2330,9 +2332,9 @@ TEST(TestInterface, KnownAddressesDisabledRule)
     ddwaf_destroy(handle3);
 }
 
-TEST(TestInterface, KnownActions)
+TEST(TestWafIntegration, KnownActions)
 {
-    auto rule = read_file("interface.yaml");
+    auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
@@ -2525,7 +2527,7 @@ TEST(TestInterface, KnownActions)
     ddwaf_destroy(handle10);
 }
 
-TEST(TestInterface, KnownActionsNullHandle)
+TEST(TestWafIntegration, KnownActionsNullHandle)
 {
     uint32_t size;
     const char *const *actions = ddwaf_known_actions(nullptr, &size);

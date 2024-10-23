@@ -11,6 +11,8 @@
 
 using namespace std::literals;
 
+namespace ddwaf::test {
+
 namespace {
 class string_buffer {
 public:
@@ -189,6 +191,8 @@ std::unordered_map<std::string_view, std::string_view> object_to_map(const ddwaf
     return map;
 }
 
+} // namespace ddwaf::test
+
 ddwaf_object json_to_object(const std::string &json)
 {
     rapidjson::Document doc;
@@ -199,7 +203,7 @@ ddwaf_object json_to_object(const std::string &json)
     }
 
     ddwaf_object output;
-    json_to_object_helper(&output, doc);
+    ddwaf::test::json_to_object_helper(&output, doc);
     return output;
 }
 
@@ -234,4 +238,65 @@ ddwaf_object read_json_file(std::string_view filename, std::string_view base)
     return json_to_object(buffer);
 }
 
+schema_validator::schema_validator(const std::string &path)
+{
+    std::ifstream rule_file(path, std::ios::in);
+    if (!rule_file) {
+        throw std::system_error(errno, std::generic_category());
+    }
+
+    std::string buffer;
+    rule_file.seekg(0, std::ios::end);
+    buffer.resize(rule_file.tellg());
+    rule_file.seekg(0, std::ios::beg);
+
+    rule_file.read(buffer.data(), buffer.size());
+    rule_file.close();
+
+    if (schema_doc_.Parse(buffer).HasParseError()) {
+        throw std::runtime_error("failed to parse schema");
+    }
+
+    schema_ = std::make_unique<rapidjson::SchemaDocument>(schema_doc_);
+    validator_ = std::make_unique<rapidjson::SchemaValidator>(*schema_);
+}
+
+std::optional<std::string> schema_validator::validate(const char *events)
+{
+    validator_->Reset();
+
+    rapidjson::Document doc;
+    doc.Parse(events);
+    if (doc.HasParseError()) {
+        return std::to_string(doc.GetErrorOffset()) + ": " +
+               rapidjson::GetParseError_En(doc.GetParseError());
+    }
+
+    if (!doc.Accept(*validator_)) {
+
+        rapidjson::StringBuffer sb;
+        rapidjson::PrettyWriter<rapidjson::StringBuffer> w(sb);
+        validator_->GetError().Accept(w);
+
+        return sb.GetString();
+    }
+
+    return std::nullopt;
+}
+
+std::optional<std::string> schema_validator::validate(rapidjson::Document &doc)
+{
+    validator_->Reset();
+
+    if (!doc.Accept(*validator_)) {
+
+        rapidjson::StringBuffer sb;
+        rapidjson::PrettyWriter<rapidjson::StringBuffer> w(sb);
+        validator_->GetError().Accept(w);
+
+        return sb.GetString();
+    }
+
+    return std::nullopt;
+}
 

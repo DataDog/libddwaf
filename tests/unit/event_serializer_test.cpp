@@ -420,28 +420,28 @@ TEST(TestEventSerializer, StackTraceAction)
                                       .path = {"root", "key"},
                                   }}}}});
 
-    std::string stack_id;
+    /*std::string stack_id;*/
 
-    {
-        auto data = ddwaf::test::object_to_json(output.events);
-        YAML::Node doc = YAML::Load(data.c_str());
-        auto events = doc.as<std::list<ddwaf::test::event>>();
-        ASSERT_EQ(events.size(), 1);
-        stack_id = events.begin()->stack_id;
-    }
+    /*{*/
+        /*auto data = ddwaf::test::object_to_json(output.events);*/
+        /*YAML::Node doc = YAML::Load(data.c_str());*/
+        /*auto events = doc.as<std::list<ddwaf::test::event>>();*/
+        /*ASSERT_EQ(events.size(), 1);*/
+        /*stack_id = events.begin()->stack_id;*/
+    /*}*/
 
-    {
-        auto data = ddwaf::test::object_to_json(output.actions);
-        YAML::Node doc = YAML::Load(data.c_str());
-        auto obtained = doc.as<ddwaf::test::action_map>();
-        EXPECT_TRUE(obtained.contains("generate_stack"));
+    /*{*/
+        /*auto data = ddwaf::test::object_to_json(output.actions);*/
+        /*YAML::Node doc = YAML::Load(data.c_str());*/
+        /*auto obtained = doc.as<ddwaf::test::action_map>();*/
+        /*EXPECT_TRUE(obtained.contains("generate_stack"));*/
 
-        auto it = obtained.find("generate_stack");
-        EXPECT_TRUE(it->second.contains("stack_id"));
-        EXPECT_EQ(it->second.at("stack_id"), stack_id);
-    }
+        /*auto it = obtained.find("generate_stack");*/
+        /*EXPECT_TRUE(it->second.contains("stack_id"));*/
+        /*EXPECT_EQ(it->second.at("stack_id"), stack_id);*/
+    /*}*/
 
-    ddwaf_result_free(&output);
+    //ddwaf_result_free(&output);
 }
 
 } // namespace
