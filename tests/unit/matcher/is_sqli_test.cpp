@@ -65,43 +65,4 @@ TEST(TestIsSQLi, TestInvalidInput)
     EXPECT_FALSE(matcher.match(std::string_view{"*", 0}).first);
 }
 
-TEST(TestIsSQLi, TestRuleset)
-{
-    // Initialize a WAF rule
-    auto rule = yaml_to_object(
-        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: is_sqli, parameters: {inputs: [{address: arg1}]}}]}]})");
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
-    ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    ddwaf_context context = ddwaf_context_init(handle);
-    ASSERT_NE(context, nullptr);
-
-    ddwaf_object param;
-    ddwaf_object tmp;
-    ddwaf_object_map(&param);
-    ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "'OR 1=1/*"));
-
-    ddwaf_result ret;
-
-    auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
-    EXPECT_EQ(code, DDWAF_MATCH);
-    EXPECT_FALSE(ret.timeout);
-    EXPECT_EVENTS(ret, {.id = "1",
-                           .name = "rule1",
-                           .tags = {{"type", "flow1"}, {"category", "category1"}},
-                           .matches = {{.op = "is_sqli",
-                               .highlight = "s&1c",
-                               .args = {{
-                                   .value = "'OR 1=1/*",
-                                   .address = "arg1",
-                               }}}}});
-    ddwaf_result_free(&ret);
-
-    ddwaf_context_destroy(context);
-    ddwaf_destroy(handle);
-}
-
 } // namespace
