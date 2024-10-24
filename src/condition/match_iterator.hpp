@@ -10,18 +10,18 @@
 
 namespace ddwaf {
 
-template <std::size_t MinLength = 2, typename IteratorType = object::kv_iterator,
+template <std::size_t MinLength = 2, typename IteratorType = kv_iterator,
     typename ResourceType = std::string_view>
 class match_iterator {
 public:
     static constexpr std::size_t npos = std::string_view::npos;
 
-    explicit match_iterator(ResourceType resource, const ddwaf_object *obj,
+    explicit match_iterator(ResourceType resource, const ddwaf_object &obj,
         const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits())
         : resource_(resource), it_(obj, {}, exclude, limits)
     {
         for (; it_; ++it_) {
-            const auto *current_obj = *it_;
+            const auto *current_obj = (*it_).ptr();
             if (current_obj->type == DDWAF_OBJ_STRING && current_obj->nbEntries >= MinLength) {
                 current_param_ = std::string_view{
                     current_obj->stringValue, static_cast<std::size_t>(current_obj->nbEntries)};
@@ -56,7 +56,7 @@ public:
         }
 
         while (++it_) {
-            const auto *current_obj = *it_;
+            const auto *current_obj = (*it_).ptr();
             if (current_obj->type == DDWAF_OBJ_STRING && current_obj->nbEntries >= MinLength) {
                 current_param_ = std::string_view{
                     current_obj->stringValue, static_cast<std::size_t>(current_obj->nbEntries)};
