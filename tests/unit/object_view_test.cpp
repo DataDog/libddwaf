@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "object_view.hpp"
-#include "test_utils.hpp"
+#include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
 
