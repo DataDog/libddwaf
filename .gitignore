@@ -31,6 +31,7 @@ perf/test_files/breakdown.numbers
 !/fuzzer/*/corpus/corpus-*
 
 /src/version.hpp
+/tests/common/base_path.hpp
 
 *.trace
 .vscode

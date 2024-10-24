@@ -3,12 +3,14 @@ include(GoogleTest)
 file(GLOB_RECURSE LIBDDWAF_TEST_SOURCE *.cpp)
 add_executable(waf_test ${LIBDDWAF_TEST_SOURCE})
 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/common/base_path.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/common/base_path.hpp)
+
 set_target_properties(waf_test PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO)
 
-target_include_directories(waf_test PRIVATE ${LIBDDWAF_PUBLIC_INCLUDES} ${LIBDDWAF_PRIVATE_INCLUDES})
+target_include_directories(waf_test PRIVATE ${CMAKE_SOURCE_DIR}/tests ${LIBDDWAF_PUBLIC_INCLUDES} ${LIBDDWAF_PRIVATE_INCLUDES})
 
 if(NOT STDLIB_MAP_RECURSIVE)
     target_compile_definitions(waf_test PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)

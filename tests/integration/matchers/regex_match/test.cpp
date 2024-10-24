@@ -1,0 +1,211 @@
+// Unless explicitly stated otherwise all files in this repository are
+// dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
+//
+// This product includes software developed at Datadog (https://www.datadoghq.com/).
+// Copyright 2021 Datadog, Inc.
+
+#include "common/gtest_utils.hpp"
+
+using namespace ddwaf::matcher;
+
+namespace {
+
+TEST(TestRegexMatchIntegration, CaseSensitiveMatch)
+{
+    // Initialize a WAF rule
+    auto rule = yaml_to_object(
+        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: alert, options: {case_sensitive: true}}}]}]})");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object param;
+        ddwaf_object tmp;
+        ddwaf_object_map(&param);
+        ddwaf_object_map_add(
+            &param, "arg1", ddwaf_object_string(&tmp, "<script>alert(1);</script>"));
+
+        ddwaf_result ret;
+
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_MATCH);
+        EXPECT_FALSE(ret.timeout);
+        EXPECT_EVENTS(ret, {.id = "1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = "alert",
+                                   .highlight = "alert",
+                                   .args = {{
+                                       .value = "<script>alert(1);</script>",
+                                       .address = "arg1",
+                                   }}}}});
+        ddwaf_result_free(&ret);
+
+        ddwaf_context_destroy(context);
+    }
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object param;
+        ddwaf_object tmp;
+        ddwaf_object_map(&param);
+        ddwaf_object_map_add(
+            &param, "arg1", ddwaf_object_string(&tmp, "<script>AlErT(1);</script>"));
+
+        ddwaf_result ret;
+
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_OK);
+        EXPECT_FALSE(ret.timeout);
+        ddwaf_result_free(&ret);
+
+        ddwaf_context_destroy(context);
+    }
+    ddwaf_destroy(handle);
+}
+
+TEST(TestRegexMatchIntegration, CaseInsensitiveMatch)
+{
+    // Initialize a WAF rule
+    auto rule = yaml_to_object(
+        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: alert, options: {case_sensitive: false}}}]}]})");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object param;
+        ddwaf_object tmp;
+        ddwaf_object_map(&param);
+        ddwaf_object_map_add(
+            &param, "arg1", ddwaf_object_string(&tmp, "<script>alert(1);</script>"));
+
+        ddwaf_result ret;
+
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_MATCH);
+        EXPECT_FALSE(ret.timeout);
+        EXPECT_EVENTS(ret, {.id = "1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = "alert",
+                                   .highlight = "alert",
+                                   .args = {{
+                                       .value = "<script>alert(1);</script>",
+                                       .address = "arg1",
+                                   }}}}});
+        ddwaf_result_free(&ret);
+
+        ddwaf_context_destroy(context);
+    }
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object param;
+        ddwaf_object tmp;
+        ddwaf_object_map(&param);
+        ddwaf_object_map_add(
+            &param, "arg1", ddwaf_object_string(&tmp, "<script>AlErT(1);</script>"));
+
+        ddwaf_result ret;
+
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_MATCH);
+        EXPECT_EVENTS(ret, {.id = "1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = "alert",
+                                   .highlight = "AlErT",
+                                   .args = {{
+                                       .value = "<script>AlErT(1);</script>",
+                                       .address = "arg1",
+                                   }}}}});
+
+        EXPECT_FALSE(ret.timeout);
+        ddwaf_result_free(&ret);
+
+        ddwaf_context_destroy(context);
+    }
+    ddwaf_destroy(handle);
+}
+
+TEST(TestRegexMatchIntegration, MinLength)
+{
+    // Initialize a WAF rule
+    auto rule = yaml_to_object(
+        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: alert, options: {min_length: 10}}}]}]})");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object param;
+        ddwaf_object tmp;
+        ddwaf_object_map(&param);
+        ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "alert("));
+
+        ddwaf_result ret;
+
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_OK);
+        ddwaf_result_free(&ret);
+
+        ddwaf_context_destroy(context);
+    }
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object param;
+        ddwaf_object tmp;
+        ddwaf_object_map(&param);
+        ddwaf_object_map_add(
+            &param, "arg1", ddwaf_object_string(&tmp, "<script>AlErT(1);</script>"));
+
+        ddwaf_result ret;
+
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_MATCH);
+        EXPECT_EVENTS(ret, {.id = "1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = "alert",
+                                   .highlight = "AlErT",
+                                   .args = {{
+                                       .value = "<script>AlErT(1);</script>",
+                                       .address = "arg1",
+                                   }}}}});
+
+        EXPECT_FALSE(ret.timeout);
+        ddwaf_result_free(&ret);
+
+        ddwaf_context_destroy(context);
+    }
+    ddwaf_destroy(handle);
+}
+} // namespace
