@@ -123,7 +123,8 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
 }
 
 void parseRule(parameter::map &rule, base_section_info &info,
-    std::unordered_set<std::string_view> &rule_ids, ddwaf::ruleset &rs, ddwaf::object_limits limits)
+    std::unordered_set<std::string_view> &rule_ids,
+    std::vector<std::shared_ptr<ddwaf::rule>> &rules, ddwaf::object_limits limits)
 {
     auto id = at<std::string>(rule, "id");
     if (rule_ids.find(id) != rule_ids.end()) {
@@ -168,7 +169,7 @@ void parseRule(parameter::map &rule, base_section_info &info,
             std::string(id), at<std::string>(rule, "name"), std::move(tags), std::move(expression));
 
         rule_ids.emplace(rule_ptr->get_id());
-        rs.insert_rule(rule_ptr);
+        rules.emplace_back(rule_ptr);
         info.add_loaded(rule_ptr->get_id());
     } catch (const std::exception &e) {
         DDWAF_WARN("failed to parse rule '{}': {}", id, e.what());
@@ -182,7 +183,8 @@ void parse(
     parameter::map &ruleset, base_ruleset_info &info, ddwaf::ruleset &rs, object_limits limits)
 {
     auto rules_array = at<parameter::vector>(ruleset, "events");
-    rs.rules.reserve(rules_array.size());
+    std::vector<std::shared_ptr<ddwaf::rule>> rules;
+    rules.reserve(rules_array.size());
 
     auto &section = info.add_section("rules");
 
@@ -191,13 +193,13 @@ void parse(
         const auto &rule_param = rules_array[i];
         try {
             auto rule = static_cast<parameter::map>(rule_param);
-            parseRule(rule, section, rule_ids, rs, limits);
+            parseRule(rule, section, rule_ids, rules, limits);
         } catch (const std::exception &e) {
             DDWAF_WARN("{}", e.what());
             section.add_failed("index:" + to_string<std::string>(i), e.what());
         }
     }
-
+    rs.insert_rules(rules, {});
     if (rs.rules.empty()) {
         throw ddwaf::parsing_error("no valid rules found");
     }

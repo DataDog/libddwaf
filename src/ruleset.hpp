@@ -11,9 +11,9 @@
 #include <vector>
 
 #include "action_mapper.hpp"
-#include "collection.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
+#include "module.hpp"
 #include "obfuscator.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
@@ -22,33 +22,20 @@
 namespace ddwaf {
 
 struct ruleset {
-    void insert_rule(const std::shared_ptr<rule> &rule)
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    void insert_rules(const std::vector<std::shared_ptr<rule>> &base_rules,
+        const std::vector<std::shared_ptr<rule>> &user_rules)
     {
-        rules.emplace_back(rule);
-        std::string_view type = rule->get_tag("type");
-        std::string_view mod = rule->get_tag_or("module", "waf");
-
-        auto [it, res] = collection_types.emplace(ddwaf::fmt::format("{}.{}", mod, type));
-        const auto &collection = *it;
-        if (rule->get_actions().empty()) {
-            if (rule->get_source() == rule::source_type::user) {
-                user_collections[collection].insert(rule);
-            } else {
-                base_collections[collection].insert(rule);
-            }
-        } else {
-            if (rule->get_source() == rule::source_type::user) {
-                user_priority_collections[collection].insert(rule);
-            } else {
-                base_priority_collections[collection].insert(rule);
-            }
+        collection_module_builder builder;
+        for (const auto &rule : base_rules) {
+            builder.insert(rule);
+            rule->get_addresses(rule_addresses);
         }
-        rule->get_addresses(rule_addresses);
-    }
-
-    void insert_rules(const std::vector<std::shared_ptr<rule>> &rules_)
-    {
-        for (const auto &rule : rules_) { insert_rule(rule); }
+        for (const auto &rule : user_rules) {
+            builder.insert(rule);
+            rule->get_addresses(rule_addresses);
+        }
+        rules = builder.build();
     }
 
     template <typename T>
@@ -164,19 +151,13 @@ struct ruleset {
     std::unordered_map<std::string_view, std::shared_ptr<exclusion::rule_filter>> rule_filters;
     std::unordered_map<std::string_view, std::shared_ptr<exclusion::input_filter>> input_filters;
 
-    std::vector<std::shared_ptr<rule>> rules;
     std::unordered_map<std::string, std::shared_ptr<matcher::base>> rule_matchers;
     std::unordered_map<std::string, std::shared_ptr<matcher::base>> exclusion_matchers;
 
     std::vector<std::shared_ptr<const scanner>> scanners;
     std::shared_ptr<action_mapper> actions;
 
-    // The key used to organise collections is "${rule.module}.${rule.type}"
-    std::unordered_set<std::string> collection_types;
-    std::unordered_map<std::string_view, priority_collection> user_priority_collections;
-    std::unordered_map<std::string_view, priority_collection> base_priority_collections;
-    std::unordered_map<std::string_view, collection> user_collections;
-    std::unordered_map<std::string_view, collection> base_collections;
+    collection_module rules;
 
     std::unordered_map<target_index, std::string> rule_addresses;
     std::unordered_map<target_index, std::string> filter_addresses;

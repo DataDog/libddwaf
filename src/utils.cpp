@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <cstdint>
+#include <deque>
 #include <list>
 #include <utility>
 
@@ -52,7 +53,7 @@ ddwaf_object clone(ddwaf_object *input)
     ddwaf_object_invalid(&tmp);
 
     ddwaf_object copy;
-    std::list<std::pair<ddwaf_object *, ddwaf_object *>> queue;
+    std::deque<std::pair<ddwaf_object *, ddwaf_object *>> queue;
 
     clone_helper(*input, copy);
     if (is_container(input)) {

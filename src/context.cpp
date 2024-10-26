@@ -9,7 +9,6 @@
 #include <vector>
 
 #include "clock.hpp"
-#include "collection.hpp"
 #include "context.hpp"
 #include "ddwaf.h"
 #include "event.hpp"
@@ -86,7 +85,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     ddwaf::timer deadline{std::chrono::microseconds(timeout)};
 
     // If this is a new run but no rule care about those new params, let's skip the run
-    if (!is_first_run() && !store_.has_new_targets()) {
+    if (!store_.has_new_targets()) {
         return DDWAF_OK;
     }
 
@@ -235,38 +234,9 @@ std::vector<event> context::eval_rules(
 {
     std::vector<ddwaf::event> events;
 
-    auto eval_collection = [&](const auto &type, const auto &collection) {
-        auto it = collection_cache_.find(type);
-        if (it == collection_cache_.end()) {
-            auto [new_it, res] = collection_cache_.emplace(type, collection_cache{});
-            it = new_it;
-        }
-        collection.match(events, store_, it->second, policy, ruleset_->rule_matchers, deadline);
-    };
-
-    // Evaluate user priority collections first
-    for (auto &[type, collection] : ruleset_->user_priority_collections) {
-        DDWAF_DEBUG("Evaluating user priority collection '{}'", type);
-        eval_collection(type, collection);
-    }
-
-    // Evaluate priority collections first
-    for (auto &[type, collection] : ruleset_->base_priority_collections) {
-        DDWAF_DEBUG("Evaluating priority collection '{}'", type);
-        eval_collection(type, collection);
-    }
-
-    // Evaluate regular collection after
-    for (auto &[type, collection] : ruleset_->user_collections) {
-        DDWAF_DEBUG("Evaluating user collection '{}'", type);
-        eval_collection(type, collection);
-    }
-
-    // Evaluate regular collection after
-    for (auto &[type, collection] : ruleset_->base_collections) {
-        DDWAF_DEBUG("Evaluating base collection '{}'", type);
-        eval_collection(type, collection);
-    }
+    DDWAF_DEBUG("Evaluating rules");
+    ruleset_->rules.eval(
+        events, store_, collection_cache_, policy, ruleset_->rule_matchers, deadline);
 
     return events;
 }

@@ -37,6 +37,11 @@ public:
         if (!expr_) {
             throw std::invalid_argument("rule constructed with null expression");
         }
+
+        auto type = get_tag("type");
+        auto mod = get_tag_or("module", "waf");
+
+        collection_ = ddwaf::fmt::format("{}.{}", mod, type);
     }
 
     rule(const rule &) = delete;
@@ -71,6 +76,7 @@ public:
     source_type get_source() const { return source_; }
     const std::string &get_id() const { return id_; }
     const std::string &get_name() const { return name_; }
+    std::string_view get_collection() const { return collection_; }
 
     std::string_view get_tag(const std::string &tag) const
     {
@@ -116,6 +122,7 @@ protected:
     std::unordered_map<std::string, std::string> ancillary_tags_;
     std::shared_ptr<expression> expr_;
     std::vector<std::string> actions_;
+    std::string collection_;
 };
 
 } // namespace ddwaf
