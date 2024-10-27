@@ -23,6 +23,8 @@ struct collection_cache {
 struct module_cache {
     memory::unordered_map<std::string_view, collection_cache> collections;
     memory::vector<rule::cache_type> rules;
+
+    [[nodiscard]] bool empty() const { return rules.empty(); }
 };
 
 class collection_module {

@@ -52,6 +52,7 @@ public:
     std::vector<event> eval_rules(const exclusion::context_policy &policy, ddwaf::timer &deadline);
 
 protected:
+    bool is_first_run() const { return collection_cache_.empty(); }
     bool check_new_rule_targets() const
     {
         // NOLINTNEXTLINE(readability-use-anyofallof)
