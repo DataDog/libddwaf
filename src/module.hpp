@@ -24,7 +24,7 @@ struct module_cache {
     memory::unordered_map<std::string_view, collection_cache> collections;
     memory::vector<rule::cache_type> rules;
 
-    [[nodiscard]] bool empty() const { return rules.empty(); }
+    [[nodiscard]] bool empty() const { return collections.empty(); }
 };
 
 class collection_module {
@@ -55,6 +55,12 @@ public:
     [[nodiscard]] const_iterator end() const { return rules_.end(); }
 
     ddwaf::rule *operator[](std::size_t index) { return rules_.at(index); }
+
+    void init_cache(module_cache &cache) const
+    {
+        cache.rules.resize(rules_.size());
+        cache.collections.reserve(collections_.size());
+    }
 
 protected:
     struct rule_collection {

@@ -16,6 +16,7 @@
 #include "exclusion/common.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
+#include "module.hpp"
 #include "obfuscator.hpp"
 #include "rule.hpp"
 #include "ruleset.hpp"
@@ -33,6 +34,7 @@ public:
     {
         rule_filter_cache_.reserve(ruleset_->rule_filters.size());
         input_filter_cache_.reserve(ruleset_->input_filters.size());
+        ruleset_->rules.init_cache(collection_cache_);
     }
 
     context(const context &) = delete;

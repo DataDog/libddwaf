@@ -84,11 +84,6 @@ void collection_module::eval(std::vector<event> &events, object_store &store, mo
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
-    if (cache.rules.size() != rules_.size()) {
-        cache.rules.resize(rules_.size());
-        cache.collections.reserve(collections_.size());
-    }
-
     for (const auto &collection : collections_) {
         DDWAF_DEBUG("Evaluating collection: {}", collection.name);
         auto &collection_cache = cache.collections[collection.name];
