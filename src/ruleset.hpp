@@ -26,13 +26,17 @@ struct ruleset {
     void insert_rules(const std::vector<std::shared_ptr<rule>> &base_rules,
         const std::vector<std::shared_ptr<rule>> &user_rules)
     {
+        shared_rules.reserve(base_rules.size() + user_rules.size());
+
         collection_module_builder builder;
         for (const auto &rule : base_rules) {
-            builder.insert(rule);
+            shared_rules.emplace_back(rule);
+            builder.insert(rule.get());
             rule->get_addresses(rule_addresses);
         }
         for (const auto &rule : user_rules) {
-            builder.insert(rule);
+            shared_rules.emplace_back(rule);
+            builder.insert(rule.get());
             rule->get_addresses(rule_addresses);
         }
         rules = builder.build();
@@ -157,6 +161,7 @@ struct ruleset {
     std::vector<std::shared_ptr<const scanner>> scanners;
     std::shared_ptr<action_mapper> actions;
 
+    std::vector<std::shared_ptr<rule>> shared_rules;
     collection_module rules;
 
     std::unordered_map<target_index, std::string> rule_addresses;

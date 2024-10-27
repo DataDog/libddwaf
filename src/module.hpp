@@ -28,8 +28,8 @@ struct module_cache {
 class collection_module {
 public:
     using cache_type = module_cache;
-    using iterator = std::vector<std::shared_ptr<rule>>::iterator;
-    using const_iterator = std::vector<std::shared_ptr<rule>>::const_iterator;
+    using iterator = std::vector<ddwaf::rule *>::iterator;
+    using const_iterator = std::vector<ddwaf::rule *>::const_iterator;
 
     collection_module() = default;
     ~collection_module() = default;
@@ -52,7 +52,7 @@ public:
     iterator end() { return rules_.end(); }
     [[nodiscard]] const_iterator end() const { return rules_.end(); }
 
-    std::shared_ptr<ddwaf::rule> operator[](std::size_t index) { return rules_.at(index); }
+    ddwaf::rule *operator[](std::size_t index) { return rules_.at(index); }
 
 protected:
     struct rule_collection {
@@ -63,19 +63,19 @@ protected:
     };
 
     collection_module(
-        std::vector<rule_collection> &&collections, std::vector<std::shared_ptr<rule>> &&rules)
+        std::vector<rule_collection> &&collections, std::vector<ddwaf::rule *> &&rules)
         : collections_(std::move(collections)), rules_(std::move(rules))
     {}
 
     std::vector<rule_collection> collections_;
-    std::vector<std::shared_ptr<rule>> rules_;
+    std::vector<ddwaf::rule *> rules_;
 
     friend class collection_module_builder;
 };
 
 class collection_module_builder {
 public:
-    void insert(const std::shared_ptr<rule> &rule) { rules_.emplace_back(rule); }
+    void insert(ddwaf::rule *rule) { rules_.emplace_back(rule); }
 
     collection_module build()
     {
@@ -123,6 +123,6 @@ public:
 protected:
     // Keep track of the first index of the collection
     std::unordered_map<std::string_view, std::size_t> collection_start_;
-    std::vector<std::shared_ptr<rule>> rules_;
+    std::vector<ddwaf::rule *> rules_;
 };
 } // namespace ddwaf
