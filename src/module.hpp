@@ -52,6 +52,8 @@ public:
     iterator end() { return rules_.end(); }
     [[nodiscard]] const_iterator end() const { return rules_.end(); }
 
+    std::shared_ptr<ddwaf::rule> operator[](std::size_t index) { return rules_.at(index); }
+
 protected:
     struct rule_collection {
         std::string_view name;
@@ -92,22 +94,23 @@ public:
         // Compute the ranges of each collection
         std::vector<collection_module::rule_collection> collections;
         if (!rules_.empty()) {
-            auto current_type = rules_[0]->get_collection();
-            collections.emplace_back(current_type,
-                rules_[0]->get_actions().empty() ? collection_type::regular
-                                                 : collection_type::priority,
-                0, rules_.size());
+            auto current_name = rules_[0]->get_collection();
+            auto current_type = rules_[0]->get_actions().empty() ? collection_type::regular
+                                                                 : collection_type::priority;
+
+            collections.emplace_back(current_name, current_type, 0, rules_.size());
 
             for (std::size_t i = 1; i < rules_.size(); ++i) {
-                auto this_type = rules_[i]->get_collection();
-                if (this_type != current_type) {
+                auto this_name = rules_[i]->get_collection();
+                auto this_type = rules_[i]->get_actions().empty() ? collection_type::regular
+                                                                  : collection_type::priority;
+
+                if (this_type != current_type || this_name != current_name) {
                     collections.back().end = i;
 
+                    current_name = this_name;
                     current_type = this_type;
-                    collections.emplace_back(current_type,
-                        rules_[0]->get_actions().empty() ? collection_type::regular
-                                                         : collection_type::priority,
-                        i, rules_.size());
+                    collections.emplace_back(current_name, current_type, i, rules_.size());
                 }
             }
         }

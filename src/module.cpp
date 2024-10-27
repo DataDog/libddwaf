@@ -89,6 +89,7 @@ void collection_module::eval(std::vector<event> &events, object_store &store, mo
     }
 
     for (const auto &collection : collections_) {
+        DDWAF_DEBUG("Evaluating collection: {}", collection.name);
         auto &collection_cache = cache.collections[collection.name];
         if (collection_cache.type >= collection.type) {
             // If the result was cached but ephemeral, clear it. Note that this is
