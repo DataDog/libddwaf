@@ -79,6 +79,7 @@ public:
 
     collection_module build()
     {
+        using rule_collection = collection_module::rule_collection;
         std::sort(rules_.begin(), rules_.end(), [](const auto &left, const auto &right) {
             auto ltype = left->get_collection();
             auto rtype = right->get_collection();
@@ -98,7 +99,7 @@ public:
             auto current_type = rules_[0]->get_actions().empty() ? collection_type::regular
                                                                  : collection_type::priority;
 
-            collections.emplace_back(current_name, current_type, 0, rules_.size());
+            collections.emplace_back(rule_collection{current_name, current_type, 0, rules_.size()});
 
             for (std::size_t i = 1; i < rules_.size(); ++i) {
                 auto this_name = rules_[i]->get_collection();
@@ -110,7 +111,8 @@ public:
 
                     current_name = this_name;
                     current_type = this_type;
-                    collections.emplace_back(current_name, current_type, i, rules_.size());
+                    collections.emplace_back(
+                        rule_collection{current_name, current_type, i, rules_.size()});
                 }
             }
         }

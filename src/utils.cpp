@@ -6,7 +6,6 @@
 
 #include <cstdint>
 #include <deque>
-#include <list>
 #include <utility>
 
 #include "ddwaf.h"
