@@ -10,6 +10,7 @@
 #include "ddwaf.h"
 #include "log.hpp"
 #include "object_store.hpp"
+#include "target_address.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {

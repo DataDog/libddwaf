@@ -13,6 +13,7 @@
 
 #include "context_allocator.hpp"
 #include "ddwaf.h"
+#include "target_address.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
