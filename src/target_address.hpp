@@ -28,8 +28,9 @@ struct target_address {
         : name(std::move(name_)), index(get_target_index(name))
     {}
 
-    auto operator<=>(const target_address &o) const { return name <=> o.name; }
-    bool operator==(const target_address &o) const { return index == o.index && name == o.name; }
+    bool operator<(const target_address &o) const { return name < o.name; }
+    bool operator>(const target_address &o) const { return name > o.name; }
+    bool operator==(const target_address &o) const { return name == o.name; }
 
     std::string name;
     target_index index;
@@ -39,15 +40,9 @@ struct target_address_view {
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     target_address_view(const target_address &address) : name(address.name), index(address.index) {}
 
-    auto operator<=>(const target_address_view &o) const { return name <=> o.name; }
-    auto operator<=>(const target_address &o) const { return name <=> o.name; }
-
-    template <typename T>
-    bool operator==(const T &o) const
-        requires std::is_same_v<target_address, T> || std::is_same_v<target_address_view, T>
-    {
-        return index == o.index && name == o.name;
-    }
+    bool operator<(const target_address_view &o) const { return name < o.name; }
+    bool operator>(const target_address_view &o) const { return name > o.name; }
+    bool operator==(const target_address_view &o) const { return name == o.name; }
 
     std::string_view name;
     target_index index;
