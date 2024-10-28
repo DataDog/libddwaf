@@ -47,10 +47,10 @@ constexpr ruleset_builder::change_state operator&(
 
 namespace {
 
-std::set<rule *> references_to_rules(
-    const std::vector<parser::reference_spec> &references, const indexer<rule> &rules)
+std::set<core_rule *> references_to_rules(
+    const std::vector<parser::reference_spec> &references, const indexer<core_rule> &rules)
 {
-    std::set<rule *> rule_refs;
+    std::set<core_rule *> rule_refs;
     if (!references.empty()) {
         for (const auto &ref : references) {
             if (ref.type == parser::reference_type::id) {
@@ -95,7 +95,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
 
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : base_rules_) {
-            auto rule_ptr = std::make_shared<ddwaf::rule>(
+            auto rule_ptr = std::make_shared<core_rule>(
                 id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
             final_base_rules_.emplace(rule_ptr);
         }
@@ -150,7 +150,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
 
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : user_rules_) {
-            auto rule_ptr = std::make_shared<ddwaf::rule>(
+            auto rule_ptr = std::make_shared<core_rule>(
                 id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
             if (!rule_ptr->is_enabled()) {
                 // Skip disabled rules
@@ -202,7 +202,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         }
     }
 
-    auto rs = std::make_shared<ddwaf::ruleset>();
+    auto rs = std::make_shared<ruleset>();
     rs->insert_rules(final_base_rules_.items());
     rs->insert_rules(final_user_rules_.items());
     rs->insert_filters(rule_filters_);
@@ -220,7 +220,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     // again that there are rules available.
     if (rs->rules.empty()) {
         DDWAF_WARN("No valid rules found");
-        throw ddwaf::parsing_error("no valid or enabled rules found");
+        throw parsing_error("no valid or enabled rules found");
     }
 
     return rs;
@@ -292,7 +292,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
                 decltype(rule_data_ids_) rule_data_ids;
 
                 auto new_user_rules = parser::v2::parse_rules(
-                    rules, section, rule_data_ids, limits_, rule::source_type::user);
+                    rules, section, rule_data_ids, limits_, core_rule::source_type::user);
                 user_rules_ = std::move(new_user_rules);
             } else {
                 DDWAF_DEBUG("Clearing all custom rules");
@@ -309,7 +309,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         // If we haven't received rules and our base ruleset is empty, the
         // WAF can't proceed.
         DDWAF_WARN("No valid rules found");
-        throw ddwaf::parsing_error("no valid rules found");
+        throw parsing_error("no valid rules found");
     }
 
     it = root.find("rules_data");

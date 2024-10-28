@@ -27,7 +27,7 @@ enum class collection_type : uint8_t { none = 0, regular = 1, priority = 2 };
 struct collection_cache {
     bool ephemeral{false};
     collection_type result{collection_type::none};
-    memory::unordered_map<rule *, rule::cache_type> rule_cache;
+    memory::unordered_map<core_rule *, core_rule::cache_type> rule_cache;
 };
 
 template <typename Derived> class base_collection {
@@ -42,7 +42,7 @@ public:
     base_collection &operator=(const base_collection &) = default;
     base_collection &operator=(base_collection &&) noexcept = default;
 
-    void insert(const std::shared_ptr<rule> &rule) { rules_.emplace_back(rule.get()); }
+    void insert(const std::shared_ptr<core_rule> &rule) { rules_.emplace_back(rule.get()); }
 
     void match(std::vector<event> &events, object_store &store, collection_cache &cache,
         const exclusion::context_policy &exclusion,
@@ -50,7 +50,7 @@ public:
         ddwaf::timer &deadline) const;
 
 protected:
-    std::vector<rule *> rules_{};
+    std::vector<core_rule *> rules_{};
 };
 
 class collection : public base_collection<collection> {

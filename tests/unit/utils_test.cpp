@@ -351,10 +351,10 @@ TEST(TestUtils, CloneMap)
 }
 
 #define EXPECT_VEC(expected, ...)                                                                  \
-    {                                                                                              \
-        std::vector<std::string_view> vec{__VA_ARGS__};                                            \
-        EXPECT_EQ(expected, vec);                                                                  \
-    }
+  {                                                                                                \
+    std::vector<std::string_view> vec{__VA_ARGS__};                                                \
+    EXPECT_EQ(expected, vec);                                                                      \
+  }
 
 TEST(TestUtils, Split)
 {

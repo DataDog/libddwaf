@@ -11,17 +11,17 @@
 using namespace ddwaf;
 
 namespace {
-std::shared_ptr<rule> make_rule(std::string id, std::string name,
+std::shared_ptr<core_rule> make_rule(std::string id, std::string name,
     std::unordered_map<std::string, std::string> tags, std::vector<std::string> actions,
-    rule::source_type source = rule::source_type::base)
+    core_rule::source_type source = core_rule::source_type::base)
 {
-    return std::make_shared<ddwaf::rule>(std::move(id), std::move(name), std::move(tags),
+    return std::make_shared<core_rule>(std::move(id), std::move(name), std::move(tags),
         std::make_shared<expression>(), std::move(actions), true, source);
 }
 
 TEST(TestRuleset, InsertSingleRegularBaseRules)
 {
-    std::vector<std::shared_ptr<rule>> rules{
+    std::vector<std::shared_ptr<core_rule>> rules{
         make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {}),
         make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {}),
         make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {}),
@@ -55,7 +55,7 @@ TEST(TestRuleset, InsertSingleRegularBaseRules)
 
 TEST(TestRuleset, InsertSinglePriorityBaseRules)
 {
-    std::vector<std::shared_ptr<rule>> rules{
+    std::vector<std::shared_ptr<core_rule>> rules{
         make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {"block"}),
         make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"}),
         make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"}),
@@ -89,7 +89,7 @@ TEST(TestRuleset, InsertSinglePriorityBaseRules)
 
 TEST(TestRuleset, InsertSingleMixedBaseRules)
 {
-    std::vector<std::shared_ptr<rule>> rules{
+    std::vector<std::shared_ptr<core_rule>> rules{
         make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {}),
         make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {}),
         make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"}),
@@ -123,19 +123,19 @@ TEST(TestRuleset, InsertSingleMixedBaseRules)
 
 TEST(TestRuleset, InsertSingleRegularUserRules)
 {
-    std::vector<std::shared_ptr<rule>> rules{
+    std::vector<std::shared_ptr<core_rule>> rules{
         make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {},
-            rule::source_type::user),
+            core_rule::source_type::user),
     };
 
     {
@@ -164,19 +164,19 @@ TEST(TestRuleset, InsertSingleRegularUserRules)
 
 TEST(TestRuleset, InsertSinglePriorityUserRules)
 {
-    std::vector<std::shared_ptr<rule>> rules{
+    std::vector<std::shared_ptr<core_rule>> rules{
         make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {"block"},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {"block"},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
-            rule::source_type::user),
+            core_rule::source_type::user),
     };
     {
         ddwaf::ruleset ruleset;
@@ -203,19 +203,19 @@ TEST(TestRuleset, InsertSinglePriorityUserRules)
 
 TEST(TestRuleset, InsertSingleMixedUserRules)
 {
-    std::vector<std::shared_ptr<rule>> rules{
+    std::vector<std::shared_ptr<core_rule>> rules{
         make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
-            rule::source_type::user),
+            core_rule::source_type::user),
     };
 
     {
@@ -243,19 +243,19 @@ TEST(TestRuleset, InsertSingleMixedUserRules)
 
 TEST(TestRuleset, InsertSingleRegularMixedRules)
 {
-    std::vector<std::shared_ptr<rule>> rules{
+    std::vector<std::shared_ptr<core_rule>> rules{
         make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {},
-            rule::source_type::base),
+            core_rule::source_type::base),
         make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {},
-            rule::source_type::base),
+            core_rule::source_type::base),
         make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {},
-            rule::source_type::base),
+            core_rule::source_type::base),
         make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {},
-            rule::source_type::user),
+            core_rule::source_type::user),
     };
 
     {
@@ -283,19 +283,19 @@ TEST(TestRuleset, InsertSingleRegularMixedRules)
 
 TEST(TestRuleset, InsertSinglePriorityMixedRules)
 {
-    std::vector<std::shared_ptr<rule>> rules{
+    std::vector<std::shared_ptr<core_rule>> rules{
         make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {"block"},
-            rule::source_type::base),
+            core_rule::source_type::base),
         make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
-            rule::source_type::base),
+            core_rule::source_type::base),
         make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {"block"},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
-            rule::source_type::base),
+            core_rule::source_type::base),
         make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
-            rule::source_type::user),
+            core_rule::source_type::user),
     };
     {
         ddwaf::ruleset ruleset;
@@ -322,19 +322,19 @@ TEST(TestRuleset, InsertSinglePriorityMixedRules)
 
 TEST(TestRuleset, InsertSingleMixedMixedRules)
 {
-    std::vector<std::shared_ptr<rule>> rules{
+    std::vector<std::shared_ptr<core_rule>> rules{
         make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
-            rule::source_type::user),
+            core_rule::source_type::user),
         make_rule("id6", "name", {{"type", "type0"}, {"category", "category0"}}, {}),
         make_rule("id7", "name", {{"type", "type1"}, {"category", "category0"}}, {}),
         make_rule("id8", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"}),

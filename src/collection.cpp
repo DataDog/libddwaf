@@ -24,8 +24,8 @@
 
 namespace ddwaf {
 
-std::optional<event> match_rule(rule *rule, const object_store &store,
-    memory::unordered_map<ddwaf::rule *, rule::cache_type> &cache,
+std::optional<event> match_rule(core_rule *rule, const object_store &store,
+    memory::unordered_map<core_rule *, core_rule::cache_type> &cache,
     const exclusion::context_policy &policy,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline)
@@ -62,11 +62,11 @@ std::optional<event> match_rule(rule *rule, const object_store &store,
     try {
         auto it = cache.find(rule);
         if (it == cache.end()) {
-            auto [new_it, res] = cache.emplace(rule, rule::cache_type{});
+            auto [new_it, res] = cache.emplace(rule, core_rule::cache_type{});
             it = new_it;
         }
 
-        rule::cache_type &rule_cache = it->second;
+        core_rule::cache_type &rule_cache = it->second;
         std::optional<event> event;
         event = rule->match(store, rule_cache, exclusion.objects, dynamic_matchers, deadline);
 

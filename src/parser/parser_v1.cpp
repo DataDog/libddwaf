@@ -164,7 +164,7 @@ void parseRule(parameter::map &rule, base_section_info &info,
             throw ddwaf::parsing_error("missing key 'type'");
         }
 
-        auto rule_ptr = std::make_shared<ddwaf::rule>(
+        auto rule_ptr = std::make_shared<core_rule>(
             std::string(id), at<std::string>(rule, "name"), std::move(tags), std::move(expression));
 
         rule_ids.emplace(rule_ptr->get_id());

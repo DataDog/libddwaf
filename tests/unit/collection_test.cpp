@@ -32,7 +32,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
+    auto rule = std::make_shared<core_rule>("id", "name", std::move(tags), builder.build());
 
     TypeParam rule_collection;
     rule_collection.insert(rule);
@@ -72,7 +72,7 @@ TYPED_TEST(TestCollection, SingleRuleMatch)
 // Validate that once there's a match for a collection, a second match isn't possible
 TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 {
-    std::vector<std::shared_ptr<rule>> rules;
+    std::vector<std::shared_ptr<core_rule>> rules;
     TypeParam rule_collection;
     {
         test::expression_builder builder(1);
@@ -84,7 +84,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
+        auto rule = std::make_shared<core_rule>("id1", "name1", std::move(tags), builder.build());
 
         rules.emplace_back(rule);
         rule_collection.insert(rule);
@@ -100,7 +100,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags), builder.build());
+        auto rule = std::make_shared<core_rule>("id2", "name2", std::move(tags), builder.build());
 
         rules.emplace_back(rule);
         rule_collection.insert(rule);
@@ -141,7 +141,7 @@ TYPED_TEST(TestCollection, MultipleRuleCachedMatch)
 // Validate that after a failed match, the collection can still produce a match
 TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
 {
-    std::vector<std::shared_ptr<rule>> rules;
+    std::vector<std::shared_ptr<core_rule>> rules;
     TypeParam rule_collection;
     {
         test::expression_builder builder(1);
@@ -153,7 +153,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
+        auto rule = std::make_shared<core_rule>("id1", "name1", std::move(tags), builder.build());
 
         rules.emplace_back(rule);
         rule_collection.insert(rule);
@@ -169,7 +169,7 @@ TYPED_TEST(TestCollection, MultipleRuleFailAndMatch)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id2", "name2", std::move(tags), builder.build());
+        auto rule = std::make_shared<core_rule>("id2", "name2", std::move(tags), builder.build());
 
         rules.emplace_back(rule);
         rule_collection.insert(rule);
@@ -223,7 +223,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    auto rule = std::make_shared<ddwaf::rule>("id", "name", std::move(tags), builder.build());
+    auto rule = std::make_shared<core_rule>("id", "name", std::move(tags), builder.build());
 
     TypeParam rule_collection;
     rule_collection.insert(rule);
@@ -265,7 +265,7 @@ TYPED_TEST(TestCollection, SingleRuleMultipleCalls)
 // Validate that a match in a priority collection prevents further regular matches
 TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
 {
-    std::vector<std::shared_ptr<rule>> rules;
+    std::vector<std::shared_ptr<core_rule>> rules;
     collection regular;
     priority_collection priority;
     {
@@ -278,7 +278,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
+        auto rule = std::make_shared<core_rule>("id1", "name1", std::move(tags), builder.build());
 
         rules.emplace_back(rule);
         regular.insert(rule);
@@ -294,7 +294,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>(
+        auto rule = std::make_shared<core_rule>(
             "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"redirect"});
 
         rules.emplace_back(rule);
@@ -338,7 +338,7 @@ TEST(TestPriorityCollection, NoRegularMatchAfterPriorityMatch)
 // priority collection
 TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
 {
-    std::vector<std::shared_ptr<rule>> rules;
+    std::vector<std::shared_ptr<core_rule>> rules;
     collection regular;
     priority_collection priority;
     {
@@ -351,7 +351,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
-        auto rule = std::make_shared<ddwaf::rule>("id1", "name1", std::move(tags), builder.build());
+        auto rule = std::make_shared<core_rule>("id1", "name1", std::move(tags), builder.build());
 
         rules.emplace_back(rule);
         regular.insert(rule);
@@ -367,7 +367,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>(
+        auto rule = std::make_shared<core_rule>(
             "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"redirect"});
 
         rules.emplace_back(rule);
@@ -412,7 +412,7 @@ TEST(TestPriorityCollection, PriorityMatchAfterRegularMatch)
 // Validate that a match in a priority collection prevents another match
 TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
 {
-    std::vector<std::shared_ptr<rule>> rules;
+    std::vector<std::shared_ptr<core_rule>> rules;
     priority_collection priority;
     {
         test::expression_builder builder(1);
@@ -424,7 +424,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
-        auto rule = std::make_shared<ddwaf::rule>(
+        auto rule = std::make_shared<core_rule>(
             "id1", "name1", std::move(tags), builder.build(), std::vector<std::string>{"block"});
 
         rules.emplace_back(rule);
@@ -441,7 +441,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>(
+        auto rule = std::make_shared<core_rule>(
             "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"redirect"});
 
         rules.emplace_back(rule);
@@ -485,7 +485,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterPriorityMatch)
 // Validate that an ephemeral match in a priority collection doesn't another match
 TEST(TestPriorityCollection, NoPriorityMatchAfterEphemeralPriorityMatch)
 {
-    std::vector<std::shared_ptr<rule>> rules;
+    std::vector<std::shared_ptr<core_rule>> rules;
     priority_collection priority;
     {
         test::expression_builder builder(1);
@@ -497,7 +497,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterEphemeralPriorityMatch)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
-        auto rule = std::make_shared<ddwaf::rule>(
+        auto rule = std::make_shared<core_rule>(
             "id1", "name1", std::move(tags), builder.build(), std::vector<std::string>{"block"});
 
         rules.emplace_back(rule);
@@ -514,7 +514,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterEphemeralPriorityMatch)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>(
+        auto rule = std::make_shared<core_rule>(
             "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"redirect"});
 
         rules.emplace_back(rule);
@@ -563,7 +563,7 @@ TEST(TestPriorityCollection, NoPriorityMatchAfterEphemeralPriorityMatch)
 // within the same evaluation
 TEST(TestPriorityCollection, EphemeralPriorityMatchNoOtherMatches)
 {
-    std::vector<std::shared_ptr<rule>> rules;
+    std::vector<std::shared_ptr<core_rule>> rules;
     priority_collection priority;
     {
         test::expression_builder builder(1);
@@ -575,7 +575,7 @@ TEST(TestPriorityCollection, EphemeralPriorityMatchNoOtherMatches)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
-        auto rule = std::make_shared<ddwaf::rule>(
+        auto rule = std::make_shared<core_rule>(
             "id1", "name1", std::move(tags), builder.build(), std::vector<std::string>{"block"});
 
         rules.emplace_back(rule);
@@ -592,7 +592,7 @@ TEST(TestPriorityCollection, EphemeralPriorityMatchNoOtherMatches)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
-        auto rule = std::make_shared<ddwaf::rule>(
+        auto rule = std::make_shared<core_rule>(
             "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"redirect"});
 
         rules.emplace_back(rule);

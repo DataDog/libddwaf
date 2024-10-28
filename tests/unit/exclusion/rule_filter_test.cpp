@@ -23,8 +23,7 @@ TEST(TestRuleFilter, Match)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     std::unordered_map<target_index, std::string> addresses;
@@ -59,8 +58,7 @@ TEST(TestRuleFilter, MatchWithDynamicMatcher)
     builder.add_target("http.client_ip");
     builder.end_condition_with_data<matcher::ip_match>("ip_data");
 
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     std::unordered_map<target_index, std::string> addresses;
@@ -116,8 +114,7 @@ TEST(TestRuleFilter, EphemeralMatch)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     std::unordered_map<target_index, std::string> addresses;
@@ -182,8 +179,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
@@ -238,8 +234,7 @@ TEST(TestRuleFilter, CachedMatchAndEphemeralMatch)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
@@ -296,8 +291,7 @@ TEST(TestRuleFilter, ValidateEphemeralMatchCache)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
@@ -349,8 +343,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     // In this instance we pass a complete store with both addresses but an
@@ -398,8 +391,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     // In this test we validate that when the cache is empty and only one
@@ -447,8 +439,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
     ddwaf::object_store store;

@@ -86,7 +86,7 @@ concept has_build_with_scanners =
     requires(typed_processor_builder<T> b, Spec spec, Scanners scanners) {
         {
             b.build(spec, scanners)
-        } -> std::same_as<std::shared_ptr<base_processor>>;
+            } -> std::same_as<std::shared_ptr<base_processor>>;
     };
 
 template <typename T>

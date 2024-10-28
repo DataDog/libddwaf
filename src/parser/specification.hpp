@@ -21,7 +21,7 @@ namespace ddwaf::parser {
 
 struct rule_spec {
     bool enabled;
-    rule::source_type source;
+    core_rule::source_type source;
     std::string name;
     std::unordered_map<std::string, std::string> tags;
     std::shared_ptr<expression> expr;

@@ -22,7 +22,7 @@
 namespace ddwaf {
 
 struct ruleset {
-    void insert_rule(const std::shared_ptr<rule> &rule)
+    void insert_rule(const std::shared_ptr<core_rule> &rule)
     {
         rules.emplace_back(rule);
         std::string_view type = rule->get_tag("type");
@@ -31,13 +31,13 @@ struct ruleset {
         auto [it, res] = collection_types.emplace(ddwaf::fmt::format("{}.{}", mod, type));
         const auto &collection = *it;
         if (rule->get_actions().empty()) {
-            if (rule->get_source() == rule::source_type::user) {
+            if (rule->get_source() == core_rule::source_type::user) {
                 user_collections[collection].insert(rule);
             } else {
                 base_collections[collection].insert(rule);
             }
         } else {
-            if (rule->get_source() == rule::source_type::user) {
+            if (rule->get_source() == core_rule::source_type::user) {
                 user_priority_collections[collection].insert(rule);
             } else {
                 base_priority_collections[collection].insert(rule);
@@ -46,7 +46,7 @@ struct ruleset {
         rule->get_addresses(rule_addresses);
     }
 
-    void insert_rules(const std::vector<std::shared_ptr<rule>> &rules_)
+    void insert_rules(const std::vector<std::shared_ptr<core_rule>> &rules_)
     {
         for (const auto &rule : rules_) { insert_rule(rule); }
     }
@@ -164,7 +164,7 @@ struct ruleset {
     std::unordered_map<std::string_view, std::shared_ptr<exclusion::rule_filter>> rule_filters;
     std::unordered_map<std::string_view, std::shared_ptr<exclusion::input_filter>> input_filters;
 
-    std::vector<std::shared_ptr<rule>> rules;
+    std::vector<std::shared_ptr<core_rule>> rules;
     std::unordered_map<std::string, std::shared_ptr<matcher::base>> rule_matchers;
     std::unordered_map<std::string, std::shared_ptr<matcher::base>> exclusion_matchers;
 
