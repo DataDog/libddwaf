@@ -53,6 +53,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/condition/ssrf_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/scalar_condition.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/shi_detector.cpp
+    ${libddwaf_SOURCE_DIR}/src/condition/cmdi_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/phrase_match.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/regex_match.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/is_sqli.cpp
