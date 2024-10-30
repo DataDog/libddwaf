@@ -28,10 +28,23 @@ using namespace std::literals;
 namespace ddwaf {
 namespace {
 
+enum class shell_flags {
+    none,
+    requires_command_opt,
+};
+
 // Most shells support -c as a way to specify a shell command, however some
 // shells such as ksh allow for the first argument to be a shell command
-std::unordered_set<std::string_view> known_shells{
-    "sh", "bash", "ksh", "rksh", "fish", "zsh", "dash", "ash"};
+std::unordered_map<std::string_view, shell_flags> known_shells{
+    {"sh", shell_flags::requires_command_opt},
+    {"bash", shell_flags::requires_command_opt},
+    {"ksh", shell_flags::none},
+    {"rksh", shell_flags::none},
+    {"fish", shell_flags::requires_command_opt},
+    {"zsh", shell_flags::requires_command_opt},
+    {"dash", shell_flags::requires_command_opt},
+    {"ash", shell_flags::requires_command_opt},
+};
 
 std::string_view basename(std::string_view path)
 {
@@ -72,8 +85,6 @@ std::optional<shi_result> cmdi_impl(const ddwaf_object &exec_args,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
-    // TODO: support indirect executable injection, e.g. time <command>
-
     std::string_view executable = trim_whitespaces(object_at(exec_args, 0));
     object::kv_iterator it(&params, {}, objects_excluded, limits);
     for (; it; ++it) {
@@ -96,20 +107,34 @@ std::optional<shi_result> cmdi_impl(const ddwaf_object &exec_args,
         }
     }
 
-    auto binary_path = basename(executable);
-    if (known_shells.contains(binary_path)) {
+    auto shell_it = known_shells.find(basename(executable));
+    if (shell_it != known_shells.end()) {
         // We've found that the current exec command is attempting to run a
         // a shell. The shell binary itself might be injected, but also the
         // shell command. So we need to identify the command
-        // Most shells allow specifying a command with -c
-        for (std::size_t i = 1; i + 1 < object_size(exec_args); ++i) {
-            auto opt = trim_whitespaces(object_at(exec_args, i));
-            if (!opt.empty() && opt[0] == '-' && opt.find('c') != std::string_view::npos) {
-                return shi_impl(object_at(exec_args, i + 1), resource_tokens, params,
-                    objects_excluded, limits, deadline);
+        std::size_t i = 1;
+        if (shell_it->second == shell_flags::requires_command_opt) {
+            // Most shells allow specifying a command with -c
+            for (; i < object_size(exec_args); ++i) {
+                auto opt = trim_whitespaces(object_at(exec_args, i));
+                if (!opt.empty() && opt[0] == '-' && opt.find('c') != std::string_view::npos) {
+                    // We've found the -c option, we can now break, if it isn't found
+                    // i will reach the end of the array
+                    break;
+                }
             }
         }
-        // TODO ksh and rksh don't require -c
+        for (; i < object_size(exec_args); ++i) {
+            auto arg = trim_whitespaces(object_at(exec_args, i));
+
+            if (!arg.empty() && arg[0] == '-') {
+                continue;
+            }
+
+            // Once the first non-option argument is reached, it must be the
+            // shell command
+            return shi_impl(arg, resource_tokens, params, objects_excluded, limits, deadline);
+        }
     }
 
     return std::nullopt;
