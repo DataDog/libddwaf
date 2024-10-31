@@ -83,16 +83,6 @@ struct string_buffer {
     std::size_t length;
 };
 
-std::string str_lowercase(std::string_view str)
-{
-    auto buffer = std::string{str};
-
-    auto str_lc = cow_string::from_mutable_buffer(buffer.data(), buffer.size());
-    transformer::lowercase::transform(str_lc);
-
-    return buffer; // NOLINT(clang-analyzer-unix.Malloc)
-}
-
 // Return true if the first argument is less than (i.e. is ordered before) the second
 bool str_casei_cmp(std::string_view left, std::string_view right)
 {

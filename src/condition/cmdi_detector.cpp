@@ -87,7 +87,7 @@ std::unordered_map<std::string_view, std::string_view> known_shells{
 std::string_view basename(std::string_view path)
 {
     auto idx = path.find_last_of(R"(\/)"sv);
-    return idx == std::string_view::npos ? std::string_view{} : path.substr(idx + 1);
+    return idx == std::string_view::npos ? path : path.substr(idx + 1);
 }
 
 std::string_view trim_whitespaces(std::string_view str)
