@@ -107,21 +107,6 @@ std::string_view trim_whitespaces(std::string_view str)
     return str.substr(start, 1 + end - start);
 }
 
-std::string str_lowercase(std::string_view str)
-{
-    auto buffer = std::string{str};
-
-    // By initialising the cow_string with the underlying data
-    // contained within the std::string, we ensure a new one won't be
-    // allocated once the string is modified.
-    cow_string str_lc{buffer.data(), buffer.size()};
-    transformer::lowercase::transform(str_lc);
-
-    str_lc.move(); // move to avoid freeing the string
-
-    return buffer; // NOLINT(clang-analyzer-unix.Malloc)
-}
-
 std::size_t object_size(const ddwaf_object &obj) { return static_cast<std::size_t>(obj.nbEntries); }
 
 std::string_view object_at(const ddwaf_object &obj, std::size_t idx)
@@ -135,8 +120,15 @@ std::string_view object_at(const ddwaf_object &obj, std::size_t idx)
 
 std::string_view find_shell_command(std::string_view executable, const ddwaf_object &exec_args)
 {
-    auto executable_lc = str_lowercase(executable);
-    auto shell_it = known_shells.find(basename(executable_lc));
+    // By initialising the cow_string with the underlying data
+    // contained within the std::string, we ensure a new one won't be
+    // allocated once the string is modified.
+    cow_string executable_lc{executable};
+    if (transformer::lowercase::transform(executable_lc)) {
+        executable = static_cast<std::string_view>(executable_lc);
+    }
+
+    auto shell_it = known_shells.find(basename(executable));
     if (shell_it != known_shells.end()) {
         // We've found that the current exec command is attempting to run a
         // a shell. The shell binary itself might be injected, but also the
