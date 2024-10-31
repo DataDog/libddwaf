@@ -5,8 +5,10 @@
 // Copyright 2021 Datadog, Inc.
 #include <cstddef>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -19,6 +21,7 @@
 #include "ddwaf.h"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
+#include "iterator.hpp"
 #include "log.hpp"
 #include "tokenizer/shell.hpp"
 #include "utils.hpp"
@@ -84,7 +87,7 @@ std::string_view basename(std::string_view path)
 
 std::string_view trim_whitespaces(std::string_view str)
 {
-    static std::string_view whitespaces = "\f\n\r\t\v";
+    static std::string_view const whitespaces = "\f\n\r\t\v";
 
     if (str.empty()) {
         return {};
@@ -103,7 +106,7 @@ std::size_t object_size(const ddwaf_object &obj) { return static_cast<std::size_
 
 std::string_view object_at(const ddwaf_object &obj, std::size_t idx)
 {
-    ddwaf_object &child = obj.array[idx];
+    ddwaf_object  const&child = obj.array[idx];
     if (child.type != DDWAF_OBJ_STRING) {
         return {};
     }
@@ -149,7 +152,7 @@ std::optional<shi_result> cmdi_impl(const ddwaf_object &exec_args,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
-    std::string_view executable = trim_whitespaces(object_at(exec_args, 0));
+    std::string_view const executable = trim_whitespaces(object_at(exec_args, 0));
     auto shell_command = find_shell_command(executable, exec_args);
 
     object::kv_iterator it(&params, {}, objects_excluded, limits);

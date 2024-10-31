@@ -5,6 +5,11 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "shi_common.hpp"
+#include "ddwaf.h"
+#include <algorithm>
+#include <cstddef>
+#include <string_view>
+#include <utility>
 
 using namespace std::literals;
 

@@ -3,7 +3,6 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-#include <algorithm>
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -14,12 +13,10 @@
 #include "argument_retriever.hpp"
 #include "clock.hpp"
 #include "condition/base.hpp"
-#include "condition/match_iterator.hpp"
 #include "condition/shi_common.hpp"
 #include "condition/shi_detector.hpp"
 #include "condition/structured_condition.hpp"
 #include "ddwaf.h"
-#include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "log.hpp"
 #include "tokenizer/shell.hpp"
