@@ -30,20 +30,50 @@ namespace {
 
 enum class shell_flags {
     none,
-    requires_command_opt,
+    linux_command_opt,
+};
+
+// An iterator which returns the given scalar, so that the match_iterator can be
+// used directly with a scalar without the need for a fully-fledged object iterator
+class scalar_iterator {
+public:
+    explicit scalar_iterator(const ddwaf_object *obj, const std::span<const std::string> & /*path*/,
+        const exclusion::object_set_ref & /*exclude*/, const object_limits & /*limits*/)
+        : current_(obj)
+    {}
+
+    ~scalar_iterator() = default;
+
+    scalar_iterator(const scalar_iterator &) = default;
+    scalar_iterator(scalar_iterator &&) noexcept = default;
+
+    scalar_iterator &operator=(const scalar_iterator &) = delete;
+    scalar_iterator &operator=(scalar_iterator &&) noexcept = delete;
+
+    [[nodiscard]] const ddwaf_object *operator*() { return current_; }
+    bool operator++()
+    {
+        current_ = nullptr;
+        return false;
+    }
+    [[nodiscard]] explicit operator bool() const { return current_ != nullptr; }
+    [[nodiscard]] static std::vector<std::string> get_current_path() { return {}; }
+
+protected:
+    const ddwaf_object *current_;
 };
 
 // Most shells support -c as a way to specify a shell command, however some
 // shells such as ksh allow for the first argument to be a shell command
 std::unordered_map<std::string_view, shell_flags> known_shells{
-    {"sh", shell_flags::requires_command_opt},
-    {"bash", shell_flags::requires_command_opt},
+    {"sh", shell_flags::linux_command_opt},
+    {"bash", shell_flags::linux_command_opt},
     {"ksh", shell_flags::none},
     {"rksh", shell_flags::none},
-    {"fish", shell_flags::requires_command_opt},
-    {"zsh", shell_flags::requires_command_opt},
-    {"dash", shell_flags::requires_command_opt},
-    {"ash", shell_flags::requires_command_opt},
+    {"fish", shell_flags::linux_command_opt},
+    {"zsh", shell_flags::linux_command_opt},
+    {"dash", shell_flags::linux_command_opt},
+    {"ash", shell_flags::linux_command_opt},
 };
 
 std::string_view basename(std::string_view path)
@@ -80,40 +110,15 @@ std::string_view object_at(const ddwaf_object &obj, std::size_t idx)
     return {child.stringValue, object_size(child)};
 }
 
-std::optional<shi_result> cmdi_impl(const ddwaf_object &exec_args,
-    std::vector<shell_token> &resource_tokens, const ddwaf_object &params,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline)
+std::string_view find_shell_command(std::string_view executable, const ddwaf_object &exec_args)
 {
-    std::string_view executable = trim_whitespaces(object_at(exec_args, 0));
-    object::kv_iterator it(&params, {}, objects_excluded, limits);
-    for (; it; ++it) {
-        if (deadline.expired()) {
-            throw ddwaf::timeout_exception();
-        }
-
-        const ddwaf_object &param = *(*it);
-        if (param.type != DDWAF_OBJ_STRING) {
-            continue;
-        }
-
-        // First check if the entire executable was injected
-        const std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
-        if (executable == value) {
-            // When the full binary has been injected, we consider it an exploit
-            // although bear in mind that this can also be a vulnerable-by-design
-            // application, leading to a false positive
-            return {{std::string(value), it.get_current_path()}};
-        }
-    }
-
     auto shell_it = known_shells.find(basename(executable));
     if (shell_it != known_shells.end()) {
         // We've found that the current exec command is attempting to run a
         // a shell. The shell binary itself might be injected, but also the
         // shell command. So we need to identify the command
         std::size_t i = 1;
-        if (shell_it->second == shell_flags::requires_command_opt) {
+        if (shell_it->second == shell_flags::linux_command_opt) {
             // Most shells allow specifying a command with -c
             for (; i < object_size(exec_args); ++i) {
                 auto opt = trim_whitespaces(object_at(exec_args, i));
@@ -133,7 +138,46 @@ std::optional<shi_result> cmdi_impl(const ddwaf_object &exec_args,
 
             // Once the first non-option argument is reached, it must be the
             // shell command
-            return shi_impl(arg, resource_tokens, params, objects_excluded, limits, deadline);
+            return arg;
+        }
+    }
+    return {};
+}
+
+std::optional<shi_result> cmdi_impl(const ddwaf_object &exec_args,
+    std::vector<shell_token> &resource_tokens, const ddwaf_object &params,
+    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+    ddwaf::timer &deadline)
+{
+    std::string_view executable = trim_whitespaces(object_at(exec_args, 0));
+    auto shell_command = find_shell_command(executable, exec_args);
+
+    object::kv_iterator it(&params, {}, objects_excluded, limits);
+    for (; it; ++it) {
+        if (deadline.expired()) {
+            throw ddwaf::timeout_exception();
+        }
+
+        const ddwaf_object &param = *(*it);
+        if (param.type != DDWAF_OBJ_STRING) {
+            continue;
+        }
+
+        // First check if the entire executable was injected
+        const std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
+        if (executable == value) {
+            // When the full binary has been injected, we consider it an exploit
+            // although bear in mind that this can also be a vulnerable-by-design
+            // application, leading to a false positive
+            return {{std::string(value), it.get_current_path()}};
+        }
+
+        if (!shell_command.empty()) {
+            auto res = find_shi_from_params<std::string_view, scalar_iterator>(
+                shell_command, resource_tokens, param, objects_excluded, limits, deadline);
+            if (res.has_value()) {
+                return res;
+            }
         }
     }
 

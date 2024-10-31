@@ -20,6 +20,7 @@
 #include "ddwaf.h"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
+#include "iterator.hpp"
 #include "log.hpp"
 #include "tokenizer/shell.hpp"
 #include "utils.hpp"
@@ -42,10 +43,56 @@ struct shell_argument_array {
     std::string resource;
 };
 
-template <typename ResourceType>
-std::optional<shi_result> shi_impl(const ResourceType &resource,
+template <typename ResourceType, typename IteratorType = object::kv_iterator>
+std::optional<shi_result> find_shi_from_params(const ResourceType &resource,
     std::vector<shell_token> &resource_tokens, const ddwaf_object &params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline);
+    ddwaf::timer &deadline)
+{
+    match_iterator<2, IteratorType, ResourceType> it(resource, &params, objects_excluded, limits);
+    for (; it; ++it) {
+        if (deadline.expired()) {
+            throw ddwaf::timeout_exception();
+        }
+
+        const auto [param, param_index] = *it;
+
+        if (resource_tokens.empty()) {
+            if constexpr (std::is_same_v<ResourceType, shell_argument_array>) {
+                shell_tokenizer tokenizer(resource.resource);
+                resource_tokens = tokenizer.tokenize();
+            } else {
+                shell_tokenizer tokenizer(resource);
+                resource_tokens = tokenizer.tokenize();
+            }
+        }
+
+        auto end_index = param_index + param.size();
+
+        // Find first token
+        std::size_t i = 0;
+        for (; i < resource_tokens.size(); ++i) {
+            const auto &token = resource_tokens[i];
+            if (end_index >= token.index && param_index < (token.index + token.str.size())) {
+                break;
+            }
+        }
+
+        // Ignore if it's a single token
+        if ((i + 1) < resource_tokens.size() && resource_tokens[i + 1].index >= end_index) {
+            continue;
+        }
+
+        for (; i < resource_tokens.size(); ++i) {
+            const auto &token = resource_tokens[i];
+            if (token.type == shell_token_type::executable ||
+                token.type == shell_token_type::redirection) {
+                return {{std::string(param), it.get_current_path()}};
+            }
+        }
+    }
+
+    return std::nullopt;
+}
 
 } // namespace ddwaf

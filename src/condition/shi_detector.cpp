@@ -43,7 +43,7 @@ eval_result shi_detector::eval_string(const unary_argument<const ddwaf_object *>
 
     std::vector<shell_token> resource_tokens;
     for (const auto &param : params) {
-        auto res = shi_impl(
+        auto res = find_shi_from_params(
             resource_sv, resource_tokens, *param.value, objects_excluded, limits_, deadline);
         if (res.has_value()) {
             std::vector<std::string> resource_kp{
@@ -77,8 +77,8 @@ eval_result shi_detector::eval_array(const unary_argument<const ddwaf_object *> 
 
     std::vector<shell_token> resource_tokens;
     for (const auto &param : params) {
-        auto res =
-            shi_impl(arguments, resource_tokens, *param.value, objects_excluded, limits_, deadline);
+        auto res = find_shi_from_params(
+            arguments, resource_tokens, *param.value, objects_excluded, limits_, deadline);
         if (res.has_value()) {
             std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
