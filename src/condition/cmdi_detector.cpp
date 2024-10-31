@@ -24,6 +24,8 @@
 #include "iterator.hpp"
 #include "log.hpp"
 #include "tokenizer/shell.hpp"
+#include "transformer/common/cow_string.hpp"
+#include "transformer/lowercase.hpp"
 #include "utils.hpp"
 
 using namespace std::literals;
@@ -34,6 +36,7 @@ namespace {
 enum class shell_flags {
     none,
     linux_command_opt,
+    windows_command_opt,
 };
 
 // An iterator which returns the given scalar, so that the match_iterator can be
@@ -68,15 +71,17 @@ protected:
 
 // Most shells support -c as a way to specify a shell command, however some
 // shells such as ksh allow for the first argument to be a shell command
-std::unordered_map<std::string_view, shell_flags> known_shells{
-    {"sh", shell_flags::linux_command_opt},
-    {"bash", shell_flags::linux_command_opt},
-    {"ksh", shell_flags::none},
-    {"rksh", shell_flags::none},
-    {"fish", shell_flags::linux_command_opt},
-    {"zsh", shell_flags::linux_command_opt},
-    {"dash", shell_flags::linux_command_opt},
-    {"ash", shell_flags::linux_command_opt},
+std::unordered_map<std::string_view, std::string_view> known_shells{
+    {"sh", "c"},
+    {"bash", "c"},
+    {"ksh", {}},
+    {"rksh", {}},
+    {"fish", "c"},
+    {"zsh", "c"},
+    {"dash", "c"},
+    {"ash", "c"},
+    {"powershell", "Command"},
+    {"powershell.exe", "Command"},
 };
 
 std::string_view basename(std::string_view path)
@@ -87,7 +92,7 @@ std::string_view basename(std::string_view path)
 
 std::string_view trim_whitespaces(std::string_view str)
 {
-    static std::string_view const whitespaces = "\f\n\r\t\v";
+    static const std::string_view whitespaces = " \f\n\r\t\v";
 
     if (str.empty()) {
         return {};
@@ -102,11 +107,26 @@ std::string_view trim_whitespaces(std::string_view str)
     return str.substr(start, 1 + end - start);
 }
 
+std::string str_lowercase(std::string_view str)
+{
+    auto buffer = std::string{str};
+
+    // By initialising the cow_string with the underlying data
+    // contained within the std::string, we ensure a new one won't be
+    // allocated once the string is modified.
+    cow_string str_lc{buffer.data(), buffer.size()};
+    transformer::lowercase::transform(str_lc);
+
+    str_lc.move(); // move to avoid freeing the string
+
+    return buffer; // NOLINT(clang-analyzer-unix.Malloc)
+}
+
 std::size_t object_size(const ddwaf_object &obj) { return static_cast<std::size_t>(obj.nbEntries); }
 
 std::string_view object_at(const ddwaf_object &obj, std::size_t idx)
 {
-    ddwaf_object  const&child = obj.array[idx];
+    const ddwaf_object &child = obj.array[idx];
     if (child.type != DDWAF_OBJ_STRING) {
         return {};
     }
@@ -115,17 +135,19 @@ std::string_view object_at(const ddwaf_object &obj, std::size_t idx)
 
 std::string_view find_shell_command(std::string_view executable, const ddwaf_object &exec_args)
 {
-    auto shell_it = known_shells.find(basename(executable));
+    auto executable_lc = str_lowercase(executable);
+    auto shell_it = known_shells.find(basename(executable_lc));
     if (shell_it != known_shells.end()) {
         // We've found that the current exec command is attempting to run a
         // a shell. The shell binary itself might be injected, but also the
         // shell command. So we need to identify the command
         std::size_t i = 1;
-        if (shell_it->second == shell_flags::linux_command_opt) {
+        if (!shell_it->second.empty()) {
             // Most shells allow specifying a command with -c
             for (; i < object_size(exec_args); ++i) {
                 auto opt = trim_whitespaces(object_at(exec_args, i));
-                if (!opt.empty() && opt[0] == '-' && opt.find('c') != std::string_view::npos) {
+                if (!opt.empty() && opt[0] == '-' &&
+                    opt.find(shell_it->second) != std::string_view::npos) {
                     // We've found the -c option, we can now break, if it isn't found
                     // i will reach the end of the array
                     break;
@@ -152,7 +174,7 @@ std::optional<shi_result> cmdi_impl(const ddwaf_object &exec_args,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
-    std::string_view const executable = trim_whitespaces(object_at(exec_args, 0));
+    const std::string_view executable = trim_whitespaces(object_at(exec_args, 0));
     auto shell_command = find_shell_command(executable, exec_args);
 
     object::kv_iterator it(&params, {}, objects_excluded, limits);
@@ -167,7 +189,8 @@ std::optional<shi_result> cmdi_impl(const ddwaf_object &exec_args,
         }
 
         // First check if the entire executable was injected
-        const std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
+        std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
+        value = trim_whitespaces(value);
         if (executable == value) {
             // When the full binary has been injected, we consider it an exploit
             // although bear in mind that this can also be a vulnerable-by-design

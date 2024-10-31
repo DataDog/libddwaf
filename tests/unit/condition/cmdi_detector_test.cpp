@@ -61,12 +61,19 @@ TEST(TestCmdiDetectorArray, ExecutableInjection)
 {
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
-    std::vector<std::pair<std::vector<std::string>, std::string>> samples{
-        {{"ls", "-l", "/file/in/repository"}, "ls"},
-        {{"/usr/bin/reboot"}, "/usr/bin/reboot"},
+    std::vector<std::tuple<std::vector<std::string>, std::string, std::string>> samples{
+        {{"ls", "-l", "/file/in/repository"}, "ls", "ls"},
+        {{"   ls         ", "-l", "/file/in/repository"}, " ls          ", "ls"},
+        {{"/usr/bin/reboot"}, "/usr/bin/reboot", "/usr/bin/reboot"},
+        {{"/usr/bin/reboot", "-f"}, "/usr/bin/reboot", "/usr/bin/reboot"},
+        {{"//usr//bin//reboot"}, "//usr//bin//reboot", "//usr//bin//reboot"},
+        {{"//usr//bin//reboot", "-f"}, "//usr//bin//reboot", "//usr//bin//reboot"},
+        {{R"(C:\\Temp\\script.ps1)"}, R"(C:\\Temp\\script.ps1)", R"(C:\\Temp\\script.ps1)"},
+        {{R"(C:\Temp\script.ps1)"}, R"(C:\Temp\script.ps1)", R"(C:\Temp\script.ps1)"},
+        {{"C:/bin/powershell.exe"}, "C:/bin/powershell.exe", "C:/bin/powershell.exe"},
     };
 
-    for (const auto &[resource, param] : samples) {
+    for (const auto &[resource, param, expected] : samples) {
         ddwaf_object tmp;
         ddwaf_object root;
         ddwaf_object_map(&root);
@@ -101,10 +108,10 @@ TEST(TestCmdiDetectorArray, ExecutableInjection)
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, param.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, expected.c_str());
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], param.c_str());
+        EXPECT_STR(cache.match->highlights[0], expected.c_str());
     }
 }
 
