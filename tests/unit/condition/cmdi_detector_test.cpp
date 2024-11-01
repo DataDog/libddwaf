@@ -17,7 +17,22 @@ template <typename... Args> std::vector<condition_parameter> gen_param_def(Args.
     return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
 }
 
-TEST(TestCmdiDetectorArray, InvalidType)
+std::string generate_resource_string(const std::vector<std::string> &resource)
+{
+    std::string resource_str;
+    for (const auto &arg : resource) {
+        if (!resource_str.empty()) {
+            resource_str.append(" \"");
+            resource_str.append(arg);
+            resource_str.append("\"");
+        } else {
+            resource_str.append(arg);
+        }
+    }
+    return resource_str;
+}
+
+TEST(TestCmdiDetector, InvalidType)
 {
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
@@ -37,7 +52,7 @@ TEST(TestCmdiDetectorArray, InvalidType)
     ASSERT_FALSE(res.outcome);
 }
 
-TEST(TestCmdiDetectorArray, EmptyResource)
+TEST(TestCmdiDetector, EmptyResource)
 {
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
@@ -57,7 +72,7 @@ TEST(TestCmdiDetectorArray, EmptyResource)
     ASSERT_FALSE(res.outcome);
 }
 
-TEST(TestCmdiDetectorArray, ExecutableInjection)
+TEST(TestCmdiDetector, ExecutableInjection)
 {
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
@@ -80,15 +95,11 @@ TEST(TestCmdiDetectorArray, ExecutableInjection)
         ddwaf_object root;
         ddwaf_object_map(&root);
 
-        std::string resource_str;
+        std::string resource_str = generate_resource_string(resource);
         ddwaf_object array;
         ddwaf_object_array(&array);
         for (const auto &arg : resource) {
             ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
-            if (!resource_str.empty()) {
-                resource_str.append(" ");
-            }
-            resource_str.append(arg);
         }
         ddwaf_object_map_add(&root, "server.sys.exec.cmd", &array);
 
@@ -117,7 +128,7 @@ TEST(TestCmdiDetectorArray, ExecutableInjection)
     }
 }
 
-TEST(TestCmdiDetectorArray, LinuxShellInjection)
+TEST(TestCmdiDetector, LinuxShellInjection)
 {
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
@@ -155,15 +166,11 @@ TEST(TestCmdiDetectorArray, LinuxShellInjection)
         ddwaf_object root;
         ddwaf_object_map(&root);
 
-        std::string resource_str;
+        std::string resource_str = generate_resource_string(resource);
         ddwaf_object array;
         ddwaf_object_array(&array);
         for (const auto &arg : resource) {
             ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
-            if (!resource_str.empty()) {
-                resource_str.append(" ");
-            }
-            resource_str.append(arg);
         }
         ddwaf_object_map_add(&root, "server.sys.exec.cmd", &array);
 
@@ -192,7 +199,7 @@ TEST(TestCmdiDetectorArray, LinuxShellInjection)
     }
 }
 
-TEST(TestCmdiDetectorArray, WindowsShellInjection)
+TEST(TestCmdiDetector, WindowsShellInjection)
 {
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
@@ -224,15 +231,11 @@ TEST(TestCmdiDetectorArray, WindowsShellInjection)
         ddwaf_object root;
         ddwaf_object_map(&root);
 
-        std::string resource_str;
+        std::string resource_str = generate_resource_string(resource);
         ddwaf_object array;
         ddwaf_object_array(&array);
         for (const auto &arg : resource) {
             ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
-            if (!resource_str.empty()) {
-                resource_str.append(" ");
-            }
-            resource_str.append(arg);
         }
         ddwaf_object_map_add(&root, "server.sys.exec.cmd", &array);
 
