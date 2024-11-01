@@ -79,8 +79,8 @@ std::size_t serialize(uint8_t *Data, std::string_view resource, std::string_view
 }
 // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 
-// NOLINTNEXTLINE
 extern "C" size_t LLVMFuzzerCustomMutator(
+    // NOLINTNEXTLINE
     uint8_t *Data, size_t Size, [[maybe_unused]] size_t MaxSize, [[maybe_unused]] unsigned int Seed)
 {
     static thread_local std::random_device dev;
@@ -100,8 +100,6 @@ extern "C" size_t LLVMFuzzerCustomMutator(
     auto param_idx = rng() % new_size;
     auto param_size = 1 + rng() % (new_size - param_idx);
 
-    // std::cout << "max_size: " << MaxSize << ", new_size: " << new_size << ", idx: " << param_idx
-    // << ", size: " << param_size << '\n';
     auto param_buffer = resource_buffer.substr(param_idx, param_size);
     return serialize(Data, resource_buffer, param_buffer);
 }

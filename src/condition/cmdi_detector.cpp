@@ -95,12 +95,12 @@ std::string_view trim_whitespaces(std::string_view str)
     static const std::string_view whitespaces = " \f\n\r\t\v";
 
     if (str.empty()) {
-        return {};
+        return str;
     }
 
     auto start = str.find_first_not_of(whitespaces);
     if (start == std::string_view::npos) {
-        return {};
+        return str;
     }
 
     auto end = str.find_last_not_of(whitespaces);
@@ -148,8 +148,7 @@ std::string_view find_shell_command(std::string_view executable, const ddwaf_obj
         }
         for (; i < object_size(exec_args); ++i) {
             auto arg = trim_whitespaces(object_at(exec_args, i));
-
-            if (!arg.empty() && arg[0] == '-') {
+            if (arg.empty() || arg[0] == '-') {
                 continue;
             }
 
@@ -167,6 +166,10 @@ std::optional<shi_result> cmdi_impl(const ddwaf_object &exec_args,
     ddwaf::timer &deadline)
 {
     const std::string_view executable = trim_whitespaces(object_at(exec_args, 0));
+    if (executable.empty()) {
+        return {};
+    }
+
     auto shell_command = find_shell_command(executable, exec_args);
 
     object::kv_iterator it(&params, {}, objects_excluded, limits);
@@ -194,6 +197,7 @@ std::optional<shi_result> cmdi_impl(const ddwaf_object &exec_args,
             auto res = find_shi_from_params<std::string_view, scalar_iterator>(
                 shell_command, resource_tokens, param, objects_excluded, limits, deadline);
             if (res.has_value()) {
+                res->key_path = it.get_current_path();
                 return res;
             }
         }
