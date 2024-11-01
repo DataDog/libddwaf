@@ -83,7 +83,7 @@ std::optional<shi_result> find_shi_from_params(const ResourceType &resource,
             continue;
         }
 
-        for (; i < resource_tokens.size(); ++i) {
+        for (; i < resource_tokens.size() && end_index >= resource_tokens[i].index; ++i) {
             const auto &token = resource_tokens[i];
             if (token.type == shell_token_type::executable ||
                 token.type == shell_token_type::redirection) {

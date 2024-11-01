@@ -72,7 +72,7 @@ TEST(TestCmdiDetector, EmptyResource)
     ASSERT_FALSE(res.outcome);
 }
 
-TEST(TestCmdiDetector, NoInjection)
+TEST(TestCmdiDetector, NoExecutableInjection)
 {
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
@@ -88,6 +88,46 @@ TEST(TestCmdiDetector, NoInjection)
         {{R"(C:\\Temp\\script.ps1)"}, R"(C:\\Temp\script.ps1)"},
         {{R"(C:\Temp\script.ps1)"}, R"(C:\Temp\script.ps)"},
         {{"C:/bin/powershell.exe"}, ":/bin/powershell.exe"},
+    };
+
+    for (const auto &[resource, param] : samples) {
+        ddwaf_object tmp;
+        ddwaf_object root;
+        ddwaf_object_map(&root);
+
+        std::string resource_str = generate_resource_string(resource);
+        ddwaf_object array;
+        ddwaf_object_array(&array);
+        for (const auto &arg : resource) {
+            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
+        }
+        ddwaf_object_map_add(&root, "server.sys.exec.cmd", &array);
+
+        ddwaf_object_map_add(
+            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
+
+        object_store store;
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        ASSERT_FALSE(res.outcome) << param;
+        EXPECT_FALSE(res.ephemeral);
+    }
+}
+
+TEST(TestCmdiDetector, NoShellInjection)
+{
+    cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
+
+    std::vector<std::pair<std::vector<std::string>, std::string>> samples{
+        {{R"(C:/bin/powershell.exe -Command "ls -l $file ; cat /etc/passwd")"}, "-l $file"},
+        {{R"(/usr/bin/ash -c "ls -l $file ; cat /etc/passwd")"}, "cat"},
+        {{R"(/usr/bin/ash -c "ls -l ; $(cat $file)"}, "-l"},
+        {{"/usr/bin/ash -c \"\n -l ; $(cat $file)\""}, "\n"},
+        {{R"!(/usr/bin/psh -c "ls -l ; $(cat $file)")!"}, "ls -l"},
+        {{R"!(/usr/bin/bash -Command "ls -l ; $(cat $file)")!"}, "ls -l"},
     };
 
     for (const auto &[resource, param] : samples) {
@@ -228,29 +268,37 @@ TEST(TestCmdiDetector, LinuxShellInjection)
     std::vector<std::pair<std::vector<std::string>, std::string>> samples{
         {{"/usr/bin/sh", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/sh", "-ci", "ls -l"}, "ls -l"},
+        {{"/usr/bin/sh", "-ic", "ls -l"}, "ls -l"},
         {{"/usr/bin/sh", "-c", "-i", "ls -l"}, "ls -l"},
         {{"/usr/bin/bash", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/bash", "-ci", "ls -l"}, "ls -l"},
+        {{"/usr/bin/bash", "-ic", "ls -l"}, "ls -l"},
         {{"/usr/bin/bash", "-c", "-i", "ls -l"}, "ls -l"},
         {{"/usr/bin/ksh", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/ksh", "-ci", "ls -l"}, "ls -l"},
+        {{"/usr/bin/ksh", "-ic", "ls -l"}, "ls -l"},
         {{"/usr/bin/ksh", "-c", "-i", "ls -l"}, "ls -l"},
         {{"/usr/bin/ksh", "ls -l"}, "ls -l"},
         {{"/usr/bin/rksh", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/rksh", "-ci", "ls -l"}, "ls -l"},
+        {{"/usr/bin/rksh", "-ic", "ls -l"}, "ls -l"},
         {{"/usr/bin/rksh", "-c", "-i", "ls -l"}, "ls -l"},
         {{"/usr/bin/rksh", "ls -l"}, "ls -l"},
         {{"/usr/bin/fish", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/fish", "-ci", "ls -l"}, "ls -l"},
+        {{"/usr/bin/fish", "-ic", "ls -l"}, "ls -l"},
         {{"/usr/bin/fish", "-c", "-i", "ls -l"}, "ls -l"},
         {{"/usr/bin/zsh", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/zsh", "-ci", "ls -l"}, "ls -l"},
+        {{"/usr/bin/zsh", "-ic", "ls -l"}, "ls -l"},
         {{"/usr/bin/zsh", "-c", "-i", "ls -l"}, "ls -l"},
         {{"/usr/bin/dash", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/dash", "-ci", "ls -l"}, "ls -l"},
+        {{"/usr/bin/dash", "-ic", "ls -l"}, "ls -l"},
         {{"/usr/bin/dash", "-c", "-i", "ls -l"}, "ls -l"},
         {{"/usr/bin/ash", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/ash", "-ci", "ls -l"}, "ls -l"},
+        {{"/usr/bin/ash", "-ic", "ls -l"}, "ls -l"},
         {{"/usr/bin/ash", "-c", "-i", "ls -l"}, "ls -l"},
     };
 

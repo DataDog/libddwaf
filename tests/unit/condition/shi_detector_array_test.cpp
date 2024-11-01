@@ -123,6 +123,10 @@ TEST(TestShiDetectorArray, NoMatchAndFalsePositives)
         {{"ls", "-l", "-r -t"}, "-r -t"},
         {{R"!({ ( $(echo ls) ) })!"}, "ls)"},
         {{R"!({ ( $(echo ls) ) } #)!", "cat /etc/passwd"}, "cat /etc/passwd)"},
+        {{"ls", "-l $file", "&&", "cat /etc/passwd"}, "-l $file"},
+        {{"ls -l $file ; cat /etc/passwd"}, "-l $file"},
+        // This should match at some point
+        {{"time", "ls -l"}, "ls -l"},
     };
 
     for (const auto &[resource, param] : samples) {
