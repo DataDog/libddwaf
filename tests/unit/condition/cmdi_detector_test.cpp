@@ -78,16 +78,64 @@ TEST(TestCmdiDetector, ExecutableInjection)
 
     std::vector<std::tuple<std::vector<std::string>, std::string, std::string>> samples{
         {{"ls", "-l", "/file/in/repository"}, "ls", "ls"},
-        {{"   ls         ", "-l", "/file/in/repository"}, " ls          ", "ls"},
         {{"/usr/bin/reboot"}, "/usr/bin/reboot", "/usr/bin/reboot"},
         {{"/usr/bin/reboot", "-f"}, "/usr/bin/reboot", "/usr/bin/reboot"},
-        {{" /usr/bin/reboot", "-f"}, "     /usr/bin/reboot        ", "/usr/bin/reboot"},
         {{"//usr//bin//reboot"}, "//usr//bin//reboot", "//usr//bin//reboot"},
-        {{"   //usr//bin//reboot\t\n"}, "//usr//bin//reboot", "//usr//bin//reboot"},
         {{"//usr//bin//reboot", "-f"}, "//usr//bin//reboot", "//usr//bin//reboot"},
         {{R"(C:\\Temp\\script.ps1)"}, R"(C:\\Temp\\script.ps1)", R"(C:\\Temp\\script.ps1)"},
         {{R"(C:\Temp\script.ps1)"}, R"(C:\Temp\script.ps1)", R"(C:\Temp\script.ps1)"},
         {{"C:/bin/powershell.exe"}, "C:/bin/powershell.exe", "C:/bin/powershell.exe"},
+    };
+
+    for (const auto &[resource, param, expected] : samples) {
+        ddwaf_object tmp;
+        ddwaf_object root;
+        ddwaf_object_map(&root);
+
+        std::string resource_str = generate_resource_string(resource);
+        ddwaf_object array;
+        ddwaf_object_array(&array);
+        for (const auto &arg : resource) {
+            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
+        }
+        ddwaf_object_map_add(&root, "server.sys.exec.cmd", &array);
+
+        ddwaf_object_map_add(
+            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
+
+        object_store store;
+        store.insert(root);
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        auto res = cond.eval(cache, store, {}, {}, deadline);
+        ASSERT_TRUE(res.outcome) << param;
+        EXPECT_FALSE(res.ephemeral);
+
+        EXPECT_TRUE(cache.match);
+        EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
+        EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+
+        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+        EXPECT_STR(cache.match->args[1].resolved, expected.c_str());
+        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+
+        EXPECT_STR(cache.match->highlights[0], expected.c_str());
+    }
+}
+
+TEST(TestCmdiDetector, ExecutableWithSpacesInjection)
+{
+    cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
+
+    std::vector<std::tuple<std::vector<std::string>, std::string, std::string>> samples{
+        {{"   ls         ", "-l", "/file/in/repository"}, " ls ", "ls"},
+        {{"  ls\n", "-l", "/file/in/repository"}, " ls\n", "ls"},
+        {{"\tls\n", "-l", "/file/in/repository"}, "ls", "ls"},
+        {{"ls", "-l", "/file/in/repository"}, "\t   ls   \n", "ls"},
+        {{"   //usr//bin//reboot\t\n"}, "//usr//bin//reboot", "//usr//bin//reboot"},
+        {{" /usr/bin/reboot", "-f"}, "     /usr/bin/reboot        ", "/usr/bin/reboot"},
     };
 
     for (const auto &[resource, param, expected] : samples) {
