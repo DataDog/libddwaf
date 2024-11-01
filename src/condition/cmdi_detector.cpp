@@ -207,10 +207,13 @@ std::string generate_string_resource(const ddwaf_object &root)
     std::string resource;
     for (std::size_t i = 0; i < object_size(root); ++i) {
         auto child = object_at(root, i);
-        if (!resource.empty()) {
-            resource.append(" "sv);
+        if (i > 0) {
+            resource.append(R"( ")");
+            resource.append(child);
+            resource.append(R"(")");
+        } else {
+            resource.append(child);
         }
-        resource.append(child);
     }
     return resource;
 }

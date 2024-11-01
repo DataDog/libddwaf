@@ -1,0 +1,28 @@
+{
+  name: "Basic run with match",
+  runs: [
+    {
+      persistent-input: {
+        server.sys.exec.cmd: ["ls", "-l"],
+        server.request.query: [ "ls" ]
+      },
+      rules: [
+        {
+          "rsp-930-005": [
+            {
+              resource: {
+                address: "server.sys.exec.cmd",
+                value: ls "-l"
+              },
+              params: {
+                address: "server.request.query",
+                value: "ls"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}
