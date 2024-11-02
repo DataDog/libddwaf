@@ -77,10 +77,7 @@ TEST(TestCmdiDetector, NoExecutableInjection)
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
     std::vector<std::pair<std::vector<std::string>, std::string>> samples{
-        {
-            {"ls", "-l", "/file/in/repository"},
-            "/usr/bin/ls",
-        },
+        {{"ls", "-l", "/file/in/repository"}, "/usr/bin/ls"},
         {{"/usr/bin/reboot"}, "reboot"},
         {{"/usr/bin/reboot", "-f"}, "unrelated.exe"},
         {{"//usr//bin//reboot"}, "usr//bin//reboot"},

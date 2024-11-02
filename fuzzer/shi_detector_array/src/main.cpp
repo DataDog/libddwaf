@@ -26,7 +26,8 @@ template <typename... Args> std::vector<condition_parameter> gen_param_def(Args.
 }
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
-std::pair<std::vector<std::string_view>, std::string_view> deserialize(const uint8_t *data, size_t size)
+std::pair<std::vector<std::string_view>, std::string_view> deserialize(
+    const uint8_t *data, size_t size)
 {
     if (size < sizeof(std::size_t)) {
         return {};
@@ -60,7 +61,7 @@ std::pair<std::vector<std::string_view>, std::string_view> deserialize(const uin
         resource.emplace_back(arg);
     }
 
-     if (size < sizeof(std::size_t)) {
+    if (size < sizeof(std::size_t)) {
         return {};
     }
 
@@ -81,7 +82,7 @@ struct serializer {
     uint8_t *data;
     std::size_t total_size{0};
 
-    explicit serializer(uint8_t *Data): data(Data) {}
+    explicit serializer(uint8_t *Data) : data(Data) {}
 
     void serialize(std::size_t size)
     {
@@ -102,12 +103,10 @@ struct serializer {
 
     template <typename T>
     std::size_t serialize(const std::vector<T> &resource, std::string_view param)
-    requires std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>
+        requires std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>
     {
         serialize(resource.size());
-        for (const auto& arg : resource) {
-            serialize(arg);
-        }
+        for (const auto &arg : resource) { serialize(arg); }
         serialize(param);
 
         return total_size;
@@ -127,7 +126,7 @@ extern "C" size_t LLVMFuzzerCustomMutator(
     MaxSize -= sizeof(std::size_t) * 2;
 
     std::string resource_str;
-    for (const auto &arg: old_resource) {
+    for (const auto &arg : old_resource) {
         if (!resource_str.empty()) {
             resource_str.append(" ");
         }
@@ -138,8 +137,8 @@ extern "C" size_t LLVMFuzzerCustomMutator(
     resource_str.resize(std::max(resource_size, MaxSize / 2));
 
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    auto new_size = LLVMFuzzerMutate(reinterpret_cast<uint8_t *>(resource_str.data()),
-        resource_size, resource_str.size());
+    auto new_size = LLVMFuzzerMutate(
+        reinterpret_cast<uint8_t *>(resource_str.data()), resource_size, resource_str.size());
     resource_str.resize(new_size);
 
     std::size_t start = 0;
