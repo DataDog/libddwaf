@@ -107,12 +107,12 @@ std::string_view trim_whitespaces(std::string_view str)
     return str.substr(start, 1 + end - start);
 }
 
-std::string_view trim_double_quotes(std::string_view str)
+std::string_view trim_quotes(std::string_view str)
 {
-    if (str.starts_with('"')) {
+    if (str.starts_with('"') || str.starts_with('\'')) {
         str.remove_prefix(1);
     }
-    if (str.ends_with('"')) {
+    if (str.ends_with('"') || str.ends_with('\'')) {
         str.remove_suffix(1);
     }
     return str;
@@ -148,7 +148,7 @@ std::string_view find_shell_command(std::string_view executable, const ddwaf_obj
         if (!shell_it->second.empty()) {
             // Most shells allow specifying a command with -c
             for (; i < object_size(exec_args); ++i) {
-                auto opt = trim_double_quotes(trim_whitespaces(object_at(exec_args, i)));
+                auto opt = trim_quotes(trim_whitespaces(object_at(exec_args, i)));
                 if (!opt.empty() && opt[0] == '-' &&
                     opt.find(shell_it->second) != std::string_view::npos) {
                     // We've found the -c option, we can now break, if it isn't found
@@ -158,7 +158,7 @@ std::string_view find_shell_command(std::string_view executable, const ddwaf_obj
             }
         }
         for (; i < object_size(exec_args); ++i) {
-            auto arg = trim_double_quotes(trim_whitespaces(object_at(exec_args, i)));
+            auto arg = trim_quotes(trim_whitespaces(object_at(exec_args, i)));
             if (arg.empty() || arg.starts_with('-') || arg.starts_with('+')) {
                 continue;
             }

@@ -371,6 +371,29 @@ TEST(TestCmdiDetector, LinuxShellInjection)
         {{"/usr/bin/dash", "-c", "+x", "ls -l"}, "ls -l"},
         {{"/usr/bin/ash", "-c", "+x", "ls -l"}, "ls -l"},
 
+        // Double quote removal
+        {{"/usr/bin/bash", "-c", "+x", R"("ls -l")"}, "ls -l"},
+        {{"/usr/bin/bash", "-c", "+x", "-i", R"("ls -l")"}, "ls -l"},
+        {{"/usr/bin/ksh", "-c", "+x", R"("ls -l")"}, "ls -l"},
+        {{"/usr/bin/ksh", "+x", R"("ls -l")"}, "ls -l"},
+        {{"/usr/bin/rksh", "-c", "+x", R"("ls -l")"}, "ls -l"},
+        {{"/usr/bin/rksh", "+x", R"("ls -l")"}, "ls -l"},
+        {{"/usr/bin/fish", "-c", "+x", R"("ls -l")"}, "ls -l"},
+        {{"/usr/bin/zsh", "-c", "+x", R"("ls -l")"}, "ls -l"},
+        {{"/usr/bin/dash", "-c", "+x", R"("ls -l")"}, "ls -l"},
+        {{"/usr/bin/ash", "-c", "+x", R"("ls -l")"}, "ls -l"},
+
+        // Single quote removal
+        {{"/usr/bin/bash", "-c", "+x", R"('ls -l')"}, "ls -l"},
+        {{"/usr/bin/bash", "-c", "+x", "-i", R"('ls -l')"}, "ls -l"},
+        {{"/usr/bin/ksh", "-c", "+x", R"('ls -l')"}, "ls -l"},
+        {{"/usr/bin/ksh", "+x", R"('ls -l')"}, "ls -l"},
+        {{"/usr/bin/rksh", "-c", "+x", R"('ls -l')"}, "ls -l"},
+        {{"/usr/bin/rksh", "+x", R"('ls -l')"}, "ls -l"},
+        {{"/usr/bin/fish", "-c", "+x", R"('ls -l')"}, "ls -l"},
+        {{"/usr/bin/zsh", "-c", "+x", R"('ls -l')"}, "ls -l"},
+        {{"/usr/bin/dash", "-c", "+x", R"('ls -l')"}, "ls -l"},
+        {{"/usr/bin/ash", "-c", "+x", R"('ls -l')"}, "ls -l"},
     };
 
     for (const auto &[resource, param] : samples) {
@@ -395,7 +418,7 @@ TEST(TestCmdiDetector, LinuxShellInjection)
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome) << param;
+        ASSERT_TRUE(res.outcome) << resource_str;
         EXPECT_FALSE(res.ephemeral);
 
         EXPECT_TRUE(cache.match);
@@ -436,6 +459,16 @@ TEST(TestCmdiDetector, WindowsShellInjection)
         {{R"(POWERSHELL.EXE)", "-Command", "ls -l"}, "ls -l"},
         {{R"(powershell)", "-Command", "ls -l"}, "ls -l"},
         {{R"(POWERSHELL)", "-Command", "ls -l"}, "ls -l"},
+
+        {{R"(powershell.exe)", "-Command", R"("ls -l")"}, "ls -l"},
+        {{R"(POWERSHELL.EXE)", "-Command", R"("ls -l")"}, "ls -l"},
+        {{R"(powershell)", "-Command", R"("ls -l")"}, "ls -l"},
+        {{R"(POWERSHELL)", "-Command", R"("ls -l")"}, "ls -l"},
+
+        {{R"(powershell.exe)", "-Command", R"('ls -l')"}, "ls -l"},
+        {{R"(POWERSHELL.EXE)", "-Command", R"('ls -l')"}, "ls -l"},
+        {{R"(powershell)", "-Command", R"('ls -l')"}, "ls -l"},
+        {{R"(POWERSHELL)", "-Command", R"('ls -l')"}, "ls -l"},
     };
 
     for (const auto &[resource, param] : samples) {
