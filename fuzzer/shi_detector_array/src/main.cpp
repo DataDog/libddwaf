@@ -121,10 +121,17 @@ extern "C" size_t LLVMFuzzerCustomMutator(
 {
     static thread_local std::mt19937 rng(Seed);
 
-    auto [old_resource, param] = deserialize(Data, Size);
     // One size_t for array size, another one for the parameter length
     MaxSize -= sizeof(std::size_t) * 2;
 
+    // Resource and parameter size limits
+    auto max_resource_size = 3 * MaxSize / 4;
+    auto max_resource_string_size = 2 * MaxSize / 4;
+    auto max_param_size = MaxSize / 4;
+
+    auto [old_resource, param] = deserialize(Data, Size);
+
+    // Compose the resource into a string
     std::string resource_str;
     for (const auto &arg : old_resource) {
         if (!resource_str.empty()) {
@@ -133,31 +140,42 @@ extern "C" size_t LLVMFuzzerCustomMutator(
         resource_str.append(arg);
     }
 
-    std::size_t resource_size = resource_str.size();
-    resource_str.resize(std::max(resource_size, MaxSize / 2));
+    // Ensure that the resource doesn't take more than half the remaining buffer
+    // since the final mutated resource will have to be split into arrays elements
+    // adding further overheads
+    std::size_t resource_size = std::min(resource_str.size(), max_resource_string_size);
+    resource_str.resize(max_resource_string_size);
 
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    // Mutate
     auto new_size = LLVMFuzzerMutate(
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
         reinterpret_cast<uint8_t *>(resource_str.data()), resource_size, resource_str.size());
     resource_str.resize(new_size);
 
+    // Break down the resource into array elements
     std::size_t start = 0;
+    std::size_t total_size = 0;
     std::vector<std::string> new_resource;
     for (std::size_t i = 0; i < resource_str.size(); ++i) {
-        if (resource_str[i] == ' ' && start != i && static_cast<bool>(rng() % 2)) {
+        if (ddwaf::isspace(resource_str[i]) && start != i && static_cast<bool>(rng() % 2)) {
             new_resource.emplace_back(resource_str.substr(start, i - start));
-            MaxSize -= sizeof(std::size_t) + new_resource.back().size();
+            total_size += sizeof(std::size_t) + new_resource.back().size();
             start = i + 1;
+        } else if ((i + 1) == resource_str.size()) {
+            new_resource.emplace_back(resource_str.substr(start));
+            total_size += sizeof(std::size_t) + new_resource.back().size();
+        }
+
+        if (total_size >= max_resource_size) {
+            break;
         }
     }
-    if (start < resource_str.size()) {
-        new_resource.emplace_back(resource_str.substr(start));
-        MaxSize -= sizeof(std::size_t) + new_resource.back().size();
-    }
+    MaxSize -= total_size;
 
-    std::size_t possible_param_size = std::min(MaxSize, resource_str.size());
-    auto param_idx = rng() % possible_param_size;
-    auto param_size = 1 + rng() % (possible_param_size - param_idx);
+    std::size_t possible_param_size =
+        std::min(MaxSize, std::min(max_param_size, resource_str.size()));
+    auto param_idx = rng() % resource_str.size();
+    auto param_size = 1 + rng() % std::min(possible_param_size, (resource_str.size() - param_idx));
 
     auto param_buffer = resource_str.substr(param_idx, param_size);
     return serializer{Data}.serialize(new_resource, param_buffer);
