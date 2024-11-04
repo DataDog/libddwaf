@@ -159,7 +159,7 @@ std::string_view find_shell_command(std::string_view executable, const ddwaf_obj
         }
         for (; i < object_size(exec_args); ++i) {
             auto arg = trim_double_quotes(trim_whitespaces(object_at(exec_args, i)));
-            if (arg.empty() || arg[0] == '-') {
+            if (arg.empty() || arg.starts_with('-') || arg.starts_with('+')) {
                 continue;
             }
 

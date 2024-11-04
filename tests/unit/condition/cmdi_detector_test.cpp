@@ -80,6 +80,10 @@ TEST(TestCmdiDetector, NoExecutableInjection)
         {{"ls", "-l", "/file/in/repository"}, "/usr/bin/ls"},
         {{"/usr/bin/reboot"}, "reboot"},
         {{"/usr/bin/reboot", "-f"}, "unrelated.exe"},
+        {{"/usr/bin/reboot", "-f"}, "/bin/unrelated.exe"},
+        {{"/usr/bin/reboot", "-f"}, "/usr"},
+        {{"/usr/bin/reboot", "-f"}, "usr"},
+        {{"/usr/bin/reboot", "-f"}, "-f"},
         {{"//usr//bin//reboot"}, "usr//bin//reboot"},
         {{"//usr//bin//reboot", "-f"}, "//usr//bin//eboot"},
         {{R"(C:\\Temp\\script.ps1)"}, R"(C:\\Temp\script.ps1)"},
@@ -125,6 +129,28 @@ TEST(TestCmdiDetector, NoShellInjection)
         {{"/usr/bin/ash", "-c", "\"\n -l ; $(cat $file)\""}, "\n"},
         {{"/usr/bin/psh", "-c", "\"ls -l ; $(cat $file)\""}, "ls -l"},
         {{"/usr/bin/bash", "-Command", "\"ls -l ; $(cat $file)\""}, "ls -l"},
+        {{"/usr/bin/ksh", "getconf PAGESIZE"}, "get"},
+        {{"/usr/bin/rksh", "cat hello"}, "hello"},
+        {{"bash", "-c",
+             "file -b --mime '/tmp/ForumEntr-avec "
+             "kedge20160204-37527-ctbhbi20160204-37527-tuzome.png'"},
+            "file"},
+        {{"bash", "file -b --mime '/tmp/ForumEntr-avec "
+                  "kedge20160204-37527-ctbhbi20160204-37527-tuzome.png'"},
+            "file -b --mime"},
+        {{"/bin/sh", "file -b --mime '/tmp/ForumEntr-avec "
+                     "kedge20160204-37527-ctbhbi20160204-37527-tuzome.png'"},
+            "file -e"},
+        {{"dash", "echo hello"}, "b"},
+        {{"/bin/zsh", "phantomjs /vendor/assets/javascripts/highcharts/highcharts-convert.js "
+                      "-infile /app/tmp/highcharts/json/input.json -outfile "
+                      "/app/tmp/highcharts/png/survey_641_chart.png -width 700 2>&1"},
+            "641"},
+        {{"/sh", "/usr/bin/generate.sh --margin-bottom 20mm --margin-top 27mm --print-media-type "
+                 "--header-html https://url/blabla-bla --footer-html https://url/blabla-bla "
+                 "https://url/blabla-bla -"},
+            "blabla-bla"},
+        {{"/bin/fish", "ls -l -r -t"}, "-r -t"},
     };
 
     for (const auto &[resource, param] : samples) {
@@ -218,6 +244,8 @@ TEST(TestCmdiDetector, ExecutableWithSpacesInjection)
         {{"ls", "-l", "/file/in/repository"}, "\t   ls   \n", "ls"},
         {{"   //usr//bin//reboot\t\n"}, "//usr//bin//reboot", "//usr//bin//reboot"},
         {{" /usr/bin/reboot", "-f"}, "     /usr/bin/reboot        ", "/usr/bin/reboot"},
+        {{" /usr/bin/reboot\v", "-f"}, "     /usr/bin/reboot        ", "/usr/bin/reboot"},
+        {{"\r \r /usr/bin/reboot\v", "-f"}, "\v \n  /usr/bin/reboot        ", "/usr/bin/reboot"},
     };
 
     for (const auto &[resource, param, expected] : samples) {
@@ -263,40 +291,86 @@ TEST(TestCmdiDetector, LinuxShellInjection)
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
     std::vector<std::pair<std::vector<std::string>, std::string>> samples{
+        {{"sh", "-c", "ls -l"}, "ls -l"},
+        {{"/sh", "-c", "ls -l"}, "ls -l"},
+        {{"/bin/sh", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/sh", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/sh", "-ci", "ls -l"}, "ls -l"},
         {{"/usr/bin/sh", "-ic", "ls -l"}, "ls -l"},
         {{"/usr/bin/sh", "-c", "-i", "ls -l"}, "ls -l"},
+
+        {{"bash", "-c", "ls -l"}, "ls -l"},
+        {{"/bash", "-c", "ls -l"}, "ls -l"},
+        {{"/bin/bash", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/bash", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/bash", "-ci", "ls -l"}, "ls -l"},
         {{"/usr/bin/bash", "-ic", "ls -l"}, "ls -l"},
         {{"/usr/bin/bash", "-c", "-i", "ls -l"}, "ls -l"},
+
+        {{"ksh", "-c", "ls -l"}, "ls -l"},
+        {{"/ksh", "-c", "ls -l"}, "ls -l"},
+        {{"/bin/ksh", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/ksh", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/ksh", "-ci", "ls -l"}, "ls -l"},
         {{"/usr/bin/ksh", "-ic", "ls -l"}, "ls -l"},
         {{"/usr/bin/ksh", "-c", "-i", "ls -l"}, "ls -l"},
         {{"/usr/bin/ksh", "ls -l"}, "ls -l"},
+
+        {{"rksh", "-c", "ls -l"}, "ls -l"},
+        {{"/rksh", "-c", "ls -l"}, "ls -l"},
+        {{"/bin/rksh", "-c", "ls -l"}, "ls -l"},
+        {{"/usr/bin/rksh", "-c", "ls -l"}, "ls -l"},
+        {{"/usr/bin/rksh", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/rksh", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/rksh", "-ci", "ls -l"}, "ls -l"},
         {{"/usr/bin/rksh", "-ic", "ls -l"}, "ls -l"},
         {{"/usr/bin/rksh", "-c", "-i", "ls -l"}, "ls -l"},
         {{"/usr/bin/rksh", "ls -l"}, "ls -l"},
+
+        {{"fish", "-c", "ls -l"}, "ls -l"},
+        {{"/fish", "-c", "ls -l"}, "ls -l"},
+        {{"/bin/fish", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/fish", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/fish", "-ci", "ls -l"}, "ls -l"},
         {{"/usr/bin/fish", "-ic", "ls -l"}, "ls -l"},
         {{"/usr/bin/fish", "-c", "-i", "ls -l"}, "ls -l"},
+
+        {{"zsh", "-c", "ls -l"}, "ls -l"},
+        {{"/zsh", "-c", "ls -l"}, "ls -l"},
+        {{"/bin/zsh", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/zsh", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/zsh", "-ci", "ls -l"}, "ls -l"},
         {{"/usr/bin/zsh", "-ic", "ls -l"}, "ls -l"},
         {{"/usr/bin/zsh", "-c", "-i", "ls -l"}, "ls -l"},
+
+        {{"dash", "-c", "ls -l"}, "ls -l"},
+        {{"/dash", "-c", "ls -l"}, "ls -l"},
+        {{"/bin/dash", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/dash", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/dash", "-ci", "ls -l"}, "ls -l"},
         {{"/usr/bin/dash", "-ic", "ls -l"}, "ls -l"},
         {{"/usr/bin/dash", "-c", "-i", "ls -l"}, "ls -l"},
+
+        {{"ash", "-c", "ls -l"}, "ls -l"},
+        {{"/ash", "-c", "ls -l"}, "ls -l"},
+        {{"/bin/ash", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/ash", "-c", "ls -l"}, "ls -l"},
         {{"/usr/bin/ash", "-ci", "ls -l"}, "ls -l"},
         {{"/usr/bin/ash", "-ic", "ls -l"}, "ls -l"},
         {{"/usr/bin/ash", "-c", "-i", "ls -l"}, "ls -l"},
+        {{"/usr/bin/sh", "-c", "+x", "ls -l"}, "ls -l"},
+
+        {{"/usr/bin/bash", "-c", "+x", "ls -l"}, "ls -l"},
+        {{"/usr/bin/bash", "-c", "+x", "-i", "ls -l"}, "ls -l"},
+        {{"/usr/bin/ksh", "-c", "+x", "ls -l"}, "ls -l"},
+        {{"/usr/bin/ksh", "+x", "ls -l"}, "ls -l"},
+        {{"/usr/bin/rksh", "-c", "+x", "ls -l"}, "ls -l"},
+        {{"/usr/bin/rksh", "+x", "ls -l"}, "ls -l"},
+        {{"/usr/bin/fish", "-c", "+x", "ls -l"}, "ls -l"},
+        {{"/usr/bin/zsh", "-c", "+x", "ls -l"}, "ls -l"},
+        {{"/usr/bin/dash", "-c", "+x", "ls -l"}, "ls -l"},
+        {{"/usr/bin/ash", "-c", "+x", "ls -l"}, "ls -l"},
+
     };
 
     for (const auto &[resource, param] : samples) {
