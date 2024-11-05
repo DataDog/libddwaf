@@ -123,11 +123,11 @@ TEST(TestCmdiDetector, NoShellInjection)
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
     std::vector<std::pair<std::vector<std::string>, std::string>> samples{
-        {{"C:/bin/powershell.exe", "-Command", "\"ls -l $file ; cat /etc/passwd\""}, "-l $file"},
-        {{"/usr/bin/ash", "-c", "\"ls -l $file ; cat /etc/passwd\""}, "cat"},
-        {{"/usr/bin/ash", "-c", "\"ls -l ; $(cat $file)\""}, "-l"},
-        {{"/usr/bin/ash", "-c", "\"\n -l ; $(cat $file)\""}, "\n"},
-        {{"/usr/bin/psh", "-c", "\"ls -l ; $(cat $file)\""}, "ls -l"},
+        {{"C:/bin/powershell.exe", "-Command", "ls -l $file ; cat /etc/passwd"}, "-l $file"},
+        {{"/usr/bin/ash", "-c", "ls -l $file ; cat /etc/passwd"}, "cat"},
+        {{"/usr/bin/ash", "-c", "ls -l ; $(cat $file)"}, "-l"},
+        {{"/usr/bin/ash", "-c", "\n -l ; $(cat $file)"}, "\n"},
+        {{"/usr/bin/psh", "-c", "ls -l ; $(cat $file)"}, "ls -l"},
         {{"/usr/bin/bash", "-Command", "\"ls -l ; $(cat $file)\""}, "ls -l"},
         {{"/usr/bin/ksh", "getconf PAGESIZE"}, "get"},
         {{"/usr/bin/rksh", "cat hello"}, "hello"},
@@ -175,7 +175,7 @@ TEST(TestCmdiDetector, NoShellInjection)
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_FALSE(res.outcome) << param;
+        ASSERT_FALSE(res.outcome) << resource_str;
         EXPECT_FALSE(res.ephemeral);
     }
 }
@@ -465,10 +465,21 @@ TEST(TestCmdiDetector, WindowsShellInjection)
         {{R"(powershell)", "-Command", R"("ls -l")"}, "ls -l"},
         {{R"(POWERSHELL)", "-Command", R"("ls -l")"}, "ls -l"},
 
+        {{R"(powershell.exe)", "-Command", R"("ls -l")"}, R"("ls -l")"},
+        {{R"(POWERSHELL.EXE)", "-Command", R"("ls -l")"}, R"("ls -l")"},
+        {{R"(powershell)", "-Command", R"("ls -l")"}, R"("ls -l")"},
+        {{R"(POWERSHELL)", "-Command", R"("ls -l")"}, R"("ls -l")"},
+
         {{R"(powershell.exe)", "-Command", R"('ls -l')"}, "ls -l"},
         {{R"(POWERSHELL.EXE)", "-Command", R"('ls -l')"}, "ls -l"},
         {{R"(powershell)", "-Command", R"('ls -l')"}, "ls -l"},
         {{R"(POWERSHELL)", "-Command", R"('ls -l')"}, "ls -l"},
+
+        {{R"(powershell.exe)", "-Command", R"('ls -l')"}, "'ls -l'"},
+        {{R"(POWERSHELL.EXE)", "-Command", R"('ls -l')"}, "'ls -l'"},
+        {{R"(powershell)", "-Command", R"('ls -l')"}, "'ls -l'"},
+        {{R"(POWERSHELL)", "-Command", R"('ls -l')"}, "'ls -l'"},
+
     };
 
     for (const auto &[resource, param] : samples) {
@@ -493,7 +504,7 @@ TEST(TestCmdiDetector, WindowsShellInjection)
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome) << resource[0];
+        ASSERT_TRUE(res.outcome) << resource_str;
         EXPECT_FALSE(res.ephemeral);
 
         EXPECT_TRUE(cache.match);
