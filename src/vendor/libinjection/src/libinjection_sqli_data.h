@@ -6292,7 +6292,8 @@ static const keyword_t sql_keywords[] = {
     {"0SKSB1", 'F'},
     {"0SKSBF", 'F'},
     {"0SKSBN", 'F'},
-    {"0SKSBS", 'F'},
+    // Match `{"offset":0,"limit":1000}`
+    {"0SKSBS", '~'},
     {"0SKSBV", 'F'},
     {"0SKSC", 'F'},
     {"0SKSE(", 'F'},
@@ -6841,7 +6842,8 @@ static const keyword_t sql_keywords[] = {
     {"0STNF(", 'F'},
     // Match `Please specify what exactly do you mean by "go deeper into xyz"`
 	{"0STNKN", '~'},
-    {"0STNN:", 'F'},
+    // Match `service:a env:b "C"`
+    {"0STNN:", '~'},
     {"0STNNC", 'F'},
     {"0STNNO", 'F'},
     {"0STNO(", 'F'},
@@ -6997,7 +6999,8 @@ static const keyword_t sql_keywords[] = {
     {"0SUON(", 'F'},
     {"0SUON1", 'F'},
     {"0SUONF", 'F'},
-    {"0SUONS", 'F'},
+    // Match `type:a AND b.c:true AND d.e.f:"g"`
+    {"0SUONS", '~'},
     {"0SUS,(", 'F'},
     {"0SUS,F", 'F'},
     {"0SUSC", 'F'},
