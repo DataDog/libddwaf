@@ -6,6 +6,7 @@
 
 #include "common/gtest_utils.hpp"
 #include "condition/cmdi_detector.hpp"
+#include "platform.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -288,6 +289,8 @@ TEST(TestCmdiDetector, ExecutableWithSpacesInjection)
 
 TEST(TestCmdiDetector, LinuxShellInjection)
 {
+    system_platform_override spo{platform::linux};
+
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
     std::vector<std::pair<std::vector<std::string>, std::string>> samples{
@@ -436,6 +439,8 @@ TEST(TestCmdiDetector, LinuxShellInjection)
 
 TEST(TestCmdiDetector, WindowsShellInjection)
 {
+    system_platform_override spo{platform::windows};
+
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
     std::vector<std::pair<std::vector<std::string>, std::string>> samples{

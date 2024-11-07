@@ -23,6 +23,7 @@
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
 #include "log.hpp"
+#include "platform.hpp"
 #include "tokenizer/shell.hpp"
 #include "transformer/common/cow_string.hpp"
 #include "transformer/lowercase.hpp"
@@ -86,7 +87,12 @@ std::unordered_map<std::string_view, std::string_view> known_shells{
 
 std::string_view basename(std::string_view path)
 {
-    auto idx = path.find_last_of(R"(\/)"sv);
+    std::size_t idx = std::string_view::npos;
+    if (system_platform::is(platform::windows)) {
+        idx = path.find_last_of(R"(\/)"sv);
+    } else {
+        idx = path.find_last_of('/');
+    }
     return idx == std::string_view::npos ? path : path.substr(idx + 1);
 }
 
@@ -95,12 +101,12 @@ std::string_view trim_whitespaces(std::string_view str)
     static const std::string_view whitespaces = " \f\n\r\t\v";
 
     if (str.empty()) {
-        return str;
+        return {};
     }
 
     auto start = str.find_first_not_of(whitespaces);
     if (start == std::string_view::npos) {
-        return str;
+        return {};
     }
 
     auto end = str.find_last_not_of(whitespaces);
@@ -124,7 +130,10 @@ std::string_view find_shell_command(std::string_view executable, const ddwaf_obj
     // contained within the std::string, we ensure a new one won't be
     // allocated once the string is modified.
     cow_string executable_lc{executable};
-    if (transformer::lowercase::transform(executable_lc)) {
+
+    // Lowercase the executable in windows due to being case insensitivity
+    if (system_platform::is(platform::windows) &&
+        transformer::lowercase::transform(executable_lc)) {
         executable = static_cast<std::string_view>(executable_lc);
     }
 
@@ -137,7 +146,7 @@ std::string_view find_shell_command(std::string_view executable, const ddwaf_obj
         if (!shell_it->second.empty()) {
             // Most shells allow specifying a command with -c
             for (; i < object_size(exec_args); ++i) {
-                auto opt = trim_whitespaces(object_at(exec_args, i));
+                auto opt = object_at(exec_args, i);
                 if (!opt.empty() && opt[0] == '-' &&
                     opt.find(shell_it->second) != std::string_view::npos) {
                     // We've found the -c option, we can now break, if it isn't found
@@ -147,7 +156,7 @@ std::string_view find_shell_command(std::string_view executable, const ddwaf_obj
             }
         }
         for (; i < object_size(exec_args); ++i) {
-            auto arg = trim_whitespaces(object_at(exec_args, i));
+            auto arg = object_at(exec_args, i);
             if (arg.empty() || arg.starts_with('-') || arg.starts_with('+')) {
                 continue;
             }
