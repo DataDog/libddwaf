@@ -34,12 +34,6 @@ using namespace std::literals;
 namespace ddwaf {
 namespace {
 
-enum class shell_flags {
-    none,
-    linux_command_opt,
-    windows_command_opt,
-};
-
 // An iterator which returns the given scalar, so that the match_iterator can be
 // used directly with a scalar without the need for a fully-fledged object iterator
 class scalar_iterator {
@@ -70,19 +64,27 @@ protected:
     const ddwaf_object *current_;
 };
 
+struct opt_spec {
+    bool requires_command_opt{false};
+    platform shell_platform;
+    std::unordered_set<std::string_view> command_opt;
+    std::unordered_set<std::string_view> opts_with_arg;
+};
+
 // Most shells support -c as a way to specify a shell command, however some
 // shells such as ksh allow for the first argument to be a shell command
-std::unordered_map<std::string_view, std::string_view> known_shells{
-    {"sh", "c"},
-    {"bash", "c"},
-    {"ksh", {}},
-    {"rksh", {}},
-    {"fish", "c"},
-    {"zsh", "c"},
-    {"dash", "c"},
-    {"ash", "c"},
-    {"powershell", "Command"},
-    {"powershell.exe", "Command"},
+std::unordered_map<std::string_view, opt_spec> known_shells{
+    // sh could be bash (red-hat) or dash (debian) so we cast a wide net
+    {"sh", {true, platform::linux, {"c"}, {"O", "o", "init-file", "rcfile"}}},
+    {"bash", {true, platform::linux, {"c"}, {"O", "o", "init-file", "rcfile"}}},
+    {"ksh", {false, platform::linux, {"c"}, {"o", "T"}}},
+    {"rksh", {false, platform::linux, {"c"}, {"o", "T"}}},
+    {"fish", {true, platform::linux, {"c"}, {"o"}}},
+    {"zsh", {true, platform::linux, {"c"}, {"o"}}},
+    {"dash", {true, platform::linux, {"c"}, {"o"}}},
+    {"ash", {true, platform::linux, {"c"}, {"o"}}},
+    {"powershell", {true, platform::windows, {"command", "commandwithargs"}, {}}},
+    {"pwsh", {true, platform::windows, {"command", "commandwithargs"}, {}}},
 };
 
 std::string_view basename(std::string_view path)
@@ -124,6 +126,41 @@ std::string_view object_at(const ddwaf_object &obj, std::size_t idx)
     return {child.stringValue, object_size(child)};
 }
 
+enum class opt_type { none, short_opt, long_opt, end_opt };
+
+// arg must not be empty
+inline std::pair<std::string_view, opt_type> parse_option(
+    const opt_spec &spec, std::string_view arg)
+{
+    if (spec.shell_platform == platform::windows && (arg[0] == '-' || arg[0] == '/')) {
+        arg.remove_prefix(1);
+        if (arg.starts_with('-')) {
+            // Powershell in linux allows --
+            arg.remove_prefix(1);
+        }
+
+        return {arg, opt_type::long_opt};
+    }
+
+    if (spec.shell_platform == platform::linux) {
+        if (arg[0] == '-') {
+            arg.remove_prefix(1);
+            if (arg.starts_with('-')) {
+                arg.remove_prefix(1);
+                return {arg, !arg.empty() ? opt_type::long_opt : opt_type::end_opt};
+            }
+            return {arg, opt_type::short_opt};
+        }
+
+        if (arg[0] == '+') {
+            arg.remove_prefix(1);
+            return {arg, opt_type::short_opt};
+        }
+    }
+
+    return {{}, opt_type::none};
+}
+
 std::string_view find_shell_command(std::string_view executable, const ddwaf_object &exec_args)
 {
     // By initialising the cow_string with the underlying data
@@ -132,40 +169,84 @@ std::string_view find_shell_command(std::string_view executable, const ddwaf_obj
     cow_string executable_lc{executable};
 
     // Lowercase the executable in windows due to being case insensitivity
-    if (system_platform::is(platform::windows) &&
-        transformer::lowercase::transform(executable_lc)) {
-        executable = static_cast<std::string_view>(executable_lc);
+    if (system_platform::is(platform::windows)) {
+        if (transformer::lowercase::transform(executable_lc)) {
+            executable = static_cast<std::string_view>(executable_lc);
+        }
+
+        if (executable.ends_with(".exe")) {
+            executable.remove_suffix(4);
+        }
     }
 
     auto shell_it = known_shells.find(basename(executable));
-    if (shell_it != known_shells.end()) {
-        // We've found that the current exec command is attempting to run a
-        // a shell. The shell binary itself might be injected, but also the
-        // shell command. So we need to identify the command
-        std::size_t i = 1;
-        if (!shell_it->second.empty()) {
-            // Most shells allow specifying a command with -c
-            for (; i < object_size(exec_args); ++i) {
-                auto opt = object_at(exec_args, i);
-                if (!opt.empty() && opt[0] == '-' &&
-                    opt.find(shell_it->second) != std::string_view::npos) {
-                    // We've found the -c option, we can now break, if it isn't found
-                    // i will reach the end of the array
-                    break;
+    if (shell_it == known_shells.end()) {
+        return {};
+    }
+
+    // We've found that the current exec command is attempting to run a
+    // a shell. The shell binary itself might be injected, but also the
+    // shell command. So we need to identify the command
+    auto &spec = shell_it->second;
+
+    bool command_opt_found = !spec.requires_command_opt;
+    for (std::size_t i = 1; i < object_size(exec_args); ++i) {
+        auto arg = object_at(exec_args, i);
+        if (arg.empty()) {
+            continue;
+        }
+
+        auto [opt, type] = parse_option(spec, arg);
+        // For every short_opt, we need to check if it requires an argument
+        if (type == opt_type::short_opt) {
+            for (std::size_t j = 0; j < opt.size(); ++j) {
+                const auto single_opt = opt.substr(j, 1);
+                // If we're looking for a command opt...
+                command_opt_found = command_opt_found || spec.command_opt.contains(single_opt);
+
+                // Check if the option requires an argument
+                if (spec.opts_with_arg.contains(single_opt)) {
+                    // Skip the next argument
+                    ++i;
                 }
             }
-        }
-        for (; i < object_size(exec_args); ++i) {
-            auto arg = object_at(exec_args, i);
-            if (arg.empty() || arg.starts_with('-') || arg.starts_with('+')) {
-                continue;
+        } else if (type == opt_type::long_opt) {
+            cow_string opt_lc{opt};
+            if (spec.shell_platform == platform::windows &&
+                transformer::lowercase::transform(opt_lc)) {
+                // powershell accepts long options without considering case
+                opt = static_cast<std::string_view>(opt_lc);
             }
 
+            // If we're looking for a command opt...
+            command_opt_found = command_opt_found || spec.command_opt.contains(opt);
+
+            // Check if the option requires an argument
+            if (spec.opts_with_arg.contains(opt)) {
+                // Skip the next argument
+                ++i;
+            }
+        } else if (type == opt_type::end_opt) {
+            // Since we found the end of options, the next argument must be
+            // the shell invocation, but only if we have found the relevant
+            // command option (assuming it's required)
+            if (!command_opt_found || i + 1 >= object_size(exec_args)) {
+                break;
+            }
+
+            return object_at(exec_args, i + 1);
+        } else {
             // Once the first non-option argument is reached, it must be the
-            // shell command
+            // shell command, unless the command opt is required and hasn't
+            // been found
+            if (!command_opt_found) {
+                break;
+            }
+
             return arg;
         }
     }
+
     return {};
 }
 
