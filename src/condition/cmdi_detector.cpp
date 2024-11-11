@@ -65,9 +65,21 @@ protected:
 };
 
 struct opt_spec {
+    // If set to true, an option will be used to indicate the presence of a
+    // shell command, for example -c or -Command, otherwise the first non-option
+    // argument is used
     bool requires_command_opt{false};
+    // If set to true, the shell command will be immediately present after the
+    // command option. Note that this can only be true if requires_command_opt
+    // is also true.
+    bool command_after_opt{false};
+    // Indicates the platform type of the shell, this determines how options
+    // are interpreted from the command line.
     platform shell_platform;
+    // The possible options hich can be used to indicate that a command is
+    // present in the call
     std::unordered_set<std::string_view> command_opt;
+    // The options which require and argument
     std::unordered_set<std::string_view> opts_with_arg;
 };
 
@@ -75,16 +87,16 @@ struct opt_spec {
 // shells such as ksh allow for the first argument to be a shell command
 std::unordered_map<std::string_view, opt_spec> known_shells{
     // sh could be bash (red-hat) or dash (debian) so we cast a wide net
-    {"sh", {true, platform::linux, {"c"}, {"O", "o", "init-file", "rcfile"}}},
-    {"bash", {true, platform::linux, {"c"}, {"O", "o", "init-file", "rcfile"}}},
-    {"ksh", {false, platform::linux, {"c"}, {"o", "T"}}},
-    {"rksh", {false, platform::linux, {"c"}, {"o", "T"}}},
-    {"fish", {true, platform::linux, {"c"}, {"o"}}},
-    {"zsh", {true, platform::linux, {"c"}, {"o"}}},
-    {"dash", {true, platform::linux, {"c"}, {"o"}}},
-    {"ash", {true, platform::linux, {"c"}, {"o"}}},
-    {"powershell", {true, platform::windows, {"command", "commandwithargs"}, {}}},
-    {"pwsh", {true, platform::windows, {"command", "commandwithargs"}, {}}},
+    {"sh", {true, false, platform::linux, {"c"}, {"O", "o", "init-file", "rcfile"}}},
+    {"bash", {true, false, platform::linux, {"c"}, {"O", "o", "init-file", "rcfile"}}},
+    {"ksh", {false, false, platform::linux, {"c"}, {"o", "T"}}},
+    {"rksh", {false, false, platform::linux, {"c"}, {"o", "T"}}},
+    {"fish", {true, true, platform::linux, {"c", "command"}, {}}},
+    {"zsh", {true, false, platform::linux, {"c"}, {"o"}}},
+    {"dash", {true, false, platform::linux, {"c"}, {"o"}}},
+    {"ash", {true, false, platform::linux, {"c"}, {"o"}}},
+    {"powershell", {true, true, platform::windows, {"command", "commandwithargs"}, {}}},
+    {"pwsh", {true, true, platform::windows, {"command", "commandwithargs"}, {}}},
 };
 
 std::string_view basename(std::string_view path)
@@ -96,6 +108,17 @@ std::string_view basename(std::string_view path)
         idx = path.find_last_of('/');
     }
     return idx == std::string_view::npos ? path : path.substr(idx + 1);
+}
+
+std::string_view trim_quotes(std::string_view str)
+{
+    if (str.size() > 1 && ((str.front() == '"' && str.back() == '"') ||
+                              (str.front() == '\'' && str.back() == '\''))) {
+        str.remove_prefix(1);
+        str.remove_suffix(1);
+    }
+
+    return str;
 }
 
 std::string_view trim_whitespaces(std::string_view str)
@@ -128,8 +151,25 @@ std::string_view object_at(const ddwaf_object &obj, std::size_t idx)
 
 enum class opt_type { none, short_opt, long_opt, end_opt };
 
+inline std::pair<std::string_view, std::string_view> split_long_opt_with_arg(std::string_view opt)
+{
+    // We need at least three characters, e.g.: x=y
+    if (opt.size() < 3) {
+        return {opt, {}};
+    }
+
+    // Check if the opt has =
+    auto idx = opt.find('=');
+    // if the idx is found at the beginning or the end, bail
+    if (idx == std::string_view::npos || idx == 0 || idx == opt.size() - 1) {
+        return {opt, {}};
+    }
+
+    return {opt.substr(0, idx), trim_quotes(opt.substr(idx + 1, opt.size() - (idx + 1)))};
+}
+
 // arg must not be empty
-inline std::pair<std::string_view, opt_type> parse_option(
+inline std::tuple<std::string_view, std::string_view, opt_type> parse_option(
     const opt_spec &spec, std::string_view arg)
 {
     if (spec.shell_platform == platform::windows && (arg[0] == '-' || arg[0] == '/')) {
@@ -139,7 +179,7 @@ inline std::pair<std::string_view, opt_type> parse_option(
             arg.remove_prefix(1);
         }
 
-        return {arg, opt_type::long_opt};
+        return {arg, {}, opt_type::long_opt};
     }
 
     if (spec.shell_platform == platform::linux) {
@@ -147,18 +187,24 @@ inline std::pair<std::string_view, opt_type> parse_option(
             arg.remove_prefix(1);
             if (arg.starts_with('-')) {
                 arg.remove_prefix(1);
-                return {arg, !arg.empty() ? opt_type::long_opt : opt_type::end_opt};
+                if (arg.empty()) {
+                    return {{}, {}, opt_type::end_opt};
+                }
+
+                // The long option might have the format x=y
+                auto [key, value] = split_long_opt_with_arg(arg);
+                return {key, value, opt_type::long_opt};
             }
-            return {arg, opt_type::short_opt};
+            return {arg, {}, opt_type::short_opt};
         }
 
         if (arg[0] == '+') {
             arg.remove_prefix(1);
-            return {arg, opt_type::short_opt};
+            return {arg, {}, opt_type::short_opt};
         }
     }
 
-    return {{}, opt_type::none};
+    return {{}, {}, opt_type::none};
 }
 
 std::string_view find_shell_command(std::string_view executable, const ddwaf_object &exec_args)
@@ -196,13 +242,23 @@ std::string_view find_shell_command(std::string_view executable, const ddwaf_obj
             continue;
         }
 
-        auto [opt, type] = parse_option(spec, arg);
+        auto [opt, embedded_arg, type] = parse_option(spec, arg);
         // For every short_opt, we need to check if it requires an argument
         if (type == opt_type::short_opt) {
             for (std::size_t j = 0; j < opt.size(); ++j) {
                 const auto single_opt = opt.substr(j, 1);
                 // If we're looking for a command opt...
                 command_opt_found = command_opt_found || spec.command_opt.contains(single_opt);
+
+                // If the shell requires the command immediately after the opt, we
+                // simply return the next argument
+                if (spec.command_after_opt && command_opt_found) {
+                    if (i + 1 >= object_size(exec_args)) {
+                        return {};
+                    }
+
+                    return object_at(exec_args, i + 1);
+                }
 
                 // Check if the option requires an argument
                 if (spec.opts_with_arg.contains(single_opt)) {
@@ -220,6 +276,16 @@ std::string_view find_shell_command(std::string_view executable, const ddwaf_obj
 
             // If we're looking for a command opt...
             command_opt_found = command_opt_found || spec.command_opt.contains(opt);
+
+            // If the shell requires the command immediately after the opt, we
+            // simply return the next argument
+            if (spec.command_after_opt && command_opt_found) {
+                if (embedded_arg.empty() && i + 1 >= object_size(exec_args)) {
+                    break;
+                }
+
+                return embedded_arg.empty() ? object_at(exec_args, i + 1) : embedded_arg;
+            }
 
             // Check if the option requires an argument
             if (spec.opts_with_arg.contains(opt)) {
