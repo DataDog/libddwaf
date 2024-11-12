@@ -32,6 +32,7 @@
 #include "rule.hpp"
 #include "ruleset.hpp"
 #include "ruleset_info.hpp"
+#include "target_address.hpp"
 #include "transformer/base.hpp"
 #include "utils.hpp"
 

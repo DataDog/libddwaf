@@ -36,15 +36,15 @@ namespace {
  * Idea behind separate cases for pre-defined lengths is to let the
  * compiler decide if it's appropriate to unroll small loops.
  */
-#define ROTATE(a, n) (((a) << (n)) | (((a)&0xffffffff) >> (32 - (n))))
+#define ROTATE(a, n) (((a) << (n)) | (((a) & 0xffffffff) >> (32 - (n))))
 
 #define CHAR_TO_UINT32(c, l)                                                                       \
-  {                                                                                                \
-    (l) = ((static_cast<uint32_t>(*((c)++))) << 24);                                               \
-    (l) |= ((static_cast<uint32_t>(*((c)++))) << 16);                                              \
-    (l) |= ((static_cast<uint32_t>(*((c)++))) << 8);                                               \
-    (l) |= ((static_cast<uint32_t>(*((c)++))));                                                    \
-  }
+    {                                                                                              \
+        (l) = ((static_cast<uint32_t>(*((c)++))) << 24);                                           \
+        (l) |= ((static_cast<uint32_t>(*((c)++))) << 16);                                          \
+        (l) |= ((static_cast<uint32_t>(*((c)++))) << 8);                                           \
+        (l) |= ((static_cast<uint32_t>(*((c)++))));                                                \
+    }
 
 #define UINT8_TO_HEX_CHAR(u) static_cast<char>((u) < 10 ? (u) + '0' : (u)-10 + 'a')
 
@@ -61,22 +61,22 @@ namespace {
 #define Maj(x, y, z) (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
 
 #define ROUND_00_15(i, a, b, c, d, e, f, g, h)                                                     \
-  {                                                                                                \
-    T1 += (h) + Sigma1(e) + Ch(e, f, g) + K256[i];                                                 \
-    (h) = Sigma0(a) + Maj(a, b, c);                                                                \
-    (d) += T1;                                                                                     \
-    (h) += T1;                                                                                     \
-  }
+    {                                                                                              \
+        T1 += (h) + Sigma1(e) + Ch(e, f, g) + K256[i];                                             \
+        (h) = Sigma0(a) + Maj(a, b, c);                                                            \
+        (d) += T1;                                                                                 \
+        (h) += T1;                                                                                 \
+    }
 
 #define ROUND_16_63(i, a, b, c, d, e, f, g, h, X)                                                  \
-  {                                                                                                \
-    s0 = (X)[((i) + 1) & 0x0f];                                                                    \
-    s0 = sigma0(s0);                                                                               \
-    s1 = (X)[((i) + 14) & 0x0f];                                                                   \
-    s1 = sigma1(s1);                                                                               \
-    T1 = (X)[(i)&0x0f] += s0 + s1 + (X)[((i) + 9) & 0x0f];                                         \
-    ROUND_00_15(i, a, b, c, d, e, f, g, h);                                                        \
-  }
+    {                                                                                              \
+        s0 = (X)[((i) + 1) & 0x0f];                                                                \
+        s0 = sigma0(s0);                                                                           \
+        s1 = (X)[((i) + 14) & 0x0f];                                                               \
+        s1 = sigma1(s1);                                                                           \
+        T1 = (X)[(i) & 0x0f] += s0 + s1 + (X)[((i) + 9) & 0x0f];                                   \
+        ROUND_00_15(i, a, b, c, d, e, f, g, h);                                                    \
+    }
 
 // NOLINTEND(cppcoreguidelines-macro-usage)
 

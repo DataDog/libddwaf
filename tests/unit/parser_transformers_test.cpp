@@ -13,8 +13,8 @@ using namespace ddwaf::parser;
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage,bugprone-unchecked-optional-access)
 #define EXPECT_OPTEQ(opt, expected)                                                                \
-  ASSERT_TRUE((opt));                                                                              \
-  EXPECT_EQ((opt), expected);
+    ASSERT_TRUE((opt));                                                                            \
+    EXPECT_EQ((opt), expected);
 // NOLINTEND(cppcoreguidelines-macro-usage,bugprone-unchecked-optional-access)
 
 namespace {
