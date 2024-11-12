@@ -331,7 +331,7 @@ std::optional<shi_result> cmdi_impl(const ddwaf_object &exec_args,
     // Restrict the executable matches to those with more than one component,
     // or rather those not in the PATH
     const auto exec_basename = basename(executable);
-    bool eval_executable = (exec_basename != executable);
+    const bool eval_executable = (exec_basename != executable);
 
     // Find any associated shell command, if the current executable is a shell
     auto shell_command = find_shell_command(exec_basename, exec_args);
