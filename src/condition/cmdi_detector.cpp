@@ -328,7 +328,18 @@ std::optional<shi_result> cmdi_impl(const ddwaf_object &exec_args,
         return {};
     }
 
-    auto shell_command = find_shell_command(executable, exec_args);
+    // Restrict the executable matches to those with more than one component,
+    // or rather those not in the PATH
+    const auto exec_basename = basename(executable);
+    bool eval_executable = (exec_basename != executable);
+
+    // Find any associated shell command, if the current executable is a shell
+    auto shell_command = find_shell_command(exec_basename, exec_args);
+
+    if (shell_command.empty() && !eval_executable) {
+        // No shell command and we're not evaluating the executable, bail
+        return std::nullopt;
+    }
 
     object::kv_iterator it(&params, {}, objects_excluded, limits);
     for (; it; ++it) {
@@ -341,14 +352,16 @@ std::optional<shi_result> cmdi_impl(const ddwaf_object &exec_args,
             continue;
         }
 
-        // First check if the entire executable was injected
-        std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
-        value = trim_whitespaces(value);
-        if (executable == value) {
-            // When the full binary has been injected, we consider it an exploit
-            // although bear in mind that this can also be a vulnerable-by-design
-            // application, leading to a false positive
-            return {{std::string(value), it.get_current_path()}};
+        if (eval_executable) {
+            // First check if the entire executable was injected
+            std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
+            value = trim_whitespaces(value);
+            if (executable == value) {
+                // When the full binary has been injected, we consider it an exploit
+                // although bear in mind that this can also be a vulnerable-by-design
+                // application, leading to a false positive
+                return {{std::string(value), it.get_current_path()}};
+            }
         }
 
         if (!shell_command.empty()) {
