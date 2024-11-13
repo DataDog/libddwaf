@@ -29,6 +29,7 @@ The following example rule takes advantage of the new operator to identify injec
             - address: graphql.server.resolver
         operator: cmdi_detector
 ```
+### Release changelog
 
 #### Changes
 - Command injection detection operator ([#354](https://github.com/DataDog/libddwaf/pull/354)) ([#357](https://github.com/DataDog/libddwaf/pull/357))
