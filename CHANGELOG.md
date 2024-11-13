@@ -32,7 +32,7 @@ The following example rule takes advantage of the new operator to identify injec
 ### Release changelog
 
 #### Changes
-- Command injection detection operator ([#354](https://github.com/DataDog/libddwaf/pull/354)) ([#357](https://github.com/DataDog/libddwaf/pull/357))
+- Command injection detection operator ([#354](https://github.com/DataDog/libddwaf/pull/354)) ([#356](https://github.com/DataDog/libddwaf/pull/356))
 
 #### Fixes
 - Disable a few patterns that caused false positives ([#355](https://github.com/DataDog/libddwaf/pull/355))
