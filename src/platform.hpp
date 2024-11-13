@@ -14,7 +14,7 @@ enum class platform : uint8_t { unknown = 0, linux, windows, macos };
 
 struct system_platform {
     static platform current() { return platform_override; }
-
+    static bool is(platform p) { return platform_override == p; }
     static void override_platform(platform p) { platform_override = p; }
 
     static platform platform_override;

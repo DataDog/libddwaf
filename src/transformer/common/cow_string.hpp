@@ -26,10 +26,6 @@ public:
             throw std::runtime_error{"cow_string initialised with nullptr"};
         }
     }
-
-    explicit cow_string(char *str, std::size_t length)
-        : modified_(true), buffer_(str), length_(length)
-    {}
     cow_string(const cow_string &) = delete;
     cow_string &operator=(const cow_string &) = delete;
     cow_string(cow_string &&other) = delete;
@@ -37,10 +33,15 @@ public:
 
     ~cow_string()
     {
-        [[likely]] if (modified_) {
+        [[likely]] if (modified_ && owned_) {
             // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
             free(buffer_);
         }
+    }
+
+    static cow_string from_mutable_buffer(char *str, std::size_t length)
+    {
+        return cow_string{str, length};
     }
 
     template <typename T = char> [[nodiscard]] constexpr T at(std::size_t idx) const
@@ -90,12 +91,13 @@ public:
     // Replaces the internal buffer, ownership is transferred
     void replace_buffer(char *str, std::size_t length)
     {
-        [[likely]] if (modified_) {
+        [[likely]] if (modified_ && owned_) {
             // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
             free(buffer_);
         }
 
         modified_ = true;
+        owned_ = true;
         buffer_ = str;
         length_ = length;
     }
@@ -125,6 +127,10 @@ public:
     }
 
 protected:
+    explicit cow_string(char *str, std::size_t length)
+        : modified_(true), owned_(false), buffer_(str), length_(length)
+    {}
+
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     void force_copy(std::size_t bytes)
     {
@@ -145,6 +151,7 @@ protected:
     }
 
     bool modified_{false};
+    bool owned_{true};
     char *buffer_{nullptr};
     std::size_t length_;
 };
