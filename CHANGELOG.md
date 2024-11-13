@@ -2,7 +2,7 @@
 ## v1.21.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 ### New features
 
-This new version of `libddwaf` only introduces a new feature, alongside other fixes and behind-the-scenes changes and improvements.
+This new version of `libddwaf` only introduces one new feature, alongside other fixes and behind-the-scenes changes and improvements.
 
 #### Exploit prevention: Command injection detection
 A new operator `cmdi_detector` has been introduced for detecting and blocking command injections. This heuristics builds on the shell injection heuristic in order to detect injections on non-shell APIs, including indirect shell injections. This new operator is part of the exploit prevention feature, so it is meant to be used in combination with targeted instrumentation.
