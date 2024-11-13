@@ -509,6 +509,12 @@ TEST(TestCmdiDetector, LinuxShellInjection)
         {{"/usr/bin/zsh", "-ci", "ls -l"}, "ls -l"},
         {{"/usr/bin/zsh", "-ic", "ls -l"}, "ls -l"},
         {{"/usr/bin/zsh", "-c", "-i", "ls -l"}, "ls -l"},
+        {{"/usr/bin/zsh", "-co", "errexit", "ls -l"}, "ls -l"},
+        {{"/usr/bin/zsh", "+o", "errexit", "-c", "ls -l"}, "ls -l"},
+        {{"/usr/bin/zsh", "-o", "errexit", "-c", "ls -l"}, "ls -l"},
+        {{"/usr/bin/zsh", "-c", "+o", "errexit", "ls -l"}, "ls -l"},
+        {{"/usr/bin/zsh", "-c", "-o", "errexit", "ls -l"}, "ls -l"},
+        {{"/usr/bin/zsh", "-c", "-o", "errexit", "--", "ls -l"}, "ls -l"},
 
         {{"dash", "-c", "ls -l"}, "ls -l"},
         {{"/dash", "-c", "ls -l"}, "ls -l"},
