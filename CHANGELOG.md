@@ -1,4 +1,46 @@
 # libddwaf release
+## v1.21.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+### New features
+
+This new version of `libddwaf` only introduces a new feature, alongside other fixes and behind-the-scenes changes and improvements.
+
+#### Exploit prevention: Command injection detection
+A new operator `cmdi_detector` has been introduced for detecting and blocking command injections. This heuristics builds on the shell injection heuristic in order to detect injections on non-shell APIs, including indirect shell injections. This new operator is part of the exploit prevention feature, so it is meant to be used in combination with targeted instrumentation.
+
+The following example rule takes advantage of the new operator to identify injections originating from request parameters:
+
+```yaml
+  - id: rsp-930-005
+    name: CMDi Exploit detection
+    tags:
+      type: cmdi
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - parameters:
+          resource:
+            - address: server.sys.exec.cmd
+          params:
+            - address: server.request.query
+            - address: server.request.body
+            - address: server.request.path_params
+            - address: grpc.server.request.message
+            - address: graphql.server.all_resolvers
+            - address: graphql.server.resolver
+        operator: cmdi_detector
+```
+
+#### Changes
+- Command injection detection operator ([#354](https://github.com/DataDog/libddwaf/pull/354)) ([#357](https://github.com/DataDog/libddwaf/pull/357))
+
+#### Fixes
+- Disable a few patterns that caused false positives ([#355](https://github.com/DataDog/libddwaf/pull/355))
+
+#### Miscellaneous
+- Fix build on macos-14 ([#349](https://github.com/DataDog/libddwaf/pull/349))
+- Support `(min|max)_version` on `verify_rule` utility ([#350](https://github.com/DataDog/libddwaf/pull/350))
+- Reorganise tests ([#351](https://github.com/DataDog/libddwaf/pull/351))
+- Auto-retry flaky build steps & downgrade to macos-13 ([#357](https://github.com/DataDog/libddwaf/pull/357))
 
 ## v1.20.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Changes
