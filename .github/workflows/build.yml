@@ -66,7 +66,11 @@ jobs:
         with:
           submodules: recursive
       - name: Select Xcode version
-        run: sudo xcode-select --switch /Applications/Xcode_14.3.1.app
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+        command: sudo xcode-select --switch /Applications/Xcode_14.3.1.app
       - name: Create Build Directory
         run: cmake -E make_directory ${{ github.workspace }}/build ${{ github.workspace }}/packages
       - name: Generating Build Scripts
@@ -228,14 +232,30 @@ jobs:
           install: true
       - run: docker build --progress=plain --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/build/Dockerfile -o packages .
       - name: Smoketest musl (gcc)
-        run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl/Dockerfile  .
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+        command: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl/Dockerfile  .
       - name: Smoketest musl (clang)
-        run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl_llvm/Dockerfile  .
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+        command: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/musl_llvm/Dockerfile  .
       - name: Smoketest gnu (gcc)
-        run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu/Dockerfile  .
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+        command: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu/Dockerfile  .
       - name: Smoketest gnu rhel 6 (gcc)
         if: matrix.target.qemu_action_arch == 'amd64'
-        run: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu_rhel6/Dockerfile  .
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+        command: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu_rhel6/Dockerfile  .
       - name: Generate Package sha256
         working-directory: packages
         run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
