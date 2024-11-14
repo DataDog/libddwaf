@@ -76,3 +76,21 @@ rules:
             - address: graphql.server.all_resolvers
             - address: graphql.server.resolver
         operator: shi_detector@v1
+  - id: rsp-930-005
+    name: CMDi Exploit detection
+    tags:
+      type: cmdi
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - parameters:
+          resource:
+            - address: server.sys.exec.cmd
+          params:
+            - address: server.request.query
+            - address: server.request.body
+            - address: server.request.path_params
+            - address: grpc.server.request.message
+            - address: graphql.server.all_resolvers
+            - address: graphql.server.resolver
+        operator: cmdi_detector@v1

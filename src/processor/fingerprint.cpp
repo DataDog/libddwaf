@@ -83,21 +83,6 @@ struct string_buffer {
     std::size_t length;
 };
 
-std::string str_lowercase(std::string_view str)
-{
-    auto buffer = std::string{str};
-
-    // By initialising the cow_string with the underlying data
-    // contained within the std::string, we ensure a new one won't be
-    // allocated once the string is modified.
-    cow_string str_lc{buffer.data(), buffer.size()};
-    transformer::lowercase::transform(str_lc);
-
-    str_lc.move(); // move to avoid freeing the string
-
-    return buffer; // NOLINT(clang-analyzer-unix.Malloc)
-}
-
 // Return true if the first argument is less than (i.e. is ordered before) the second
 bool str_casei_cmp(std::string_view left, std::string_view right)
 {
@@ -205,7 +190,15 @@ template <typename Derived, typename Output = std::string> struct field_generato
 struct string_field : field_generator<string_field> {
     explicit string_field(std::string_view input) : value(input) {}
     // NOLINTNEXTLINE(readability-make-member-function-const)
-    [[nodiscard]] std::string generate() { return str_lowercase(value); }
+    [[nodiscard]] std::string generate()
+    {
+        auto buffer = std::string{value};
+
+        auto str_lc = cow_string::from_mutable_buffer(buffer.data(), buffer.size());
+        transformer::lowercase::transform(str_lc);
+
+        return buffer; // NOLINT(clang-analyzer-unix.Malloc)
+    }
 
     std::string_view value;
 };

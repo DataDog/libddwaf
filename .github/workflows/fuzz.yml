@@ -88,7 +88,11 @@ jobs:
             params: "--dialect=standard"
           - fuzzer: shell_tokenizer
             params: ""
-          - fuzzer: shi_detector
+          - fuzzer: shi_detector_string
+            params: ""
+          - fuzzer: shi_detector_array
+            params: ""
+          - fuzzer: cmdi_detector
             params: ""
           - fuzzer: sha256
             params: ""
@@ -100,7 +104,6 @@ jobs:
             params: ""
           - fuzzer: session_fingerprint
             params: ""
-
     steps:
       - uses: actions/checkout@v4
         with:
