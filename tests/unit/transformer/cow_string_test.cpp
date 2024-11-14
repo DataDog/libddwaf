@@ -26,6 +26,19 @@ TEST(TestCoWString, ConstRead)
     EXPECT_NE(str.data(), nullptr);
 }
 
+TEST(TestCoWString, ConstReadMutableBuffer)
+{
+    std::string original{"value"};
+    auto str = cow_string::from_mutable_buffer(original.data(), original.size());
+    EXPECT_TRUE(str.modified());
+
+    EXPECT_EQ(original.length(), str.length());
+    for (size_t i = 0; i < original.length(); ++i) { EXPECT_EQ(original[i], str.at(i)); }
+
+    EXPECT_TRUE(str.modified());
+    EXPECT_EQ(str.data(), original.data());
+}
+
 TEST(TestCoWString, NonConstRead)
 {
     constexpr std::string_view original = "value";
@@ -39,6 +52,19 @@ TEST(TestCoWString, NonConstRead)
     EXPECT_NE(str.data(), nullptr);
 }
 
+TEST(TestCoWString, NonConstReadMutableBuffer)
+{
+    std::string original{"value"};
+    auto str = cow_string::from_mutable_buffer(original.data(), original.size());
+    EXPECT_TRUE(str.modified());
+
+    EXPECT_EQ(original.length(), str.length());
+    for (size_t i = 0; i < original.length(); ++i) { EXPECT_EQ(original[i], str[i]); }
+
+    EXPECT_TRUE(str.modified());
+    EXPECT_EQ(str.data(), original.data());
+}
+
 TEST(TestCoWString, TruncateUnmodified)
 {
     cow_string str("value");
@@ -49,6 +75,21 @@ TEST(TestCoWString, TruncateUnmodified)
 
     EXPECT_EQ(str.length(), 4);
     EXPECT_STREQ(str.data(), "valu");
+}
+
+TEST(TestCoWString, TruncateUnmodifiedMutableBuffer)
+{
+    std::string original{"value"};
+    auto str = cow_string::from_mutable_buffer(original.data(), original.size());
+
+    EXPECT_EQ(str.length(), 5);
+    EXPECT_TRUE(str.modified());
+
+    str.truncate(4);
+
+    EXPECT_EQ(str.length(), 4);
+    EXPECT_STREQ(str.data(), "valu");
+    EXPECT_EQ(str.data(), original.data());
 }
 
 TEST(TestCoWString, WriteAndTruncate)
@@ -64,6 +105,24 @@ TEST(TestCoWString, WriteAndTruncate)
     str.truncate(4);
     EXPECT_EQ(str.length(), 4);
     EXPECT_STREQ(str.data(), "vale");
+}
+
+TEST(TestCoWString, WriteAndTruncateMutableBuffer)
+{
+    std::string original{"value"};
+    auto str = cow_string::from_mutable_buffer(original.data(), original.size());
+
+    EXPECT_EQ(str.length(), 5);
+    EXPECT_TRUE(str.modified());
+
+    str[3] = 'e';
+    EXPECT_TRUE(str.modified());
+    EXPECT_NE(str.data(), nullptr);
+
+    str.truncate(4);
+    EXPECT_EQ(str.length(), 4);
+    EXPECT_STREQ(str.data(), "vale");
+    EXPECT_EQ(str.data(), original.data());
 }
 
 TEST(TestCoWString, EmptyString)
