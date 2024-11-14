@@ -76,6 +76,11 @@ TEST(TestShiDetectorString, NoMatchAndFalsePositives)
         {R"(ls -l -r -t)", "-r -t"},
         {R"!({ ( $(echo ls) ) })!", "ls)"},
         {R"!({ ( $(echo ls) ) } # cat /etc/passwd)!", "cat /etc/passwd"},
+        {R"!(ls -l file && cat /etc/passwd)!", "-l file"},
+        {R"!("ls -l $file ; cat /etc/passwd)!", "-l $file"},
+        // This should match at some point
+        {R"!(time ls -l)!", "ls -l"},
+
     };
 
     for (const auto &[resource, param] : samples) {

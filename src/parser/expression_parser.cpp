@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "condition/base.hpp"
+#include "condition/cmdi_detector.hpp"
 #include "condition/exists.hpp"
 #include "condition/lfi_detector.hpp"
 #include "condition/scalar_condition.hpp"
@@ -178,6 +179,9 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
                 operator_name, version, params, source, transformers, addresses, limits));
         } else if (operator_name == "shi_detector") {
             conditions.emplace_back(build_versioned_condition<shi_detector>(
+                operator_name, version, params, source, transformers, addresses, limits));
+        } else if (operator_name == "cmdi_detector") {
+            conditions.emplace_back(build_versioned_condition<cmdi_detector>(
                 operator_name, version, params, source, transformers, addresses, limits));
         } else if (operator_name == "exists") {
             auto arguments =
