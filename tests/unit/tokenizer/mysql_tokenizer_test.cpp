@@ -214,8 +214,8 @@ TEST(TestMySqlTokenizer, NonEolComment)
             {stt::binary_operator, stt::binary_operator, stt::identifier, stt::identifier}},
         {R"(SELECT * FROM table WHERE x=--1;)",
             {stt::keyword, stt::asterisk, stt::keyword, stt::identifier, stt::keyword,
-                stt::identifier, stt::binary_operator, stt::binary_operator, stt::binary_operator,
-                stt::number, stt::query_end}},
+                stt::identifier, stt::binary_operator, stt::binary_operator, stt::number,
+                stt::query_end}},
     };
 
     for (const auto &[statement, expected_tokens] : samples) {

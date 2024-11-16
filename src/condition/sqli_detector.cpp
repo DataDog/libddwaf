@@ -484,7 +484,6 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
                 return sqli_error::invalid_sql;
             }
         }
-
         auto [param_tokens, param_tokens_begin] =
             get_consecutive_tokens(resource_tokens, param_index, param_index + value.size());
         if (param_tokens.empty()) {

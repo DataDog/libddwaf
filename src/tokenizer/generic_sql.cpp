@@ -100,7 +100,7 @@ void generic_sql_tokenizer::tokenize_eol_comment()
     emplace_token(token);
 }
 
-void generic_sql_tokenizer::tokenize_eol_comment_or_operator()
+void generic_sql_tokenizer::tokenize_eol_comment_or_operator_or_number()
 {
     if (next() == '-') {
         tokenize_eol_comment();
@@ -109,8 +109,18 @@ void generic_sql_tokenizer::tokenize_eol_comment_or_operator()
 
     sql_token token;
     token.index = index();
-    token.str = substr(token.index, 1);
-    token.type = sql_token_type::binary_operator;
+
+    auto number_str = extract_number();
+    if (!number_str.empty()) {
+        token.type = sql_token_type::number;
+        token.str = number_str;
+        advance(number_str.size() - 1);
+    } else {
+        // If it's not a number, it must be an operator
+        token.str = substr(token.index, 1);
+        token.type = sql_token_type::binary_operator;
+    }
+
     emplace_token(token);
 }
 
@@ -149,7 +159,7 @@ std::vector<sql_token> generic_sql_tokenizer::tokenize_impl()
         } else if (c == '/') {
             tokenize_inline_comment_or_operator();
         } else if (c == '-') {
-            tokenize_eol_comment_or_operator();
+            tokenize_eol_comment_or_operator_or_number();
         } else if (c == '#') {
             tokenize_eol_comment();
         } else if (c == '!' || c == '>') {

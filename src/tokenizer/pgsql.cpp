@@ -145,7 +145,7 @@ void pgsql_tokenizer::tokenize_eol_comment()
     emplace_token(token);
 }
 
-void pgsql_tokenizer::tokenize_eol_comment_or_operator()
+void pgsql_tokenizer::tokenize_eol_comment_or_operator_or_number()
 {
     auto n = next();
     if (n == '-') {
@@ -158,7 +158,21 @@ void pgsql_tokenizer::tokenize_eol_comment_or_operator()
         return;
     }
 
-    add_token(sql_token_type::binary_operator);
+    sql_token token;
+    token.index = index();
+
+    auto number_str = extract_number();
+    if (!number_str.empty()) {
+        token.type = sql_token_type::number;
+        token.str = number_str;
+        advance(number_str.size() - 1);
+    } else {
+        // If it's not a number, it must be an operator
+        token.str = substr(token.index, 1);
+        token.type = sql_token_type::binary_operator;
+    }
+
+    emplace_token(token);
 }
 
 void pgsql_tokenizer::tokenize_dollar_quoted_string()
@@ -266,7 +280,7 @@ std::vector<sql_token> pgsql_tokenizer::tokenize_impl()
         } else if (c == '/') {
             tokenize_inline_comment_or_operator();
         } else if (c == '-') {
-            tokenize_eol_comment_or_operator();
+            tokenize_eol_comment_or_operator_or_number();
         } else if (c == '@') {
             auto n = next();
             if (n == '@' || n == '>') {

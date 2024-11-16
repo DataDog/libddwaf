@@ -25,7 +25,7 @@ protected:
     void tokenize_keyword_operator_or_identifier();
     void tokenize_inline_comment_or_operator();
     void tokenize_eol_comment();
-    void tokenize_eol_comment_or_operator();
+    void tokenize_eol_comment_or_operator_or_number();
     void tokenize_number_or_identifier();
     void tokenize_variable();
 
