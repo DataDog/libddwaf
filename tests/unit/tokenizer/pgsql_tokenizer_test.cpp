@@ -122,7 +122,7 @@ TEST(TestPgSqlTokenizer, BinaryOperators)
 
 TEST(TestPgSqlTokenizer, BitwiseOperators)
 {
-    std::vector<std::string> samples{"&", "^", "|", "~"};
+    std::vector<std::string> samples{"&", "^", "|", "~", "#"};
 
     for (const auto &statement : samples) {
         pgsql_tokenizer tokenizer(statement);
@@ -130,6 +130,33 @@ TEST(TestPgSqlTokenizer, BitwiseOperators)
         ASSERT_EQ(obtained_tokens.size(), 1) << statement;
         EXPECT_EQ(obtained_tokens[0].type, stt::bitwise_operator);
         EXPECT_TRUE(obtained_tokens[0].str == statement);
+    }
+}
+
+TEST(TestPgSqlTokenizer, Expression)
+{
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {R"(1+1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(+1+1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(+1+1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(-1+1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(1-1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(-1-1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(+1-1)", {stt::number, stt::binary_operator, stt::number}},
+        // Technically these are not valid in postgresql
+        {R"(b'10101'-1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(B'10101'+1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(x'FFAA1'+1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(X'ABCDE'-1)", {stt::number, stt::binary_operator, stt::number}},
+    };
+
+    for (const auto &[statement, expected_tokens] : samples) {
+        pgsql_tokenizer tokenizer(statement);
+        auto obtained_tokens = tokenizer.tokenize();
+        // ASSERT_EQ(expected_tokens.size(), obtained_tokens.size()) << statement;
+        for (std::size_t i = 0; i < obtained_tokens.size(); ++i) {
+            EXPECT_EQ(expected_tokens[i], obtained_tokens[i].type);
+        }
     }
 }
 

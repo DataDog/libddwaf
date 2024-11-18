@@ -283,7 +283,7 @@ std::vector<sql_token> pgsql_tokenizer::tokenize_impl()
             } else if (n == '-') {
                 add_token(sql_token_type::binary_operator, 2);
             } else {
-                add_token(sql_token_type::binary_operator);
+                add_token(sql_token_type::bitwise_operator);
             }
         } else if (c == '*') {
             add_token(sql_token_type::asterisk);

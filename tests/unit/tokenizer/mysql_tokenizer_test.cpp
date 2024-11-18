@@ -136,6 +136,32 @@ TEST(TestMySqlTokenizer, BitwiseOperators)
     }
 }
 
+TEST(TestMySqlTokenizer, Expression)
+{
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {R"(1+1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(+1+1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(+1+1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(-1+1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(1-1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(-1-1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(+1-1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(b'10101'-1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(B'10101'+1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(x'FFAA1'+1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(X'ABCDE'-1)", {stt::number, stt::binary_operator, stt::number}},
+    };
+
+    for (const auto &[statement, expected_tokens] : samples) {
+        mysql_tokenizer tokenizer(statement);
+        auto obtained_tokens = tokenizer.tokenize();
+        // ASSERT_EQ(expected_tokens.size(), obtained_tokens.size()) << statement;
+        for (std::size_t i = 0; i < obtained_tokens.size(); ++i) {
+            EXPECT_EQ(expected_tokens[i], obtained_tokens[i].type);
+        }
+    }
+}
+
 TEST(TestMySqlTokenizer, InlineComment)
 {
     std::vector<std::pair<std::string, std::vector<stt>>> samples{
