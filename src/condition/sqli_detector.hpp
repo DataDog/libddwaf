@@ -13,7 +13,7 @@ namespace ddwaf {
 
 class sqli_detector : public base_impl<sqli_detector> {
 public:
-    static constexpr unsigned version = 2;
+    static constexpr unsigned version = 3;
     static constexpr std::array<std::string_view, 3> param_names{"resource", "params", "db_type"};
 
     explicit sqli_detector(std::vector<condition_parameter> args, const object_limits &limits = {})
