@@ -26,6 +26,7 @@ protected:
     void tokenize_inline_comment_or_operator();
     void tokenize_eol_comment();
     void tokenize_eol_comment_or_operator_or_number();
+    void tokenize_operator_or_number();
     void tokenize_dollar_quoted_string();
     void tokenize_dollar_string_or_identifier();
 

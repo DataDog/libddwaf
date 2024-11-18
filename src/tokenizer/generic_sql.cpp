@@ -124,6 +124,25 @@ void generic_sql_tokenizer::tokenize_eol_comment_or_operator_or_number()
     emplace_token(token);
 }
 
+void generic_sql_tokenizer::tokenize_operator_or_number()
+{
+    sql_token token;
+    token.index = index();
+
+    auto number_str = extract_number();
+    if (!number_str.empty()) {
+        token.type = sql_token_type::number;
+        token.str = number_str;
+        advance(number_str.size() - 1);
+    } else {
+        // If it's not a number, it must be an operator
+        token.str = substr(token.index, 1);
+        token.type = sql_token_type::binary_operator;
+    }
+
+    emplace_token(token);
+}
+
 std::vector<sql_token> generic_sql_tokenizer::tokenize_impl()
 {
     for (; !eof(); advance()) {
@@ -171,8 +190,10 @@ std::vector<sql_token> generic_sql_tokenizer::tokenize_impl()
             } else {
                 add_token(sql_token_type::binary_operator);
             }
-        } else if (c == '=' || c == '%' || c == '+') {
+        } else if (c == '=' || c == '%') {
             add_token(sql_token_type::binary_operator);
+        } else if (c == '+') {
+            tokenize_operator_or_number();
         } else if (c == '|') {
             if (next() == '|') {
                 add_token(sql_token_type::binary_operator, 2);

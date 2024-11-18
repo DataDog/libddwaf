@@ -88,7 +88,7 @@ TEST(TestMySqlTokenizer, Number)
 {
     std::vector<std::string> samples{"0", "1.1", "1", "1", "1e17", "1.0101e+17", "0x22", "0xFF",
         "0122", "00", "0b101", "0B11_00", "0b110_0", "0X12_3", "0xFA_AA", "0o77", "0O7_7",
-        "012_345", "0.000_00"};
+        "012_345", "0.000_00", "-1.2", "-0.1", "-1", "+1", "+1.2", "+0.1"};
 
     for (const auto &statement : samples) {
         mysql_tokenizer tokenizer(statement);

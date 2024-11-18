@@ -237,6 +237,25 @@ void mysql_tokenizer::tokenize_eol_comment_or_operator_or_number()
         return;
     }
 
+    if (tokens_.empty() || current_token_type() != sql_token_type::number) {
+        auto number_str = extract_number();
+        if (!number_str.empty()) {
+            sql_token token;
+            token.index = index();
+            token.type = sql_token_type::number;
+            token.str = number_str;
+            advance(number_str.size() - 1);
+            emplace_token(token);
+            return;
+        }
+    }
+
+    // If it's not a number, it must be an operator
+    add_token(sql_token_type::binary_operator);
+}
+
+void mysql_tokenizer::tokenize_operator_or_number()
+{
     sql_token token;
     token.index = index();
 
@@ -325,8 +344,10 @@ std::vector<sql_token> mysql_tokenizer::tokenize_impl()
             } else {
                 add_token(sql_token_type::binary_operator);
             }
-        } else if (c == '=' || c == '%' || c == '+') {
+        } else if (c == '=' || c == '%') {
             add_token(sql_token_type::binary_operator);
+        } else if (c == '+') {
+            tokenize_operator_or_number();
         } else if (c == '|') {
             if (next() == '|') {
                 add_token(sql_token_type::binary_operator, 2);

@@ -71,15 +71,25 @@ void pgsql_tokenizer::tokenize_string_keyword_operator_or_identifier()
         return;
     }
 
-    // Escaped string or bit-string
-    if ((c == 'e' || c == 'b' || c == 'x') && n == '\'') {
+    // Escaped string
+    if (c == 'e' && n == '\'') {
+        advance();
+        // The substring won't contain the prefix, but it's not required
+        token.str = extract_escaped_string('\'');
+        token.type = sql_token_type::single_quoted_string;
+        emplace_token(token);
+        return;
+    }
+
+    // Bit-string
+    if ((c == 'b' || c == 'x') && n == '\'') {
         advance();
         // The substring won't contain the prefix, but it's not required
         // Also, bit-strings have a reduced character set not taken into
         // consideration here, however it probably also doesn't make a
         // difference to us since we're not using the value.
-        token.str = c == 'e' ? extract_escaped_string('\'') : extract_unescaped_string('\'');
-        token.type = sql_token_type::single_quoted_string;
+        token.str = extract_unescaped_string('\'');
+        token.type = sql_token_type::number;
         emplace_token(token);
         return;
     }
@@ -158,6 +168,25 @@ void pgsql_tokenizer::tokenize_eol_comment_or_operator_or_number()
         return;
     }
 
+    sql_token token;
+    token.index = index();
+
+    auto number_str = extract_number();
+    if (!number_str.empty()) {
+        token.type = sql_token_type::number;
+        token.str = number_str;
+        advance(number_str.size() - 1);
+    } else {
+        // If it's not a number, it must be an operator
+        token.str = substr(token.index, 1);
+        token.type = sql_token_type::binary_operator;
+    }
+
+    emplace_token(token);
+}
+
+void pgsql_tokenizer::tokenize_operator_or_number()
+{
     sql_token token;
     token.index = index();
 
@@ -304,8 +333,10 @@ std::vector<sql_token> pgsql_tokenizer::tokenize_impl()
             } else {
                 add_token(sql_token_type::binary_operator);
             }
-        } else if (c == '=' || c == '%' || c == '+') {
+        } else if (c == '=' || c == '%') {
             add_token(sql_token_type::binary_operator);
+        } else if (c == '+') {
+            tokenize_operator_or_number();
         } else if (c == '|') {
             if (next() == '|') {
                 add_token(sql_token_type::binary_operator, 2);

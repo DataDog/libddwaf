@@ -70,7 +70,7 @@ TEST(TestPgSqlTokenizer, Number)
 {
     std::vector<std::string> samples{"0", "1.1", "1", "1", "1e17", "1.0101e+17", "0x22", "0xFF",
         "0122", "00", "0b101", "0B11_00", "0b110_0", "0X12_3", "0xFA_AA", "0o77", "0O7_7",
-        "012_345", "0.000_00"};
+        "012_345", "0.000_00", "-1.2", "-0.1", "-1", "+1", "+1.2", "+0.1"};
 
     for (const auto &statement : samples) {
         pgsql_tokenizer tokenizer(statement);
@@ -220,12 +220,27 @@ TEST(TestPgSqlTokenizer, SingleQuotedString)
                 stt::query_end}},
         {R"(E'colname')", {stt::single_quoted_string}},
         {R"(e'colname')", {stt::single_quoted_string}},
-        {R"(B'010101')", {stt::single_quoted_string}},
-        {R"(b'101010')", {stt::single_quoted_string}},
-        {R"(X'AFB001')", {stt::single_quoted_string}},
-        {R"(x'123ABC')", {stt::single_quoted_string}},
         {R"(U&'\00FF hello')", {stt::single_quoted_string}},
         {R"(u&'\00FF hello')", {stt::single_quoted_string}},
+    };
+
+    for (const auto &[statement, expected_tokens] : samples) {
+        pgsql_tokenizer tokenizer(statement);
+        auto obtained_tokens = tokenizer.tokenize();
+        ASSERT_EQ(expected_tokens.size(), obtained_tokens.size()) << statement;
+        for (std::size_t i = 0; i < obtained_tokens.size(); ++i) {
+            EXPECT_EQ(expected_tokens[i], obtained_tokens[i].type);
+        }
+    }
+}
+
+TEST(TestPgSqlTokenizer, BitString)
+{
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {R"(B'010101')", {stt::number}},
+        {R"(b'101010')", {stt::number}},
+        {R"(X'AFB001')", {stt::number}},
+        {R"(x'123ABC')", {stt::number}},
     };
 
     for (const auto &[statement, expected_tokens] : samples) {
@@ -330,6 +345,12 @@ TEST(TestPgSqlTokenizer, Queries)
                 stt::keyword, stt::identifier, stt::keyword, stt::keyword, stt::identifier,
                 stt::parenthesis_close, stt::keyword, stt::identifier, stt::query_end}},
 
+        {R"(SET v2 = b'1000001'+0, v3 = CAST(x'AF010A' AS UNSIGNED))",
+            {stt::identifier, stt::identifier, stt::binary_operator, stt::number, stt::number,
+                stt::comma, stt::identifier, stt::binary_operator, stt::identifier,
+                stt::parenthesis_open, stt::number, stt::identifier, stt::identifier,
+                stt::parenthesis_close}},
+
         {R"(SELECT four, ten, SUM(SUM(four)) OVER (PARTITION BY four), AVG(ten) FROM tenk1
 GROUP BY four, ten ORDER BY four, ten;)",
             {stt::keyword, stt::identifier, stt::comma, stt::identifier, stt::comma,
@@ -354,7 +375,7 @@ GROUP BY four, ten ORDER BY four, ten;)",
         auto obtained_tokens = tokenizer.tokenize();
         ASSERT_EQ(expected_tokens.size(), obtained_tokens.size()) << statement;
         for (std::size_t i = 0; i < obtained_tokens.size(); ++i) {
-            EXPECT_EQ(expected_tokens[i], obtained_tokens[i].type) << statement;
+            EXPECT_EQ(expected_tokens[i], obtained_tokens[i].type) << obtained_tokens[i].str;
         }
     }
 }
