@@ -107,40 +107,21 @@ void generic_sql_tokenizer::tokenize_eol_comment_or_operator_or_number()
         return;
     }
 
-    sql_token token;
-    token.index = index();
-
-    auto number_str = extract_number();
-    if (!number_str.empty()) {
-        token.type = sql_token_type::number;
-        token.str = number_str;
-        advance(number_str.size() - 1);
-    } else {
-        // If it's not a number, it must be an operator
-        token.str = substr(token.index, 1);
-        token.type = sql_token_type::binary_operator;
+    if (tokens_.empty() || current_token_type() != sql_token_type::number) {
+        auto number_str = extract_number();
+        if (!number_str.empty()) {
+            sql_token token;
+            token.index = index();
+            token.type = sql_token_type::number;
+            token.str = number_str;
+            advance(number_str.size() - 1);
+            emplace_token(token);
+            return;
+        }
     }
 
-    emplace_token(token);
-}
-
-void generic_sql_tokenizer::tokenize_operator_or_number()
-{
-    sql_token token;
-    token.index = index();
-
-    auto number_str = extract_number();
-    if (!number_str.empty()) {
-        token.type = sql_token_type::number;
-        token.str = number_str;
-        advance(number_str.size() - 1);
-    } else {
-        // If it's not a number, it must be an operator
-        token.str = substr(token.index, 1);
-        token.type = sql_token_type::binary_operator;
-    }
-
-    emplace_token(token);
+    // If it's not a number, it must be an operator
+    add_token(sql_token_type::binary_operator);
 }
 
 std::vector<sql_token> generic_sql_tokenizer::tokenize_impl()

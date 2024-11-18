@@ -346,10 +346,10 @@ TEST(TestPgSqlTokenizer, Queries)
                 stt::parenthesis_close, stt::keyword, stt::identifier, stt::query_end}},
 
         {R"(SET v2 = b'1000001'+0, v3 = CAST(x'AF010A' AS UNSIGNED))",
-            {stt::identifier, stt::identifier, stt::binary_operator, stt::number, stt::number,
-                stt::comma, stt::identifier, stt::binary_operator, stt::identifier,
-                stt::parenthesis_open, stt::number, stt::identifier, stt::identifier,
-                stt::parenthesis_close}},
+            {stt::identifier, stt::identifier, stt::binary_operator, stt::number,
+                stt::binary_operator, stt::number, stt::comma, stt::identifier,
+                stt::binary_operator, stt::identifier, stt::parenthesis_open, stt::number,
+                stt::identifier, stt::identifier, stt::parenthesis_close}},
 
         {R"(SELECT four, ten, SUM(SUM(four)) OVER (PARTITION BY four), AVG(ten) FROM tenk1
 GROUP BY four, ten ORDER BY four, ten;)",

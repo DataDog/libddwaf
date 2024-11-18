@@ -109,10 +109,26 @@ mysql_tokenizer::mysql_tokenizer(
     }
 }
 
-void mysql_tokenizer::tokenize_keyword_operator_or_identifier()
+void mysql_tokenizer::tokenize_string_keyword_operator_or_identifier()
 {
     sql_token token;
     token.index = index();
+
+    auto c = ddwaf::tolower(peek());
+    auto n = next();
+
+    // Bit-string
+    if ((c == 'b' || c == 'x') && n == '\'') {
+        advance();
+        // The substring won't contain the prefix, but it's not required
+        // Also, bit-strings have a reduced character set not taken into
+        // consideration here, however it probably also doesn't make a
+        // difference to us since we're not using the value.
+        token.str = extract_unescaped_string('\'');
+        token.type = sql_token_type::number;
+        emplace_token(token);
+        return;
+    }
 
     auto remaining_str = substr(index());
 
@@ -254,25 +270,6 @@ void mysql_tokenizer::tokenize_eol_comment_or_operator_or_number()
     add_token(sql_token_type::binary_operator);
 }
 
-void mysql_tokenizer::tokenize_operator_or_number()
-{
-    sql_token token;
-    token.index = index();
-
-    auto number_str = extract_number();
-    if (!number_str.empty()) {
-        token.type = sql_token_type::number;
-        token.str = number_str;
-        advance(number_str.size() - 1);
-    } else {
-        // If it's not a number, it must be an operator
-        token.str = substr(token.index, 1);
-        token.type = sql_token_type::binary_operator;
-    }
-
-    emplace_token(token);
-}
-
 std::vector<sql_token> mysql_tokenizer::tokenize_impl()
 {
     for (; !eof(); advance()) {
@@ -280,7 +277,7 @@ std::vector<sql_token> mysql_tokenizer::tokenize_impl()
         // TODO use an array of characters or a giant switch?
         if (ddwaf::isalpha(c) || c == '_' || static_cast<uint8_t>(c) > 0x7f) {
             // Command or identifier
-            tokenize_keyword_operator_or_identifier();
+            tokenize_string_keyword_operator_or_identifier();
         } else if (ddwaf::isdigit(c)) {
             tokenize_number_or_identifier();
         } else if (c == '"') {

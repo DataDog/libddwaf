@@ -271,6 +271,25 @@ template <typename T> void sql_tokenizer<T>::tokenize_number()
     }
 }
 
+template <typename T> void sql_tokenizer<T>::tokenize_operator_or_number()
+{
+    if (tokens_.empty() || current_token_type() != sql_token_type::number) {
+        auto number_str = extract_number();
+        if (!number_str.empty()) {
+            sql_token token;
+            token.index = index();
+            token.type = sql_token_type::number;
+            token.str = number_str;
+            advance(number_str.size() - 1);
+            emplace_token(token);
+            return;
+        }
+    }
+
+    // If it's not a number, it must be an operator
+    add_token(sql_token_type::binary_operator);
+}
+
 template class sql_tokenizer<pgsql_tokenizer>;
 template class sql_tokenizer<mysql_tokenizer>;
 template class sql_tokenizer<sqlite_tokenizer>;
