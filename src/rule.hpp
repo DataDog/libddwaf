@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "action_mapper.hpp"
 #include "clock.hpp"
 #include "event.hpp"
 #include "exclusion/common.hpp"
@@ -34,9 +35,11 @@ public:
 
     core_rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
         std::shared_ptr<expression> expr, std::vector<std::string> actions = {},
-        bool enabled = true, source_type source = source_type::base)
-        : enabled_(enabled), source_(source), id_(std::move(id)), name_(std::move(name)),
-          tags_(std::move(tags)), actions_(std::move(actions)), expr_(std::move(expr))
+        bool enabled = true, source_type source = source_type::base,
+        action_type blocking_mode = action_type::monitor)
+        : enabled_(enabled), source_(source), blocking_mode_(blocking_mode), id_(std::move(id)),
+          name_(std::move(name)), tags_(std::move(tags)), actions_(std::move(actions)),
+          expr_(std::move(expr))
     {
         if (!expr_) {
             throw std::invalid_argument("rule constructed with null expression");
@@ -114,6 +117,8 @@ public:
     const std::vector<std::string> &get_actions() const { return actions_; }
     void set_actions(std::vector<std::string> new_actions) { actions_ = std::move(new_actions); }
 
+    void set_blocking_mode(action_type blocking_mode) { blocking_mode_ = blocking_mode; }
+    action_type get_blocking_mode() const { return blocking_mode_; }
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
         return expr_->get_addresses(addresses);
@@ -123,6 +128,7 @@ protected:
     // General metadata
     bool enabled_{true};
     source_type source_;
+    action_type blocking_mode_{action_type::monitor};
     std::string id_;
     std::string name_;
     std::unordered_map<std::string, std::string> tags_;

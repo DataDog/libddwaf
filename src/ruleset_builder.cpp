@@ -7,6 +7,7 @@
 #include <exception>
 #include <memory>
 #include <set>
+#include <string>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -71,6 +72,24 @@ std::set<core_rule *> references_to_rules(
     return rule_refs;
 }
 
+action_type obtain_blocking_mode(
+    const action_mapper &mapper, const std::vector<std::string> &rule_actions)
+{
+    action_type mode = action_type::monitor;
+    for (const auto &action : rule_actions) {
+        auto it = mapper.find(action);
+        if (it == mapper.end()) {
+            continue;
+        }
+
+        auto action_mode = it->second.type;
+        if (is_blocking_action(action_mode) && mode < action_mode) {
+            mode = action_mode;
+        }
+    }
+    return mode;
+}
+
 } // namespace
 
 std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_ruleset_info &info)
@@ -82,9 +101,12 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         return {};
     }
 
-    constexpr static change_state base_rule_update = change_state::rules | change_state::overrides;
+    constexpr static change_state base_rule_update =
+        change_state::rules | change_state::overrides | change_state::actions;
+    constexpr static change_state custom_rule_update =
+        change_state::custom_rules | change_state::actions;
     constexpr static change_state filters_update =
-        base_rule_update | change_state::custom_rules | change_state::filters;
+        base_rule_update | custom_rule_update | change_state::filters;
     constexpr static change_state processors_update =
         change_state::processors | change_state::scanners;
     // When a configuration with 'rules' or 'rules_override' is received, we
@@ -135,23 +157,27 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
             }
         }
 
-        // Remove any disabled rules
+        // Update blocking mode and remove any disabled rules
         for (auto it = final_base_rules_.begin(); it != final_base_rules_.end();) {
             if (!(*it)->is_enabled()) {
                 it = final_base_rules_.erase(it);
-            } else {
-                ++it;
+                continue;
             }
+
+            auto mode = obtain_blocking_mode(*actions_, (*it)->get_actions());
+            (*it)->set_blocking_mode(mode);
+
+            ++it;
         }
     }
 
-    if ((state & change_state::custom_rules) != change_state::none) {
+    if ((state & custom_rule_update) != change_state::none) {
         final_user_rules_.clear();
-
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : user_rules_) {
+            auto mode = obtain_blocking_mode(*actions_, spec.actions);
             auto rule_ptr = std::make_shared<core_rule>(
-                id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
+                id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source, mode);
             if (!rule_ptr->is_enabled()) {
                 // Skip disabled rules
                 continue;
