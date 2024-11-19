@@ -99,10 +99,6 @@ protected:
         current_shell_scope_ = shell_scope_stack_.back();
     }
 
-    shell_token_type current_token_type() const { return tokens_.back().type; }
-
-    shell_token &current_token() { return tokens_.back(); }
-
     template <typename T, typename... Rest>
     bool match_nth_nonws_token_descending(std::size_t n, T expected, Rest... args) const
     {

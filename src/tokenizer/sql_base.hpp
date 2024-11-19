@@ -81,6 +81,8 @@ protected:
     void tokenize_conforming_string(char quote, sql_token_type type);
     void tokenize_escaped_string(char quote, sql_token_type type);
     void tokenize_number();
+    // Assumes the first character is + or -
+    void tokenize_operator_or_number();
 };
 
 } // namespace ddwaf
