@@ -14,11 +14,13 @@
 #include <vector>
 
 #include "action_mapper.hpp"
+#include "builder/module_builder.hpp"
 #include "exception.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
 #include "indexer.hpp"
 #include "log.hpp"
+#include "module.hpp"
 #include "parameter.hpp"
 #include "parser/common.hpp"
 #include "parser/parser.hpp"

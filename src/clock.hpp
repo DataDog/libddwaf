@@ -62,8 +62,9 @@ protected:
 
     monotonic_clock::time_point start_;
     monotonic_clock::time_point end_;
-    const uint32_t syscall_period_;
+    uint32_t syscall_period_;
     uint32_t calls_{1};
     bool expired_{false};
 };
+
 } // namespace ddwaf
