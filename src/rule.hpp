@@ -6,19 +6,17 @@
 
 #pragma once
 
-#include <atomic>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "action_mapper.hpp"
 #include "clock.hpp"
 #include "event.hpp"
 #include "exclusion/common.hpp"
 #include "expression.hpp"
-#include "iterator.hpp"
 #include "matcher/base.hpp"
+#include "module_category.hpp"
 #include "object_store.hpp"
 
 namespace ddwaf {
@@ -30,14 +28,15 @@ namespace ddwaf {
 class core_rule {
 public:
     enum class source_type : uint8_t { base = 1, user = 2 };
+    enum class verdict_type : uint8_t { none = 0, monitor = 1, block = 2 };
 
     using cache_type = expression::cache_type;
 
     core_rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
         std::shared_ptr<expression> expr, std::vector<std::string> actions = {},
         bool enabled = true, source_type source = source_type::base,
-        action_type blocking_mode = action_type::monitor)
-        : enabled_(enabled), source_(source), blocking_mode_(blocking_mode), id_(std::move(id)),
+        verdict_type verdict = verdict_type::monitor)
+        : enabled_(enabled), source_(source), verdict_(verdict), id_(std::move(id)),
           name_(std::move(name)), tags_(std::move(tags)), actions_(std::move(actions)),
           expr_(std::move(expr))
     {
@@ -46,7 +45,7 @@ public:
         }
 
         // If the tag is not present, the default is `waf`
-        mod_ = get_tag_or("module", "waf");
+        mod_ = string_to_rule_module_category(get_tag_or("module", "waf"));
         // Type is guaranteed to be present
         type_ = get_tag("type");
     }
@@ -85,7 +84,7 @@ public:
     std::string_view get_id() const { return id_; }
     std::string_view get_name() const { return name_; }
     std::string_view get_type() const { return type_; }
-    std::string_view get_module() const { return mod_; }
+    rule_module_category get_module() const { return mod_; }
 
     std::string_view get_tag(const std::string &tag) const
     {
@@ -117,8 +116,8 @@ public:
     const std::vector<std::string> &get_actions() const { return actions_; }
     void set_actions(std::vector<std::string> new_actions) { actions_ = std::move(new_actions); }
 
-    void set_blocking_mode(action_type blocking_mode) { blocking_mode_ = blocking_mode; }
-    action_type get_blocking_mode() const { return blocking_mode_; }
+    void set_verdict(verdict_type verdict) { verdict_ = verdict; }
+    verdict_type get_verdict() const { return verdict_; }
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
         return expr_->get_addresses(addresses);
@@ -128,7 +127,7 @@ protected:
     // General metadata
     bool enabled_{true};
     source_type source_;
-    action_type blocking_mode_{action_type::monitor};
+    verdict_type verdict_{verdict_type::monitor};
     std::string id_;
     std::string name_;
     std::unordered_map<std::string, std::string> tags_;
@@ -136,7 +135,7 @@ protected:
 
     // Frequently accessed tags
     std::string type_;
-    std::string mod_;
+    rule_module_category mod_;
 
     // Tags provided through rules_override
     std::unordered_map<std::string, std::string> ancillary_tags_;

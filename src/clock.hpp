@@ -35,7 +35,8 @@ public:
     // WAF calls expired() quite often, otherwise another solution would be
     // required to minimise syscalls.
     explicit timer(std::chrono::microseconds exp, uint32_t syscall_period = default_syscall_period)
-        : start_(monotonic_clock::now()), end_(start_ + exp), syscall_period_(syscall_period)
+        : start_(monotonic_clock::now()), end_(add_saturated(start_, exp)),
+          syscall_period_(syscall_period)
     {}
 
     bool expired()
@@ -58,6 +59,14 @@ public:
     }
 
 protected:
+    static monotonic_clock::time_point add_saturated(
+        monotonic_clock::time_point augend, std::chrono::microseconds addend)
+    {
+        return (addend > (monotonic_clock::time_point::max() - augend))
+                   ? monotonic_clock::time_point::max()
+                   : augend + addend;
+    }
+
     constexpr static uint32_t default_syscall_period{16};
 
     monotonic_clock::time_point start_;

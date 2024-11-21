@@ -23,6 +23,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/sha256.cpp
     ${libddwaf_SOURCE_DIR}/src/uuid.cpp
     ${libddwaf_SOURCE_DIR}/src/action_mapper.cpp
+    ${libddwaf_SOURCE_DIR}/src/builder/module_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/processor_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/sql_base.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/pgsql.cpp

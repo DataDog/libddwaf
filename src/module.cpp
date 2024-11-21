@@ -63,64 +63,61 @@ std::optional<event> eval_rule(const core_rule &rule, const object_store &store,
 
 } // namespace
 
-void rule_module::eval(std::vector<event> &events, object_store &store, module_cache &cache,
-    const exclusion::context_policy &exclusion,
+void rule_module::eval_with_collections(std::vector<event> &events, object_store &store,
+    cache_type &cache, const exclusion::context_policy &exclusion,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
-    for (std::size_t i = 0; i < rules_.size(); ++i) {
-        const auto &rule = *rules_[i];
-        auto &rule_cache = cache.rules[i];
-
-        auto event = eval_rule(rule, store, rule_cache, exclusion, dynamic_matchers, deadline);
-        if (event.has_value()) {
-            events.emplace_back(std::move(*event));
-            DDWAF_DEBUG("Found event on rule {}", rule.get_id());
-            break;
-        }
-    }
-}
-
-void rule_collection_module::eval(std::vector<event> &events, object_store &store,
-    module_cache &cache, const exclusion::context_policy &exclusion,
-    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-    ddwaf::timer &deadline) const
-{
-    // TODO Optimize by separating rule collections
-    for (std::size_t i = 0; i < rules_.size(); ++i) {
-        auto *rule = rules_[i];
-        const auto collection_name = rule->get_type();
-        auto &collection_cache = cache.collections[collection_name];
-        if (collection_cache.type >= rule->get_blocking_mode()) {
+    for (const auto &collection : collections_) {
+        DDWAF_DEBUG("Evaluating collection: {}", collection.name);
+        auto &collection_cache = cache.collections[collection.name];
+        if (collection_cache.type >= collection.type) {
             // If the result was cached but ephemeral, clear it. Note that this is
             // just a workaround taking advantage of the order of evaluation of
             // collections. Collections might be removed in the future altogether.
-            if (collection_cache.type == rule->get_blocking_mode() && collection_cache.ephemeral) {
-                collection_cache.type = action_type::none;
+            if (collection_cache.type == collection.type && collection_cache.ephemeral) {
+                collection_cache.type = core_rule::verdict_type::none;
                 collection_cache.ephemeral = false;
             } else {
-                // Skip all rules with the same type
-                while (++i < rules_.size() && collection_name == rules_[i]->get_type()) {}
                 continue;
             }
         }
 
-        for (; i < rules_.size() && collection_name == rules_[i]->get_type(); ++i) {
-            rule = rules_[i];
-            auto &rule_cache = cache.rules[i];
+        for (std::size_t i = collection.begin; i < collection.end; ++i) {
+            auto &rule = *rules_[i];
             auto event =
-                eval_rule(*rules_[i], store, rule_cache, exclusion, dynamic_matchers, deadline);
+                eval_rule(rule, store, cache.rules[i], exclusion, dynamic_matchers, deadline);
             if (event.has_value()) {
-                collection_cache.type = rule->get_blocking_mode();
+                collection_cache.type = collection.type;
                 collection_cache.ephemeral = event->ephemeral;
 
                 events.emplace_back(std::move(*event));
-                DDWAF_DEBUG("Found event on rule {}", rule->get_id());
-
+                DDWAF_DEBUG("Found event on rule {}", rule.get_id());
                 break;
             }
         }
     }
 }
 
+void rule_module::eval(std::vector<event> &events, object_store &store, cache_type &cache,
+    const exclusion::context_policy &exclusion,
+    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
+    ddwaf::timer &deadline) const
+{
+    if (collections_.empty()) {
+        for (std::size_t i = 0; i < rules_.size(); ++i) {
+            const auto &rule = *rules_[i];
+            auto &rule_cache = cache.rules[i];
+
+            auto event = eval_rule(rule, store, rule_cache, exclusion, dynamic_matchers, deadline);
+            if (event.has_value()) {
+                events.emplace_back(std::move(*event));
+                DDWAF_DEBUG("Found event on rule {}", rule.get_id());
+                break;
+            }
+        }
+    } else {
+        eval_with_collections(events, store, cache, exclusion, dynamic_matchers, deadline);
+    }
+}
 } // namespace ddwaf

@@ -74,10 +74,9 @@ std::set<core_rule *> references_to_rules(
     return rule_refs;
 }
 
-action_type obtain_blocking_mode(
+core_rule::verdict_type obtain_rule_verdict(
     const action_mapper &mapper, const std::vector<std::string> &rule_actions)
 {
-    action_type mode = action_type::monitor;
     for (const auto &action : rule_actions) {
         auto it = mapper.find(action);
         if (it == mapper.end()) {
@@ -85,11 +84,11 @@ action_type obtain_blocking_mode(
         }
 
         auto action_mode = it->second.type;
-        if (is_blocking_action(action_mode) && mode < action_mode) {
-            mode = action_mode;
+        if (is_blocking_action(action_mode)) {
+            return core_rule::verdict_type::block;
         }
     }
-    return mode;
+    return core_rule::verdict_type::monitor;
 }
 
 } // namespace
@@ -166,8 +165,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
                 continue;
             }
 
-            auto mode = obtain_blocking_mode(*actions_, (*it)->get_actions());
-            (*it)->set_blocking_mode(mode);
+            auto mode = obtain_rule_verdict(*actions_, (*it)->get_actions());
+            (*it)->set_verdict(mode);
 
             ++it;
         }
@@ -177,7 +176,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         final_user_rules_.clear();
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : user_rules_) {
-            auto mode = obtain_blocking_mode(*actions_, spec.actions);
+            auto mode = obtain_rule_verdict(*actions_, spec.actions);
             auto rule_ptr = std::make_shared<core_rule>(
                 id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source, mode);
             if (!rule_ptr->is_enabled()) {
