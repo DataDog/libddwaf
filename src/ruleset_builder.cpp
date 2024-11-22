@@ -14,13 +14,11 @@
 #include <vector>
 
 #include "action_mapper.hpp"
-#include "builder/module_builder.hpp"
 #include "exception.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
 #include "indexer.hpp"
 #include "log.hpp"
-#include "module.hpp"
 #include "parameter.hpp"
 #include "parser/common.hpp"
 #include "parser/parser.hpp"
@@ -230,8 +228,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     }
 
     auto rs = std::make_shared<ruleset>();
-    rs->insert_rules(final_base_rules_.items());
-    rs->insert_rules(final_user_rules_.items());
+    rs->insert_rules(final_base_rules_.items(), final_user_rules_.items());
     rs->insert_filters(rule_filters_);
     rs->insert_filters(input_filters_);
     rs->insert_preprocessors(preprocessors_);

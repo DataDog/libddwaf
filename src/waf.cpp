@@ -8,14 +8,12 @@
 #include <stdexcept>
 #include <utility>
 
-#include "action_mapper.hpp"
 #include "ddwaf.h"
 #include "exception.hpp"
 #include "log.hpp"
 #include "obfuscator.hpp"
 #include "parameter.hpp"
 #include "parser/parser.hpp"
-#include "ruleset.hpp"
 #include "ruleset_builder.hpp"
 #include "ruleset_info.hpp"
 #include "utils.hpp"
@@ -39,6 +37,7 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
         }
     }
 
+#ifdef LIBDDWAF_ENABLE_PARSER_V1
     // Prevent combining version 1 of the ruleset and the builder
     if (version == 1) {
         ddwaf::ruleset rs;
@@ -50,6 +49,7 @@ waf::waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_l
         ruleset_ = std::make_shared<ddwaf::ruleset>(std::move(rs));
         return;
     }
+#endif
 
     if (version == 2) {
         DDWAF_DEBUG("Parsing ruleset with schema version 2.x");

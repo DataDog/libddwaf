@@ -4,9 +4,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "common/gtest_utils.hpp"
-#include "parser/common.hpp"
-#include "parser/parser.hpp"
+#ifdef LIBDDWAF_ENABLE_PARSER_V1
+#  include "common/gtest_utils.hpp"
+#  include "parser/common.hpp"
+#  include "parser/parser.hpp"
 
 using namespace ddwaf;
 
@@ -66,7 +67,7 @@ void run_test(ddwaf_handle handle)
     ddwaf_context_destroy(context);
 }
 
-TEST(TestTestDiagnosticsV1Integration, Basic)
+TEST(TestDiagnosticsV1Integration, Basic)
 {
     auto rule = yaml_to_object(
         R"({version: '1.1', events: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operation: match_regex, parameters: {inputs: [arg1], regex: .*}}, {operation: match_regex, parameters: {inputs: [arg2:x], regex: .*}},{operation: match_regex, parameters: {inputs: [arg2:y], regex: .*}}]}]})");
@@ -101,7 +102,7 @@ TEST(TestTestDiagnosticsV1Integration, Basic)
     ddwaf_destroy(handle);
 }
 
-TEST(TestTestDiagnosticsV1Integration, TestInvalidRule)
+TEST(TestDiagnosticsV1Integration, TestInvalidRule)
 {
     auto rule = read_file("invalid_single_v1.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -139,7 +140,7 @@ TEST(TestTestDiagnosticsV1Integration, TestInvalidRule)
     ddwaf_object_free(&diagnostics);
 }
 
-TEST(TestTestDiagnosticsV1Integration, TestMultipleSameInvalidRules)
+TEST(TestDiagnosticsV1Integration, TestMultipleSameInvalidRules)
 {
     auto rule = read_file("invalid_multiple_same_v1.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -178,7 +179,7 @@ TEST(TestTestDiagnosticsV1Integration, TestMultipleSameInvalidRules)
     ddwaf_object_free(&diagnostics);
 }
 
-TEST(TestTestDiagnosticsV1Integration, TestMultipleDiffInvalidRules)
+TEST(TestDiagnosticsV1Integration, TestMultipleDiffInvalidRules)
 {
     auto rule = read_file("invalid_multiple_diff_v1.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -227,7 +228,7 @@ TEST(TestTestDiagnosticsV1Integration, TestMultipleDiffInvalidRules)
     ddwaf_object_free(&diagnostics);
 }
 
-TEST(TestTestDiagnosticsV1Integration, TestMultipleMixInvalidRules)
+TEST(TestDiagnosticsV1Integration, TestMultipleMixInvalidRules)
 {
     auto rule = read_file("invalid_multiple_mix_v1.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -287,7 +288,7 @@ TEST(TestTestDiagnosticsV1Integration, TestMultipleMixInvalidRules)
     ddwaf_destroy(handle);
 }
 
-TEST(TestTestDiagnosticsV1Integration, TestInvalidDuplicate)
+TEST(TestDiagnosticsV1Integration, TestInvalidDuplicate)
 {
     auto rule = read_file("invalid_duplicate_v1.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -326,7 +327,7 @@ TEST(TestTestDiagnosticsV1Integration, TestInvalidDuplicate)
     ddwaf_destroy(handle);
 }
 
-TEST(TestTestDiagnosticsV1Integration, TestInvalidTooManyTransformers)
+TEST(TestDiagnosticsV1Integration, TestInvalidTooManyTransformers)
 {
     auto rule = read_file("invalid_too_many_transformers_v1.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -366,3 +367,4 @@ TEST(TestTestDiagnosticsV1Integration, TestInvalidTooManyTransformers)
 }
 
 } // namespace
+#endif

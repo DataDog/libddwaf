@@ -4,37 +4,39 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <cstddef>
-#include <cstdint>
-#include <exception>
-#include <memory>
-#include <string>
-#include <string_view>
-#include <unordered_map>
-#include <unordered_set>
-#include <utility>
-#include <vector>
+#ifdef LIBDDWAF_ENABLE_PARSER_V1
 
-#include "condition/base.hpp"
-#include "condition/scalar_condition.hpp"
-#include "ddwaf.h"
-#include "exception.hpp"
-#include "expression.hpp"
-#include "log.hpp"
-#include "matcher/base.hpp"
-#include "matcher/is_sqli.hpp"
-#include "matcher/is_xss.hpp"
-#include "matcher/phrase_match.hpp"
-#include "matcher/regex_match.hpp"
-#include "parameter.hpp"
-#include "parser/common.hpp"
-#include "parser/parser.hpp"
-#include "rule.hpp"
-#include "ruleset.hpp"
-#include "ruleset_info.hpp"
-#include "target_address.hpp"
-#include "transformer/base.hpp"
-#include "utils.hpp"
+#  include <cstddef>
+#  include <cstdint>
+#  include <exception>
+#  include <memory>
+#  include <string>
+#  include <string_view>
+#  include <unordered_map>
+#  include <unordered_set>
+#  include <utility>
+#  include <vector>
+
+#  include "condition/base.hpp"
+#  include "condition/scalar_condition.hpp"
+#  include "ddwaf.h"
+#  include "exception.hpp"
+#  include "expression.hpp"
+#  include "log.hpp"
+#  include "matcher/base.hpp"
+#  include "matcher/is_sqli.hpp"
+#  include "matcher/is_xss.hpp"
+#  include "matcher/phrase_match.hpp"
+#  include "matcher/regex_match.hpp"
+#  include "parameter.hpp"
+#  include "parser/common.hpp"
+#  include "parser/parser.hpp"
+#  include "rule.hpp"
+#  include "ruleset.hpp"
+#  include "ruleset_info.hpp"
+#  include "target_address.hpp"
+#  include "transformer/base.hpp"
+#  include "utils.hpp"
 
 namespace ddwaf::parser::v1 {
 
@@ -208,3 +210,5 @@ void parse(
 }
 
 } // namespace ddwaf::parser::v1
+
+#endif

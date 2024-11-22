@@ -4,8 +4,24 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "exception.hpp"
+#include <cstddef>
+#include <memory>
 #include <module.hpp>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+#include "clock.hpp"
+#include "event.hpp"
+#include "exception.hpp"
+#include "exclusion/common.hpp"
+#include "log.hpp"
+#include "matcher/base.hpp"
+#include "object_store.hpp"
+#include "rule.hpp"
 
 namespace ddwaf {
 
@@ -88,7 +104,7 @@ void rule_module::eval_with_collections(std::vector<event> &events, object_store
             auto event =
                 eval_rule(rule, store, cache.rules[i], exclusion, dynamic_matchers, deadline);
             if (event.has_value()) {
-                collection_cache.type = collection.type;
+                collection_cache.type = rule.get_verdict();
                 collection_cache.ephemeral = event->ephemeral;
 
                 events.emplace_back(std::move(*event));

@@ -26,6 +26,7 @@ struct rule_module_cache {
 
 class rule_module {
 public:
+    using verdict_type = core_rule::verdict_type;
     using cache_type = rule_module_cache;
     using iterator = std::vector<core_rule *>::iterator;
     using const_iterator = std::vector<core_rule *>::const_iterator;
@@ -56,7 +57,7 @@ protected:
 
     struct rule_collection {
         std::string_view name;
-        core_rule::verdict_type type;
+        verdict_type type;
         std::size_t begin;
         std::size_t end;
     };

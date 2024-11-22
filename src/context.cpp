@@ -4,12 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <string_view>
 #include <vector>
 
 #include "clock.hpp"
-#include "collection.hpp"
 #include "context.hpp"
 #include "ddwaf.h"
 #include "event.hpp"
@@ -236,37 +236,10 @@ std::vector<event> context::eval_rules(
 {
     std::vector<ddwaf::event> events;
 
-    auto eval_collection = [&](const auto &type, const auto &collection) {
-        auto it = collection_cache_.find(type);
-        if (it == collection_cache_.end()) {
-            auto [new_it, res] = collection_cache_.emplace(type, collection_cache{});
-            it = new_it;
-        }
-        collection.match(events, store_, it->second, policy, ruleset_->rule_matchers, deadline);
-    };
-
-    // Evaluate user priority collections first
-    for (auto &[type, collection] : ruleset_->user_priority_collections) {
-        DDWAF_DEBUG("Evaluating user priority collection '{}'", type);
-        eval_collection(type, collection);
-    }
-
-    // Evaluate priority collections first
-    for (auto &[type, collection] : ruleset_->base_priority_collections) {
-        DDWAF_DEBUG("Evaluating priority collection '{}'", type);
-        eval_collection(type, collection);
-    }
-
-    // Evaluate regular collection after
-    for (auto &[type, collection] : ruleset_->user_collections) {
-        DDWAF_DEBUG("Evaluating user collection '{}'", type);
-        eval_collection(type, collection);
-    }
-
-    // Evaluate regular collection after
-    for (auto &[type, collection] : ruleset_->base_collections) {
-        DDWAF_DEBUG("Evaluating base collection '{}'", type);
-        eval_collection(type, collection);
+    for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
+        const auto &mod = ruleset_->rule_modules[i];
+        auto &cache = rule_module_cache_[i];
+        mod.eval(events, store_, cache, policy, ruleset_->rule_matchers, deadline);
     }
 
     return events;

@@ -31,9 +31,13 @@ public:
 
     explicit context(std::shared_ptr<ruleset> ruleset) : ruleset_(std::move(ruleset))
     {
+        processor_cache_.reserve(ruleset_->preprocessors.size() + ruleset_->postprocessors.size());
         rule_filter_cache_.reserve(ruleset_->rule_filters.size());
         input_filter_cache_.reserve(ruleset_->input_filters.size());
-        collection_cache_.reserve(ruleset_->collection_types.size());
+
+        for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
+            ruleset_->rule_modules[i].init_cache(rule_module_cache_[i]);
+        }
     }
 
     context(const context &) = delete;
@@ -53,7 +57,7 @@ public:
     std::vector<event> eval_rules(const exclusion::context_policy &policy, ddwaf::timer &deadline);
 
 protected:
-    bool is_first_run() const { return collection_cache_.empty(); }
+    bool is_first_run() const { return store_.empty(); }
     bool check_new_rule_targets() const
     {
         // NOLINTNEXTLINE(readability-use-anyofallof)
@@ -88,7 +92,7 @@ protected:
     exclusion::context_policy exclusion_policy_;
 
     // Cache of collections to avoid processing once a result has been obtained
-    memory::unordered_map<std::string_view, collection::cache_type> collection_cache_{};
+    std::array<rule_module_cache, rule_module_count> rule_module_cache_;
 };
 
 class context_wrapper {

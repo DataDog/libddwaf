@@ -32,24 +32,24 @@ TEST(TestRuleset, InsertSingleRegularBaseRules)
 
     {
         ddwaf::ruleset ruleset;
-        for (const auto &rule : rules) { ruleset.insert_rule(rule); }
+        ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        EXPECT_EQ(ruleset.base_collections.size(), 3);
-        EXPECT_EQ(ruleset.base_priority_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_priority_collections.size(), 0);
+        /*        //EXPECT_EQ(ruleset.base/g_collections.size(), 3);*/
+        /*//EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);*/
+        /*//EXPECT_EQ(ruleset.user/g_collections.size(), 0);*/
+        /*//EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);*/
     }
 
     {
         ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules);
+        ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        EXPECT_EQ(ruleset.base_collections.size(), 3);
-        EXPECT_EQ(ruleset.base_priority_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_priority_collections.size(), 0);
+        /*        //EXPECT_EQ(ruleset.base/g_collections.size(), 3);*/
+        /*//EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);*/
+        /*//EXPECT_EQ(ruleset.user/g_collections.size(), 0);*/
+        /*//EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);*/
     }
 }
 
@@ -66,24 +66,24 @@ TEST(TestRuleset, InsertSinglePriorityBaseRules)
 
     {
         ddwaf::ruleset ruleset;
-        for (const auto &rule : rules) { ruleset.insert_rule(rule); }
+        ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        EXPECT_EQ(ruleset.base_collections.size(), 0);
-        EXPECT_EQ(ruleset.base_priority_collections.size(), 3);
-        EXPECT_EQ(ruleset.user_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_priority_collections.size(), 0);
+        ////EXPECT_EQ(ruleset.base/g_collections.size(), 0);
+        ////EXPECT_EQ(ruleset.base/g_priority_collections.size(), 3);
+        ////EXPECT_EQ(ruleset.user/g_collections.size(), 0);
+        ////EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);
     }
 
     {
         ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules);
+        ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        EXPECT_EQ(ruleset.base_collections.size(), 0);
-        EXPECT_EQ(ruleset.base_priority_collections.size(), 3);
-        EXPECT_EQ(ruleset.user_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_priority_collections.size(), 0);
+        ////EXPECT_EQ(ruleset.base/g_collections.size(), 0);
+        ////EXPECT_EQ(ruleset.base/g_priority_collections.size(), 3);
+        ////EXPECT_EQ(ruleset.user/g_collections.size(), 0);
+        ////EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);
     }
 }
 
@@ -100,24 +100,24 @@ TEST(TestRuleset, InsertSingleMixedBaseRules)
 
     {
         ddwaf::ruleset ruleset;
-        for (const auto &rule : rules) { ruleset.insert_rule(rule); }
+        ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        EXPECT_EQ(ruleset.base_collections.size(), 3);
-        EXPECT_EQ(ruleset.base_priority_collections.size(), 2);
-        EXPECT_EQ(ruleset.user_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_priority_collections.size(), 0);
+        // EXPECT_EQ(ruleset.base/g_collections.size(), 3);
+        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 2);
+        // EXPECT_EQ(ruleset.user/g_collections.size(), 0);
+        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);
     }
 
     {
         ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules);
+        ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        EXPECT_EQ(ruleset.base_collections.size(), 3);
-        EXPECT_EQ(ruleset.base_priority_collections.size(), 2);
-        EXPECT_EQ(ruleset.user_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_priority_collections.size(), 0);
+        // EXPECT_EQ(ruleset.base/g_collections.size(), 3);
+        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 2);
+        // EXPECT_EQ(ruleset.user/g_collections.size(), 0);
+        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);
     }
 }
 
@@ -140,25 +140,25 @@ TEST(TestRuleset, InsertSingleRegularUserRules)
 
     {
         ddwaf::ruleset ruleset;
-        for (const auto &rule : rules) { ruleset.insert_rule(rule); }
+        ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        EXPECT_EQ(ruleset.base_collections.size(), 0);
-        EXPECT_EQ(ruleset.base_priority_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_collections.size(), 3);
-        EXPECT_EQ(ruleset.user_priority_collections.size(), 0);
+        // EXPECT_EQ(ruleset.base/g_collections.size(), 0);
+        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);
+        // EXPECT_EQ(ruleset.user/g_collections.size(), 3);
+        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);
     }
 
     {
         ddwaf::ruleset ruleset;
 
-        ruleset.insert_rules(rules);
+        ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        EXPECT_EQ(ruleset.base_collections.size(), 0);
-        EXPECT_EQ(ruleset.base_priority_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_collections.size(), 3);
-        EXPECT_EQ(ruleset.user_priority_collections.size(), 0);
+        // EXPECT_EQ(ruleset.base/g_collections.size(), 0);
+        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);
+        // EXPECT_EQ(ruleset.user/g_collections.size(), 3);
+        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);
     }
 }
 
@@ -180,24 +180,24 @@ TEST(TestRuleset, InsertSinglePriorityUserRules)
     };
     {
         ddwaf::ruleset ruleset;
-        for (const auto &rule : rules) { ruleset.insert_rule(rule); }
+        ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        EXPECT_EQ(ruleset.base_collections.size(), 0);
-        EXPECT_EQ(ruleset.base_priority_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_priority_collections.size(), 3);
+        // EXPECT_EQ(ruleset.base/g_collections.size(), 0);
+        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);
+        // EXPECT_EQ(ruleset.user/g_collections.size(), 0);
+        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 3);
     }
 
     {
         ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules);
+        ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        EXPECT_EQ(ruleset.base_collections.size(), 0);
-        EXPECT_EQ(ruleset.base_priority_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_priority_collections.size(), 3);
+        // EXPECT_EQ(ruleset.base/g_collections.size(), 0);
+        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);
+        // EXPECT_EQ(ruleset.user/g_collections.size(), 0);
+        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 3);
     }
 }
 
@@ -220,24 +220,24 @@ TEST(TestRuleset, InsertSingleMixedUserRules)
 
     {
         ddwaf::ruleset ruleset;
-        for (const auto &rule : rules) { ruleset.insert_rule(rule); }
+        ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        EXPECT_EQ(ruleset.base_collections.size(), 0);
-        EXPECT_EQ(ruleset.base_priority_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_collections.size(), 3);
-        EXPECT_EQ(ruleset.user_priority_collections.size(), 2);
+        // EXPECT_EQ(ruleset.base/g_collections.size(), 0);
+        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);
+        // EXPECT_EQ(ruleset.user/g_collections.size(), 3);
+        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 2);
     }
 
     {
         ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules);
+        ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        EXPECT_EQ(ruleset.base_collections.size(), 0);
-        EXPECT_EQ(ruleset.base_priority_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_collections.size(), 3);
-        EXPECT_EQ(ruleset.user_priority_collections.size(), 2);
+        // EXPECT_EQ(ruleset.base/g_collections.size(), 0);
+        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);
+        // EXPECT_EQ(ruleset.user/g_collections.size(), 3);
+        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 2);
     }
 }
 
@@ -260,24 +260,24 @@ TEST(TestRuleset, InsertSingleRegularMixedRules)
 
     {
         ddwaf::ruleset ruleset;
-        for (const auto &rule : rules) { ruleset.insert_rule(rule); }
+        ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        EXPECT_EQ(ruleset.base_collections.size(), 3);
-        EXPECT_EQ(ruleset.base_priority_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_collections.size(), 2);
-        EXPECT_EQ(ruleset.user_priority_collections.size(), 0);
+        // EXPECT_EQ(ruleset.base/g_collections.size(), 3);
+        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);
+        // EXPECT_EQ(ruleset.user/g_collections.size(), 2);
+        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);
     }
 
     {
         ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules);
+        ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        EXPECT_EQ(ruleset.base_collections.size(), 3);
-        EXPECT_EQ(ruleset.base_priority_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_collections.size(), 2);
-        EXPECT_EQ(ruleset.user_priority_collections.size(), 0);
+        // EXPECT_EQ(ruleset.base/g_collections.size(), 3);
+        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);
+        // EXPECT_EQ(ruleset.user/g_collections.size(), 2);
+        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);
     }
 }
 
@@ -299,24 +299,24 @@ TEST(TestRuleset, InsertSinglePriorityMixedRules)
     };
     {
         ddwaf::ruleset ruleset;
-        for (const auto &rule : rules) { ruleset.insert_rule(rule); }
+        ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        EXPECT_EQ(ruleset.base_collections.size(), 0);
-        EXPECT_EQ(ruleset.base_priority_collections.size(), 3);
-        EXPECT_EQ(ruleset.user_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_priority_collections.size(), 2);
+        // EXPECT_EQ(ruleset.base/g_collections.size(), 0);
+        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 3);
+        // EXPECT_EQ(ruleset.user/g_collections.size(), 0);
+        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 2);
     }
 
     {
         ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules);
+        ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        EXPECT_EQ(ruleset.base_collections.size(), 0);
-        EXPECT_EQ(ruleset.base_priority_collections.size(), 3);
-        EXPECT_EQ(ruleset.user_collections.size(), 0);
-        EXPECT_EQ(ruleset.user_priority_collections.size(), 2);
+        // EXPECT_EQ(ruleset.base/g_collections.size(), 0);
+        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 3);
+        // EXPECT_EQ(ruleset.user/g_collections.size(), 0);
+        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 2);
     }
 }
 
@@ -345,24 +345,24 @@ TEST(TestRuleset, InsertSingleMixedMixedRules)
 
     {
         ddwaf::ruleset ruleset;
-        for (const auto &rule : rules) { ruleset.insert_rule(rule); }
+        ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 12);
-        EXPECT_EQ(ruleset.base_collections.size(), 3);
-        EXPECT_EQ(ruleset.base_priority_collections.size(), 2);
-        EXPECT_EQ(ruleset.user_collections.size(), 3);
-        EXPECT_EQ(ruleset.user_priority_collections.size(), 2);
+        // EXPECT_EQ(ruleset.base/g_collections.size(), 3);
+        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 2);
+        // EXPECT_EQ(ruleset.user/g_collections.size(), 3);
+        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 2);
     }
 
     {
         ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules);
+        ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 12);
-        EXPECT_EQ(ruleset.base_collections.size(), 3);
-        EXPECT_EQ(ruleset.base_priority_collections.size(), 2);
-        EXPECT_EQ(ruleset.user_collections.size(), 3);
-        EXPECT_EQ(ruleset.user_priority_collections.size(), 2);
+        // EXPECT_EQ(ruleset.base/g_collections.size(), 3);
+        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 2);
+        // EXPECT_EQ(ruleset.user/g_collections.size(), 3);
+        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 2);
     }
 }
 
