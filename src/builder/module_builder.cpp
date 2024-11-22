@@ -45,7 +45,8 @@ rule_module rule_module_builder::build()
             if (!collections_.empty()) {
                 collections_.back().end = i;
             }
-            collections_.emplace_back(cur_key, rule->get_verdict(), i, i + 1);
+            using rule_collection = rule_module::rule_collection;
+            collections_.emplace_back(rule_collection{cur_key, rule->get_verdict(), i, i + 1});
             prev_key = cur_key;
         }
     }
