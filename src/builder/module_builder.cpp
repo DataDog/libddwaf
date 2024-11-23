@@ -55,7 +55,7 @@ rule_module rule_module_builder::build()
         collections_.back().end = rules_.size();
     }
 
-    return rule_module{std::move(rules_), std::move(collections_)};
+    return rule_module{std::move(rules_), std::move(collections_), policy_};
 }
 
 std::array<rule_module, rule_module_count> rule_module_set_builder::build(

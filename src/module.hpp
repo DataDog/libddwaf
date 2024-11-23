@@ -31,6 +31,11 @@ public:
     using iterator = std::vector<core_rule *>::iterator;
     using const_iterator = std::vector<core_rule *>::const_iterator;
 
+    enum class expiration_policy : uint8_t {
+        expiring,
+        non_expiring,
+    };
+
     rule_module() = default;
     ~rule_module() = default;
     rule_module(const rule_module &) = default;
@@ -43,6 +48,8 @@ public:
         cache.rules.resize(rules_.size());
         cache.collections.reserve(collections_.size());
     }
+
+    [[nodiscard]] bool may_expire() const { return policy_ == expiration_policy::expiring; }
 
     verdict_type eval(std::vector<event> &events, object_store &store, cache_type &cache,
         const exclusion::context_policy &exclusion,
@@ -62,13 +69,15 @@ protected:
         std::size_t end;
     };
 
-    explicit rule_module(
-        std::vector<core_rule *> &&rules, std::vector<rule_collection> &&collections)
-        : rules_(std::move(rules)), collections_(std::move(collections))
+    explicit rule_module(std::vector<core_rule *> &&rules,
+        std::vector<rule_collection> &&collections,
+        expiration_policy policy = expiration_policy::expiring)
+        : rules_(std::move(rules)), collections_(std::move(collections)), policy_(policy)
     {}
 
     std::vector<core_rule *> rules_;
     std::vector<rule_collection> collections_;
+    expiration_policy policy_{expiration_policy::expiring};
 
     friend class rule_module_builder;
 };

@@ -76,4 +76,9 @@ protected:
     bool expired_{false};
 };
 
+inline timer endless_timer()
+{
+    return timer(std::chrono::microseconds{std::numeric_limits<uint64_t>::max()});
+}
+
 } // namespace ddwaf

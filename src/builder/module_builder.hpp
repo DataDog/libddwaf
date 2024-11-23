@@ -18,10 +18,11 @@ public:
     using source_type = core_rule::source_type;
     using source_precedence_fn_type = bool (*)(source_type left, source_type right);
     using grouping_key_fn_type = std::string_view (*)(const core_rule *rule);
+    using expiration_policy = rule_module::expiration_policy;
 
-    rule_module_builder(
-        source_precedence_fn_type source_precedence, grouping_key_fn_type grouping_key)
-        : source_precedence_fn_(source_precedence), grouping_key_fn_(grouping_key)
+    rule_module_builder(source_precedence_fn_type source_precedence,
+        grouping_key_fn_type grouping_key, expiration_policy policy = expiration_policy::expiring)
+        : source_precedence_fn_(source_precedence), grouping_key_fn_(grouping_key), policy_(policy)
     {}
     ~rule_module_builder() = default;
     rule_module_builder(rule_module_builder &&) = delete;
@@ -38,61 +39,8 @@ protected:
     grouping_key_fn_type grouping_key_fn_;
     std::vector<core_rule *> rules_;
     std::vector<rule_module::rule_collection> collections_;
+    expiration_policy policy_;
 };
-
-// Modules:
-//   - Network-ACL:
-//      - Order:
-//          blocking
-//          non-blocking
-//      - Short-circuit: rule match
-//      - No timing
-//   - Authentication-ACL:
-//      - Order:
-//          blocking
-//          non-blocking
-//      - Short-circuit: rule match
-//      - No timing
-//   - Custom-ACL:
-//      - Order:
-//          blocking user rules
-//          blocking datadog rules
-//          non-blocking user
-//          non-blocking datadog rules
-//      - Short-circuit: rule match
-//      - Timed
-//   - Configuration:
-//      - Order:
-//          blocking user rules
-//          blocking datadog rules
-//          non-blocking user
-//          non-blocking datadog rules
-//      - Short-circuit: rule match
-//      - Timed
-//   - Business logic:
-//      - Order:
-//          blocking user rules
-//          blocking datadog rules
-//          non-blocking user
-//          non-blocking datadog rules
-//      - Short-circuit: rule match
-//      - Timed
-//   - RASP:
-//      - Order:
-//          blocking datadog rules
-//          blocking user rules
-//          non-blocking datadog rules
-//          non-blocking user
-//      - Short-circuit: rule match
-//      - Timed
-//   - WAF:
-//      - Order:
-//          blocking datadog rules
-//          blocking user rules
-//          non-blocking datadog rules
-//          non-blocking user
-//      - Short-circuit: rule match, but only rules of the same type (collections)
-//      - Timed
 
 class rule_module_set_builder {
 public:
@@ -125,13 +73,20 @@ protected:
     static constexpr std::string_view null_grouping_key(const core_rule * /*rule*/) { return {}; }
 
     std::array<rule_module_builder, rule_module_count> builders_{{
-        {base_rule_precedence, null_grouping_key}, // Network-ACL
-        {base_rule_precedence, null_grouping_key}, // Authentication-ACL
-        {user_rule_precedence, null_grouping_key}, // Custom-ACL
-        {user_rule_precedence, null_grouping_key}, // Configuration
-        {user_rule_precedence, null_grouping_key}, // Business logic
-        {base_rule_precedence, null_grouping_key}, // RASP
-        {user_rule_precedence, type_grouping_key}, // WAF
+        // Network-ACL
+        {base_rule_precedence, null_grouping_key, rule_module::expiration_policy::non_expiring},
+        // Authentication-ACL
+        {base_rule_precedence, null_grouping_key, rule_module::expiration_policy::non_expiring},
+        // Custom-ACL
+        {user_rule_precedence, null_grouping_key},
+        // Configuration
+        {user_rule_precedence, null_grouping_key},
+        // Business logic
+        {user_rule_precedence, null_grouping_key},
+        // RASP
+        {base_rule_precedence, null_grouping_key},
+        // WAF
+        {user_rule_precedence, type_grouping_key},
     }};
 };
 

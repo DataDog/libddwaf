@@ -236,12 +236,21 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
 std::vector<event> context::eval_rules(
     const exclusion::context_policy &policy, ddwaf::timer &deadline)
 {
+    static auto no_deadline = endless_timer();
+
     std::vector<ddwaf::event> events;
 
     for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
         const auto &mod = ruleset_->rule_modules[i];
         auto &cache = rule_module_cache_[i];
-        auto verdict = mod.eval(events, store_, cache, policy, ruleset_->rule_matchers, deadline);
+
+        rule_module::verdict_type verdict = rule_module::verdict_type::none;
+        if (mod.may_expire()) {
+            verdict = mod.eval(events, store_, cache, policy, ruleset_->rule_matchers, deadline);
+        } else {
+            verdict = mod.eval(events, store_, cache, policy, ruleset_->rule_matchers, no_deadline);
+        }
+
         if (verdict == rule_module::verdict_type::block) {
             break;
         }
