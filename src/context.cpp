@@ -16,8 +16,10 @@
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "log.hpp"
+#include "module.hpp"
 #include "object_store.hpp"
 #include "processor/base.hpp"
+#include "rule.hpp"
 #include "target_address.hpp"
 #include "utils.hpp"
 
@@ -239,7 +241,10 @@ std::vector<event> context::eval_rules(
     for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
         const auto &mod = ruleset_->rule_modules[i];
         auto &cache = rule_module_cache_[i];
-        mod.eval(events, store_, cache, policy, ruleset_->rule_matchers, deadline);
+        auto verdict = mod.eval(events, store_, cache, policy, ruleset_->rule_matchers, deadline);
+        if (verdict == rule_module::verdict_type::block) {
+            break;
+        }
     }
 
     return events;

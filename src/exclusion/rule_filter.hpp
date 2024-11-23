@@ -55,7 +55,7 @@ protected:
     std::shared_ptr<expression> expr_;
     std::unordered_set<core_rule *> rule_targets_;
     filter_mode mode_;
-    std::string action_{};
+    std::string action_;
 };
 
 } // namespace ddwaf::exclusion

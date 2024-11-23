@@ -44,14 +44,14 @@ public:
         cache.collections.reserve(collections_.size());
     }
 
-    void eval(std::vector<event> &events, object_store &store, cache_type &cache,
+    verdict_type eval(std::vector<event> &events, object_store &store, cache_type &cache,
         const exclusion::context_policy &exclusion,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
         ddwaf::timer &deadline) const;
 
 protected:
-    void eval_with_collections(std::vector<event> &events, object_store &store, cache_type &cache,
-        const exclusion::context_policy &exclusion,
+    verdict_type eval_with_collections(std::vector<event> &events, object_store &store,
+        cache_type &cache, const exclusion::context_policy &exclusion,
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
         ddwaf::timer &deadline) const;
 

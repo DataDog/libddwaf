@@ -26,12 +26,16 @@
 namespace ddwaf {
 
 namespace {
-std::optional<event> eval_rule(const core_rule &rule, const object_store &store,
-    core_rule::cache_type &cache, const exclusion::context_policy &policy,
+using verdict_type = rule_module::verdict_type;
+
+std::pair<std::optional<event>, verdict_type> eval_rule(const core_rule &rule,
+    const object_store &store, core_rule::cache_type &cache,
+    const exclusion::context_policy &policy,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline)
 {
     const auto &id = rule.get_id();
+    auto verdict = rule.get_verdict();
 
     if (deadline.expired()) {
         DDWAF_INFO("Ran out of time while evaluating rule '{}'", id);
@@ -40,21 +44,23 @@ std::optional<event> eval_rule(const core_rule &rule, const object_store &store,
 
     if (!rule.is_enabled()) {
         DDWAF_DEBUG("Rule '{}' is disabled", id);
-        return std::nullopt;
+        return {std::nullopt, verdict_type::none};
     }
 
     std::string_view action_override;
     auto exclusion = policy.find(&rule);
     if (exclusion.mode == exclusion::filter_mode::bypass) {
         DDWAF_DEBUG("Bypassing rule '{}'", id);
-        return std::nullopt;
+        return {std::nullopt, verdict_type::none};
     }
 
     if (exclusion.mode == exclusion::filter_mode::monitor) {
-        DDWAF_DEBUG("Monitoring rule '{}'", id);
         action_override = "monitor";
+        verdict = verdict_type::monitor;
+        DDWAF_DEBUG("Monitoring rule '{}'", id);
     } else if (exclusion.mode == exclusion::filter_mode::custom) {
         action_override = exclusion.action_override;
+        verdict = verdict_type::block;
         DDWAF_DEBUG("Evaluating rule '{}' with custom action '{}'", id, action_override);
     } else {
         DDWAF_DEBUG("Evaluating rule '{}'", id);
@@ -68,22 +74,23 @@ std::optional<event> eval_rule(const core_rule &rule, const object_store &store,
             event->action_override = action_override;
         }
 
-        return event;
+        return {event, verdict};
     } catch (const ddwaf::timeout_exception &) {
         DDWAF_INFO("Ran out of time while evaluating rule '{}'", id);
         throw;
     }
 
-    return std::nullopt;
+    return {std::nullopt, verdict_type::none};
 }
 
 } // namespace
 
-void rule_module::eval_with_collections(std::vector<event> &events, object_store &store,
+verdict_type rule_module::eval_with_collections(std::vector<event> &events, object_store &store,
     cache_type &cache, const exclusion::context_policy &exclusion,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
+    verdict_type final_verdict = verdict_type::none;
     for (const auto &collection : collections_) {
         DDWAF_DEBUG("Evaluating collection: {}", collection.name);
         auto &collection_cache = cache.collections[collection.name];
@@ -101,21 +108,26 @@ void rule_module::eval_with_collections(std::vector<event> &events, object_store
 
         for (std::size_t i = collection.begin; i < collection.end; ++i) {
             auto &rule = *rules_[i];
-            auto event =
+            auto [event, verdict] =
                 eval_rule(rule, store, cache.rules[i], exclusion, dynamic_matchers, deadline);
             if (event.has_value()) {
-                collection_cache.type = rule.get_verdict();
+                collection_cache.type = verdict;
                 collection_cache.ephemeral = event->ephemeral;
 
                 events.emplace_back(std::move(*event));
                 DDWAF_DEBUG("Found event on rule {}", rule.get_id());
+
+                if (verdict > final_verdict) {
+                    final_verdict = verdict;
+                }
                 break;
             }
         }
     }
+    return final_verdict;
 }
 
-void rule_module::eval(std::vector<event> &events, object_store &store, cache_type &cache,
+verdict_type rule_module::eval(std::vector<event> &events, object_store &store, cache_type &cache,
     const exclusion::context_policy &exclusion,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline) const
@@ -125,15 +137,17 @@ void rule_module::eval(std::vector<event> &events, object_store &store, cache_ty
             const auto &rule = *rules_[i];
             auto &rule_cache = cache.rules[i];
 
-            auto event = eval_rule(rule, store, rule_cache, exclusion, dynamic_matchers, deadline);
+            auto [event, verdict] =
+                eval_rule(rule, store, rule_cache, exclusion, dynamic_matchers, deadline);
             if (event.has_value()) {
                 events.emplace_back(std::move(*event));
                 DDWAF_DEBUG("Found event on rule {}", rule.get_id());
-                break;
+                return verdict;
             }
         }
-    } else {
-        eval_with_collections(events, store, cache, exclusion, dynamic_matchers, deadline);
+        return verdict_type::none;
     }
+
+    return eval_with_collections(events, store, cache, exclusion, dynamic_matchers, deadline);
 }
 } // namespace ddwaf
