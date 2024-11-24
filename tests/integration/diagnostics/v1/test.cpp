@@ -4,10 +4,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifdef LIBDDWAF_ENABLE_PARSER_V1
-#  include "common/gtest_utils.hpp"
-#  include "parser/common.hpp"
-#  include "parser/parser.hpp"
+#include "common/gtest_utils.hpp"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
 
 using namespace ddwaf;
 
@@ -367,4 +366,3 @@ TEST(TestDiagnosticsV1Integration, TestInvalidTooManyTransformers)
 }
 
 } // namespace
-#endif

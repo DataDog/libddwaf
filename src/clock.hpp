@@ -28,15 +28,14 @@ private:
 };
 #endif // __linux__
 
-class timer {
+// Syscall period refers to the number of calls to expired() before
+// clock_gettime is called. This approach is only feasible because the
+// WAF calls expired() quite often, otherwise another solution would be
+// required to minimise syscalls.
+template <std::size_t SyscallPeriod = 16> class base_timer {
 public:
-    // Syscall period refers to the number of calls to expired() before
-    // clock_gettime is called. This approach is only feasible because the
-    // WAF calls expired() quite often, otherwise another solution would be
-    // required to minimise syscalls.
-    explicit timer(std::chrono::microseconds exp, uint32_t syscall_period = default_syscall_period)
-        : start_(monotonic_clock::now()), end_(add_saturated(start_, exp)),
-          syscall_period_(syscall_period)
+    explicit base_timer(std::chrono::microseconds exp)
+        : start_(monotonic_clock::now()), end_(add_saturated(start_, exp))
     {}
 
     bool expired()
@@ -45,7 +44,7 @@ public:
             if (end_ <= monotonic_clock::now()) {
                 expired_ = true;
             } else {
-                calls_ = syscall_period_;
+                calls_ = SyscallPeriod;
             }
         }
         return expired_;
@@ -67,18 +66,17 @@ protected:
                    : augend + addend;
     }
 
-    constexpr static uint32_t default_syscall_period{16};
-
     monotonic_clock::time_point start_;
     monotonic_clock::time_point end_;
-    uint32_t syscall_period_;
     uint32_t calls_{1};
     bool expired_{false};
 };
 
+using timer = base_timer<16>;
+
 inline timer endless_timer()
 {
-    return timer(std::chrono::microseconds{std::numeric_limits<uint64_t>::max()});
+    return timer{std::chrono::microseconds{std::numeric_limits<uint64_t>::max()}};
 }
 
 } // namespace ddwaf

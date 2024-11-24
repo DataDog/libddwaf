@@ -38,7 +38,7 @@ struct ruleset {
 
         // TODO this could be done with rules vector
         rule_module_set_builder builder;
-        rule_modules = builder.build(base, user);
+        rule_modules = builder.build(rules);
     }
 
     template <typename T>

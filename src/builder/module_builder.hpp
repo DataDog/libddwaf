@@ -52,8 +52,7 @@ public:
     rule_module_set_builder &operator=(const rule_module_set_builder &) = delete;
 
     std::array<rule_module, rule_module_count> build(
-        const std::vector<std::shared_ptr<core_rule>> &base,
-        const std::vector<std::shared_ptr<core_rule>> &user);
+        const std::vector<std::shared_ptr<core_rule>> &rules);
 
 protected:
     // Helpers

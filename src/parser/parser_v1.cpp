@@ -4,39 +4,37 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#ifdef LIBDDWAF_ENABLE_PARSER_V1
+#include <cstddef>
+#include <cstdint>
+#include <exception>
+#include <memory>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
-#  include <cstddef>
-#  include <cstdint>
-#  include <exception>
-#  include <memory>
-#  include <string>
-#  include <string_view>
-#  include <unordered_map>
-#  include <unordered_set>
-#  include <utility>
-#  include <vector>
-
-#  include "condition/base.hpp"
-#  include "condition/scalar_condition.hpp"
-#  include "ddwaf.h"
-#  include "exception.hpp"
-#  include "expression.hpp"
-#  include "log.hpp"
-#  include "matcher/base.hpp"
-#  include "matcher/is_sqli.hpp"
-#  include "matcher/is_xss.hpp"
-#  include "matcher/phrase_match.hpp"
-#  include "matcher/regex_match.hpp"
-#  include "parameter.hpp"
-#  include "parser/common.hpp"
-#  include "parser/parser.hpp"
-#  include "rule.hpp"
-#  include "ruleset.hpp"
-#  include "ruleset_info.hpp"
-#  include "target_address.hpp"
-#  include "transformer/base.hpp"
-#  include "utils.hpp"
+#include "condition/base.hpp"
+#include "condition/scalar_condition.hpp"
+#include "ddwaf.h"
+#include "exception.hpp"
+#include "expression.hpp"
+#include "log.hpp"
+#include "matcher/base.hpp"
+#include "matcher/is_sqli.hpp"
+#include "matcher/is_xss.hpp"
+#include "matcher/phrase_match.hpp"
+#include "matcher/regex_match.hpp"
+#include "parameter.hpp"
+#include "parser/common.hpp"
+#include "parser/parser.hpp"
+#include "rule.hpp"
+#include "ruleset.hpp"
+#include "ruleset_info.hpp"
+#include "target_address.hpp"
+#include "transformer/base.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::parser::v1 {
 
@@ -125,8 +123,9 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
     return std::make_shared<expression>(std::move(conditions));
 }
 
-void parseRule(parameter::map &rule, base_section_info &info,
-    std::unordered_set<std::string_view> &rule_ids, ddwaf::ruleset &rs, ddwaf::object_limits limits)
+void parse_rule(parameter::map &rule, base_section_info &info,
+    std::unordered_set<std::string_view> &rule_ids, std::vector<std::shared_ptr<core_rule>> &rules,
+    ddwaf::object_limits limits)
 {
     auto id = at<std::string>(rule, "id");
     if (rule_ids.find(id) != rule_ids.end()) {
@@ -171,7 +170,7 @@ void parseRule(parameter::map &rule, base_section_info &info,
             std::string(id), at<std::string>(rule, "name"), std::move(tags), std::move(expression));
 
         rule_ids.emplace(rule_ptr->get_id());
-        rs.insert_rule(rule_ptr);
+        rules.emplace_back(rule_ptr);
         info.add_loaded(rule_ptr->get_id());
     } catch (const std::exception &e) {
         DDWAF_WARN("failed to parse rule '{}': {}", id, e.what());
@@ -190,11 +189,13 @@ void parse(
     auto &section = info.add_section("rules");
 
     std::unordered_set<std::string_view> rule_ids;
+    std::vector<std::shared_ptr<core_rule>> rules;
     for (unsigned i = 0; i < rules_array.size(); ++i) {
         const auto &rule_param = rules_array[i];
         try {
             auto rule = static_cast<parameter::map>(rule_param);
-            parseRule(rule, section, rule_ids, rs, limits);
+            parse_rule(rule, section, rule_ids, rules, limits);
+            rs.insert_rules(rules, {});
         } catch (const std::exception &e) {
             DDWAF_WARN("{}", e.what());
             section.add_failed("index:" + to_string<std::string>(i), e.what());
@@ -210,5 +211,3 @@ void parse(
 }
 
 } // namespace ddwaf::parser::v1
-
-#endif

@@ -59,21 +59,14 @@ rule_module rule_module_builder::build()
 }
 
 std::array<rule_module, rule_module_count> rule_module_set_builder::build(
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    const std::vector<std::shared_ptr<core_rule>> &base,
-    const std::vector<std::shared_ptr<core_rule>> &user)
+    const std::vector<std::shared_ptr<core_rule>> &rules)
 {
     std::array<rule_module, rule_module_count> all_modules;
 
-    const auto inserter = [this](const auto &rules) {
-        for (const auto &rule : rules) {
-            auto &builder = builders_[static_cast<std::size_t>(rule->get_module())];
-            builder.insert(rule.get());
-        }
-    };
-
-    inserter(base);
-    inserter(user);
+    for (const auto &rule : rules) {
+        auto &builder = builders_[static_cast<std::size_t>(rule->get_module())];
+        builder.insert(rule.get());
+    }
 
     for (std::size_t i = 0; i < builders_.size(); ++i) { all_modules[i] = builders_[i].build(); }
 
