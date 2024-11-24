@@ -75,17 +75,6 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
         return DDWAF_ERR_INVALID_OBJECT;
     }
 
-    // If the timeout provided is 0, we need to ensure the parameters are owned
-    // by the additive to ensure that the semantics of DDWAF_ERR_TIMEOUT are
-    // consistent across all possible timeout scenarios.
-    if (timeout == 0) {
-        if (res.has_value()) {
-            ddwaf_result &output = *res;
-            output.timeout = true;
-        }
-        return DDWAF_OK;
-    }
-
     ddwaf::timer deadline{std::chrono::microseconds(timeout)};
 
     // If this is a new run but no rule care about those new params, let's skip the run
