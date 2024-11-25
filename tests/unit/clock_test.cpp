@@ -46,4 +46,14 @@ TEST(TestTimer, ValidatePeriod)
     EXPECT_TRUE(deadline.expired());
 }
 
+TEST(TestTimer, EndlessTimer)
+{
+    // Simple sanity check, we can't really test this
+    auto deadline = ddwaf::endless_timer();
+    EXPECT_FALSE(deadline.expired());
+
+    std::this_thread::sleep_for(1ms);
+    EXPECT_FALSE(deadline.expired());
+}
+
 } // namespace

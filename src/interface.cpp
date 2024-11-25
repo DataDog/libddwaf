@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <chrono>
 #include <cstdint>
 #include <exception>
 #include <limits>
@@ -228,6 +229,13 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
         optional_ref<ddwaf_object> ephemeral{std::nullopt};
         if (ephemeral_data != nullptr) {
             ephemeral = *ephemeral_data;
+        }
+
+        // The timers will actually count nanoseconds, std::chrono doesn't
+        // deal well with durations being beyond range.
+        constexpr uint64_t max_timeout_ms = std::chrono::nanoseconds::max().count() / 1000;
+        if (timeout > max_timeout_ms) {
+            timeout = max_timeout_ms;
         }
 
         return context->run(persistent, ephemeral, res, timeout);

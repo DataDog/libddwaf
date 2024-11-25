@@ -34,7 +34,7 @@ private:
 // required to minimise syscalls.
 template <std::size_t SyscallPeriod = 16> class base_timer {
 public:
-    explicit base_timer(std::chrono::microseconds exp)
+    explicit base_timer(std::chrono::nanoseconds exp)
         : start_(monotonic_clock::now()), end_(add_saturated(start_, exp))
     {}
 
@@ -59,7 +59,7 @@ public:
 
 protected:
     static monotonic_clock::time_point add_saturated(
-        monotonic_clock::time_point augend, std::chrono::microseconds addend)
+        monotonic_clock::time_point augend, std::chrono::nanoseconds addend)
     {
         return (addend > (monotonic_clock::time_point::max() - augend))
                    ? monotonic_clock::time_point::max()
@@ -74,9 +74,6 @@ protected:
 
 using timer = base_timer<16>;
 
-inline timer endless_timer()
-{
-    return timer{std::chrono::microseconds{std::numeric_limits<uint64_t>::max()}};
-}
+inline timer endless_timer() { return timer{std::chrono::nanoseconds::max()}; }
 
 } // namespace ddwaf
