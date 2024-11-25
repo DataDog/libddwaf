@@ -1,0 +1,123 @@
+version: '2.1'
+rules:
+  - id: "1"
+    name: rule1-non-blocking
+    tags:
+      type: flow1
+      category: category
+      module: authentication-acl
+    conditions:
+      - operator: exact_match
+        parameters:
+          inputs:
+            - address: rule1-input
+            - address: base-rule1-input
+          list:
+            - "admin"
+  - id: "2"
+    name: rule2-non-blocking
+    tags:
+      type: flow2
+      category: category
+      module: authentication-acl
+    conditions:
+      - operator: exact_match
+        parameters:
+          inputs:
+            - address: rule2-input
+            - address: base-rule2-input
+          list:
+            - "admin"
+  - id: "3"
+    name: rule3-blocking
+    tags:
+      type: flow3
+      category: category
+      module: authentication-acl
+    conditions:
+      - operator: exact_match
+        parameters:
+          inputs:
+            - address: rule3-input
+            - address: base-rule3-input
+          list:
+            - "admin"
+    on_match:
+      - block
+  - id: "4"
+    name: rule4-blocking
+    tags:
+      type: flow4
+      category: category
+      module: authentication-acl
+    conditions:
+      - operator: exact_match
+        parameters:
+          inputs:
+            - address: rule4-input
+            - address: base-rule4-input
+          list:
+            - "admin"
+    on_match:
+      - block
+custom_rules:
+  - id: "custom-1"
+    name: custom-rule1-non-blocking
+    tags:
+      type: flow1
+      category: category
+      module: authentication-acl
+    conditions:
+      - operator: exact_match
+        parameters:
+          inputs:
+            - address: rule1-input
+            - address: custom-rule1-input
+          list:
+            - "admin"
+  - id: "custom-2"
+    name: custom-rule2-blocking
+    tags:
+      type: flow2
+      category: category
+      module: authentication-acl
+    conditions:
+      - operator: exact_match
+        parameters:
+          inputs:
+            - address: rule2-input
+            - address: custom-rule2-input
+          list:
+            - "admin"
+    on_match:
+      - block
+  - id: "custom-3"
+    name: custom-rule3-blocking
+    tags:
+      type: flow3
+      category: category
+      module: authentication-acl
+    conditions:
+      - operator: exact_match
+        parameters:
+          inputs:
+            - address: rule3-input
+            - address: custom-rule3-input
+          list:
+            - "admin"
+  - id: "custom-4"
+    name: custom-rule4-blocking
+    tags:
+      type: flow4
+      category: category
+      module: authentication-acl
+    conditions:
+      - operator: exact_match
+        parameters:
+          inputs:
+            - address: rule4-input
+            - address: custom-rule4-input
+          list:
+            - "admin"
+    on_match:
+      - block

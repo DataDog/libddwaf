@@ -1,0 +1,21 @@
+{
+  name: "User rules have precedence in custom-acl",
+  runs: [
+    {
+      persistent-input: {
+        rule1-input: admin
+      },
+      rules: [
+        {
+          custom-1: [
+            {
+              address: rule1-input,
+              value: admin
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

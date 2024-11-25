@@ -1,0 +1,21 @@
+{
+  name: "Validate that user rules still match when there's no contention",
+  runs: [
+    {
+      persistent-input: {
+        custom-rule1-input: admin
+      },
+      rules: [
+        {
+          custom-1: [
+            {
+              address: custom-rule1-input,
+              value: admin
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}
