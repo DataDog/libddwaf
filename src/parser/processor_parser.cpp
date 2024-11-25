@@ -18,6 +18,7 @@
 #include "parser/parser.hpp"
 #include "parser/specification.hpp"
 #include "processor/base.hpp"
+#include "processor/copy_data.hpp"
 #include "processor/extract_schema.hpp"
 #include "processor/fingerprint.hpp"
 #include "semver.hpp"
@@ -106,6 +107,8 @@ processor_container parse_processors(
                 type = processor_type::http_header_fingerprint;
             } else if (generator_id == "session_fingerprint") {
                 type = processor_type::session_fingerprint;
+            } else if (generator_id == "copy_data") {
+                type = processor_type::copy_data;
             } else {
                 DDWAF_WARN("Unknown generator: {}", generator_id);
                 info.add_failed(id, "unknown generator '" + generator_id + "'");
@@ -130,9 +133,12 @@ processor_container parse_processors(
             } else if (type == processor_type::http_network_fingerprint) {
                 mappings = parse_processor_mappings(
                     mappings_vec, addresses, http_network_fingerprint::param_names);
-            } else {
+            } else if (type == processor_type::session_fingerprint) {
                 mappings = parse_processor_mappings(
                     mappings_vec, addresses, session_fingerprint::param_names);
+            } else {
+                mappings = parse_processor_mappings(
+                    mappings_vec, addresses, copy_data_processor::param_names);
             }
 
             std::vector<reference_spec> scanners;

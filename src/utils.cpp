@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <cstdint>
-#include <list>
+#include <deque>
 #include <utility>
 
 #include "ddwaf.h"
@@ -46,17 +46,18 @@ void clone_helper(const ddwaf_object &source, ddwaf_object &destination)
     }
 }
 
-ddwaf_object clone(ddwaf_object *input)
+ddwaf_object clone(const ddwaf_object *input)
 {
     ddwaf_object tmp;
     ddwaf_object_invalid(&tmp);
 
     ddwaf_object copy;
-    std::list<std::pair<ddwaf_object *, ddwaf_object *>> queue;
+    std::deque<std::pair<ddwaf_object *, ddwaf_object *>> queue;
 
     clone_helper(*input, copy);
     if (is_container(input)) {
-        queue.emplace_front(input, &copy);
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+        queue.emplace_front(const_cast<ddwaf_object *>(input), &copy);
     }
 
     while (!queue.empty()) {

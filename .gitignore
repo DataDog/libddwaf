@@ -37,3 +37,4 @@ perf/test_files/breakdown.numbers
 .vscode
 *.swp
 *.swo
+*.swn

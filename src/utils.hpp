@@ -112,7 +112,7 @@ inline bool is_invalid_or_null(const ddwaf_object *obj)
     return obj != nullptr && (obj->type == DDWAF_OBJ_INVALID || obj->type == DDWAF_OBJ_NULL);
 }
 
-ddwaf_object clone(ddwaf_object *input);
+ddwaf_object clone(const ddwaf_object *input);
 } // namespace object
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
