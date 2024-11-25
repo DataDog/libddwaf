@@ -11,17 +11,16 @@
 
 namespace ddwaf {
 enum class rule_module_category : uint8_t {
-    network_acl,
+    network_acl = 0,
     authentication_acl,
     custom_acl,
     configuration,
     business_logic,
     rasp,
     waf,
-    count
 };
 
-constexpr std::size_t rule_module_count = static_cast<std::size_t>(rule_module_category::count);
+constexpr std::size_t rule_module_count = static_cast<std::size_t>(rule_module_category::waf) + 1;
 
 inline rule_module_category string_to_rule_module_category(std::string_view name)
 {
