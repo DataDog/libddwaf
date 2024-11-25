@@ -85,6 +85,12 @@ std::pair<std::optional<event>, verdict_type> eval_rule(const core_rule &rule,
 
 } // namespace
 
+ddwaf::timer &rule_module::get_deadline(ddwaf::timer &deadline) const
+{
+    static auto no_deadline = endless_timer();
+    return may_expire() ? deadline : no_deadline;
+}
+
 verdict_type rule_module::eval_with_collections(std::vector<event> &events, object_store &store,
     cache_type &cache, const exclusion::context_policy &exclusion,
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
@@ -132,22 +138,27 @@ verdict_type rule_module::eval(std::vector<event> &events, object_store &store, 
     const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
+    auto &apt_deadline = get_deadline(deadline);
+
     if (collections_.empty()) {
+        auto final_verdict = verdict_type::none;
         for (std::size_t i = 0; i < rules_.size(); ++i) {
             const auto &rule = *rules_[i];
             auto &rule_cache = cache.rules[i];
 
             auto [event, verdict] =
-                eval_rule(rule, store, rule_cache, exclusion, dynamic_matchers, deadline);
+                eval_rule(rule, store, rule_cache, exclusion, dynamic_matchers, apt_deadline);
             if (event.has_value()) {
                 events.emplace_back(std::move(*event));
                 DDWAF_DEBUG("Found event on rule {}", rule.get_id());
-                return verdict;
+                if (verdict > final_verdict) {
+                    final_verdict = verdict;
+                }
             }
         }
-        return verdict_type::none;
+        return final_verdict;
     }
 
-    return eval_with_collections(events, store, cache, exclusion, dynamic_matchers, deadline);
+    return eval_with_collections(events, store, cache, exclusion, dynamic_matchers, apt_deadline);
 }
 } // namespace ddwaf

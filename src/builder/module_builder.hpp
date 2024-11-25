@@ -12,6 +12,22 @@
 
 namespace ddwaf {
 
+// Helpers
+inline bool user_rule_precedence(
+    const core_rule::source_type left, const core_rule::source_type right)
+{
+    return left > right;
+}
+
+inline bool base_rule_precedence(
+    const core_rule::source_type left, const core_rule::source_type right)
+{
+    return left < right;
+}
+
+inline std::string_view type_grouping_key(const core_rule *rule) { return rule->get_type(); }
+inline constexpr std::string_view null_grouping_key(const core_rule * /*rule*/) { return {}; }
+
 // The module builder can be used to build a single module
 class rule_module_builder {
 public:
@@ -55,22 +71,6 @@ public:
         const std::vector<std::shared_ptr<core_rule>> &rules);
 
 protected:
-    // Helpers
-    static bool user_rule_precedence(
-        const core_rule::source_type left, const core_rule::source_type right)
-    {
-        return left > right;
-    }
-
-    static bool base_rule_precedence(
-        const core_rule::source_type left, const core_rule::source_type right)
-    {
-        return left < right;
-    }
-
-    static std::string_view type_grouping_key(const core_rule *rule) { return rule->get_type(); }
-    static constexpr std::string_view null_grouping_key(const core_rule * /*rule*/) { return {}; }
-
     std::array<rule_module_builder, rule_module_count> builders_{{
         // Network-ACL
         {base_rule_precedence, null_grouping_key, rule_module::expiration_policy::non_expiring},

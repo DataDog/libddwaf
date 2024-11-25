@@ -62,6 +62,8 @@ protected:
         const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
         ddwaf::timer &deadline) const;
 
+    ddwaf::timer &get_deadline(ddwaf::timer &deadline) const;
+
     struct rule_collection {
         std::string_view name;
         verdict_type type;
