@@ -1,5 +1,5 @@
 {
-  name: "Base rules have precedence in network-acl",
+  name: "All rules are provided in monitoring mode",
   runs: [
     {
       persistent-input: {
@@ -8,6 +8,14 @@
       rules: [
         {
           1: [
+            {
+              address: rule1-input,
+              value: 192.168.0.1
+            }
+          ],
+        },
+        {
+          custom-1: [
             {
               address: rule1-input,
               value: 192.168.0.1

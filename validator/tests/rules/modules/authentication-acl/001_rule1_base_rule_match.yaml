@@ -1,5 +1,5 @@
 {
-  name: "Base rules have precedence in authentication-acl",
+  name: "All rules are provided in monitoring mode",
   runs: [
     {
       persistent-input: {
@@ -13,7 +13,15 @@
               value: admin
             }
           ]
-        }
+        },
+        {
+          custom-1: [
+            {
+              address: rule1-input,
+              value: admin
+            }
+          ]
+        },
       ],
       code: match
     }

@@ -141,6 +141,7 @@ verdict_type rule_module::eval(std::vector<event> &events, object_store &store, 
     auto &apt_deadline = get_deadline(deadline);
 
     if (collections_.empty()) {
+        auto final_verdict = verdict_type::none;
         for (std::size_t i = 0; i < rules_.size(); ++i) {
             const auto &rule = *rules_[i];
             auto &rule_cache = cache.rules[i];
@@ -150,10 +151,13 @@ verdict_type rule_module::eval(std::vector<event> &events, object_store &store, 
             if (event.has_value()) {
                 events.emplace_back(std::move(*event));
                 DDWAF_DEBUG("Found event on rule {}", rule.get_id());
-                return verdict;
+                final_verdict = verdict;
+                if (final_verdict == verdict_type::block) {
+                    break;
+                }
             }
         }
-        return verdict_type::none;
+        return final_verdict;
     }
 
     return eval_with_collections(events, store, cache, exclusion, dynamic_matchers, apt_deadline);
