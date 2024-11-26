@@ -644,6 +644,22 @@ TEST(TestHttpHeaderFingerprint, UnknownHeaders)
     ddwaf_object_free(&output);
 }
 
+TEST(TestHttpHeaderFingerprint, InvalidHeaderType)
+{
+    ddwaf_object headers;
+    ddwaf_object_string(&headers, "value");
+
+    http_header_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    processor_cache cache;
+    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_INVALID);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    ddwaf_object_free(&headers);
+}
+
 TEST(TestHttpNetworkFingerprint, AllXFFHeaders)
 {
     ddwaf_object tmp;
@@ -815,6 +831,22 @@ TEST(TestHttpNetworkFingerprint, HeaderPrecedence)
     match_frag(get_headers(7), "net-8-0000000111");
     match_frag(get_headers(8), "net-9-0000000011");
     match_frag(get_headers(9), "net-10-0000000001");
+}
+
+TEST(TestNetworkHeaderFingerprint, InvalidHeaderType)
+{
+    ddwaf_object headers;
+    ddwaf_object_string(&headers, "value");
+
+    http_network_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    processor_cache cache;
+    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_INVALID);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    ddwaf_object_free(&headers);
 }
 
 TEST(TestSessionFingerprint, UserOnly)

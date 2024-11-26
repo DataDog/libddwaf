@@ -56,4 +56,13 @@ TEST(TestTimer, EndlessTimer)
     EXPECT_FALSE(deadline.expired());
 }
 
+TEST(TestTimer, TimerExpirationBeyondSizeLimit)
+{
+    ddwaf::base_timer<5> deadline{std::chrono::nanoseconds::max()};
+    EXPECT_FALSE(deadline.expired());
+
+    std::this_thread::sleep_for(1ms);
+    EXPECT_FALSE(deadline.expired());
+}
+
 } // namespace
