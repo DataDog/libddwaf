@@ -123,9 +123,11 @@ verdict_type rule_module::eval_with_collections(std::vector<event> &events, obje
                 events.emplace_back(std::move(*event));
                 DDWAF_DEBUG("Found event on rule {}", rule.get_id());
 
-                if (verdict > final_verdict) {
-                    final_verdict = verdict;
+                if (verdict == verdict_type::block) {
+                    return verdict_type::block;
                 }
+
+                final_verdict = verdict_type::monitor;
                 break;
             }
         }

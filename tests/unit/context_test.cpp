@@ -726,7 +726,7 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
     EXPECT_EQ(events.size(), 2);
 }
 
-TEST(TestContext, MatchMultiplePriorityCollectionsSingleRun)
+TEST(TestContext, MatchPriorityCollectionsSingleRun)
 {
     auto ruleset = test::get_default_ruleset();
     std::vector<std::shared_ptr<core_rule>> rules;
@@ -771,7 +771,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsSingleRun)
     ctx.insert(root);
 
     auto events = ctx.eval_rules({}, deadline);
-    EXPECT_EQ(events.size(), 2);
+    EXPECT_EQ(events.size(), 1);
 }
 
 TEST(TestContext, MatchMultipleCollectionsDoubleRun)
