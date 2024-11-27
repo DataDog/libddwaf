@@ -699,4 +699,388 @@ TEST(TestModule, SingleCollectionsMonitoringRuleMatch)
     }
 }
 
+TEST(TestModule, UserPrecedenceSingleCollectionsMonitoringUserMatch)
+{
+    std::vector<std::shared_ptr<core_rule>> rules;
+    {
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rules.emplace_back(
+            std::make_shared<core_rule>("id1", "name", std::move(tags), builder.build()));
+    }
+
+    {
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
+            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+    }
+
+    rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
+    for (const auto &rule : rules) { mod_builder.insert(rule.get()); }
+
+    auto mod = mod_builder.build();
+
+    rule_module_cache cache;
+    mod.init_cache(cache);
+
+    ddwaf::object_store store;
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        store.insert(root);
+
+        std::vector<event> events;
+        ddwaf::timer deadline = endless_timer();
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
+        EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
+        EXPECT_EQ(events.size(), 1);
+        EXPECT_STRV(events[0].rule->get_id(), "id2");
+    }
+}
+
+TEST(TestModule, BasePrecedenceSingleCollectionsMonitoringBaseNatch)
+{
+    std::vector<std::shared_ptr<core_rule>> rules;
+    {
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rules.emplace_back(
+            std::make_shared<core_rule>("id1", "name", std::move(tags), builder.build()));
+    }
+
+    {
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
+            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+    }
+
+    rule_module_builder mod_builder{base_rule_precedence, type_grouping_key};
+    for (const auto &rule : rules) { mod_builder.insert(rule.get()); }
+
+    auto mod = mod_builder.build();
+
+    rule_module_cache cache;
+    mod.init_cache(cache);
+
+    ddwaf::object_store store;
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        store.insert(root);
+
+        std::vector<event> events;
+        ddwaf::timer deadline = endless_timer();
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
+        EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
+        EXPECT_EQ(events.size(), 1);
+        EXPECT_STRV(events[0].rule->get_id(), "id1");
+    }
+}
+
+TEST(TestModule, UserPrecedenceSingleCollectionsBlockingBaseMatch)
+{
+    std::vector<std::shared_ptr<core_rule>> rules;
+    {
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
+            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
+            core_rule::verdict_type::block));
+    }
+
+    {
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
+            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+    }
+
+    rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
+    for (const auto &rule : rules) { mod_builder.insert(rule.get()); }
+
+    auto mod = mod_builder.build();
+
+    rule_module_cache cache;
+    mod.init_cache(cache);
+
+    ddwaf::object_store store;
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        store.insert(root);
+
+        std::vector<event> events;
+        ddwaf::timer deadline = endless_timer();
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
+        EXPECT_EQ(verdict, rule_module::verdict_type::block);
+        EXPECT_EQ(events.size(), 1);
+        EXPECT_STRV(events[0].rule->get_id(), "id1");
+    }
+}
+
+TEST(TestModule, UserPrecedenceSingleCollectionsBlockingUserMatch)
+{
+    std::vector<std::shared_ptr<core_rule>> rules;
+    {
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
+            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
+            core_rule::verdict_type::block));
+    }
+
+    {
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type"}, {"category", "category"}};
+
+        rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
+            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::user,
+            core_rule::verdict_type::block));
+    }
+
+    rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
+    for (const auto &rule : rules) { mod_builder.insert(rule.get()); }
+
+    auto mod = mod_builder.build();
+
+    rule_module_cache cache;
+    mod.init_cache(cache);
+
+    ddwaf::object_store store;
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        store.insert(root);
+
+        std::vector<event> events;
+        ddwaf::timer deadline = endless_timer();
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
+        EXPECT_EQ(verdict, rule_module::verdict_type::block);
+        EXPECT_EQ(events.size(), 1);
+        EXPECT_STRV(events[0].rule->get_id(), "id2");
+    }
+}
+
+TEST(TestModule, UserPrecedenceMultipleCollectionsMonitoringMatch)
+{
+    std::vector<std::shared_ptr<core_rule>> rules;
+    {
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type1"}, {"category", "category"}};
+
+        rules.emplace_back(
+            std::make_shared<core_rule>("id1", "name", std::move(tags), builder.build()));
+    }
+
+    {
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type2"}, {"category", "category"}};
+
+        rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
+            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+    }
+
+    rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
+    for (const auto &rule : rules) { mod_builder.insert(rule.get()); }
+
+    auto mod = mod_builder.build();
+
+    rule_module_cache cache;
+    mod.init_cache(cache);
+
+    ddwaf::object_store store;
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        store.insert(root);
+
+        std::vector<event> events;
+        ddwaf::timer deadline = endless_timer();
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
+        EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
+        EXPECT_EQ(events.size(), 2);
+    }
+}
+
+TEST(TestModule, UserPrecedenceMultipleCollectionsBlockingMatch)
+{
+    std::vector<std::shared_ptr<core_rule>> rules;
+    {
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type1"}, {"category", "category"}};
+
+        rules.emplace_back(
+            std::make_shared<core_rule>("id1", "name", std::move(tags), builder.build()));
+    }
+
+    {
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type2"}, {"category", "category"}};
+
+        rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
+            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::user,
+            core_rule::verdict_type::block));
+    }
+
+    rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
+    for (const auto &rule : rules) { mod_builder.insert(rule.get()); }
+
+    auto mod = mod_builder.build();
+
+    rule_module_cache cache;
+    mod.init_cache(cache);
+
+    ddwaf::object_store store;
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        store.insert(root);
+
+        std::vector<event> events;
+        ddwaf::timer deadline = endless_timer();
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
+        EXPECT_EQ(verdict, rule_module::verdict_type::block);
+        EXPECT_EQ(events.size(), 1);
+    }
+}
+
+TEST(TestModule, DisabledRules)
+{
+    std::vector<std::shared_ptr<core_rule>> rules;
+    {
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+
+        std::unordered_map<std::string, std::string> tags{
+            {"type", "type1"}, {"category", "category"}};
+
+        rules.emplace_back(std::make_shared<core_rule>(
+            "id1", "name", std::move(tags), builder.build(), std::vector<std::string>{}, false));
+    }
+
+    rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
+    for (const auto &rule : rules) { mod_builder.insert(rule.get()); }
+
+    auto mod = mod_builder.build();
+
+    rule_module_cache cache;
+    mod.init_cache(cache);
+
+    ddwaf::object_store store;
+    {
+        ddwaf_object root;
+        ddwaf_object tmp;
+        ddwaf_object_map(&root);
+        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+
+        store.insert(root);
+
+        std::vector<event> events;
+        ddwaf::timer deadline = endless_timer();
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
+        EXPECT_EQ(verdict, rule_module::verdict_type::none);
+    }
+}
 } // namespace
