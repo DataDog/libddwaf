@@ -25,8 +25,14 @@ inline bool base_rule_precedence(
     return left < right;
 }
 
-inline std::string_view type_grouping_key(const core_rule *rule) { return rule->get_type(); }
-constexpr std::string_view null_grouping_key(const core_rule * /*rule*/) { return {}; }
+[[gnu::const]] inline std::string_view type_grouping_key(const core_rule *rule)
+{
+    return rule->get_type();
+}
+[[gnu::const]] constexpr std::string_view null_grouping_key(const core_rule * /*rule*/)
+{
+    return {};
+}
 
 // The module builder can be used to build a single module
 class rule_module_builder {
