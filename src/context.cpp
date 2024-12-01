@@ -77,8 +77,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
 
     ddwaf::timer deadline{std::chrono::microseconds(timeout)};
 
-    // If this is a new run but no rule care about those new params, let's skip the run
-    if (!is_first_run() && !store_.has_new_targets()) {
+    if (!store_.has_new_targets()) {
         return DDWAF_OK;
     }
 

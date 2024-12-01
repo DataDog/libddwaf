@@ -61,9 +61,17 @@ protected:
     static monotonic_clock::time_point add_saturated(
         monotonic_clock::time_point augend, std::chrono::nanoseconds addend)
     {
-        return (addend > (monotonic_clock::time_point::max() - augend))
-                   ? monotonic_clock::time_point::max()
-                   : augend + addend;
+        using duration = monotonic_clock::duration;
+
+        duration::rep augend_count = augend.time_since_epoch().count();
+        duration::rep addend_count = addend.count();
+        duration::rep result;
+
+        if (__builtin_add_overflow(augend_count, addend_count, &result)) {
+            return monotonic_clock::time_point::max();
+        }
+
+        return monotonic_clock::time_point(duration(result));
     }
 
     monotonic_clock::time_point start_;

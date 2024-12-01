@@ -23,7 +23,7 @@
 namespace ddwaf {
 
 struct ruleset {
-    // OLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     void insert_rules(const std::vector<std::shared_ptr<core_rule>> &base,
         const std::vector<std::shared_ptr<core_rule>> &user)
     {

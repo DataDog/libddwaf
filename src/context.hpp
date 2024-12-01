@@ -87,11 +87,11 @@ protected:
     memory::unordered_map<base_processor *, processor_cache> processor_cache_;
 
     // Caches of filters and conditions
-    memory::unordered_map<rule_filter *, rule_filter::cache_type> rule_filter_cache_{};
+    memory::unordered_map<rule_filter *, rule_filter::cache_type> rule_filter_cache_;
     memory::unordered_map<input_filter *, input_filter::cache_type> input_filter_cache_;
     exclusion::context_policy exclusion_policy_;
 
-    // Cache of collections to avoid processing once a result has been obtained
+    // Cache of modules to avoid processing once a result has been obtained
     std::array<rule_module_cache, rule_module_count> rule_module_cache_;
 };
 

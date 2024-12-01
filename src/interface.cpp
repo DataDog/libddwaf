@@ -234,9 +234,7 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
         // The timers will actually count nanoseconds, std::chrono doesn't
         // deal well with durations being beyond range.
         constexpr uint64_t max_timeout_ms = std::chrono::nanoseconds::max().count() / 1000;
-        if (timeout > max_timeout_ms) {
-            timeout = max_timeout_ms;
-        }
+        timeout = std::min(timeout, max_timeout_ms);
 
         return context->run(persistent, ephemeral, res, timeout);
     } catch (const std::exception &e) {

@@ -26,7 +26,7 @@ inline bool base_rule_precedence(
 }
 
 inline std::string_view type_grouping_key(const core_rule *rule) { return rule->get_type(); }
-inline constexpr std::string_view null_grouping_key(const core_rule * /*rule*/) { return {}; }
+constexpr std::string_view null_grouping_key(const core_rule * /*rule*/) { return {}; }
 
 // The module builder can be used to build a single module
 class rule_module_builder {
@@ -71,21 +71,54 @@ public:
         const std::vector<std::shared_ptr<core_rule>> &rules);
 
 protected:
+    /* Rules Ordering
+     * ---------------------------
+     * network_acl: (ignore timeout)
+     *  - Collection: [order by: verdict (block then monitor then none), source (base then user)]
+     *
+     * authentication_acl: (ignore timeout)
+     *  - Collection: [order by: verdict, source (base then user)]
+     *
+     * custom_acl:
+     *   - Collection: [order by: verdict, source (user then base)]
+     *
+     * configuration:
+     *   - Collection: [order by: verdict, source (user then base)]
+     *
+     * business_logic:
+     *   - Collection: [order by: verdict, source (user then base)]
+     *
+     * rasp:
+     *   - Collection: [order by: verdict, source (base then user)]
+     *
+     * waf:
+     *   - Collection: [verdict=block, source=user, type=<type 1>]
+     *   - Collection: [verdict=block, source=user, type=...]
+     *   - Collection: [verdict=block, source=base, type=<type 1>]
+     *   - Collection: [verdict=block, source=base, type=...]
+     *   - Collection: [verdict=monitor, source=user, type=<type 1>]
+     *   - Collection: [verdict=monitor, source=user, type=...]
+     *   - Collection: [verdict=monitor, source=base, type=<type 1>]
+     *   - Collection: [verdict=monitor, source=base, type=...]
+     *
+     * Note: Non expiring modules should always be placed before expiring modules.
+     */
+
     std::array<rule_module_builder, rule_module_count> builders_{{
         // Network-ACL
         {base_rule_precedence, null_grouping_key, rule_module::expiration_policy::non_expiring},
         // Authentication-ACL
         {base_rule_precedence, null_grouping_key, rule_module::expiration_policy::non_expiring},
         // Custom-ACL
-        {user_rule_precedence, null_grouping_key},
+        {user_rule_precedence, null_grouping_key, rule_module::expiration_policy::expiring},
         // Configuration
-        {user_rule_precedence, null_grouping_key},
+        {user_rule_precedence, null_grouping_key, rule_module::expiration_policy::expiring},
         // Business logic
-        {user_rule_precedence, null_grouping_key},
+        {user_rule_precedence, null_grouping_key, rule_module::expiration_policy::expiring},
         // RASP
-        {base_rule_precedence, null_grouping_key},
+        {base_rule_precedence, null_grouping_key, rule_module::expiration_policy::expiring},
         // WAF
-        {user_rule_precedence, type_grouping_key},
+        {user_rule_precedence, type_grouping_key, rule_module::expiration_policy::expiring},
     }};
 };
 

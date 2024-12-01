@@ -134,7 +134,7 @@ protected:
     std::vector<std::string> actions_;
 
     // Frequently accessed tags
-    std::string type_;
+    std::string_view type_;
     rule_module_category mod_;
 
     // Tags provided through rules_override
