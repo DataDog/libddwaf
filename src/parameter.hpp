@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <compare>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -25,7 +26,7 @@ public:
     using string_set = std::unordered_set<std::string_view>;
 
     parameter() = default;
-    // NOLINTNEXTLINE(google-explicit-constructor)
+    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
     parameter(const ddwaf_object &arg) : _ddwaf_object() { *((ddwaf_object *)this) = arg; }
 
     parameter(const parameter &) = default;

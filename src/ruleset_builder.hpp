@@ -96,8 +96,8 @@ protected:
     // These are the contents of the latest generated ruleset
 
     // Rules
-    indexer<rule> final_base_rules_;
-    indexer<rule> final_user_rules_;
+    indexer<core_rule> final_base_rules_;
+    indexer<core_rule> final_user_rules_;
 
     // Filters
     std::unordered_map<std::string_view, std::shared_ptr<exclusion::rule_filter>> rule_filters_;

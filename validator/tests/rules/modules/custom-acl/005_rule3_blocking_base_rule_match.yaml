@@ -1,0 +1,21 @@
+{
+  name: "Blocking base rules have precedence over non-blocking user rules in authentication-acl",
+  runs: [
+    {
+      persistent-input: {
+        rule3-input: admin
+      },
+      rules: [
+        {
+          3: [
+            {
+              address: rule3-input,
+              value: admin
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

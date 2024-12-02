@@ -1,0 +1,21 @@
+{
+  name: "Blocking base rules have precedence over blocking user rules in network-acl",
+  runs: [
+    {
+      persistent-input: {
+        rule4-input: 192.168.0.1
+      },
+      rules: [
+        {
+          4: [
+            {
+              address: rule4-input,
+              value: 192.168.0.1
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

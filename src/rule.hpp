@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <atomic>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -16,36 +15,48 @@
 #include "event.hpp"
 #include "exclusion/common.hpp"
 #include "expression.hpp"
-#include "iterator.hpp"
 #include "matcher/base.hpp"
+#include "module_category.hpp"
 #include "object_store.hpp"
 
 namespace ddwaf {
 
-class rule {
+// A core rule constitutes the most important type of entity within the
+// evaluation process. These rules are "request-bound", i.e. they are used to
+// specifically analyse request data, as opposed to other types of rules such
+// as threshold rules which analyse data across requests.
+class core_rule {
 public:
     enum class source_type : uint8_t { base = 1, user = 2 };
+    enum class verdict_type : uint8_t { none = 0, monitor = 1, block = 2 };
 
     using cache_type = expression::cache_type;
 
-    rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
+    core_rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
         std::shared_ptr<expression> expr, std::vector<std::string> actions = {},
-        bool enabled = true, source_type source = source_type::base)
-        : enabled_(enabled), source_(source), id_(std::move(id)), name_(std::move(name)),
-          tags_(std::move(tags)), expr_(std::move(expr)), actions_(std::move(actions))
+        bool enabled = true, source_type source = source_type::base,
+        verdict_type verdict = verdict_type::monitor)
+        : enabled_(enabled), source_(source), verdict_(verdict), id_(std::move(id)),
+          name_(std::move(name)), tags_(std::move(tags)), actions_(std::move(actions)),
+          expr_(std::move(expr))
     {
         if (!expr_) {
             throw std::invalid_argument("rule constructed with null expression");
         }
+
+        // If the tag is not present, the default is `waf`
+        mod_ = string_to_rule_module_category(get_tag_or("module", "waf"));
+        // Type is guaranteed to be present
+        type_ = get_tag("type");
     }
 
-    rule(const rule &) = delete;
-    rule &operator=(const rule &) = delete;
+    core_rule(const core_rule &) = delete;
+    core_rule &operator=(const core_rule &) = delete;
 
-    rule(rule &&rhs) noexcept = default;
-    rule &operator=(rule &&rhs) = default;
+    core_rule(core_rule &&rhs) noexcept = default;
+    core_rule &operator=(core_rule &&rhs) = default;
 
-    virtual ~rule() = default;
+    virtual ~core_rule() = default;
 
     virtual std::optional<event> match(const object_store &store, cache_type &cache,
         const exclusion::object_set_ref &objects_excluded,
@@ -68,9 +79,12 @@ public:
     [[nodiscard]] bool is_enabled() const { return enabled_; }
     void toggle(bool value) { enabled_ = value; }
 
-    source_type get_source() const { return source_; }
-    const std::string &get_id() const { return id_; }
-    const std::string &get_name() const { return name_; }
+    [[nodiscard]] source_type get_source() const { return source_; }
+
+    std::string_view get_id() const { return id_; }
+    std::string_view get_name() const { return name_; }
+    std::string_view get_type() const { return type_; }
+    rule_module_category get_module() const { return mod_; }
 
     std::string_view get_tag(const std::string &tag) const
     {
@@ -98,24 +112,36 @@ public:
         }
     }
 
+    [[nodiscard]] bool has_actions() const { return !actions_.empty(); }
     const std::vector<std::string> &get_actions() const { return actions_; }
+    void set_actions(std::vector<std::string> new_actions) { actions_ = std::move(new_actions); }
 
+    void set_verdict(verdict_type verdict) { verdict_ = verdict; }
+    verdict_type get_verdict() const { return verdict_; }
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
         return expr_->get_addresses(addresses);
     }
 
-    void set_actions(std::vector<std::string> new_actions) { actions_ = std::move(new_actions); }
-
 protected:
+    // General metadata
     bool enabled_{true};
     source_type source_;
+    verdict_type verdict_{verdict_type::monitor};
     std::string id_;
     std::string name_;
     std::unordered_map<std::string, std::string> tags_;
-    std::unordered_map<std::string, std::string> ancillary_tags_;
-    std::shared_ptr<expression> expr_;
     std::vector<std::string> actions_;
+
+    // Frequently accessed tags
+    std::string_view type_;
+    rule_module_category mod_;
+
+    // Tags provided through rules_override
+    std::unordered_map<std::string, std::string> ancillary_tags_;
+
+    // Evaluable expression encompassing all the rule's conditions
+    std::shared_ptr<expression> expr_;
 };
 
 } // namespace ddwaf

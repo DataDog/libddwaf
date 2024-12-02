@@ -28,7 +28,7 @@ namespace {
 
 rule_spec parse_rule(parameter::map &rule,
     std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
-    rule::source_type source, address_container &addresses)
+    core_rule::source_type source, address_container &addresses)
 {
     std::vector<transformer_id> rule_transformers;
     auto data_source = ddwaf::data_source::values;
@@ -68,7 +68,7 @@ rule_spec parse_rule(parameter::map &rule,
 
 rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info &info,
     std::unordered_map<std::string, std::string> &rule_data_ids, const object_limits &limits,
-    rule::source_type source)
+    core_rule::source_type source)
 {
     rule_spec_container rules;
     for (unsigned i = 0; i < rule_array.size(); ++i) {

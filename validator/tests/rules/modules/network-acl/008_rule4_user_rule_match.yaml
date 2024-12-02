@@ -1,0 +1,21 @@
+{
+  name: "Validate that user rules still match when there's no contention",
+  runs: [
+    {
+      persistent-input: {
+        custom-rule4-input: 192.168.0.1
+      },
+      rules: [
+        {
+          custom-4: [
+            {
+              address: custom-rule4-input,
+              value: 192.168.0.1
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

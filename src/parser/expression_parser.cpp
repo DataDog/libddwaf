@@ -34,6 +34,7 @@
 #include "parser/common.hpp"
 #include "parser/matcher_parser.hpp"
 #include "parser/parser.hpp"
+#include "target_address.hpp"
 #include "transformer/base.hpp"
 #include "utils.hpp"
 

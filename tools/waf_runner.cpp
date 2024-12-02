@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
 
             ddwaf_result ret;
             auto code =
-                ddwaf_run(context, &persistent, &ephemeral, &ret, std::numeric_limits<uint32_t>::max());
+                ddwaf_run(context, &persistent, &ephemeral, &ret, std::numeric_limits<uint64_t>::max());
             if (code == DDWAF_MATCH && ddwaf_object_size(&ret.events) > 0) {
                 std::stringstream ss;
                 YAML::Emitter out(ss);

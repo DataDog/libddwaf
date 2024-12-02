@@ -12,7 +12,7 @@
 using namespace ddwaf;
 using namespace std::literals;
 
-using rule_tag_map = ddwaf::multi_key_map<std::string_view, rule *>;
+using rule_tag_map = ddwaf::multi_key_map<std::string_view, core_rule *>;
 
 namespace {
 
@@ -36,13 +36,13 @@ TEST(TestMultiKeyMap, Find)
         {"id6", "type1", "category1", {{"key", "value0"}}},
         {"id7", "type1", "category1", {{"key", "value1"}}}};
 
-    std::vector<std::shared_ptr<rule>> rules;
+    std::vector<std::shared_ptr<core_rule>> rules;
     for (const auto &spec : specs) {
         std::unordered_map<std::string, std::string> tags = spec.tags;
         tags.emplace("type", spec.type);
         tags.emplace("category", spec.category);
 
-        auto rule_ptr = std::make_shared<ddwaf::rule>(
+        auto rule_ptr = std::make_shared<core_rule>(
             std::string(spec.id), "name", decltype(tags)(tags), std::make_shared<expression>());
         rules.emplace_back(rule_ptr);
         ruledb.insert(rule_ptr->get_tags(), rule_ptr.get());
@@ -101,13 +101,13 @@ TEST(TestMultiKeyMap, Multifind)
         {"id6", "type1", "category1", {{"key", "value0"}}},
         {"id7", "type1", "category1", {{"key", "value1"}}}};
 
-    std::vector<std::shared_ptr<rule>> rules;
+    std::vector<std::shared_ptr<core_rule>> rules;
     for (const auto &spec : specs) {
         std::unordered_map<std::string, std::string> tags = spec.tags;
         tags.emplace("type", spec.type);
         tags.emplace("category", spec.category);
 
-        auto rule_ptr = std::make_shared<ddwaf::rule>(
+        auto rule_ptr = std::make_shared<core_rule>(
             std::string(spec.id), "name", decltype(tags)(tags), std::make_shared<expression>());
         rules.emplace_back(rule_ptr);
         ruledb.insert(rule_ptr->get_tags(), rule_ptr.get());
@@ -171,13 +171,13 @@ TEST(TestMultiKeyMap, Erase)
         {"id6", "type1", "category1", {{"key", "value0"}}},
         {"id7", "type1", "category1", {{"key", "value1"}}}};
 
-    std::vector<std::shared_ptr<rule>> rules;
+    std::vector<std::shared_ptr<core_rule>> rules;
     for (const auto &spec : specs) {
         std::unordered_map<std::string, std::string> tags = spec.tags;
         tags.emplace("type", spec.type);
         tags.emplace("category", spec.category);
 
-        auto rule_ptr = std::make_shared<ddwaf::rule>(
+        auto rule_ptr = std::make_shared<core_rule>(
             std::string(spec.id), "name", decltype(tags)(tags), std::make_shared<expression>());
         rules.emplace_back(rule_ptr);
         ruledb.insert(rule_ptr->get_tags(), rule_ptr.get());

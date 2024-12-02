@@ -21,6 +21,7 @@
 #include "processor/extract_schema.hpp"
 #include "processor/fingerprint.hpp"
 #include "semver.hpp"
+#include "target_address.hpp"
 #include "utils.hpp"
 #include "version.hpp"
 

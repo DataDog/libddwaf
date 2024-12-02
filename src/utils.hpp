@@ -56,13 +56,6 @@ struct object_limits {
     uint32_t max_transformers_per_address{10}; // can't be overridden for now
 };
 
-using target_index = std::size_t;
-
-inline target_index get_target_index(std::string_view address)
-{
-    return std::hash<std::string_view>{}(address);
-}
-
 inline size_t find_string_cutoff(const char *str, size_t length, object_limits limits = {})
 {
     // If the string is shorter than our cap, then fine

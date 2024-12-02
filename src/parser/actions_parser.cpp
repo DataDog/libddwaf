@@ -36,6 +36,7 @@ void validate_and_add_redirect(
 {
     auto it = parameters.find("location");
     if (it == parameters.end() || it->second.empty()) {
+        // TODO add a log message
         builder.alias_default_action_to("block", id);
         return;
     }
