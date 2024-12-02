@@ -9,6 +9,12 @@
 #include <atomic>
 #include <chrono>
 
+#if defined __has_builtin
+#  if __has_builtin(__builtin_add_overflow)
+#    define HAS_BUILTIN_ADD_OVERFLOW
+#  endif
+#endif
+
 namespace ddwaf {
 #ifndef __linux__
 using monotonic_clock = std::chrono::steady_clock;
@@ -61,6 +67,7 @@ protected:
     static monotonic_clock::time_point add_saturated(
         monotonic_clock::time_point augend, std::chrono::nanoseconds addend)
     {
+#ifdef HAS_BUILTIN_ADD_OVERFLOW
         using duration = monotonic_clock::duration;
 
         duration::rep augend_count = augend.time_since_epoch().count();
@@ -72,6 +79,11 @@ protected:
         }
 
         return monotonic_clock::time_point(duration(result));
+#else
+        return (addend > (monotonic_clock::time_point::max() - augend))
+                   ? monotonic_clock::time_point::max()
+                   : augend + addend;
+#endif
     }
 
     monotonic_clock::time_point start_;
