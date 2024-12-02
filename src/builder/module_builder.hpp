@@ -80,7 +80,7 @@ protected:
     /* Rules Ordering
      * ---------------------------
      * network_acl: (ignore timeout)
-     *  - Collection: [order by: verdict (block then monitor then none), source (base then user)]
+     *  - Collection: [order by: verdict (block then monitor), source (base then user)]
      *
      * authentication_acl: (ignore timeout)
      *  - Collection: [order by: verdict, source (base then user)]
