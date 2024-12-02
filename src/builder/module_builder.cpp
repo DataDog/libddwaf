@@ -26,11 +26,10 @@ rule_module rule_module_builder::build()
         const auto rverdict = right->get_verdict();
         const auto lsource = left->get_source();
         const auto rsource = right->get_source();
-        std::string_view const lkey = grouping_key_fn_(left);
-        std::string_view const rkey = grouping_key_fn_(right);
         return lverdict > rverdict ||
-               (lverdict == rverdict && (source_precedence_fn_(lsource, rsource) ||
-                                            (lsource == rsource && lkey < rkey)));
+               (lverdict == rverdict &&
+                   (source_precedence_fn_(lsource, rsource) ||
+                       (lsource == rsource && grouping_key_fn_(left) < grouping_key_fn_(right))));
     };
 
     // Sort first
