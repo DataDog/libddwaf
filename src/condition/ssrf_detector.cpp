@@ -215,11 +215,13 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
             }
         }
 
-        // If the injection includes the scheme check if it's still a valid one
+        // If the injection includes the scheme and beyond, check if the
+        // potentially injected scheme is still a valid one
         //
         //  scheme://userinfo@host:port/path?query#fragment
-        //  ───────────────────>
-        if (param_index == 0 && !authorised_scheme_set.contains(uri.scheme)) {
+        //  ───────>
+        if (!uri.scheme.empty() && param_index == 0 && param.size() > uri.scheme.size() &&
+            !authorised_scheme_set.contains(uri.scheme)) {
             return {{std::string(param), it.get_current_path()}};
         }
 

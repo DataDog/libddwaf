@@ -79,7 +79,7 @@ public:
 
 protected:
     ResourceType resource_;
-    std::string_view current_param_{};
+    std::string_view current_param_;
     std::size_t current_index_{npos};
     IteratorType it_;
 };

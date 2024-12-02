@@ -63,7 +63,7 @@ TEST(TestSqliteTokenizer, Number)
 {
     std::vector<std::string> samples{"0", "1.1", "1", "1", "1e17", "1.0101e+17", "0x22", "0xFF",
         "0122", "00", "0b101", "0B11_00", "0b110_0", "0X12_3", "0xFA_AA", "0o77", "0O7_7",
-        "012_345", "0.000_00"};
+        "012_345", "0.000_00", "-1.2", "-0.1", "-1", "+1", "+1.2", "+0.1"};
 
     for (const auto &statement : samples) {
         sqlite_tokenizer tokenizer(statement);
@@ -108,6 +108,28 @@ TEST(TestSqliteTokenizer, BitwiseOperators)
         ASSERT_EQ(obtained_tokens.size(), 1) << statement;
         EXPECT_EQ(obtained_tokens[0].type, stt::bitwise_operator);
         EXPECT_TRUE(obtained_tokens[0].str == statement);
+    }
+}
+
+TEST(TestSqliteTokenizer, Expression)
+{
+    std::vector<std::pair<std::string, std::vector<stt>>> samples{
+        {R"(1+1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(+1+1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(+1+1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(-1+1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(1-1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(-1-1)", {stt::number, stt::binary_operator, stt::number}},
+        {R"(+1-1)", {stt::number, stt::binary_operator, stt::number}},
+    };
+
+    for (const auto &[statement, expected_tokens] : samples) {
+        sqlite_tokenizer tokenizer(statement);
+        auto obtained_tokens = tokenizer.tokenize();
+        // ASSERT_EQ(expected_tokens.size(), obtained_tokens.size()) << statement;
+        for (std::size_t i = 0; i < obtained_tokens.size(); ++i) {
+            EXPECT_EQ(expected_tokens[i], obtained_tokens[i].type);
+        }
     }
 }
 

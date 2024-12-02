@@ -1,0 +1,29 @@
+{
+  name: "Basic run with match",
+  runs: [
+    {
+      persistent-input: {
+        server.sys.exec.cmd: ["/usr/bin/bash", "-c", "cat $0", "/etc/passwd"],
+        server.request.query: [ "no", "injection", "here" ],
+        server.request.body: [ "no", "injection", "before", "cat $0", "or", "after"]
+      },
+      rules: [
+        {
+          "rsp-930-005": [
+            {
+              resource: {
+                address: "server.sys.exec.cmd",
+                value: /usr/bin/bash "-c" "cat $0" "/etc/passwd"
+              },
+              params: {
+                address: "server.request.body",
+                value: "cat $0"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}
