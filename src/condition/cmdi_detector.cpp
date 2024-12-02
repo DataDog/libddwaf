@@ -25,6 +25,7 @@
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
 #include "log.hpp"
+#include "object_view.hpp"
 #include "platform.hpp"
 #include "tokenizer/shell.hpp"
 #include "transformer/common/cow_string.hpp"
