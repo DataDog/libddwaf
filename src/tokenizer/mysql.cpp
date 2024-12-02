@@ -109,10 +109,26 @@ mysql_tokenizer::mysql_tokenizer(
     }
 }
 
-void mysql_tokenizer::tokenize_keyword_operator_or_identifier()
+void mysql_tokenizer::tokenize_string_keyword_operator_or_identifier()
 {
     sql_token token;
     token.index = index();
+
+    auto c = ddwaf::tolower(peek());
+    auto n = next();
+
+    // Bit-string
+    if ((c == 'b' || c == 'x') && n == '\'') {
+        advance();
+        // The substring won't contain the prefix, but it's not required
+        // Also, bit-strings have a reduced character set not taken into
+        // consideration here, however it probably also doesn't make a
+        // difference to us since we're not using the value.
+        token.str = extract_unescaped_string('\'');
+        token.type = sql_token_type::number;
+        emplace_token(token);
+        return;
+    }
 
     auto remaining_str = substr(index());
 
@@ -221,7 +237,7 @@ void mysql_tokenizer::tokenize_eol_comment()
     emplace_token(token);
 }
 
-void mysql_tokenizer::tokenize_eol_comment_or_operator()
+void mysql_tokenizer::tokenize_eol_comment_or_operator_or_number()
 {
     auto n = next();
     auto n2 = next(2);
@@ -237,6 +253,20 @@ void mysql_tokenizer::tokenize_eol_comment_or_operator()
         return;
     }
 
+    if (tokens_.empty() || current_token_type() != sql_token_type::number) {
+        auto number_str = extract_number();
+        if (!number_str.empty()) {
+            sql_token token;
+            token.index = index();
+            token.type = sql_token_type::number;
+            token.str = number_str;
+            advance(number_str.size() - 1);
+            emplace_token(token);
+            return;
+        }
+    }
+
+    // If it's not a number, it must be an operator
     add_token(sql_token_type::binary_operator);
 }
 
@@ -247,7 +277,7 @@ std::vector<sql_token> mysql_tokenizer::tokenize_impl()
         // TODO use an array of characters or a giant switch?
         if (ddwaf::isalpha(c) || c == '_' || static_cast<uint8_t>(c) > 0x7f) {
             // Command or identifier
-            tokenize_keyword_operator_or_identifier();
+            tokenize_string_keyword_operator_or_identifier();
         } else if (ddwaf::isdigit(c)) {
             tokenize_number_or_identifier();
         } else if (c == '"') {
@@ -284,7 +314,7 @@ std::vector<sql_token> mysql_tokenizer::tokenize_impl()
         } else if (c == '/') {
             tokenize_inline_comment_or_operator();
         } else if (c == '-') {
-            tokenize_eol_comment_or_operator();
+            tokenize_eol_comment_or_operator_or_number();
         } else if (c == '#') {
             tokenize_eol_comment();
         } else if (c == '@') {
@@ -311,8 +341,10 @@ std::vector<sql_token> mysql_tokenizer::tokenize_impl()
             } else {
                 add_token(sql_token_type::binary_operator);
             }
-        } else if (c == '=' || c == '%' || c == '+') {
+        } else if (c == '=' || c == '%') {
             add_token(sql_token_type::binary_operator);
+        } else if (c == '+') {
+            tokenize_operator_or_number();
         } else if (c == '|') {
             if (next() == '|') {
                 add_token(sql_token_type::binary_operator, 2);

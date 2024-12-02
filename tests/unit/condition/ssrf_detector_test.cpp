@@ -74,7 +74,9 @@ void match_path_and_input(
 TEST(TestSSRFDetector, MatchScheme)
 {
     match_path_and_input({
-        {"gopher://blabla.com/path", {.yaml = "gopher"}},
+        {"gopher://blabla.com/path", {.yaml = R"("gopher:")", .resolved = "gopher:"}},
+        {"data://blabla.com/path",
+            {.yaml = R"(data://blabla.com)", .resolved = "data://blabla.com"}},
     });
 }
 
@@ -208,6 +210,8 @@ TEST(TestSSRFDetector, NoMatchPotentialFalsePositives)
             {"http://google.com/batch", {.yaml = R"({query: {param: "batch"}})"}},
             {"http://google.com/batch", {.yaml = R"({query: {param: "/batch"}})"}},
             {"file/blabla/metadata", {.yaml = R"({query: {param: "blabla"}})"}},
+            {"gopher://blabla.com/path", {.yaml = "gopher"}},
+            {"data://blabla.com/path", {.yaml = "data"}},
             /*            {"http://scrapper-proxy.awsregion.bla.iohttps://images.bla.com/whatever",*/
             /*{.yaml = R"({url: "https://images.bla.com/whatever"})"}},*/
         },

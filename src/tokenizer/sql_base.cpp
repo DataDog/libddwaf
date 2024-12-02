@@ -23,7 +23,7 @@ namespace ddwaf {
 namespace {
 // Hexadecimal, octal, decimal or floating point
 re2::RE2 number_regex(
-    R"((?i)^(0[Xx][0-9a-fA-F](?:[0-9a-fA-F]*|_[0-9a-fA-F])*|0[Bb][01](?:[01]|_[01])*|0[Oo][0-7](?:[0-7]|_[0-7])*|(?:(?:[0-9](?:[0-9]|_[0-9])*)(?:\.[0-9](?:[0-9]|_[0-9])*)?(?:[eE][+-]?[0-9](?:[0-9]|_[0-9])*)?))(?:\b|\s|$))");
+    R"((?i)^(0[Xx][0-9a-fA-F](?:[0-9a-fA-F]*|_[0-9a-fA-F])*|0[Bb][01](?:[01]|_[01])*|0[Oo][0-7](?:[0-7]|_[0-7])*|(?:(?:[-+]?[0-9](?:[0-9]|_[0-9])*)(?:\.[0-9](?:[0-9]|_[0-9])*)?(?:[eE][+-]?[0-9](?:[0-9]|_[0-9])*)?))(?:\b|\s|$))");
 
 } // namespace
 
@@ -269,6 +269,25 @@ template <typename T> void sql_tokenizer<T>::tokenize_number()
         emplace_token(token);
         advance(token.str.size() - 1);
     }
+}
+
+template <typename T> void sql_tokenizer<T>::tokenize_operator_or_number()
+{
+    if (tokens_.empty() || current_token_type() != sql_token_type::number) {
+        auto number_str = extract_number();
+        if (!number_str.empty()) {
+            sql_token token;
+            token.index = index();
+            token.type = sql_token_type::number;
+            token.str = number_str;
+            advance(number_str.size() - 1);
+            emplace_token(token);
+            return;
+        }
+    }
+
+    // If it's not a number, it must be an operator
+    add_token(sql_token_type::binary_operator);
 }
 
 template class sql_tokenizer<pgsql_tokenizer>;

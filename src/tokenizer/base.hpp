@@ -91,6 +91,10 @@ protected:
         }
     }
 
+    T current_token_type() const { return tokens_.back().type; }
+
+    base_token<T> &current_token() { return tokens_.back(); }
+
     std::string_view buffer_;
     std::size_t idx_{0};
     std::unordered_set<T> skip_tokens_{};

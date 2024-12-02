@@ -467,7 +467,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
 {
     static constexpr std::size_t min_str_len = 3;
 
-    match_iterator<min_str_len> it(resource, &params, objects_excluded, limits);
+    match_iterator<min_str_len> it(resource, params, objects_excluded, limits);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
@@ -484,7 +484,6 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
                 return sqli_error::invalid_sql;
             }
         }
-
         auto [param_tokens, param_tokens_begin] =
             get_consecutive_tokens(resource_tokens, param_index, param_index + value.size());
         if (param_tokens.empty()) {
