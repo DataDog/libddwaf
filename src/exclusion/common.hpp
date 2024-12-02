@@ -15,7 +15,7 @@
 
 namespace ddwaf {
 
-class rule;
+class core_rule;
 
 namespace exclusion {
 
@@ -69,19 +69,19 @@ struct rule_policy_ref {
 };
 
 struct context_policy {
-    std::unordered_map<const rule *, rule_policy> persistent;
-    std::unordered_map<const rule *, rule_policy> ephemeral;
+    std::unordered_map<const core_rule *, rule_policy> persistent;
+    std::unordered_map<const core_rule *, rule_policy> ephemeral;
 
     [[nodiscard]] bool empty() const { return persistent.empty() && ephemeral.empty(); }
 
     [[nodiscard]] std::size_t size() const { return persistent.size() + ephemeral.size(); }
 
-    bool contains(const rule *key) const
+    bool contains(const core_rule *key) const
     {
         return persistent.contains(key) || ephemeral.contains(key);
     }
 
-    rule_policy_ref find(const rule *key) const
+    rule_policy_ref find(const core_rule *key) const
     {
         auto p_it = persistent.find(key);
         auto e_it = ephemeral.find(key);
@@ -109,8 +109,8 @@ struct context_policy {
             {p_policy.objects, e_policy.objects}};
     }
 
-    void add_rule_exclusion(const ddwaf::rule *rule, filter_mode mode, std::string_view action,
-        bool ephemeral_exclusion)
+    void add_rule_exclusion(
+        const core_rule *rule, filter_mode mode, std::string_view action, bool ephemeral_exclusion)
     {
         auto &rule_policy = ephemeral_exclusion ? ephemeral : persistent;
 
@@ -122,7 +122,7 @@ struct context_policy {
         }
     }
 
-    void add_input_exclusion(const ddwaf::rule *rule, const object_set &objects)
+    void add_input_exclusion(const core_rule *rule, const object_set &objects)
     {
         if (!objects.persistent.empty()) {
             auto &rule_policy = persistent[rule];

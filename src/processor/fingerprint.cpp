@@ -586,6 +586,10 @@ std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_i
     const unary_argument<const ddwaf_object *> &headers, processor_cache & /*cache*/,
     ddwaf::timer &deadline) const
 {
+    if (headers.value->type != DDWAF_OBJ_MAP) {
+        return {{}, object_store::attribute::none};
+    }
+
     std::string known_header_bitset;
     known_header_bitset.resize(standard_headers_length, '0');
 
@@ -632,6 +636,10 @@ std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_
     const unary_argument<const ddwaf_object *> &headers, processor_cache & /*cache*/,
     ddwaf::timer &deadline) const
 {
+    if (headers.value->type != DDWAF_OBJ_MAP) {
+        return {{}, object_store::attribute::none};
+    }
+
     std::string ip_origin_bitset;
     ip_origin_bitset.resize(ip_origin_headers_length, '0');
 

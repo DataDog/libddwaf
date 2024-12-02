@@ -21,6 +21,7 @@
 #include "parser/parser.hpp"
 #include "parser/specification.hpp"
 #include "semver.hpp"
+#include "target_address.hpp"
 #include "utils.hpp"
 #include "version.hpp"
 

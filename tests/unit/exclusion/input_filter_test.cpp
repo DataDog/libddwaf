@@ -26,8 +26,7 @@ TEST(TestInputFilter, InputExclusionNoConditions)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {});
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter(
         "filter", std::make_shared<expression>(), {rule.get()}, std::move(obj_filter));
 
@@ -55,8 +54,7 @@ TEST(TestInputFilter, EphemeralInputExclusionNoConditions)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {});
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter(
         "filter", std::make_shared<expression>(), {rule.get()}, std::move(obj_filter));
 
@@ -89,8 +87,7 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter(
         "filter", std::make_shared<expression>(), {rule.get()}, std::move(obj_filter));
 
@@ -123,8 +120,7 @@ TEST(TestInputFilter, EphemeralObjectExclusionNoConditions)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter(
         "filter", std::make_shared<expression>(), {rule.get()}, std::move(obj_filter));
 
@@ -158,8 +154,7 @@ TEST(TestInputFilter, PersistentInputExclusionWithPersistentCondition)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
@@ -192,8 +187,7 @@ TEST(TestInputFilter, EphemeralInputExclusionWithEphemeralCondition)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
@@ -230,8 +224,7 @@ TEST(TestInputFilter, PersistentInputExclusionWithEphemeralCondition)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
@@ -268,8 +261,7 @@ TEST(TestInputFilter, EphemeralInputExclusionWithPersistentCondition)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
@@ -302,8 +294,7 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("usr.id"), "usr.id", {});
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
@@ -335,8 +326,7 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
@@ -370,8 +360,7 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
 
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
@@ -409,8 +398,7 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
 
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     ddwaf::timer deadline{2s};
@@ -435,8 +423,7 @@ TEST(TestInputFilter, InputValidateCachedMatch)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("usr.id"), "usr.id");
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     // To validate that the cache works, we pass an object store containing
@@ -485,8 +472,7 @@ TEST(TestInputFilter, InputValidateCachedEphemeralMatch)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("usr.id"), "usr.id");
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     // To validate that the cache works, we pass an object store containing
@@ -566,8 +552,7 @@ TEST(TestInputFilter, InputMatchWithoutCache)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     // In this test we validate that when the cache is empty and only one
@@ -616,8 +601,7 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
@@ -674,8 +658,7 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
@@ -734,8 +717,7 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     // To validate that the cache works, we pass an object store containing
@@ -798,8 +780,7 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     // In this test we validate that when the cache is empty and only one
@@ -858,8 +839,7 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
@@ -918,8 +898,7 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     // In this instance we pass a complete store with both addresses but an
@@ -982,8 +961,7 @@ TEST(TestInputFilter, MatchWithDynamicMatcher)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
-    auto rule =
-        std::make_shared<ddwaf::rule>(ddwaf::rule("", "", {}, std::make_shared<expression>()));
+    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     {

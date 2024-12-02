@@ -32,6 +32,7 @@
 #include "rule.hpp"
 #include "ruleset.hpp"
 #include "ruleset_info.hpp"
+#include "target_address.hpp"
 #include "transformer/base.hpp"
 #include "utils.hpp"
 
@@ -122,8 +123,9 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
     return std::make_shared<expression>(std::move(conditions));
 }
 
-void parseRule(parameter::map &rule, base_section_info &info,
-    std::unordered_set<std::string_view> &rule_ids, ddwaf::ruleset &rs, ddwaf::object_limits limits)
+void parse_rule(parameter::map &rule, base_section_info &info,
+    std::unordered_set<std::string_view> &rule_ids, std::vector<std::shared_ptr<core_rule>> &rules,
+    ddwaf::object_limits limits)
 {
     auto id = at<std::string>(rule, "id");
     if (rule_ids.find(id) != rule_ids.end()) {
@@ -164,11 +166,11 @@ void parseRule(parameter::map &rule, base_section_info &info,
             throw ddwaf::parsing_error("missing key 'type'");
         }
 
-        auto rule_ptr = std::make_shared<ddwaf::rule>(
+        auto rule_ptr = std::make_shared<core_rule>(
             std::string(id), at<std::string>(rule, "name"), std::move(tags), std::move(expression));
 
         rule_ids.emplace(rule_ptr->get_id());
-        rs.insert_rule(rule_ptr);
+        rules.emplace_back(rule_ptr);
         info.add_loaded(rule_ptr->get_id());
     } catch (const std::exception &e) {
         DDWAF_WARN("failed to parse rule '{}': {}", id, e.what());
@@ -187,11 +189,13 @@ void parse(
     auto &section = info.add_section("rules");
 
     std::unordered_set<std::string_view> rule_ids;
+    std::vector<std::shared_ptr<core_rule>> rules;
     for (unsigned i = 0; i < rules_array.size(); ++i) {
         const auto &rule_param = rules_array[i];
         try {
             auto rule = static_cast<parameter::map>(rule_param);
-            parseRule(rule, section, rule_ids, rs, limits);
+            parse_rule(rule, section, rule_ids, rules, limits);
+            rs.insert_rules(rules, {});
         } catch (const std::exception &e) {
             DDWAF_WARN("{}", e.what());
             section.add_failed("index:" + to_string<std::string>(i), e.what());

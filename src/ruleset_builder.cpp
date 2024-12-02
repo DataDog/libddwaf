@@ -7,6 +7,7 @@
 #include <exception>
 #include <memory>
 #include <set>
+#include <string>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -47,10 +48,10 @@ constexpr ruleset_builder::change_state operator&(
 
 namespace {
 
-std::set<rule *> references_to_rules(
-    const std::vector<parser::reference_spec> &references, const indexer<rule> &rules)
+std::set<core_rule *> references_to_rules(
+    const std::vector<parser::reference_spec> &references, const indexer<core_rule> &rules)
 {
-    std::set<rule *> rule_refs;
+    std::set<core_rule *> rule_refs;
     if (!references.empty()) {
         for (const auto &ref : references) {
             if (ref.type == parser::reference_type::id) {
@@ -71,6 +72,23 @@ std::set<rule *> references_to_rules(
     return rule_refs;
 }
 
+core_rule::verdict_type obtain_rule_verdict(
+    const action_mapper &mapper, const std::vector<std::string> &rule_actions)
+{
+    for (const auto &action : rule_actions) {
+        auto it = mapper.find(action);
+        if (it == mapper.end()) {
+            continue;
+        }
+
+        auto action_mode = it->second.type;
+        if (is_blocking_action(action_mode)) {
+            return core_rule::verdict_type::block;
+        }
+    }
+    return core_rule::verdict_type::monitor;
+}
+
 } // namespace
 
 std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_ruleset_info &info)
@@ -82,9 +100,12 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         return {};
     }
 
-    constexpr static change_state base_rule_update = change_state::rules | change_state::overrides;
+    constexpr static change_state base_rule_update =
+        change_state::rules | change_state::overrides | change_state::actions;
+    constexpr static change_state custom_rule_update =
+        change_state::custom_rules | change_state::actions;
     constexpr static change_state filters_update =
-        base_rule_update | change_state::custom_rules | change_state::filters;
+        base_rule_update | custom_rule_update | change_state::filters;
     constexpr static change_state processors_update =
         change_state::processors | change_state::scanners;
     // When a configuration with 'rules' or 'rules_override' is received, we
@@ -95,7 +116,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
 
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : base_rules_) {
-            auto rule_ptr = std::make_shared<ddwaf::rule>(
+            auto rule_ptr = std::make_shared<core_rule>(
                 id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
             final_base_rules_.emplace(rule_ptr);
         }
@@ -135,23 +156,27 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
             }
         }
 
-        // Remove any disabled rules
+        // Update blocking mode and remove any disabled rules
         for (auto it = final_base_rules_.begin(); it != final_base_rules_.end();) {
             if (!(*it)->is_enabled()) {
                 it = final_base_rules_.erase(it);
-            } else {
-                ++it;
+                continue;
             }
+
+            auto mode = obtain_rule_verdict(*actions_, (*it)->get_actions());
+            (*it)->set_verdict(mode);
+
+            ++it;
         }
     }
 
-    if ((state & change_state::custom_rules) != change_state::none) {
+    if ((state & custom_rule_update) != change_state::none) {
         final_user_rules_.clear();
-
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : user_rules_) {
-            auto rule_ptr = std::make_shared<ddwaf::rule>(
-                id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
+            auto mode = obtain_rule_verdict(*actions_, spec.actions);
+            auto rule_ptr = std::make_shared<core_rule>(
+                id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source, mode);
             if (!rule_ptr->is_enabled()) {
                 // Skip disabled rules
                 continue;
@@ -202,9 +227,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
         }
     }
 
-    auto rs = std::make_shared<ddwaf::ruleset>();
-    rs->insert_rules(final_base_rules_.items());
-    rs->insert_rules(final_user_rules_.items());
+    auto rs = std::make_shared<ruleset>();
+    rs->insert_rules(final_base_rules_.items(), final_user_rules_.items());
     rs->insert_filters(rule_filters_);
     rs->insert_filters(input_filters_);
     rs->insert_preprocessors(preprocessors_);
@@ -220,7 +244,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(parameter::map &root, base_rules
     // again that there are rules available.
     if (rs->rules.empty()) {
         DDWAF_WARN("No valid rules found");
-        throw ddwaf::parsing_error("no valid or enabled rules found");
+        throw parsing_error("no valid or enabled rules found");
     }
 
     return rs;
@@ -292,7 +316,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
                 decltype(rule_data_ids_) rule_data_ids;
 
                 auto new_user_rules = parser::v2::parse_rules(
-                    rules, section, rule_data_ids, limits_, rule::source_type::user);
+                    rules, section, rule_data_ids, limits_, core_rule::source_type::user);
                 user_rules_ = std::move(new_user_rules);
             } else {
                 DDWAF_DEBUG("Clearing all custom rules");
@@ -309,7 +333,7 @@ ruleset_builder::change_state ruleset_builder::load(parameter::map &root, base_r
         // If we haven't received rules and our base ruleset is empty, the
         // WAF can't proceed.
         DDWAF_WARN("No valid rules found");
-        throw ddwaf::parsing_error("no valid rules found");
+        throw parsing_error("no valid rules found");
     }
 
     it = root.find("rules_data");

@@ -151,7 +151,7 @@ void add_action_to_tracker(action_tracker &actions, std::string_view id, action_
     }
 }
 
-void serialize_rule(const ddwaf::rule &rule, ddwaf_object &rule_map)
+void serialize_rule(const core_rule &rule, ddwaf_object &rule_map)
 {
     ddwaf_object tmp;
     ddwaf_object tags_map;
@@ -186,7 +186,7 @@ void serialize_empty_rule(ddwaf_object &rule_map)
     ddwaf_object_map_add(&rule_map, "tags", &tags_map);
 }
 
-void serialize_and_consolidate_rule_actions(const ddwaf::rule &rule, ddwaf_object &rule_map,
+void serialize_and_consolidate_rule_actions(const core_rule &rule, ddwaf_object &rule_map,
     std::string_view action_override, action_tracker &actions, ddwaf_object &stack_id)
 {
     const auto &rule_actions = rule.get_actions();

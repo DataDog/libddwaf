@@ -17,7 +17,7 @@ namespace {
 
 TEST(TestTimer, Basic)
 {
-    ddwaf::timer deadline{2ms, 1};
+    ddwaf::base_timer<1> deadline{2ms};
     EXPECT_FALSE(deadline.expired());
 
     std::this_thread::sleep_for(2ms);
@@ -34,7 +34,7 @@ TEST(TestTimer, ExpiredFromConstruction)
 
 TEST(TestTimer, ValidatePeriod)
 {
-    ddwaf::timer deadline{1ms, 5};
+    ddwaf::base_timer<5> deadline{1ms};
     EXPECT_FALSE(deadline.expired());
 
     std::this_thread::sleep_for(1ms);
@@ -44,6 +44,25 @@ TEST(TestTimer, ValidatePeriod)
     EXPECT_FALSE(deadline.expired());
     EXPECT_TRUE(deadline.expired());
     EXPECT_TRUE(deadline.expired());
+}
+
+TEST(TestTimer, EndlessTimer)
+{
+    // Simple sanity check, we can't really test this
+    auto deadline = ddwaf::endless_timer();
+    EXPECT_FALSE(deadline.expired());
+
+    std::this_thread::sleep_for(1ms);
+    EXPECT_FALSE(deadline.expired());
+}
+
+TEST(TestTimer, TimerExpirationBeyondSizeLimit)
+{
+    ddwaf::base_timer<5> deadline{std::chrono::nanoseconds::max()};
+    EXPECT_FALSE(deadline.expired());
+
+    std::this_thread::sleep_for(1ms);
+    EXPECT_FALSE(deadline.expired());
 }
 
 } // namespace

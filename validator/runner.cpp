@@ -25,6 +25,13 @@ test_runner::test_runner(const std::string &rule_file)
         auto id = rule_node["id"].as<std::string>();
         rules_[id] = rule_node;
     }
+
+    auto custom_rules_node = doc["custom_rules"];
+    for (auto it = custom_rules_node.begin(); it != custom_rules_node.end(); ++it) {
+        YAML::Node rule_node = *it;
+        auto id = rule_node["id"].as<std::string>();
+        custom_rules_[id] = rule_node;
+    }
 }
 
 test_runner::~test_runner() { ddwaf_destroy(handle_); }
@@ -161,7 +168,12 @@ void test_runner::validate(const YAML::Node &expected, const YAML::Node &obtaine
             seen[j] = true;
             found_expected = true;
 
-            auto rule = rules_[id];
+            YAML::Node rule;
+            if (rules_.contains(id)) {
+                rule = rules_[id];
+            } else {
+                rule = custom_rules_[id];
+            }
             validate_rule(rule, obtained_rule_match["rule"]);
             validate_conditions(rule["conditions"], obtained_rule_match["rule_matches"]);
             validate_matches(expected_rule_match, obtained_rule_match["rule_matches"]);
