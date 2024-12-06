@@ -46,6 +46,19 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/parser/rule_override_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/scanner_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/parser/exclusion_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/actions_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/common.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/data_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/exclusion_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/expression_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/matcher_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/processor_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/matcher_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/rule_override_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/rule_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/scanner_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/transformer_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/manager.cpp
     ${libddwaf_SOURCE_DIR}/src/processor/extract_schema.cpp
     ${libddwaf_SOURCE_DIR}/src/processor/fingerprint.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/exists.cpp
