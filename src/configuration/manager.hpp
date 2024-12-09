@@ -7,10 +7,9 @@
 #pragma once
 
 #include <string>
-#include <string_view>
 #include <unordered_map>
 
-#include "configuration/configuration.hpp"
+#include "configuration/common/configuration.hpp"
 
 namespace ddwaf {
 
@@ -28,7 +27,7 @@ public:
     bool add_or_update(const std::string &path, parameter::map &root, base_ruleset_info &info);
     bool remove(const std::string &path);
 
-    static configuration_spec consolidate() ;
+    static configuration_spec consolidate();
 
 protected:
     configuration_spec load(parameter::map &root, base_ruleset_info &info);

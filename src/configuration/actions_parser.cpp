@@ -11,7 +11,7 @@
 #include <utility>
 
 #include "action_mapper.hpp"
-#include "configuration/common.hpp"
+#include "configuration/common/common.hpp"
 #include "log.hpp"
 #include "parameter.hpp"
 #include "uri_utils.hpp"

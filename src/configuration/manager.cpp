@@ -14,19 +14,18 @@
 #include <string_view>
 #include <utility>
 
-#include "configuration/manager.hpp"
 #include "configuration/actions_parser.hpp"
-#include "configuration/common.hpp"
-#include "configuration/configuration.hpp"
+#include "configuration/common/common.hpp"
+#include "configuration/common/configuration.hpp"
 #include "configuration/data_parser.hpp"
 #include "configuration/exclusion_parser.hpp"
+#include "configuration/manager.hpp"
 #include "configuration/processor_parser.hpp"
 #include "configuration/rule_override_parser.hpp"
 #include "configuration/rule_parser.hpp"
 #include "configuration/scanner_parser.hpp"
 #include "log.hpp"
 #include "parameter.hpp"
-#include "rule.hpp"
 #include "ruleset_info.hpp"
 
 namespace ddwaf {
@@ -67,9 +66,7 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
         try {
             auto rules = static_cast<parameter::vector>(it->second);
 
-            if (!rules.empty()) {
-                config.base_rules =
-                    parse_rules(rules, section, limits_, core_rule::source_type::base, ids_);
+            if (!rules.empty() && parse_base_rules(rules, config, ids_, section, limits_)) {
                 config.content = config.content | content_set::rules;
             }
         } catch (const std::exception &e) {
@@ -84,9 +81,7 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
         auto &section = info.add_section("custom_rules");
         try {
             auto rules = static_cast<parameter::vector>(it->second);
-            if (!rules.empty()) {
-                config.user_rules =
-                    parse_rules(rules, section, limits_, core_rule::source_type::user, ids_);
+            if (!rules.empty() && parse_user_rules(rules, config, ids_, section, limits_)) {
                 config.content = config.content | content_set::custom_rules;
             }
         } catch (const std::exception &e) {
@@ -101,8 +96,7 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
         auto &section = info.add_section("rules_data");
         try {
             auto rules_data = static_cast<parameter::vector>(it->second);
-            if (!rules_data.empty()) {
-                config.rule_matchers = parse_data(rules_data, section);
+            if (!rules_data.empty() && parse_rule_data(rules_data, config, section)) {
                 config.content = config.content | content_set::rule_data;
             }
         } catch (const std::exception &e) {
@@ -117,8 +111,7 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
         auto &section = info.add_section("rules_override");
         try {
             auto overrides = static_cast<parameter::vector>(it->second);
-            if (!overrides.empty()) {
-                config.overrides = parse_overrides(overrides, section);
+            if (!overrides.empty() && parse_overrides(overrides, config, section)) {
                 config.content = config.content | content_set::overrides;
             }
         } catch (const std::exception &e) {
@@ -133,8 +126,7 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
         auto &section = info.add_section("exclusions");
         try {
             auto exclusions = static_cast<parameter::vector>(it->second);
-            if (!exclusions.empty()) {
-                config.exclusions = parse_filters(exclusions, section, limits_, ids_);
+            if (!exclusions.empty() && parse_filters(exclusions, config, ids_, section, limits_)) {
                 config.content = config.content | content_set::filters;
             }
         } catch (const std::exception &e) {
@@ -149,8 +141,7 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
         auto &section = info.add_section("exclusions_data");
         try {
             auto exclusions_data = static_cast<parameter::vector>(it->second);
-            if (!exclusions_data.empty()) {
-                config.exclusion_matchers = parse_data(exclusions_data, section);
+            if (!exclusions_data.empty() && parse_exclusion_data(exclusions_data, config, section)) {
                 config.content = config.content | content_set::exclusion_data;
             }
         } catch (const std::exception &e) {
@@ -165,8 +156,7 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
         auto &section = info.add_section("processors");
         try {
             auto processors = static_cast<parameter::vector>(it->second);
-            if (!processors.empty()) {
-                config.processors = parse_processors(processors, section, limits_, ids_);
+            if (!processors.empty() && parse_processors(processors, config, ids_, section, limits_)) {
                 config.content = config.content | content_set::processors;
             }
         } catch (const std::exception &e) {
@@ -181,8 +171,7 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
         auto &section = info.add_section("scanners");
         try {
             auto scanners = static_cast<parameter::vector>(it->second);
-            if (!scanners.empty()) {
-                config.scanners = parse_scanners(scanners, section, ids_);
+            if (!scanners.empty() && parse_scanners(scanners, config, ids_, section)) {
                 config.content = config.content | content_set::scanners;
             }
         } catch (const std::exception &e) {
@@ -232,9 +221,9 @@ bool configuration_manager::remove(const std::string &path)
 
     for (const auto &rule : it->second.user_rules) { ids_.rules.erase(rule.id); }
 
-    for (const auto &filter : it->second.exclusions.rule_filters) { ids_.filters.erase(filter.id); }
+    for (const auto &filter : it->second.rule_filters) { ids_.filters.erase(filter.id); }
 
-    for (const auto &filter : it->second.exclusions.input_filters) {
+    for (const auto &filter : it->second.input_filters) {
         ids_.filters.erase(filter.id);
     }
 

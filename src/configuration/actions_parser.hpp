@@ -9,10 +9,8 @@
 #include <memory>
 
 #include "action_mapper.hpp"
-#include "configuration/common.hpp"
-#include "configuration/configuration.hpp"
+#include "configuration/common/common.hpp"
 #include "parameter.hpp"
-#include "ruleset_info.hpp"
 
 namespace ddwaf {
 

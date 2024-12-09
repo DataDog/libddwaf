@@ -15,14 +15,11 @@
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <string_view>
 #include <vector>
 
 #include "exclusion/object_filter.hpp"
-#include "parameter.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
-#include "ruleset_info.hpp"
 #include "scanner.hpp"
 
 namespace ddwaf {
@@ -86,41 +83,13 @@ struct processor_spec {
     bool output{true};
 };
 
+enum class data_type { unknown, data_with_expiration, ip_with_expiration };
+
 struct data_spec {
+    using value_type = std::pair<std::string, uint64_t>;
     std::string id;
-    std::shared_ptr<matcher::base> matcher;
-};
-
-// Containers
-using rule_spec_container = std::vector<rule_spec>;
-using data_container = std::vector<data_spec>;
-using scanner_container = std::vector<std::shared_ptr<scanner>>;
-using processor_container = std::vector<processor_spec>;
-
-struct override_spec_container {
-    [[nodiscard]] bool empty() const { return by_ids.empty() && by_tags.empty(); }
-    void clear()
-    {
-        by_ids.clear();
-        by_tags.clear();
-    }
-    // The distinction is only necessary due to the restriction that
-    // overrides by ID are to be considered a priority over overrides by tags
-    std::vector<override_spec> by_ids;
-    std::vector<override_spec> by_tags;
-};
-
-struct filter_spec_container {
-    [[nodiscard]] bool empty() const { return rule_filters.empty() && input_filters.empty(); }
-
-    void clear()
-    {
-        rule_filters.clear();
-        input_filters.clear();
-    }
-
-    std::vector<rule_filter_spec> rule_filters;
-    std::vector<input_filter_spec> input_filters;
+    data_type type;
+    std::vector<value_type> values;
 };
 
 // Config spec contains an instance of a parsed configuration. Since this has to
@@ -149,21 +118,25 @@ struct configuration_spec {
     content_set content;
 
     // Obtained from 'rules', can't be empty
-    rule_spec_container base_rules;
+    std::vector<rule_spec> base_rules;
     // Obtained from 'custom_rules'
-    rule_spec_container user_rules;
+    std::vector<rule_spec> user_rules;
     // Obtained from 'rules_data', depends on base_rules_
-    data_container rule_matchers;
+    std::vector<data_spec> rule_data;
     // Obtained from 'rules_override'
-    override_spec_container overrides;
+    // The distinction is only necessary due to the restriction that
+    // overrides by ID are to be considered a priority over overrides by tags
+    std::vector<override_spec> overrides_by_id;
+    std::vector<override_spec> overrides_by_tags;
     // Obtained from 'exclusions'
-    filter_spec_container exclusions;
+    std::vector<rule_filter_spec> rule_filters;
+    std::vector<input_filter_spec> input_filters;
     // Obtained from 'exclusion_data', depends on exclusions_
-    data_container exclusion_matchers;
+    std::vector<data_spec> exclusion_data;
     // Obtained from 'processors'
-    processor_container processors;
+    std::vector<processor_spec> processors;
     // Scanner container
-    scanner_container scanners;
+    std::vector<std::shared_ptr<scanner>> scanners;
     // Actions
     std::shared_ptr<action_mapper> actions;
 };

@@ -12,10 +12,11 @@
 #include <vector>
 
 #include "condition/base.hpp"
-#include "configuration/common.hpp"
-#include "configuration/configuration.hpp"
+#include "configuration/common/common.hpp"
+#include "configuration/common/configuration.hpp"
+#include "configuration/common/expression_parser.hpp"
+#include "configuration/common/reference_parser.hpp"
 #include "configuration/exclusion_parser.hpp"
-#include "configuration/expression_parser.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "exclusion/object_filter.hpp"
@@ -110,10 +111,9 @@ rule_filter_spec parse_rule_filter(const parameter::map &filter, std::string id,
 
 } // namespace
 
-filter_spec_container parse_filters(parameter::vector &filter_array, base_section_info &info,
-    const object_limits &limits, spec_id_tracker &ids)
+bool parse_filters(const parameter::vector &filter_array, configuration_spec &cfg,
+    spec_id_tracker &ids, base_section_info &info, const object_limits &limits)
 {
-    filter_spec_container filters;
     for (unsigned i = 0; i < filter_array.size(); i++) {
         const auto &node_param = filter_array[i];
         auto node = static_cast<parameter::map>(node_param);
@@ -139,10 +139,10 @@ filter_spec_container parse_filters(parameter::vector &filter_array, base_sectio
 
             if (node.find("inputs") != node.end()) {
                 auto filter = parse_input_filter(node, id, addresses, limits);
-                filters.input_filters.emplace_back(std::move(filter));
+                cfg.input_filters.emplace_back(std::move(filter));
             } else {
                 auto filter = parse_rule_filter(node, id, addresses, limits);
-                filters.rule_filters.emplace_back(std::move(filter));
+                cfg.rule_filters.emplace_back(std::move(filter));
             }
             DDWAF_DEBUG("Parsed exclusion filter {}", id);
 
@@ -161,7 +161,7 @@ filter_spec_container parse_filters(parameter::vector &filter_array, base_sectio
         }
     }
 
-    return filters;
+    return !cfg.rule_filters.empty() || !cfg.input_filters.empty();
 }
 
 } // namespace ddwaf

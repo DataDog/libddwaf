@@ -10,10 +10,10 @@
 #include <vector>
 
 #include "condition/base.hpp"
-#include "configuration/common.hpp"
-#include "configuration/configuration.hpp"
-#include "configuration/expression_parser.hpp"
-#include "configuration/transformer_parser.hpp"
+#include "configuration/common/common.hpp"
+#include "configuration/common/configuration.hpp"
+#include "configuration/common/expression_parser.hpp"
+#include "configuration/common/transformer_parser.hpp"
 #include "exception.hpp"
 #include "log.hpp"
 #include "parameter.hpp"
@@ -64,12 +64,10 @@ rule_spec parse_rule(parameter::map &rule, std::string id, const object_limits &
         std::move(tags), std::move(expr), at<std::vector<std::string>>(rule, "on_match", {})};
 }
 
-} // namespace
 
-rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info &info,
-    const object_limits &limits, core_rule::source_type source, spec_id_tracker &ids)
+std::vector<rule_spec> parse_rules(const parameter::vector &rule_array, spec_id_tracker &ids, base_section_info &info, core_rule::source_type source, const object_limits &limits)
 {
-    rule_spec_container rules;
+    std::vector<rule_spec> rules;
     for (unsigned i = 0; i < rule_array.size(); ++i) {
         const auto &rule_param = rule_array[i];
         auto node = static_cast<parameter::map>(rule_param);
@@ -116,4 +114,17 @@ rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info
     return rules;
 }
 
+} // namespace
+
+bool parse_base_rules(const parameter::vector &rule_array, configuration_spec &cfg, spec_id_tracker &ids, base_section_info &info, const object_limits &limits)
+{
+    cfg.base_rules = parse_rules(rule_array, ids, info, core_rule::source_type::base, limits);
+    return !cfg.base_rules.empty();
+}
+
+bool parse_user_rules(const parameter::vector &rule_array, configuration_spec &cfg, spec_id_tracker &ids, base_section_info &info, const object_limits &limits)
+{
+    cfg.user_rules = parse_rules(rule_array, ids, info, core_rule::source_type::user, limits);
+    return !cfg.user_rules.empty();
+}
 } // namespace ddwaf

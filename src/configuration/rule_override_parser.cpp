@@ -9,8 +9,9 @@
 #include <utility>
 #include <vector>
 
-#include "configuration/common.hpp"
-#include "configuration/configuration.hpp"
+#include "configuration/common/common.hpp"
+#include "configuration/common/configuration.hpp"
+#include "configuration/common/reference_parser.hpp"
 #include "exception.hpp"
 #include "log.hpp"
 #include "parameter.hpp"
@@ -73,10 +74,8 @@ std::pair<override_spec, reference_type> parse_override(const parameter::map &no
 
 } // namespace
 
-override_spec_container parse_overrides(parameter::vector &override_array, base_section_info &info)
+bool parse_overrides(const parameter::vector &override_array, configuration_spec &cfg, ruleset_info::base_section_info &info)
 {
-    override_spec_container overrides;
-
     for (unsigned i = 0; i < override_array.size(); ++i) {
         auto id = index_to_id(i);
         const auto &node_param = override_array[i];
@@ -84,9 +83,9 @@ override_spec_container parse_overrides(parameter::vector &override_array, base_
         try {
             auto [spec, type] = parse_override(node);
             if (type == reference_type::id) {
-                overrides.by_ids.emplace_back(std::move(spec));
+                cfg.overrides_by_id.emplace_back(std::move(spec));
             } else if (type == reference_type::tags) {
-                overrides.by_tags.emplace_back(std::move(spec));
+                cfg.overrides_by_tags.emplace_back(std::move(spec));
             } else {
                 // This code is likely unreachable
                 DDWAF_WARN("Rule override with no targets");
@@ -101,7 +100,7 @@ override_spec_container parse_overrides(parameter::vector &override_array, base_
         }
     }
 
-    return overrides;
+    return !cfg.overrides_by_id.empty() || !cfg.overrides_by_tags.empty();
 }
 
 } // namespace ddwaf

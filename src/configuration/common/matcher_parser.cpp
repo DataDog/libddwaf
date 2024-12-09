@@ -16,8 +16,8 @@
 #include <utility>
 #include <vector>
 
-#include "configuration/common.hpp"
-#include "configuration/matcher_parser.hpp" // IWYU pragma: keep
+#include "configuration/common/common.hpp"
+#include "configuration/common/matcher_parser.hpp" // IWYU pragma: keep
 #include "ddwaf.h"
 #include "exception.hpp"
 #include "matcher/base.hpp"

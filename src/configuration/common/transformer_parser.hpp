@@ -6,12 +6,14 @@
 
 #pragma once
 
-#include "configuration/common/configuration.hpp"
+#include "condition/base.hpp"
 #include "parameter.hpp"
-#include "ruleset_info.hpp"
+#include "transformer/base.hpp"
 
 namespace ddwaf {
 
-bool parse_scanners(const parameter::vector &scanner_array, configuration_spec &cfg, spec_id_tracker &ids, ruleset_info::base_section_info &info);
+std::vector<transformer_id> parse_transformers(const parameter::vector &root, data_source &source);
+
+std::optional<transformer_id> transformer_from_string(std::string_view str);
 
 } // namespace ddwaf

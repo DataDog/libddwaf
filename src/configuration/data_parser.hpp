@@ -6,16 +6,13 @@
 
 #pragma once
 
-#include <string>
-#include <unordered_map>
-
-#include "configuration/common.hpp"
-#include "configuration/configuration.hpp"
+#include "configuration/common/common.hpp"
+#include "configuration/common/configuration.hpp"
 #include "parameter.hpp"
-#include "ruleset_info.hpp"
 
 namespace ddwaf {
 
-data_container parse_data(parameter::vector &data_array, base_section_info &info);
+bool parse_rule_data(const parameter::vector &data_array, configuration_spec &cfg, base_section_info &info);
+bool parse_exclusion_data(const parameter::vector &data_array, configuration_spec &cfg, base_section_info &info);
 
 } // namespace ddwaf

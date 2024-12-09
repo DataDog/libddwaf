@@ -10,9 +10,10 @@
 #include <utility>
 #include <vector>
 
-#include "configuration/common.hpp"
-#include "configuration/configuration.hpp"
-#include "configuration/expression_parser.hpp"
+#include "configuration/common/common.hpp"
+#include "configuration/common/configuration.hpp"
+#include "configuration/common/expression_parser.hpp"
+#include "configuration/common/reference_parser.hpp"
 #include "exception.hpp"
 #include "log.hpp"
 #include "parameter.hpp"
@@ -63,11 +64,9 @@ std::vector<processor_mapping> parse_processor_mappings(
 
 } // namespace
 
-processor_container parse_processors(parameter::vector &processor_array, base_section_info &info,
-    const object_limits &limits, spec_id_tracker &ids)
+bool parse_processors(const parameter::vector &processor_array, configuration_spec &cfg,
+    spec_id_tracker &ids, ruleset_info::base_section_info &info, const object_limits &limits)
 {
-    processor_container processors;
-
     for (unsigned i = 0; i < processor_array.size(); i++) {
         const auto &node_param = processor_array[i];
         auto node = static_cast<parameter::map>(node_param);
@@ -153,7 +152,7 @@ processor_container parse_processors(parameter::vector &processor_array, base_se
             }
 
             DDWAF_DEBUG("Parsed processor {}", id);
-            processors.emplace_back(processor_spec{
+            cfg.processors.emplace_back(processor_spec{
                 id, type, std::move(expr), std::move(mappings), std::move(scanners), eval, output});
 
             info.add_loaded(id);
@@ -170,7 +169,8 @@ processor_container parse_processors(parameter::vector &processor_array, base_se
             info.add_failed(id, e.what());
         }
     }
-    return processors;
+
+    return !cfg.processors.empty();
 }
 
 } // namespace ddwaf

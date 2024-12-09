@@ -6,15 +6,12 @@
 
 #pragma once
 
-#include <memory>
-
-#include "configuration/common.hpp"
-#include "configuration/configuration.hpp"
+#include "configuration/common/configuration.hpp"
 #include "parameter.hpp"
 #include "ruleset_info.hpp"
 
 namespace ddwaf {
 
-override_spec_container parse_overrides(parameter::vector &override_array, base_section_info &info);
+bool parse_overrides(const parameter::vector &override_array, configuration_spec &cfg, ruleset_info::base_section_info &info);
 
 } // namespace ddwaf

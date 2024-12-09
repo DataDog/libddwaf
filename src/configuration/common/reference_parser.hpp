@@ -6,15 +6,11 @@
 
 #pragma once
 
-#include <string>
-#include <unordered_map>
-
-#include "configuration/configuration.hpp"
 #include "parameter.hpp"
-#include "ruleset_info.hpp"
+#include "configuration/common/configuration.hpp"
 
 namespace ddwaf {
 
-std::vector<transformer_id> parse_transformers(const parameter::vector &root, data_source &source);
+reference_spec parse_reference(const parameter::map &target);
 
 } // namespace ddwaf

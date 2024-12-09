@@ -6,14 +6,9 @@
 
 #pragma once
 
-#include <string>
-#include <unordered_map>
-
-#include "configuration/common.hpp"
-#include "configuration/configuration.hpp"
+#include "configuration/common/common.hpp"
 #include "expression.hpp"
 #include "parameter.hpp"
-#include "ruleset_info.hpp"
 
 namespace ddwaf {
 

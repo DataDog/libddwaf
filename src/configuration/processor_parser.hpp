@@ -6,15 +6,13 @@
 
 #pragma once
 
-#include "configuration/common.hpp"
-#include "configuration/configuration.hpp"
+#include "configuration/common/configuration.hpp"
 #include "parameter.hpp"
-#include "processor/base.hpp"
 #include "ruleset_info.hpp"
 
 namespace ddwaf {
 
-processor_container parse_processors(parameter::vector &processor_array, base_section_info &info,
-    const object_limits &limits, spec_id_tracker &ids);
+bool parse_processors(const parameter::vector &processor_array, configuration_spec &cfg,
+    spec_id_tracker &ids, ruleset_info::base_section_info &info, const object_limits &limits);
 
 } // namespace ddwaf

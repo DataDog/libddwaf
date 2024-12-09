@@ -6,23 +6,15 @@
 
 #pragma once
 
-#include <optional>
 #include <string>
 
-#include "configuration/configuration.hpp"
 #include "exception.hpp"
 #include "parameter.hpp"
 #include "ruleset_info.hpp"
-#include "transformer/base.hpp"
 
 using base_section_info = ddwaf::base_ruleset_info::base_section_info;
 
 namespace ddwaf {
-
-struct address_container {
-    std::unordered_set<std::string> required;
-    std::unordered_set<std::string> optional;
-};
 
 template <typename T, typename Key = std::string> T at(const parameter::map &map, const Key &key)
 {
@@ -46,11 +38,12 @@ T at(const parameter::map &map, const Key &key, const T &default_)
     }
 }
 
-std::optional<transformer_id> transformer_from_string(std::string_view str);
-
 inline std::string index_to_id(unsigned idx) { return "index:" + to_string<std::string>(idx); }
 
-reference_spec parse_reference(const parameter::map &target);
+struct address_container {
+    std::unordered_set<std::string> required;
+    std::unordered_set<std::string> optional;
+};
 
 inline void add_addresses_to_info(const address_container &addresses, base_section_info &info)
 {

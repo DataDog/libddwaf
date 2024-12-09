@@ -6,18 +6,14 @@
 
 #pragma once
 
-#include <string>
-#include <unordered_map>
-
-#include "configuration/common.hpp"
-#include "configuration/configuration.hpp"
+#include "configuration/common/common.hpp"
+#include "configuration/common/configuration.hpp"
 #include "parameter.hpp"
-#include "rule.hpp"
-#include "ruleset_info.hpp"
 
 namespace ddwaf {
 
-rule_spec_container parse_rules(parameter::vector &rule_array, base_section_info &info,
-    const object_limits &limits, core_rule::source_type source, spec_id_tracker &ids);
+bool parse_base_rules(const parameter::vector &rule_array, configuration_spec &cfg, spec_id_tracker &ids, base_section_info &info, const object_limits &limits);
+
+bool parse_user_rules(const parameter::vector &rule_array, configuration_spec &cfg, spec_id_tracker &ids, base_section_info &info, const object_limits &limits);
 
 } // namespace ddwaf
