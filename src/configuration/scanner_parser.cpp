@@ -42,7 +42,8 @@ std::unique_ptr<matcher::base> parse_scanner_matcher(const parameter::map &root)
 
 } // namespace
 
-bool parse_scanners(const parameter::vector &scanner_array, configuration_spec &cfg, spec_id_tracker &ids, ruleset_info::base_section_info &info)
+bool parse_scanners(const parameter::vector &scanner_array, configuration_spec &cfg,
+    spec_id_tracker &ids, ruleset_info::base_section_info &info)
 {
     for (unsigned i = 0; i < scanner_array.size(); i++) {
         const auto &node_param = scanner_array[i];

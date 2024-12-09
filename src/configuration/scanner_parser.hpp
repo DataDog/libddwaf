@@ -12,6 +12,7 @@
 
 namespace ddwaf {
 
-bool parse_scanners(const parameter::vector &scanner_array, configuration_spec &cfg, spec_id_tracker &ids, ruleset_info::base_section_info &info);
+bool parse_scanners(const parameter::vector &scanner_array, configuration_spec &cfg,
+    spec_id_tracker &ids, ruleset_info::base_section_info &info);
 
 } // namespace ddwaf

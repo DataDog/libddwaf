@@ -12,7 +12,9 @@
 
 namespace ddwaf {
 
-bool parse_rule_data(const parameter::vector &data_array, configuration_spec &cfg, base_section_info &info);
-bool parse_exclusion_data(const parameter::vector &data_array, configuration_spec &cfg, base_section_info &info);
+bool parse_rule_data(
+    const parameter::vector &data_array, configuration_spec &cfg, base_section_info &info);
+bool parse_exclusion_data(
+    const parameter::vector &data_array, configuration_spec &cfg, base_section_info &info);
 
 } // namespace ddwaf

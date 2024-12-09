@@ -141,7 +141,8 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
         auto &section = info.add_section("exclusions_data");
         try {
             auto exclusions_data = static_cast<parameter::vector>(it->second);
-            if (!exclusions_data.empty() && parse_exclusion_data(exclusions_data, config, section)) {
+            if (!exclusions_data.empty() &&
+                parse_exclusion_data(exclusions_data, config, section)) {
                 config.content = config.content | content_set::exclusion_data;
             }
         } catch (const std::exception &e) {
@@ -156,7 +157,8 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
         auto &section = info.add_section("processors");
         try {
             auto processors = static_cast<parameter::vector>(it->second);
-            if (!processors.empty() && parse_processors(processors, config, ids_, section, limits_)) {
+            if (!processors.empty() &&
+                parse_processors(processors, config, ids_, section, limits_)) {
                 config.content = config.content | content_set::processors;
             }
         } catch (const std::exception &e) {
@@ -223,9 +225,7 @@ bool configuration_manager::remove(const std::string &path)
 
     for (const auto &filter : it->second.rule_filters) { ids_.filters.erase(filter.id); }
 
-    for (const auto &filter : it->second.input_filters) {
-        ids_.filters.erase(filter.id);
-    }
+    for (const auto &filter : it->second.input_filters) { ids_.filters.erase(filter.id); }
 
     for (const auto &proc : it->second.processors) { ids_.processors.erase(proc.id); }
 

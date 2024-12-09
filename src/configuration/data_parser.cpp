@@ -21,9 +21,7 @@ namespace ddwaf {
 namespace {
 template <typename T> std::vector<T> parse_data(parameter &input);
 
-template <>
-std::vector<data_spec::value_type> parse_data<data_spec::value_type>(
-    parameter &input)
+template <> std::vector<data_spec::value_type> parse_data<data_spec::value_type>(parameter &input)
 {
     std::vector<data_spec::value_type> data;
     data.reserve(input.nbEntries);
@@ -93,13 +91,15 @@ std::vector<data_spec> parse_data(const parameter::vector &data_array, base_sect
 
 } // namespace
 
-bool parse_rule_data(const parameter::vector &data_array, configuration_spec &cfg, base_section_info &info)
+bool parse_rule_data(
+    const parameter::vector &data_array, configuration_spec &cfg, base_section_info &info)
 {
     cfg.rule_data = parse_data(data_array, info);
     return !cfg.rule_data.empty();
 }
 
-bool parse_exclusion_data(const parameter::vector &data_array, configuration_spec &cfg, base_section_info &info)
+bool parse_exclusion_data(
+    const parameter::vector &data_array, configuration_spec &cfg, base_section_info &info)
 {
     cfg.exclusion_data = parse_data(data_array, info);
     return !cfg.exclusion_data.empty();

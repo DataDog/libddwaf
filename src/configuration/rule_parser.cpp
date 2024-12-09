@@ -64,8 +64,8 @@ rule_spec parse_rule(parameter::map &rule, std::string id, const object_limits &
         std::move(tags), std::move(expr), at<std::vector<std::string>>(rule, "on_match", {})};
 }
 
-
-std::vector<rule_spec> parse_rules(const parameter::vector &rule_array, spec_id_tracker &ids, base_section_info &info, core_rule::source_type source, const object_limits &limits)
+std::vector<rule_spec> parse_rules(const parameter::vector &rule_array, spec_id_tracker &ids,
+    base_section_info &info, core_rule::source_type source, const object_limits &limits)
 {
     std::vector<rule_spec> rules;
     for (unsigned i = 0; i < rule_array.size(); ++i) {
@@ -116,13 +116,15 @@ std::vector<rule_spec> parse_rules(const parameter::vector &rule_array, spec_id_
 
 } // namespace
 
-bool parse_base_rules(const parameter::vector &rule_array, configuration_spec &cfg, spec_id_tracker &ids, base_section_info &info, const object_limits &limits)
+bool parse_base_rules(const parameter::vector &rule_array, configuration_spec &cfg,
+    spec_id_tracker &ids, base_section_info &info, const object_limits &limits)
 {
     cfg.base_rules = parse_rules(rule_array, ids, info, core_rule::source_type::base, limits);
     return !cfg.base_rules.empty();
 }
 
-bool parse_user_rules(const parameter::vector &rule_array, configuration_spec &cfg, spec_id_tracker &ids, base_section_info &info, const object_limits &limits)
+bool parse_user_rules(const parameter::vector &rule_array, configuration_spec &cfg,
+    spec_id_tracker &ids, base_section_info &info, const object_limits &limits)
 {
     cfg.user_rules = parse_rules(rule_array, ids, info, core_rule::source_type::user, limits);
     return !cfg.user_rules.empty();

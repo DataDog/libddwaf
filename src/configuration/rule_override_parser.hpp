@@ -12,6 +12,7 @@
 
 namespace ddwaf {
 
-bool parse_overrides(const parameter::vector &override_array, configuration_spec &cfg, ruleset_info::base_section_info &info);
+bool parse_overrides(const parameter::vector &override_array, configuration_spec &cfg,
+    ruleset_info::base_section_info &info);
 
 } // namespace ddwaf

@@ -74,7 +74,8 @@ std::pair<override_spec, reference_type> parse_override(const parameter::map &no
 
 } // namespace
 
-bool parse_overrides(const parameter::vector &override_array, configuration_spec &cfg, ruleset_info::base_section_info &info)
+bool parse_overrides(const parameter::vector &override_array, configuration_spec &cfg,
+    ruleset_info::base_section_info &info)
 {
     for (unsigned i = 0; i < override_array.size(); ++i) {
         auto id = index_to_id(i);

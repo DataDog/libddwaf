@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "parameter.hpp"
 #include "configuration/common/configuration.hpp"
+#include "parameter.hpp"
 
 namespace ddwaf {
 
