@@ -19,6 +19,7 @@
 #include "log.hpp"
 #include "matcher/base.hpp"
 #include "parameter.hpp"
+#include "ruleset_info.hpp"
 #include "scanner.hpp"
 #include "semver.hpp"
 #include "version.hpp"

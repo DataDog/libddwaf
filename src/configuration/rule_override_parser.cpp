@@ -15,6 +15,7 @@
 #include "exception.hpp"
 #include "log.hpp"
 #include "parameter.hpp"
+#include "ruleset_info.hpp"
 
 namespace ddwaf {
 

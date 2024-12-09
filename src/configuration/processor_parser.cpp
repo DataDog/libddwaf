@@ -20,6 +20,7 @@
 #include "processor/base.hpp"
 #include "processor/extract_schema.hpp"
 #include "processor/fingerprint.hpp"
+#include "ruleset_info.hpp"
 #include "semver.hpp"
 #include "target_address.hpp"
 #include "utils.hpp"
