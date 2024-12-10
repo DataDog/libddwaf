@@ -2,18 +2,20 @@
 ## v1.22.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 ### New features
 
-This new version of `libddwaf` introduces an important new feature, module-based rule evaluation precedence. This new feature ensures that rules are evaluated in a specified order, based on the module they belong to, which specifies the absolute precedence of the rules contained within it, as well as a set of criteria which determines the relative precedence within the module.
+This new version of `libddwaf` introduces an important new feature: module-based rule evaluation precedence. This new feature ensures that rules are evaluated in a specified order, based on the module they belong to, which specifies the absolute precedence of the rules contained within it, as well as a set of criteria which determines the relative precedence within the module.
 
 Rules within a module are organised based on whether they are in blocking mode or monitoring mode, with the former always having precedence over the latter. In addition, two rules of the same mode are then organised based on whether they belong to the base ruleset (datadog-owned) or the custom ruleset (customer-owned), as some modules give precedence to one over the other.
 
-The modules defined in this version are the following, note that while some modules have "lower" precedence, the reality is that they are often evaluated independently of other modules, as is the case for `rasp` and `business-logic`:
+The modules defined in this version, in their evaluation order, are the following:
 - `network-acl`: specifically containing IP denylist rules. In this module, precedence is given to rules within the base ruleset over the custom ruleset. Additionally, this module does not adhere to the user-provided timeout.
 - `authentication-acl`: specifically containing user denylist rules. In this module, precedence is given to rules within the base ruleset over the custom ruleset. Additionally, this module does not adhere to the user-provided timeout.
 - `custom-acl`: this module contains custom denylist rules, without restriction on the type of inputs targeted. As the name suggests, precedence is given to rules within the custom ruleset.
-- `configuration`: this module contains rules for detecting misconfigurations and / or configuration restrictions, giving also precedence to rules within custom the custom ruleset.
+- `configuration`: this module contains rules for detecting misconfigurations and / or configuration restrictions, giving also precedence to rules within the custom ruleset.
 - `business-logic`: containing rules used to identify and / or block business logic events, also giving precedence to rules within the custom ruleset.
-- `rasp`: containing exclusively exploit prevention rules, for obvious reasons this module gives precedence to rules within the base ruleset.
-- `waf`:  this module contains rules for detecting attacks based on the request inputs. Rules within this module are organised by type in what is known as rule collections. This organisation is primarily used to ensure that only a single match of a given type is generated per context, but has a marginal impact on the rule evaluation order, as rules are clustered together by type as much as possible. In addition, precedence is given to rules within the custom ruleset rather than the base ruleset.
+- `rasp`: containing exclusively exploit prevention rules. To ensure the effectivenes of exploit prevention rules, this module gives precedence to rules within the base ruleset.
+- `waf`:  this module contains rules for detecting attacks exclusively based on the request inputs. Rules within this module are organised by rule type, in what is known as rule collections. This organisation is primarily used to ensure that only a single match of a given type is generated per context, but it also has a marginal impact on the rule evaluation order, as rules are clustered together by type as much as possible. In addition, precedence is given to rules within the custom ruleset rather than the base ruleset.
+
+**Note** that while some modules have "lower" precedence, the reality is that they are often evaluated independently of other modules, as is the case for the `rasp` and `business-logic` modules
 
 Finally, this release also includes a number of fixes and improvements on the exploit prevention heuristics to limit the potential for false positives.
 
