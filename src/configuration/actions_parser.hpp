@@ -10,11 +10,12 @@
 
 #include "action_mapper.hpp"
 #include "configuration/common/common.hpp"
+#include "configuration/common/configuration.hpp"
 #include "parameter.hpp"
 
 namespace ddwaf {
 
 std::shared_ptr<action_mapper> parse_actions(
-    parameter::vector &actions_array, base_section_info &info);
+    parameter::vector &actions_array, spec_id_tracker &ids, base_section_info &info);
 
 } // namespace ddwaf

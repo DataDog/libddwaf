@@ -51,7 +51,7 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
             // generated. Note that this mapper will still contain the default
             // actions.
             auto actions = static_cast<parameter::vector>(it->second);
-            config.actions = parse_actions(actions, section);
+            config.actions = parse_actions(actions, ids_, section);
             config.content = config.content | content_set::actions;
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse actions: {}", e.what());

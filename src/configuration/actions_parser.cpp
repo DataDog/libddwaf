@@ -12,6 +12,7 @@
 
 #include "action_mapper.hpp"
 #include "configuration/common/common.hpp"
+#include "configuration/common/configuration.hpp"
 #include "log.hpp"
 #include "parameter.hpp"
 #include "uri_utils.hpp"
@@ -73,7 +74,7 @@ void validate_and_add_redirect(
 } // namespace
 
 std::shared_ptr<action_mapper> parse_actions(
-    parameter::vector &actions_array, base_section_info &info)
+    parameter::vector &actions_array, spec_id_tracker &ids, base_section_info &info)
 {
     action_mapper_builder builder;
 
@@ -84,6 +85,12 @@ std::shared_ptr<action_mapper> parse_actions(
         std::string id;
         try {
             id = at<std::string>(node, "id");
+            if (ids.actions.find(id) != ids.actions.end()) {
+                DDWAF_WARN("Duplicate action: {}", id);
+                info.add_failed(id, "duplicate action");
+                continue;
+            }
+
             auto type = at<std::string>(node, "type");
             auto parameters = at<std::unordered_map<std::string, std::string>>(node, "parameters");
 

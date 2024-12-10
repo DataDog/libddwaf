@@ -146,6 +146,7 @@ struct spec_id_tracker {
     std::unordered_set<std::string> filters;
     std::unordered_set<std::string> processors;
     std::unordered_set<std::string> scanners;
+    std::unordered_set<std::string> actions;
 };
 
 constexpr configuration_spec::content_set operator|(

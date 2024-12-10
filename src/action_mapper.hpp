@@ -34,13 +34,13 @@ inline bool is_blocking_action(action_type type)
     return type == action_type::block_request || type == action_type::redirect_request;
 }
 
-struct action_spec {
+struct action_parameters {
     action_type type;
     std::string type_str;
     std::unordered_map<std::string, std::string> parameters;
 };
 
-using action_mapper = std::map<std::string, action_spec, std::less<>>;
+using action_mapper = std::map<std::string, action_parameters, std::less<>>;
 
 class action_mapper_builder {
 public:
@@ -56,7 +56,7 @@ public:
     void set_action(
         std::string id, std::string type, std::unordered_map<std::string, std::string> parameters);
 
-    [[nodiscard]] static const action_spec &get_default_action(std::string_view id);
+    [[nodiscard]] static const action_parameters &get_default_action(std::string_view id);
 
     std::shared_ptr<action_mapper> build_shared();
 
@@ -64,8 +64,8 @@ public:
     action_mapper build();
 
 protected:
-    std::map<std::string, action_spec, std::less<>> action_by_id_;
-    static const std::map<std::string, action_spec, std::less<>> default_actions_;
+    std::map<std::string, action_parameters, std::less<>> action_by_id_;
+    static const std::map<std::string, action_parameters, std::less<>> default_actions_;
 };
 
 } // namespace ddwaf

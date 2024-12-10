@@ -55,10 +55,10 @@ void action_mapper_builder::set_action(
     }
 
     action_by_id_.emplace(std::move(id),
-        action_spec{action_type_from_string(type), std::move(type), std::move(parameters)});
+        action_parameters{action_type_from_string(type), std::move(type), std::move(parameters)});
 }
 
-[[nodiscard]] const action_spec &action_mapper_builder::get_default_action(std::string_view id)
+[[nodiscard]] const action_parameters &action_mapper_builder::get_default_action(std::string_view id)
 {
     auto it = default_actions_.find(id);
     if (it == default_actions_.end()) {
@@ -74,14 +74,14 @@ std::shared_ptr<action_mapper> action_mapper_builder::build_shared()
 
 action_mapper action_mapper_builder::build()
 {
-    for (const auto &[action_id, action_spec] : default_actions_) {
-        action_by_id_.try_emplace(action_id, action_spec);
+    for (const auto &[action_id, action_parameters] : default_actions_) {
+        action_by_id_.try_emplace(action_id, action_parameters);
     }
 
     return std::move(action_by_id_);
 }
 
-const std::map<std::string, action_spec, std::less<>> action_mapper_builder::default_actions_ = {
+const std::map<std::string, action_parameters, std::less<>> action_mapper_builder::default_actions_ = {
     {"block", {action_type::block_request, "block_request",
                   {{"status_code", "403"}, {"type", "auto"}, {"grpc_status_code", "10"}}}},
     {"stack_trace", {action_type::generate_stack, "generate_stack", {}}},
