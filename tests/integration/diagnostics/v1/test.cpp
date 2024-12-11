@@ -6,7 +6,6 @@
 
 #include "common/gtest_utils.hpp"
 #include "parser/common.hpp"
-#include "parser/parser.hpp"
 
 using namespace ddwaf;
 

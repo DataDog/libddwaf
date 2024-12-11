@@ -7,7 +7,9 @@
 #include <exception>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
+#include <vector>
 
 #include "configuration/actions_parser.hpp"
 #include "configuration/common/common.hpp"
@@ -24,8 +26,6 @@
 #include "ruleset_info.hpp"
 
 namespace ddwaf {
-
-using content_set = configuration_spec::content_set;
 
 configuration_spec configuration_manager::load(parameter::map &root, base_ruleset_info &info)
 {
@@ -47,7 +47,7 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
             // actions.
             auto actions = static_cast<parameter::vector>(it->second);
             if (!actions.empty() && parse_actions(actions, config, ids_, section)) {
-                config.content = config.content | content_set::actions;
+                config.content = config.content | change_set::actions;
             }
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse actions: {}", e.what());
@@ -62,7 +62,7 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
         try {
             auto rules = static_cast<parameter::vector>(it->second);
             if (!rules.empty() && parse_base_rules(rules, config, ids_, section, limits_)) {
-                config.content = config.content | content_set::rules;
+                config.content = config.content | change_set::rules;
             }
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse rules: {}", e.what());
@@ -77,7 +77,7 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
         try {
             auto rules = static_cast<parameter::vector>(it->second);
             if (!rules.empty() && parse_user_rules(rules, config, ids_, section, limits_)) {
-                config.content = config.content | content_set::custom_rules;
+                config.content = config.content | change_set::custom_rules;
             }
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse custom rules: {}", e.what());
@@ -92,7 +92,7 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
         try {
             auto rules_data = static_cast<parameter::vector>(it->second);
             if (!rules_data.empty() && parse_rule_data(rules_data, config, section)) {
-                config.content = config.content | content_set::rule_data;
+                config.content = config.content | change_set::rule_data;
             }
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse rule data: {}", e.what());
@@ -107,7 +107,7 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
         try {
             auto overrides = static_cast<parameter::vector>(it->second);
             if (!overrides.empty() && parse_overrides(overrides, config, section)) {
-                config.content = config.content | content_set::overrides;
+                config.content = config.content | change_set::overrides;
             }
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse overrides: {}", e.what());
@@ -122,7 +122,7 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
         try {
             auto exclusions = static_cast<parameter::vector>(it->second);
             if (!exclusions.empty() && parse_filters(exclusions, config, ids_, section, limits_)) {
-                config.content = config.content | content_set::filters;
+                config.content = config.content | change_set::filters;
             }
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse exclusions: {}", e.what());
@@ -138,7 +138,7 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
             auto exclusions_data = static_cast<parameter::vector>(it->second);
             if (!exclusions_data.empty() &&
                 parse_exclusion_data(exclusions_data, config, section)) {
-                config.content = config.content | content_set::exclusion_data;
+                config.content = config.content | change_set::exclusion_data;
             }
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse exclusion data: {}", e.what());
@@ -154,7 +154,7 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
             auto processors = static_cast<parameter::vector>(it->second);
             if (!processors.empty() &&
                 parse_processors(processors, config, ids_, section, limits_)) {
-                config.content = config.content | content_set::processors;
+                config.content = config.content | change_set::processors;
             }
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse processors: {}", e.what());
@@ -169,7 +169,7 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
         try {
             auto scanners = static_cast<parameter::vector>(it->second);
             if (!scanners.empty() && parse_scanners(scanners, config, ids_, section)) {
-                config.content = config.content | content_set::scanners;
+                config.content = config.content | change_set::scanners;
             }
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse scanners: {}", e.what());
@@ -191,19 +191,6 @@ void configuration_manager::remove_config_ids(
     for (const auto &proc : it->second.processors) { ids_.processors.erase(proc.id); }
     for (const auto &scnr : it->second.scanners) { ids_.scanners.erase(scnr->get_id_ref()); }
     for (const auto &action : it->second.actions) { ids_.actions.erase(action.id); }
-}
-
-bool configuration_manager::set_default(parameter::map &root, base_ruleset_info &info)
-{
-    auto new_config = load(root, info);
-
-    if (new_config.empty()) {
-        return false;
-    }
-
-    default_config_ = std::move(new_config);
-
-    return true;
 }
 
 bool configuration_manager::add(
@@ -254,6 +241,50 @@ bool configuration_manager::remove(const std::string &path)
     return true;
 }
 
-configuration_spec configuration_manager::consolidate() const { return {}; }
+merged_configuration_spec configuration_manager::consolidate() const
+{
+    auto emplace_contents = []<typename T>(std::vector<T> &destination, std::vector<T> &source) {
+        destination.reserve(destination.size() + source.size());
+        for (const auto &item : source) { destination.emplace_back(item); }
+    };
+
+    merged_configuration_spec merged;
+    for (auto [path, cfg] : configs_) {
+        merged.content = merged.content | cfg.content;
+
+        emplace_contents(merged.base_rules, cfg.base_rules);
+        emplace_contents(merged.user_rules, cfg.user_rules);
+        emplace_contents(merged.overrides_by_id, cfg.overrides_by_id);
+        emplace_contents(merged.overrides_by_tags, cfg.overrides_by_tags);
+        emplace_contents(merged.rule_filters, cfg.rule_filters);
+        emplace_contents(merged.input_filters, cfg.input_filters);
+        emplace_contents(merged.processors, cfg.processors);
+        emplace_contents(merged.actions, cfg.actions);
+
+        for (const auto &data : cfg.rule_data) {
+            auto it = merged.rule_data.find(data.id);
+            if (it == merged.rule_data.end()) {
+                merged.rule_data.emplace(data.id, data);
+            } else {
+                auto &dest_vec = it->second.values;
+                dest_vec.insert(dest_vec.begin(), data.values.begin(), data.values.end());
+            }
+        }
+
+        for (const auto &data : cfg.exclusion_data) {
+            auto it = merged.exclusion_data.find(data.id);
+            if (it == merged.exclusion_data.end()) {
+                merged.exclusion_data.emplace(data.id, data);
+            } else {
+                auto &dest_vec = it->second.values;
+                dest_vec.insert(dest_vec.begin(), data.values.begin(), data.values.end());
+            }
+        }
+
+        for (const auto &scnr : cfg.scanners) { merged.scanners.emplace(scnr); }
+    }
+
+    return merged;
+}
 
 } // namespace ddwaf

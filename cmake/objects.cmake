@@ -1,5 +1,4 @@
 set(LIBDDWAF_SOURCE
-    ${libddwaf_SOURCE_DIR}/src/ruleset_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/clock.cpp
     ${libddwaf_SOURCE_DIR}/src/parameter.cpp
     ${libddwaf_SOURCE_DIR}/src/interface.cpp
@@ -24,6 +23,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/action_mapper.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/module_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/processor_builder.cpp
+    ${libddwaf_SOURCE_DIR}/src/builder/ruleset_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/sql_base.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/pgsql.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/mysql.cpp
@@ -33,19 +33,6 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/exclusion/input_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/object_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/rule_filter.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/actions_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/common.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/parser_v1.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/data_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/processor_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/expression_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/matcher_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/transformer_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/rule_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/rule_override_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/scanner_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/exclusion_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/common/expression_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/common/matcher_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/common/transformer_parser.cpp

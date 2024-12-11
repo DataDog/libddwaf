@@ -24,13 +24,11 @@ public:
     configuration_manager &operator=(configuration_manager &&) = delete;
     configuration_manager &operator=(const configuration_manager &) = delete;
 
-    bool set_default(parameter::map &root, base_ruleset_info &info);
-
     bool add(const std::string &path, parameter::map &root, base_ruleset_info &info);
     bool update(const std::string &path, parameter::map &root, base_ruleset_info &info);
     bool remove(const std::string &path);
 
-    configuration_spec consolidate() const;
+    merged_configuration_spec consolidate() const;
 
 protected:
     void remove_config_ids(
@@ -38,7 +36,6 @@ protected:
 
     configuration_spec load(parameter::map &root, base_ruleset_info &info);
 
-    configuration_spec default_config_;
     spec_id_tracker ids_;
     std::unordered_map<std::string, configuration_spec> configs_;
     object_limits limits_;

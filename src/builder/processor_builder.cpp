@@ -9,8 +9,8 @@
 #include <vector>
 
 #include "builder/processor_builder.hpp"
+#include "configuration/common/configuration.hpp"
 #include "indexer.hpp"
-#include "parser/specification.hpp"
 #include "processor/base.hpp"
 #include "processor/extract_schema.hpp"
 #include "processor/fingerprint.hpp"
@@ -20,17 +20,17 @@ namespace ddwaf {
 
 namespace {
 std::set<const scanner *> references_to_scanners(
-    const std::vector<parser::reference_spec> &references, const indexer<const scanner> &scanners)
+    const std::vector<reference_spec> &references, const indexer<const scanner> &scanners)
 {
     std::set<const scanner *> scanner_refs;
     for (const auto &ref : references) {
-        if (ref.type == parser::reference_type::id) {
+        if (ref.type == reference_type::id) {
             const auto *scanner = scanners.find_by_id(ref.ref_id);
             if (scanner == nullptr) {
                 continue;
             }
             scanner_refs.emplace(scanner);
-        } else if (ref.type == parser::reference_type::tags) {
+        } else if (ref.type == reference_type::tags) {
             auto current_refs = scanners.find_by_tags(ref.tags);
             scanner_refs.merge(current_refs);
         }
@@ -103,20 +103,21 @@ template <typename T>
 }
 } // namespace
 
-[[nodiscard]] std::shared_ptr<base_processor> processor_builder::build(
-    const indexer<const scanner> &scanners) const
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+std::shared_ptr<base_processor> processor_builder::build(
+    const processor_spec &spec, const indexer<const scanner> &scanners)
 {
-    switch (type) {
+    switch (spec.type) {
     case processor_type::extract_schema:
-        return build_with_type<extract_schema>(*this, scanners);
+        return build_with_type<extract_schema>(spec, scanners);
     case processor_type::http_endpoint_fingerprint:
-        return build_with_type<http_endpoint_fingerprint>(*this, scanners);
+        return build_with_type<http_endpoint_fingerprint>(spec, scanners);
     case processor_type::http_header_fingerprint:
-        return build_with_type<http_header_fingerprint>(*this, scanners);
+        return build_with_type<http_header_fingerprint>(spec, scanners);
     case processor_type::http_network_fingerprint:
-        return build_with_type<http_network_fingerprint>(*this, scanners);
+        return build_with_type<http_network_fingerprint>(spec, scanners);
     case processor_type::session_fingerprint:
-        return build_with_type<session_fingerprint>(*this, scanners);
+        return build_with_type<session_fingerprint>(spec, scanners);
     default:
         break;
     }

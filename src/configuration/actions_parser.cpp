@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <exception>
-#include <memory>
 #include <string>
 #include <unordered_map>
 #include <utility>

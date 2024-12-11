@@ -7,11 +7,11 @@
 
 #include <memory>
 
+#include "builder/waf_builder.hpp"
 #include "context.hpp"
 #include "ddwaf.h"
-#include "parser/parser.hpp"
+#include "parameter.hpp"
 #include "ruleset.hpp"
-#include "ruleset_builder.hpp"
 #include "ruleset_info.hpp"
 #include "utils.hpp"
 #include "version.hpp"
@@ -37,11 +37,11 @@ public:
     }
 
 protected:
-    waf(std::shared_ptr<ruleset_builder> builder, std::shared_ptr<ruleset> ruleset)
+    waf(std::shared_ptr<waf_builder> builder, std::shared_ptr<ruleset> ruleset)
         : builder_(std::move(builder)), ruleset_(std::move(ruleset))
     {}
 
-    std::shared_ptr<ruleset_builder> builder_;
+    std::shared_ptr<waf_builder> builder_;
     std::shared_ptr<ruleset> ruleset_;
 };
 
