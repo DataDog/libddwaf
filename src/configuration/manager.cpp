@@ -4,11 +4,6 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2024 Datadog, Inc.
 
-// Unless explicitly contentd otherwise all files in this repository are
-// dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
-//
-// This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2021 Datadog, Inc.
 #include <exception>
 #include <string>
 #include <string_view>
@@ -51,8 +46,9 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
             // generated. Note that this mapper will still contain the default
             // actions.
             auto actions = static_cast<parameter::vector>(it->second);
-            config.actions = parse_actions(actions, ids_, section);
-            config.content = config.content | content_set::actions;
+            if (!actions.empty() && parse_actions(actions, config, ids_, section)) {
+                config.content = config.content | content_set::actions;
+            }
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse actions: {}", e.what());
             section.set_error(e.what());
@@ -65,7 +61,6 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
         auto &section = info.add_section("rules");
         try {
             auto rules = static_cast<parameter::vector>(it->second);
-
             if (!rules.empty() && parse_base_rules(rules, config, ids_, section, limits_)) {
                 config.content = config.content | content_set::rules;
             }
@@ -185,6 +180,19 @@ configuration_spec configuration_manager::load(parameter::map &root, base_rulese
     return config;
 }
 
+void configuration_manager::remove_config_ids(
+    const std::unordered_map<std::string, configuration_spec>::const_iterator &it)
+{
+    // Remove all IDs provided by this configuration
+    for (const auto &rule : it->second.base_rules) { ids_.rules.erase(rule.id); }
+    for (const auto &rule : it->second.user_rules) { ids_.rules.erase(rule.id); }
+    for (const auto &filter : it->second.rule_filters) { ids_.filters.erase(filter.id); }
+    for (const auto &filter : it->second.input_filters) { ids_.filters.erase(filter.id); }
+    for (const auto &proc : it->second.processors) { ids_.processors.erase(proc.id); }
+    for (const auto &scnr : it->second.scanners) { ids_.scanners.erase(scnr->get_id_ref()); }
+    for (const auto &action : it->second.actions) { ids_.actions.erase(action.id); }
+}
+
 bool configuration_manager::set_default(parameter::map &root, base_ruleset_info &info)
 {
     auto new_config = load(root, info);
@@ -198,7 +206,7 @@ bool configuration_manager::set_default(parameter::map &root, base_ruleset_info 
     return true;
 }
 
-bool configuration_manager::add_or_update(
+bool configuration_manager::add(
     const std::string &path, parameter::map &root, base_ruleset_info &info)
 {
     auto new_config = load(root, info);
@@ -211,6 +219,27 @@ bool configuration_manager::add_or_update(
     return true;
 }
 
+bool configuration_manager::update(
+    const std::string &path, parameter::map &root, base_ruleset_info &info)
+{
+    auto it = configs_.find(path);
+    if (it == configs_.end()) {
+        return false;
+    }
+
+    remove_config_ids(it);
+
+    auto new_config = load(root, info);
+    if (new_config.empty()) {
+        configs_.erase(it);
+        return false;
+    }
+
+    it->second = std::move(new_config);
+
+    return true;
+}
+
 bool configuration_manager::remove(const std::string &path)
 {
     auto it = configs_.find(path);
@@ -218,24 +247,13 @@ bool configuration_manager::remove(const std::string &path)
         return false;
     }
 
-    // Remove all IDs provided by this configuration
-    for (const auto &rule : it->second.base_rules) { ids_.rules.erase(rule.id); }
+    remove_config_ids(it);
 
-    for (const auto &rule : it->second.user_rules) { ids_.rules.erase(rule.id); }
-
-    for (const auto &filter : it->second.rule_filters) { ids_.filters.erase(filter.id); }
-
-    for (const auto &filter : it->second.input_filters) { ids_.filters.erase(filter.id); }
-
-    for (const auto &proc : it->second.processors) { ids_.processors.erase(proc.id); }
-
-    for (const auto &scnr : it->second.scanners) { ids_.scanners.erase(scnr->get_id_ref()); }
-
-    configs_.erase(path);
+    configs_.erase(it);
 
     return true;
 }
 
-configuration_spec configuration_manager::consolidate() { return {}; }
+configuration_spec configuration_manager::consolidate() const { return {}; }
 
 } // namespace ddwaf

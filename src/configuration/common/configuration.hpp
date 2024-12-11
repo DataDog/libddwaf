@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "action_mapper.hpp"
 #include "exclusion/object_filter.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
@@ -92,6 +93,13 @@ struct data_spec {
     std::vector<value_type> values;
 };
 
+struct action_spec {
+    std::string id;
+    action_type type;
+    std::string type_str;
+    std::unordered_map<std::string, std::string> parameters;
+};
+
 // Config spec contains an instance of a parsed configuration. Since this has to
 // be composed into a larger configuration, the storage cost need not consider
 // retrieval cost.
@@ -138,7 +146,7 @@ struct configuration_spec {
     // Scanner container
     std::vector<std::shared_ptr<scanner>> scanners;
     // Actions
-    std::shared_ptr<action_mapper> actions;
+    std::vector<action_spec> actions;
 };
 
 struct spec_id_tracker {

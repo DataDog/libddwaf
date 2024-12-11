@@ -21,7 +21,7 @@ namespace ddwaf {
 
 namespace {
 
-void validate_and_add_block(auto &id, auto &type, auto &parameters, action_mapper_builder &builder)
+void validate_and_add_block(auto &actions, auto id, auto &type, auto &parameters)
 {
     if (!parameters.contains("status_code") || !parameters.contains("grpc_status_code") ||
         !parameters.contains("type")) {
@@ -30,16 +30,18 @@ void validate_and_add_block(auto &id, auto &type, auto &parameters, action_mappe
         auto default_params = action_mapper_builder::get_default_action("block");
         for (const auto &[k, v] : default_params.parameters) { parameters.try_emplace(k, v); }
     }
-    builder.set_action(id, std::move(type), std::move(parameters));
+
+    actions.emplace_back(
+        std::move(id), action_type_from_string(type), std::move(type), std::move(parameters));
 }
 
-void validate_and_add_redirect(
-    auto &id, auto &type, auto &parameters, action_mapper_builder &builder)
+void validate_and_add_redirect(auto &actions, auto id, auto &type, auto &parameters)
 {
     auto it = parameters.find("location");
     if (it == parameters.end() || it->second.empty()) {
+        auto block_params = action_mapper_builder::get_default_action("block");
         // TODO add a log message
-        builder.alias_default_action_to("block", id);
+        actions.emplace_back(id, block_params.type, block_params.type_str, block_params.parameters);
         return;
     }
 
@@ -54,7 +56,9 @@ void validate_and_add_redirect(
         (!decomposed->scheme.empty() && decomposed->scheme != "http" &&
             decomposed->scheme != "https") ||
         (decomposed->scheme_and_authority.empty() && !decomposed->path.starts_with('/'))) {
-        builder.alias_default_action_to("block", id);
+        auto block_params = action_mapper_builder::get_default_action("block");
+        // TODO add a log message
+        actions.emplace_back(id, block_params.type, block_params.type_str, block_params.parameters);
         return;
     }
 
@@ -68,16 +72,15 @@ void validate_and_add_redirect(
         parameters.emplace("status_code", "303");
     }
 
-    builder.set_action(id, std::move(type), std::move(parameters));
+    actions.emplace_back(
+        std::move(id), action_type_from_string(type), std::move(type), std::move(parameters));
 }
 
 } // namespace
 
-std::shared_ptr<action_mapper> parse_actions(
-    parameter::vector &actions_array, spec_id_tracker &ids, base_section_info &info)
+bool parse_actions(const parameter::vector &actions_array, configuration_spec &cfg,
+    spec_id_tracker &ids, base_section_info &info)
 {
-    action_mapper_builder builder;
-
     for (unsigned i = 0; i < actions_array.size(); i++) {
         const auto &node_param = actions_array[i];
         auto node = static_cast<parameter::map>(node_param);
@@ -98,11 +101,12 @@ std::shared_ptr<action_mapper> parse_actions(
 
             // Block and redirect actions should be validated and aliased
             if (type == "redirect_request") {
-                validate_and_add_redirect(id, type, parameters, builder);
+                validate_and_add_redirect(cfg.actions, id, type, parameters);
             } else if (type == "block_request") {
-                validate_and_add_block(id, type, parameters, builder);
+                validate_and_add_block(cfg.actions, id, type, parameters);
             } else {
-                builder.set_action(id, std::move(type), std::move(parameters));
+                cfg.actions.emplace_back(
+                    id, action_type_from_string(type), std::move(type), std::move(parameters));
             }
 
             info.add_loaded(id);
@@ -115,7 +119,7 @@ std::shared_ptr<action_mapper> parse_actions(
         }
     }
 
-    return builder.build_shared();
+    return !cfg.actions.empty();
 }
 
 } // namespace ddwaf

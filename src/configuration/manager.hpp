@@ -10,6 +10,8 @@
 #include <unordered_map>
 
 #include "configuration/common/configuration.hpp"
+#include "parameter.hpp"
+#include "ruleset_info.hpp"
 
 namespace ddwaf {
 
@@ -24,12 +26,16 @@ public:
 
     bool set_default(parameter::map &root, base_ruleset_info &info);
 
-    bool add_or_update(const std::string &path, parameter::map &root, base_ruleset_info &info);
+    bool add(const std::string &path, parameter::map &root, base_ruleset_info &info);
+    bool update(const std::string &path, parameter::map &root, base_ruleset_info &info);
     bool remove(const std::string &path);
 
-    static configuration_spec consolidate();
+    configuration_spec consolidate() const;
 
 protected:
+    void remove_config_ids(
+        const std::unordered_map<std::string, configuration_spec>::const_iterator &it);
+
     configuration_spec load(parameter::map &root, base_ruleset_info &info);
 
     configuration_spec default_config_;

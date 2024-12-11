@@ -15,7 +15,7 @@
 
 namespace ddwaf {
 
-std::shared_ptr<action_mapper> parse_actions(
-    parameter::vector &actions_array, spec_id_tracker &ids, base_section_info &info);
+bool parse_actions(const parameter::vector &actions_array, configuration_spec &cfg,
+    spec_id_tracker &ids, base_section_info &info);
 
 } // namespace ddwaf
