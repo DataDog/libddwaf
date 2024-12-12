@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "common/gtest_utils.hpp"
-#include "parser/common.hpp"
+#include "configuration/common/common.hpp"
 
 using namespace ddwaf;
 
@@ -79,18 +79,18 @@ TEST(TestDiagnosticsV1Integration, Basic)
     ddwaf::parameter root(diagnostics);
     auto root_map = static_cast<ddwaf::parameter::map>(root);
 
-    auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version", "");
+    auto version = ddwaf::at<std::string>(root_map, "ruleset_version", "");
     EXPECT_STREQ(version.c_str(), "");
 
-    auto rules = ddwaf::parser::at<parameter::map>(root_map, "rules");
+    auto rules = ddwaf::at<parameter::map>(root_map, "rules");
 
-    auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
+    auto loaded = ddwaf::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 1);
 
-    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    auto failed = ddwaf::at<parameter::vector>(rules, "failed");
     EXPECT_EQ(failed.size(), 0);
 
-    auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
+    auto errors = ddwaf::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 0);
 
     ddwaf_object_free(&diagnostics);
@@ -114,18 +114,18 @@ TEST(TestDiagnosticsV1Integration, TestInvalidRule)
     ddwaf::parameter root(diagnostics);
     auto root_map = static_cast<ddwaf::parameter::map>(root);
 
-    auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version", "");
+    auto version = ddwaf::at<std::string>(root_map, "ruleset_version", "");
     EXPECT_STREQ(version.c_str(), "");
 
-    auto rules = ddwaf::parser::at<parameter::map>(root_map, "rules");
+    auto rules = ddwaf::at<parameter::map>(root_map, "rules");
 
-    auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
+    auto loaded = ddwaf::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 0);
 
-    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    auto failed = ddwaf::at<parameter::vector>(rules, "failed");
     EXPECT_EQ(failed.size(), 1);
 
-    auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
+    auto errors = ddwaf::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 1);
 
     auto it = errors.find("missing key 'type'");
@@ -152,18 +152,18 @@ TEST(TestDiagnosticsV1Integration, TestMultipleSameInvalidRules)
     ddwaf::parameter root(diagnostics);
     auto root_map = static_cast<ddwaf::parameter::map>(root);
 
-    auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version", "");
+    auto version = ddwaf::at<std::string>(root_map, "ruleset_version", "");
     EXPECT_STREQ(version.c_str(), "");
 
-    auto rules = ddwaf::parser::at<parameter::map>(root_map, "rules");
+    auto rules = ddwaf::at<parameter::map>(root_map, "rules");
 
-    auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
+    auto loaded = ddwaf::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 0);
 
-    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    auto failed = ddwaf::at<parameter::vector>(rules, "failed");
     EXPECT_EQ(failed.size(), 2);
 
-    auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
+    auto errors = ddwaf::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 1);
 
     auto it = errors.find("missing key 'type'");
@@ -191,18 +191,18 @@ TEST(TestDiagnosticsV1Integration, TestMultipleDiffInvalidRules)
     ddwaf::parameter root(diagnostics);
     auto root_map = static_cast<ddwaf::parameter::map>(root);
 
-    auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version", "");
+    auto version = ddwaf::at<std::string>(root_map, "ruleset_version", "");
     EXPECT_STREQ(version.c_str(), "");
 
-    auto rules = ddwaf::parser::at<parameter::map>(root_map, "rules");
+    auto rules = ddwaf::at<parameter::map>(root_map, "rules");
 
-    auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
+    auto loaded = ddwaf::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 0);
 
-    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    auto failed = ddwaf::at<parameter::vector>(rules, "failed");
     EXPECT_EQ(failed.size(), 2);
 
-    auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
+    auto errors = ddwaf::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 2);
 
     {
@@ -240,18 +240,18 @@ TEST(TestDiagnosticsV1Integration, TestMultipleMixInvalidRules)
     ddwaf::parameter root(diagnostics);
     auto root_map = static_cast<ddwaf::parameter::map>(root);
 
-    auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version", "");
+    auto version = ddwaf::at<std::string>(root_map, "ruleset_version", "");
     EXPECT_STREQ(version.c_str(), "");
 
-    auto rules = ddwaf::parser::at<parameter::map>(root_map, "rules");
+    auto rules = ddwaf::at<parameter::map>(root_map, "rules");
 
-    auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
+    auto loaded = ddwaf::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 1);
 
-    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    auto failed = ddwaf::at<parameter::vector>(rules, "failed");
     EXPECT_EQ(failed.size(), 4);
 
-    auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
+    auto errors = ddwaf::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 3);
 
     {
@@ -300,18 +300,18 @@ TEST(TestDiagnosticsV1Integration, TestInvalidDuplicate)
     ddwaf::parameter root(diagnostics);
     auto root_map = static_cast<ddwaf::parameter::map>(root);
 
-    auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version", "");
+    auto version = ddwaf::at<std::string>(root_map, "ruleset_version", "");
     EXPECT_STREQ(version.c_str(), "");
 
-    auto rules = ddwaf::parser::at<parameter::map>(root_map, "rules");
+    auto rules = ddwaf::at<parameter::map>(root_map, "rules");
 
-    auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
+    auto loaded = ddwaf::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 1);
 
-    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    auto failed = ddwaf::at<parameter::vector>(rules, "failed");
     EXPECT_EQ(failed.size(), 1);
 
-    auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
+    auto errors = ddwaf::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 1);
 
     auto it = errors.find("duplicate rule");
@@ -339,18 +339,18 @@ TEST(TestDiagnosticsV1Integration, TestInvalidTooManyTransformers)
     ddwaf::parameter root(diagnostics);
     auto root_map = static_cast<ddwaf::parameter::map>(root);
 
-    auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version", "");
+    auto version = ddwaf::at<std::string>(root_map, "ruleset_version", "");
     EXPECT_STREQ(version.c_str(), "");
 
-    auto rules = ddwaf::parser::at<parameter::map>(root_map, "rules");
+    auto rules = ddwaf::at<parameter::map>(root_map, "rules");
 
-    auto loaded = ddwaf::parser::at<parameter::vector>(rules, "loaded");
+    auto loaded = ddwaf::at<parameter::vector>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 0);
 
-    auto failed = ddwaf::parser::at<parameter::vector>(rules, "failed");
+    auto failed = ddwaf::at<parameter::vector>(rules, "failed");
     EXPECT_EQ(failed.size(), 1);
 
-    auto errors = ddwaf::parser::at<parameter::map>(rules, "errors");
+    auto errors = ddwaf::at<parameter::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 1);
 
     auto it = errors.find("number of transformers beyond allowed limit");
