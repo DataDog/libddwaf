@@ -21,7 +21,7 @@ exact_match::exact_match(std::vector<std::string> &&data) : data_(std::move(data
     for (const auto &str : data_) { values_.emplace(str, 0); }
 }
 
-exact_match::exact_match(const std::vector<std::pair<std::string_view, uint64_t>> &data)
+exact_match::exact_match(const std::vector<std::pair<std::string, uint64_t>> &data)
 {
     data_.reserve(data.size());
     values_.reserve(data.size());

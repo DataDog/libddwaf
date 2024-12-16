@@ -111,7 +111,7 @@ TEST(TestIPMatch, Expiration)
         std::chrono::system_clock::now().time_since_epoch())
                        .count();
 
-    ip_match matcher(std::vector<std::pair<std::string_view, uint64_t>>{{"1.2.3.4", now - 1},
+    ip_match matcher(std::vector<std::pair<std::string, uint64_t>>{{"1.2.3.4", now - 1},
         {"5.6.7.254", now + 100}, {"::ffff:0102:0304", now - 1},
         {"1234:0:0:0:0:0:0:5678", now + 100}, {"::1", now - 1},
         {"abcd::1234:5678:1234:5678", now + 100}, {"abcd::1234:0:0:0", now - 1},
@@ -136,7 +136,7 @@ TEST(TestIPMatch, OverlappingExpiration)
         std::chrono::system_clock::now().time_since_epoch())
                        .count();
 
-    ip_match matcher(std::vector<std::pair<std::string_view, uint64_t>>{{"4.4.4.4", 0},
+    ip_match matcher(std::vector<std::pair<std::string, uint64_t>>{{"4.4.4.4", 0},
         {"4.4.4.4", now - 1}, {"5.5.5.5", now - 1}, {"5.5.5.5", 0}, {"1.0.0.0/8", now - 1},
         {"1.2.3.4", now + 100}, {"2.2.0.0/16", now + 100}, {"2.2.7.8", now - 100},
         {"2.3.0.0/16", 0}, {"2.3.9.1", now - 100}, {"2.4.0.0/16", now - 1}, {"2.4.3.4", 0}});

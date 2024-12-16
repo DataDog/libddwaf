@@ -57,6 +57,10 @@ protected:
     std::unordered_map<std::string_view, std::shared_ptr<base_processor>> preprocessors_;
     std::unordered_map<std::string_view, std::shared_ptr<base_processor>> postprocessors_;
 
+    // Matchers
+    std::unordered_map<std::string, std::shared_ptr<matcher::base>> rule_matchers_;
+    std::unordered_map<std::string, std::shared_ptr<matcher::base>> exclusion_matchers_;
+
     // Actions
     std::shared_ptr<action_mapper> actions_;
 };

@@ -67,7 +67,7 @@ TEST(TestExactMatch, Expiration)
         std::chrono::system_clock::now().time_since_epoch())
                        .count();
 
-    exact_match matcher(std::vector<std::pair<std::string_view, uint64_t>>{{"aaaa", now - 1},
+    exact_match matcher(std::vector<std::pair<std::string, uint64_t>>{{"aaaa", now - 1},
         {"bbbb", now + 100}, {"cccc", now - 1}, {"dddd", 0}, {"dddd", now - 1}, {"eeee", now - 1},
         {"eeee", 0}, {"ffff", now + 100}, {"ffff", now}});
 

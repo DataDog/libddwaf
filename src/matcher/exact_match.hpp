@@ -16,7 +16,7 @@ namespace ddwaf::matcher {
 
 class exact_match : public base_impl<exact_match> {
 public:
-    using data_type = std::vector<std::pair<std::string_view, uint64_t>>;
+    using data_type = std::vector<std::pair<std::string, uint64_t>>;
 
     static constexpr std::string_view matcher_name = "exact_match";
     static constexpr std::string_view negated_matcher_name = "!exact_match";

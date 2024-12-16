@@ -21,6 +21,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/sha256.cpp
     ${libddwaf_SOURCE_DIR}/src/uuid.cpp
     ${libddwaf_SOURCE_DIR}/src/action_mapper.cpp
+    ${libddwaf_SOURCE_DIR}/src/builder/matcher_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/module_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/processor_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/ruleset_builder.cpp

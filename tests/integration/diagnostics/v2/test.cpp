@@ -6,8 +6,8 @@
 
 #include "common/gtest_utils.hpp"
 
-#include "parameter.hpp"
 #include "configuration/common/common.hpp"
+#include "parameter.hpp"
 
 using namespace ddwaf;
 

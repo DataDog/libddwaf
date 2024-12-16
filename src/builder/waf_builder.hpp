@@ -37,16 +37,14 @@ public:
         return cfg_mgr_.update(path, root, info);
     }
 
-    bool remove(const std::string &path)
-    {
-        return cfg_mgr_.remove(path);
-    }
+    bool remove(const std::string &path) { return cfg_mgr_.remove(path); }
 
     std::shared_ptr<ruleset> build()
     {
         auto config = cfg_mgr_.consolidate();
         return rbuilder_.build(config);
     }
+
 protected:
     configuration_manager cfg_mgr_;
     ruleset_builder rbuilder_;

@@ -28,7 +28,7 @@ ip_match::ip_match(const std::vector<std::string_view> &ip_list)
     init_tree(ip_list);
 }
 
-ip_match::ip_match(const std::vector<std::pair<std::string_view, uint64_t>> &ip_list)
+ip_match::ip_match(const std::vector<std::pair<std::string, uint64_t>> &ip_list)
     : rtree_(radix_new(radix_tree_bits), radix_free)
 {
     if (!rtree_) {

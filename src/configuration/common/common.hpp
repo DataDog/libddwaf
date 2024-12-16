@@ -51,4 +51,24 @@ inline void add_addresses_to_info(const address_container &addresses, base_secti
     for (const auto &address : addresses.optional) { info.add_optional_address(address); }
 }
 
+inline unsigned parse_schema_version(parameter::map &ruleset)
+{
+    auto version = at<std::string_view>(ruleset, "version");
+
+    auto dot_pos = version.find('.');
+    if (dot_pos == std::string_view::npos) {
+        throw parsing_error("invalid version format, expected major.minor");
+    }
+    version.remove_suffix(version.size() - dot_pos);
+
+    unsigned major;
+    const char *data = version.data();
+    const char *end = data + version.size();
+    if (std::from_chars(data, end, major).ec != std::errc{}) {
+        throw parsing_error("invalid version format, expected major.minor");
+    }
+
+    return major;
+}
+
 } // namespace ddwaf

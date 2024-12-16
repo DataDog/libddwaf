@@ -11,17 +11,19 @@
 namespace ddwaf{
 class waf;
 class context_wrapper;
+class waf_builder;
 } // namespace ddwaf
 using ddwaf_handle = ddwaf::waf *;
 using ddwaf_context = ddwaf::context_wrapper *;
+using ddwaf_builder = ddwaf::waf_builder *;
 
 extern "C"
 {
 #endif
 
 #include <stdbool.h>
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #define DDWAF_MAX_STRING_LENGTH 4096
 #define DDWAF_MAX_CONTAINER_DEPTH 20
@@ -86,6 +88,7 @@ typedef enum
 #ifndef __cplusplus
 typedef struct _ddwaf_handle* ddwaf_handle;
 typedef struct _ddwaf_context* ddwaf_context;
+typedef struct _ddwaf_builder* ddwaf_builder;
 #endif
 
 typedef struct _ddwaf_object ddwaf_object;
@@ -363,6 +366,17 @@ void ddwaf_context_destroy(ddwaf_context context);
  * @param result Structure to free. (nonnull)
  **/
 void ddwaf_result_free(ddwaf_result *result);
+
+/** */
+ddwaf_builder ddwaf_builder_init(const ddwaf_config *config);
+
+bool ddwaf_builder_add_config(ddwaf_builder builder, const char *path, uint32_t path_len, ddwaf_object *config, ddwaf_object *diagnostics);
+bool ddwaf_builder_update_config(ddwaf_builder builder, const char *path, uint32_t path_len, ddwaf_object *config, ddwaf_object *diagnostics);
+bool ddwaf_builder_remove_config(ddwaf_builder builder, const char *path, uint32_t path_len);
+
+ddwaf_handle ddwaf_builder_build_instance(ddwaf_builder builder);
+
+void ddwaf_builder_destroy(ddwaf_builder builder);
 
 /**
  * ddwaf_object_invalid

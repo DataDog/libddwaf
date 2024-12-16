@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "action_mapper.hpp"
+#include "builder/matcher_builder.hpp"
 #include "builder/processor_builder.hpp"
 #include "configuration/common/configuration.hpp"
 #include "exception.hpp"
@@ -204,14 +205,28 @@ std::shared_ptr<ruleset> ruleset_builder::build(merged_configuration_spec &confi
         }
     }
 
+    if ((config.content & change_set::rule_data) != change_set::none) {
+        rule_matchers_.clear();
+        for (const auto &[id, spec] : config.rule_data) {
+            rule_matchers_.emplace(id, matcher_builder::build(spec));
+        }
+    }
+
+    if ((config.content & change_set::exclusion_data) != change_set::none) {
+        exclusion_matchers_.clear();
+        for (const auto &[id, spec] : config.exclusion_data) {
+            exclusion_matchers_.emplace(id, matcher_builder::build(spec));
+        }
+    }
+
     auto rs = std::make_shared<ruleset>();
     rs->insert_rules(final_base_rules_.items(), final_user_rules_.items());
     rs->insert_filters(rule_filters_);
     rs->insert_filters(input_filters_);
     rs->insert_preprocessors(preprocessors_);
     rs->insert_postprocessors(postprocessors_);
-    // rs->rule_matchers = rule_matchers_;
-    // rs->exclusion_matchers = exclusion_matchers_;
+    rs->rule_matchers = rule_matchers_;
+    rs->exclusion_matchers = exclusion_matchers_;
     rs->scanners = config.scanners.items();
     rs->actions = actions_;
     rs->free_fn = free_fn_;

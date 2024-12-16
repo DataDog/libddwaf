@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "common/gtest_utils.hpp"
+#include "ddwaf.h"
 #include "version.hpp"
 
 using namespace ddwaf;
@@ -23,7 +24,7 @@ TEST(TestWafIntegration, Empty)
     ddwaf_object_free(&rule);
 }
 
-TEST(TestWafIntegration, ddwaf_get_version)
+TEST(TestWafIntegration, GetWafVersion)
 {
     EXPECT_STREQ(ddwaf_get_version(), ddwaf::current_version.cstring());
 }
@@ -234,7 +235,9 @@ TEST(TestWafIntegration, PreloadRuleData)
     auto rule = read_file("rule_data_with_data.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder_add_config(builder, "default", sizeof("default") - 1, &rule, nullptr);
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
@@ -270,7 +273,8 @@ TEST(TestWafIntegration, PreloadRuleData)
         auto root = yaml_to_object(
             R"({rules_data: [{id: usr_data, type: data_with_expiration, data: [{value: pepe, expiration: 0}]}, {id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.2, expiration: 0}]}]})");
 
-        ddwaf_handle new_handle = ddwaf_update(handle, &root, nullptr);
+        ddwaf_builder_add_config(builder, LSTRARG("rule_data"), &root, nullptr);
+        ddwaf_handle new_handle = ddwaf_builder_build_instance(builder);
         ASSERT_NE(new_handle, nullptr);
         ddwaf_object_free(&root);
         ddwaf_destroy(handle);
@@ -316,15 +320,21 @@ TEST(TestWafIntegration, UpdateRules)
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
 
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder_add_config(builder, "default", sizeof("default") - 1, &rule, nullptr);
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
     ddwaf_context context1 = ddwaf_context_init(handle);
     ASSERT_NE(context1, nullptr);
 
+    ddwaf_builder_remove_config(builder, "default", sizeof("default") - 1);
+
     rule = read_file("interface3.yaml", base_dir);
-    ddwaf_handle new_handle = ddwaf_update(handle, &rule, nullptr);
+    ddwaf_builder_add_config(builder, "new_config", sizeof("new_config") - 1, &rule, nullptr);
+    ddwaf_handle new_handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(new_handle, nullptr);
     ddwaf_object_free(&rule);
 
