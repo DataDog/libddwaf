@@ -340,7 +340,7 @@ bool ddwaf_builder_update_config(ddwaf::waf_builder *builder, const char *path, 
 
     if (diagnostics == nullptr) {
         ddwaf::null_ruleset_info ri;
-        return builder->add({path, path_len}, input_map, ri);
+        return builder->update({path, path_len}, input_map, ri);
     }
 
     ddwaf::ruleset_info ri;

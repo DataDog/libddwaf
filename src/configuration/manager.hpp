@@ -28,7 +28,7 @@ public:
     bool update(const std::string &path, parameter::map &root, base_ruleset_info &info);
     bool remove(const std::string &path);
 
-    merged_configuration_spec consolidate() const;
+    merged_configuration_spec consolidate();
 
 protected:
     void remove_config_ids(
@@ -39,6 +39,7 @@ protected:
     spec_id_tracker ids_;
     std::unordered_map<std::string, configuration_spec> configs_;
     object_limits limits_;
+    change_set changes_{change_set::none};
 };
 
 } // namespace ddwaf

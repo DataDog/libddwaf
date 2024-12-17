@@ -234,6 +234,8 @@ bool configuration_manager::remove(const std::string &path)
         return false;
     }
 
+    changes_ = changes_ | it->second.content;
+
     remove_config_ids(it);
 
     configs_.erase(it);
@@ -241,14 +243,17 @@ bool configuration_manager::remove(const std::string &path)
     return true;
 }
 
-merged_configuration_spec configuration_manager::consolidate() const
+merged_configuration_spec configuration_manager::consolidate()
 {
+    merged_configuration_spec merged;
+    merged.content = changes_;
+    changes_ = change_set::none;
+
     auto emplace_contents = []<typename T>(std::vector<T> &destination, std::vector<T> &source) {
         destination.reserve(destination.size() + source.size());
         for (const auto &item : source) { destination.emplace_back(item); }
     };
 
-    merged_configuration_spec merged;
     for (auto [path, cfg] : configs_) {
         merged.content = merged.content | cfg.content;
 
