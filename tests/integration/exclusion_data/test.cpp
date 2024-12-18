@@ -15,7 +15,7 @@ constexpr std::string_view base_dir = "integration/exclusion_data/";
 TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
-    
+
     {
         auto rule = read_file("exclude_one_rule_by_user.yaml", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
@@ -148,7 +148,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
 TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
-    
+
     {
         auto rule = read_file("exclude_one_rule_by_ip.yaml", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
@@ -280,7 +280,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
 TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
-    
+
     {
         auto rule = read_file("exclude_one_rule_by_ip.yaml", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
@@ -418,7 +418,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
 TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
-    
+
     {
         auto rule = read_file("exclude_one_input_by_ip.yaml", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
