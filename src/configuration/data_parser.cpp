@@ -53,12 +53,13 @@ std::vector<data_spec> parse_data(const parameter::vector &data_array, base_sect
     std::vector<data_spec> all_data;
     for (unsigned i = 0; i < data_array.size(); ++i) {
         const ddwaf::parameter object = data_array[i];
+        // TODO fix this id shenanigans
         std::string id;
         try {
             const auto entry = static_cast<ddwaf::parameter::map>(object);
 
             data_spec spec;
-            spec.id = at<std::string>(entry, "id");
+            id = spec.id = at<std::string>(entry, "id");
 
             auto type_str = at<std::string_view>(entry, "type");
             spec.type = data_type_from_string(type_str);

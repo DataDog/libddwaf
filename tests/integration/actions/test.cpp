@@ -147,12 +147,17 @@ TEST(TestActionsIntegration, DefaultActions)
 
 TEST(TestActionsIntegration, OverrideDefaultAction)
 {
-    auto rule = read_file("default_actions.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    {
+        auto rule = read_file("default_actions.yaml", base_dir);
+        ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
 
     ddwaf_object tmp;
     {
@@ -185,15 +190,16 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
     }
 
     {
-        auto overrides = yaml_to_object(
-            R"({actions: [{id: block, type: redirect_request, parameters: {location: http://google.com, status_code: 303}}]})");
-        auto *new_handle = ddwaf_update(handle, &overrides, nullptr);
-        ddwaf_object_free(&overrides);
-        ASSERT_NE(new_handle, nullptr);
-
         ddwaf_destroy(handle);
-        handle = new_handle;
+
+        auto actions = yaml_to_object(
+            R"({actions: [{id: block, type: redirect_request, parameters: {location: http://google.com, status_code: 303}}]})");
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("actions"), &actions, nullptr);
+        ddwaf_object_free(&actions);
     }
+
+    handle = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle, nullptr);
 
     {
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -224,16 +230,22 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
         ddwaf_context_destroy(context);
     }
     ddwaf_destroy(handle);
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestActionsIntegration, AddNewAction)
 {
-    auto rule = read_file("default_actions.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    {
+        auto rule = read_file("default_actions.yaml", base_dir);
+        ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
 
     ddwaf_object tmp;
     {
@@ -265,15 +277,16 @@ TEST(TestActionsIntegration, AddNewAction)
     }
 
     {
-        auto overrides = yaml_to_object(
-            R"({actions: [{id: unblock, type: unblock_request, parameters: {code: 303}}]})");
-        auto *new_handle = ddwaf_update(handle, &overrides, nullptr);
-        ddwaf_object_free(&overrides);
-        ASSERT_NE(new_handle, nullptr);
-
         ddwaf_destroy(handle);
-        handle = new_handle;
+
+        auto actions = yaml_to_object(
+            R"({actions: [{id: unblock, type: unblock_request, parameters: {code: 303}}]})");
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("actions"), &actions, nullptr);
+        ddwaf_object_free(&actions);
     }
+
+    handle = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle, nullptr);
 
     {
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -305,6 +318,7 @@ TEST(TestActionsIntegration, AddNewAction)
     }
 
     ddwaf_destroy(handle);
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestActionsIntegration, EmptyOrInvalidActions)
