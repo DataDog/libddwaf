@@ -63,11 +63,11 @@ typedef enum
  **/
 typedef enum
 {
-    DDWAF_ERR_INTERNAL     = -3,
-    DDWAF_ERR_INVALID_OBJECT = -2,
+    DDWAF_MATCH                = 1,
+    DDWAF_OK                   = 0,
     DDWAF_ERR_INVALID_ARGUMENT = -1,
-    DDWAF_OK             = 0,
-    DDWAF_MATCH          = 1,
+    DDWAF_ERR_INVALID_OBJECT   = -2,
+    DDWAF_ERR_INTERNAL         = -3,
 } DDWAF_RET_CODE;
 
 /**
@@ -367,15 +367,67 @@ void ddwaf_context_destroy(ddwaf_context context);
  **/
 void ddwaf_result_free(ddwaf_result *result);
 
-/** */
+/**
+ * ddwaf_builder_init
+ *
+ * Initialize an instace of the waf builder
+ *
+ * @param config Optional configuration of the WAF. (nullable)
+ *
+ * @return Handle to the builer instance or NULL on error.
+ *
+ * @note If config is NULL, default values will be used, including the default
+ *       free function (ddwaf_object_free).
+ **/
 ddwaf_builder ddwaf_builder_init(const ddwaf_config *config);
 
-bool ddwaf_builder_add_config(ddwaf_builder builder, const char *path, uint32_t path_len, ddwaf_object *config, ddwaf_object *diagnostics);
-bool ddwaf_builder_update_config(ddwaf_builder builder, const char *path, uint32_t path_len, ddwaf_object *config, ddwaf_object *diagnostics);
+/**
+ * ddwaf_builder_add_or_update_config
+ *
+ * Adds or updates a configuration based on the given path, which must be a unique
+ * identifier of the provided configuration.
+ *
+ * @param builder Builder to perform the operation on. (nonnull)
+ * @param path A string containing the path of the configuration, this must uniquely identify the configuration. (nonnull)
+ * @param path_len The length of the string contained within path.
+ * @param config ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
+ * @param diagnostics Optional ruleset parsing diagnostics. (nullable)
+ *
+ * @return Whether the operation succeeded (true) or failed (false).
+ **/
+bool ddwaf_builder_add_or_update_config(ddwaf_builder builder, const char *path, uint32_t path_len, ddwaf_object *config, ddwaf_object *diagnostics);
+
+/**
+ * ddwaf_builder_remove_config
+ *
+ * Removes a configuration based on the provided path.
+ *
+ * @param builder Builder to perform the operation on. (nonnull)
+ * @param path A string containing the path of the configuration, this must uniquely identify the configuration. (nonnull)
+ * @param path_len The length of the string contained within path.
+ *
+ * @return Whether the operation succeeded (true) or failed (false).
+ **/
 bool ddwaf_builder_remove_config(ddwaf_builder builder, const char *path, uint32_t path_len);
 
+/**
+ * ddwaf_builder_build_instance
+ *
+ * Builds a ddwaf instance based on the current set of configurations
+ *
+ * @param builder Builder to perform the operation on. (nonnull)
+ *
+ * @return Handle to the new WAF instance or NULL if there was an error.
+ **/
 ddwaf_handle ddwaf_builder_build_instance(ddwaf_builder builder);
 
+/**
+ * ddwaf_builder_destroy
+ *
+ * Destroy an instance of the builder.
+ *
+ * @param builder Builder to perform the operation on. (nonnull)
+ */
 void ddwaf_builder_destroy(ddwaf_builder builder);
 
 /**

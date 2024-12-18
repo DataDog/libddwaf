@@ -160,6 +160,7 @@ int main(int argc, char *argv[])
                 std::cout << "Derivatives:\n" << ss.str() << "\n\n";
             }
 
+            std::cout << "Total time: " << ret.total_runtime << '\n';
             ddwaf_result_free(&ret);
         }
 

@@ -24,8 +24,7 @@ public:
     configuration_manager &operator=(configuration_manager &&) = delete;
     configuration_manager &operator=(const configuration_manager &) = delete;
 
-    bool add(const std::string &path, parameter::map &root, base_ruleset_info &info);
-    bool update(const std::string &path, parameter::map &root, base_ruleset_info &info);
+    bool add_or_update(const std::string &path, parameter::map &root, base_ruleset_info &info);
     bool remove(const std::string &path);
 
     merged_configuration_spec consolidate();
@@ -35,6 +34,7 @@ protected:
         const std::unordered_map<std::string, configuration_spec>::const_iterator &it);
 
     configuration_spec load(parameter::map &root, base_ruleset_info &info);
+    merged_configuration_spec merge();
 
     spec_id_tracker ids_;
     std::unordered_map<std::string, configuration_spec> configs_;

@@ -11,6 +11,7 @@
 
 #include "builder/ruleset_builder.hpp"
 #include "configuration/manager.hpp"
+#include "waf.hpp"
 
 namespace ddwaf {
 
@@ -27,22 +28,18 @@ public:
     waf_builder &operator=(waf_builder &&) = delete;
     waf_builder &operator=(const waf_builder &) = delete;
 
-    bool add(const std::string &path, parameter::map &root, base_ruleset_info &info)
+    bool add_or_update(const std::string &path, parameter::map &root, base_ruleset_info &info)
     {
-        return cfg_mgr_.add(path, root, info);
-    }
-
-    bool update(const std::string &path, parameter::map &root, base_ruleset_info &info)
-    {
-        return cfg_mgr_.update(path, root, info);
+        return cfg_mgr_.add_or_update(path, root, info);
     }
 
     bool remove(const std::string &path) { return cfg_mgr_.remove(path); }
 
-    std::shared_ptr<ruleset> build()
+    ddwaf::waf build()
     {
         auto config = cfg_mgr_.consolidate();
-        return rbuilder_.build(config);
+        auto ruleset = rbuilder_.build(config);
+        return waf{std::move(ruleset)};
     }
 
 protected:

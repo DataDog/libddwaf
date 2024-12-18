@@ -7,7 +7,6 @@
 
 #include <memory>
 
-#include "builder/waf_builder.hpp"
 #include "context.hpp"
 #include "ddwaf.h"
 #include "parameter.hpp"
