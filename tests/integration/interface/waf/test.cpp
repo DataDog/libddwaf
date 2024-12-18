@@ -1356,22 +1356,28 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
 
 TEST(TestWafIntegration, UpdateInvalidOverrides)
 {
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_builder builder = ddwaf_builder_init(&config);
+
     auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
-
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
-    ASSERT_NE(handle1, nullptr);
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
     ddwaf_object_free(&rule);
 
+    ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle1, nullptr);
+
     auto overrides = yaml_to_object(R"({rules_override: [{enabled: false}]})");
-    ddwaf_handle handle2 = ddwaf_update(handle1, &overrides, nullptr);
-    ASSERT_NE(handle2, nullptr);
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
     ddwaf_object_free(&overrides);
+
+    ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle2, nullptr);
 
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle2);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestWafIntegration, UpdateRuleData)

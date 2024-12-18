@@ -69,10 +69,11 @@ std::vector<rule_spec> parse_rules(const parameter::vector &rule_array, spec_id_
 {
     std::vector<rule_spec> rules;
     for (unsigned i = 0; i < rule_array.size(); ++i) {
-        const auto &rule_param = rule_array[i];
-        auto node = static_cast<parameter::map>(rule_param);
         std::string id;
         try {
+            const auto &rule_param = rule_array[i];
+            auto node = static_cast<parameter::map>(rule_param);
+
             address_container addresses;
 
             id = at<std::string>(node, "id");

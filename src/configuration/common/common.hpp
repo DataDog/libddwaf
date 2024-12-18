@@ -53,7 +53,10 @@ inline void add_addresses_to_info(const address_container &addresses, base_secti
 
 inline unsigned parse_schema_version(parameter::map &ruleset)
 {
-    auto version = at<std::string_view>(ruleset, "version");
+    auto version = at<std::string_view>(ruleset, "version", {});
+    if (version.empty()) {
+        return 2;
+    }
 
     auto dot_pos = version.find('.');
     if (dot_pos == std::string_view::npos) {

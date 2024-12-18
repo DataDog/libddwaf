@@ -123,35 +123,6 @@ ddwaf::waf *ddwaf_init(
     return nullptr;
 }
 
-ddwaf::waf *ddwaf_update(
-    ddwaf::waf *handle, const ddwaf_object * /*ruleset*/, ddwaf_object * /*diagnostics*/)
-{
-    /*    try {*/
-    /*if (handle != nullptr && ruleset != nullptr) {*/
-    /*const ddwaf::parameter input = *ruleset;*/
-    /*if (diagnostics == nullptr) {*/
-    /*ddwaf::null_ruleset_info ri;*/
-    /*return handle->update(input, ri);*/
-    /*}*/
-
-    /*ddwaf::ruleset_info ri;*/
-    /*const ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });*/
-
-    /*return handle->update(input, ri);*/
-    /*}*/
-    /*} catch (const std::exception &e) {*/
-    /*DDWAF_ERROR("{}", e.what());*/
-    /*} catch (...) {*/
-    /*DDWAF_ERROR("unknown exception");*/
-    /*}*/
-
-    if (handle == nullptr) {
-        return nullptr;
-    }
-
-    return new ddwaf::waf{*handle};
-}
-
 void ddwaf_destroy(ddwaf::waf *handle)
 {
     if (handle == nullptr) {
