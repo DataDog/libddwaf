@@ -281,6 +281,7 @@ ddwaf_builder ddwaf_builder_init(const ddwaf_config *config)
 }
 
 bool ddwaf_builder_add_or_update_config(ddwaf::waf_builder *builder, const char *path,
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     uint32_t path_len, ddwaf_object *config, ddwaf_object *diagnostics)
 {
     if (builder == nullptr) {
