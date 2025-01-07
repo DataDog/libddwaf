@@ -35,7 +35,7 @@ bool contains_action(const std::vector<action_spec> &actions, std::string_view i
     return false;
 }
 
-TEST(TestActionsParser, EmptyActions)
+TEST(TestActionParser, EmptyActions)
 {
     auto object = yaml_to_object(R"([])");
 
@@ -49,7 +49,7 @@ TEST(TestActionsParser, EmptyActions)
     EXPECT_EQ(cfg.actions.size(), 0);
 }
 
-TEST(TestActionsParser, SingleAction)
+TEST(TestActionParser, SingleAction)
 {
     auto object = yaml_to_object(R"([{id: block_1, type: block_request, parameters: {}}])");
 
@@ -83,7 +83,7 @@ TEST(TestActionsParser, SingleAction)
     EXPECT_TRUE(contains_action(cfg.actions, "block_1"));
 }
 
-TEST(TestActionsParser, RedirectAction)
+TEST(TestActionParser, RedirectAction)
 {
     std::vector<std::tuple<std::string, std::string, std::string>> redirections{
         {"redirect_301", "301", "http://www.datadoghq.com"},
@@ -151,7 +151,7 @@ TEST(TestActionsParser, RedirectAction)
     }
 }
 
-TEST(TestActionsParser, RedirectActionInvalidStatusCode)
+TEST(TestActionParser, RedirectActionInvalidStatusCode)
 {
     auto object = yaml_to_object(
         R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: 404}, type: redirect_request}])");
@@ -197,7 +197,7 @@ TEST(TestActionsParser, RedirectActionInvalidStatusCode)
     }
 }
 
-TEST(TestActionsParser, RedirectActionInvalid300StatusCode)
+TEST(TestActionParser, RedirectActionInvalid300StatusCode)
 {
     auto object = yaml_to_object(
         R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: 304}, type: redirect_request}])");
@@ -243,7 +243,7 @@ TEST(TestActionsParser, RedirectActionInvalid300StatusCode)
     }
 }
 
-TEST(TestActionsParser, RedirectActionMissingStatusCode)
+TEST(TestActionParser, RedirectActionMissingStatusCode)
 {
     auto object = yaml_to_object(
         R"([{id: redirect, parameters: {location: "http://www.google.com"}, type: redirect_request}])");
@@ -289,7 +289,7 @@ TEST(TestActionsParser, RedirectActionMissingStatusCode)
     }
 }
 
-TEST(TestActionsParser, RedirectActionMissingLocation)
+TEST(TestActionParser, RedirectActionMissingLocation)
 {
     auto object = yaml_to_object(
         R"([{id: redirect, parameters: {status_code: 303}, type: redirect_request}])");
@@ -336,7 +336,7 @@ TEST(TestActionsParser, RedirectActionMissingLocation)
     }
 }
 
-TEST(TestActionsParser, RedirectActionNonHttpURL)
+TEST(TestActionParser, RedirectActionNonHttpURL)
 {
     auto object = yaml_to_object(
         R"([{id: redirect, parameters: {status_code: 303, location: ftp://myftp.mydomain.com}, type: redirect_request}])");
@@ -383,7 +383,7 @@ TEST(TestActionsParser, RedirectActionNonHttpURL)
     }
 }
 
-TEST(TestActionsParser, RedirectActionInvalidRelativePathURL)
+TEST(TestActionParser, RedirectActionInvalidRelativePathURL)
 {
     auto object = yaml_to_object(
         R"([{id: redirect, parameters: {status_code: 303, location: ../../../etc/passwd}, type: redirect_request}])");
@@ -430,7 +430,7 @@ TEST(TestActionsParser, RedirectActionInvalidRelativePathURL)
     }
 }
 
-TEST(TestActionsParser, OverrideDefaultBlockAction)
+TEST(TestActionParser, OverrideDefaultBlockAction)
 {
     auto object = yaml_to_object(
         R"([{id: block, parameters: {location: "http://www.google.com", status_code: 302}, type: redirect_request}])");
@@ -477,7 +477,7 @@ TEST(TestActionsParser, OverrideDefaultBlockAction)
     }
 }
 
-TEST(TestActionsParser, BlockActionMissingStatusCode)
+TEST(TestActionParser, BlockActionMissingStatusCode)
 {
     auto object = yaml_to_object(
         R"([{id: block, parameters: {type: "auto", grpc_status_code: 302}, type: block_request}])");
@@ -524,7 +524,7 @@ TEST(TestActionsParser, BlockActionMissingStatusCode)
     }
 }
 
-TEST(TestActionsParser, UnknownActionType)
+TEST(TestActionParser, UnknownActionType)
 {
     auto object = yaml_to_object(
         R"([{id: sanitize, parameters: {location: "http://www.google.com", status_code: 302}, type: new_action_type}])");
@@ -559,7 +559,7 @@ TEST(TestActionsParser, UnknownActionType)
     EXPECT_TRUE(contains_action(cfg.actions, "sanitize"));
 }
 
-TEST(TestActionsParser, BlockActionMissingGrpcStatusCode)
+TEST(TestActionParser, BlockActionMissingGrpcStatusCode)
 {
     auto object = yaml_to_object(
         R"([{id: block, parameters: {type: "auto", status_code: 302}, type: block_request}])");
@@ -606,7 +606,7 @@ TEST(TestActionsParser, BlockActionMissingGrpcStatusCode)
     }
 }
 
-TEST(TestActionsParser, BlockActionMissingType)
+TEST(TestActionParser, BlockActionMissingType)
 {
     auto object = yaml_to_object(
         R"([{id: block, parameters: {grpc_status_code: 11, status_code: 302}, type: block_request}])");
@@ -653,7 +653,7 @@ TEST(TestActionsParser, BlockActionMissingType)
     }
 }
 
-TEST(TestActionsParser, BlockActionMissingParameters)
+TEST(TestActionParser, BlockActionMissingParameters)
 {
     auto object = yaml_to_object(R"([{id: block, parameters: {}, type: block_request}])");
 
@@ -699,7 +699,7 @@ TEST(TestActionsParser, BlockActionMissingParameters)
     }
 }
 
-TEST(TestActionsParser, MissingID)
+TEST(TestActionParser, MissingID)
 {
     auto object = yaml_to_object(
         R"([{parameters: {location: "http://www.google.com", status_code: 302}, type: new_action_type}])");
@@ -740,7 +740,7 @@ TEST(TestActionsParser, MissingID)
     }
 }
 
-TEST(TestActionsParser, MissingType)
+TEST(TestActionParser, MissingType)
 {
     auto object = yaml_to_object(
         R"([{id: sanitize, parameters: {location: "http://www.google.com", status_code: 302}}])");
@@ -781,7 +781,7 @@ TEST(TestActionsParser, MissingType)
     }
 }
 
-TEST(TestActionsParser, MissingParameters)
+TEST(TestActionParser, MissingParameters)
 {
     auto object = yaml_to_object(R"([{id: sanitize, type: sanitize_request}])");
 
