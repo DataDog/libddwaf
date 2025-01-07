@@ -31,7 +31,7 @@ void validate_and_add_block(auto &actions, auto id, auto &type, auto &parameters
     }
 
     actions.emplace_back(
-        std::move(id), action_type_from_string(type), std::move(type), std::move(parameters));
+        action_spec{std::move(id), action_type_from_string(type), std::move(type), std::move(parameters)});
 }
 
 void validate_and_add_redirect(auto &actions, auto id, auto &type, auto &parameters)
