@@ -211,22 +211,6 @@ ddwaf_handle ddwaf_init(const ddwaf_object *ruleset,
     const ddwaf_config* config, ddwaf_object *diagnostics);
 
 /**
- * ddwaf_update
- *
- * Update a ddwaf instance
- *
- * @param ruleset ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
- * @param diagnostics Optional ruleset parsing diagnostics. (nullable)
- *
- * @return Handle to the new WAF instance or NULL if there was an error processing the ruleset.
- *
- * @note If handle or ruleset are NULL, the diagnostics object will not be initialised.
- * @note This function is not thread-safe
- **/
-ddwaf_handle ddwaf_update(ddwaf_handle handle, const ddwaf_object *ruleset,
-    ddwaf_object *diagnostics);
-
-/**
  * ddwaf_destroy
  *
  * Destroy a WAF instance.
