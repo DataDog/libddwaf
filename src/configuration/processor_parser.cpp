@@ -157,7 +157,7 @@ bool parse_processors(const parameter::vector &processor_array, configuration_sp
                 id, type, std::move(expr), std::move(mappings), std::move(scanners), eval, output});
 
             info.add_loaded(id);
-            ids.filters.emplace(std::move(id));
+            ids.processors.emplace(std::move(id));
             add_addresses_to_info(addresses, info);
         } catch (const unsupported_operator_version &e) {
             DDWAF_WARN("Skipping processor '{}': {}", id, e.what());

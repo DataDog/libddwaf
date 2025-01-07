@@ -158,6 +158,17 @@ struct configuration_spec {
     std::vector<action_spec> actions;
 };
 
+// TODO:
+// The configuration should contain changes:
+//  remove: [x y z]
+//  add: [x y z]
+// In the example of rules:
+//  - We could have an index of rule_builder and then apply or revert overrides
+//  depending on whether they are added or removed.
+//  - If the rule is removed, we simply remove it.
+//
+//  We have to effectively keep a set of builders per primitive so we can
+//  recreate them on demand.
 struct merged_configuration_spec {
     // Specifies the contents of the configuration
     change_set content{change_set::none};

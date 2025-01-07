@@ -40,7 +40,8 @@ void validate_and_add_redirect(auto &actions, auto id, auto &type, auto &paramet
     if (it == parameters.end() || it->second.empty()) {
         auto block_params = action_mapper_builder::get_default_action("block");
         // TODO add a log message
-        actions.emplace_back(id, block_params.type, block_params.type_str, block_params.parameters);
+        actions.emplace_back(
+            action_spec{id, block_params.type, block_params.type_str, block_params.parameters});
         return;
     }
 
@@ -57,7 +58,8 @@ void validate_and_add_redirect(auto &actions, auto id, auto &type, auto &paramet
         (decomposed->scheme_and_authority.empty() && !decomposed->path.starts_with('/'))) {
         auto block_params = action_mapper_builder::get_default_action("block");
         // TODO add a log message
-        actions.emplace_back(id, block_params.type, block_params.type_str, block_params.parameters);
+        actions.emplace_back(
+            action_spec{id, block_params.type, block_params.type_str, block_params.parameters});
         return;
     }
 
@@ -71,8 +73,8 @@ void validate_and_add_redirect(auto &actions, auto id, auto &type, auto &paramet
         parameters.emplace("status_code", "303");
     }
 
-    actions.emplace_back(
-        std::move(id), action_type_from_string(type), std::move(type), std::move(parameters));
+    actions.emplace_back(action_spec{
+        std::move(id), action_type_from_string(type), std::move(type), std::move(parameters)});
 }
 
 } // namespace
@@ -104,8 +106,8 @@ bool parse_actions(const parameter::vector &actions_array, configuration_spec &c
             } else if (type == "block_request") {
                 validate_and_add_block(cfg.actions, id, type, parameters);
             } else {
-                cfg.actions.emplace_back(
-                    id, action_type_from_string(type), std::move(type), std::move(parameters));
+                cfg.actions.emplace_back(action_spec{
+                    id, action_type_from_string(type), std::move(type), std::move(parameters)});
             }
 
             info.add_loaded(id);
