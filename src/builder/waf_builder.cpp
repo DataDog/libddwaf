@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "builder/waf_builder.hpp"
-#include "configuration/manager.hpp"
+#include "configuration/configuration_manager.hpp"
 #include "parameter.hpp"
 #include "ruleset_info.hpp"
 #include "waf.hpp"

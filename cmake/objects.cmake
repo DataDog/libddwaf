@@ -46,7 +46,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/configuration/rule_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/legacy_rule_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/scanner_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/configuration/manager.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/configuration_manager.cpp
     ${libddwaf_SOURCE_DIR}/src/processor/extract_schema.cpp
     ${libddwaf_SOURCE_DIR}/src/processor/fingerprint.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/exists.cpp

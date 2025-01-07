@@ -10,7 +10,7 @@
 #include <utility>
 
 #include "builder/ruleset_builder.hpp"
-#include "configuration/manager.hpp"
+#include "configuration/configuration_manager.hpp"
 #include "waf.hpp"
 
 namespace ddwaf {
