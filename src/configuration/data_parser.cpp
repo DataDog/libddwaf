@@ -69,12 +69,12 @@ std::vector<data_spec> parse_data(const parameter::vector &data_array, base_sect
                 spec.type == data_type::ip_with_expiration) {
                 spec.values = parse_data<data_spec::value_type>(data);
             } else {
-                DDWAF_DEBUG("Unknown type '{}' for data id '{}", type_str, id);
-                info.add_failed(id, "unkonwn type '" + std::string{type_str} + "'");
+                DDWAF_DEBUG("Unknown type '{}' for data id '{}'", type_str, id);
+                info.add_failed(id, "unknown type '" + std::string{type_str} + "'");
                 continue;
             }
 
-            DDWAF_DEBUG("Parsed dynamic data {} of type {}", id, type_str);
+            DDWAF_DEBUG("Parsed dynamic data '{}' of type '{}'", id, type_str);
             info.add_loaded(id);
             all_data.emplace_back(std::move(spec));
         } catch (const ddwaf::exception &e) {
