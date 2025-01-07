@@ -35,7 +35,7 @@ bool contains_action(const std::vector<action_spec> &actions, std::string_view i
     return false;
 }
 
-TEST(TestActionsParser EmptyActions)
+TEST(TestActionsParser, EmptyActions)
 {
     auto object = yaml_to_object(R"([])");
 
@@ -43,42 +43,13 @@ TEST(TestActionsParser EmptyActions)
     spec_id_tracker ids;
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_actions(actions_array, cfg, ids, section));
+    ASSERT_FALSE(parse_actions(actions_array, cfg, ids, section));
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(cfg.actions.size(), 4);
-    EXPECT_TRUE(contains_action(cfg.actions, "block"));
-    EXPECT_TRUE(contains_action(cfg.actions, "stack_trace"));
-    EXPECT_TRUE(contains_action(cfg.actions, "extract_schema"));
-
-    {
-        const auto &spec = find_action(cfg.actions, "block");
-        EXPECT_EQ(spec.type, action_type::block_request);
-        EXPECT_EQ(spec.type_str, "block_request");
-        EXPECT_EQ(spec.parameters.size(), 3);
-
-        const auto &parameters = spec.parameters;
-        EXPECT_STR(parameters.at("status_code"), "403");
-        EXPECT_STR(parameters.at("grpc_status_code"), "10");
-        EXPECT_STR(parameters.at("type"), "auto");
-    }
-
-    {
-        const auto &spec = find_action(cfg.actions, "stack_trace");
-        EXPECT_EQ(spec.type, action_type::generate_stack);
-        EXPECT_EQ(spec.type_str, "generate_stack");
-        EXPECT_EQ(spec.parameters.size(), 0);
-    }
-
-    {
-        const auto &spec = find_action(cfg.actions, "extract_schema");
-        EXPECT_EQ(spec.type, action_type::generate_schema);
-        EXPECT_EQ(spec.type_str, "generate_schema");
-        EXPECT_EQ(spec.parameters.size(), 0);
-    }
+    EXPECT_EQ(cfg.actions.size(), 0);
 }
 
-TEST(TestActionsParser SingleAction)
+TEST(TestActionsParser, SingleAction)
 {
     auto object = yaml_to_object(R"([{id: block_1, type: block_request, parameters: {}}])");
 
@@ -108,14 +79,11 @@ TEST(TestActionsParser SingleAction)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.actions.size(), 5);
+    EXPECT_EQ(cfg.actions.size(), 1);
     EXPECT_TRUE(contains_action(cfg.actions, "block_1"));
-    EXPECT_TRUE(contains_action(cfg.actions, "block"));
-    EXPECT_TRUE(contains_action(cfg.actions, "stack_trace"));
-    EXPECT_TRUE(contains_action(cfg.actions, "extract_schema"));
 }
 
-TEST(TestActionsParser RedirectAction)
+TEST(TestActionsParser, RedirectAction)
 {
     std::vector<std::tuple<std::string, std::string, std::string>> redirections{
         {"redirect_301", "301", "http://www.datadoghq.com"},
@@ -167,11 +135,7 @@ TEST(TestActionsParser RedirectAction)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.actions.size(), 10);
-    EXPECT_TRUE(contains_action(cfg.actions, "block"));
-    EXPECT_TRUE(contains_action(cfg.actions, "stack_trace"));
-    EXPECT_TRUE(contains_action(cfg.actions, "extract_schema"));
-    EXPECT_TRUE(contains_action(cfg.actions, "monitor"));
+    EXPECT_EQ(cfg.actions.size(), 6);
 
     for (auto &[name, status_code, url] : redirections) {
         ASSERT_TRUE(contains_action(cfg.actions, name));
@@ -187,7 +151,7 @@ TEST(TestActionsParser RedirectAction)
     }
 }
 
-TEST(TestActionsParser RedirectActionInvalidStatusCode)
+TEST(TestActionsParser, RedirectActionInvalidStatusCode)
 {
     auto object = yaml_to_object(
         R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: 404}, type: redirect_request}])");
@@ -218,12 +182,8 @@ TEST(TestActionsParser RedirectActionInvalidStatusCode)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.actions.size(), 5);
+    EXPECT_EQ(cfg.actions.size(), 1);
     EXPECT_TRUE(contains_action(cfg.actions, "redirect"));
-    EXPECT_TRUE(contains_action(cfg.actions, "block"));
-    EXPECT_TRUE(contains_action(cfg.actions, "stack_trace"));
-    EXPECT_TRUE(contains_action(cfg.actions, "extract_schema"));
-    EXPECT_TRUE(contains_action(cfg.actions, "monitor"));
 
     {
         const auto &spec = find_action(cfg.actions, "redirect");
@@ -237,7 +197,7 @@ TEST(TestActionsParser RedirectActionInvalidStatusCode)
     }
 }
 
-TEST(TestActionsParser RedirectActionInvalid300StatusCode)
+TEST(TestActionsParser, RedirectActionInvalid300StatusCode)
 {
     auto object = yaml_to_object(
         R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: 304}, type: redirect_request}])");
@@ -268,12 +228,8 @@ TEST(TestActionsParser RedirectActionInvalid300StatusCode)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.actions.size(), 5);
+    EXPECT_EQ(cfg.actions.size(), 1);
     EXPECT_TRUE(contains_action(cfg.actions, "redirect"));
-    EXPECT_TRUE(contains_action(cfg.actions, "block"));
-    EXPECT_TRUE(contains_action(cfg.actions, "stack_trace"));
-    EXPECT_TRUE(contains_action(cfg.actions, "extract_schema"));
-    EXPECT_TRUE(contains_action(cfg.actions, "monitor"));
 
     {
         const auto &spec = find_action(cfg.actions, "redirect");
@@ -287,7 +243,7 @@ TEST(TestActionsParser RedirectActionInvalid300StatusCode)
     }
 }
 
-TEST(TestActionsParser RedirectActionMissingStatusCode)
+TEST(TestActionsParser, RedirectActionMissingStatusCode)
 {
     auto object = yaml_to_object(
         R"([{id: redirect, parameters: {location: "http://www.google.com"}, type: redirect_request}])");
@@ -318,12 +274,8 @@ TEST(TestActionsParser RedirectActionMissingStatusCode)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.actions.size(), 5);
+    EXPECT_EQ(cfg.actions.size(), 1);
     EXPECT_TRUE(contains_action(cfg.actions, "redirect"));
-    EXPECT_TRUE(contains_action(cfg.actions, "block"));
-    EXPECT_TRUE(contains_action(cfg.actions, "stack_trace"));
-    EXPECT_TRUE(contains_action(cfg.actions, "extract_schema"));
-    EXPECT_TRUE(contains_action(cfg.actions, "monitor"));
 
     {
         const auto &spec = find_action(cfg.actions, "redirect");
@@ -337,7 +289,7 @@ TEST(TestActionsParser RedirectActionMissingStatusCode)
     }
 }
 
-TEST(TestActionsParser RedirectActionMissingLocation)
+TEST(TestActionsParser, RedirectActionMissingLocation)
 {
     auto object = yaml_to_object(
         R"([{id: redirect, parameters: {status_code: 303}, type: redirect_request}])");
@@ -368,12 +320,8 @@ TEST(TestActionsParser RedirectActionMissingLocation)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.actions.size(), 5);
+    EXPECT_EQ(cfg.actions.size(), 1);
     EXPECT_TRUE(contains_action(cfg.actions, "redirect"));
-    EXPECT_TRUE(contains_action(cfg.actions, "block"));
-    EXPECT_TRUE(contains_action(cfg.actions, "stack_trace"));
-    EXPECT_TRUE(contains_action(cfg.actions, "extract_schema"));
-    EXPECT_TRUE(contains_action(cfg.actions, "monitor"));
 
     {
         const auto &spec = find_action(cfg.actions, "redirect");
@@ -388,7 +336,7 @@ TEST(TestActionsParser RedirectActionMissingLocation)
     }
 }
 
-TEST(TestActionsParser RedirectActionNonHttpURL)
+TEST(TestActionsParser, RedirectActionNonHttpURL)
 {
     auto object = yaml_to_object(
         R"([{id: redirect, parameters: {status_code: 303, location: ftp://myftp.mydomain.com}, type: redirect_request}])");
@@ -419,12 +367,8 @@ TEST(TestActionsParser RedirectActionNonHttpURL)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.actions.size(), 5);
+    EXPECT_EQ(cfg.actions.size(), 1);
     EXPECT_TRUE(contains_action(cfg.actions, "redirect"));
-    EXPECT_TRUE(contains_action(cfg.actions, "block"));
-    EXPECT_TRUE(contains_action(cfg.actions, "stack_trace"));
-    EXPECT_TRUE(contains_action(cfg.actions, "extract_schema"));
-    EXPECT_TRUE(contains_action(cfg.actions, "monitor"));
 
     {
         const auto &spec = find_action(cfg.actions, "redirect");
@@ -439,7 +383,7 @@ TEST(TestActionsParser RedirectActionNonHttpURL)
     }
 }
 
-TEST(TestActionsParser RedirectActionInvalidRelativePathURL)
+TEST(TestActionsParser, RedirectActionInvalidRelativePathURL)
 {
     auto object = yaml_to_object(
         R"([{id: redirect, parameters: {status_code: 303, location: ../../../etc/passwd}, type: redirect_request}])");
@@ -470,12 +414,8 @@ TEST(TestActionsParser RedirectActionInvalidRelativePathURL)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.actions.size(), 5);
+    EXPECT_EQ(cfg.actions.size(), 1);
     EXPECT_TRUE(contains_action(cfg.actions, "redirect"));
-    EXPECT_TRUE(contains_action(cfg.actions, "block"));
-    EXPECT_TRUE(contains_action(cfg.actions, "stack_trace"));
-    EXPECT_TRUE(contains_action(cfg.actions, "extract_schema"));
-    EXPECT_TRUE(contains_action(cfg.actions, "monitor"));
 
     {
         const auto &spec = find_action(cfg.actions, "redirect");
@@ -490,7 +430,7 @@ TEST(TestActionsParser RedirectActionInvalidRelativePathURL)
     }
 }
 
-TEST(TestActionsParser OverrideDefaultBlockAction)
+TEST(TestActionsParser, OverrideDefaultBlockAction)
 {
     auto object = yaml_to_object(
         R"([{id: block, parameters: {location: "http://www.google.com", status_code: 302}, type: redirect_request}])");
@@ -522,11 +462,8 @@ TEST(TestActionsParser OverrideDefaultBlockAction)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.actions.size(), 4);
+    EXPECT_EQ(cfg.actions.size(), 1);
     EXPECT_TRUE(contains_action(cfg.actions, "block"));
-    EXPECT_TRUE(contains_action(cfg.actions, "stack_trace"));
-    EXPECT_TRUE(contains_action(cfg.actions, "extract_schema"));
-    EXPECT_TRUE(contains_action(cfg.actions, "monitor"));
 
     {
         const auto &spec = find_action(cfg.actions, "block");
@@ -540,7 +477,7 @@ TEST(TestActionsParser OverrideDefaultBlockAction)
     }
 }
 
-TEST(TestActionsParser BlockActionMissingStatusCode)
+TEST(TestActionsParser, BlockActionMissingStatusCode)
 {
     auto object = yaml_to_object(
         R"([{id: block, parameters: {type: "auto", grpc_status_code: 302}, type: block_request}])");
@@ -571,11 +508,8 @@ TEST(TestActionsParser BlockActionMissingStatusCode)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.actions.size(), 4);
+    EXPECT_EQ(cfg.actions.size(), 1);
     EXPECT_TRUE(contains_action(cfg.actions, "block"));
-    EXPECT_TRUE(contains_action(cfg.actions, "stack_trace"));
-    EXPECT_TRUE(contains_action(cfg.actions, "extract_schema"));
-    EXPECT_TRUE(contains_action(cfg.actions, "monitor"));
 
     {
         const auto &spec = find_action(cfg.actions, "block");
@@ -590,7 +524,7 @@ TEST(TestActionsParser BlockActionMissingStatusCode)
     }
 }
 
-TEST(TestActionsParser UnknownActionType)
+TEST(TestActionsParser, UnknownActionType)
 {
     auto object = yaml_to_object(
         R"([{id: sanitize, parameters: {location: "http://www.google.com", status_code: 302}, type: new_action_type}])");
@@ -621,15 +555,11 @@ TEST(TestActionsParser UnknownActionType)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.actions.size(), 5);
+    EXPECT_EQ(cfg.actions.size(), 1);
     EXPECT_TRUE(contains_action(cfg.actions, "sanitize"));
-    EXPECT_TRUE(contains_action(cfg.actions, "block"));
-    EXPECT_TRUE(contains_action(cfg.actions, "stack_trace"));
-    EXPECT_TRUE(contains_action(cfg.actions, "extract_schema"));
-    EXPECT_TRUE(contains_action(cfg.actions, "monitor"));
 }
 
-TEST(TestActionsParser BlockActionMissingGrpcStatusCode)
+TEST(TestActionsParser, BlockActionMissingGrpcStatusCode)
 {
     auto object = yaml_to_object(
         R"([{id: block, parameters: {type: "auto", status_code: 302}, type: block_request}])");
@@ -660,11 +590,8 @@ TEST(TestActionsParser BlockActionMissingGrpcStatusCode)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.actions.size(), 4);
+    EXPECT_EQ(cfg.actions.size(), 1);
     EXPECT_TRUE(contains_action(cfg.actions, "block"));
-    EXPECT_TRUE(contains_action(cfg.actions, "stack_trace"));
-    EXPECT_TRUE(contains_action(cfg.actions, "extract_schema"));
-    EXPECT_TRUE(contains_action(cfg.actions, "monitor"));
 
     {
         const auto &spec = find_action(cfg.actions, "block");
@@ -679,7 +606,7 @@ TEST(TestActionsParser BlockActionMissingGrpcStatusCode)
     }
 }
 
-TEST(TestActionsParser BlockActionMissingType)
+TEST(TestActionsParser, BlockActionMissingType)
 {
     auto object = yaml_to_object(
         R"([{id: block, parameters: {grpc_status_code: 11, status_code: 302}, type: block_request}])");
@@ -710,11 +637,8 @@ TEST(TestActionsParser BlockActionMissingType)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.actions.size(), 4);
+    EXPECT_EQ(cfg.actions.size(), 1);
     EXPECT_TRUE(contains_action(cfg.actions, "block"));
-    EXPECT_TRUE(contains_action(cfg.actions, "stack_trace"));
-    EXPECT_TRUE(contains_action(cfg.actions, "extract_schema"));
-    EXPECT_TRUE(contains_action(cfg.actions, "monitor"));
 
     {
         const auto &spec = find_action(cfg.actions, "block");
@@ -729,7 +653,7 @@ TEST(TestActionsParser BlockActionMissingType)
     }
 }
 
-TEST(TestActionsParser BlockActionMissingParameters)
+TEST(TestActionsParser, BlockActionMissingParameters)
 {
     auto object = yaml_to_object(R"([{id: block, parameters: {}, type: block_request}])");
 
@@ -759,11 +683,8 @@ TEST(TestActionsParser BlockActionMissingParameters)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.actions.size(), 4);
+    EXPECT_EQ(cfg.actions.size(), 1);
     EXPECT_TRUE(contains_action(cfg.actions, "block"));
-    EXPECT_TRUE(contains_action(cfg.actions, "stack_trace"));
-    EXPECT_TRUE(contains_action(cfg.actions, "extract_schema"));
-    EXPECT_TRUE(contains_action(cfg.actions, "monitor"));
 
     {
         const auto &spec = find_action(cfg.actions, "block");
@@ -778,7 +699,7 @@ TEST(TestActionsParser BlockActionMissingParameters)
     }
 }
 
-TEST(TestActionsParser MissingID)
+TEST(TestActionsParser, MissingID)
 {
     auto object = yaml_to_object(
         R"([{parameters: {location: "http://www.google.com", status_code: 302}, type: new_action_type}])");
@@ -789,6 +710,8 @@ TEST(TestActionsParser MissingID)
     auto actions_array = static_cast<parameter::vector>(parameter(object));
     ASSERT_FALSE(parse_actions(actions_array, cfg, ids, section));
     ddwaf_object_free(&object);
+
+    EXPECT_EQ(cfg.actions.size(), 0);
 
     {
         parameter root;
@@ -815,15 +738,9 @@ TEST(TestActionsParser MissingID)
 
         ddwaf_object_free(&root);
     }
-
-    EXPECT_EQ(cfg.actions.size(), 4);
-    EXPECT_TRUE(contains_action(cfg.actions, "block"));
-    EXPECT_TRUE(contains_action(cfg.actions, "stack_trace"));
-    EXPECT_TRUE(contains_action(cfg.actions, "extract_schema"));
-    EXPECT_TRUE(contains_action(cfg.actions, "monitor"));
 }
 
-TEST(TestActionsParser MissingType)
+TEST(TestActionsParser, MissingType)
 {
     auto object = yaml_to_object(
         R"([{id: sanitize, parameters: {location: "http://www.google.com", status_code: 302}}])");
@@ -834,6 +751,8 @@ TEST(TestActionsParser MissingType)
     auto actions_array = static_cast<parameter::vector>(parameter(object));
     ASSERT_FALSE(parse_actions(actions_array, cfg, ids, section));
     ddwaf_object_free(&object);
+
+    EXPECT_EQ(cfg.actions.size(), 0);
 
     {
         parameter root;
@@ -860,15 +779,9 @@ TEST(TestActionsParser MissingType)
 
         ddwaf_object_free(&root);
     }
-
-    EXPECT_EQ(cfg.actions.size(), 4);
-    EXPECT_TRUE(contains_action(cfg.actions, "block"));
-    EXPECT_TRUE(contains_action(cfg.actions, "stack_trace"));
-    EXPECT_TRUE(contains_action(cfg.actions, "extract_schema"));
-    EXPECT_TRUE(contains_action(cfg.actions, "monitor"));
 }
 
-TEST(TestActionsParser MissingParameters)
+TEST(TestActionsParser, MissingParameters)
 {
     auto object = yaml_to_object(R"([{id: sanitize, type: sanitize_request}])");
 
@@ -878,6 +791,8 @@ TEST(TestActionsParser MissingParameters)
     auto actions_array = static_cast<parameter::vector>(parameter(object));
     ASSERT_FALSE(parse_actions(actions_array, cfg, ids, section));
     ddwaf_object_free(&object);
+
+    EXPECT_EQ(cfg.actions.size(), 0);
 
     {
         parameter root;
@@ -904,12 +819,6 @@ TEST(TestActionsParser MissingParameters)
 
         ddwaf_object_free(&root);
     }
-
-    EXPECT_EQ(cfg.actions.size(), 4);
-    EXPECT_TRUE(contains_action(cfg.actions, "block"));
-    EXPECT_TRUE(contains_action(cfg.actions, "stack_trace"));
-    EXPECT_TRUE(contains_action(cfg.actions, "extract_schema"));
-    EXPECT_TRUE(contains_action(cfg.actions, "monitor"));
 }
 
 } // namespace
