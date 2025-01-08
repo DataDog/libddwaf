@@ -110,6 +110,7 @@ bool parse_actions(const parameter::vector &actions_array, configuration_spec &c
                     id, action_type_from_string(type), std::move(type), std::move(parameters)});
             }
 
+            ids.actions.emplace(id);
             info.add_loaded(id);
         } catch (const std::exception &e) {
             if (id.empty()) {

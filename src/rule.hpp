@@ -99,24 +99,10 @@ public:
     }
 
     const std::unordered_map<std::string, std::string> &get_tags() const { return tags_; }
-    const std::unordered_map<std::string, std::string> &get_ancillary_tags() const
-    {
-        return ancillary_tags_;
-    }
-
-    void set_ancillary_tag(const std::string &key, const std::string &value)
-    {
-        // Ancillary tags aren't allowed to overlap with standard tags
-        if (!tags_.contains(key)) {
-            ancillary_tags_[key] = value;
-        }
-    }
 
     [[nodiscard]] bool has_actions() const { return !actions_.empty(); }
     const std::vector<std::string> &get_actions() const { return actions_; }
-    void set_actions(std::vector<std::string> new_actions) { actions_ = std::move(new_actions); }
 
-    void set_verdict(verdict_type verdict) { verdict_ = verdict; }
     verdict_type get_verdict() const { return verdict_; }
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
@@ -136,9 +122,6 @@ protected:
     // Frequently accessed tags
     std::string_view type_;
     rule_module_category mod_;
-
-    // Tags provided through rules_override
-    std::unordered_map<std::string, std::string> ancillary_tags_;
 
     // Evaluable expression encompassing all the rule's conditions
     std::shared_ptr<expression> expr_;

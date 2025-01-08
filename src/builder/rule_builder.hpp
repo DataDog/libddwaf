@@ -23,6 +23,7 @@ public:
 
     std::string_view get_id() const { return spec_.id; }
     const std::unordered_map<std::string, std::string> &get_tags() const { return spec_.tags; }
+    [[nodiscard]] bool is_enabled() const { return spec_.enabled; }
 
     bool apply_override(const override_spec &ovrd)
     {
@@ -34,7 +35,7 @@ public:
             spec_.actions = *ovrd.actions;
         }
 
-        for (const auto &[tag, value] : ovrd.tags) { spec_.tags.emplace(tag, value); }
+        for (const auto &[tag, value] : ovrd.tags) { spec_.tags[tag] = value; }
 
         return true;
     }

@@ -13,6 +13,7 @@
 #include "action_mapper.hpp"
 #include "builder/matcher_builder.hpp"
 #include "builder/processor_builder.hpp"
+#include "builder/rule_builder.hpp"
 #include "configuration/common/configuration.hpp"
 #include "exception.hpp"
 #include "exclusion/input_filter.hpp"
@@ -27,10 +28,11 @@ namespace ddwaf {
 
 namespace {
 
-std::set<core_rule *> references_to_rules(
-    const std::vector<reference_spec> &references, const indexer<core_rule> &rules)
+template <typename T>
+std::set<T *> resolve_references(
+    const std::vector<reference_spec> &references, const indexer<T> &rules)
 {
-    std::set<core_rule *> rule_refs;
+    std::set<T *> rule_refs;
     if (!references.empty()) {
         for (const auto &ref : references) {
             if (ref.type == reference_type::id) {
@@ -49,23 +51,6 @@ std::set<core_rule *> references_to_rules(
         for (const auto &rule : rules) { rule_refs.emplace(rule.get()); }
     }
     return rule_refs;
-}
-
-core_rule::verdict_type obtain_rule_verdict(
-    const action_mapper &mapper, const std::vector<std::string> &rule_actions)
-{
-    for (const auto &action : rule_actions) {
-        auto it = mapper.find(action);
-        if (it == mapper.end()) {
-            continue;
-        }
-
-        auto action_mode = it->second.type;
-        if (is_blocking_action(action_mode)) {
-            return core_rule::verdict_type::block;
-        }
-    }
-    return core_rule::verdict_type::monitor;
 }
 
 } // namespace
@@ -93,59 +78,31 @@ std::shared_ptr<ruleset> ruleset_builder::build(merged_configuration_spec &confi
     if ((config.content & base_rule_update) != change_set::none) {
         final_base_rules_.clear();
 
+        indexer<rule_builder> rule_builders;
         // Initially, new rules are generated from their spec
         for (const auto &spec : config.base_rules) {
-            auto rule_ptr = std::make_shared<core_rule>(
-                spec.id, spec.name, spec.tags, spec.expr, spec.actions, spec.enabled, spec.source);
-            final_base_rules_.emplace(rule_ptr);
+            rule_builders.emplace(std::make_shared<rule_builder>(spec));
         }
 
         // Overrides only impact base rules since user rules can already be modified by the user
         for (const auto &ovrd : config.overrides_by_tags) {
-            auto rule_targets = references_to_rules(ovrd.targets, final_base_rules_);
-            for (const auto &rule_ptr : rule_targets) {
-                if (ovrd.enabled.has_value()) {
-                    rule_ptr->toggle(*ovrd.enabled);
-                }
-
-                if (ovrd.actions.has_value()) {
-                    rule_ptr->set_actions(*ovrd.actions);
-                }
-
-                for (const auto &[tag, value] : ovrd.tags) {
-                    rule_ptr->set_ancillary_tag(tag, value);
-                }
+            auto rule_builder_targets = resolve_references(ovrd.targets, rule_builders);
+            for (const auto &rule_builder_ptr : rule_builder_targets) {
+                rule_builder_ptr->apply_override(ovrd);
             }
         }
 
         for (const auto &ovrd : config.overrides_by_id) {
-            auto rule_targets = references_to_rules(ovrd.targets, final_base_rules_);
-            for (const auto &rule_ptr : rule_targets) {
-                if (ovrd.enabled.has_value()) {
-                    rule_ptr->toggle(*ovrd.enabled);
-                }
-
-                if (ovrd.actions.has_value()) {
-                    rule_ptr->set_actions(*ovrd.actions);
-                }
-
-                for (const auto &[tag, value] : ovrd.tags) {
-                    rule_ptr->set_ancillary_tag(tag, value);
-                }
+            auto rule_builder_targets = resolve_references(ovrd.targets, rule_builders);
+            for (const auto &rule_builder_ptr : rule_builder_targets) {
+                rule_builder_ptr->apply_override(ovrd);
             }
         }
 
-        // Update blocking mode and remove any disabled rules
-        for (auto it = final_base_rules_.begin(); it != final_base_rules_.end();) {
-            if (!(*it)->is_enabled()) {
-                it = final_base_rules_.erase(it);
-                continue;
+        for (const auto &builder : rule_builders) {
+            if (builder->is_enabled()) {
+                final_base_rules_.emplace(builder->build(*actions_));
             }
-
-            auto mode = obtain_rule_verdict(*actions_, (*it)->get_actions());
-            (*it)->set_verdict(mode);
-
-            ++it;
         }
     }
 
@@ -153,14 +110,10 @@ std::shared_ptr<ruleset> ruleset_builder::build(merged_configuration_spec &confi
         final_user_rules_.clear();
         // Initially, new rules are generated from their spec
         for (const auto &spec : config.user_rules) {
-            auto mode = obtain_rule_verdict(*actions_, spec.actions);
-            auto rule_ptr = std::make_shared<core_rule>(spec.id, spec.name, spec.tags, spec.expr,
-                spec.actions, spec.enabled, spec.source, mode);
-            if (!rule_ptr->is_enabled()) {
-                // Skip disabled rules
-                continue;
+            rule_builder builder{spec};
+            if (builder.is_enabled()) {
+                final_user_rules_.emplace(builder.build(*actions_));
             }
-            final_user_rules_.emplace(rule_ptr);
         }
     }
 
@@ -171,8 +124,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(merged_configuration_spec &confi
 
         // First generate rule filters
         for (const auto &filter : config.rule_filters) {
-            auto rule_targets = references_to_rules(filter.targets, final_base_rules_);
-            rule_targets.merge(references_to_rules(filter.targets, final_user_rules_));
+            auto rule_targets = resolve_references(filter.targets, final_base_rules_);
+            rule_targets.merge(resolve_references(filter.targets, final_user_rules_));
 
             auto filter_ptr = std::make_shared<exclusion::rule_filter>(filter.id, filter.expr,
                 std::move(rule_targets), filter.on_match, filter.custom_action);
@@ -181,8 +134,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(merged_configuration_spec &confi
 
         // Finally input filters
         for (const auto &filter : config.input_filters) {
-            auto rule_targets = references_to_rules(filter.targets, final_base_rules_);
-            rule_targets.merge(references_to_rules(filter.targets, final_user_rules_));
+            auto rule_targets = resolve_references(filter.targets, final_base_rules_);
+            rule_targets.merge(resolve_references(filter.targets, final_user_rules_));
 
             auto filter_ptr = std::make_shared<exclusion::input_filter>(
                 filter.id, filter.expr, std::move(rule_targets), filter.filter);

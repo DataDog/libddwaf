@@ -821,4 +821,46 @@ TEST(TestActionParser, MissingParameters)
     }
 }
 
+TEST(TestActionParser, DuplicateAction)
+{
+    auto object = yaml_to_object(
+        R"([{id: block_1, type: block_request, parameters: {}},{id: block_1, type: block_request, parameters: {}}])");
+
+    configuration_spec cfg;
+    spec_id_tracker ids;
+    ruleset_info::section_info section;
+    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    ASSERT_TRUE(parse_actions(actions_array, cfg, ids, section));
+    ddwaf_object_free(&object);
+
+    {
+        parameter root;
+        section.to_object(root);
+
+        auto root_map = static_cast<parameter::map>(root);
+
+        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("block_1"), loaded.end());
+
+        auto failed = at<parameter::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+
+        auto errors = at<parameter::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+
+        auto it = errors.find("duplicate action");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<parameter::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("block_1"), error_rules.end());
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_EQ(cfg.actions.size(), 1);
+    EXPECT_TRUE(contains_action(cfg.actions, "block_1"));
+}
+
 } // namespace
