@@ -28,9 +28,19 @@ public:
     waf_builder &operator=(waf_builder &&) = delete;
     waf_builder &operator=(const waf_builder &) = delete;
 
-    bool add_or_update(const std::string &path, parameter::map &root, base_ruleset_info &info);
-    bool remove(const std::string &path);
-    ddwaf::waf build();
+    bool add_or_update(const std::string &path, parameter::map &root, base_ruleset_info &info)
+    {
+        return cfg_mgr_.add_or_update(path, root, info);
+    }
+
+    bool remove(const std::string &path) { return cfg_mgr_.remove(path); }
+
+    ddwaf::waf build()
+    {
+        auto config = cfg_mgr_.consolidate();
+        auto ruleset = rbuilder_.build(config);
+        return waf{std::move(ruleset)};
+    }
 
 protected:
     configuration_manager cfg_mgr_;
