@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <utility>
 
+#include "action_mapper.hpp"
 #include "builder/action_mapper_builder.hpp"
 
 namespace ddwaf {
