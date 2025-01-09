@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include "action_mapper.hpp"
+#include "builder/action_mapper_builder.hpp"
 
 #include "common/gtest_utils.hpp"
 

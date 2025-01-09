@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "action_mapper.hpp"
+#include "builder/action_mapper_builder.hpp"
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "log.hpp"

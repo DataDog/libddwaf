@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "action_mapper.hpp"
+#include "builder/action_mapper_builder.hpp"
 #include "builder/matcher_builder.hpp"
 #include "builder/processor_builder.hpp"
 #include "builder/rule_builder.hpp"

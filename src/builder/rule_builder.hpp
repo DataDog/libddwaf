@@ -35,7 +35,11 @@ public:
             spec_.actions = *ovrd.actions;
         }
 
-        for (const auto &[tag, value] : ovrd.tags) { spec_.tags[tag] = value; }
+        for (const auto &[key, value] : ovrd.tags) {
+            if (!spec_.tags.contains(key)) {
+                ancillary_tags_[key] = value;
+            }
+        }
 
         return true;
     }
@@ -56,13 +60,16 @@ public:
             }
         }
 
+        ancillary_tags_.merge(spec_.tags);
+
         return std::make_shared<core_rule>(std::move(spec_.id), std::move(spec_.name),
-            std::move(spec_.tags), std::move(spec_.expr), std::move(spec_.actions), spec_.enabled,
-            spec_.source, verdict);
+            std::move(ancillary_tags_), std::move(spec_.expr), std::move(spec_.actions),
+            spec_.enabled, spec_.source, verdict);
     }
 
 protected:
     rule_spec spec_;
+    std::unordered_map<std::string, std::string> ancillary_tags_;
 };
 
 } // namespace ddwaf
