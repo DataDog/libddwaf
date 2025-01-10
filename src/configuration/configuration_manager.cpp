@@ -282,9 +282,9 @@ merged_configuration_spec configuration_manager::merge()
         emplace_contents(merged.actions, cfg.actions);
 
         for (const auto &data : cfg.rule_data) {
-            auto it = merged.rule_data.find(data.id);
+            auto it = merged.rule_data.find(data.data_id);
             if (it == merged.rule_data.end()) {
-                merged.rule_data.emplace(data.id, data);
+                merged.rule_data.emplace(data.data_id, data);
             } else {
                 auto &dest_vec = it->second.values;
                 dest_vec.insert(dest_vec.begin(), data.values.begin(), data.values.end());
@@ -292,9 +292,9 @@ merged_configuration_spec configuration_manager::merge()
         }
 
         for (const auto &data : cfg.exclusion_data) {
-            auto it = merged.exclusion_data.find(data.id);
+            auto it = merged.exclusion_data.find(data.data_id);
             if (it == merged.exclusion_data.end()) {
-                merged.exclusion_data.emplace(data.id, data);
+                merged.exclusion_data.emplace(data.data_id, data);
             } else {
                 auto &dest_vec = it->second.values;
                 dest_vec.insert(dest_vec.begin(), data.values.begin(), data.values.end());

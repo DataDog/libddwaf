@@ -16,6 +16,7 @@
 #include "log.hpp"
 #include "parameter.hpp"
 #include "ruleset_info.hpp"
+#include "uuid.hpp"
 
 namespace ddwaf {
 
@@ -25,6 +26,7 @@ std::pair<override_spec, reference_type> parse_override(const parameter::map &no
 {
     // Note that ID is a duplicate field and will be deprecated at some point
     override_spec current;
+    current.id = uuidv4_generate_pseudo();
 
     auto it = node.find("enabled");
     if (it != node.end()) {

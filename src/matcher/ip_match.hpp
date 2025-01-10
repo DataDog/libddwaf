@@ -10,6 +10,7 @@
 #include <radixlib.h>
 #include <vector>
 
+#include "indexed_multivector.hpp"
 #include "ip_utils.hpp"
 #include "matcher/base.hpp"
 
@@ -35,6 +36,8 @@ public:
         init_tree(ip_list);
     }
 
+    explicit ip_match(
+        const indexed_multivector<std::string, std::pair<std::string, uint64_t>> &ip_list);
     explicit ip_match(const data_type &ip_list);
     ~ip_match() override = default;
     ip_match(const ip_match &) = delete;

@@ -17,7 +17,7 @@ namespace {
 auto find_data(const std::vector<data_spec> &data_vec, std::string_view id)
 {
     for (const auto &data : data_vec) {
-        if (data.id == id) {
+        if (data.data_id == id) {
             return data;
         }
     }

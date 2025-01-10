@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "indexed_multivector.hpp"
 #include "matcher/base.hpp"
 
 namespace ddwaf::matcher {
@@ -23,6 +24,8 @@ public:
 
     exact_match() = default;
     explicit exact_match(std::vector<std::string> &&data);
+    explicit exact_match(
+        const indexed_multivector<std::string, std::pair<std::string, uint64_t>> &data);
     explicit exact_match(const data_type &data);
     ~exact_match() override = default;
     exact_match(const exact_match &) = default;

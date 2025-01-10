@@ -4,12 +4,6 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2024 Datadog, Inc.
 
-// Unless explicitly setd otherwise all files in this repository are
-// dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
-//
-// This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2021 Datadog, Inc.
-
 #pragma once
 
 #include <cstdint>
@@ -45,6 +39,7 @@ struct reference_spec {
 };
 
 struct override_spec {
+    std::string id;
     std::optional<bool> enabled;
     std::optional<std::vector<std::string>> actions;
     std::vector<reference_spec> targets;
@@ -90,6 +85,7 @@ enum class data_type { unknown, data_with_expiration, ip_with_expiration };
 struct data_spec {
     using value_type = std::pair<std::string, uint64_t>;
     std::string id;
+    std::string data_id;
     data_type type;
     std::vector<value_type> values;
 };
@@ -156,6 +152,29 @@ struct configuration_spec {
     std::vector<std::shared_ptr<scanner>> scanners;
     // Actions
     std::vector<action_spec> actions;
+};
+
+struct configuration_change_spec {
+    [[nodiscard]] bool empty() const { return content == change_set::none; }
+
+    change_set content{change_set::none};
+
+    std::unordered_set<std::string> base_rules;
+    std::unordered_set<std::string> user_rules;
+    std::unordered_set<std::string> rule_data;
+
+    std::unordered_set<std::string> overrides_by_id;
+    std::unordered_set<std::string> overrides_by_tags;
+
+    std::unordered_set<std::string> rule_filters;
+    std::unordered_set<std::string> input_filters;
+    std::unordered_set<std::string> exclusion_data;
+
+    std::unordered_set<std::string> processors;
+
+    std::unordered_set<std::string> scanners;
+
+    std::unordered_set<std::string> actions;
 };
 
 // TODO:

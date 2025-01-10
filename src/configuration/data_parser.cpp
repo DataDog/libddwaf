@@ -15,6 +15,7 @@
 #include "exception.hpp"
 #include "log.hpp"
 #include "parameter.hpp"
+#include "uuid.hpp"
 
 namespace ddwaf {
 
@@ -54,12 +55,13 @@ std::vector<data_spec> parse_data(const parameter::vector &data_array, base_sect
     for (unsigned i = 0; i < data_array.size(); ++i) {
         const ddwaf::parameter object = data_array[i];
         // TODO fix this id shenanigans
-        std::string id;
+        std::string data_id;
         try {
             const auto entry = static_cast<ddwaf::parameter::map>(object);
 
             data_spec spec;
-            id = spec.id = at<std::string>(entry, "id");
+            spec.id = uuidv4_generate_pseudo();
+            data_id = spec.data_id = at<std::string>(entry, "id");
 
             auto type_str = at<std::string_view>(entry, "type");
             spec.type = data_type_from_string(type_str);
@@ -69,21 +71,21 @@ std::vector<data_spec> parse_data(const parameter::vector &data_array, base_sect
                 spec.type == data_type::ip_with_expiration) {
                 spec.values = parse_data<data_spec::value_type>(data);
             } else {
-                DDWAF_DEBUG("Unknown type '{}' for data id '{}'", type_str, id);
-                info.add_failed(id, "unknown type '" + std::string{type_str} + "'");
+                DDWAF_DEBUG("Unknown type '{}' for data id '{}'", type_str, data_id);
+                info.add_failed(data_id, "unknown type '" + std::string{type_str} + "'");
                 continue;
             }
 
-            DDWAF_DEBUG("Parsed dynamic data '{}' of type '{}'", id, type_str);
-            info.add_loaded(id);
+            DDWAF_DEBUG("Parsed dynamic data '{}' of type '{}'", data_id, type_str);
+            info.add_loaded(data_id);
             all_data.emplace_back(std::move(spec));
         } catch (const ddwaf::exception &e) {
-            if (id.empty()) {
-                id = index_to_id(i);
+            if (data_id.empty()) {
+                data_id = index_to_id(i);
             }
 
-            DDWAF_ERROR("Failed to parse data id '{}': {}", id, e.what());
-            info.add_failed(id, e.what());
+            DDWAF_ERROR("Failed to parse data id '{}': {}", data_id, e.what());
+            info.add_failed(data_id, e.what());
         }
     }
 
