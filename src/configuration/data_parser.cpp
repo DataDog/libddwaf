@@ -50,9 +50,8 @@ data_type data_type_from_string(std::string_view str_type)
     return data_type::unknown;
 }
 
-bool parse_data(const parameter::vector &data_array, base_section_info &info, auto &&emplace_fn)
+void parse_data(const parameter::vector &data_array, base_section_info &info, auto &&emplace_fn)
 {
-    bool data_parsed = false;
     for (unsigned i = 0; i < data_array.size(); ++i) {
         const ddwaf::parameter object = data_array[i];
         // TODO fix this id shenanigans
@@ -60,27 +59,22 @@ bool parse_data(const parameter::vector &data_array, base_section_info &info, au
         try {
             const auto entry = static_cast<ddwaf::parameter::map>(object);
 
-            data_spec spec;
-            spec.id = uuidv4_generate_pseudo();
-            data_id = spec.data_id = at<std::string>(entry, "id");
+            std::string id = uuidv4_generate_pseudo();
+            data_id = at<std::string>(entry, "id");
 
             auto type_str = at<std::string_view>(entry, "type");
-            spec.type = data_type_from_string(type_str);
+            auto type = data_type_from_string(type_str);
             auto data = at<parameter>(entry, "data");
-
-            if (spec.type == data_type::data_with_expiration ||
-                spec.type == data_type::ip_with_expiration) {
-                spec.values = parse_data<data_spec::value_type>(data);
-            } else {
+            if (type != data_type::data_with_expiration && type != data_type::ip_with_expiration) {
                 DDWAF_DEBUG("Unknown type '{}' for data id '{}'", type_str, data_id);
                 info.add_failed(data_id, "unknown type '" + std::string{type_str} + "'");
                 continue;
             }
+            auto values = parse_data<data_spec::value_type>(data);
 
             DDWAF_DEBUG("Parsed dynamic data '{}' of type '{}'", data_id, type_str);
-            data_parsed = true;
             info.add_loaded(data_id);
-            emplace_fn(std::move(data_id), spec.id, std::move(spec));
+            emplace_fn(std::move(data_id), std::move(id), type, std::move(values));
         } catch (const ddwaf::exception &e) {
             if (data_id.empty()) {
                 data_id = index_to_id(i);
@@ -90,27 +84,27 @@ bool parse_data(const parameter::vector &data_array, base_section_info &info, au
             info.add_failed(data_id, e.what());
         }
     }
-
-    return data_parsed;
 }
 
 } // namespace
 
-bool parse_rule_data(
+void parse_rule_data(
     const parameter::vector &data_array, configuration_collector &cfg, base_section_info &info)
 {
-    return parse_data(
-        data_array, info, [&cfg](std::string &&data_id, std::string id, data_spec &&data) {
-            cfg.emplace_rule_data(std::move(data_id), std::move(id), std::move(data));
+    parse_data(data_array, info,
+        [&cfg](std::string &&data_id, std::string &&id, data_type type,
+            std::vector<data_spec::value_type> &&data) {
+            cfg.emplace_rule_data(std::move(data_id), std::move(id), type, std::move(data));
         });
 }
 
-bool parse_exclusion_data(
+void parse_exclusion_data(
     const parameter::vector &data_array, configuration_collector &cfg, base_section_info &info)
 {
-    return parse_data(
-        data_array, info, [&cfg](std::string &&data_id, std::string id, data_spec &&data) {
-            cfg.emplace_exclusion_data(std::move(data_id), std::move(id), std::move(data));
+    parse_data(data_array, info,
+        [&cfg](std::string &&data_id, std::string &&id, data_type type,
+            std::vector<data_spec::value_type> &&data) {
+            cfg.emplace_exclusion_data(std::move(data_id), std::move(id), type, std::move(data));
         });
 }
 

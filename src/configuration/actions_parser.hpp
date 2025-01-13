@@ -16,7 +16,7 @@
 
 namespace ddwaf {
 
-bool parse_actions(
+void parse_actions(
     const parameter::vector &actions_array, configuration_collector &cfg, base_section_info &info);
 
 } // namespace ddwaf

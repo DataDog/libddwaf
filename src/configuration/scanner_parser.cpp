@@ -12,7 +12,6 @@
 #include <utility>
 
 #include "configuration/common/common.hpp"
-#include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
 #include "configuration/common/matcher_parser.hpp"
 #include "configuration/scanner_parser.hpp"
@@ -44,10 +43,9 @@ std::unique_ptr<matcher::base> parse_scanner_matcher(const parameter::map &root)
 
 } // namespace
 
-bool parse_scanners(const parameter::vector &scanner_array, configuration_collector &cfg,
+void parse_scanners(const parameter::vector &scanner_array, configuration_collector &cfg,
     ruleset_info::base_section_info &info)
 {
-    bool scanners_parsed = false;
     for (unsigned i = 0; i < scanner_array.size(); i++) {
         const auto &node_param = scanner_array[i];
         auto node = static_cast<parameter::map>(node_param);
@@ -103,7 +101,6 @@ bool parse_scanners(const parameter::vector &scanner_array, configuration_collec
             DDWAF_DEBUG("Parsed scanner {}", id);
             auto scnr = std::make_shared<scanner>(scanner{
                 std::move(id), std::move(tags), std::move(key_matcher), std::move(value_matcher)});
-            scanners_parsed = true;
             info.add_loaded(scnr->get_id());
             cfg.emplace_scanner(scnr);
         } catch (const std::exception &e) {
@@ -114,8 +111,6 @@ bool parse_scanners(const parameter::vector &scanner_array, configuration_collec
             info.add_failed(id, e.what());
         }
     }
-
-    return scanners_parsed;
 }
 
 } // namespace ddwaf

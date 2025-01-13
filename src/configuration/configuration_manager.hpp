@@ -31,8 +31,7 @@ public:
     configuration_spec consolidate();
 
 protected:
-    void remove_config(
-        const std::unordered_map<std::string, configuration_change_spec>::const_iterator &it);
+    void remove_config(const configuration_change_spec &cfg);
 
     void load(parameter::map &root, configuration_collector &collector, base_ruleset_info &info);
     configuration_spec merge();

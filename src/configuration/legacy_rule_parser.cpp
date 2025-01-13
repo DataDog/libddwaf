@@ -11,7 +11,6 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -125,10 +124,9 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
 
 } // namespace
 
-bool parse_legacy_rules(const parameter::vector &rule_array, configuration_collector &cfg,
+void parse_legacy_rules(const parameter::vector &rule_array, configuration_collector &cfg,
     base_section_info &info, object_limits limits)
 {
-    bool rules_parsed = false;
     for (unsigned i = 0; i < rule_array.size(); ++i) {
         std::string id;
         try {
@@ -149,12 +147,13 @@ bool parse_legacy_rules(const parameter::vector &rule_array, configuration_colle
             }
 
             for (const auto &transformer_param : transformers) {
-                auto transformer = static_cast<std::string_view>(transformer_param);
-                auto id = transformer_from_string(transformer);
-                if (!id.has_value()) {
-                    throw ddwaf::parsing_error("invalid transformer" + std::string(transformer));
+                auto transformer_name = static_cast<std::string_view>(transformer_param);
+                auto transformer = transformer_from_string(transformer_name);
+                if (!transformer.has_value()) {
+                    throw ddwaf::parsing_error(
+                        "invalid transformer" + std::string(transformer_name));
                 }
-                rule_transformers.emplace_back(id.value());
+                rule_transformers.emplace_back(transformer.value());
             }
 
             auto conditions_array = at<parameter::vector>(node, "conditions");
@@ -173,13 +172,12 @@ bool parse_legacy_rules(const parameter::vector &rule_array, configuration_colle
                 throw ddwaf::parsing_error("missing key 'type'");
             }
 
-            rule_spec spec{std::move(id), true, core_rule::source_type::base,
-                at<std::string>(node, "name"), std::move(tags), std::move(expression), {}};
+            rule_spec spec{true, core_rule::source_type::base, at<std::string>(node, "name"),
+                std::move(tags), std::move(expression), {}};
 
             DDWAF_DEBUG("Parsed rule {}", id);
-            rules_parsed = true;
-            info.add_loaded(spec.id);
-            cfg.emplace_rule(spec.id, std::move(spec));
+            info.add_loaded(id);
+            cfg.emplace_rule(std::move(id), std::move(spec));
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = index_to_id(i);
@@ -188,8 +186,6 @@ bool parse_legacy_rules(const parameter::vector &rule_array, configuration_colle
             info.add_failed(id, e.what());
         }
     }
-
-    return rules_parsed;
 }
 
 } // namespace ddwaf

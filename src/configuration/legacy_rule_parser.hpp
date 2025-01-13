@@ -7,13 +7,12 @@
 #pragma once
 
 #include "configuration/common/common.hpp"
-#include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
 #include "parameter.hpp"
 
 namespace ddwaf {
 
-bool parse_legacy_rules(const parameter::vector &rule_array, configuration_collector &cfg,
+void parse_legacy_rules(const parameter::vector &rule_array, configuration_collector &cfg,
     base_section_info &info, object_limits limits);
 
 } // namespace ddwaf

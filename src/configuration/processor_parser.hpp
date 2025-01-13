@@ -13,7 +13,7 @@
 
 namespace ddwaf {
 
-bool parse_processors(const parameter::vector &processor_array, configuration_collector &cfg,
+void parse_processors(const parameter::vector &processor_array, configuration_collector &cfg,
     ruleset_info::base_section_info &info, const object_limits &limits);
 
 } // namespace ddwaf

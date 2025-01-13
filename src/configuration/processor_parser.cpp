@@ -66,10 +66,9 @@ std::vector<processor_mapping> parse_processor_mappings(
 
 } // namespace
 
-bool parse_processors(const parameter::vector &processor_array, configuration_collector &cfg,
+void parse_processors(const parameter::vector &processor_array, configuration_collector &cfg,
     ruleset_info::base_section_info &info, const object_limits &limits)
 {
-    bool processors_parsed = false;
     for (unsigned i = 0; i < processor_array.size(); i++) {
         const auto &node_param = processor_array[i];
         auto node = static_cast<parameter::map>(node_param);
@@ -153,11 +152,10 @@ bool parse_processors(const parameter::vector &processor_array, configuration_co
                 info.add_failed(id, "processor not used for evaluation or output");
                 continue;
             }
-            processor_spec spec{
-                id, type, std::move(expr), std::move(mappings), std::move(scanners), eval, output};
+            processor_spec const spec{
+                type, std::move(expr), std::move(mappings), std::move(scanners), eval, output};
 
             DDWAF_DEBUG("Parsed processor {}", id);
-            processors_parsed = true;
             info.add_loaded(id);
             add_addresses_to_info(addresses, info);
             cfg.emplace_processor(std::move(id), spec);
@@ -172,8 +170,6 @@ bool parse_processors(const parameter::vector &processor_array, configuration_co
             info.add_failed(id, e.what());
         }
     }
-
-    return processors_parsed;
 }
 
 } // namespace ddwaf

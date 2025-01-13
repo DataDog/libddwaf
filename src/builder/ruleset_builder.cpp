@@ -80,7 +80,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(configuration_spec &config)
         indexer<rule_builder> rule_builders;
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : config.base_rules) {
-            rule_builders.emplace(std::make_shared<rule_builder>(spec));
+            rule_builders.emplace(std::make_shared<rule_builder>(id, spec));
         }
 
         // Overrides only impact base rules since user rules can already be modified by the user
@@ -109,7 +109,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(configuration_spec &config)
         final_user_rules_.clear();
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : config.user_rules) {
-            rule_builder builder{spec};
+            rule_builder builder{id, spec};
             if (builder.is_enabled()) {
                 final_user_rules_.emplace(builder.build(*actions_));
             }
@@ -126,9 +126,9 @@ std::shared_ptr<ruleset> ruleset_builder::build(configuration_spec &config)
             auto rule_targets = resolve_references(filter.targets, final_base_rules_);
             rule_targets.merge(resolve_references(filter.targets, final_user_rules_));
 
-            auto filter_ptr = std::make_shared<exclusion::rule_filter>(filter.id, filter.expr,
-                std::move(rule_targets), filter.on_match, filter.custom_action);
-            rule_filters_.emplace(filter_ptr->get_id(), filter_ptr);
+            auto filter_ptr = std::make_shared<exclusion::rule_filter>(
+                id, filter.expr, std::move(rule_targets), filter.on_match, filter.custom_action);
+            rule_filters_.emplace(id, filter_ptr);
         }
 
         // Finally input filters
@@ -137,8 +137,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(configuration_spec &config)
             rule_targets.merge(resolve_references(filter.targets, final_user_rules_));
 
             auto filter_ptr = std::make_shared<exclusion::input_filter>(
-                filter.id, filter.expr, std::move(rule_targets), filter.filter);
-            input_filters_.emplace(filter_ptr->get_id(), filter_ptr);
+                id, filter.expr, std::move(rule_targets), filter.filter);
+            input_filters_.emplace(id, filter_ptr);
         }
     }
 
@@ -148,7 +148,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(configuration_spec &config)
         postprocessors_.clear();
 
         for (auto &[id, spec] : config.processors) {
-            auto proc = processor_builder::build(spec, config.scanners);
+            auto proc = processor_builder::build(id, spec, config.scanners);
             if (spec.evaluate) {
                 preprocessors_.emplace(proc->get_id(), std::move(proc));
             } else {

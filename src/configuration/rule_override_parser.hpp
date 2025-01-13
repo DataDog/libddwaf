@@ -6,14 +6,13 @@
 
 #pragma once
 
-#include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
 #include "parameter.hpp"
 #include "ruleset_info.hpp"
 
 namespace ddwaf {
 
-bool parse_overrides(const parameter::vector &override_array, configuration_collector &cfg,
+void parse_overrides(const parameter::vector &override_array, configuration_collector &cfg,
     ruleset_info::base_section_info &info);
 
 } // namespace ddwaf

@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "builder/processor_builder.hpp"
@@ -41,83 +42,83 @@ std::set<const scanner *> references_to_scanners(
 template <typename T> struct typed_processor_builder;
 
 template <> struct typed_processor_builder<extract_schema> {
-    std::shared_ptr<base_processor> build(const auto &spec, const auto &scanners)
+    std::shared_ptr<base_processor> build(const auto &id, const auto &spec, const auto &scanners)
     {
         auto ref_scanners = references_to_scanners(spec.scanners, scanners);
         return std::make_shared<extract_schema>(
-            spec.id, spec.expr, spec.mappings, std::move(ref_scanners), spec.evaluate, spec.output);
+            id, spec.expr, spec.mappings, std::move(ref_scanners), spec.evaluate, spec.output);
     }
 };
 
 template <> struct typed_processor_builder<http_endpoint_fingerprint> {
-    std::shared_ptr<base_processor> build(const auto &spec)
+    std::shared_ptr<base_processor> build(const auto &id, const auto &spec)
     {
         return std::make_shared<http_endpoint_fingerprint>(
-            spec.id, spec.expr, spec.mappings, spec.evaluate, spec.output);
+            id, spec.expr, spec.mappings, spec.evaluate, spec.output);
     }
 };
 
 template <> struct typed_processor_builder<http_header_fingerprint> {
-    std::shared_ptr<base_processor> build(const auto &spec)
+    std::shared_ptr<base_processor> build(const auto &id, const auto &spec)
     {
         return std::make_shared<http_header_fingerprint>(
-            spec.id, spec.expr, spec.mappings, spec.evaluate, spec.output);
+            id, spec.expr, spec.mappings, spec.evaluate, spec.output);
     }
 };
 
 template <> struct typed_processor_builder<http_network_fingerprint> {
-    std::shared_ptr<base_processor> build(const auto &spec)
+    std::shared_ptr<base_processor> build(const auto &id, const auto &spec)
     {
         return std::make_shared<http_network_fingerprint>(
-            spec.id, spec.expr, spec.mappings, spec.evaluate, spec.output);
+            id, spec.expr, spec.mappings, spec.evaluate, spec.output);
     }
 };
 
 template <> struct typed_processor_builder<session_fingerprint> {
-    std::shared_ptr<base_processor> build(const auto &spec)
+    std::shared_ptr<base_processor> build(const auto &id, const auto &spec)
     {
         return std::make_shared<session_fingerprint>(
-            spec.id, spec.expr, spec.mappings, spec.evaluate, spec.output);
+            id, spec.expr, spec.mappings, spec.evaluate, spec.output);
     }
 };
 
-template <typename T, typename Spec, typename Scanners>
+template <typename T, typename Id, typename Spec, typename Scanners>
 concept has_build_with_scanners =
-    requires(typed_processor_builder<T> b, Spec spec, Scanners scanners) {
+    requires(typed_processor_builder<T> b, Id id, Spec spec, Scanners scanners) {
         {
-            b.build(spec, scanners)
+            b.build(id, spec, scanners)
         } -> std::same_as<std::shared_ptr<base_processor>>;
     };
 
 template <typename T>
 [[nodiscard]] std::shared_ptr<base_processor> build_with_type(
-    const auto &spec, const auto &scanners)
+    const auto &id, const auto &spec, const auto &scanners)
     requires std::is_base_of_v<base_processor, T>
 {
     typed_processor_builder<T> typed_builder;
-    if constexpr (has_build_with_scanners<T, decltype(spec), decltype(scanners)>) {
-        return typed_builder.build(spec, scanners);
+    if constexpr (has_build_with_scanners<T, decltype(id), decltype(spec), decltype(scanners)>) {
+        return typed_builder.build(id, spec, scanners);
     } else {
-        return typed_builder.build(spec);
+        return typed_builder.build(id, spec);
     }
 }
 } // namespace
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::shared_ptr<base_processor> processor_builder::build(
-    const processor_spec &spec, const indexer<const scanner> &scanners)
+    const std::string &id, const processor_spec &spec, const indexer<const scanner> &scanners)
 {
     switch (spec.type) {
     case processor_type::extract_schema:
-        return build_with_type<extract_schema>(spec, scanners);
+        return build_with_type<extract_schema>(id, spec, scanners);
     case processor_type::http_endpoint_fingerprint:
-        return build_with_type<http_endpoint_fingerprint>(spec, scanners);
+        return build_with_type<http_endpoint_fingerprint>(id, spec, scanners);
     case processor_type::http_header_fingerprint:
-        return build_with_type<http_header_fingerprint>(spec, scanners);
+        return build_with_type<http_header_fingerprint>(id, spec, scanners);
     case processor_type::http_network_fingerprint:
-        return build_with_type<http_network_fingerprint>(spec, scanners);
+        return build_with_type<http_network_fingerprint>(id, spec, scanners);
     case processor_type::session_fingerprint:
-        return build_with_type<session_fingerprint>(spec, scanners);
+        return build_with_type<session_fingerprint>(id, spec, scanners);
     default:
         break;
     }

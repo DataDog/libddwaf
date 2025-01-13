@@ -28,7 +28,7 @@ namespace ddwaf {
 
 namespace {
 
-rule_spec parse_rule(parameter::map &rule, std::string id, const object_limits &limits,
+rule_spec parse_rule(parameter::map &rule, const object_limits &limits,
     core_rule::source_type source, address_container &addresses)
 {
     std::vector<transformer_id> rule_transformers;
@@ -61,14 +61,13 @@ rule_spec parse_rule(parameter::map &rule, std::string id, const object_limits &
         throw ddwaf::parsing_error("missing key 'type'");
     }
 
-    return {std::move(id), at<bool>(rule, "enabled", true), source, at<std::string>(rule, "name"),
-        std::move(tags), std::move(expr), at<std::vector<std::string>>(rule, "on_match", {})};
+    return {at<bool>(rule, "enabled", true), source, at<std::string>(rule, "name"), std::move(tags),
+        std::move(expr), at<std::vector<std::string>>(rule, "on_match", {})};
 }
 
-bool parse_rules(const parameter::vector &rule_array, configuration_collector &cfg,
+void parse_rules(const parameter::vector &rule_array, configuration_collector &cfg,
     base_section_info &info, core_rule::source_type source, const object_limits &limits)
 {
-    bool rules_parsed = false;
     for (unsigned i = 0; i < rule_array.size(); ++i) {
         std::string id;
         try {
@@ -94,10 +93,9 @@ bool parse_rules(const parameter::vector &rule_array, configuration_collector &c
                 continue;
             }
 
-            auto rule = parse_rule(node, id, limits, source, addresses);
+            auto rule = parse_rule(node, limits, source, addresses);
 
             DDWAF_DEBUG("Parsed rule {}", id);
-            rules_parsed = true;
             info.add_loaded(id);
             add_addresses_to_info(addresses, info);
             cfg.emplace_rule(std::move(id), std::move(rule));
@@ -112,21 +110,19 @@ bool parse_rules(const parameter::vector &rule_array, configuration_collector &c
             info.add_failed(id, e.what());
         }
     }
-
-    return rules_parsed;
 }
 
 } // namespace
 
-bool parse_base_rules(const parameter::vector &rule_array, configuration_collector &cfg,
+void parse_base_rules(const parameter::vector &rule_array, configuration_collector &cfg,
     base_section_info &info, const object_limits &limits)
 {
-    return parse_rules(rule_array, cfg, info, core_rule::source_type::base, limits);
+    parse_rules(rule_array, cfg, info, core_rule::source_type::base, limits);
 }
 
-bool parse_user_rules(const parameter::vector &rule_array, configuration_collector &cfg,
+void parse_user_rules(const parameter::vector &rule_array, configuration_collector &cfg,
     base_section_info &info, const object_limits &limits)
 {
-    return parse_rules(rule_array, cfg, info, core_rule::source_type::user, limits);
+    parse_rules(rule_array, cfg, info, core_rule::source_type::user, limits);
 }
 } // namespace ddwaf

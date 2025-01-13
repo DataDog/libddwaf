@@ -12,10 +12,10 @@
 
 namespace ddwaf {
 
-bool parse_base_rules(const parameter::vector &rule_array, configuration_collector &cfg,
+void parse_base_rules(const parameter::vector &rule_array, configuration_collector &cfg,
     base_section_info &info, const object_limits &limits);
 
-bool parse_user_rules(const parameter::vector &rule_array, configuration_collector &cfg,
+void parse_user_rules(const parameter::vector &rule_array, configuration_collector &cfg,
     base_section_info &info, const object_limits &limits);
 
 } // namespace ddwaf

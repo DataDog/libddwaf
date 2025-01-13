@@ -32,8 +32,8 @@ namespace ddwaf {
 
 namespace {
 
-input_filter_spec parse_input_filter(const parameter::map &filter, std::string id,
-    address_container &addresses, const object_limits &limits)
+input_filter_spec parse_input_filter(
+    const parameter::map &filter, address_container &addresses, const object_limits &limits)
 {
     // Check for conditions first
     auto conditions_array = at<parameter::vector>(filter, "conditions", {});
@@ -68,11 +68,11 @@ input_filter_spec parse_input_filter(const parameter::map &filter, std::string i
         obj_filter->insert(target, std::move(address), key_path);
     }
 
-    return {std::move(id), std::move(expr), std::move(obj_filter), std::move(rules_target)};
+    return {std::move(expr), std::move(obj_filter), std::move(rules_target)};
 }
 
-rule_filter_spec parse_rule_filter(const parameter::map &filter, std::string id,
-    address_container &addresses, const object_limits &limits)
+rule_filter_spec parse_rule_filter(
+    const parameter::map &filter, address_container &addresses, const object_limits &limits)
 {
     // Check for conditions first
     auto conditions_array = at<parameter::vector>(filter, "conditions", {});
@@ -106,16 +106,14 @@ rule_filter_spec parse_rule_filter(const parameter::map &filter, std::string id,
         throw ddwaf::parsing_error("empty exclusion filter");
     }
 
-    return {
-        std::move(id), std::move(expr), std::move(rules_target), on_match, std::move(on_match_id)};
+    return {std::move(expr), std::move(rules_target), on_match, std::move(on_match_id)};
 }
 
 } // namespace
 
-bool parse_filters(const parameter::vector &filter_array, configuration_collector &cfg,
+void parse_filters(const parameter::vector &filter_array, configuration_collector &cfg,
     base_section_info &info, const object_limits &limits)
 {
-    bool filters_parsed = false;
     for (unsigned i = 0; i < filter_array.size(); i++) {
         const auto &node_param = filter_array[i];
         auto node = static_cast<parameter::map>(node_param);
@@ -140,14 +138,13 @@ bool parse_filters(const parameter::vector &filter_array, configuration_collecto
             }
 
             if (node.find("inputs") != node.end()) {
-                auto filter = parse_input_filter(node, id, addresses, limits);
+                auto filter = parse_input_filter(node, addresses, limits);
                 cfg.emplace_filter(id, std::move(filter));
             } else {
-                auto filter = parse_rule_filter(node, id, addresses, limits);
+                auto filter = parse_rule_filter(node, addresses, limits);
                 cfg.emplace_filter(id, std::move(filter));
             }
             DDWAF_DEBUG("Parsed exclusion filter {}", id);
-            filters_parsed = true;
             info.add_loaded(std::move(id));
             add_addresses_to_info(addresses, info);
         } catch (const unsupported_operator_version &e) {
@@ -161,8 +158,6 @@ bool parse_filters(const parameter::vector &filter_array, configuration_collecto
             info.add_failed(id, e.what());
         }
     }
-
-    return filters_parsed;
 }
 
 } // namespace ddwaf

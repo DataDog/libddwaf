@@ -27,7 +27,6 @@ override_spec parse_override(const parameter::map &node)
 {
     // Note that ID is a duplicate field and will be deprecated at some point
     override_spec current;
-    current.id = uuidv4_generate_pseudo();
     current.type = reference_type::none;
 
     auto it = node.find("enabled");
@@ -77,10 +76,9 @@ override_spec parse_override(const parameter::map &node)
 
 } // namespace
 
-bool parse_overrides(const parameter::vector &override_array, configuration_collector &cfg,
+void parse_overrides(const parameter::vector &override_array, configuration_collector &cfg,
     ruleset_info::base_section_info &info)
 {
-    bool overrides_parsed = false;
     for (unsigned i = 0; i < override_array.size(); ++i) {
         auto id = index_to_id(i);
         const auto &node_param = override_array[i];
@@ -95,16 +93,15 @@ bool parse_overrides(const parameter::vector &override_array, configuration_coll
             }
 
             DDWAF_DEBUG("Parsed override {}", id);
-            overrides_parsed = true;
             info.add_loaded(id);
-            cfg.emplace_override(spec.id, std::move(spec));
+            // We use a UUID since we want to have a unique identifier across
+            // all configurations
+            cfg.emplace_override(uuidv4_generate_pseudo(), std::move(spec));
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse rule override: {}", e.what());
             info.add_failed(id, e.what());
         }
     }
-
-    return overrides_parsed;
 }
 
 } // namespace ddwaf

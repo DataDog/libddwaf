@@ -199,28 +199,25 @@ void configuration_manager::load(
     }
 }
 
-void configuration_manager::remove_config(
-    const std::unordered_map<std::string, configuration_change_spec>::const_iterator &it)
+void configuration_manager::remove_config(const configuration_change_spec &cfg)
 {
-    for (const auto &id : it->second.base_rules) { global_config_.base_rules.erase(id); }
-    for (const auto &id : it->second.user_rules) { global_config_.user_rules.erase(id); }
-    for (const auto &id : it->second.rule_filters) { global_config_.rule_filters.erase(id); }
-    for (const auto &id : it->second.input_filters) { global_config_.input_filters.erase(id); }
-    for (const auto &id : it->second.overrides_by_id) { global_config_.overrides_by_id.erase(id); }
-    for (const auto &id : it->second.overrides_by_tags) {
-        global_config_.overrides_by_tags.erase(id);
-    }
-    for (const auto &id : it->second.processors) { global_config_.processors.erase(id); }
-    for (const auto &id : it->second.scanners) { global_config_.processors.erase(id); }
-    for (const auto &id : it->second.actions) { global_config_.actions.erase(id); }
-    for (const auto &[data_id, id] : it->second.rule_data) {
+    for (const auto &id : cfg.base_rules) { global_config_.base_rules.erase(id); }
+    for (const auto &id : cfg.user_rules) { global_config_.user_rules.erase(id); }
+    for (const auto &id : cfg.rule_filters) { global_config_.rule_filters.erase(id); }
+    for (const auto &id : cfg.input_filters) { global_config_.input_filters.erase(id); }
+    for (const auto &id : cfg.overrides_by_id) { global_config_.overrides_by_id.erase(id); }
+    for (const auto &id : cfg.overrides_by_tags) { global_config_.overrides_by_tags.erase(id); }
+    for (const auto &id : cfg.processors) { global_config_.processors.erase(id); }
+    for (const auto &id : cfg.scanners) { global_config_.processors.erase(id); }
+    for (const auto &id : cfg.actions) { global_config_.actions.erase(id); }
+    for (const auto &[data_id, id] : cfg.rule_data) {
         auto it = global_config_.rule_data.find(data_id);
         if (it != global_config_.rule_data.end()) {
             // Should always be true...
             it->second.values.erase(id);
         }
     }
-    for (const auto &[data_id, id] : it->second.exclusion_data) {
+    for (const auto &[data_id, id] : cfg.exclusion_data) {
         auto it = global_config_.exclusion_data.find(data_id);
         if (it != global_config_.exclusion_data.end()) {
             // Should always be true...
@@ -237,7 +234,7 @@ bool configuration_manager::add_or_update(
         // Track the change, i.e. removed stuff
         changes_ = changes_ | it->second.content;
 
-        remove_config(it);
+        remove_config(it->second);
     } else {
         auto [new_it, res] = configs_.emplace(path, configuration_change_spec{});
         if (!res) {
@@ -270,7 +267,7 @@ bool configuration_manager::remove(const std::string &path)
 
     changes_ = changes_ | it->second.content;
 
-    remove_config(it);
+    remove_config(it->second);
 
     configs_.erase(it);
 

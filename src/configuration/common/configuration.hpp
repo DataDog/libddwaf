@@ -22,7 +22,6 @@
 namespace ddwaf {
 
 struct rule_spec {
-    std::string id;
     bool enabled;
     core_rule::source_type source;
     std::string name;
@@ -40,7 +39,6 @@ struct reference_spec {
 };
 
 struct override_spec {
-    std::string id;
     reference_type type;
     std::optional<bool> enabled;
     std::optional<std::vector<std::string>> actions;
@@ -49,7 +47,6 @@ struct override_spec {
 };
 
 struct rule_filter_spec {
-    std::string id;
     std::shared_ptr<expression> expr;
     std::vector<reference_spec> targets;
     exclusion::filter_mode on_match;
@@ -57,7 +54,6 @@ struct rule_filter_spec {
 };
 
 struct input_filter_spec {
-    std::string id;
     std::shared_ptr<expression> expr;
     std::shared_ptr<exclusion::object_filter> filter;
     std::vector<reference_spec> targets;
@@ -73,7 +69,6 @@ enum class processor_type : unsigned {
 };
 
 struct processor_spec {
-    std::string id;
     processor_type type;
     std::shared_ptr<expression> expr;
     std::vector<processor_mapping> mappings;
@@ -86,20 +81,11 @@ enum class data_type { unknown, data_with_expiration, ip_with_expiration };
 
 struct data_spec {
     using value_type = std::pair<std::string, uint64_t>;
-    std::string id;
-    std::string data_id;
-    data_type type;
-    std::vector<value_type> values;
-};
-
-struct merged_data_spec {
-    using value_type = std::pair<std::string, uint64_t>;
     data_type type{data_type::unknown};
     indexed_multivector<std::string, value_type> values;
 };
 
 struct action_spec {
-    std::string id;
     action_type type;
     std::string type_str;
     std::unordered_map<std::string, std::string> parameters;
@@ -165,7 +151,7 @@ struct configuration_spec {
     // Obtained from 'custom_rules'
     std::unordered_map<std::string, rule_spec> user_rules;
     // Obtained from 'rules_data', depends on base_rules_
-    std::unordered_map<std::string, merged_data_spec> rule_data;
+    std::unordered_map<std::string, data_spec> rule_data;
     // Obtained from 'rules_override'
     // The distinction is only necessary due to the restriction that
     // overrides by ID are to be considered a priority over overrides by tags
@@ -175,21 +161,13 @@ struct configuration_spec {
     std::unordered_map<std::string, rule_filter_spec> rule_filters;
     std::unordered_map<std::string, input_filter_spec> input_filters;
     // Obtained from 'exclusion_data', depends on exclusions_
-    std::unordered_map<std::string, merged_data_spec> exclusion_data;
+    std::unordered_map<std::string, data_spec> exclusion_data;
     // Obtained from 'processors'
     std::unordered_map<std::string, processor_spec> processors;
     // Scanner container
     indexer<const scanner> scanners;
     // Actions
     std::unordered_map<std::string, action_spec> actions;
-};
-
-struct spec_id_tracker {
-    std::unordered_set<std::string> rules;
-    std::unordered_set<std::string> filters;
-    std::unordered_set<std::string> processors;
-    std::unordered_set<std::string> scanners;
-    std::unordered_set<std::string> actions;
 };
 
 } // namespace ddwaf
