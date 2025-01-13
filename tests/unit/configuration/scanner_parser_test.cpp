@@ -14,27 +14,17 @@ using namespace ddwaf;
 
 namespace {
 
-std::shared_ptr<scanner> find_scanner(
-    const std::vector<std::shared_ptr<scanner>> &scanners, std::string_view id)
-{
-    for (const auto &scnr : scanners) {
-        if (scnr->get_id() == id) {
-            return scnr;
-        }
-    }
-    return nullptr;
-}
-
 TEST(TestScannerParser, ParseKeyOnlyScanner)
 {
     auto definition = json_to_object(
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<parameter::vector>(parameter(definition));
 
-    spec_id_tracker ids;
-    ruleset_info::section_info section;
     configuration_spec cfg;
-    ASSERT_TRUE(parse_scanners(scanners_array, cfg, ids, section));
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_scanners(scanners_array, collector, section);
     ddwaf_object_free(&definition);
 
     {
@@ -58,7 +48,7 @@ TEST(TestScannerParser, ParseKeyOnlyScanner)
 
     ASSERT_EQ(cfg.scanners.size(), 1);
 
-    const auto scnr = find_scanner(cfg.scanners, "ecd");
+    const auto *const scnr = cfg.scanners.find_by_id("ecd");
     ASSERT_NE(scnr, nullptr);
     EXPECT_STREQ(scnr->get_id().data(), "ecd");
     std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
@@ -81,10 +71,11 @@ TEST(TestScannerParser, ParseValueOnlyScanner)
         R"([{"id":"ecd","value":{"operator":"match_regex","parameters":{"regex":"@"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<parameter::vector>(parameter(definition));
 
-    spec_id_tracker ids;
-    ruleset_info::section_info section;
     configuration_spec cfg;
-    ASSERT_TRUE(parse_scanners(scanners_array, cfg, ids, section));
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_scanners(scanners_array, collector, section);
     ddwaf_object_free(&definition);
 
     {
@@ -108,7 +99,7 @@ TEST(TestScannerParser, ParseValueOnlyScanner)
 
     ASSERT_EQ(cfg.scanners.size(), 1);
 
-    const auto scnr = find_scanner(cfg.scanners, "ecd");
+    const auto *const scnr = cfg.scanners.find_by_id("ecd");
     ASSERT_NE(scnr, nullptr);
     EXPECT_STREQ(scnr->get_id().data(), "ecd");
     std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
@@ -131,10 +122,11 @@ TEST(TestScannerParser, ParseKeyValueScanner)
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"value":{"operator":"match_regex","parameters":{"regex":"@"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<parameter::vector>(parameter(definition));
 
-    spec_id_tracker ids;
-    ruleset_info::section_info section;
     configuration_spec cfg;
-    ASSERT_TRUE(parse_scanners(scanners_array, cfg, ids, section));
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_scanners(scanners_array, collector, section);
     ddwaf_object_free(&definition);
 
     {
@@ -158,7 +150,7 @@ TEST(TestScannerParser, ParseKeyValueScanner)
 
     ASSERT_EQ(cfg.scanners.size(), 1);
 
-    const auto scnr = find_scanner(cfg.scanners, "ecd");
+    const auto *const scnr = cfg.scanners.find_by_id("ecd");
     ASSERT_NE(scnr, nullptr);
     EXPECT_STREQ(scnr->get_id().data(), "ecd");
     std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
@@ -181,10 +173,11 @@ TEST(TestScannerParser, ParseNoID)
         R"([{"key":{"operator":"match_regex","parameters":{"regex":"email"}},"value":{"operator":"match_regex","parameters":{"regex":"@"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<parameter::vector>(parameter(definition));
 
-    spec_id_tracker ids;
-    ruleset_info::section_info section;
     configuration_spec cfg;
-    ASSERT_FALSE(parse_scanners(scanners_array, cfg, ids, section));
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_scanners(scanners_array, collector, section);
     ddwaf_object_free(&definition);
 
     {
@@ -221,10 +214,11 @@ TEST(TestScannerParser, ParseNoTags)
         R"([{"id":"error","key":{"operator":"match_regex","parameters":{"regex":"email"}},"value":{"operator":"match_regex","parameters":{"regex":"@"}}}])");
     auto scanners_array = static_cast<parameter::vector>(parameter(definition));
 
-    spec_id_tracker ids;
-    ruleset_info::section_info section;
     configuration_spec cfg;
-    ASSERT_FALSE(parse_scanners(scanners_array, cfg, ids, section));
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_scanners(scanners_array, collector, section);
     ddwaf_object_free(&definition);
 
     {
@@ -261,10 +255,11 @@ TEST(TestScannerParser, ParseNoKeyValue)
         json_to_object(R"([{"id":"error","tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<parameter::vector>(parameter(definition));
 
-    spec_id_tracker ids;
-    ruleset_info::section_info section;
     configuration_spec cfg;
-    ASSERT_FALSE(parse_scanners(scanners_array, cfg, ids, section));
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_scanners(scanners_array, collector, section);
     ddwaf_object_free(&definition);
 
     {
@@ -301,10 +296,11 @@ TEST(TestScannerParser, ParseDuplicate)
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}},{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<parameter::vector>(parameter(definition));
 
-    spec_id_tracker ids;
-    ruleset_info::section_info section;
     configuration_spec cfg;
-    ASSERT_TRUE(parse_scanners(scanners_array, cfg, ids, section));
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_scanners(scanners_array, collector, section);
     ddwaf_object_free(&definition);
 
     {
@@ -342,10 +338,11 @@ TEST(TestScannerParser, ParseKeyNoOperator)
         R"([{"id":"ecd","key":{"parameters":{"regex":"email"}},"value":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<parameter::vector>(parameter(definition));
 
-    spec_id_tracker ids;
-    ruleset_info::section_info section;
     configuration_spec cfg;
-    ASSERT_FALSE(parse_scanners(scanners_array, cfg, ids, section));
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_scanners(scanners_array, collector, section);
 
     ddwaf_object_free(&definition);
 
@@ -383,10 +380,11 @@ TEST(TestScannerParser, ParseKeyNoParameters)
         R"([{"id":"ecd","key":{"operator":"match_regex"},"value":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<parameter::vector>(parameter(definition));
 
-    spec_id_tracker ids;
-    ruleset_info::section_info section;
     configuration_spec cfg;
-    ASSERT_FALSE(parse_scanners(scanners_array, cfg, ids, section));
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_scanners(scanners_array, collector, section);
     ddwaf_object_free(&definition);
 
     {
@@ -423,10 +421,11 @@ TEST(TestScannerParser, ParseValueNoOperator)
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"value":{"parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<parameter::vector>(parameter(definition));
 
-    spec_id_tracker ids;
-    ruleset_info::section_info section;
     configuration_spec cfg;
-    ASSERT_FALSE(parse_scanners(scanners_array, cfg, ids, section));
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_scanners(scanners_array, collector, section);
     ddwaf_object_free(&definition);
 
     {
@@ -463,10 +462,11 @@ TEST(TestScannerParser, ParseValueNoParameters)
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"value":{"operator":"match_regex"},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<parameter::vector>(parameter(definition));
 
-    spec_id_tracker ids;
-    ruleset_info::section_info section;
     configuration_spec cfg;
-    ASSERT_FALSE(parse_scanners(scanners_array, cfg, ids, section));
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_scanners(scanners_array, collector, section);
     ddwaf_object_free(&definition);
 
     {
@@ -503,10 +503,11 @@ TEST(TestScannerParser, ParseUnknownMatcher)
         R"([{"id":"ecd","key":{"operator":"what","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<parameter::vector>(parameter(definition));
 
-    spec_id_tracker ids;
-    ruleset_info::section_info section;
     configuration_spec cfg;
-    ASSERT_FALSE(parse_scanners(scanners_array, cfg, ids, section));
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_scanners(scanners_array, collector, section);
 
     ddwaf_object_free(&definition);
 
@@ -544,10 +545,11 @@ TEST(TestScannerParser, ParseRuleDataID)
         R"([{"id":"ecd","key":{"operator":"exact_match","parameters":{"data":"invalid"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<parameter::vector>(parameter(definition));
 
-    spec_id_tracker ids;
-    ruleset_info::section_info section;
     configuration_spec cfg;
-    ASSERT_FALSE(parse_scanners(scanners_array, cfg, ids, section));
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_scanners(scanners_array, collector, section);
 
     ddwaf_object_free(&definition);
 
@@ -585,10 +587,11 @@ TEST(TestScannerParser, IncompatibleMinVersion)
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}, "min_version": "99.0.0"}])");
     auto scanners_array = static_cast<parameter::vector>(parameter(definition));
 
-    spec_id_tracker ids;
-    ruleset_info::section_info section;
     configuration_spec cfg;
-    ASSERT_FALSE(parse_scanners(scanners_array, cfg, ids, section));
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_scanners(scanners_array, collector, section);
 
     ddwaf_object_free(&definition);
 
@@ -623,10 +626,11 @@ TEST(TestScannerParser, IncompatibleMaxVersion)
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}, "max_version": "0.0.99"}])");
     auto scanners_array = static_cast<parameter::vector>(parameter(definition));
 
-    spec_id_tracker ids;
-    ruleset_info::section_info section;
     configuration_spec cfg;
-    ASSERT_FALSE(parse_scanners(scanners_array, cfg, ids, section));
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_scanners(scanners_array, collector, section);
 
     ddwaf_object_free(&definition);
 
@@ -661,10 +665,11 @@ TEST(TestScannerParser, CompatibleVersion)
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}, "min_version": "0.0.99", "max_version": "2.0.0"}])");
     auto scanners_array = static_cast<parameter::vector>(parameter(definition));
 
-    spec_id_tracker ids;
-    ruleset_info::section_info section;
     configuration_spec cfg;
-    ASSERT_TRUE(parse_scanners(scanners_array, cfg, ids, section));
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_scanners(scanners_array, collector, section);
     ddwaf_object_free(&definition);
 
     {

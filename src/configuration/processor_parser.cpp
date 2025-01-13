@@ -152,7 +152,7 @@ void parse_processors(const parameter::vector &processor_array, configuration_co
                 info.add_failed(id, "processor not used for evaluation or output");
                 continue;
             }
-            processor_spec const spec{
+            const processor_spec spec{
                 type, std::move(expr), std::move(mappings), std::move(scanners), eval, output};
 
             DDWAF_DEBUG("Parsed processor {}", id);

@@ -55,8 +55,8 @@ public:
         } else {
             change_.content = change_.content | change_set::custom_rules;
 
-            change_.base_rules.emplace(id);
-            config_.base_rules.emplace(std::move(id), std::move(spec));
+            change_.user_rules.emplace(id);
+            config_.user_rules.emplace(std::move(id), std::move(spec));
         }
     }
 

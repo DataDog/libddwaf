@@ -160,4 +160,53 @@ TEST(TestIPMatch, OverlappingExpiration)
     EXPECT_TRUE(match(matcher, "2.4.3.4"));
 }
 
+TEST(TestIPMatch, MultivectorConstructor)
+{
+    ddwaf::indexed_multivector<std::string, std::pair<std::string, uint64_t>> ivec;
+    ivec.emplace("vec1", {{"1.2.3.4", 0}, {"5.6.7.254", 0}, {"::ffff:0102:0304", 0}});
+    ivec.emplace(
+        "vec2", {{"1234:0:0:0:0:0:0:5678", 0}, {"::1", 0}, {"abcd::1234:5678:1234:5678", 0}});
+    ivec.emplace("vec3", {{"abcd::1234:0:0:0", 0}, {"abcd::1234:ffff:ffff:ffff", 0}});
+    ip_match matcher(ivec);
+
+    EXPECT_STREQ(matcher.to_string().data(), "");
+    EXPECT_STREQ(matcher.name().data(), "ip_match");
+
+    EXPECT_TRUE(match(matcher, "1.2.3.4"));
+    EXPECT_TRUE(match(matcher, "5.6.7.254"));
+    EXPECT_TRUE(match(matcher, "::ffff:0102:0304"));
+    EXPECT_TRUE(match(matcher, "1234:0:0:0:0:0:0:5678"));
+    EXPECT_TRUE(match(matcher, "::1"));
+    EXPECT_TRUE(match(matcher, "abcd::1234:5678:1234:5678"));
+    EXPECT_TRUE(match(matcher, "abcd::1234:0:0:0"));
+    EXPECT_TRUE(match(matcher, "abcd::1234:ffff:ffff:ffff"));
+    EXPECT_FALSE(match(matcher, "3.4.2.1"));
+}
+
+TEST(TestIPMatch, MultivectorConstructorExpiration)
+{
+    uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+    ddwaf::indexed_multivector<std::string, std::pair<std::string, uint64_t>> ivec;
+    ivec.emplace(
+        "vec1", {{"1.2.3.4", now - 1}, {"5.6.7.254", now + 100}, {"::ffff:0102:0304", now - 1}});
+    ivec.emplace("vec2", {{"1234:0:0:0:0:0:0:5678", now + 100}, {"::1", now - 1},
+                             {"abcd::1234:5678:1234:5678", now + 100}});
+    ivec.emplace("vec3", {{"abcd::1234:0:0:0", now - 1}, {"abcd::1234:ffff:ffff:ffff", now + 100}});
+    ip_match matcher(ivec);
+
+    EXPECT_STREQ(matcher.to_string().data(), "");
+    EXPECT_STREQ(matcher.name().data(), "ip_match");
+
+    EXPECT_FALSE(match(matcher, "1.2.3.4"));
+    EXPECT_TRUE(match(matcher, "5.6.7.254"));
+    EXPECT_FALSE(match(matcher, "::ffff:0102:0304"));
+    EXPECT_TRUE(match(matcher, "1234:0:0:0:0:0:0:5678"));
+    EXPECT_FALSE(match(matcher, "::1"));
+    EXPECT_TRUE(match(matcher, "abcd::1234:5678:1234:5678"));
+    EXPECT_FALSE(match(matcher, "abcd::1234:0:0:0"));
+    EXPECT_TRUE(match(matcher, "abcd::1234:ffff:ffff:ffff"));
+}
+
 } // namespace

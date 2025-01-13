@@ -19,9 +19,11 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutSideEffects)
     auto object = yaml_to_object(R"([{rules_target: [{tags: {confidence: 1}}]}])");
 
     configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto override_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_overrides(override_array, cfg, section));
+    parse_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -56,9 +58,11 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutTargets)
     auto object = yaml_to_object(R"([{rules_target: [{}], enabled: false}])");
 
     configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto override_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_overrides(override_array, cfg, section));
+    parse_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -94,9 +98,11 @@ TEST(TestRuleOverrideParser, ParseRuleOverride)
         yaml_to_object(R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block]}])");
 
     configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto override_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_overrides(override_array, cfg, section));
+    parse_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -121,7 +127,7 @@ TEST(TestRuleOverrideParser, ParseRuleOverride)
     EXPECT_EQ(cfg.overrides_by_id.size(), 0);
     EXPECT_EQ(cfg.overrides_by_tags.size(), 1);
 
-    auto &ovrd = cfg.overrides_by_tags[0];
+    auto &ovrd = cfg.overrides_by_tags.begin()->second;
     EXPECT_FALSE(ovrd.enabled.has_value());
     EXPECT_TRUE(ovrd.actions.has_value());
     EXPECT_EQ(ovrd.actions->size(), 1);
@@ -141,9 +147,11 @@ TEST(TestRuleOverrideParser, ParseMultipleRuleOverrides)
         R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block]},{rules_target: [{rule_id: 1}], enabled: false}])");
 
     configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto override_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_overrides(override_array, cfg, section));
+    parse_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -170,7 +178,7 @@ TEST(TestRuleOverrideParser, ParseMultipleRuleOverrides)
     EXPECT_EQ(cfg.overrides_by_tags.size(), 1);
 
     {
-        auto &ovrd = cfg.overrides_by_tags[0];
+        auto &ovrd = cfg.overrides_by_tags.begin()->second;
         EXPECT_FALSE(ovrd.enabled.has_value());
         EXPECT_TRUE(ovrd.actions.has_value());
         EXPECT_EQ(ovrd.actions->size(), 1);
@@ -185,7 +193,7 @@ TEST(TestRuleOverrideParser, ParseMultipleRuleOverrides)
     }
 
     {
-        auto &ovrd = cfg.overrides_by_id[0];
+        auto &ovrd = cfg.overrides_by_id.begin()->second;
         EXPECT_TRUE(ovrd.enabled.has_value());
         EXPECT_FALSE(*ovrd.enabled);
         EXPECT_FALSE(ovrd.actions.has_value());
@@ -204,9 +212,11 @@ TEST(TestRuleOverrideParser, ParseInconsistentRuleOverride)
         R"([{rules_target: [{tags: {confidence: 1}}, {rule_id: 1}], on_match: [block], enabled: false}])");
 
     configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto override_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_overrides(override_array, cfg, section));
+    parse_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -245,9 +255,11 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideForTags)
         R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block], tags: {category: new_category, threshold: 25}}])");
 
     configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto override_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_overrides(override_array, cfg, section));
+    parse_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -272,7 +284,7 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideForTags)
     EXPECT_EQ(cfg.overrides_by_id.size(), 0);
     EXPECT_EQ(cfg.overrides_by_tags.size(), 1);
 
-    auto &ovrd = cfg.overrides_by_tags[0];
+    auto &ovrd = cfg.overrides_by_tags.begin()->second;
     EXPECT_FALSE(ovrd.enabled.has_value());
     EXPECT_TRUE(ovrd.actions.has_value());
     EXPECT_EQ(ovrd.actions->size(), 1);
@@ -295,9 +307,11 @@ TEST(TestRuleOverrideParser, ParseInvalidTagsField)
         R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block], tags: [{category: new_category}, {threshold: 25}]}])");
 
     configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto override_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_overrides(override_array, cfg, section));
+    parse_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {

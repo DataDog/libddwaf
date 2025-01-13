@@ -8,6 +8,7 @@
 #include "configuration/actions_parser.hpp"
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
+#include "configuration/common/configuration_collector.hpp"
 #include "fmt/core.h"
 #include "parameter.hpp"
 
@@ -15,35 +16,16 @@ using namespace ddwaf;
 
 namespace {
 
-const action_spec &find_action(const std::vector<action_spec> &actions, std::string_view id)
-{
-    for (const auto &action : actions) {
-        if (action.id == id) {
-            return action;
-        }
-    }
-    throw;
-}
-
-bool contains_action(const std::vector<action_spec> &actions, std::string_view id)
-{
-    for (const auto &action : actions) {
-        if (action.id == id) {
-            return true;
-        }
-    }
-    return false;
-}
-
 TEST(TestActionParser, EmptyActions)
 {
     auto object = yaml_to_object(R"([])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(cfg.actions.size(), 0);
@@ -54,10 +36,11 @@ TEST(TestActionParser, SingleAction)
     auto object = yaml_to_object(R"([{id: block_1, type: block_request, parameters: {}}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -80,7 +63,7 @@ TEST(TestActionParser, SingleAction)
     }
 
     EXPECT_EQ(cfg.actions.size(), 1);
-    EXPECT_TRUE(contains_action(cfg.actions, "block_1"));
+    EXPECT_TRUE(cfg.actions.contains("block_1"));
 }
 
 TEST(TestActionParser, RedirectAction)
@@ -105,10 +88,11 @@ TEST(TestActionParser, RedirectAction)
     auto object = yaml_to_object(yaml);
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -138,9 +122,9 @@ TEST(TestActionParser, RedirectAction)
     EXPECT_EQ(cfg.actions.size(), 6);
 
     for (auto &[name, status_code, url] : redirections) {
-        ASSERT_TRUE(contains_action(cfg.actions, name));
+        ASSERT_TRUE(cfg.actions.contains(name));
 
-        const auto &spec = find_action(cfg.actions, name);
+        const auto &spec = cfg.actions[name];
         EXPECT_EQ(spec.type, action_type::redirect_request) << name;
         EXPECT_EQ(spec.type_str, "redirect_request");
         EXPECT_EQ(spec.parameters.size(), 2);
@@ -157,10 +141,11 @@ TEST(TestActionParser, RedirectActionInvalidStatusCode)
         R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: 404}, type: redirect_request}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -183,10 +168,10 @@ TEST(TestActionParser, RedirectActionInvalidStatusCode)
     }
 
     EXPECT_EQ(cfg.actions.size(), 1);
-    EXPECT_TRUE(contains_action(cfg.actions, "redirect"));
+    EXPECT_TRUE(cfg.actions.contains("redirect"));
 
     {
-        const auto &spec = find_action(cfg.actions, "redirect");
+        const auto &spec = cfg.actions["redirect"];
         EXPECT_EQ(spec.type, action_type::redirect_request);
         EXPECT_EQ(spec.type_str, "redirect_request");
         EXPECT_EQ(spec.parameters.size(), 2);
@@ -203,10 +188,11 @@ TEST(TestActionParser, RedirectActionInvalid300StatusCode)
         R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: 304}, type: redirect_request}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -229,10 +215,10 @@ TEST(TestActionParser, RedirectActionInvalid300StatusCode)
     }
 
     EXPECT_EQ(cfg.actions.size(), 1);
-    EXPECT_TRUE(contains_action(cfg.actions, "redirect"));
+    EXPECT_TRUE(cfg.actions.contains("redirect"));
 
     {
-        const auto &spec = find_action(cfg.actions, "redirect");
+        const auto &spec = cfg.actions["redirect"];
         EXPECT_EQ(spec.type, action_type::redirect_request);
         EXPECT_EQ(spec.type_str, "redirect_request");
         EXPECT_EQ(spec.parameters.size(), 2);
@@ -249,10 +235,11 @@ TEST(TestActionParser, RedirectActionMissingStatusCode)
         R"([{id: redirect, parameters: {location: "http://www.google.com"}, type: redirect_request}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -275,10 +262,10 @@ TEST(TestActionParser, RedirectActionMissingStatusCode)
     }
 
     EXPECT_EQ(cfg.actions.size(), 1);
-    EXPECT_TRUE(contains_action(cfg.actions, "redirect"));
+    EXPECT_TRUE(cfg.actions.contains("redirect"));
 
     {
-        const auto &spec = find_action(cfg.actions, "redirect");
+        const auto &spec = cfg.actions["redirect"];
         EXPECT_EQ(spec.type, action_type::redirect_request);
         EXPECT_EQ(spec.type_str, "redirect_request");
         EXPECT_EQ(spec.parameters.size(), 2);
@@ -295,10 +282,11 @@ TEST(TestActionParser, RedirectActionMissingLocation)
         R"([{id: redirect, parameters: {status_code: 303}, type: redirect_request}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -321,10 +309,10 @@ TEST(TestActionParser, RedirectActionMissingLocation)
     }
 
     EXPECT_EQ(cfg.actions.size(), 1);
-    EXPECT_TRUE(contains_action(cfg.actions, "redirect"));
+    EXPECT_TRUE(cfg.actions.contains("redirect"));
 
     {
-        const auto &spec = find_action(cfg.actions, "redirect");
+        const auto &spec = cfg.actions["redirect"];
         EXPECT_EQ(spec.type, action_type::block_request);
         EXPECT_EQ(spec.type_str, "block_request");
         EXPECT_EQ(spec.parameters.size(), 3);
@@ -342,10 +330,11 @@ TEST(TestActionParser, RedirectActionNonHttpURL)
         R"([{id: redirect, parameters: {status_code: 303, location: ftp://myftp.mydomain.com}, type: redirect_request}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -368,10 +357,10 @@ TEST(TestActionParser, RedirectActionNonHttpURL)
     }
 
     EXPECT_EQ(cfg.actions.size(), 1);
-    EXPECT_TRUE(contains_action(cfg.actions, "redirect"));
+    EXPECT_TRUE(cfg.actions.contains("redirect"));
 
     {
-        const auto &spec = find_action(cfg.actions, "redirect");
+        const auto &spec = cfg.actions["redirect"];
         EXPECT_EQ(spec.type, action_type::block_request);
         EXPECT_EQ(spec.type_str, "block_request");
         EXPECT_EQ(spec.parameters.size(), 3);
@@ -389,10 +378,11 @@ TEST(TestActionParser, RedirectActionInvalidRelativePathURL)
         R"([{id: redirect, parameters: {status_code: 303, location: ../../../etc/passwd}, type: redirect_request}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -415,10 +405,10 @@ TEST(TestActionParser, RedirectActionInvalidRelativePathURL)
     }
 
     EXPECT_EQ(cfg.actions.size(), 1);
-    EXPECT_TRUE(contains_action(cfg.actions, "redirect"));
+    EXPECT_TRUE(cfg.actions.contains("redirect"));
 
     {
-        const auto &spec = find_action(cfg.actions, "redirect");
+        const auto &spec = cfg.actions["redirect"];
         EXPECT_EQ(spec.type, action_type::block_request);
         EXPECT_EQ(spec.type_str, "block_request");
         EXPECT_EQ(spec.parameters.size(), 3);
@@ -436,10 +426,11 @@ TEST(TestActionParser, OverrideDefaultBlockAction)
         R"([{id: block, parameters: {location: "http://www.google.com", status_code: 302}, type: redirect_request}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
 
     ddwaf_object_free(&object);
 
@@ -463,10 +454,10 @@ TEST(TestActionParser, OverrideDefaultBlockAction)
     }
 
     EXPECT_EQ(cfg.actions.size(), 1);
-    EXPECT_TRUE(contains_action(cfg.actions, "block"));
+    EXPECT_TRUE(cfg.actions.contains("block"));
 
     {
-        const auto &spec = find_action(cfg.actions, "block");
+        const auto &spec = cfg.actions["block"];
         EXPECT_EQ(spec.type, action_type::redirect_request);
         EXPECT_EQ(spec.type_str, "redirect_request");
         EXPECT_EQ(spec.parameters.size(), 2);
@@ -483,10 +474,11 @@ TEST(TestActionParser, BlockActionMissingStatusCode)
         R"([{id: block, parameters: {type: "auto", grpc_status_code: 302}, type: block_request}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -509,10 +501,10 @@ TEST(TestActionParser, BlockActionMissingStatusCode)
     }
 
     EXPECT_EQ(cfg.actions.size(), 1);
-    EXPECT_TRUE(contains_action(cfg.actions, "block"));
+    EXPECT_TRUE(cfg.actions.contains("block"));
 
     {
-        const auto &spec = find_action(cfg.actions, "block");
+        const auto &spec = cfg.actions["block"];
         EXPECT_EQ(spec.type, action_type::block_request);
         EXPECT_EQ(spec.type_str, "block_request");
         EXPECT_EQ(spec.parameters.size(), 3);
@@ -530,10 +522,11 @@ TEST(TestActionParser, UnknownActionType)
         R"([{id: sanitize, parameters: {location: "http://www.google.com", status_code: 302}, type: new_action_type}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -556,7 +549,7 @@ TEST(TestActionParser, UnknownActionType)
     }
 
     EXPECT_EQ(cfg.actions.size(), 1);
-    EXPECT_TRUE(contains_action(cfg.actions, "sanitize"));
+    EXPECT_TRUE(cfg.actions.contains("sanitize"));
 }
 
 TEST(TestActionParser, BlockActionMissingGrpcStatusCode)
@@ -565,10 +558,11 @@ TEST(TestActionParser, BlockActionMissingGrpcStatusCode)
         R"([{id: block, parameters: {type: "auto", status_code: 302}, type: block_request}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -591,10 +585,10 @@ TEST(TestActionParser, BlockActionMissingGrpcStatusCode)
     }
 
     EXPECT_EQ(cfg.actions.size(), 1);
-    EXPECT_TRUE(contains_action(cfg.actions, "block"));
+    EXPECT_TRUE(cfg.actions.contains("block"));
 
     {
-        const auto &spec = find_action(cfg.actions, "block");
+        const auto &spec = cfg.actions["block"];
         EXPECT_EQ(spec.type, action_type::block_request);
         EXPECT_EQ(spec.type_str, "block_request");
         EXPECT_EQ(spec.parameters.size(), 3);
@@ -612,10 +606,11 @@ TEST(TestActionParser, BlockActionMissingType)
         R"([{id: block, parameters: {grpc_status_code: 11, status_code: 302}, type: block_request}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -638,10 +633,10 @@ TEST(TestActionParser, BlockActionMissingType)
     }
 
     EXPECT_EQ(cfg.actions.size(), 1);
-    EXPECT_TRUE(contains_action(cfg.actions, "block"));
+    EXPECT_TRUE(cfg.actions.contains("block"));
 
     {
-        const auto &spec = find_action(cfg.actions, "block");
+        const auto &spec = cfg.actions["block"];
         EXPECT_EQ(spec.type, action_type::block_request);
         EXPECT_EQ(spec.type_str, "block_request");
         EXPECT_EQ(spec.parameters.size(), 3);
@@ -658,10 +653,11 @@ TEST(TestActionParser, BlockActionMissingParameters)
     auto object = yaml_to_object(R"([{id: block, parameters: {}, type: block_request}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -684,10 +680,10 @@ TEST(TestActionParser, BlockActionMissingParameters)
     }
 
     EXPECT_EQ(cfg.actions.size(), 1);
-    EXPECT_TRUE(contains_action(cfg.actions, "block"));
+    EXPECT_TRUE(cfg.actions.contains("block"));
 
     {
-        const auto &spec = find_action(cfg.actions, "block");
+        const auto &spec = cfg.actions["block"];
         EXPECT_EQ(spec.type, action_type::block_request);
         EXPECT_EQ(spec.type_str, "block_request");
         EXPECT_EQ(spec.parameters.size(), 3);
@@ -705,10 +701,11 @@ TEST(TestActionParser, MissingID)
         R"([{parameters: {location: "http://www.google.com", status_code: 302}, type: new_action_type}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(cfg.actions.size(), 0);
@@ -746,10 +743,11 @@ TEST(TestActionParser, MissingType)
         R"([{id: sanitize, parameters: {location: "http://www.google.com", status_code: 302}}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(cfg.actions.size(), 0);
@@ -786,10 +784,11 @@ TEST(TestActionParser, MissingParameters)
     auto object = yaml_to_object(R"([{id: sanitize, type: sanitize_request}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(cfg.actions.size(), 0);
@@ -827,10 +826,11 @@ TEST(TestActionParser, DuplicateAction)
         R"([{id: block_1, type: block_request, parameters: {}},{id: block_1, type: block_request, parameters: {}}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto actions_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_actions(actions_array, cfg, ids, section));
+    parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -860,7 +860,7 @@ TEST(TestActionParser, DuplicateAction)
     }
 
     EXPECT_EQ(cfg.actions.size(), 1);
-    EXPECT_TRUE(contains_action(cfg.actions, "block_1"));
+    EXPECT_TRUE(cfg.actions.contains("block_1"));
 }
 
 } // namespace

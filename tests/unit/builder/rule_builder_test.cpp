@@ -22,10 +22,10 @@ TEST(TestRuleBuilder, SimpleRule)
     exp_builder.add_target("http.client_ip");
     exp_builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    rule_spec spec{"test", true, core_rule::source_type::base, "Test rule", {{"type", "flow1"}},
+    rule_spec spec{true, core_rule::source_type::base, "Test rule", {{"type", "flow1"}},
         exp_builder.build(), {}};
 
-    rule_builder builder{spec};
+    rule_builder builder{"test", spec};
 
     auto rule = builder.build({});
     EXPECT_NE(rule, nullptr);

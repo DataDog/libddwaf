@@ -208,7 +208,7 @@ void configuration_manager::remove_config(const configuration_change_spec &cfg)
     for (const auto &id : cfg.overrides_by_id) { global_config_.overrides_by_id.erase(id); }
     for (const auto &id : cfg.overrides_by_tags) { global_config_.overrides_by_tags.erase(id); }
     for (const auto &id : cfg.processors) { global_config_.processors.erase(id); }
-    for (const auto &id : cfg.scanners) { global_config_.processors.erase(id); }
+    for (const auto &id : cfg.scanners) { global_config_.scanners.erase(id); }
     for (const auto &id : cfg.actions) { global_config_.actions.erase(id); }
     for (const auto &[data_id, id] : cfg.rule_data) {
         auto it = global_config_.rule_data.find(data_id);

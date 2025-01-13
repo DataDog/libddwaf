@@ -14,16 +14,6 @@ using namespace ddwaf;
 
 namespace {
 
-auto find_data(const std::vector<data_spec> &data_vec, std::string_view id)
-{
-    for (const auto &data : data_vec) {
-        if (data.data_id == id) {
-            return data;
-        }
-    }
-    throw;
-}
-
 TEST(TestExclusionDataParser, ParseIPData)
 {
     auto object = yaml_to_object(
@@ -31,8 +21,10 @@ TEST(TestExclusionDataParser, ParseIPData)
     auto input = static_cast<parameter::vector>(parameter(object));
 
     configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    ASSERT_TRUE(parse_exclusion_data(input, cfg, section));
+    parse_exclusion_data(input, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -55,7 +47,7 @@ TEST(TestExclusionDataParser, ParseIPData)
     }
 
     EXPECT_EQ(cfg.exclusion_data.size(), 1);
-    EXPECT_EQ(find_data(cfg.exclusion_data, "ip_data").type, data_type::ip_with_expiration);
+    EXPECT_EQ(cfg.exclusion_data["ip_data"].type, data_type::ip_with_expiration);
 }
 
 TEST(TestExclusionDataParser, ParseStringData)
@@ -65,8 +57,10 @@ TEST(TestExclusionDataParser, ParseStringData)
     auto input = static_cast<parameter::vector>(parameter(object));
 
     configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    ASSERT_TRUE(parse_exclusion_data(input, cfg, section));
+    parse_exclusion_data(input, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -89,7 +83,7 @@ TEST(TestExclusionDataParser, ParseStringData)
     }
 
     EXPECT_EQ(cfg.exclusion_data.size(), 1);
-    EXPECT_EQ(find_data(cfg.exclusion_data, "usr_data").type, data_type::data_with_expiration);
+    EXPECT_EQ(cfg.exclusion_data["usr_data"].type, data_type::data_with_expiration);
 }
 
 TEST(TestExclusionDataParser, ParseMultipleData)
@@ -99,8 +93,10 @@ TEST(TestExclusionDataParser, ParseMultipleData)
     auto input = static_cast<parameter::vector>(parameter(object));
 
     configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    ASSERT_TRUE(parse_exclusion_data(input, cfg, section));
+    parse_exclusion_data(input, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -124,8 +120,8 @@ TEST(TestExclusionDataParser, ParseMultipleData)
     }
 
     EXPECT_EQ(cfg.exclusion_data.size(), 2);
-    EXPECT_EQ(find_data(cfg.exclusion_data, "usr_data").type, data_type::data_with_expiration);
-    EXPECT_EQ(find_data(cfg.exclusion_data, "ip_data").type, data_type::ip_with_expiration);
+    EXPECT_EQ(cfg.exclusion_data["usr_data"].type, data_type::data_with_expiration);
+    EXPECT_EQ(cfg.exclusion_data["ip_data"].type, data_type::ip_with_expiration);
 }
 
 TEST(TestExclusionDataParser, ParseUnknownDataID)
@@ -135,8 +131,10 @@ TEST(TestExclusionDataParser, ParseUnknownDataID)
     auto input = static_cast<parameter::vector>(parameter(object));
 
     configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    ASSERT_TRUE(parse_exclusion_data(input, cfg, section));
+    parse_exclusion_data(input, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -160,8 +158,8 @@ TEST(TestExclusionDataParser, ParseUnknownDataID)
     }
 
     EXPECT_EQ(cfg.exclusion_data.size(), 2);
-    EXPECT_EQ(find_data(cfg.exclusion_data, "ip_data").type, data_type::ip_with_expiration);
-    EXPECT_EQ(find_data(cfg.exclusion_data, "usr_data").type, data_type::data_with_expiration);
+    EXPECT_EQ(cfg.exclusion_data["ip_data"].type, data_type::ip_with_expiration);
+    EXPECT_EQ(cfg.exclusion_data["usr_data"].type, data_type::data_with_expiration);
 }
 
 TEST(TestExclusionDataParser, ParseUnsupportedTypes)
@@ -171,8 +169,10 @@ TEST(TestExclusionDataParser, ParseUnsupportedTypes)
     auto input = static_cast<parameter::vector>(parameter(object));
 
     configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    ASSERT_FALSE(parse_exclusion_data(input, cfg, section));
+    parse_exclusion_data(input, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -222,8 +222,10 @@ TEST(TestExclusionDataParser, ParseUnknownDataIDWithUnsupportedType)
     auto input = static_cast<parameter::vector>(parameter(object));
 
     configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    ASSERT_FALSE(parse_exclusion_data(input, cfg, section));
+    parse_exclusion_data(input, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -261,8 +263,10 @@ TEST(TestExclusionDataParser, ParseMissingType)
     auto input = static_cast<parameter::vector>(parameter(object));
 
     configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    ASSERT_FALSE(parse_exclusion_data(input, cfg, section));
+    parse_exclusion_data(input, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -300,8 +304,10 @@ TEST(TestExclusionDataParser, ParseMissingID)
     auto input = static_cast<parameter::vector>(parameter(object));
 
     configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    ASSERT_FALSE(parse_exclusion_data(input, cfg, section));
+    parse_exclusion_data(input, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -338,8 +344,10 @@ TEST(TestExclusionDataParser, ParseMissingData)
     auto input = static_cast<parameter::vector>(parameter(object));
 
     configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    ASSERT_FALSE(parse_exclusion_data(input, cfg, section));
+    parse_exclusion_data(input, collector, section);
     ddwaf_object_free(&object);
 
     {

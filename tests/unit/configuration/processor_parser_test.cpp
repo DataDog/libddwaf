@@ -21,10 +21,11 @@ TEST(TestProcessorParser, ParseNoGenerator)
     auto object = yaml_to_object(R"([{id: 1}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_processors(array, cfg, ids, section, limits));
+    parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -62,10 +63,11 @@ TEST(TestProcessorParser, ParseNoID)
     auto object = yaml_to_object(R"([{}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_processors(array, cfg, ids, section, limits));
+    parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -103,10 +105,11 @@ TEST(TestProcessorParser, ParseNoParameters)
     auto object = yaml_to_object(R"([{id: 1, generator: extract_schema}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_processors(array, cfg, ids, section, limits));
+    parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -144,10 +147,11 @@ TEST(TestProcessorParser, ParseNoMappings)
     auto object = yaml_to_object(R"([{id: 1, generator: extract_schema, parameters: {}}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_processors(array, cfg, ids, section, limits));
+    parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -186,10 +190,11 @@ TEST(TestProcessorParser, ParseEmptyMappings)
         yaml_to_object(R"([{id: 1, generator: extract_schema, parameters: {mappings: []}}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_processors(array, cfg, ids, section, limits));
+    parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -228,10 +233,11 @@ TEST(TestProcessorParser, ParseNoInput)
         yaml_to_object(R"([{id: 1, generator: extract_schema, parameters: {mappings: [{}]}}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_processors(array, cfg, ids, section, limits));
+    parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -270,10 +276,11 @@ TEST(TestProcessorParser, ParseEmptyInput)
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [], output: out}]}}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_processors(array, cfg, ids, section, limits));
+    parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -312,10 +319,11 @@ TEST(TestProcessorParser, ParseNoOutput)
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}]}]}}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_processors(array, cfg, ids, section, limits));
+    parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -354,10 +362,11 @@ TEST(TestProcessorParser, ParseUnknownGenerator)
         R"([{id: 1, generator: unknown, parameters: {mappings: [{inputs: [{address: in}], output: out}]}}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_processors(array, cfg, ids, section, limits));
+    parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -396,10 +405,11 @@ TEST(TestProcessorParser, ParseUseless)
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: false, output: false}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_processors(array, cfg, ids, section, limits));
+    parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -438,10 +448,11 @@ TEST(TestProcessorParser, ParsePreprocessor)
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: true, output: false}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_processors(array, cfg, ids, section, limits));
+    parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(cfg.processors.size(), 1);
@@ -455,10 +466,11 @@ TEST(TestProcessorParser, ParsePreprocessorWithOutput)
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: true, output: true}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_processors(array, cfg, ids, section, limits));
+    parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(cfg.processors.size(), 1);
@@ -472,10 +484,11 @@ TEST(TestProcessorParser, ParsePostprocessor)
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: false, output: true}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_processors(array, cfg, ids, section, limits));
+    parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(cfg.processors.size(), 1);
@@ -489,10 +502,11 @@ TEST(TestProcessorParser, ParseDuplicate)
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: false, output: true},{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: true, output: false}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_processors(array, cfg, ids, section, limits));
+    parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(cfg.processors.size(), 1);
@@ -532,10 +546,11 @@ TEST(TestProcessorParser, IncompatibleMinVersion)
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, min_version: 99.0.0, evaluate: false, output: true}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_processors(array, cfg, ids, section, limits));
+    parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(cfg.processors.size(), 0);
@@ -571,10 +586,11 @@ TEST(TestProcessorParser, IncompatibleMaxVersion)
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, max_version: 0.0.99, evaluate: false, output: true}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_processors(array, cfg, ids, section, limits));
+    parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(cfg.processors.size(), 0);
@@ -610,10 +626,11 @@ TEST(TestProcessorParser, CompatibleVersion)
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, min_version: 0.0.99, max_version: 2.0.0, evaluate: false, output: true}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_processors(array, cfg, ids, section, limits));
+    parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(cfg.processors.size(), 1);

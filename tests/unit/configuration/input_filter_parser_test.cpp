@@ -14,26 +14,17 @@ using namespace ddwaf;
 
 namespace {
 
-auto find_filter(const std::vector<input_filter_spec> &filters, std::string_view id)
-{
-    for (auto it = filters.begin(); it != filters.end(); ++it) {
-        if (it->id == id) {
-            return it;
-        }
-    }
-    return filters.end();
-}
-
 TEST(TestInputFilterParser, ParseEmpty)
 {
     object_limits limits;
     auto object = yaml_to_object(R"([{id: 1, inputs: []}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_filters(filters_array, cfg, ids, section, limits));
+    parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -72,10 +63,11 @@ TEST(TestInputFilterParser, ParseFilterWithoutID)
     auto object = yaml_to_object(R"([{inputs: [{address: http.client_ip}]}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_filters(filters_array, cfg, ids, section, limits));
+    parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -115,10 +107,11 @@ TEST(TestInputFilterParser, ParseDuplicateFilters)
         R"([{id: 1, inputs: [{address: http.client_ip}]}, {id: 1, inputs: [{address: usr.id}]}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_filters(filters_array, cfg, ids, section, limits));
+    parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -158,10 +151,11 @@ TEST(TestInputFilterParser, ParseUnconditionalNoTargets)
     auto object = yaml_to_object(R"([{id: 1, inputs: [{address: http.client_ip}]}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_filters(filters_array, cfg, ids, section, limits));
+    parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -187,11 +181,11 @@ TEST(TestInputFilterParser, ParseUnconditionalNoTargets)
     EXPECT_EQ(cfg.input_filters.size(), 1);
 
     const auto &filter_it = cfg.input_filters.begin();
-    EXPECT_STR(filter_it->id, "1");
+    EXPECT_STR(filter_it->first, "1");
 
-    EXPECT_EQ(filter_it->expr->size(), 0);
-    EXPECT_EQ(filter_it->targets.size(), 0);
-    EXPECT_TRUE(filter_it->filter);
+    EXPECT_EQ(filter_it->second.expr->size(), 0);
+    EXPECT_EQ(filter_it->second.targets.size(), 0);
+    EXPECT_TRUE(filter_it->second.filter);
 }
 
 TEST(TestInputFilterParser, ParseUnconditionalTargetID)
@@ -202,10 +196,11 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetID)
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}]}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_filters(filters_array, cfg, ids, section, limits));
+    parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -231,13 +226,13 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetID)
     EXPECT_EQ(cfg.input_filters.size(), 1);
 
     const auto &filter_it = cfg.input_filters.begin();
-    EXPECT_STR(filter_it->id, "1");
+    EXPECT_STR(filter_it->first, "1");
 
-    EXPECT_EQ(filter_it->expr->size(), 0);
-    EXPECT_EQ(filter_it->targets.size(), 1);
-    EXPECT_TRUE(filter_it->filter);
+    EXPECT_EQ(filter_it->second.expr->size(), 0);
+    EXPECT_EQ(filter_it->second.targets.size(), 1);
+    EXPECT_TRUE(filter_it->second.filter);
 
-    const auto &target = filter_it->targets[0];
+    const auto &target = filter_it->second.targets[0];
     EXPECT_EQ(target.type, reference_type::id);
     EXPECT_STR(target.ref_id, "2939");
     EXPECT_EQ(target.tags.size(), 0);
@@ -251,10 +246,11 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetTags)
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_filters(filters_array, cfg, ids, section, limits));
+    parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -280,13 +276,13 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetTags)
     EXPECT_EQ(cfg.input_filters.size(), 1);
 
     const auto &filter_it = cfg.input_filters.begin();
-    EXPECT_STR(filter_it->id, "1");
+    EXPECT_STR(filter_it->first, "1");
 
-    EXPECT_EQ(filter_it->expr->size(), 0);
-    EXPECT_EQ(filter_it->targets.size(), 1);
-    EXPECT_TRUE(filter_it->filter);
+    EXPECT_EQ(filter_it->second.expr->size(), 0);
+    EXPECT_EQ(filter_it->second.targets.size(), 1);
+    EXPECT_TRUE(filter_it->second.filter);
 
-    const auto &target = filter_it->targets[0];
+    const auto &target = filter_it->second.targets[0];
     EXPECT_EQ(target.type, reference_type::tags);
     EXPECT_TRUE(target.ref_id.empty());
     EXPECT_EQ(target.tags.size(), 2);
@@ -302,10 +298,11 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetPriority)
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939, tags: {type: rule, category: unknown}}]}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_filters(filters_array, cfg, ids, section, limits));
+    parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -331,13 +328,13 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetPriority)
     EXPECT_EQ(cfg.input_filters.size(), 1);
 
     const auto &filter_it = cfg.input_filters.begin();
-    EXPECT_STR(filter_it->id, "1");
+    EXPECT_STR(filter_it->first, "1");
 
-    EXPECT_EQ(filter_it->expr->size(), 0);
-    EXPECT_EQ(filter_it->targets.size(), 1);
-    EXPECT_TRUE(filter_it->filter);
+    EXPECT_EQ(filter_it->second.expr->size(), 0);
+    EXPECT_EQ(filter_it->second.targets.size(), 1);
+    EXPECT_TRUE(filter_it->second.filter);
 
-    const auto &target = filter_it->targets[0];
+    const auto &target = filter_it->second.targets[0];
     EXPECT_EQ(target.type, reference_type::id);
     EXPECT_STR(target.ref_id, "2939");
     EXPECT_EQ(target.tags.size(), 0);
@@ -351,10 +348,11 @@ TEST(TestInputFilterParser, ParseUnconditionalMultipleTargets)
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}, {tags: {type: rule, category: unknown}}]}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_filters(filters_array, cfg, ids, section, limits));
+    parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -380,21 +378,21 @@ TEST(TestInputFilterParser, ParseUnconditionalMultipleTargets)
     EXPECT_EQ(cfg.input_filters.size(), 1);
 
     const auto &filter_it = cfg.input_filters.begin();
-    EXPECT_STR(filter_it->id, "1");
+    EXPECT_STR(filter_it->first, "1");
 
-    EXPECT_EQ(filter_it->expr->size(), 0);
-    EXPECT_EQ(filter_it->targets.size(), 2);
-    EXPECT_TRUE(filter_it->filter);
+    EXPECT_EQ(filter_it->second.expr->size(), 0);
+    EXPECT_EQ(filter_it->second.targets.size(), 2);
+    EXPECT_TRUE(filter_it->second.filter);
 
     {
-        const auto &target = filter_it->targets[0];
+        const auto &target = filter_it->second.targets[0];
         EXPECT_EQ(target.type, reference_type::id);
         EXPECT_STR(target.ref_id, "2939");
         EXPECT_EQ(target.tags.size(), 0);
     }
 
     {
-        const auto &target = filter_it->targets[1];
+        const auto &target = filter_it->second.targets[1];
         EXPECT_EQ(target.type, reference_type::tags);
         EXPECT_TRUE(target.ref_id.empty());
         EXPECT_EQ(target.tags.size(), 2);
@@ -411,10 +409,11 @@ TEST(TestInputFilterParser, ParseMultipleUnconditional)
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}]}, {id: 2, inputs: [{address: usr.id}], rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_filters(filters_array, cfg, ids, section, limits));
+    parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -441,28 +440,28 @@ TEST(TestInputFilterParser, ParseMultipleUnconditional)
     EXPECT_EQ(cfg.input_filters.size(), 2);
 
     {
-        const auto &filter_it = find_filter(cfg.input_filters, "1");
-        EXPECT_STR(filter_it->id, "1");
+        const auto &filter_it = cfg.input_filters.find("1");
+        EXPECT_STR(filter_it->first, "1");
 
-        EXPECT_EQ(filter_it->expr->size(), 0);
-        EXPECT_EQ(filter_it->targets.size(), 1);
-        EXPECT_TRUE(filter_it->filter);
+        EXPECT_EQ(filter_it->second.expr->size(), 0);
+        EXPECT_EQ(filter_it->second.targets.size(), 1);
+        EXPECT_TRUE(filter_it->second.filter);
 
-        const auto &target = filter_it->targets[0];
+        const auto &target = filter_it->second.targets[0];
         EXPECT_EQ(target.type, reference_type::id);
         EXPECT_STR(target.ref_id, "2939");
         EXPECT_EQ(target.tags.size(), 0);
     }
 
     {
-        const auto &filter_it = find_filter(cfg.input_filters, "2");
-        EXPECT_STR(filter_it->id, "2");
+        const auto &filter_it = cfg.input_filters.find("2");
+        EXPECT_STR(filter_it->first, "2");
 
-        EXPECT_EQ(filter_it->expr->size(), 0);
-        EXPECT_EQ(filter_it->targets.size(), 1);
-        EXPECT_TRUE(filter_it->filter);
+        EXPECT_EQ(filter_it->second.expr->size(), 0);
+        EXPECT_EQ(filter_it->second.targets.size(), 1);
+        EXPECT_TRUE(filter_it->second.filter);
 
-        const auto &target = filter_it->targets[0];
+        const auto &target = filter_it->second.targets[0];
         EXPECT_EQ(target.type, reference_type::tags);
         EXPECT_TRUE(target.ref_id.empty());
         EXPECT_EQ(target.tags.size(), 2);
@@ -479,10 +478,11 @@ TEST(TestInputFilterParser, ParseConditionalSingleCondition)
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_filters(filters_array, cfg, ids, section, limits));
+    parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -508,13 +508,13 @@ TEST(TestInputFilterParser, ParseConditionalSingleCondition)
     EXPECT_EQ(cfg.input_filters.size(), 1);
 
     const auto &filter_it = cfg.input_filters.begin();
-    EXPECT_STR(filter_it->id, "1");
+    EXPECT_STR(filter_it->first, "1");
 
-    EXPECT_EQ(filter_it->expr->size(), 1);
-    EXPECT_EQ(filter_it->targets.size(), 1);
-    EXPECT_TRUE(filter_it->filter);
+    EXPECT_EQ(filter_it->second.expr->size(), 1);
+    EXPECT_EQ(filter_it->second.targets.size(), 1);
+    EXPECT_TRUE(filter_it->second.filter);
 
-    const auto &target = filter_it->targets[0];
+    const auto &target = filter_it->second.targets[0];
     EXPECT_EQ(target.type, reference_type::id);
     EXPECT_STR(target.ref_id, "2939");
     EXPECT_EQ(target.tags.size(), 0);
@@ -527,10 +527,11 @@ TEST(TestInputFilterParser, ParseConditionalMultipleConditions)
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_filters(filters_array, cfg, ids, section, limits));
+    parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -556,13 +557,13 @@ TEST(TestInputFilterParser, ParseConditionalMultipleConditions)
     EXPECT_EQ(cfg.input_filters.size(), 1);
 
     const auto &filter_it = cfg.input_filters.begin();
-    EXPECT_STR(filter_it->id, "1");
+    EXPECT_STR(filter_it->first, "1");
 
-    EXPECT_EQ(filter_it->expr->size(), 3);
-    EXPECT_EQ(filter_it->targets.size(), 1);
-    EXPECT_TRUE(filter_it->filter);
+    EXPECT_EQ(filter_it->second.expr->size(), 3);
+    EXPECT_EQ(filter_it->second.targets.size(), 1);
+    EXPECT_TRUE(filter_it->second.filter);
 
-    const auto &target = filter_it->targets[0];
+    const auto &target = filter_it->second.targets[0];
     EXPECT_EQ(target.type, reference_type::id);
     EXPECT_STR(target.ref_id, "2939");
     EXPECT_EQ(target.tags.size(), 0);
@@ -576,10 +577,11 @@ TEST(TestInputFilterParser, IncompatibleMinVersion)
         yaml_to_object(R"([{id: 1, inputs: [{address: http.client_ip}], min_version: 99.0.0}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_filters(filters_array, cfg, ids, section, limits));
+    parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -616,10 +618,11 @@ TEST(TestInputFilterParser, IncompatibleMaxVersion)
         yaml_to_object(R"([{id: 1, inputs: [{address: http.client_ip}], max_version: 0.0.99}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_FALSE(parse_filters(filters_array, cfg, ids, section, limits));
+    parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
@@ -656,10 +659,11 @@ TEST(TestInputFilterParser, CompatibleVersion)
         R"([{id: 1, inputs: [{address: http.client_ip}], min_version: 0.0.99, max_version: 2.0.0}])");
 
     configuration_spec cfg;
-    spec_id_tracker ids;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<parameter::vector>(parameter(object));
-    ASSERT_TRUE(parse_filters(filters_array, cfg, ids, section, limits));
+    parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
