@@ -12,6 +12,7 @@
 
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
+#include "configuration/common/configuration_collector.hpp"
 #include "exception.hpp"
 #include "log.hpp"
 #include "parameter.hpp"
@@ -49,9 +50,9 @@ data_type data_type_from_string(std::string_view str_type)
     return data_type::unknown;
 }
 
-std::vector<data_spec> parse_data(const parameter::vector &data_array, base_section_info &info)
+bool parse_data(const parameter::vector &data_array, base_section_info &info, auto &&emplace_fn)
 {
-    std::vector<data_spec> all_data;
+    bool data_parsed = false;
     for (unsigned i = 0; i < data_array.size(); ++i) {
         const ddwaf::parameter object = data_array[i];
         // TODO fix this id shenanigans
@@ -77,8 +78,9 @@ std::vector<data_spec> parse_data(const parameter::vector &data_array, base_sect
             }
 
             DDWAF_DEBUG("Parsed dynamic data '{}' of type '{}'", data_id, type_str);
+            data_parsed = true;
             info.add_loaded(data_id);
-            all_data.emplace_back(std::move(spec));
+            emplace_fn(std::move(data_id), spec.id, std::move(spec));
         } catch (const ddwaf::exception &e) {
             if (data_id.empty()) {
                 data_id = index_to_id(i);
@@ -89,23 +91,27 @@ std::vector<data_spec> parse_data(const parameter::vector &data_array, base_sect
         }
     }
 
-    return all_data;
+    return data_parsed;
 }
 
 } // namespace
 
 bool parse_rule_data(
-    const parameter::vector &data_array, configuration_spec &cfg, base_section_info &info)
+    const parameter::vector &data_array, configuration_collector &cfg, base_section_info &info)
 {
-    cfg.rule_data = parse_data(data_array, info);
-    return !cfg.rule_data.empty();
+    return parse_data(
+        data_array, info, [&cfg](std::string &&data_id, std::string id, data_spec &&data) {
+            cfg.emplace_rule_data(std::move(data_id), std::move(id), std::move(data));
+        });
 }
 
 bool parse_exclusion_data(
-    const parameter::vector &data_array, configuration_spec &cfg, base_section_info &info)
+    const parameter::vector &data_array, configuration_collector &cfg, base_section_info &info)
 {
-    cfg.exclusion_data = parse_data(data_array, info);
-    return !cfg.exclusion_data.empty();
+    return parse_data(
+        data_array, info, [&cfg](std::string &&data_id, std::string id, data_spec &&data) {
+            cfg.emplace_exclusion_data(std::move(data_id), std::move(id), std::move(data));
+        });
 }
 
 } // namespace ddwaf

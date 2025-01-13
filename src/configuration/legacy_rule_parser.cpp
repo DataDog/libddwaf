@@ -19,6 +19,7 @@
 #include "condition/scalar_condition.hpp"
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
+#include "configuration/common/configuration_collector.hpp"
 #include "configuration/common/transformer_parser.hpp"
 #include "ddwaf.h"
 #include "exception.hpp"
@@ -124,9 +125,10 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
 
 } // namespace
 
-bool parse_legacy_rules(const parameter::vector &rule_array, configuration_spec &cfg,
-    spec_id_tracker &ids, base_section_info &info, object_limits limits)
+bool parse_legacy_rules(const parameter::vector &rule_array, configuration_collector &cfg,
+    base_section_info &info, object_limits limits)
 {
+    bool rules_parsed = false;
     for (unsigned i = 0; i < rule_array.size(); ++i) {
         std::string id;
         try {
@@ -134,7 +136,7 @@ bool parse_legacy_rules(const parameter::vector &rule_array, configuration_spec 
             auto node = static_cast<parameter::map>(rule_param);
 
             id = at<std::string>(node, "id");
-            if (ids.rules.find(id) != ids.rules.end()) {
+            if (cfg.contains_rule(id)) {
                 DDWAF_WARN("Duplicate rule {}", id);
                 info.add_failed(id, "duplicate rule");
                 continue;
@@ -175,9 +177,9 @@ bool parse_legacy_rules(const parameter::vector &rule_array, configuration_spec 
                 at<std::string>(node, "name"), std::move(tags), std::move(expression), {}};
 
             DDWAF_DEBUG("Parsed rule {}", id);
+            rules_parsed = true;
             info.add_loaded(spec.id);
-            ids.rules.emplace(spec.id);
-            cfg.base_rules.emplace_back(std::move(spec));
+            cfg.emplace_rule(spec.id, std::move(spec));
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = index_to_id(i);
@@ -187,7 +189,7 @@ bool parse_legacy_rules(const parameter::vector &rule_array, configuration_spec 
         }
     }
 
-    return !cfg.base_rules.empty();
+    return rules_parsed;
 }
 
 } // namespace ddwaf

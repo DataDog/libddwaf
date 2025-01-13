@@ -10,6 +10,7 @@
 #include <unordered_map>
 
 #include "configuration/common/configuration.hpp"
+#include "configuration/common/configuration_collector.hpp"
 #include "parameter.hpp"
 #include "ruleset_info.hpp"
 
@@ -27,19 +28,19 @@ public:
     bool add_or_update(const std::string &path, parameter::map &root, base_ruleset_info &info);
     bool remove(const std::string &path);
 
-    merged_configuration_spec consolidate();
+    configuration_spec consolidate();
 
 protected:
-    void remove_config_ids(
-        const std::unordered_map<std::string, configuration_spec>::const_iterator &it);
+    void remove_config(
+        const std::unordered_map<std::string, configuration_change_spec>::const_iterator &it);
 
-    configuration_spec load(parameter::map &root, base_ruleset_info &info);
-    merged_configuration_spec merge();
+    void load(parameter::map &root, configuration_collector &collector, base_ruleset_info &info);
+    configuration_spec merge();
 
-    spec_id_tracker ids_;
-    std::unordered_map<std::string, configuration_spec> configs_;
-    object_limits limits_;
+    std::unordered_map<std::string, configuration_change_spec> configs_;
+    configuration_spec global_config_;
     change_set changes_{change_set::none};
+    object_limits limits_;
 };
 
 } // namespace ddwaf

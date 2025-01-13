@@ -29,7 +29,7 @@ public:
     ruleset_builder &operator=(ruleset_builder &&) = delete;
     ruleset_builder &operator=(const ruleset_builder &) = delete;
 
-    std::shared_ptr<ruleset> build(merged_configuration_spec &config);
+    std::shared_ptr<ruleset> build(configuration_spec &config);
 
 protected:
     // These members are obtained through ddwaf_config and are persistent across

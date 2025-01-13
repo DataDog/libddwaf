@@ -13,6 +13,7 @@
 #include "builder/action_mapper_builder.hpp"
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
+#include "configuration/common/configuration_collector.hpp"
 #include "log.hpp"
 #include "parameter.hpp"
 #include "uri_utils.hpp"
@@ -21,7 +22,7 @@ namespace ddwaf {
 
 namespace {
 
-void validate_and_add_block(auto &actions, auto id, auto &type, auto &parameters)
+void validate_and_add_block(auto &cfg, auto id, auto &type, auto &parameters)
 {
     if (!parameters.contains("status_code") || !parameters.contains("grpc_status_code") ||
         !parameters.contains("type")) {
@@ -31,18 +32,19 @@ void validate_and_add_block(auto &actions, auto id, auto &type, auto &parameters
         for (const auto &[k, v] : default_params.parameters) { parameters.try_emplace(k, v); }
     }
 
-    actions.emplace_back(action_spec{
-        std::move(id), action_type_from_string(type), std::move(type), std::move(parameters)});
+    DDWAF_DEBUG("ACtion: {}", id);
+    cfg.emplace_action(
+        id, action_spec{id, action_type_from_string(type), std::move(type), std::move(parameters)});
 }
 
-void validate_and_add_redirect(auto &actions, auto id, auto &type, auto &parameters)
+void validate_and_add_redirect(auto &cfg, auto id, auto &type, auto &parameters)
 {
     auto it = parameters.find("location");
     if (it == parameters.end() || it->second.empty()) {
         auto block_params = action_mapper_builder::get_default_action("block");
         // TODO add a log message
-        actions.emplace_back(
-            action_spec{id, block_params.type, block_params.type_str, block_params.parameters});
+        cfg.emplace_action(
+            id, action_spec{id, block_params.type, block_params.type_str, block_params.parameters});
         return;
     }
 
@@ -59,8 +61,8 @@ void validate_and_add_redirect(auto &actions, auto id, auto &type, auto &paramet
         (decomposed->scheme_and_authority.empty() && !decomposed->path.starts_with('/'))) {
         auto block_params = action_mapper_builder::get_default_action("block");
         // TODO add a log message
-        actions.emplace_back(
-            action_spec{id, block_params.type, block_params.type_str, block_params.parameters});
+        cfg.emplace_action(
+            id, action_spec{id, block_params.type, block_params.type_str, block_params.parameters});
         return;
     }
 
@@ -74,15 +76,16 @@ void validate_and_add_redirect(auto &actions, auto id, auto &type, auto &paramet
         parameters.emplace("status_code", "303");
     }
 
-    actions.emplace_back(action_spec{
-        std::move(id), action_type_from_string(type), std::move(type), std::move(parameters)});
+    cfg.emplace_action(
+        id, action_spec{id, action_type_from_string(type), std::move(type), std::move(parameters)});
 }
 
 } // namespace
 
-bool parse_actions(const parameter::vector &actions_array, configuration_spec &cfg,
-    spec_id_tracker &ids, base_section_info &info)
+bool parse_actions(
+    const parameter::vector &actions_array, configuration_collector &cfg, base_section_info &info)
 {
+    bool actions_parsed = false;
     for (unsigned i = 0; i < actions_array.size(); i++) {
         const auto &node_param = actions_array[i];
         auto node = static_cast<parameter::map>(node_param);
@@ -90,7 +93,7 @@ bool parse_actions(const parameter::vector &actions_array, configuration_spec &c
         std::string id;
         try {
             id = at<std::string>(node, "id");
-            if (ids.actions.find(id) != ids.actions.end()) {
+            if (cfg.contains_action(id)) {
                 DDWAF_WARN("Duplicate action: {}", id);
                 info.add_failed(id, "duplicate action");
                 continue;
@@ -103,16 +106,16 @@ bool parse_actions(const parameter::vector &actions_array, configuration_spec &c
 
             // Block and redirect actions should be validated and aliased
             if (type == "redirect_request") {
-                validate_and_add_redirect(cfg.actions, id, type, parameters);
+                validate_and_add_redirect(cfg, id, type, parameters);
             } else if (type == "block_request") {
-                validate_and_add_block(cfg.actions, id, type, parameters);
+                validate_and_add_block(cfg, id, type, parameters);
             } else {
-                cfg.actions.emplace_back(action_spec{
-                    id, action_type_from_string(type), std::move(type), std::move(parameters)});
+                cfg.emplace_action(id, action_spec{id, action_type_from_string(type),
+                                           std::move(type), std::move(parameters)});
             }
 
-            ids.actions.emplace(id);
-            info.add_loaded(id);
+            actions_parsed = true;
+            info.add_loaded(std::move(id));
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = index_to_id(i);
@@ -122,7 +125,7 @@ bool parse_actions(const parameter::vector &actions_array, configuration_spec &c
         }
     }
 
-    return !cfg.actions.empty();
+    return actions_parsed;
 }
 
 } // namespace ddwaf

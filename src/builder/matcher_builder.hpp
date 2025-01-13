@@ -11,7 +11,7 @@
 namespace ddwaf {
 
 struct matcher_builder {
-    static std::shared_ptr<matcher::base> build(const data_spec &data);
+    static std::shared_ptr<matcher::base> build(const merged_data_spec &data);
 };
 
 } // namespace ddwaf

@@ -13,7 +13,7 @@
 
 namespace ddwaf {
 
-std::shared_ptr<matcher::base> matcher_builder::build(const data_spec &data)
+std::shared_ptr<matcher::base> matcher_builder::build(const merged_data_spec &data)
 {
     std::shared_ptr<matcher::base> matcher;
     if (data.type == data_type::ip_with_expiration) {

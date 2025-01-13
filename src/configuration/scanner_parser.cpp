@@ -13,6 +13,7 @@
 
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
+#include "configuration/common/configuration_collector.hpp"
 #include "configuration/common/matcher_parser.hpp"
 #include "configuration/scanner_parser.hpp"
 #include "exception.hpp"
@@ -43,16 +44,17 @@ std::unique_ptr<matcher::base> parse_scanner_matcher(const parameter::map &root)
 
 } // namespace
 
-bool parse_scanners(const parameter::vector &scanner_array, configuration_spec &cfg,
-    spec_id_tracker &ids, ruleset_info::base_section_info &info)
+bool parse_scanners(const parameter::vector &scanner_array, configuration_collector &cfg,
+    ruleset_info::base_section_info &info)
 {
+    bool scanners_parsed = false;
     for (unsigned i = 0; i < scanner_array.size(); i++) {
         const auto &node_param = scanner_array[i];
         auto node = static_cast<parameter::map>(node_param);
         std::string id;
         try {
             id = at<std::string>(node, "id");
-            if (ids.scanners.find(id) != ids.scanners.end()) {
+            if (cfg.contains_scanner(id)) {
                 DDWAF_WARN("Duplicate scanner: {}", id);
                 info.add_failed(id, "duplicate scanner");
                 continue;
@@ -101,9 +103,9 @@ bool parse_scanners(const parameter::vector &scanner_array, configuration_spec &
             DDWAF_DEBUG("Parsed scanner {}", id);
             auto scnr = std::make_shared<scanner>(scanner{
                 std::move(id), std::move(tags), std::move(key_matcher), std::move(value_matcher)});
-            cfg.scanners.emplace_back(scnr);
+            scanners_parsed = true;
             info.add_loaded(scnr->get_id());
-            ids.scanners.emplace(scnr->get_id());
+            cfg.emplace_scanner(scnr);
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = index_to_id(i);
@@ -113,7 +115,7 @@ bool parse_scanners(const parameter::vector &scanner_array, configuration_spec &
         }
     }
 
-    return !cfg.scanners.empty();
+    return scanners_parsed;
 }
 
 } // namespace ddwaf

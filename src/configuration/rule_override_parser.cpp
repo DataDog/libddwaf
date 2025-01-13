@@ -11,6 +11,7 @@
 
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
+#include "configuration/common/configuration_collector.hpp"
 #include "configuration/common/reference_parser.hpp"
 #include "exception.hpp"
 #include "log.hpp"
@@ -22,11 +23,12 @@ namespace ddwaf {
 
 namespace {
 
-std::pair<override_spec, reference_type> parse_override(const parameter::map &node)
+override_spec parse_override(const parameter::map &node)
 {
     // Note that ID is a duplicate field and will be deprecated at some point
     override_spec current;
     current.id = uuidv4_generate_pseudo();
+    current.type = reference_type::none;
 
     auto it = node.find("enabled");
     if (it != node.end()) {
@@ -45,17 +47,15 @@ std::pair<override_spec, reference_type> parse_override(const parameter::map &no
         current.tags = std::move(tags);
     }
 
-    reference_type type = reference_type::none;
-
     auto rules_target_array = at<parameter::vector>(node, "rules_target", {});
     if (!rules_target_array.empty()) {
         current.targets.reserve(rules_target_array.size());
 
         for (const auto &target : rules_target_array) {
             auto target_spec = parse_reference(static_cast<parameter::map>(target));
-            if (type == reference_type::none) {
-                type = target_spec.type;
-            } else if (type != target_spec.type) {
+            if (current.type == reference_type::none) {
+                current.type = target_spec.type;
+            } else if (current.type != target_spec.type) {
                 throw ddwaf::parsing_error("rule override targets rules and tags");
             }
 
@@ -65,46 +65,46 @@ std::pair<override_spec, reference_type> parse_override(const parameter::map &no
         // Since the rules_target array is empty, the ID is mandatory
         reference_spec ref_spec{reference_type::id, at<std::string>(node, "id"), {}};
         current.targets.emplace_back(std::move(ref_spec));
-        type = reference_type::id;
+        current.type = reference_type::id;
     }
 
     if (!current.actions.has_value() && !current.enabled.has_value() && current.tags.empty()) {
         throw ddwaf::parsing_error("rule override without side-effects");
     }
 
-    return {current, type};
+    return current;
 }
 
 } // namespace
 
-bool parse_overrides(const parameter::vector &override_array, configuration_spec &cfg,
+bool parse_overrides(const parameter::vector &override_array, configuration_collector &cfg,
     ruleset_info::base_section_info &info)
 {
+    bool overrides_parsed = false;
     for (unsigned i = 0; i < override_array.size(); ++i) {
         auto id = index_to_id(i);
         const auto &node_param = override_array[i];
         auto node = static_cast<parameter::map>(node_param);
         try {
-            auto [spec, type] = parse_override(node);
-            if (type == reference_type::id) {
-                cfg.overrides_by_id.emplace_back(std::move(spec));
-            } else if (type == reference_type::tags) {
-                cfg.overrides_by_tags.emplace_back(std::move(spec));
-            } else {
+            auto spec = parse_override(node);
+            if (spec.type == reference_type::none) {
                 // This code is likely unreachable
                 DDWAF_WARN("Rule override with no targets");
                 info.add_failed(id, "rule override with no targets");
                 continue;
             }
+
             DDWAF_DEBUG("Parsed override {}", id);
+            overrides_parsed = true;
             info.add_loaded(id);
+            cfg.emplace_override(spec.id, std::move(spec));
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse rule override: {}", e.what());
             info.add_failed(id, e.what());
         }
     }
 
-    return !cfg.overrides_by_id.empty() || !cfg.overrides_by_tags.empty();
+    return overrides_parsed;
 }
 
 } // namespace ddwaf

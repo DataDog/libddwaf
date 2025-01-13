@@ -54,7 +54,7 @@ std::set<T *> resolve_references(
 
 } // namespace
 
-std::shared_ptr<ruleset> ruleset_builder::build(merged_configuration_spec &config)
+std::shared_ptr<ruleset> ruleset_builder::build(configuration_spec &config)
 {
     constexpr static change_set base_rule_update =
         change_set::rules | change_set::overrides | change_set::actions;
@@ -65,8 +65,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(merged_configuration_spec &confi
 
     if (!actions_ || (config.content & change_set::actions) != change_set::none) {
         action_mapper_builder mapper_builder;
-        for (const auto &spec : config.actions) {
-            mapper_builder.set_action(spec.id, spec.type_str, spec.parameters);
+        for (const auto &[id, spec] : config.actions) {
+            mapper_builder.set_action(id, spec.type_str, spec.parameters);
         }
         actions_ = mapper_builder.build_shared();
     }
@@ -79,19 +79,19 @@ std::shared_ptr<ruleset> ruleset_builder::build(merged_configuration_spec &confi
 
         indexer<rule_builder> rule_builders;
         // Initially, new rules are generated from their spec
-        for (const auto &spec : config.base_rules) {
+        for (const auto &[id, spec] : config.base_rules) {
             rule_builders.emplace(std::make_shared<rule_builder>(spec));
         }
 
         // Overrides only impact base rules since user rules can already be modified by the user
-        for (const auto &ovrd : config.overrides_by_tags) {
+        for (const auto &[id, ovrd] : config.overrides_by_tags) {
             auto rule_builder_targets = resolve_references(ovrd.targets, rule_builders);
             for (const auto &rule_builder_ptr : rule_builder_targets) {
                 rule_builder_ptr->apply_override(ovrd);
             }
         }
 
-        for (const auto &ovrd : config.overrides_by_id) {
+        for (const auto &[id, ovrd] : config.overrides_by_id) {
             auto rule_builder_targets = resolve_references(ovrd.targets, rule_builders);
             for (const auto &rule_builder_ptr : rule_builder_targets) {
                 rule_builder_ptr->apply_override(ovrd);
@@ -108,7 +108,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(merged_configuration_spec &confi
     if ((config.content & custom_rule_update) != change_set::none) {
         final_user_rules_.clear();
         // Initially, new rules are generated from their spec
-        for (const auto &spec : config.user_rules) {
+        for (const auto &[id, spec] : config.user_rules) {
             rule_builder builder{spec};
             if (builder.is_enabled()) {
                 final_user_rules_.emplace(builder.build(*actions_));
@@ -122,7 +122,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(merged_configuration_spec &confi
         input_filters_.clear();
 
         // First generate rule filters
-        for (const auto &filter : config.rule_filters) {
+        for (const auto &[id, filter] : config.rule_filters) {
             auto rule_targets = resolve_references(filter.targets, final_base_rules_);
             rule_targets.merge(resolve_references(filter.targets, final_user_rules_));
 
@@ -132,7 +132,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(merged_configuration_spec &confi
         }
 
         // Finally input filters
-        for (const auto &filter : config.input_filters) {
+        for (const auto &[id, filter] : config.input_filters) {
             auto rule_targets = resolve_references(filter.targets, final_base_rules_);
             rule_targets.merge(resolve_references(filter.targets, final_user_rules_));
 
@@ -147,7 +147,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(merged_configuration_spec &confi
         preprocessors_.clear();
         postprocessors_.clear();
 
-        for (auto &spec : config.processors) {
+        for (auto &[id, spec] : config.processors) {
             auto proc = processor_builder::build(spec, config.scanners);
             if (spec.evaluate) {
                 preprocessors_.emplace(proc->get_id(), std::move(proc));

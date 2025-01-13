@@ -35,6 +35,8 @@ public:
         return items_.erase(it);
     }
 
+    [[nodiscard]] bool contains(std::string_view id) const { return by_id_.contains(id); }
+
     T *find_by_id(std::string_view id) const
     {
         auto it = by_id_.find(id);

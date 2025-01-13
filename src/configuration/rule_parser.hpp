@@ -7,15 +7,15 @@
 #pragma once
 
 #include "configuration/common/common.hpp"
-#include "configuration/common/configuration.hpp"
+#include "configuration/common/configuration_collector.hpp"
 #include "parameter.hpp"
 
 namespace ddwaf {
 
-bool parse_base_rules(const parameter::vector &rule_array, configuration_spec &cfg,
-    spec_id_tracker &ids, base_section_info &info, const object_limits &limits);
+bool parse_base_rules(const parameter::vector &rule_array, configuration_collector &cfg,
+    base_section_info &info, const object_limits &limits);
 
-bool parse_user_rules(const parameter::vector &rule_array, configuration_spec &cfg,
-    spec_id_tracker &ids, base_section_info &info, const object_limits &limits);
+bool parse_user_rules(const parameter::vector &rule_array, configuration_collector &cfg,
+    base_section_info &info, const object_limits &limits);
 
 } // namespace ddwaf

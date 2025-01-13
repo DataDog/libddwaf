@@ -13,6 +13,7 @@
 
 #include "action_mapper.hpp"
 #include "exclusion/object_filter.hpp"
+#include "indexed_multivector.hpp"
 #include "indexer.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
@@ -40,6 +41,7 @@ struct reference_spec {
 
 struct override_spec {
     std::string id;
+    reference_type type;
     std::optional<bool> enabled;
     std::optional<std::vector<std::string>> actions;
     std::vector<reference_spec> targets;
@@ -90,6 +92,12 @@ struct data_spec {
     std::vector<value_type> values;
 };
 
+struct merged_data_spec {
+    using value_type = std::pair<std::string, uint64_t>;
+    data_type type{data_type::unknown};
+    indexed_multivector<std::string, value_type> values;
+};
+
 struct action_spec {
     std::string id;
     action_type type;
@@ -122,38 +130,10 @@ constexpr change_set operator&(change_set lhs, change_set rhs)
                                    static_cast<std::underlying_type_t<change_set>>(rhs));
 }
 
+// TODO update this note
 // Config spec contains an instance of a parsed configuration. Since this has to
 // be composed into a larger configuration, the storage cost need not consider
 // retrieval cost.
-struct configuration_spec {
-    [[nodiscard]] bool empty() const { return content == change_set::none; }
-    // Specifies the contents of the configuration
-    change_set content{change_set::none};
-
-    // Obtained from 'rules', can't be empty
-    std::vector<rule_spec> base_rules;
-    // Obtained from 'custom_rules'
-    std::vector<rule_spec> user_rules;
-    // Obtained from 'rules_data', depends on base_rules_
-    std::vector<data_spec> rule_data;
-    // Obtained from 'rules_override'
-    // The distinction is only necessary due to the restriction that
-    // overrides by ID are to be considered a priority over overrides by tags
-    std::vector<override_spec> overrides_by_id;
-    std::vector<override_spec> overrides_by_tags;
-    // Obtained from 'exclusions'
-    std::vector<rule_filter_spec> rule_filters;
-    std::vector<input_filter_spec> input_filters;
-    // Obtained from 'exclusion_data', depends on exclusions_
-    std::vector<data_spec> exclusion_data;
-    // Obtained from 'processors'
-    std::vector<processor_spec> processors;
-    // Scanner container
-    std::vector<std::shared_ptr<scanner>> scanners;
-    // Actions
-    std::vector<action_spec> actions;
-};
-
 struct configuration_change_spec {
     [[nodiscard]] bool empty() const { return content == change_set::none; }
 
@@ -161,14 +141,14 @@ struct configuration_change_spec {
 
     std::unordered_set<std::string> base_rules;
     std::unordered_set<std::string> user_rules;
-    std::unordered_set<std::string> rule_data;
+    std::vector<std::pair<std::string, std::string>> rule_data;
 
     std::unordered_set<std::string> overrides_by_id;
     std::unordered_set<std::string> overrides_by_tags;
 
     std::unordered_set<std::string> rule_filters;
     std::unordered_set<std::string> input_filters;
-    std::unordered_set<std::string> exclusion_data;
+    std::vector<std::pair<std::string, std::string>> exclusion_data;
 
     std::unordered_set<std::string> processors;
 
@@ -177,42 +157,31 @@ struct configuration_change_spec {
     std::unordered_set<std::string> actions;
 };
 
-// TODO:
-// The configuration should contain changes:
-//  remove: [x y z]
-//  add: [x y z]
-// In the example of rules:
-//  - We could have an index of rule_builder and then apply or revert overrides
-//  depending on whether they are added or removed.
-//  - If the rule is removed, we simply remove it.
-//
-//  We have to effectively keep a set of builders per primitive so we can
-//  recreate them on demand.
-struct merged_configuration_spec {
+struct configuration_spec {
     // Specifies the contents of the configuration
     change_set content{change_set::none};
     // Obtained from 'rules', can't be empty
-    std::vector<rule_spec> base_rules;
+    std::unordered_map<std::string, rule_spec> base_rules;
     // Obtained from 'custom_rules'
-    std::vector<rule_spec> user_rules;
+    std::unordered_map<std::string, rule_spec> user_rules;
     // Obtained from 'rules_data', depends on base_rules_
-    std::unordered_map<std::string, data_spec> rule_data;
+    std::unordered_map<std::string, merged_data_spec> rule_data;
     // Obtained from 'rules_override'
     // The distinction is only necessary due to the restriction that
     // overrides by ID are to be considered a priority over overrides by tags
-    std::vector<override_spec> overrides_by_id;
-    std::vector<override_spec> overrides_by_tags;
+    std::unordered_map<std::string, override_spec> overrides_by_id;
+    std::unordered_map<std::string, override_spec> overrides_by_tags;
     // Obtained from 'exclusions'
-    std::vector<rule_filter_spec> rule_filters;
-    std::vector<input_filter_spec> input_filters;
+    std::unordered_map<std::string, rule_filter_spec> rule_filters;
+    std::unordered_map<std::string, input_filter_spec> input_filters;
     // Obtained from 'exclusion_data', depends on exclusions_
-    std::unordered_map<std::string, data_spec> exclusion_data;
+    std::unordered_map<std::string, merged_data_spec> exclusion_data;
     // Obtained from 'processors'
-    std::vector<processor_spec> processors;
+    std::unordered_map<std::string, processor_spec> processors;
     // Scanner container
     indexer<const scanner> scanners;
     // Actions
-    std::vector<action_spec> actions;
+    std::unordered_map<std::string, action_spec> actions;
 };
 
 struct spec_id_tracker {

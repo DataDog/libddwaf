@@ -8,13 +8,14 @@
 
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
+#include "configuration/common/configuration_collector.hpp"
 #include "parameter.hpp"
 
 namespace ddwaf {
 
 bool parse_rule_data(
-    const parameter::vector &data_array, configuration_spec &cfg, base_section_info &info);
+    const parameter::vector &data_array, configuration_collector &cfg, base_section_info &info);
 bool parse_exclusion_data(
-    const parameter::vector &data_array, configuration_spec &cfg, base_section_info &info);
+    const parameter::vector &data_array, configuration_collector &cfg, base_section_info &info);
 
 } // namespace ddwaf

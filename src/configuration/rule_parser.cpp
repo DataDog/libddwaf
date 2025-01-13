@@ -12,6 +12,7 @@
 #include "condition/base.hpp"
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
+#include "configuration/common/configuration_collector.hpp"
 #include "configuration/common/expression_parser.hpp"
 #include "configuration/common/transformer_parser.hpp"
 #include "exception.hpp"
@@ -64,10 +65,10 @@ rule_spec parse_rule(parameter::map &rule, std::string id, const object_limits &
         std::move(tags), std::move(expr), at<std::vector<std::string>>(rule, "on_match", {})};
 }
 
-std::vector<rule_spec> parse_rules(const parameter::vector &rule_array, spec_id_tracker &ids,
+bool parse_rules(const parameter::vector &rule_array, configuration_collector &cfg,
     base_section_info &info, core_rule::source_type source, const object_limits &limits)
 {
-    std::vector<rule_spec> rules;
+    bool rules_parsed = false;
     for (unsigned i = 0; i < rule_array.size(); ++i) {
         std::string id;
         try {
@@ -77,7 +78,7 @@ std::vector<rule_spec> parse_rules(const parameter::vector &rule_array, spec_id_
             address_container addresses;
 
             id = at<std::string>(node, "id");
-            if (ids.rules.find(id) != ids.rules.end()) {
+            if (cfg.contains_rule(id)) {
                 DDWAF_WARN("Duplicate rule {}", id);
                 info.add_failed(id, "duplicate rule");
                 continue;
@@ -94,12 +95,12 @@ std::vector<rule_spec> parse_rules(const parameter::vector &rule_array, spec_id_
             }
 
             auto rule = parse_rule(node, id, limits, source, addresses);
+
             DDWAF_DEBUG("Parsed rule {}", id);
+            rules_parsed = true;
             info.add_loaded(id);
             add_addresses_to_info(addresses, info);
-
-            ids.rules.emplace(std::move(id));
-            rules.emplace_back(std::move(rule));
+            cfg.emplace_rule(std::move(id), std::move(rule));
         } catch (const unsupported_operator_version &e) {
             DDWAF_WARN("Skipping rule '{}': {}", id, e.what());
             info.add_skipped(id);
@@ -112,22 +113,20 @@ std::vector<rule_spec> parse_rules(const parameter::vector &rule_array, spec_id_
         }
     }
 
-    return rules;
+    return rules_parsed;
 }
 
 } // namespace
 
-bool parse_base_rules(const parameter::vector &rule_array, configuration_spec &cfg,
-    spec_id_tracker &ids, base_section_info &info, const object_limits &limits)
+bool parse_base_rules(const parameter::vector &rule_array, configuration_collector &cfg,
+    base_section_info &info, const object_limits &limits)
 {
-    cfg.base_rules = parse_rules(rule_array, ids, info, core_rule::source_type::base, limits);
-    return !cfg.base_rules.empty();
+    return parse_rules(rule_array, cfg, info, core_rule::source_type::base, limits);
 }
 
-bool parse_user_rules(const parameter::vector &rule_array, configuration_spec &cfg,
-    spec_id_tracker &ids, base_section_info &info, const object_limits &limits)
+bool parse_user_rules(const parameter::vector &rule_array, configuration_collector &cfg,
+    base_section_info &info, const object_limits &limits)
 {
-    cfg.user_rules = parse_rules(rule_array, ids, info, core_rule::source_type::user, limits);
-    return !cfg.user_rules.empty();
+    return parse_rules(rule_array, cfg, info, core_rule::source_type::user, limits);
 }
 } // namespace ddwaf
