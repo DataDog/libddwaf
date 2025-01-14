@@ -497,4 +497,23 @@ TEST(TestIndexer, IterateMultipleElements)
     EXPECT_TRUE(objects.empty());
 }
 
+TEST(TestIndexer, EraseNonExistentKey)
+{
+    indexer<test_object> index;
+    auto object =
+        std::make_shared<test_object>("id", decltype(test_object::tags){{"tag", "value"}});
+    index.emplace(object);
+    EXPECT_EQ(index.size(), 1);
+
+    index.erase("random_id");
+    EXPECT_EQ(index.size(), 1);
+
+    EXPECT_TRUE(index.contains("id"));
+    EXPECT_EQ(index.find_by_id("id"), object.get());
+
+    auto items = index.find_by_tags(decltype(test_object::tags){{"tag", "value"}});
+    EXPECT_EQ(items.size(), 1);
+    EXPECT_TRUE(items.contains(object.get()));
+}
+
 } // namespace
