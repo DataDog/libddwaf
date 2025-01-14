@@ -37,8 +37,8 @@ public:
 
     ddwaf::waf build()
     {
-        auto config = cfg_mgr_.consolidate();
-        auto ruleset = rbuilder_.build(config);
+        auto [global_config, current_changes] = cfg_mgr_.consolidate();
+        auto ruleset = rbuilder_.build(global_config, current_changes);
         return waf{std::move(ruleset)};
     }
 

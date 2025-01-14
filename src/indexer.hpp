@@ -65,6 +65,7 @@ public:
     }
 
     [[nodiscard]] std::size_t size() const { return items_.size(); }
+    [[nodiscard]] bool empty() const { return items_.empty(); }
 
     void clear()
     {

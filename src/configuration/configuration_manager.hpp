@@ -28,13 +28,12 @@ public:
     bool add_or_update(const std::string &path, parameter::map &root, base_ruleset_info &info);
     bool remove(const std::string &path);
 
-    configuration_spec consolidate();
+    std::pair<const configuration_spec &, change_set> consolidate();
 
 protected:
     void remove_config(const configuration_change_spec &cfg);
 
     void load(parameter::map &root, configuration_collector &collector, base_ruleset_info &info);
-    configuration_spec merge();
 
     std::unordered_map<std::string, configuration_change_spec> configs_;
     configuration_spec global_config_;

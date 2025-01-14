@@ -28,7 +28,30 @@ TEST(TestActionParser, EmptyActions)
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
-    EXPECT_EQ(cfg.actions.size(), 0);
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
 
 TEST(TestActionParser, SingleAction)
@@ -64,6 +87,31 @@ TEST(TestActionParser, SingleAction)
 
     EXPECT_EQ(cfg.actions.size(), 1);
     EXPECT_TRUE(cfg.actions.contains("block_1"));
+
+    EXPECT_EQ(change.actions.size(), 1);
+    EXPECT_TRUE(change.actions.contains("block_1"));
+
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
 
 TEST(TestActionParser, RedirectAction)
@@ -119,9 +167,11 @@ TEST(TestActionParser, RedirectAction)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_EQ(change.actions.size(), 6);
     EXPECT_EQ(cfg.actions.size(), 6);
 
     for (auto &[name, status_code, url] : redirections) {
+        EXPECT_TRUE(change.actions.contains(name));
         ASSERT_TRUE(cfg.actions.contains(name));
 
         const auto &spec = cfg.actions[name];
@@ -133,6 +183,28 @@ TEST(TestActionParser, RedirectAction)
         EXPECT_STR(parameters.at("status_code"), status_code.c_str());
         EXPECT_STR(parameters.at("location"), url.c_str());
     }
+
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
 
 TEST(TestActionParser, RedirectActionInvalidStatusCode)
@@ -167,7 +239,10 @@ TEST(TestActionParser, RedirectActionInvalidStatusCode)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_EQ(change.actions.size(), 1);
     EXPECT_EQ(cfg.actions.size(), 1);
+
+    EXPECT_TRUE(change.actions.contains("redirect"));
     EXPECT_TRUE(cfg.actions.contains("redirect"));
 
     {
@@ -214,7 +289,10 @@ TEST(TestActionParser, RedirectActionInvalid300StatusCode)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_EQ(change.actions.size(), 1);
     EXPECT_EQ(cfg.actions.size(), 1);
+
+    EXPECT_TRUE(change.actions.contains("redirect"));
     EXPECT_TRUE(cfg.actions.contains("redirect"));
 
     {
@@ -261,7 +339,10 @@ TEST(TestActionParser, RedirectActionMissingStatusCode)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_EQ(change.actions.size(), 1);
     EXPECT_EQ(cfg.actions.size(), 1);
+
+    EXPECT_TRUE(change.actions.contains("redirect"));
     EXPECT_TRUE(cfg.actions.contains("redirect"));
 
     {
@@ -308,7 +389,10 @@ TEST(TestActionParser, RedirectActionMissingLocation)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_EQ(change.actions.size(), 1);
     EXPECT_EQ(cfg.actions.size(), 1);
+
+    EXPECT_TRUE(change.actions.contains("redirect"));
     EXPECT_TRUE(cfg.actions.contains("redirect"));
 
     {
@@ -356,7 +440,10 @@ TEST(TestActionParser, RedirectActionNonHttpURL)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_EQ(change.actions.size(), 1);
     EXPECT_EQ(cfg.actions.size(), 1);
+
+    EXPECT_TRUE(change.actions.contains("redirect"));
     EXPECT_TRUE(cfg.actions.contains("redirect"));
 
     {
@@ -404,7 +491,10 @@ TEST(TestActionParser, RedirectActionInvalidRelativePathURL)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_EQ(change.actions.size(), 1);
     EXPECT_EQ(cfg.actions.size(), 1);
+
+    EXPECT_TRUE(change.actions.contains("redirect"));
     EXPECT_TRUE(cfg.actions.contains("redirect"));
 
     {
@@ -453,7 +543,10 @@ TEST(TestActionParser, OverrideDefaultBlockAction)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_EQ(change.actions.size(), 1);
     EXPECT_EQ(cfg.actions.size(), 1);
+
+    EXPECT_TRUE(change.actions.contains("block"));
     EXPECT_TRUE(cfg.actions.contains("block"));
 
     {
@@ -500,7 +593,10 @@ TEST(TestActionParser, BlockActionMissingStatusCode)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_EQ(change.actions.size(), 1);
     EXPECT_EQ(cfg.actions.size(), 1);
+
+    EXPECT_TRUE(change.actions.contains("block"));
     EXPECT_TRUE(cfg.actions.contains("block"));
 
     {
@@ -548,7 +644,10 @@ TEST(TestActionParser, UnknownActionType)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_EQ(change.actions.size(), 1);
     EXPECT_EQ(cfg.actions.size(), 1);
+
+    EXPECT_TRUE(change.actions.contains("sanitize"));
     EXPECT_TRUE(cfg.actions.contains("sanitize"));
 }
 
@@ -584,7 +683,10 @@ TEST(TestActionParser, BlockActionMissingGrpcStatusCode)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_EQ(change.actions.size(), 1);
     EXPECT_EQ(cfg.actions.size(), 1);
+
+    EXPECT_TRUE(change.actions.contains("block"));
     EXPECT_TRUE(cfg.actions.contains("block"));
 
     {
@@ -632,7 +734,10 @@ TEST(TestActionParser, BlockActionMissingType)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_EQ(change.actions.size(), 1);
     EXPECT_EQ(cfg.actions.size(), 1);
+
+    EXPECT_TRUE(change.actions.contains("block"));
     EXPECT_TRUE(cfg.actions.contains("block"));
 
     {
@@ -679,7 +784,10 @@ TEST(TestActionParser, BlockActionMissingParameters)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_EQ(change.actions.size(), 1);
     EXPECT_EQ(cfg.actions.size(), 1);
+
+    EXPECT_TRUE(change.actions.contains("block"));
     EXPECT_TRUE(cfg.actions.contains("block"));
 
     {
@@ -708,6 +816,7 @@ TEST(TestActionParser, MissingID)
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
+    EXPECT_EQ(change.actions.size(), 0);
     EXPECT_EQ(cfg.actions.size(), 0);
 
     {
@@ -750,6 +859,7 @@ TEST(TestActionParser, MissingType)
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
+    EXPECT_EQ(change.actions.size(), 0);
     EXPECT_EQ(cfg.actions.size(), 0);
 
     {
@@ -791,6 +901,7 @@ TEST(TestActionParser, MissingParameters)
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
+    EXPECT_EQ(change.actions.size(), 0);
     EXPECT_EQ(cfg.actions.size(), 0);
 
     {
@@ -859,7 +970,10 @@ TEST(TestActionParser, DuplicateAction)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_EQ(change.actions.size(), 1);
     EXPECT_EQ(cfg.actions.size(), 1);
+
+    EXPECT_TRUE(change.actions.contains("block_1"));
     EXPECT_TRUE(cfg.actions.contains("block_1"));
 }
 

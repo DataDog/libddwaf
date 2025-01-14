@@ -123,6 +123,7 @@ constexpr change_set operator&(change_set lhs, change_set rhs)
 struct configuration_change_spec {
     [[nodiscard]] bool empty() const { return content == change_set::none; }
 
+    // Specifies the contents of the configuration
     change_set content{change_set::none};
 
     std::unordered_set<std::string> base_rules;
@@ -144,9 +145,7 @@ struct configuration_change_spec {
 };
 
 struct configuration_spec {
-    // Specifies the contents of the configuration
-    change_set content{change_set::none};
-    // Obtained from 'rules', can't be empty
+    // Obtained from 'rules'
     std::unordered_map<std::string, rule_spec> base_rules;
     // Obtained from 'custom_rules'
     std::unordered_map<std::string, rule_spec> user_rules;

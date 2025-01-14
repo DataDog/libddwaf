@@ -274,18 +274,13 @@ bool configuration_manager::remove(const std::string &path)
     return true;
 }
 
-configuration_spec configuration_manager::merge()
+std::pair<const configuration_spec &, change_set> configuration_manager::consolidate()
 {
-    global_config_.content = changes_;
-    return global_config_;
-}
-
-configuration_spec configuration_manager::consolidate()
-{
-    configuration_spec merged = merge();
-    merged.content = merged.content | changes_;
+    // Copy and reset the current changes
+    auto current_change = changes_;
     changes_ = change_set::none;
-    return merged;
+
+    return {global_config_, current_change};
 }
 
 } // namespace ddwaf
