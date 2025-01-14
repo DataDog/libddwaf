@@ -12,6 +12,10 @@ using namespace ddwaf;
 namespace {
 
 struct test_object {
+    test_object(std::string id_, std::unordered_map<std::string, std::string> tags_)
+        : id(std::move(id_)), tags(std::move(tags_))
+    {}
+
     std::string_view get_id() const { return id; }
     const std::unordered_map<std::string, std::string> &get_tags() const { return tags; }
 
