@@ -46,6 +46,10 @@ TEST(TestExclusionDataParser, ParseIPData)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.content, change_set::exclusion_data);
+    EXPECT_EQ(change.exclusion_data.size(), 1);
+
     EXPECT_EQ(cfg.exclusion_data.size(), 1);
     EXPECT_EQ(cfg.exclusion_data["ip_data"].type, data_type::ip_with_expiration);
 }
@@ -81,6 +85,10 @@ TEST(TestExclusionDataParser, ParseStringData)
 
         ddwaf_object_free(&root);
     }
+
+    EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.content, change_set::exclusion_data);
+    EXPECT_EQ(change.exclusion_data.size(), 1);
 
     EXPECT_EQ(cfg.exclusion_data.size(), 1);
     EXPECT_EQ(cfg.exclusion_data["usr_data"].type, data_type::data_with_expiration);
@@ -119,6 +127,10 @@ TEST(TestExclusionDataParser, ParseMultipleData)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.content, change_set::exclusion_data);
+    EXPECT_EQ(change.exclusion_data.size(), 2);
+
     EXPECT_EQ(cfg.exclusion_data.size(), 2);
     EXPECT_EQ(cfg.exclusion_data["usr_data"].type, data_type::data_with_expiration);
     EXPECT_EQ(cfg.exclusion_data["ip_data"].type, data_type::ip_with_expiration);
@@ -156,6 +168,10 @@ TEST(TestExclusionDataParser, ParseUnknownDataID)
 
         ddwaf_object_free(&root);
     }
+
+    EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.content, change_set::exclusion_data);
+    EXPECT_EQ(change.exclusion_data.size(), 2);
 
     EXPECT_EQ(cfg.exclusion_data.size(), 2);
     EXPECT_EQ(cfg.exclusion_data["ip_data"].type, data_type::ip_with_expiration);
@@ -212,7 +228,30 @@ TEST(TestExclusionDataParser, ParseUnsupportedTypes)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.exclusion_data.size(), 0);
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
 
 TEST(TestExclusionDataParser, ParseUnknownDataIDWithUnsupportedType)
@@ -253,7 +292,30 @@ TEST(TestExclusionDataParser, ParseUnknownDataIDWithUnsupportedType)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.exclusion_data.size(), 0);
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
 
 TEST(TestExclusionDataParser, ParseMissingType)
@@ -294,7 +356,30 @@ TEST(TestExclusionDataParser, ParseMissingType)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.exclusion_data.size(), 0);
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
 
 TEST(TestExclusionDataParser, ParseMissingID)
@@ -335,7 +420,30 @@ TEST(TestExclusionDataParser, ParseMissingID)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.exclusion_data.size(), 0);
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
 
 TEST(TestExclusionDataParser, ParseMissingData)
@@ -375,6 +483,30 @@ TEST(TestExclusionDataParser, ParseMissingData)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.exclusion_data.size(), 0);
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
+
 } // namespace

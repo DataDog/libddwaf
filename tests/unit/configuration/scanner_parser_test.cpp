@@ -46,7 +46,11 @@ TEST(TestScannerParser, ParseKeyOnlyScanner)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_EQ(change.content, change_set::scanners);
+    EXPECT_EQ(change.scanners.size(), 1);
+    EXPECT_TRUE(change.scanners.contains("ecd"));
     ASSERT_EQ(cfg.scanners.size(), 1);
+    EXPECT_TRUE(cfg.scanners.contains("ecd"));
 
     const auto *const scnr = cfg.scanners.find_by_id("ecd");
     ASSERT_NE(scnr, nullptr);
@@ -97,7 +101,11 @@ TEST(TestScannerParser, ParseValueOnlyScanner)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_EQ(change.content, change_set::scanners);
+    EXPECT_EQ(change.scanners.size(), 1);
+    EXPECT_TRUE(change.scanners.contains("ecd"));
     ASSERT_EQ(cfg.scanners.size(), 1);
+    EXPECT_TRUE(cfg.scanners.contains("ecd"));
 
     const auto *const scnr = cfg.scanners.find_by_id("ecd");
     ASSERT_NE(scnr, nullptr);
@@ -148,7 +156,11 @@ TEST(TestScannerParser, ParseKeyValueScanner)
         ddwaf_object_free(&root);
     }
 
+    EXPECT_EQ(change.content, change_set::scanners);
+    EXPECT_EQ(change.scanners.size(), 1);
+    EXPECT_TRUE(change.scanners.contains("ecd"));
     ASSERT_EQ(cfg.scanners.size(), 1);
+    EXPECT_TRUE(cfg.scanners.contains("ecd"));
 
     const auto *const scnr = cfg.scanners.find_by_id("ecd");
     ASSERT_NE(scnr, nullptr);
@@ -205,7 +217,30 @@ TEST(TestScannerParser, ParseNoID)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.scanners.size(), 0);
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
 
 TEST(TestScannerParser, ParseNoTags)
@@ -246,7 +281,30 @@ TEST(TestScannerParser, ParseNoTags)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.scanners.size(), 0);
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
 
 TEST(TestScannerParser, ParseNoKeyValue)
@@ -287,7 +345,30 @@ TEST(TestScannerParser, ParseNoKeyValue)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.scanners.size(), 0);
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
 
 TEST(TestScannerParser, ParseDuplicate)
@@ -329,7 +410,11 @@ TEST(TestScannerParser, ParseDuplicate)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.scanners.size(), 1);
+    EXPECT_EQ(change.content, change_set::scanners);
+    EXPECT_EQ(change.scanners.size(), 1);
+    EXPECT_TRUE(change.scanners.contains("ecd"));
+    ASSERT_EQ(cfg.scanners.size(), 1);
+    EXPECT_TRUE(cfg.scanners.contains("ecd"));
 }
 
 TEST(TestScannerParser, ParseKeyNoOperator)
@@ -371,7 +456,30 @@ TEST(TestScannerParser, ParseKeyNoOperator)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.scanners.size(), 0);
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
 
 TEST(TestScannerParser, ParseKeyNoParameters)
@@ -412,7 +520,30 @@ TEST(TestScannerParser, ParseKeyNoParameters)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.scanners.size(), 0);
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
 
 TEST(TestScannerParser, ParseValueNoOperator)
@@ -453,7 +584,30 @@ TEST(TestScannerParser, ParseValueNoOperator)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.scanners.size(), 0);
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
 
 TEST(TestScannerParser, ParseValueNoParameters)
@@ -494,7 +648,30 @@ TEST(TestScannerParser, ParseValueNoParameters)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.scanners.size(), 0);
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
 
 TEST(TestScannerParser, ParseUnknownMatcher)
@@ -536,7 +713,30 @@ TEST(TestScannerParser, ParseUnknownMatcher)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.scanners.size(), 0);
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
 
 TEST(TestScannerParser, ParseRuleDataID)
@@ -578,7 +778,30 @@ TEST(TestScannerParser, ParseRuleDataID)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.scanners.size(), 0);
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
 
 TEST(TestScannerParser, IncompatibleMinVersion)
@@ -617,7 +840,30 @@ TEST(TestScannerParser, IncompatibleMinVersion)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.scanners.size(), 0);
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
 
 TEST(TestScannerParser, IncompatibleMaxVersion)
@@ -656,7 +902,30 @@ TEST(TestScannerParser, IncompatibleMaxVersion)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.scanners.size(), 0);
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.overrides_by_id.empty());
+    EXPECT_TRUE(change.overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.overrides_by_id.empty());
+    EXPECT_TRUE(cfg.overrides_by_tags.empty());
 }
 
 TEST(TestScannerParser, CompatibleVersion)
@@ -694,7 +963,11 @@ TEST(TestScannerParser, CompatibleVersion)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(cfg.scanners.size(), 1);
+    EXPECT_EQ(change.content, change_set::scanners);
+    EXPECT_EQ(change.scanners.size(), 1);
+    EXPECT_TRUE(change.scanners.contains("ecd"));
+    ASSERT_EQ(cfg.scanners.size(), 1);
+    EXPECT_TRUE(cfg.scanners.contains("ecd"));
 }
 
 } // namespace
