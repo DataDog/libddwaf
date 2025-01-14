@@ -2,12 +2,7 @@
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
 // This product includes software developed at Datadog
-// (https://www.datadoghq.com/). Copyright 2024 Datadog, Inc.
-
-// dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
-//
-// This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2021 Datadog, Inc.
+// (https://www.datadoghq.com/). Copyright 2021 Datadog, Inc.
 #include <optional>
 #include <string>
 #include <string_view>

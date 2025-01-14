@@ -333,7 +333,6 @@ ddwaf_handle ddwaf_builder_build_instance(ddwaf::waf_builder *builder)
     }
 
     try {
-        // TODO waf builder must build a waf
         return new ddwaf::waf{builder->build()};
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());

@@ -64,17 +64,15 @@ public:
 
         ancillary_tags_.merge(spec_.tags);
 
-        rule_ = std::make_shared<core_rule>(std::move(id_), std::move(spec_.name),
+        return std::make_shared<core_rule>(std::move(id_), std::move(spec_.name),
             std::move(ancillary_tags_), std::move(spec_.expr), std::move(spec_.actions),
             spec_.enabled, spec_.source, verdict);
-        return rule_;
     }
 
 protected:
     std::string id_;
     rule_spec spec_;
     std::unordered_map<std::string, std::string> ancillary_tags_;
-    std::shared_ptr<core_rule> rule_;
 };
 
 } // namespace ddwaf

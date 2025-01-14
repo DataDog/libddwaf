@@ -78,7 +78,6 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     if ((current_changes & base_rule_update) != change_set::none) {
         final_base_rules_.clear();
 
-        // TODO cache the builders to avoid to indexers
         indexer<rule_builder> rule_builders;
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : global_config.base_rules) {
@@ -186,11 +185,11 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     rs->free_fn = free_fn_;
     rs->event_obfuscator = event_obfuscator_;
 
-    // Since disabled rules aren't added to the final ruleset, we must check
-    // again that there are rules available.
-    if (rs->rules.empty()) {
-        DDWAF_WARN("No valid rules found");
-        throw parsing_error("no valid or enabled rules found");
+    // An instance is valid if it contains primitives with side-effects, such as
+    // rules or postprocessors.
+    if (rs->rules.empty() && rs->postprocessors.empty()) {
+        DDWAF_WARN("No valid rules or postprocessors found");
+        throw parsing_error("no valid or enabled rules or postprocessors found");
     }
 
     return rs;

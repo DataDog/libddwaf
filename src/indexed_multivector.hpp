@@ -11,8 +11,11 @@
 
 namespace ddwaf {
 
-// This is a container which stores multiple vectors indexed by a key. Elements within
-// the vectors can then be iterated through as a single vector.
+// The indexed multivector is a container which stores multiple vectors indexed
+// by a key. The main purpose of the indexed multivector is to allow the
+// iteration of all vectors as a single vector, as well as the ability to remove
+// individual ones as needed. Note that the vector the insertion order isn't
+// preserved.
 template <typename Key, typename T> class indexed_multivector {
 public:
     indexed_multivector() = default;

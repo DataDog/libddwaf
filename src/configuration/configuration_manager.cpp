@@ -65,9 +65,6 @@ void configuration_manager::load(
         DDWAF_DEBUG("Parsing actions");
         auto &section = info.add_section("actions");
         try {
-            // If the actions array is empty, an empty action mapper will be
-            // generated. Note that this mapper will still contain the default
-            // actions.
             auto actions = static_cast<parameter::vector>(it->second);
             if (!actions.empty()) {
                 parse_actions(actions, collector, section);
@@ -252,7 +249,7 @@ bool configuration_manager::add_or_update(
         return false;
     }
 
-    changes_ = changes_ | new_config.content;
+    changes_ |= new_config.content;
     it->second = std::move(new_config);
 
     return true;
@@ -265,7 +262,7 @@ bool configuration_manager::remove(const std::string &path)
         return false;
     }
 
-    changes_ = changes_ | it->second.content;
+    changes_ |= it->second.content;
 
     remove_config(it->second);
 
