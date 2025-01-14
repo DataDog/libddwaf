@@ -110,40 +110,51 @@ constexpr change_set operator|(change_set lhs, change_set rhs)
                                    static_cast<std::underlying_type_t<change_set>>(rhs));
 }
 
+constexpr change_set &operator|=(change_set &lhs, change_set rhs) { return lhs = lhs | rhs; }
+
 constexpr change_set operator&(change_set lhs, change_set rhs)
 {
     return static_cast<change_set>(static_cast<std::underlying_type_t<change_set>>(lhs) &
                                    static_cast<std::underlying_type_t<change_set>>(rhs));
 }
 
-// TODO update this note
-// Config spec contains an instance of a parsed configuration. Since this has to
-// be composed into a larger configuration, the storage cost need not consider
-// retrieval cost.
+constexpr change_set &operator&=(change_set &lhs, change_set rhs) { return lhs = lhs & rhs; }
+
+// The configuration_change_spec structure contains the IDs of all elements
+// introduced by the given configuration. This can be used later on to remove
+// the contents from the global configuration.
 struct configuration_change_spec {
     [[nodiscard]] bool empty() const { return content == change_set::none; }
 
     // Specifies the contents of the configuration
     change_set content{change_set::none};
-
+    // Rule IDs
     std::unordered_set<std::string> base_rules;
     std::unordered_set<std::string> user_rules;
+    // Rule data IDs consist of a pair containing the data ID and a given unique
+    // ID for the given data spec.
     std::vector<std::pair<std::string, std::string>> rule_data;
-
+    // Override IDs consisting of a unique ID auto-generated for each override
     std::unordered_set<std::string> overrides_by_id;
     std::unordered_set<std::string> overrides_by_tags;
-
+    // Filter IDs
     std::unordered_set<std::string> rule_filters;
     std::unordered_set<std::string> input_filters;
+    // Exclusion data IDs consist of a pair containing the data ID and a given
+    // unique ID for the given data spec.
     std::vector<std::pair<std::string, std::string>> exclusion_data;
-
+    // Processor IDs
     std::unordered_set<std::string> processors;
-
+    // Scanner IDs
     std::unordered_set<std::string> scanners;
-
+    // Action IDs
     std::unordered_set<std::string> actions;
 };
 
+// The configuration spec is a global configuration structure which is generated
+// from all the partial configurations. Each item in this configuration has its
+// own unique ID which is mapped to the independent configuration so that it can
+// be later removed as needed.
 struct configuration_spec {
     // Obtained from 'rules'
     std::unordered_map<std::string, rule_spec> base_rules;
@@ -163,9 +174,10 @@ struct configuration_spec {
     std::unordered_map<std::string, data_spec> exclusion_data;
     // Obtained from 'processors'
     std::unordered_map<std::string, processor_spec> processors;
-    // Scanner container
+    // Obtained from 'scanners'
+    // Scanners are stored directly in an indexer to simplify their use
     indexer<const scanner> scanners;
-    // Actions
+    // Obtained from 'actions'
     std::unordered_map<std::string, action_spec> actions;
 };
 

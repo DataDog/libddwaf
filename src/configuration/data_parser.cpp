@@ -54,7 +54,6 @@ void parse_data(const parameter::vector &data_array, base_section_info &info, au
 {
     for (unsigned i = 0; i < data_array.size(); ++i) {
         const ddwaf::parameter object = data_array[i];
-        // TODO fix this id shenanigans
         std::string data_id;
         try {
             const auto entry = static_cast<ddwaf::parameter::map>(object);

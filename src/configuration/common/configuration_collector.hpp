@@ -48,12 +48,12 @@ public:
     void emplace_rule(std::string id, rule_spec spec)
     {
         if (spec.source == core_rule::source_type::base) {
-            change_.content = change_.content | change_set::rules;
+            change_.content |= change_set::rules;
 
             change_.base_rules.emplace(id);
             config_.base_rules.emplace(std::move(id), std::move(spec));
         } else {
-            change_.content = change_.content | change_set::custom_rules;
+            change_.content |= change_set::custom_rules;
 
             change_.user_rules.emplace(id);
             config_.user_rules.emplace(std::move(id), std::move(spec));
@@ -62,7 +62,7 @@ public:
 
     void emplace_override(std::string id, override_spec spec)
     {
-        change_.content = change_.content | change_set::overrides;
+        change_.content |= change_set::overrides;
 
         if (spec.type == reference_type::id) {
             change_.overrides_by_id.emplace(id);
@@ -75,7 +75,7 @@ public:
 
     void emplace_filter(std::string id, rule_filter_spec spec)
     {
-        change_.content = change_.content | change_set::filters;
+        change_.content |= change_set::filters;
 
         change_.rule_filters.emplace(id);
         config_.rule_filters.emplace(std::move(id), std::move(spec));
@@ -83,7 +83,7 @@ public:
 
     void emplace_filter(std::string id, input_filter_spec spec)
     {
-        change_.content = change_.content | change_set::filters;
+        change_.content |= change_set::filters;
 
         change_.input_filters.emplace(id);
         config_.input_filters.emplace(std::move(id), std::move(spec));
@@ -91,7 +91,7 @@ public:
 
     void emplace_processor(std::string id, processor_spec spec)
     {
-        change_.content = change_.content | change_set::processors;
+        change_.content |= change_set::processors;
 
         change_.processors.emplace(id);
         config_.processors.emplace(std::move(id), std::move(spec));
@@ -99,7 +99,7 @@ public:
 
     void emplace_scanner(std::shared_ptr<scanner> scanner)
     {
-        change_.content = change_.content | change_set::scanners;
+        change_.content |= change_set::scanners;
 
         change_.scanners.emplace(scanner->get_id());
         config_.scanners.emplace(std::move(scanner));
@@ -107,7 +107,7 @@ public:
 
     void emplace_action(std::string id, action_spec spec)
     {
-        change_.content = change_.content | change_set::actions;
+        change_.content |= change_set::actions;
 
         change_.actions.emplace(id);
         config_.actions.emplace(std::move(id), std::move(spec));
@@ -117,7 +117,7 @@ public:
     void emplace_rule_data(std::string data_id, std::string id, data_type type,
         std::vector<data_spec::value_type> values)
     {
-        change_.content = change_.content | change_set::rule_data;
+        change_.content |= change_set::rule_data;
 
         auto it = config_.rule_data.find(data_id);
         if (it == config_.rule_data.end()) {
@@ -135,7 +135,7 @@ public:
     void emplace_exclusion_data(std::string data_id, std::string id, data_type type,
         std::vector<data_spec::value_type> values)
     {
-        change_.content = change_.content | change_set::exclusion_data;
+        change_.content |= change_set::exclusion_data;
 
         auto it = config_.exclusion_data.find(data_id);
         if (it == config_.exclusion_data.end()) {
