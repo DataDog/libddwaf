@@ -882,4 +882,274 @@ TEST(TestDiagnosticsV2Integration, Processor)
     ddwaf_destroy(handle);
 }
 
+TEST(TestDiagnosticsV2Integration, InvalidRulesContainer)
+{
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+
+    auto rule =
+        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules: {}})");
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_object diagnostics;
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf::parameter root(diagnostics);
+        auto root_map = static_cast<ddwaf::parameter::map>(root);
+
+        auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
+        EXPECT_STREQ(version.c_str(), "1.2.7");
+
+        auto rules = ddwaf::at<parameter::map>(root_map, "rules");
+
+        auto errors = ddwaf::at<std::string>(rules, "error");
+        EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
+
+        ddwaf_object_free(&diagnostics);
+    }
+
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestDiagnosticsV2Integration, InvalidCustomRulesContainer)
+{
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+
+    auto rule =
+        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, custom_rules: {}})");
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_object diagnostics;
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf::parameter root(diagnostics);
+        auto root_map = static_cast<ddwaf::parameter::map>(root);
+
+        auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
+        EXPECT_STREQ(version.c_str(), "1.2.7");
+
+        auto rules = ddwaf::at<parameter::map>(root_map, "custom_rules");
+
+        auto errors = ddwaf::at<std::string>(rules, "error");
+        EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
+
+        ddwaf_object_free(&diagnostics);
+    }
+
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestDiagnosticsV2Integration, InvalidExclusionsContainer)
+{
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+
+    auto rule =
+        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, exclusions: {}})");
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_object diagnostics;
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf::parameter root(diagnostics);
+        auto root_map = static_cast<ddwaf::parameter::map>(root);
+
+        auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
+        EXPECT_STREQ(version.c_str(), "1.2.7");
+
+        auto rules = ddwaf::at<parameter::map>(root_map, "exclusions");
+
+        auto errors = ddwaf::at<std::string>(rules, "error");
+        EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
+
+        ddwaf_object_free(&diagnostics);
+    }
+
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestDiagnosticsV2Integration, InvalidOverridesContainer)
+{
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+
+    auto rule = yaml_to_object(
+        R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules_override: {}})");
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_object diagnostics;
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf::parameter root(diagnostics);
+        auto root_map = static_cast<ddwaf::parameter::map>(root);
+
+        auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
+        EXPECT_STREQ(version.c_str(), "1.2.7");
+
+        auto rules = ddwaf::at<parameter::map>(root_map, "rules_override");
+
+        auto errors = ddwaf::at<std::string>(rules, "error");
+        EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
+
+        ddwaf_object_free(&diagnostics);
+    }
+
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestDiagnosticsV2Integration, InvalidScannersContainer)
+{
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+
+    auto rule =
+        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, scanners: {}})");
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_object diagnostics;
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf::parameter root(diagnostics);
+        auto root_map = static_cast<ddwaf::parameter::map>(root);
+
+        auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
+        EXPECT_STREQ(version.c_str(), "1.2.7");
+
+        auto rules = ddwaf::at<parameter::map>(root_map, "scanners");
+
+        auto errors = ddwaf::at<std::string>(rules, "error");
+        EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
+
+        ddwaf_object_free(&diagnostics);
+    }
+
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestDiagnosticsV2Integration, InvalidProcessorsContainer)
+{
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+
+    auto rule =
+        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, processors: {}})");
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_object diagnostics;
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf::parameter root(diagnostics);
+        auto root_map = static_cast<ddwaf::parameter::map>(root);
+
+        auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
+        EXPECT_STREQ(version.c_str(), "1.2.7");
+
+        auto rules = ddwaf::at<parameter::map>(root_map, "processors");
+
+        auto errors = ddwaf::at<std::string>(rules, "error");
+        EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
+
+        ddwaf_object_free(&diagnostics);
+    }
+
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestDiagnosticsV2Integration, InvalidActionsContainer)
+{
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+
+    auto rule =
+        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, actions: {}})");
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_object diagnostics;
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf::parameter root(diagnostics);
+        auto root_map = static_cast<ddwaf::parameter::map>(root);
+
+        auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
+        EXPECT_STREQ(version.c_str(), "1.2.7");
+
+        auto rules = ddwaf::at<parameter::map>(root_map, "actions");
+
+        auto errors = ddwaf::at<std::string>(rules, "error");
+        EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
+
+        ddwaf_object_free(&diagnostics);
+    }
+
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestDiagnosticsV2Integration, InvalidRuleDataContainer)
+{
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+
+    auto rule =
+        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules_data: {}})");
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_object diagnostics;
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf::parameter root(diagnostics);
+        auto root_map = static_cast<ddwaf::parameter::map>(root);
+
+        auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
+        EXPECT_STREQ(version.c_str(), "1.2.7");
+
+        auto rules = ddwaf::at<parameter::map>(root_map, "rules_data");
+
+        auto errors = ddwaf::at<std::string>(rules, "error");
+        EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
+
+        ddwaf_object_free(&diagnostics);
+    }
+
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestDiagnosticsV2Integration, InvalidExclusionDataContainer)
+{
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+
+    auto rule = yaml_to_object(
+        R"({version: '2.1', metadata: {rules_version: '1.2.7'}, exclusion_data: {}})");
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_object diagnostics;
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf::parameter root(diagnostics);
+        auto root_map = static_cast<ddwaf::parameter::map>(root);
+
+        auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
+        EXPECT_STREQ(version.c_str(), "1.2.7");
+
+        auto rules = ddwaf::at<parameter::map>(root_map, "exclusion_data");
+
+        auto errors = ddwaf::at<std::string>(rules, "error");
+        EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
+
+        ddwaf_object_free(&diagnostics);
+    }
+
+    ddwaf_builder_destroy(builder);
+}
+
 } // namespace

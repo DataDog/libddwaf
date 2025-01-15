@@ -364,4 +364,28 @@ TEST(TestDiagnosticsV1Integration, TestInvalidTooManyTransformers)
     ddwaf_destroy(handle);
 }
 
+TEST(TestDiagnosticsV1Integration, InvalidRulesContainer)
+{
+    auto rule = yaml_to_object(R"({version: '1.1', events: {}})");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_object diagnostics;
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ASSERT_EQ(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf::parameter root(diagnostics);
+    auto root_map = static_cast<ddwaf::parameter::map>(root);
+
+    auto version = ddwaf::at<std::string>(root_map, "ruleset_version", "");
+    EXPECT_STREQ(version.c_str(), "");
+
+    auto rules = ddwaf::at<parameter::map>(root_map, "rules");
+
+    auto errors = ddwaf::at<std::string>(rules, "error");
+    EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
+
+    ddwaf_object_free(&diagnostics);
+}
+
 } // namespace

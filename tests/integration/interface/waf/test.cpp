@@ -193,43 +193,6 @@ TEST(TestWafIntegration, InvalidVersionNoRules)
     ddwaf_object_free(&rule);
 }
 
-/*TEST(TestWafIntegration, UpdateWithNullObject)*/
-/*{*/
-/*EXPECT_EQ(ddwaf_update(nullptr, nullptr, nullptr), nullptr);*/
-/*}*/
-
-/*TEST(TestWafIntegration, UpdateWithNullHandle)*/
-/*{*/
-/*auto rule = read_file("rules_requiring_data.yaml", base_dir);*/
-/*ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);*/
-
-/*ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);*/
-/*ASSERT_NE(handle, nullptr);*/
-/*ddwaf_object_free(&rule);*/
-
-/*EXPECT_EQ(ddwaf_update(handle, nullptr, nullptr), nullptr);*/
-/*ddwaf_destroy(handle);*/
-/*}*/
-
-/*TEST(TestWafIntegration, UpdateEmpty)*/
-/*{*/
-/*auto rule = read_file("interface.yaml", base_dir);*/
-/*ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);*/
-
-/*ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};*/
-
-/*ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);*/
-/*ASSERT_NE(handle, nullptr);*/
-/*ddwaf_object_free(&rule);*/
-
-/*rule = yaml_to_object("{}");*/
-/*ddwaf_handle new_handle = ddwaf_update(handle, &rule, nullptr);*/
-/*ASSERT_EQ(new_handle, nullptr);*/
-/*ddwaf_object_free(&rule);*/
-
-/*ddwaf_destroy(handle);*/
-/*}*/
-
 TEST(TestWafIntegration, PreloadRuleData)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
@@ -377,25 +340,6 @@ TEST(TestWafIntegration, UpdateRules)
 
     ddwaf_builder_destroy(builder);
 }
-
-/*TEST(TestWafIntegration, UpdateInvalidRules)*/
-/*{*/
-/*auto rule = read_file("interface.yaml", base_dir);*/
-/*ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);*/
-
-/*ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};*/
-
-/*ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);*/
-/*ASSERT_NE(handle, nullptr);*/
-/*ddwaf_object_free(&rule);*/
-
-/*rule = yaml_to_object("{rules: []}");*/
-/*ddwaf_handle new_handle = ddwaf_update(handle, &rule, nullptr);*/
-/*ASSERT_EQ(new_handle, nullptr);*/
-/*ddwaf_object_free(&rule);*/
-
-/*ddwaf_destroy(handle);*/
-/*}*/
 
 TEST(TestWafIntegration, UpdateDisableEnableRuleByID)
 {
@@ -1535,29 +1479,6 @@ TEST(TestWafIntegration, UpdateAndRevertRuleData)
 
     ddwaf_builder_destroy(builder);
 }
-
-/*TEST(TestWafIntegration, UpdateInvalidRuleData)*/
-/*{*/
-/*auto rule = read_file("rule_data.yaml", base_dir);*/
-/*ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);*/
-
-/*ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};*/
-
-/*ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);*/
-/*ASSERT_NE(handle1, nullptr);*/
-/*ddwaf_object_free(&rule);*/
-
-/*// A rules_data with unrelated keys is considered an empty rules_data*/
-/*auto data = yaml_to_object(*/
-/*R"({rules_data: [{id: ipo_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration:
- * 0}]}]})");*/
-/*ddwaf_handle handle2 = ddwaf_update(handle1, &data, nullptr);*/
-/*EXPECT_NE(handle2, nullptr);*/
-/*ddwaf_object_free(&data);*/
-
-/*ddwaf_destroy(handle1);*/
-/*ddwaf_destroy(handle2);*/
-/*}*/
 
 TEST(TestWafIntegration, UpdateRuleExclusions)
 {

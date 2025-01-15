@@ -153,7 +153,7 @@ void configuration_manager::load(
     it = root.find("exclusion_data");
     if (it != root.end()) {
         DDWAF_DEBUG("Parsing exclusion data");
-        auto &section = info.add_section("exclusions_data");
+        auto &section = info.add_section("exclusion_data");
         try {
             auto exclusions_data = static_cast<parameter::vector>(it->second);
             if (!exclusions_data.empty()) {
