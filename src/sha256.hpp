@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <array>
+#include <cstdint>
 #include <cstring>
 #include <span>
 #include <string>
