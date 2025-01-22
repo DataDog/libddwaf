@@ -282,7 +282,7 @@ jobs:
 
       - name: Package Nuget
         run: |
-          sudo apt-get update && sudo apt-get install -y libarchive-tools
+          sudo apt-get update && sudo apt-get install -y libarchive-tools mono-complete
           function extract_file {
             local -r arch=$1 filepat=$2 dest=$3
             local -r file_in_arch=$(bsdtar -tf "$arch" | grep "$filepat" | head -1)
