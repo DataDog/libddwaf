@@ -25,8 +25,6 @@ public:
     action_mapper_builder &operator=(const action_mapper_builder &) = delete;
     action_mapper_builder &operator=(action_mapper_builder &&) = delete;
 
-    void alias_default_action_to(std::string_view default_id, std::string alias);
-
     void set_action(
         std::string id, std::string type, std::unordered_map<std::string, std::string> parameters);
 

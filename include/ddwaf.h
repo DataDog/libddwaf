@@ -354,7 +354,7 @@ void ddwaf_result_free(ddwaf_result *result);
 /**
  * ddwaf_builder_init
  *
- * Initialize an instace of the waf builder
+ * Initialize an instace of the waf builder.
  *
  * @param config Optional configuration of the WAF. (nullable)
  *
@@ -369,7 +369,7 @@ ddwaf_builder ddwaf_builder_init(const ddwaf_config *config);
  * ddwaf_builder_add_or_update_config
  *
  * Adds or updates a configuration based on the given path, which must be a unique
- * identifier of the provided configuration.
+ * identifier for the provided configuration.
  *
  * @param builder Builder to perform the operation on. (nonnull)
  * @param path A string containing the path of the configuration, this must uniquely identify the configuration. (nonnull)
@@ -387,7 +387,7 @@ bool ddwaf_builder_add_or_update_config(ddwaf_builder builder, const char *path,
  * Removes a configuration based on the provided path.
  *
  * @param builder Builder to perform the operation on. (nonnull)
- * @param path A string containing the path of the configuration, this must uniquely identify the configuration. (nonnull)
+ * @param path A string containing the path of the configuration to be removed. (nonnull)
  * @param path_len The length of the string contained within path.
  *
  * @return Whether the operation succeeded (true) or failed (false).
@@ -397,7 +397,7 @@ bool ddwaf_builder_remove_config(ddwaf_builder builder, const char *path, uint32
 /**
  * ddwaf_builder_build_instance
  *
- * Builds a ddwaf instance based on the current set of configurations
+ * Builds a ddwaf instance based on the current set of configurations.
  *
  * @param builder Builder to perform the operation on. (nonnull)
  *

@@ -18,16 +18,6 @@
 
 namespace ddwaf {
 
-void action_mapper_builder::alias_default_action_to(std::string_view default_id, std::string alias)
-{
-    auto it = default_actions_.find(default_id);
-    if (it == default_actions_.end()) {
-        throw std::runtime_error(
-            "attempting to add alias to non-existent default action " + std::string(default_id));
-    }
-    action_by_id_.emplace(std::move(alias), it->second);
-}
-
 void action_mapper_builder::set_action(
     std::string id, std::string type, std::unordered_map<std::string, std::string> parameters)
 {
