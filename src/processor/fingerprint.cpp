@@ -553,7 +553,7 @@ std::pair<header_type, unsigned> get_header_type_and_index(std::string_view head
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval_impl(
     const unary_argument<std::string_view> &method, const unary_argument<std::string_view> &uri_raw,
-    const unary_argument<const ddwaf_object *> &query,
+    const optional_argument<const ddwaf_object *> &query,
     const optional_argument<const ddwaf_object *> &body, processor_cache &cache,
     ddwaf::timer &deadline) const
 {
@@ -573,7 +573,7 @@ std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval
     try {
         res = generate_fragment_cached("http", cache.fingerprint.fragment_fields,
             string_field{method.value}, string_hash_field{stripped_uri},
-            key_hash_field{query.value}, optional_generator<key_hash_field>{body});
+            optional_generator<key_hash_field>{query}, optional_generator<key_hash_field>{body});
     } catch (const std::out_of_range &e) {
         DDWAF_WARN("Failed to generate http endpoint fingerprint: {}", e.what());
     }
