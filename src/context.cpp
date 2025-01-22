@@ -64,15 +64,6 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
         output = DDWAF_RESULT_INITIALISER;
     }
 
-    {
-        if (ddwaf::logger::valid(DDWAF_LOG_INFO)) {
-            constexpr const char *filename = base_name(__FILE__);
-            auto message = ddwaf::fmt::format("this is a test message");
-            ddwaf::logger::log(
-                DDWAF_LOG_INFO, __FUNCTION__, filename, __LINE__, message.c_str(), message.size());
-        }
-    }
-
     auto *free_fn = ruleset_->free_fn;
     if (persistent.has_value() && !store_.insert(*persistent, attribute::none, free_fn)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
