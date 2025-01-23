@@ -16,7 +16,7 @@ constexpr std::string_view base_dir = "integration/exclusion/rule_filter/";
 TEST(TestRuleFilterIntegration, ExcludeSingleRule)
 {
     auto rule = read_file("exclude_one_rule.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -49,7 +49,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRule)
 TEST(TestRuleFilterIntegration, ExcludeByType)
 {
     auto rule = read_file("exclude_by_type.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -82,7 +82,7 @@ TEST(TestRuleFilterIntegration, ExcludeByType)
 TEST(TestRuleFilterIntegration, ExcludeByCategory)
 {
     auto rule = read_file("exclude_by_category.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -107,7 +107,7 @@ TEST(TestRuleFilterIntegration, ExcludeByCategory)
 TEST(TestRuleFilterIntegration, ExcludeByTags)
 {
     auto rule = read_file("exclude_by_tags.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -140,7 +140,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTags)
 TEST(TestRuleFilterIntegration, ExcludeAllWithCondition)
 {
     auto rule = read_file("exclude_all_with_condition.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -202,7 +202,7 @@ TEST(TestRuleFilterIntegration, ExcludeAllWithCondition)
 TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithCondition)
 {
     auto rule = read_file("exclude_one_rule_with_condition.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -273,7 +273,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithCondition)
 TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithConditionAndTransformers)
 {
     auto rule = read_file("exclude_one_rule_with_condition_and_transformers.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -343,7 +343,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithConditionAndTransformers)
 TEST(TestRuleFilterIntegration, ExcludeByTypeWithCondition)
 {
     auto rule = read_file("exclude_by_type_with_condition.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -414,7 +414,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTypeWithCondition)
 TEST(TestRuleFilterIntegration, ExcludeByCategoryWithCondition)
 {
     auto rule = read_file("exclude_by_category_with_condition.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -476,7 +476,7 @@ TEST(TestRuleFilterIntegration, ExcludeByCategoryWithCondition)
 TEST(TestRuleFilterIntegration, ExcludeByTagsWithCondition)
 {
     auto rule = read_file("exclude_by_tags_with_condition.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -547,7 +547,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTagsWithCondition)
 TEST(TestRuleFilterIntegration, MonitorSingleRule)
 {
     auto rule = read_file("monitor_one_rule.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -583,7 +583,7 @@ TEST(TestRuleFilterIntegration, MonitorSingleRule)
 TEST(TestRuleFilterIntegration, AvoidHavingTwoMonitorOnActions)
 {
     auto rule = read_file("multiple_monitor_on_match.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -619,7 +619,7 @@ TEST(TestRuleFilterIntegration, AvoidHavingTwoMonitorOnActions)
 TEST(TestRuleFilterIntegration, MonitorBypassFilterModePrecedence)
 {
     auto rule = read_file("monitor_bypass_precedence.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -641,7 +641,7 @@ TEST(TestRuleFilterIntegration, MonitorBypassFilterModePrecedence)
 TEST(TestRuleFilterIntegration, MonitorCustomFilterModePrecedence)
 {
     auto rule = read_file("monitor_custom_precedence.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -677,7 +677,7 @@ TEST(TestRuleFilterIntegration, MonitorCustomFilterModePrecedence)
 TEST(TestRuleFilterIntegration, BypassCustomFilterModePrecedence)
 {
     auto rule = read_file("bypass_custom_precedence.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -700,7 +700,7 @@ TEST(TestRuleFilterIntegration, BypassCustomFilterModePrecedence)
 TEST(TestRuleFilterIntegration, UnconditionalCustomFilterMode)
 {
     auto rule = read_file("exclude_with_custom_action.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -737,7 +737,7 @@ TEST(TestRuleFilterIntegration, UnconditionalCustomFilterMode)
 TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
 {
     auto rule = read_file("exclude_with_custom_action_and_condition.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -801,12 +801,17 @@ TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
 
 TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
 {
-    auto rule = read_file("exclude_with_unknown_action.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto *handle1 = ddwaf_init(&rule, nullptr, nullptr);
+    {
+        auto rule = read_file("exclude_with_unknown_action.yaml", base_dir);
+        ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
 
     {
         ddwaf_context context = ddwaf_context_init(handle1);
@@ -834,14 +839,15 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
         ddwaf_context_destroy(context);
     }
 
-    ddwaf_handle handle2;
     {
-        auto overrides =
+        auto actions =
             yaml_to_object(R"({actions: [{id: block2, type: block_request, parameters: {}}]})");
-        handle2 = ddwaf_update(handle1, &overrides, nullptr);
-        ddwaf_object_free(&overrides);
-        ASSERT_NE(handle2, nullptr);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("actions"), &actions, nullptr);
+        ddwaf_object_free(&actions);
     }
+
+    auto *handle2 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle1, nullptr);
 
     {
         ddwaf_context context = ddwaf_context_init(handle2);
@@ -873,6 +879,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
 
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle2);
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestRuleFilterIntegration, CustomFilterModeNonblockingAction)
@@ -881,7 +888,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeNonblockingAction)
     // generate_stack, which is neither a blocking, redirecting or monitoring
     // action, hence its ignored.
     auto rule = read_file("exclude_with_nonblocking_action.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     auto *handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);

@@ -39,6 +39,8 @@
         NULL, 0, {string}, length, DDWAF_OBJ_STRING                                                \
     }
 
+#define LSTRARG(value) value, sizeof(value) - 1
+
 namespace ddwaf::test {
 
 class expression_builder {

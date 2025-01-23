@@ -13,6 +13,7 @@
 #include <optional>
 #include <string_view>
 
+#include "builder/waf_builder.hpp"
 #include "context.hpp"
 #include "ddwaf.h"
 #include "log.hpp"
@@ -94,50 +95,31 @@ ddwaf::waf *ddwaf_init(
 {
     try {
         if (ruleset != nullptr) {
-            const ddwaf::parameter input = *ruleset;
-
             auto free_fn = config != nullptr ? config->free_fn : ddwaf_object_free;
-            if (diagnostics == nullptr) {
-                ddwaf::null_ruleset_info ri;
-                return new ddwaf::waf(
-                    input, ri, limits_from_config(config), free_fn, obfuscator_from_config(config));
-            }
+            ddwaf::waf_builder builder(
+                limits_from_config(config), free_fn, obfuscator_from_config(config));
 
-            ddwaf::ruleset_info ri;
-            const ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });
-
-            return new ddwaf::waf(
-                input, ri, limits_from_config(config), free_fn, obfuscator_from_config(config));
-        }
-    } catch (const std::exception &e) {
-        DDWAF_ERROR("{}", e.what());
-    } catch (...) {
-        DDWAF_ERROR("unknown exception");
-    }
-
-    return nullptr;
-}
-
-ddwaf::waf *ddwaf_update(ddwaf::waf *handle, const ddwaf_object *ruleset, ddwaf_object *diagnostics)
-{
-    try {
-        if (handle != nullptr && ruleset != nullptr) {
             const ddwaf::parameter input = *ruleset;
             if (diagnostics == nullptr) {
                 ddwaf::null_ruleset_info ri;
-                return handle->update(input, ri);
+
+                auto input_map = static_cast<ddwaf::parameter::map>(input);
+                builder.add_or_update("default", input_map, ri);
+                return new ddwaf::waf{builder.build()};
             }
 
             ddwaf::ruleset_info ri;
             const ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });
-
-            return handle->update(input, ri);
+            auto input_map = static_cast<ddwaf::parameter::map>(input);
+            builder.add_or_update("default", input_map, ri);
+            return new ddwaf::waf{builder.build()};
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());
     } catch (...) {
         DDWAF_ERROR("unknown exception");
     }
+
     return nullptr;
 }
 
@@ -282,4 +264,84 @@ void ddwaf_result_free(ddwaf_result *result)
 
     *result = DDWAF_RESULT_INITIALISER;
 }
+
+ddwaf_builder ddwaf_builder_init(const ddwaf_config *config)
+{
+    try {
+        auto free_fn = config != nullptr ? config->free_fn : ddwaf_object_free;
+        return new ddwaf::waf_builder(
+            limits_from_config(config), free_fn, obfuscator_from_config(config));
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+
+    return nullptr;
+}
+
+bool ddwaf_builder_add_or_update_config(ddwaf::waf_builder *builder, const char *path,
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    uint32_t path_len, ddwaf_object *config, ddwaf_object *diagnostics)
+{
+    if (builder == nullptr) {
+        return false;
+    }
+
+    try {
+        auto input = static_cast<ddwaf::parameter>(*config);
+        auto input_map = static_cast<ddwaf::parameter::map>(input);
+
+        if (diagnostics == nullptr) {
+            ddwaf::null_ruleset_info ri;
+            return builder->add_or_update({path, path_len}, input_map, ri);
+        }
+
+        ddwaf::ruleset_info ri;
+        const ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });
+        return builder->add_or_update({path, path_len}, input_map, ri);
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+
+    return false;
+}
+
+bool ddwaf_builder_remove_config(ddwaf::waf_builder *builder, const char *path, uint32_t path_len)
+{
+    if (builder == nullptr) {
+        return false;
+    }
+
+    try {
+        return builder->remove({path, path_len});
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+
+    return false;
+}
+
+ddwaf_handle ddwaf_builder_build_instance(ddwaf::waf_builder *builder)
+{
+    if (builder == nullptr) {
+        return nullptr;
+    }
+
+    try {
+        return new ddwaf::waf{builder->build()};
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+
+    return nullptr;
+}
+
+void ddwaf_builder_destroy(ddwaf_builder builder) { delete builder; }
 }

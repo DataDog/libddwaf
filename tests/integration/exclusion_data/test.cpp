@@ -14,12 +14,17 @@ constexpr std::string_view base_dir = "integration/exclusion_data/";
 
 TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
 {
-    auto rule = read_file("exclude_one_rule_by_user.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, nullptr, nullptr);
+    {
+        auto rule = read_file("exclude_one_rule_by_user.yaml", base_dir);
+        ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
 
     {
         ddwaf_context context = ddwaf_context_init(handle1);
@@ -57,15 +62,15 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
         ddwaf_context_destroy(context);
     }
 
-    ddwaf_handle handle2;
     {
-        auto root = yaml_to_object(
+        auto data = yaml_to_object(
             R"({exclusion_data: [{id: usr_data, type: data_with_expiration, data: [{value: admin, expiration: 0}]}]})");
-
-        handle2 = ddwaf_update(handle1, &root, nullptr);
-        ASSERT_NE(handle2, nullptr);
-        ddwaf_object_free(&root);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusion_data"), &data, nullptr);
+        ddwaf_object_free(&data);
     }
+
+    ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle2, nullptr);
 
     {
         ddwaf_context context = ddwaf_context_init(handle2);
@@ -93,14 +98,9 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
         ddwaf_context_destroy(context);
     }
 
-    ddwaf_handle handle3;
-    {
-        auto root = yaml_to_object(R"({exclusion_data: []})");
-
-        handle3 = ddwaf_update(handle1, &root, nullptr);
-        ASSERT_NE(handle3, nullptr);
-        ddwaf_object_free(&root);
-    }
+    ddwaf_builder_remove_config(builder, LSTRARG("exclusion_data"));
+    ddwaf_handle handle3 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle3, nullptr);
 
     {
         ddwaf_context context = ddwaf_context_init(handle3);
@@ -141,16 +141,23 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle3);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
 {
-    auto rule = read_file("exclude_one_rule_by_ip.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, nullptr, nullptr);
+    {
+        auto rule = read_file("exclude_one_rule_by_ip.yaml", base_dir);
+        ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
 
     {
         ddwaf_context context = ddwaf_context_init(handle1);
@@ -188,15 +195,15 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
         ddwaf_context_destroy(context);
     }
 
-    ddwaf_handle handle2;
     {
-        auto root = yaml_to_object(
+        auto data = yaml_to_object(
             R"({exclusion_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.0.1, expiration: 0}]}]})");
-
-        handle2 = ddwaf_update(handle1, &root, nullptr);
-        ASSERT_NE(handle2, nullptr);
-        ddwaf_object_free(&root);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusion_data"), &data, nullptr);
+        ddwaf_object_free(&data);
     }
+
+    ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle2, nullptr);
 
     {
         ddwaf_context context = ddwaf_context_init(handle2);
@@ -224,14 +231,9 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
         ddwaf_context_destroy(context);
     }
 
-    ddwaf_handle handle3;
-    {
-        auto root = yaml_to_object(R"({exclusion_data: []})");
-
-        handle3 = ddwaf_update(handle1, &root, nullptr);
-        ASSERT_NE(handle3, nullptr);
-        ddwaf_object_free(&root);
-    }
+    ddwaf_builder_remove_config(builder, LSTRARG("exclusion_data"));
+    ddwaf_handle handle3 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle3, nullptr);
 
     {
         ddwaf_context context = ddwaf_context_init(handle3);
@@ -271,16 +273,23 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle3);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
 {
-    auto rule = read_file("exclude_one_rule_by_ip.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, nullptr, nullptr);
+    {
+        auto rule = read_file("exclude_one_rule_by_ip.yaml", base_dir);
+        ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
 
     {
         ddwaf_context context = ddwaf_context_init(handle1);
@@ -318,15 +327,15 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
         ddwaf_context_destroy(context);
     }
 
-    ddwaf_handle handle2;
     {
-        auto root = yaml_to_object(
+        auto data = yaml_to_object(
             R"({exclusion_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.0.1, expiration: 0}]}]})");
-
-        handle2 = ddwaf_update(handle1, &root, nullptr);
-        ASSERT_NE(handle2, nullptr);
-        ddwaf_object_free(&root);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusion_data"), &data, nullptr);
+        ddwaf_object_free(&data);
     }
+
+    ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle2, nullptr);
 
     {
         ddwaf_context context = ddwaf_context_init(handle2);
@@ -354,15 +363,15 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
         ddwaf_context_destroy(context);
     }
 
-    ddwaf_handle handle3;
     {
-        auto root =
+        auto data =
             yaml_to_object(R"({exclusion_data: [{id: ip_data, type: unknown_data, data: [{}]}]})");
-
-        handle3 = ddwaf_update(handle1, &root, nullptr);
-        ASSERT_NE(handle3, nullptr);
-        ddwaf_object_free(&root);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusion_data"), &data, nullptr);
+        ddwaf_object_free(&data);
     }
+
+    ddwaf_handle handle3 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle3, nullptr);
 
     {
         ddwaf_context context = ddwaf_context_init(handle3);
@@ -402,16 +411,23 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle3);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
 {
-    auto rule = read_file("exclude_one_input_by_ip.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, nullptr, nullptr);
+    {
+        auto rule = read_file("exclude_one_input_by_ip.yaml", base_dir);
+        ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
 
     {
         ddwaf_context context = ddwaf_context_init(handle1);
@@ -449,15 +465,15 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
         ddwaf_context_destroy(context);
     }
 
-    ddwaf_handle handle2;
     {
-        auto root = yaml_to_object(
+        auto data = yaml_to_object(
             R"({exclusion_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.0.1, expiration: 0}]}]})");
-
-        handle2 = ddwaf_update(handle1, &root, nullptr);
-        ASSERT_NE(handle2, nullptr);
-        ddwaf_object_free(&root);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusion_data"), &data, nullptr);
+        ddwaf_object_free(&data);
     }
+
+    ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle2, nullptr);
 
     {
         ddwaf_context context = ddwaf_context_init(handle2);
@@ -485,14 +501,9 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
         ddwaf_context_destroy(context);
     }
 
-    ddwaf_handle handle3;
-    {
-        auto root = yaml_to_object(R"({exclusion_data: []})");
-
-        handle3 = ddwaf_update(handle1, &root, nullptr);
-        ASSERT_NE(handle3, nullptr);
-        ddwaf_object_free(&root);
-    }
+    ddwaf_builder_remove_config(builder, LSTRARG("exclusion_data"));
+    ddwaf_handle handle3 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle3, nullptr);
 
     {
         ddwaf_context context = ddwaf_context_init(handle3);
@@ -532,6 +543,8 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle3);
+
+    ddwaf_builder_destroy(builder);
 }
 
 } // namespace

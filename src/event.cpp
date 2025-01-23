@@ -165,9 +165,6 @@ void serialize_rule(const core_rule &rule, ddwaf_object &rule_map)
     for (const auto &[key, value] : rule.get_tags()) {
         ddwaf_object_map_addl(&tags_map, key.c_str(), key.size(), to_object(tmp, value));
     }
-    for (const auto &[key, value] : rule.get_ancillary_tags()) {
-        ddwaf_object_map_addl(&tags_map, key.c_str(), key.size(), to_object(tmp, value));
-    }
     ddwaf_object_map_add(&rule_map, "tags", &tags_map);
 }
 

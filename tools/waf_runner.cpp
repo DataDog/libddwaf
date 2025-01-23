@@ -64,107 +64,100 @@ int main(int argc, char *argv[])
 
     const std::vector<std::string> rulesets = args["--ruleset"];
     const std::vector<std::string> inputs = args["--input"];
-    if (rulesets.empty() || inputs.empty()) {
-        std::cout << "Usage: " << argv[0] << " --ruleset <json/yaml file> [<json/yaml file>..]"
+    if (rulesets.empty() || rulesets.size() > 1 || inputs.empty()) {
+        std::cout << "Usage: " << argv[0] << " --ruleset <json/yaml file>"
                   << " --input <json input> [<json input>..]\n";
         return EXIT_FAILURE;
     }
 
-    ddwaf_handle handle = nullptr;
-    for (const auto &ruleset : rulesets) {
-        auto rule = YAML::Load(read_file(ruleset)).as<ddwaf_object>();
-        if (handle == nullptr) {
-            const ddwaf_config config{{0, 0, 0}, {key_regex, value_regex}, ddwaf_object_free};
-            handle = ddwaf_init(&rule, &config, nullptr);
-        } else {
-            auto *updated_handle = ddwaf_update(handle, &rule, nullptr);
-            ddwaf_destroy(handle);
-            handle = updated_handle;
-        }
+    const auto &ruleset = rulesets[0];
 
-        ddwaf_object_free(&rule);
-        if (handle == nullptr) {
-            std::cout << "Failed to load " << ruleset << '\n';
-            return EXIT_FAILURE;
-        }
-
-        std::cout << "-- Run with " << ruleset << '\n';
-
-        ddwaf_context context = ddwaf_context_init(handle);
-        if (context == nullptr) {
-            ddwaf_destroy(handle);
-            std::cout << "Failed to initialise context\n";
-            return EXIT_FAILURE;
-        }
-
-        for (const auto &json_str : inputs) {
-
-            std::cout << "---- Run with " << json_str << '\n';
-            auto input = YAML::Load(json_str);
-
-            ddwaf_object persistent;
-            ddwaf_object ephemeral;
-
-            auto persistent_input = input["persistent"];
-            auto ephemeral_input = input["ephemeral"];
-            if (!persistent_input.IsDefined() && !ephemeral_input.IsDefined()) {
-                persistent = input.as<ddwaf_object>();
-                ddwaf_object_map(&ephemeral);
-            } else {
-                if (input["persistent"].IsDefined()) {
-                    persistent = input["persistent"].as<ddwaf_object>();
-                } else {
-                    ddwaf_object_map(&persistent);
-                }
-
-                if (input["ephemeral"].IsDefined()) {
-                    ephemeral = input["ephemeral"].as<ddwaf_object>();
-                } else {
-                    ddwaf_object_map(&ephemeral);
-                }
-            }
-
-            ddwaf_result ret;
-            auto code =
-                ddwaf_run(context, &persistent, &ephemeral, &ret, std::numeric_limits<uint64_t>::max());
-            if (code == DDWAF_MATCH && ddwaf_object_size(&ret.events) > 0) {
-                std::stringstream ss;
-                YAML::Emitter out(ss);
-                out.SetIndent(2);
-                out.SetMapFormat(YAML::Block);
-                out.SetSeqFormat(YAML::Block);
-                out << object_to_yaml(ret.events);
-
-                std::cout << "Events:\n" << ss.str() << "\n\n";
-            }
-
-            if (code == DDWAF_MATCH && ddwaf_object_size(&ret.actions) > 0) {
-                std::stringstream ss;
-                YAML::Emitter out(ss);
-                out.SetIndent(2);
-                out.SetMapFormat(YAML::Block);
-                out.SetSeqFormat(YAML::Block);
-                out << object_to_yaml(ret.actions);
-
-                std::cout << "Actions:\n" << ss.str() << "\n\n";
-            }
-
-            if (ddwaf_object_size(&ret.derivatives) > 0) {
-                std::stringstream ss;
-                YAML::Emitter out(ss);
-                out.SetIndent(2);
-                out.SetMapFormat(YAML::Block);
-                out.SetSeqFormat(YAML::Block);
-                out << object_to_yaml(ret.derivatives);
-
-                std::cout << "Derivatives:\n" << ss.str() << "\n\n";
-            }
-
-            ddwaf_result_free(&ret);
-        }
-
-        ddwaf_context_destroy(context);
+    auto rule = YAML::Load(read_file(ruleset)).as<ddwaf_object>();
+    const ddwaf_config config{{0, 0, 0}, {key_regex, value_regex}, ddwaf_object_free};
+    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_object_free(&rule);
+    if (handle == nullptr) {
+        std::cout << "Failed to load " << ruleset << '\n';
+        return EXIT_FAILURE;
     }
+
+    std::cout << "-- Run with " << ruleset << '\n';
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    if (context == nullptr) {
+        ddwaf_destroy(handle);
+        std::cout << "Failed to initialise context\n";
+        return EXIT_FAILURE;
+    }
+
+    for (const auto &json_str : inputs) {
+
+        std::cout << "---- Run with " << json_str << '\n';
+        auto input = YAML::Load(json_str);
+
+        ddwaf_object persistent;
+        ddwaf_object ephemeral;
+
+        auto persistent_input = input["persistent"];
+        auto ephemeral_input = input["ephemeral"];
+        if (!persistent_input.IsDefined() && !ephemeral_input.IsDefined()) {
+            persistent = input.as<ddwaf_object>();
+            ddwaf_object_map(&ephemeral);
+        } else {
+            if (input["persistent"].IsDefined()) {
+                persistent = input["persistent"].as<ddwaf_object>();
+            } else {
+                ddwaf_object_map(&persistent);
+            }
+
+            if (input["ephemeral"].IsDefined()) {
+                ephemeral = input["ephemeral"].as<ddwaf_object>();
+            } else {
+                ddwaf_object_map(&ephemeral);
+            }
+        }
+
+        ddwaf_result ret;
+        auto code =
+            ddwaf_run(context, &persistent, &ephemeral, &ret, std::numeric_limits<uint64_t>::max());
+        if (code == DDWAF_MATCH && ddwaf_object_size(&ret.events) > 0) {
+            std::stringstream ss;
+            YAML::Emitter out(ss);
+            out.SetIndent(2);
+            out.SetMapFormat(YAML::Block);
+            out.SetSeqFormat(YAML::Block);
+            out << object_to_yaml(ret.events);
+
+            std::cout << "Events:\n" << ss.str() << "\n\n";
+        }
+
+        if (code == DDWAF_MATCH && ddwaf_object_size(&ret.actions) > 0) {
+            std::stringstream ss;
+            YAML::Emitter out(ss);
+            out.SetIndent(2);
+            out.SetMapFormat(YAML::Block);
+            out.SetSeqFormat(YAML::Block);
+            out << object_to_yaml(ret.actions);
+
+            std::cout << "Actions:\n" << ss.str() << "\n\n";
+        }
+
+        if (ddwaf_object_size(&ret.derivatives) > 0) {
+            std::stringstream ss;
+            YAML::Emitter out(ss);
+            out.SetIndent(2);
+            out.SetMapFormat(YAML::Block);
+            out.SetSeqFormat(YAML::Block);
+            out << object_to_yaml(ret.derivatives);
+
+            std::cout << "Derivatives:\n" << ss.str() << "\n\n";
+        }
+
+        std::cout << "Total time: " << ret.total_runtime << '\n';
+        ddwaf_result_free(&ret);
+    }
+
+    ddwaf_context_destroy(context);
 
     ddwaf_destroy(handle);
 

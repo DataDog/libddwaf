@@ -12,8 +12,6 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "utils.hpp"
-
 namespace ddwaf {
 
 enum class action_type : uint8_t {
@@ -34,38 +32,12 @@ inline bool is_blocking_action(action_type type)
     return type == action_type::block_request || type == action_type::redirect_request;
 }
 
-struct action_spec {
+struct action_parameters {
     action_type type;
     std::string type_str;
     std::unordered_map<std::string, std::string> parameters;
 };
 
-using action_mapper = std::map<std::string, action_spec, std::less<>>;
-
-class action_mapper_builder {
-public:
-    action_mapper_builder() = default;
-    ~action_mapper_builder() = default;
-    action_mapper_builder(const action_mapper_builder &) = delete;
-    action_mapper_builder(action_mapper_builder &&) = delete;
-    action_mapper_builder &operator=(const action_mapper_builder &) = delete;
-    action_mapper_builder &operator=(action_mapper_builder &&) = delete;
-
-    void alias_default_action_to(std::string_view default_id, std::string alias);
-
-    void set_action(
-        std::string id, std::string type, std::unordered_map<std::string, std::string> parameters);
-
-    [[nodiscard]] static const action_spec &get_default_action(std::string_view id);
-
-    std::shared_ptr<action_mapper> build_shared();
-
-    // Used for testing
-    action_mapper build();
-
-protected:
-    std::map<std::string, action_spec, std::less<>> action_by_id_;
-    static const std::map<std::string, action_spec, std::less<>> default_actions_;
-};
+using action_mapper = std::map<std::string, action_parameters, std::less<>>;
 
 } // namespace ddwaf
