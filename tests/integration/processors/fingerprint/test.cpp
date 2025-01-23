@@ -144,10 +144,6 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         ddwaf_object map = DDWAF_OBJECT_MAP;
         ddwaf_object settings = DDWAF_OBJECT_MAP;
 
-        ddwaf_object query = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&map, "server.request.query", &query);
-
         ddwaf_object_map_add(
             &map, "server.request.uri.raw", ddwaf_object_string(&tmp, "/path/to/resource/?key="));
         ddwaf_object_map_add(&map, "server.request.method", ddwaf_object_string(&tmp, "PuT"));
@@ -188,7 +184,7 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 3);
 
         auto derivatives = test::object_to_map(out.derivatives);
-        EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3-2c70e12b-");
+        EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3--");
         EXPECT_STRV(derivatives["_dd.appsec.fp.http.header"], "hdr-1111111111-a441b15f-0-");
         EXPECT_STRV(derivatives["_dd.appsec.fp.http.network"], "net-1-1111111111");
 
@@ -203,6 +199,27 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         ddwaf_object body = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&body, "key", ddwaf_object_invalid(&tmp));
         ddwaf_object_map_add(&map, "server.request.body", &body);
+
+        ddwaf_result out;
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        EXPECT_FALSE(out.timeout);
+
+        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+
+        auto derivatives = test::object_to_map(out.derivatives);
+        EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3--2c70e12b");
+
+        ddwaf_result_free(&out);
+    }
+
+    {
+        ddwaf_object tmp;
+
+        ddwaf_object map = DDWAF_OBJECT_MAP;
+
+        ddwaf_object query = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&map, "server.request.query", &query);
 
         ddwaf_result out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
@@ -469,10 +486,6 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
         ddwaf_object map = DDWAF_OBJECT_MAP;
         ddwaf_object settings = DDWAF_OBJECT_MAP;
 
-        ddwaf_object query = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&map, "server.request.query", &query);
-
         ddwaf_object_map_add(
             &map, "server.request.uri.raw", ddwaf_object_string(&tmp, "/path/to/resource/?key="));
         ddwaf_object_map_add(&map, "server.request.method", ddwaf_object_string(&tmp, "PuT"));
@@ -535,6 +548,24 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
                     }}}}}, );
 
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
+        ddwaf_result_free(&out);
+    }
+
+    {
+        ddwaf_object tmp;
+
+        ddwaf_object map = DDWAF_OBJECT_MAP;
+
+        ddwaf_object query = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&map, "server.request.query", &query);
+
+        ddwaf_result out;
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        EXPECT_FALSE(out.timeout);
+
+        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
+
         ddwaf_result_free(&out);
     }
 
@@ -816,10 +847,6 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
         ddwaf_object map = DDWAF_OBJECT_MAP;
         ddwaf_object settings = DDWAF_OBJECT_MAP;
 
-        ddwaf_object query = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&map, "server.request.query", &query);
-
         ddwaf_object_map_add(
             &map, "server.request.uri.raw", ddwaf_object_string(&tmp, "/path/to/resource/?key="));
         ddwaf_object_map_add(&map, "server.request.method", ddwaf_object_string(&tmp, "PuT"));
@@ -884,9 +911,30 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 3);
 
         auto derivatives = test::object_to_map(out.derivatives);
-        EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3-2c70e12b-");
+        EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3--");
         EXPECT_STRV(derivatives["_dd.appsec.fp.http.header"], "hdr-1111111111-a441b15f-0-");
         EXPECT_STRV(derivatives["_dd.appsec.fp.http.network"], "net-1-1111111111");
+
+        ddwaf_result_free(&out);
+    }
+
+    {
+        ddwaf_object tmp;
+
+        ddwaf_object map = DDWAF_OBJECT_MAP;
+
+        ddwaf_object query = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&map, "server.request.query", &query);
+
+        ddwaf_result out;
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        EXPECT_FALSE(out.timeout);
+
+        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+
+        auto derivatives = test::object_to_map(out.derivatives);
+        EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3-2c70e12b-");
 
         ddwaf_result_free(&out);
     }
