@@ -32,7 +32,6 @@ void validate_and_add_block(auto &cfg, auto id, auto &type, auto &parameters)
         for (const auto &[k, v] : default_params.parameters) { parameters.try_emplace(k, v); }
     }
 
-    DDWAF_DEBUG("ACtion: {}", id);
     cfg.emplace_action(
         id, action_spec{action_type_from_string(type), std::move(type), std::move(parameters)});
 }

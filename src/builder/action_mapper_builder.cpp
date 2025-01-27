@@ -18,15 +18,14 @@
 
 namespace ddwaf {
 
-void action_mapper_builder::set_action(
-    std::string id, std::string type, std::unordered_map<std::string, std::string> parameters)
+void action_mapper_builder::set_action(const std::string &id, std::string type,
+    std::unordered_map<std::string, std::string> parameters)
 {
-    if (action_by_id_.find(id) != action_by_id_.end()) {
+    auto [it, res] = action_by_id_.try_emplace(id,
+        action_parameters{action_type_from_string(type), std::move(type), std::move(parameters)});
+    if (!res) {
         throw std::runtime_error("duplicate action '" + id + '\'');
     }
-
-    action_by_id_.emplace(std::move(id),
-        action_parameters{action_type_from_string(type), std::move(type), std::move(parameters)});
 }
 
 [[nodiscard]] const action_parameters &action_mapper_builder::get_default_action(
