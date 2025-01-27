@@ -41,7 +41,7 @@ void validate_and_add_redirect(auto &cfg, auto id, auto &type, auto &parameters)
     auto it = parameters.find("location");
     if (it == parameters.end() || it->second.empty()) {
         auto block_params = action_mapper_builder::get_default_action("block");
-        // TODO add a log message
+        DDWAF_DEBUG("Location missing from redirect action '{}', downgrading to block_request", id);
         cfg.emplace_action(
             id, action_spec{block_params.type, block_params.type_str, block_params.parameters});
         return;
@@ -59,7 +59,8 @@ void validate_and_add_redirect(auto &cfg, auto id, auto &type, auto &parameters)
             decomposed->scheme != "https") ||
         (decomposed->scheme_and_authority.empty() && !decomposed->path.starts_with('/'))) {
         auto block_params = action_mapper_builder::get_default_action("block");
-        // TODO add a log message
+
+        DDWAF_DEBUG("Unsupported scheme on redirect action '{}', downgrading to block_request", id);
         cfg.emplace_action(
             id, action_spec{block_params.type, block_params.type_str, block_params.parameters});
         return;
