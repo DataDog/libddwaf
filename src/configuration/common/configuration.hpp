@@ -61,7 +61,6 @@ struct input_filter_spec {
 
 enum class processor_type : unsigned {
     extract_schema,
-    // Reserved
     http_endpoint_fingerprint,
     http_network_fingerprint,
     http_header_fingerprint,

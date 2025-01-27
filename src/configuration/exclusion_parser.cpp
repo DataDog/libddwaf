@@ -52,11 +52,6 @@ input_filter_spec parse_input_filter(
     auto obj_filter = std::make_shared<exclusion::object_filter>(limits);
     auto inputs_array = at<parameter::vector>(filter, "inputs");
 
-    // TODO: add empty method to object filter and check after
-    if (expr->empty() && inputs_array.empty() && rules_target.empty()) {
-        throw ddwaf::parsing_error("empty exclusion filter");
-    }
-
     for (const auto &input_param : inputs_array) {
         auto input_map = static_cast<parameter::map>(input_param);
         auto address = at<std::string>(input_map, "address");
@@ -66,6 +61,10 @@ input_filter_spec parse_input_filter(
 
         addresses.optional.emplace(address);
         obj_filter->insert(target, std::move(address), key_path);
+    }
+
+    if (expr->empty() && obj_filter->empty()) {
+        throw ddwaf::parsing_error("empty exclusion filter");
     }
 
     return {std::move(expr), std::move(obj_filter), std::move(rules_target)};
