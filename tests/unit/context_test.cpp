@@ -380,9 +380,9 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
-        rules.emplace_back(std::make_shared<core_rule>(
-            "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"block"}));
-        rules.back()->set_verdict(core_rule::verdict_type::block);
+        rules.emplace_back(std::make_shared<core_rule>("id2", "name2", std::move(tags),
+            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
+            core_rule::verdict_type::block));
     }
     ruleset->insert_rules(rules, {});
 
@@ -531,9 +531,9 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
-        rules.emplace_back(std::make_shared<core_rule>(
-            "id2", "name2", std::move(tags), builder.build(), std::vector<std::string>{"block"}));
-        rules.back()->set_verdict(core_rule::verdict_type::block);
+        rules.emplace_back(std::make_shared<core_rule>("id2", "name2", std::move(tags),
+            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
+            core_rule::verdict_type::block));
     }
     ruleset->insert_rules(rules, {});
 
@@ -614,9 +614,9 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
-        rules.emplace_back(std::make_shared<core_rule>(
-            "id1", "name1", std::move(tags), builder.build(), std::vector<std::string>{"block"}));
-        rules.back()->set_verdict(core_rule::verdict_type::block);
+        rules.emplace_back(std::make_shared<core_rule>("id1", "name1", std::move(tags),
+            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
+            core_rule::verdict_type::block));
     }
 
     {
@@ -740,9 +740,9 @@ TEST(TestContext, MatchPriorityCollectionsSingleRun)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category1"}};
 
-        rules.emplace_back(std::make_shared<core_rule>(
-            "id1", "name1", std::move(tags), builder.build(), std::vector<std::string>{"block"}));
-        rules.back()->set_verdict(core_rule::verdict_type::block);
+        rules.emplace_back(std::make_shared<core_rule>("id1", "name1", std::move(tags),
+            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
+            core_rule::verdict_type::block));
     }
 
     {
@@ -847,9 +847,9 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category1"}};
 
-        rules.emplace_back(std::make_shared<core_rule>(
-            "id1", "name1", std::move(tags), builder.build(), std::vector<std::string>{"block"}));
-        rules.back()->set_verdict(core_rule::verdict_type::block);
+        rules.emplace_back(std::make_shared<core_rule>("id1", "name1", std::move(tags),
+            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
+            core_rule::verdict_type::block));
     }
 
     {
@@ -1120,9 +1120,9 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
-        rule = std::make_shared<core_rule>("id", "name", std::move(tags), builder.build());
-        rule->set_actions({"block"});
-        rule->set_verdict(core_rule::verdict_type::block);
+        rule = std::make_shared<core_rule>("id", "name", std::move(tags), builder.build(),
+            std::vector<std::string>{"block"}, true, core_rule::source_type::base,
+            core_rule::verdict_type::block);
         ruleset->insert_rules({rule}, {});
     }
 
@@ -1198,9 +1198,9 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
-        rule = std::make_shared<core_rule>("id", "name", std::move(tags), builder.build());
-        rule->set_actions({"block"});
-        rule->set_verdict(core_rule::verdict_type::block);
+        rule = std::make_shared<core_rule>("id", "name", std::move(tags), builder.build(),
+            std::vector<std::string>{"block"}, true, core_rule::source_type::base,
+            core_rule::verdict_type::block);
         ruleset->insert_rules({rule}, {});
     }
 

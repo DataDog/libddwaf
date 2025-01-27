@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "parser/common.hpp"
+#include "configuration/common/common.hpp"
 #include "ruleset_info.hpp"
 
 #include "common/gtest_utils.hpp"
@@ -53,27 +53,27 @@ TEST(TestRulesetInfo, ValidRulesetInfo)
     auto root_map = static_cast<ddwaf::parameter::map>(root);
     EXPECT_EQ(root_map.size(), 4);
 
-    auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version");
+    auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
     EXPECT_STREQ(version.c_str(), "2.3.4");
 
     std::unordered_map<std::string, std::string> kv{
         {"rules", "first"}, {"exclusions", "second"}, {"rules_override", "third"}};
     for (auto &[key, value] : kv) {
-        auto section = ddwaf::parser::at<parameter::map>(root_map, key);
+        auto section = ddwaf::at<parameter::map>(root_map, key);
         EXPECT_EQ(section.size(), 4);
 
-        auto loaded = ddwaf::parser::at<parameter::vector>(section, "loaded");
+        auto loaded = ddwaf::at<parameter::vector>(section, "loaded");
         EXPECT_EQ(loaded.size(), 1);
 
         EXPECT_STREQ(static_cast<std::string>(loaded[0]).c_str(), value.c_str());
 
-        auto failed = ddwaf::parser::at<parameter::vector>(section, "failed");
+        auto failed = ddwaf::at<parameter::vector>(section, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = ddwaf::parser::at<parameter::vector>(section, "skipped");
+        auto skipped = ddwaf::at<parameter::vector>(section, "skipped");
         EXPECT_EQ(skipped.size(), 0);
 
-        auto errors = ddwaf::parser::at<parameter::map>(section, "errors");
+        auto errors = ddwaf::at<parameter::map>(section, "errors");
         EXPECT_EQ(errors.size(), 0);
     }
 
@@ -100,16 +100,16 @@ TEST(TestRulesetInfo, FailedWithErrorsRulesetInfo)
     auto root_map = static_cast<ddwaf::parameter::map>(root);
     EXPECT_EQ(root_map.size(), 2);
 
-    auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version");
+    auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
     EXPECT_STREQ(version.c_str(), "2.3.4");
 
-    auto section = ddwaf::parser::at<parameter::map>(root_map, "rules");
+    auto section = ddwaf::at<parameter::map>(root_map, "rules");
     EXPECT_EQ(section.size(), 4);
 
-    auto loaded = ddwaf::parser::at<parameter::vector>(section, "loaded");
+    auto loaded = ddwaf::at<parameter::vector>(section, "loaded");
     EXPECT_EQ(loaded.size(), 0);
 
-    auto failed = ddwaf::parser::at<parameter::string_set>(section, "failed");
+    auto failed = ddwaf::at<parameter::string_set>(section, "failed");
     EXPECT_EQ(failed.size(), 5);
     EXPECT_NE(failed.find("first"), failed.end());
     EXPECT_NE(failed.find("second"), failed.end());
@@ -117,10 +117,10 @@ TEST(TestRulesetInfo, FailedWithErrorsRulesetInfo)
     EXPECT_NE(failed.find("fourth"), failed.end());
     EXPECT_NE(failed.find("fifth"), failed.end());
 
-    auto skipped = ddwaf::parser::at<parameter::vector>(section, "skipped");
+    auto skipped = ddwaf::at<parameter::vector>(section, "skipped");
     EXPECT_EQ(skipped.size(), 0);
 
-    auto errors = ddwaf::parser::at<parameter::map>(section, "errors");
+    auto errors = ddwaf::at<parameter::map>(section, "errors");
     EXPECT_EQ(errors.size(), 3);
     {
         auto it = errors.find("error1");
@@ -174,22 +174,22 @@ TEST(TestRulesetInfo, SkippedRulesetInfo)
     auto root_map = static_cast<ddwaf::parameter::map>(root);
     EXPECT_EQ(root_map.size(), 2);
 
-    auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version");
+    auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
     EXPECT_STREQ(version.c_str(), "2.3.4");
 
-    auto section = ddwaf::parser::at<parameter::map>(root_map, "rules");
+    auto section = ddwaf::at<parameter::map>(root_map, "rules");
     EXPECT_EQ(section.size(), 4);
 
-    auto loaded = ddwaf::parser::at<parameter::vector>(section, "loaded");
+    auto loaded = ddwaf::at<parameter::vector>(section, "loaded");
     EXPECT_EQ(loaded.size(), 0);
 
-    auto failed = ddwaf::parser::at<parameter::string_set>(section, "failed");
+    auto failed = ddwaf::at<parameter::string_set>(section, "failed");
     EXPECT_EQ(failed.size(), 0);
 
-    auto skipped = ddwaf::parser::at<parameter::vector>(section, "skipped");
+    auto skipped = ddwaf::at<parameter::vector>(section, "skipped");
     EXPECT_EQ(skipped.size(), 5);
 
-    auto errors = ddwaf::parser::at<parameter::map>(section, "errors");
+    auto errors = ddwaf::at<parameter::map>(section, "errors");
     EXPECT_EQ(errors.size(), 0);
 
     ddwaf_object_free(&root);
@@ -214,13 +214,13 @@ TEST(TestRulesetInfo, SectionErrorRulesetInfo)
         auto root_map = static_cast<ddwaf::parameter::map>(root);
         EXPECT_EQ(root_map.size(), 2);
 
-        auto version = ddwaf::parser::at<std::string>(root_map, "ruleset_version");
+        auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
         EXPECT_STREQ(version.c_str(), "2.3.4");
 
-        auto section = ddwaf::parser::at<parameter::map>(root_map, "rules_data");
+        auto section = ddwaf::at<parameter::map>(root_map, "rules_data");
         EXPECT_EQ(section.size(), 1);
 
-        auto error = ddwaf::parser::at<std::string>(section, "error");
+        auto error = ddwaf::at<std::string>(section, "error");
         EXPECT_STR(error, "expected 'array' found 'map'");
     }
 

@@ -11,17 +11,19 @@
 namespace ddwaf{
 class waf;
 class context_wrapper;
+class waf_builder;
 } // namespace ddwaf
 using ddwaf_handle = ddwaf::waf *;
 using ddwaf_context = ddwaf::context_wrapper *;
+using ddwaf_builder = ddwaf::waf_builder *;
 
 extern "C"
 {
 #endif
 
 #include <stdbool.h>
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #define DDWAF_MAX_STRING_LENGTH 4096
 #define DDWAF_MAX_CONTAINER_DEPTH 20
@@ -61,11 +63,11 @@ typedef enum
  **/
 typedef enum
 {
-    DDWAF_ERR_INTERNAL     = -3,
-    DDWAF_ERR_INVALID_OBJECT = -2,
+    DDWAF_ERR_INTERNAL         = -3,
+    DDWAF_ERR_INVALID_OBJECT   = -2,
     DDWAF_ERR_INVALID_ARGUMENT = -1,
-    DDWAF_OK             = 0,
-    DDWAF_MATCH          = 1,
+    DDWAF_OK                   = 0,
+    DDWAF_MATCH                = 1,
 } DDWAF_RET_CODE;
 
 /**
@@ -86,6 +88,7 @@ typedef enum
 #ifndef __cplusplus
 typedef struct _ddwaf_handle* ddwaf_handle;
 typedef struct _ddwaf_context* ddwaf_context;
+typedef struct _ddwaf_builder* ddwaf_builder;
 #endif
 
 typedef struct _ddwaf_object ddwaf_object;
@@ -206,22 +209,6 @@ typedef void (*ddwaf_log_cb)(
  **/
 ddwaf_handle ddwaf_init(const ddwaf_object *ruleset,
     const ddwaf_config* config, ddwaf_object *diagnostics);
-
-/**
- * ddwaf_update
- *
- * Update a ddwaf instance
- *
- * @param ruleset ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
- * @param diagnostics Optional ruleset parsing diagnostics. (nullable)
- *
- * @return Handle to the new WAF instance or NULL if there was an error processing the ruleset.
- *
- * @note If handle or ruleset are NULL, the diagnostics object will not be initialised.
- * @note This function is not thread-safe
- **/
-ddwaf_handle ddwaf_update(ddwaf_handle handle, const ddwaf_object *ruleset,
-    ddwaf_object *diagnostics);
 
 /**
  * ddwaf_destroy
@@ -363,6 +350,69 @@ void ddwaf_context_destroy(ddwaf_context context);
  * @param result Structure to free. (nonnull)
  **/
 void ddwaf_result_free(ddwaf_result *result);
+
+/**
+ * ddwaf_builder_init
+ *
+ * Initialize an instace of the waf builder.
+ *
+ * @param config Optional configuration of the WAF. (nullable)
+ *
+ * @return Handle to the builer instance or NULL on error.
+ *
+ * @note If config is NULL, default values will be used, including the default
+ *       free function (ddwaf_object_free).
+ **/
+ddwaf_builder ddwaf_builder_init(const ddwaf_config *config);
+
+/**
+ * ddwaf_builder_add_or_update_config
+ *
+ * Adds or updates a configuration based on the given path, which must be a unique
+ * identifier for the provided configuration.
+ *
+ * @param builder Builder to perform the operation on. (nonnull)
+ * @param path A string containing the path of the configuration, this must uniquely identify the configuration. (nonnull)
+ * @param path_len The length of the string contained within path.
+ * @param config ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
+ * @param diagnostics Optional ruleset parsing diagnostics. (nullable)
+ *
+ * @return Whether the operation succeeded (true) or failed (false).
+ **/
+bool ddwaf_builder_add_or_update_config(ddwaf_builder builder, const char *path, uint32_t path_len, ddwaf_object *config, ddwaf_object *diagnostics);
+
+/**
+ * ddwaf_builder_remove_config
+ *
+ * Removes a configuration based on the provided path.
+ *
+ * @param builder Builder to perform the operation on. (nonnull)
+ * @param path A string containing the path of the configuration to be removed. (nonnull)
+ * @param path_len The length of the string contained within path.
+ *
+ * @return Whether the operation succeeded (true) or failed (false).
+ **/
+bool ddwaf_builder_remove_config(ddwaf_builder builder, const char *path, uint32_t path_len);
+
+/**
+ * ddwaf_builder_build_instance
+ *
+ * Builds a ddwaf instance based on the current set of configurations.
+ *
+ * @param builder Builder to perform the operation on. (nonnull)
+ *
+ * @return Handle to the new WAF instance or NULL if there was an error.
+ **/
+ddwaf_handle ddwaf_builder_build_instance(ddwaf_builder builder);
+
+/**
+ * ddwaf_builder_destroy
+ *
+ * Destroy an instance of the builder.
+ *
+ * @param builder Builder to perform the operation on. (nonnull)
+ */
+void ddwaf_builder_destroy(ddwaf_builder builder);
 
 /**
  * ddwaf_object_invalid
