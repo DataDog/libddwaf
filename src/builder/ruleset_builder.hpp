@@ -63,7 +63,7 @@ protected:
     std::unordered_map<std::string, std::shared_ptr<matcher::base>> exclusion_matchers_;
 
     // Actions
-    std::shared_ptr<action_mapper> actions_;
+    std::shared_ptr<const action_mapper> actions_;
 };
 
 } // namespace ddwaf

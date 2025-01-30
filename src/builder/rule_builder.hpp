@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "configuration/common/configuration.hpp"
-#include "indexer.hpp"
 #include "rule.hpp"
 
 namespace ddwaf {

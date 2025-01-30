@@ -30,7 +30,7 @@ public:
 
     [[nodiscard]] static const action_parameters &get_default_action(std::string_view id);
 
-    std::shared_ptr<action_mapper> build_shared();
+    std::shared_ptr<const action_mapper> build_shared();
 
     // Used for testing
     action_mapper build();

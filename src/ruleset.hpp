@@ -159,7 +159,7 @@ struct ruleset {
     std::unordered_map<std::string, std::shared_ptr<matcher::base>> exclusion_matchers;
 
     std::vector<std::shared_ptr<const scanner>> scanners;
-    std::shared_ptr<action_mapper> actions;
+    std::shared_ptr<const action_mapper> actions;
 
     // Rule modules
     std::array<rule_module, rule_module_count> rule_modules;
