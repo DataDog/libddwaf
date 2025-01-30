@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <span>
 #include <string>

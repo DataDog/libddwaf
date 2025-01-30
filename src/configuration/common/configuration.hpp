@@ -76,7 +76,7 @@ struct processor_spec {
     bool output{true};
 };
 
-enum class data_type { unknown, data_with_expiration, ip_with_expiration };
+enum class data_type : uint8_t { unknown, data_with_expiration, ip_with_expiration };
 
 struct data_spec {
     using value_type = std::pair<std::string, uint64_t>;
@@ -90,7 +90,7 @@ struct action_spec {
     std::unordered_map<std::string, std::string> parameters;
 };
 
-enum class change_set : uint32_t {
+enum class change_set : uint16_t {
     none = 0,
     rules = 1,
     custom_rules = 2,
@@ -103,6 +103,7 @@ enum class change_set : uint32_t {
     exclusion_data = 256,
 };
 
+// NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange)
 constexpr change_set operator|(change_set lhs, change_set rhs)
 {
     return static_cast<change_set>(static_cast<std::underlying_type_t<change_set>>(lhs) |
@@ -118,6 +119,7 @@ constexpr change_set operator&(change_set lhs, change_set rhs)
 }
 
 constexpr change_set &operator&=(change_set &lhs, change_set rhs) { return lhs = lhs & rhs; }
+// NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange)
 
 // The configuration_change_spec structure contains the IDs of all elements
 // introduced by the given configuration. This can be used later on to remove

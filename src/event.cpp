@@ -126,8 +126,7 @@ struct action_tracker {
     std::string stack_id;
 
     // This set contains all remaining actions other than the blocking action
-    // NOLINTNEXTLINE(readability-redundant-member-init)
-    std::unordered_set<std::string_view> non_blocking_actions{};
+    std::unordered_set<std::string_view> non_blocking_actions;
 
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const action_mapper &mapper;
@@ -293,7 +292,8 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_result 
         return;
     }
 
-    action_tracker actions{.mapper = actions_};
+    action_tracker actions{
+        .blocking_action = {}, .stack_id = {}, .non_blocking_actions = {}, .mapper = actions_};
 
     ddwaf_object_array(&output.events);
     for (const auto &event : events) {

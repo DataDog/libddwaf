@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <span>
 #include <stdexcept>
