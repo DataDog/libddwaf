@@ -64,7 +64,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(
         base_rule_update | custom_rule_update | change_set::filters;
     constexpr static change_set processors_update = change_set::processors | change_set::scanners;
 
-    if (!actions_ || (current_changes & change_set::actions) != change_set::none) {
+    if (!actions_ || contains(current_changes, change_set::actions)) {
         action_mapper_builder mapper_builder;
         for (const auto &[id, spec] : global_config.actions) {
             mapper_builder.set_action(id, spec.type_str, spec.parameters);
@@ -75,7 +75,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     // When a configuration with 'rules' or 'rules_override' is received, we
     // need to regenerate the ruleset from the base rules as we want to ensure
     // that there are no side-effects on running contexts.
-    if ((current_changes & base_rule_update) != change_set::none) {
+    if (contains(current_changes, base_rule_update)) {
         final_base_rules_.clear();
 
         indexer<rule_builder> rule_builders;
@@ -106,7 +106,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(
         }
     }
 
-    if ((current_changes & custom_rule_update) != change_set::none) {
+    if (contains(current_changes, custom_rule_update)) {
         final_user_rules_.clear();
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : global_config.user_rules) {
@@ -118,7 +118,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     }
 
     // Generate exclusion filters targetting all final rules
-    if ((current_changes & filters_update) != change_set::none) {
+    if (contains(current_changes, filters_update)) {
         rule_filters_.clear();
         input_filters_.clear();
 
@@ -144,7 +144,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     }
 
     // Generate new processors
-    if ((current_changes & processors_update) != change_set::none) {
+    if (contains(current_changes, processors_update)) {
         preprocessors_.clear();
         postprocessors_.clear();
 
@@ -158,14 +158,14 @@ std::shared_ptr<ruleset> ruleset_builder::build(
         }
     }
 
-    if ((current_changes & change_set::rule_data) != change_set::none) {
+    if (contains(current_changes, change_set::rule_data)) {
         rule_matchers_.clear();
         for (const auto &[id, spec] : global_config.rule_data) {
             rule_matchers_.emplace(id, matcher_builder::build(spec));
         }
     }
 
-    if ((current_changes & change_set::exclusion_data) != change_set::none) {
+    if (contains(current_changes, change_set::exclusion_data)) {
         exclusion_matchers_.clear();
         for (const auto &[id, spec] : global_config.exclusion_data) {
             exclusion_matchers_.emplace(id, matcher_builder::build(spec));

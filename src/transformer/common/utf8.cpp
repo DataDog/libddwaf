@@ -330,7 +330,7 @@ bool normalize_string(cow_string &str)
 
         // Write the codepoints to the scratchpad
         for (size_t inflightBufferIndex = 0; inflightBufferIndex < decomposedLength;
-            ++inflightBufferIndex) {
+             ++inflightBufferIndex) {
             // NOLINTNEXTLINE(modernize-avoid-c-arrays)
             char utf8Write[4];
             const uint8_t lengthWritten =

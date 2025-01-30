@@ -13,7 +13,7 @@ namespace ddwaf {
 class configuration_collector {
 public:
     configuration_collector(configuration_change_spec &change, configuration_spec &config)
-        : change_(change), config_(config) {};
+        : change_(change), config_(config){};
     configuration_collector(const configuration_collector &) = delete;
     configuration_collector &operator=(const configuration_collector &) = delete;
     configuration_collector(configuration_collector &&) = delete;

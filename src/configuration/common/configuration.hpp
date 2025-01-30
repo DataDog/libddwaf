@@ -119,6 +119,8 @@ constexpr change_set operator&(change_set lhs, change_set rhs)
 }
 
 constexpr change_set &operator&=(change_set &lhs, change_set rhs) { return lhs = lhs & rhs; }
+
+constexpr bool contains(change_set set, change_set opt) { return (set & opt) != change_set::none; }
 // NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange)
 
 // The configuration_change_spec structure contains the IDs of all elements

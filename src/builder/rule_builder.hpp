@@ -45,6 +45,8 @@ public:
         return true;
     }
 
+    // The builder should be considered invalid after calling build, as the memory
+    // associated with the rule_spec and overrides is transferred to the generated rule.
     std::shared_ptr<core_rule> build(const action_mapper &mapper)
     {
         core_rule::verdict_type verdict = core_rule::verdict_type::monitor;
