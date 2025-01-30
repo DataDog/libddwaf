@@ -25,7 +25,7 @@ namespace ddwaf {
 
 namespace {
 
-enum class search_outcome { found, not_found, unknown };
+enum class search_outcome : uint8_t { found, not_found, unknown };
 
 const ddwaf_object *find_key(
     const ddwaf_object &parent, std::string_view key, const object_limits &limits)

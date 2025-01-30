@@ -126,7 +126,8 @@ struct action_tracker {
     std::string stack_id;
 
     // This set contains all remaining actions other than the blocking action
-    std::unordered_set<std::string_view> non_blocking_actions;
+    // NOLINTNEXTLINE(readability-redundant-member-init)
+    std::unordered_set<std::string_view> non_blocking_actions{};
 
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const action_mapper &mapper;

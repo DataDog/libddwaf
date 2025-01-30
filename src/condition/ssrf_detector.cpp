@@ -269,7 +269,7 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
         auto res = ssrf_impl(*decomposed, *param.value, objects_excluded, limits_,
             dangerous_ip_matcher_, authorised_schemes_, deadline);
         if (res.has_value()) {
-            std::vector<std::string> uri_kp{uri.key_path.begin(), uri.key_path.end()};
+            const std::vector<std::string> uri_kp{uri.key_path.begin(), uri.key_path.end()};
             const bool ephemeral = uri.ephemeral || param.ephemeral;
 
             auto &[highlight, param_kp] = res.value();

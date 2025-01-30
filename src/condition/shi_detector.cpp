@@ -43,7 +43,7 @@ eval_result shi_detector::eval_string(const unary_argument<const ddwaf_object *>
         auto res = find_shi_from_params(
             resource_sv, resource_tokens, *param.value, objects_excluded, limits_, deadline);
         if (res.has_value()) {
-            std::vector<std::string> resource_kp{
+            const std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
             const bool ephemeral = resource.ephemeral || param.ephemeral;
 
@@ -85,7 +85,7 @@ eval_result shi_detector::eval_array(const unary_argument<const ddwaf_object *> 
         auto res = find_shi_from_params(
             arguments, resource_tokens, *param.value, objects_excluded, limits_, deadline);
         if (res.has_value()) {
-            std::vector<std::string> resource_kp{
+            const std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
             const bool ephemeral = resource.ephemeral || param.ephemeral;
 

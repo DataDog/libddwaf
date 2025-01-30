@@ -40,7 +40,7 @@ namespace {
 constexpr auto &npos = std::string_view::npos;
 constexpr std::size_t min_token_count = 4;
 
-enum class sqli_error {
+enum class sqli_error : uint8_t {
     none,
     invalid_sql,
 };
@@ -210,7 +210,7 @@ bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
 
 bool has_order_by_structure(std::span<sql_token> tokens)
 {
-    enum class order_by_state {
+    enum class order_by_state : uint8_t {
         invalid,
         begin,
         table_or_column_name,
@@ -519,7 +519,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
         auto res = internal::sqli_impl(
             sql.value, resource_tokens, *param.value, dialect, objects_excluded, limits_, deadline);
         if (std::holds_alternative<internal::matched_param>(res)) {
-            std::vector<std::string> sql_kp{sql.key_path.begin(), sql.key_path.end()};
+            const std::vector<std::string> sql_kp{sql.key_path.begin(), sql.key_path.end()};
             const bool ephemeral = sql.ephemeral || param.ephemeral;
 
             auto stripped_stmt = internal::strip_literals(sql.value, resource_tokens);

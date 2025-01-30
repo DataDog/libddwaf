@@ -245,6 +245,7 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
 
     const auto decomposedLength = (size_t)utf8proc_decompose_char((int32_t)codepoint, wbBuffer,
         (utf8proc_ssize_t)wbBufferLength,
+        // NOLINTNEXTLINE(core.EnumCastOutOfRange)
         (utf8proc_option_t)(UTF8PROC_DECOMPOSE | UTF8PROC_IGNORE | UTF8PROC_COMPAT | UTF8PROC_LUMP |
                             UTF8PROC_STRIPMARK | UTF8PROC_STRIPNA | UTF8PROC_CASEFOLD),
         nullptr);

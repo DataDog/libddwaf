@@ -513,7 +513,7 @@ ddwaf_object generate_fragment_cached(std::string_view header,
     return buffer.to_object();
 }
 
-enum class header_type { unknown, standard, ip_origin, user_agent, datadog };
+enum class header_type : uint8_t { unknown, standard, ip_origin, user_agent, datadog };
 
 constexpr std::size_t standard_headers_length = 10;
 constexpr std::size_t ip_origin_headers_length = 10;

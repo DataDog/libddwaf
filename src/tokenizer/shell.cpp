@@ -72,7 +72,7 @@ void find_executables_and_strip_whitespaces(std::vector<shell_token> &tokens)
     // The scope within the command, this helps identify high level constructs
     // which end up evaluating as part of a command, e.g. an executable
     // generated from a command substitution
-    enum class command_scope {
+    enum class command_scope : uint8_t {
         variable_definition_or_executable,
         variable_definition,
         arguments,

@@ -191,7 +191,7 @@ std::string_view object_at(const ddwaf_object &obj, std::size_t idx)
     return {child.stringValue, object_size(child)};
 }
 
-enum class opt_type { none, short_opt, long_opt, end_opt };
+enum class opt_type : uint8_t { none, short_opt, long_opt, end_opt };
 
 inline std::pair<std::string_view, std::string_view> split_long_opt_with_arg(std::string_view opt)
 {
@@ -452,7 +452,7 @@ eval_result cmdi_detector::eval_impl(const unary_argument<const ddwaf_object *> 
         auto res = cmdi_impl(
             *resource.value, resource_tokens, *param.value, objects_excluded, limits_, deadline);
         if (res.has_value()) {
-            std::vector<std::string> resource_kp{
+            const std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
             const bool ephemeral = resource.ephemeral || param.ephemeral;
 

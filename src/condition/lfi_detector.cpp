@@ -129,7 +129,7 @@ eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path
     for (const auto &param : params) {
         auto res = lfi_impl(path.value, *param.value, objects_excluded, limits_, deadline);
         if (res.has_value()) {
-            std::vector<std::string> path_kp{path.key_path.begin(), path.key_path.end()};
+            const std::vector<std::string> path_kp{path.key_path.begin(), path.key_path.end()};
             const bool ephemeral = path.ephemeral || param.ephemeral;
 
             auto &[highlight, param_kp] = res.value();
