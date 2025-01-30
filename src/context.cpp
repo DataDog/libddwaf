@@ -19,6 +19,7 @@
 #include "module.hpp"
 #include "object_store.hpp"
 #include "processor/base.hpp"
+#include "rule.hpp"
 #include "target_address.hpp"
 #include "utils.hpp"
 
