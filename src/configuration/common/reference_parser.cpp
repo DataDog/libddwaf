@@ -10,6 +10,7 @@
 
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
+#include "configuration/common/reference_parser.hpp"
 #include "parameter.hpp"
 
 namespace ddwaf {
@@ -18,12 +19,12 @@ reference_spec parse_reference(const parameter::map &target)
 {
     auto ref_id = at<std::string>(target, "rule_id", {});
     if (!ref_id.empty()) {
-        return {reference_type::id, std::move(ref_id), {}};
+        return {.type = reference_type::id, .ref_id = std::move(ref_id), .tags = {}};
     }
 
     ref_id = at<std::string>(target, "id", {});
     if (!ref_id.empty()) {
-        return {reference_type::id, std::move(ref_id), {}};
+        return {.type = reference_type::id, .ref_id = std::move(ref_id), .tags = {}};
     }
 
     auto tag_map = at<parameter::map>(target, "tags", {});
@@ -31,10 +32,10 @@ reference_spec parse_reference(const parameter::map &target)
         std::unordered_map<std::string, std::string> tags;
         for (auto &[key, value] : tag_map) { tags.emplace(key, value); }
 
-        return {reference_type::tags, {}, std::move(tags)};
+        return {.type = reference_type::tags, .ref_id = {}, .tags = std::move(tags)};
     }
 
-    return {reference_type::none, {}, {}};
+    return {.type = reference_type::none, .ref_id = {}, .tags = {}};
 }
 
 } // namespace ddwaf

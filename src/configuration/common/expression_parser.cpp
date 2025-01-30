@@ -19,6 +19,7 @@
 #include "condition/sqli_detector.hpp"
 #include "condition/ssrf_detector.hpp"
 #include "configuration/common/common.hpp"
+#include "configuration/common/expression_parser.hpp"
 #include "configuration/common/matcher_parser.hpp"
 #include "configuration/common/transformer_parser.hpp"
 #include "exception.hpp"
@@ -93,8 +94,11 @@ std::vector<condition_parameter> parse_arguments(const parameter::map &params, d
             addresses.required.emplace(address);
             auto it = input.find("transformers");
             if (it == input.end()) {
-                targets.emplace_back(condition_target{
-                    address, get_target_index(address), std::move(kp), transformers, source});
+                targets.emplace_back(condition_target{.name = address,
+                    .index = get_target_index(address),
+                    .key_path = std::move(kp),
+                    .transformers = transformers,
+                    .source = source});
             } else {
                 auto input_transformers = static_cast<parameter::vector>(it->second);
                 if (input_transformers.size() > limits.max_transformers_per_address) {
@@ -103,8 +107,11 @@ std::vector<condition_parameter> parse_arguments(const parameter::map &params, d
 
                 source = data_source::values;
                 auto new_transformers = parse_transformers(input_transformers, source);
-                targets.emplace_back(condition_target{address, get_target_index(address),
-                    std::move(kp), std::move(new_transformers), source});
+                targets.emplace_back(condition_target{.name = address,
+                    .index = get_target_index(address),
+                    .key_path = std::move(kp),
+                    .transformers = std::move(new_transformers),
+                    .source = source});
             }
         }
     }

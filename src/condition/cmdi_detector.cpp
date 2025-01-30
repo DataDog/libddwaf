@@ -89,16 +89,56 @@ struct opt_spec {
 // shells such as ksh allow for the first argument to be a shell command
 std::unordered_map<std::string_view, opt_spec> known_shells{
     // sh could be bash (red-hat) or dash (debian) so we cast a wide net
-    {"sh", {true, false, platform::linux, {"c"}, {"O", "o", "init-file", "rcfile"}}},
-    {"bash", {true, false, platform::linux, {"c"}, {"O", "o", "init-file", "rcfile"}}},
-    {"ksh", {false, false, platform::linux, {"c"}, {"o", "T"}}},
-    {"rksh", {false, false, platform::linux, {"c"}, {"o", "T"}}},
-    {"fish", {true, true, platform::linux, {"c", "command"}, {}}},
-    {"zsh", {true, false, platform::linux, {"c"}, {"o"}}},
-    {"dash", {true, false, platform::linux, {"c"}, {"o"}}},
-    {"ash", {true, false, platform::linux, {"c"}, {"o"}}},
-    {"powershell", {true, true, platform::windows, {"command", "commandwithargs"}, {}}},
-    {"pwsh", {true, true, platform::windows, {"command", "commandwithargs"}, {}}},
+    {"sh", {.requires_command_opt = true,
+               .command_after_opt = false,
+               .shell_platform = platform::linux,
+               .command_opt = {"c"},
+               .opts_with_arg = {"O", "o", "init-file", "rcfile"}}},
+    {"bash", {.requires_command_opt = true,
+                 .command_after_opt = false,
+                 .shell_platform = platform::linux,
+                 .command_opt = {"c"},
+                 .opts_with_arg = {"O", "o", "init-file", "rcfile"}}},
+    {"ksh", {.requires_command_opt = false,
+                .command_after_opt = false,
+                .shell_platform = platform::linux,
+                .command_opt = {"c"},
+                .opts_with_arg = {"o", "T"}}},
+    {"rksh", {.requires_command_opt = false,
+                 .command_after_opt = false,
+                 .shell_platform = platform::linux,
+                 .command_opt = {"c"},
+                 .opts_with_arg = {"o", "T"}}},
+    {"fish", {.requires_command_opt = true,
+                 .command_after_opt = true,
+                 .shell_platform = platform::linux,
+                 .command_opt = {"c", "command"},
+                 .opts_with_arg = {}}},
+    {"zsh", {.requires_command_opt = true,
+                .command_after_opt = false,
+                .shell_platform = platform::linux,
+                .command_opt = {"c"},
+                .opts_with_arg = {"o"}}},
+    {"dash", {.requires_command_opt = true,
+                 .command_after_opt = false,
+                 .shell_platform = platform::linux,
+                 .command_opt = {"c"},
+                 .opts_with_arg = {"o"}}},
+    {"ash", {.requires_command_opt = true,
+                .command_after_opt = false,
+                .shell_platform = platform::linux,
+                .command_opt = {"c"},
+                .opts_with_arg = {"o"}}},
+    {"powershell", {.requires_command_opt = true,
+                       .command_after_opt = true,
+                       .shell_platform = platform::windows,
+                       .command_opt = {"command", "commandwithargs"},
+                       .opts_with_arg = {}}},
+    {"pwsh", {.requires_command_opt = true,
+                 .command_after_opt = true,
+                 .shell_platform = platform::windows,
+                 .command_opt = {"command", "commandwithargs"},
+                 .opts_with_arg = {}}},
 };
 
 std::string_view basename(std::string_view path)
@@ -360,7 +400,7 @@ std::optional<shi_result> cmdi_impl(const ddwaf_object &exec_args,
                 // When the full binary has been injected, we consider it an exploit
                 // although bear in mind that this can also be a vulnerable-by-design
                 // application, leading to a false positive
-                return {{std::string(value), it.get_current_path()}};
+                return {{.value = std::string(value), .key_path = it.get_current_path()}};
             }
         }
 
@@ -420,12 +460,21 @@ eval_result cmdi_detector::eval_impl(const unary_argument<const ddwaf_object *> 
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
 
-            cache.match = condition_match{{{"resource"sv, generate_string_resource(*resource.value),
-                                               resource.address, resource_kp},
-                                              {"params"sv, highlight, param.address, param_kp}},
-                {std::move(highlight)}, "cmdi_detector"sv, {}, ephemeral};
+            cache.match =
+                condition_match{.args = {{.name = "resource"sv,
+                                             .resolved = generate_string_resource(*resource.value),
+                                             .address = resource.address,
+                                             .key_path = resource_kp},
+                                    {.name = "params"sv,
+                                        .resolved = highlight,
+                                        .address = param.address,
+                                        .key_path = param_kp}},
+                    .highlights = {std::move(highlight)},
+                    .operator_name = "cmdi_detector"sv,
+                    .operator_value = {},
+                    .ephemeral = ephemeral};
 
-            return {true, ephemeral};
+            return {.outcome = true, .ephemeral = ephemeral};
         }
     }
 

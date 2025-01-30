@@ -20,6 +20,7 @@
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
 #include "configuration/common/transformer_parser.hpp"
+#include "configuration/legacy_rule_parser.hpp"
 #include "ddwaf.h"
 #include "exception.hpp"
 #include "expression.hpp"
@@ -111,8 +112,11 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
                 key_path.emplace_back(input.substr(pos + 1, input.size()));
             }
 
-            def.targets.emplace_back(condition_target{root, get_target_index(root),
-                std::move(key_path), transformers, data_source::values});
+            def.targets.emplace_back(condition_target{.name = root,
+                .index = get_target_index(root),
+                .key_path = std::move(key_path),
+                .transformers = transformers,
+                .source = data_source::values});
         }
 
         conditions.emplace_back(std::make_unique<scalar_condition>(
@@ -172,8 +176,12 @@ void parse_legacy_rules(const parameter::vector &rule_array, configuration_colle
                 throw ddwaf::parsing_error("missing key 'type'");
             }
 
-            rule_spec spec{true, core_rule::source_type::base, at<std::string>(node, "name"),
-                std::move(tags), std::move(expression), {}};
+            rule_spec spec{.enabled = true,
+                .source = core_rule::source_type::base,
+                .name = at<std::string>(node, "name"),
+                .tags = std::move(tags),
+                .expr = std::move(expression),
+                .actions = {}};
 
             DDWAF_DEBUG("Parsed rule {}", id);
             info.add_loaded(id);

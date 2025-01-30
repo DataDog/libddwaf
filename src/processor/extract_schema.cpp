@@ -39,6 +39,7 @@ enum class scalar_type : uint8_t { null = 1, boolean = 2, integer = 4, string = 
 
 struct node_scalar {
     scalar_type type{scalar_type::null};
+    // NOLINTNEXTLINE(readability-redundant-member-init)
     std::unordered_map<std::string, std::string> tags{};
     mutable std::size_t hash{0};
 };
@@ -268,6 +269,7 @@ ddwaf_object node_serialize::operator()(const node_record_ptr &node) const
     return array;
 }
 
+namespace {
 // NOLINTNEXTLINE(misc-no-recursion)
 ddwaf_object serialize(const base_node &node) { return std::visit(node_serialize{}, node); }
 
@@ -281,21 +283,21 @@ base_node generate_helper(const ddwaf_object *object, std::string_view key,
 
     switch (object->type) {
     case DDWAF_OBJ_NULL:
-        return node_scalar{scalar_type::null};
+        return node_scalar{.type = scalar_type::null};
     case DDWAF_OBJ_FLOAT:
-        return node_scalar{scalar_type::real};
+        return node_scalar{.type = scalar_type::real};
     case DDWAF_OBJ_BOOL:
-        return node_scalar{scalar_type::boolean};
+        return node_scalar{.type = scalar_type::boolean};
     case DDWAF_OBJ_STRING:
         for (const auto *scanner : scanners) {
             if (scanner->eval(key, *object)) {
-                return node_scalar{scalar_type::string, scanner->get_tags()};
+                return node_scalar{.type = scalar_type::string, .tags = scanner->get_tags()};
             }
         }
-        return node_scalar{scalar_type::string};
+        return node_scalar{.type = scalar_type::string};
     case DDWAF_OBJ_SIGNED:
     case DDWAF_OBJ_UNSIGNED:
-        return node_scalar{scalar_type::integer};
+        return node_scalar{.type = scalar_type::integer};
     case DDWAF_OBJ_MAP: {
         auto length = static_cast<std::size_t>(object->nbEntries);
         node_record_ptr record = std::make_unique<node_record>();
@@ -346,6 +348,8 @@ ddwaf_object generate(
     return serialize(
         generate_helper(object, {}, scanners, extract_schema::max_container_depth, deadline));
 }
+
+} // namespace
 
 } // namespace schema
 

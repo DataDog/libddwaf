@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "condition/base.hpp"
+#include "configuration/common/transformer_parser.hpp"
 #include "exception.hpp"
 #include "parameter.hpp"
 #include "transformer/base.hpp"

@@ -15,6 +15,7 @@
 #include "configuration/common/configuration_collector.hpp"
 #include "configuration/common/expression_parser.hpp"
 #include "configuration/common/transformer_parser.hpp"
+#include "configuration/rule_parser.hpp"
 #include "exception.hpp"
 #include "log.hpp"
 #include "parameter.hpp"
@@ -61,8 +62,12 @@ rule_spec parse_rule(parameter::map &rule, const object_limits &limits,
         throw ddwaf::parsing_error("missing key 'type'");
     }
 
-    return {at<bool>(rule, "enabled", true), source, at<std::string>(rule, "name"), std::move(tags),
-        std::move(expr), at<std::vector<std::string>>(rule, "on_match", {})};
+    return {.enabled = at<bool>(rule, "enabled", true),
+        .source = source,
+        .name = at<std::string>(rule, "name"),
+        .tags = std::move(tags),
+        .expr = std::move(expr),
+        .actions = at<std::vector<std::string>>(rule, "on_match", {})};
 }
 
 void parse_rules(const parameter::vector &rule_array, configuration_collector &cfg,

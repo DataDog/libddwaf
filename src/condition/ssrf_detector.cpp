@@ -276,12 +276,20 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
 
-            cache.match =
-                condition_match{{{"resource"sv, std::string{uri.value}, uri.address, uri_kp},
-                                    {"params"sv, highlight, param.address, param_kp}},
-                    {std::move(highlight)}, "ssrf_detector", {}, ephemeral};
+            cache.match = condition_match{.args = {{.name = "resource"sv,
+                                                       .resolved = std::string{uri.value},
+                                                       .address = uri.address,
+                                                       .key_path = uri_kp},
+                                              {.name = "params"sv,
+                                                  .resolved = highlight,
+                                                  .address = param.address,
+                                                  .key_path = param_kp}},
+                .highlights = {std::move(highlight)},
+                .operator_name = "ssrf_detector",
+                .operator_value = {},
+                .ephemeral = ephemeral};
 
-            return {true, ephemeral};
+            return {.outcome = true, .ephemeral = ephemeral};
         }
     }
 

@@ -13,6 +13,7 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
+#include "configuration/data_parser.hpp"
 #include "exception.hpp"
 #include "log.hpp"
 #include "parameter.hpp"

@@ -13,6 +13,7 @@
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
 #include "configuration/common/reference_parser.hpp"
+#include "configuration/rule_override_parser.hpp"
 #include "exception.hpp"
 #include "log.hpp"
 #include "parameter.hpp"
@@ -62,7 +63,8 @@ override_spec parse_override(const parameter::map &node)
         }
     } else {
         // Since the rules_target array is empty, the ID is mandatory
-        reference_spec ref_spec{reference_type::id, at<std::string>(node, "id"), {}};
+        reference_spec ref_spec{
+            .type = reference_type::id, .ref_id = at<std::string>(node, "id"), .tags = {}};
         current.targets.emplace_back(std::move(ref_spec));
         current.type = reference_type::id;
     }

@@ -15,6 +15,7 @@
 #include "configuration/common/configuration_collector.hpp"
 #include "configuration/common/expression_parser.hpp"
 #include "configuration/common/reference_parser.hpp"
+#include "configuration/processor_parser.hpp"
 #include "exception.hpp"
 #include "log.hpp"
 #include "parameter.hpp"
@@ -53,12 +54,15 @@ std::vector<processor_mapping> parse_processor_mappings(
             auto input_address = at<std::string>(input, "address");
 
             addresses.optional.emplace(input_address);
-            parameters.emplace_back(processor_parameter{
-                {processor_target{get_target_index(input_address), std::move(input_address), {}}}});
+            parameters.emplace_back(
+                processor_parameter{{processor_target{.index = get_target_index(input_address),
+                    .name = std::move(input_address),
+                    .key_path = {}}}});
         }
         auto output = at<std::string>(mapping, "output");
-        mappings.emplace_back(processor_mapping{
-            std::move(parameters), {get_target_index(output), std::move(output), {}}});
+        mappings.emplace_back(processor_mapping{.inputs = std::move(parameters),
+            .output = {
+                .index = get_target_index(output), .name = std::move(output), .key_path = {}}});
     }
 
     return mappings;
@@ -152,8 +156,12 @@ void parse_processors(const parameter::vector &processor_array, configuration_co
                 info.add_failed(id, "processor not used for evaluation or output");
                 continue;
             }
-            const processor_spec spec{
-                type, std::move(expr), std::move(mappings), std::move(scanners), eval, output};
+            const processor_spec spec{.type = type,
+                .expr = std::move(expr),
+                .mappings = std::move(mappings),
+                .scanners = std::move(scanners),
+                .evaluate = eval,
+                .output = output};
 
             DDWAF_DEBUG("Parsed processor {}", id);
             info.add_loaded(id);

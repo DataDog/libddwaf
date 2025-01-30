@@ -222,9 +222,14 @@ eval_result scalar_negated_condition::eval(condition_cache &cache, const object_
     }
 
     if (!match) {
-        cache.match = {{{{"input"sv, object_to_string(*object), target_.name,
-                            {target_.key_path.begin(), target_.key_path.end()}}},
-            {}, matcher->negated_name(), matcher->to_string(), ephemeral}};
+        cache.match = {{.args = {{.name = "input"sv,
+                            .resolved = object_to_string(*object),
+                            .address = target_.name,
+                            .key_path = {target_.key_path.begin(), target_.key_path.end()}}},
+            .highlights = {},
+            .operator_name = matcher->negated_name(),
+            .operator_value = matcher->to_string(),
+            .ephemeral = ephemeral}};
         return {.outcome = true, .ephemeral = ephemeral};
     }
 

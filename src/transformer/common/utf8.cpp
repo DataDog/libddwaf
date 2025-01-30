@@ -18,6 +18,68 @@ extern "C" {
 
 namespace ddwaf::utf8 {
 
+namespace {
+
+int8_t findNextGlyphLength(const char *utf8Buffer, uint64_t lengthLeft)
+{
+    if (lengthLeft == 0) {
+        return 0;
+    }
+
+    // We're going to assume the caller provided us with the beginning of a UTF-8 sequence.
+
+    // Valid UTF8 has a specific binary format.
+    //  If it's a single byte UTF8 character, then it is always of form '0xxxxxxx', where 'x' is any
+    //  binary digit. If it's a two byte UTF8 character, then it's always of form '110xxxxx
+    //  10xxxxxx'. Similarly for three and four byte UTF8 characters it starts with '1110xxxx' and
+    //  '11110xxx' followed
+    //      by '10xxxxxx' one less times as there are bytes.
+
+    const auto firstByte = (uint8_t)utf8Buffer[0];
+    int8_t expectedSequenceLength = -1;
+
+    // Looking for 0xxxxxxx
+    // If the highest bit is 0, we know it's a single byte sequence.
+    if ((firstByte & 0x80) == 0) {
+        return 1;
+    }
+
+    // Looking for 110xxxxx
+    // Signify a sequence of 2 bytes
+    if ((firstByte >> 5) == 0x6) {
+        expectedSequenceLength = 2;
+    }
+
+    // Looking for 1110xxxx
+    // Signify a sequence of 3 bytes
+    else if ((firstByte >> 4) == 0xe) {
+        expectedSequenceLength = 3;
+    }
+
+    // Looking for 11110xxx
+    // Signify a sequence of 4 bytes
+    else if ((firstByte >> 3) == 0x1e) {
+        expectedSequenceLength = 4;
+    }
+
+    // If we found a valid prefix, we check that it makes sense based on the length left
+    if (expectedSequenceLength < 0 || ((uint64_t)expectedSequenceLength) > lengthLeft) {
+        return -1;
+    }
+
+    // If it's plausible, we then check if the bytes are valid
+    for (int8_t i = 1; i < expectedSequenceLength; ++i) {
+        // Every byte in the sequence must be prefixed by 10xxxxxx
+        if ((((uint8_t)utf8Buffer[i]) >> 6) != 0x2) {
+            return -1;
+        }
+    }
+
+    return expectedSequenceLength;
+}
+
+} // namespace
+
 uint8_t codepoint_to_bytes(uint32_t codepoint, char *utf8_buffer)
 {
     // Handle the easy case of ASCII
@@ -88,64 +150,6 @@ uint8_t write_codepoint(uint32_t codepoint, char *utf8Buffer, uint64_t lengthLef
 
     // Insert the bytes
     return codepoint_to_bytes(codepoint, utf8Buffer);
-}
-
-int8_t findNextGlyphLength(const char *utf8Buffer, uint64_t lengthLeft)
-{
-    if (lengthLeft == 0) {
-        return 0;
-    }
-
-    // We're going to assume the caller provided us with the beginning of a UTF-8 sequence.
-
-    // Valid UTF8 has a specific binary format.
-    //  If it's a single byte UTF8 character, then it is always of form '0xxxxxxx', where 'x' is any
-    //  binary digit. If it's a two byte UTF8 character, then it's always of form '110xxxxx
-    //  10xxxxxx'. Similarly for three and four byte UTF8 characters it starts with '1110xxxx' and
-    //  '11110xxx' followed
-    //      by '10xxxxxx' one less times as there are bytes.
-
-    const auto firstByte = (uint8_t)utf8Buffer[0];
-    int8_t expectedSequenceLength = -1;
-
-    // Looking for 0xxxxxxx
-    // If the highest bit is 0, we know it's a single byte sequence.
-    if ((firstByte & 0x80) == 0) {
-        return 1;
-    }
-
-    // Looking for 110xxxxx
-    // Signify a sequence of 2 bytes
-    if ((firstByte >> 5) == 0x6) {
-        expectedSequenceLength = 2;
-    }
-
-    // Looking for 1110xxxx
-    // Signify a sequence of 3 bytes
-    else if ((firstByte >> 4) == 0xe) {
-        expectedSequenceLength = 3;
-    }
-
-    // Looking for 11110xxx
-    // Signify a sequence of 4 bytes
-    else if ((firstByte >> 3) == 0x1e) {
-        expectedSequenceLength = 4;
-    }
-
-    // If we found a valid prefix, we check that it makes sense based on the length left
-    if (expectedSequenceLength < 0 || ((uint64_t)expectedSequenceLength) > lengthLeft) {
-        return -1;
-    }
-
-    // If it's plausible, we then check if the bytes are valid
-    for (int8_t i = 1; i < expectedSequenceLength; ++i) {
-        // Every byte in the sequence must be prefixed by 10xxxxxx
-        if ((((uint8_t)utf8Buffer[i]) >> 6) != 0x2) {
-            return -1;
-        }
-    }
-
-    return expectedSequenceLength;
 }
 
 uint32_t fetch_next_codepoint(const char *utf8Buffer, uint64_t &position, uint64_t length)
@@ -325,7 +329,7 @@ bool normalize_string(cow_string &str)
 
         // Write the codepoints to the scratchpad
         for (size_t inflightBufferIndex = 0; inflightBufferIndex < decomposedLength;
-             ++inflightBufferIndex) {
+            ++inflightBufferIndex) {
             // NOLINTNEXTLINE(modernize-avoid-c-arrays)
             char utf8Write[4];
             const uint8_t lengthWritten =

@@ -11,6 +11,7 @@
 
 #include "action_mapper.hpp"
 #include "builder/action_mapper_builder.hpp"
+#include "configuration/actions_parser.hpp"
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
@@ -32,8 +33,8 @@ void validate_and_add_block(auto &cfg, auto id, auto &type, auto &parameters)
         for (const auto &[k, v] : default_params.parameters) { parameters.try_emplace(k, v); }
     }
 
-    cfg.emplace_action(
-        id, action_spec{action_type_from_string(type), std::move(type), std::move(parameters)});
+    cfg.emplace_action(std::move(id),
+        action_spec{action_type_from_string(type), std::move(type), std::move(parameters)});
 }
 
 void validate_and_add_redirect(auto &cfg, auto id, auto &type, auto &parameters)
@@ -42,8 +43,9 @@ void validate_and_add_redirect(auto &cfg, auto id, auto &type, auto &parameters)
     if (it == parameters.end() || it->second.empty()) {
         auto block_params = action_mapper_builder::get_default_action("block");
         DDWAF_DEBUG("Location missing from redirect action '{}', downgrading to block_request", id);
-        cfg.emplace_action(
-            id, action_spec{block_params.type, block_params.type_str, block_params.parameters});
+        cfg.emplace_action(id, action_spec{.type = block_params.type,
+                                   .type_str = block_params.type_str,
+                                   .parameters = block_params.parameters});
         return;
     }
 
@@ -61,8 +63,9 @@ void validate_and_add_redirect(auto &cfg, auto id, auto &type, auto &parameters)
         auto block_params = action_mapper_builder::get_default_action("block");
 
         DDWAF_DEBUG("Unsupported scheme on redirect action '{}', downgrading to block_request", id);
-        cfg.emplace_action(
-            id, action_spec{block_params.type, block_params.type_str, block_params.parameters});
+        cfg.emplace_action(id, action_spec{.type = block_params.type,
+                                   .type_str = block_params.type_str,
+                                   .parameters = block_params.parameters});
         return;
     }
 
@@ -109,8 +112,9 @@ void parse_actions(
             } else if (type == "block_request") {
                 validate_and_add_block(cfg, id, type, parameters);
             } else {
-                cfg.emplace_action(id, action_spec{action_type_from_string(type), std::move(type),
-                                           std::move(parameters)});
+                cfg.emplace_action(id, action_spec{.type = action_type_from_string(type),
+                                           .type_str = std::move(type),
+                                           .parameters = std::move(parameters)});
             }
 
             info.add_loaded(std::move(id));

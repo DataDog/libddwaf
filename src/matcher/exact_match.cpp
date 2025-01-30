@@ -26,7 +26,7 @@ exact_match::exact_match(const std::vector<std::pair<std::string, uint64_t>> &da
 {
     data_.reserve(data.size());
     values_.reserve(data.size());
-    for (auto [str, expiration] : data) {
+    for (const auto &[str, expiration] : data) {
         const auto &ref = data_.emplace_back(str);
         auto res = values_.emplace(ref, expiration);
         if (!res.second) {
@@ -43,7 +43,7 @@ exact_match::exact_match(
 {
     data_.reserve(data.size());
     values_.reserve(data.size());
-    for (auto [str, expiration] : data) {
+    for (const auto &[str, expiration] : data) {
         const auto &ref = data_.emplace_back(str);
         auto res = values_.emplace(ref, expiration);
         if (!res.second) {

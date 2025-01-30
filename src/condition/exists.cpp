@@ -98,12 +98,18 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
         if (exists(input.value, input.key_path, objects_excluded, limits_) ==
             search_outcome::found) {
             std::vector<std::string> key_path{input.key_path.begin(), input.key_path.end()};
-            cache.match = {{{{"input", {}, input.address, std::move(key_path)}}, {}, "exists", {},
-                input.ephemeral}};
-            return {true, input.ephemeral};
+            cache.match = {{.args = {{.name = "input",
+                                .resolved = {},
+                                .address = input.address,
+                                .key_path = std::move(key_path)}},
+                .highlights = {},
+                .operator_name = "exists",
+                .operator_value = {},
+                .ephemeral = input.ephemeral}};
+            return {.outcome = true, .ephemeral = input.ephemeral};
         }
     }
-    return {false, false};
+    return {.outcome = false, .ephemeral = false};
 }
 
 [[nodiscard]] eval_result exists_negated_condition::eval_impl(
@@ -115,13 +121,19 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
     // the data set
     if (exists(input.value, input.key_path, objects_excluded, limits_) !=
         search_outcome::not_found) {
-        return {false, false};
+        return {.outcome = false, .ephemeral = false};
     }
 
     std::vector<std::string> key_path{input.key_path.begin(), input.key_path.end()};
-    cache.match = {
-        {{{"input", {}, input.address, std::move(key_path)}}, {}, "!exists", {}, input.ephemeral}};
-    return {true, input.ephemeral};
+    cache.match = {{.args = {{.name = "input",
+                        .resolved = {},
+                        .address = input.address,
+                        .key_path = std::move(key_path)}},
+        .highlights = {},
+        .operator_name = "!exists",
+        .operator_value = {},
+        .ephemeral = input.ephemeral}};
+    return {.outcome = true, .ephemeral = input.ephemeral};
 }
 
 } // namespace ddwaf

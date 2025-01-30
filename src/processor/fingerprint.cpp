@@ -27,6 +27,7 @@
 #include "processor/base.hpp"
 #include "processor/fingerprint.hpp"
 #include "sha256.hpp"
+#include "traits.hpp"
 #include "transformer/common/cow_string.hpp"
 #include "transformer/lowercase.hpp"
 #include "utils.hpp"
@@ -168,10 +169,8 @@ void normalize_value(std::string_view key, std::string &buffer, bool trailing_se
 template <typename Derived, typename Output = std::string> struct field_generator {
     using output_type = Output;
 
-    field_generator() = default;
+public:
     ~field_generator() = default;
-    field_generator(const field_generator &) = default;
-    field_generator(field_generator &&) noexcept = default;
     field_generator &operator=(const field_generator &) = default;
     field_generator &operator=(field_generator &&) noexcept = default;
 
@@ -185,6 +184,12 @@ template <typename Derived, typename Output = std::string> struct field_generato
         }
     }
     output_type operator()() { return static_cast<Derived *>(this)->generate(); }
+
+private:
+    field_generator(const field_generator &) = default;
+    field_generator() = default;
+    field_generator(field_generator &&) noexcept = default;
+    friend Derived;
 };
 
 struct string_field : field_generator<string_field> {
@@ -254,9 +259,7 @@ struct key_hash_field : field_generator<key_hash_field> {
 
             const std::string_view key{
                 child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
-            if (max_string_size > key.size()) {
-                max_string_size = key.size();
-            }
+            max_string_size = std::max(max_string_size, key.size());
 
             keys.emplace_back(key);
         }
@@ -334,9 +337,7 @@ struct kv_hash_fields : field_generator<kv_hash_fields, std::pair<std::string, s
             }
 
             auto larger_size = std::max(key.size(), val.size());
-            if (max_string_size < larger_size) {
-                max_string_size = larger_size;
-            }
+            max_string_size = std::max(max_string_size, larger_size);
 
             kv_sorted.emplace_back(key, val);
         }

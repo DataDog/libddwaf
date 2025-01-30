@@ -26,7 +26,7 @@ protected:
 
 class unsupported_version : public exception {
 public:
-    unsupported_version() : exception(std::string()){};
+    unsupported_version() : exception(std::string()) {};
 };
 
 class unsupported_operator_version : public exception {

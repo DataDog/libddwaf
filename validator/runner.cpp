@@ -266,7 +266,7 @@ void test_runner::validate_matches(const YAML::Node &expected, const YAML::Node 
             }
         } else {
             for (YAML::const_iterator it = expected_match.begin(); it != expected_match.end();
-                 ++it) {
+                ++it) {
                 auto key = it->first.as<std::string>();
                 auto expected_param = it->second;
                 auto obtained_param = obtained_match[key];

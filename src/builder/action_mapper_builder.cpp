@@ -21,8 +21,10 @@ namespace ddwaf {
 void action_mapper_builder::set_action(const std::string &id, std::string type,
     std::unordered_map<std::string, std::string> parameters)
 {
-    auto [it, res] = action_by_id_.try_emplace(id,
-        action_parameters{.type=action_type_from_string(type), .type_str=std::move(type), .parameters=std::move(parameters)});
+    auto [it, res] =
+        action_by_id_.try_emplace(id, action_parameters{.type = action_type_from_string(type),
+                                          .type_str = std::move(type),
+                                          .parameters = std::move(parameters)});
     if (!res) {
         throw std::runtime_error("duplicate action '" + id + '\'');
     }
@@ -54,10 +56,15 @@ action_mapper action_mapper_builder::build()
 
 const std::map<std::string, action_parameters, std::less<>>
     action_mapper_builder::default_actions_ = {
-        {"block", {.type=action_type::block_request, .type_str="block_request",
-                      .parameters={{"status_code", "403"}, {"type", "auto"}, {"grpc_status_code", "10"}}}},
-        {"stack_trace", {.type=action_type::generate_stack, .type_str="generate_stack", .parameters={}}},
-        {"extract_schema", {.type=action_type::generate_schema, .type_str="generate_schema", .parameters={}}},
-        {"monitor", {.type=action_type::monitor, .type_str="monitor", .parameters={}}}};
+        {"block", {.type = action_type::block_request,
+                      .type_str = "block_request",
+                      .parameters = {{"status_code", "403"}, {"type", "auto"},
+                          {"grpc_status_code", "10"}}}},
+        {"stack_trace",
+            {.type = action_type::generate_stack, .type_str = "generate_stack", .parameters = {}}},
+        {"extract_schema", {.type = action_type::generate_schema,
+                               .type_str = "generate_schema",
+                               .parameters = {}}},
+        {"monitor", {.type = action_type::monitor, .type_str = "monitor", .parameters = {}}}};
 
 } // namespace ddwaf

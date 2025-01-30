@@ -67,7 +67,9 @@ input_filter_spec parse_input_filter(
         throw ddwaf::parsing_error("empty exclusion filter");
     }
 
-    return {std::move(expr), std::move(obj_filter), std::move(rules_target)};
+    return {.expr = std::move(expr),
+        .filter = std::move(obj_filter),
+        .targets = std::move(rules_target)};
 }
 
 rule_filter_spec parse_rule_filter(
@@ -105,7 +107,10 @@ rule_filter_spec parse_rule_filter(
         throw ddwaf::parsing_error("empty exclusion filter");
     }
 
-    return {std::move(expr), std::move(rules_target), on_match, std::move(on_match_id)};
+    return {.expr = std::move(expr),
+        .targets = std::move(rules_target),
+        .on_match = on_match,
+        .custom_action = std::move(on_match_id)};
 }
 
 } // namespace

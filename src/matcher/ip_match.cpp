@@ -37,7 +37,7 @@ ip_match::ip_match(
         throw std::runtime_error("failed to instantiate radix tree");
     }
 
-    for (auto [str, expiration] : ip_list) {
+    for (const auto &[str, expiration] : ip_list) {
         // Parse and populate each IP/network
         ipaddr ip{};
         if (ddwaf::parse_cidr(str, ip)) {
@@ -56,7 +56,7 @@ ip_match::ip_match(const std::vector<std::pair<std::string, uint64_t>> &ip_list)
         throw std::runtime_error("failed to instantiate radix tree");
     }
 
-    for (auto [str, expiration] : ip_list) {
+    for (const auto &[str, expiration] : ip_list) {
         // Parse and populate each IP/network
         ipaddr ip{};
         if (ddwaf::parse_cidr(str, ip)) {
