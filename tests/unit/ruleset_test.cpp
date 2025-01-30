@@ -35,10 +35,6 @@ TEST(TestRuleset, InsertSingleRegularBaseRules)
         ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        /*        //EXPECT_EQ(ruleset.base/g_collections.size(), 3);*/
-        /*//EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);*/
-        /*//EXPECT_EQ(ruleset.user/g_collections.size(), 0);*/
-        /*//EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);*/
     }
 
     {
@@ -46,10 +42,6 @@ TEST(TestRuleset, InsertSingleRegularBaseRules)
         ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        /*        //EXPECT_EQ(ruleset.base/g_collections.size(), 3);*/
-        /*//EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);*/
-        /*//EXPECT_EQ(ruleset.user/g_collections.size(), 0);*/
-        /*//EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);*/
     }
 }
 
@@ -69,10 +61,6 @@ TEST(TestRuleset, InsertSinglePriorityBaseRules)
         ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        ////EXPECT_EQ(ruleset.base/g_collections.size(), 0);
-        ////EXPECT_EQ(ruleset.base/g_priority_collections.size(), 3);
-        ////EXPECT_EQ(ruleset.user/g_collections.size(), 0);
-        ////EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);
     }
 
     {
@@ -80,10 +68,6 @@ TEST(TestRuleset, InsertSinglePriorityBaseRules)
         ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        ////EXPECT_EQ(ruleset.base/g_collections.size(), 0);
-        ////EXPECT_EQ(ruleset.base/g_priority_collections.size(), 3);
-        ////EXPECT_EQ(ruleset.user/g_collections.size(), 0);
-        ////EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);
     }
 }
 
@@ -103,10 +87,6 @@ TEST(TestRuleset, InsertSingleMixedBaseRules)
         ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        // EXPECT_EQ(ruleset.base/g_collections.size(), 3);
-        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 2);
-        // EXPECT_EQ(ruleset.user/g_collections.size(), 0);
-        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);
     }
 
     {
@@ -114,10 +94,6 @@ TEST(TestRuleset, InsertSingleMixedBaseRules)
         ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        // EXPECT_EQ(ruleset.base/g_collections.size(), 3);
-        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 2);
-        // EXPECT_EQ(ruleset.user/g_collections.size(), 0);
-        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);
     }
 }
 
@@ -143,10 +119,6 @@ TEST(TestRuleset, InsertSingleRegularUserRules)
         ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        // EXPECT_EQ(ruleset.base/g_collections.size(), 0);
-        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);
-        // EXPECT_EQ(ruleset.user/g_collections.size(), 3);
-        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);
     }
 
     {
@@ -155,10 +127,6 @@ TEST(TestRuleset, InsertSingleRegularUserRules)
         ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        // EXPECT_EQ(ruleset.base/g_collections.size(), 0);
-        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);
-        // EXPECT_EQ(ruleset.user/g_collections.size(), 3);
-        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);
     }
 }
 
@@ -183,10 +151,6 @@ TEST(TestRuleset, InsertSinglePriorityUserRules)
         ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        // EXPECT_EQ(ruleset.base/g_collections.size(), 0);
-        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);
-        // EXPECT_EQ(ruleset.user/g_collections.size(), 0);
-        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 3);
     }
 
     {
@@ -194,10 +158,6 @@ TEST(TestRuleset, InsertSinglePriorityUserRules)
         ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        // EXPECT_EQ(ruleset.base/g_collections.size(), 0);
-        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);
-        // EXPECT_EQ(ruleset.user/g_collections.size(), 0);
-        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 3);
     }
 }
 
@@ -223,10 +183,6 @@ TEST(TestRuleset, InsertSingleMixedUserRules)
         ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        // EXPECT_EQ(ruleset.base/g_collections.size(), 0);
-        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);
-        // EXPECT_EQ(ruleset.user/g_collections.size(), 3);
-        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 2);
     }
 
     {
@@ -234,10 +190,6 @@ TEST(TestRuleset, InsertSingleMixedUserRules)
         ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        // EXPECT_EQ(ruleset.base/g_collections.size(), 0);
-        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);
-        // EXPECT_EQ(ruleset.user/g_collections.size(), 3);
-        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 2);
     }
 }
 
@@ -263,10 +215,6 @@ TEST(TestRuleset, InsertSingleRegularMixedRules)
         ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        // EXPECT_EQ(ruleset.base/g_collections.size(), 3);
-        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);
-        // EXPECT_EQ(ruleset.user/g_collections.size(), 2);
-        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);
     }
 
     {
@@ -274,10 +222,6 @@ TEST(TestRuleset, InsertSingleRegularMixedRules)
         ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        // EXPECT_EQ(ruleset.base/g_collections.size(), 3);
-        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 0);
-        // EXPECT_EQ(ruleset.user/g_collections.size(), 2);
-        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 0);
     }
 }
 
@@ -302,10 +246,6 @@ TEST(TestRuleset, InsertSinglePriorityMixedRules)
         ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        // EXPECT_EQ(ruleset.base/g_collections.size(), 0);
-        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 3);
-        // EXPECT_EQ(ruleset.user/g_collections.size(), 0);
-        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 2);
     }
 
     {
@@ -313,10 +253,6 @@ TEST(TestRuleset, InsertSinglePriorityMixedRules)
         ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 6);
-        // EXPECT_EQ(ruleset.base/g_collections.size(), 0);
-        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 3);
-        // EXPECT_EQ(ruleset.user/g_collections.size(), 0);
-        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 2);
     }
 }
 
@@ -348,10 +284,6 @@ TEST(TestRuleset, InsertSingleMixedMixedRules)
         ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 12);
-        // EXPECT_EQ(ruleset.base/g_collections.size(), 3);
-        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 2);
-        // EXPECT_EQ(ruleset.user/g_collections.size(), 3);
-        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 2);
     }
 
     {
@@ -359,10 +291,6 @@ TEST(TestRuleset, InsertSingleMixedMixedRules)
         ruleset.insert_rules(rules, {});
 
         EXPECT_EQ(ruleset.rules.size(), 12);
-        // EXPECT_EQ(ruleset.base/g_collections.size(), 3);
-        // EXPECT_EQ(ruleset.base/g_priority_collections.size(), 2);
-        // EXPECT_EQ(ruleset.user/g_collections.size(), 3);
-        // EXPECT_EQ(ruleset.user/g_priority_collections.size(), 2);
     }
 }
 

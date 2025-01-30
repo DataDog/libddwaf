@@ -9,9 +9,8 @@
 
 #include "context.hpp"
 #include "ddwaf.h"
-#include "parser/parser.hpp"
+#include "parameter.hpp"
 #include "ruleset.hpp"
-#include "ruleset_builder.hpp"
 #include "ruleset_info.hpp"
 #include "utils.hpp"
 #include "version.hpp"
@@ -20,9 +19,12 @@ namespace ddwaf {
 
 class waf {
 public:
-    waf(ddwaf::parameter input, ddwaf::base_ruleset_info &info, ddwaf::object_limits limits,
-        ddwaf_object_free_fn free_fn, std::shared_ptr<ddwaf::obfuscator> event_obfuscator);
-    waf *update(ddwaf::parameter input, ddwaf::base_ruleset_info &info);
+    explicit waf(std::shared_ptr<ruleset> ruleset) : ruleset_(std::move(ruleset)) {}
+    waf(const waf &) = default;
+    waf(waf &&) = default;
+    waf &operator=(const waf &) = default;
+    waf &operator=(waf &&) = default;
+    ~waf() = default;
 
     ddwaf::context_wrapper *create_context() { return new context_wrapper(ruleset_); }
 
@@ -37,11 +39,6 @@ public:
     }
 
 protected:
-    waf(std::shared_ptr<ruleset_builder> builder, std::shared_ptr<ruleset> ruleset)
-        : builder_(std::move(builder)), ruleset_(std::move(ruleset))
-    {}
-
-    std::shared_ptr<ruleset_builder> builder_;
     std::shared_ptr<ruleset> ruleset_;
 };
 

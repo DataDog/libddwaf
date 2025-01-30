@@ -6,6 +6,7 @@
 
 #include "common/gtest_utils.hpp"
 
+#include "builder/action_mapper_builder.hpp"
 #include "event.hpp"
 #include "rule.hpp"
 #include "utils.hpp"

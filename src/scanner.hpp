@@ -49,6 +49,7 @@ public:
 
     const std::unordered_map<std::string, std::string> &get_tags() const { return tags_; }
     std::string_view get_id() const { return id_; }
+    const std::string &get_id_ref() const { return id_; }
 
 protected:
     static bool eval_matcher(const std::unique_ptr<matcher::base> &matcher, const ddwaf_object &obj)

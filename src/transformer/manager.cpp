@@ -29,6 +29,8 @@
 
 namespace ddwaf::transformer {
 
+namespace {
+
 bool call_transformer(transformer_id id, cow_string &str)
 {
     switch (id) {
@@ -72,6 +74,8 @@ bool call_transformer(transformer_id id, cow_string &str)
 
     return false;
 }
+
+} // namespace
 
 bool manager::transform(const ddwaf_object &source, ddwaf_object &destination,
     const std::span<const transformer_id> &transformers)

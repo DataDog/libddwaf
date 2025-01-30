@@ -165,9 +165,6 @@ void serialize_rule(const core_rule &rule, ddwaf_object &rule_map)
     for (const auto &[key, value] : rule.get_tags()) {
         ddwaf_object_map_addl(&tags_map, key.c_str(), key.size(), to_object(tmp, value));
     }
-    for (const auto &[key, value] : rule.get_ancillary_tags()) {
-        ddwaf_object_map_addl(&tags_map, key.c_str(), key.size(), to_object(tmp, value));
-    }
     ddwaf_object_map_add(&rule_map, "tags", &tags_map);
 }
 
@@ -295,7 +292,8 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_result 
         return;
     }
 
-    action_tracker actions{.mapper = actions_};
+    action_tracker actions{
+        .blocking_action = {}, .stack_id = {}, .non_blocking_actions = {}, .mapper = actions_};
 
     ddwaf_object_array(&output.events);
     for (const auto &event : events) {

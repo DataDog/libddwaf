@@ -53,7 +53,7 @@ std::optional<excluded_set> input_filter::match(const object_store &store, cache
         return std::nullopt;
     }
 
-    return {{rule_targets_, std::move(objects)}};
+    return {{.rules = rule_targets_, .objects = std::move(objects)}};
 }
 
 } // namespace ddwaf::exclusion

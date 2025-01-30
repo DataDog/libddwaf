@@ -4,12 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "sha256.hpp"
-
+#include <cstdint>
 #include <utility>
 #include <vector>
 
 #include "common/gtest_utils.hpp"
+#include "sha256.hpp"
 
 TEST(TestSha256, RandomInputTest)
 {

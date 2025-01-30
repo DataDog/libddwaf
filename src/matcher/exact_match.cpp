@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "indexed_multivector.hpp"
 #include "matcher/exact_match.hpp"
 
 namespace ddwaf::matcher {
@@ -21,11 +22,28 @@ exact_match::exact_match(std::vector<std::string> &&data) : data_(std::move(data
     for (const auto &str : data_) { values_.emplace(str, 0); }
 }
 
-exact_match::exact_match(const std::vector<std::pair<std::string_view, uint64_t>> &data)
+exact_match::exact_match(const std::vector<std::pair<std::string, uint64_t>> &data)
 {
     data_.reserve(data.size());
     values_.reserve(data.size());
-    for (auto [str, expiration] : data) {
+    for (const auto &[str, expiration] : data) {
+        const auto &ref = data_.emplace_back(str);
+        auto res = values_.emplace(ref, expiration);
+        if (!res.second) {
+            const uint64_t prev_expiration = res.first->second;
+            if (prev_expiration != 0 && (expiration == 0 || expiration > prev_expiration)) {
+                res.first->second = expiration;
+            }
+        }
+    }
+}
+
+exact_match::exact_match(
+    const indexed_multivector<std::string, std::pair<std::string, uint64_t>> &data)
+{
+    data_.reserve(data.size());
+    values_.reserve(data.size());
+    for (const auto &[str, expiration] : data) {
         const auto &ref = data_.emplace_back(str);
         auto res = values_.emplace(ref, expiration);
         if (!res.second) {

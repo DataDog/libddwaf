@@ -35,6 +35,24 @@ public:
         return items_.erase(it);
     }
 
+    void erase(std::string_view id)
+    {
+        iterator it;
+        for (it = items_.begin(); it != items_.end(); ++it) {
+            if (id == (*it)->get_id()) {
+                break;
+            }
+        }
+
+        if (it == items_.end()) {
+            return;
+        }
+
+        erase(it);
+    }
+
+    [[nodiscard]] bool contains(std::string_view id) const { return by_id_.contains(id); }
+
     T *find_by_id(std::string_view id) const
     {
         auto it = by_id_.find(id);
@@ -47,6 +65,7 @@ public:
     }
 
     [[nodiscard]] std::size_t size() const { return items_.size(); }
+    [[nodiscard]] bool empty() const { return items_.empty(); }
 
     void clear()
     {

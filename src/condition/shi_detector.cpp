@@ -43,7 +43,7 @@ eval_result shi_detector::eval_string(const unary_argument<const ddwaf_object *>
         auto res = find_shi_from_params(
             resource_sv, resource_tokens, *param.value, objects_excluded, limits_, deadline);
         if (res.has_value()) {
-            std::vector<std::string> resource_kp{
+            const std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
             const bool ephemeral = resource.ephemeral || param.ephemeral;
 
@@ -51,12 +51,20 @@ eval_result shi_detector::eval_string(const unary_argument<const ddwaf_object *>
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
 
-            cache.match = condition_match{
-                {{"resource"sv, std::string{resource_sv}, resource.address, resource_kp},
-                    {"params"sv, highlight, param.address, param_kp}},
-                {std::move(highlight)}, "shi_detector", {}, ephemeral};
+            cache.match = condition_match{.args = {{.name = "resource"sv,
+                                                       .resolved = std::string{resource_sv},
+                                                       .address = resource.address,
+                                                       .key_path = resource_kp},
+                                              {.name = "params"sv,
+                                                  .resolved = highlight,
+                                                  .address = param.address,
+                                                  .key_path = param_kp}},
+                .highlights = {std::move(highlight)},
+                .operator_name = "shi_detector",
+                .operator_value = {},
+                .ephemeral = ephemeral};
 
-            return {true, ephemeral};
+            return {.outcome = true, .ephemeral = ephemeral};
         }
     }
 
@@ -77,7 +85,7 @@ eval_result shi_detector::eval_array(const unary_argument<const ddwaf_object *> 
         auto res = find_shi_from_params(
             arguments, resource_tokens, *param.value, objects_excluded, limits_, deadline);
         if (res.has_value()) {
-            std::vector<std::string> resource_kp{
+            const std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
             const bool ephemeral = resource.ephemeral || param.ephemeral;
 
@@ -85,12 +93,20 @@ eval_result shi_detector::eval_array(const unary_argument<const ddwaf_object *> 
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
 
-            cache.match = condition_match{
-                {{"resource"sv, std::move(arguments.resource), resource.address, resource_kp},
-                    {"params"sv, highlight, param.address, param_kp}},
-                {std::move(highlight)}, "shi_detector", {}, ephemeral};
+            cache.match = condition_match{.args = {{.name = "resource"sv,
+                                                       .resolved = std::move(arguments.resource),
+                                                       .address = resource.address,
+                                                       .key_path = resource_kp},
+                                              {.name = "params"sv,
+                                                  .resolved = highlight,
+                                                  .address = param.address,
+                                                  .key_path = param_kp}},
+                .highlights = {std::move(highlight)},
+                .operator_name = "shi_detector",
+                .operator_value = {},
+                .ephemeral = ephemeral};
 
-            return {true, ephemeral};
+            return {.outcome = true, .ephemeral = ephemeral};
         }
     }
 

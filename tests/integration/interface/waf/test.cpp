@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "common/gtest_utils.hpp"
+#include "ddwaf.h"
 #include "version.hpp"
 
 using namespace ddwaf;
@@ -23,7 +24,7 @@ TEST(TestWafIntegration, Empty)
     ddwaf_object_free(&rule);
 }
 
-TEST(TestWafIntegration, ddwaf_get_version)
+TEST(TestWafIntegration, GetWafVersion)
 {
     EXPECT_STREQ(ddwaf_get_version(), ddwaf::current_version.cstring());
 }
@@ -192,51 +193,25 @@ TEST(TestWafIntegration, InvalidVersionNoRules)
     ddwaf_object_free(&rule);
 }
 
-TEST(TestWafIntegration, UpdateWithNullObject)
-{
-    EXPECT_EQ(ddwaf_update(nullptr, nullptr, nullptr), nullptr);
-}
-
-TEST(TestWafIntegration, UpdateWithNullHandle)
-{
-    auto rule = read_file("rule_data.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
-    ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    EXPECT_EQ(ddwaf_update(handle, nullptr, nullptr), nullptr);
-    ddwaf_destroy(handle);
-}
-
-TEST(TestWafIntegration, UpdateEmpty)
-{
-    auto rule = read_file("interface.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
-
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    rule = yaml_to_object("{}");
-    ddwaf_handle new_handle = ddwaf_update(handle, &rule, nullptr);
-    ASSERT_EQ(new_handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    ddwaf_destroy(handle);
-}
-
 TEST(TestWafIntegration, PreloadRuleData)
 {
-    auto rule = read_file("rule_data_with_data.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ASSERT_NE(builder, nullptr);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    {
+        auto rule = read_file("rules_requiring_data.yaml", base_dir);
+        ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+
+        auto rule_data = read_file("rule_data.yaml", base_dir);
+        ASSERT_TRUE(rule_data.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rule_data"), &rule_data, nullptr);
+        ddwaf_object_free(&rule_data);
+    }
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
 
     {
         ddwaf_context context = ddwaf_context_init(handle);
@@ -267,12 +242,13 @@ TEST(TestWafIntegration, PreloadRuleData)
     }
 
     {
-        auto root = yaml_to_object(
+        auto rule_data = yaml_to_object(
             R"({rules_data: [{id: usr_data, type: data_with_expiration, data: [{value: pepe, expiration: 0}]}, {id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.2, expiration: 0}]}]})");
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rule_data"), &rule_data, nullptr);
+        ddwaf_object_free(&rule_data);
 
-        ddwaf_handle new_handle = ddwaf_update(handle, &root, nullptr);
+        ddwaf_handle new_handle = ddwaf_builder_build_instance(builder);
         ASSERT_NE(new_handle, nullptr);
-        ddwaf_object_free(&root);
         ddwaf_destroy(handle);
 
         handle = new_handle;
@@ -307,6 +283,7 @@ TEST(TestWafIntegration, PreloadRuleData)
     }
 
     ddwaf_destroy(handle);
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestWafIntegration, UpdateRules)
@@ -316,15 +293,22 @@ TEST(TestWafIntegration, UpdateRules)
 
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
 
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder_add_or_update_config(builder, "default", sizeof("default") - 1, &rule, nullptr);
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
     ddwaf_context context1 = ddwaf_context_init(handle);
     ASSERT_NE(context1, nullptr);
 
+    ddwaf_builder_remove_config(builder, "default", sizeof("default") - 1);
+
     rule = read_file("interface3.yaml", base_dir);
-    ddwaf_handle new_handle = ddwaf_update(handle, &rule, nullptr);
+    ddwaf_builder_add_or_update_config(
+        builder, "new_config", sizeof("new_config") - 1, &rule, nullptr);
+    ddwaf_handle new_handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(new_handle, nullptr);
     ddwaf_object_free(&rule);
 
@@ -353,48 +337,38 @@ TEST(TestWafIntegration, UpdateRules)
 
     ddwaf_context_destroy(context2);
     ddwaf_context_destroy(context1);
-}
 
-TEST(TestWafIntegration, UpdateInvalidRules)
-{
-    auto rule = read_file("interface.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
-
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    rule = yaml_to_object("{rules: []}");
-    ddwaf_handle new_handle = ddwaf_update(handle, &rule, nullptr);
-    ASSERT_EQ(new_handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    ddwaf_destroy(handle);
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestWafIntegration, UpdateDisableEnableRuleByID)
 {
-    auto rule = read_file("interface.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ASSERT_NE(builder, nullptr);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    {
+        auto rule = read_file("interface.yaml", base_dir);
+        ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("interface"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
 
     ddwaf_context context1 = ddwaf_context_init(handle1);
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_handle handle2;
     {
         auto overrides =
             yaml_to_object(R"({rules_override: [{rules_target: [{rule_id: 1}], enabled: false}]})");
-        handle2 = ddwaf_update(handle1, &overrides, nullptr);
+        ASSERT_TRUE(overrides.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
     }
+    auto *handle2 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle2, nullptr);
 
     ddwaf_context context2 = ddwaf_context_init(handle2);
     ASSERT_NE(context2, nullptr);
@@ -418,12 +392,9 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByID)
     ddwaf_context_destroy(context1);
     ddwaf_destroy(handle1);
 
-    ddwaf_handle handle3;
-    {
-        auto overrides = yaml_to_object(R"({rules_override: []})");
-        handle3 = ddwaf_update(handle2, &overrides, nullptr);
-        ddwaf_object_free(&overrides);
-    }
+    ddwaf_builder_remove_config(builder, LSTRARG("overrides"));
+    auto *handle3 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle3, nullptr);
 
     ddwaf_context context3 = ddwaf_context_init(handle3);
     ASSERT_NE(context3, nullptr);
@@ -443,29 +414,37 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByID)
     ddwaf_context_destroy(context3);
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle3);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestWafIntegration, UpdateDisableEnableRuleByTags)
 {
-    auto rule = read_file("interface.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_builder builder = ddwaf_builder_init(&config);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    {
+        auto rule = read_file("interface.yaml", base_dir);
+        ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
 
     ddwaf_context context1 = ddwaf_context_init(handle1);
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_handle handle2;
     {
         auto overrides = yaml_to_object(
             R"({rules_override: [{rules_target: [{tags: {type: flow2}}], enabled: false}]})");
-        handle2 = ddwaf_update(handle1, &overrides, nullptr);
+        ASSERT_TRUE(overrides.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
     }
+    auto *handle2 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle2, nullptr);
 
     ddwaf_context context2 = ddwaf_context_init(handle2);
     ASSERT_NE(context2, nullptr);
@@ -492,12 +471,9 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByTags)
     ddwaf_context_destroy(context2);
     ddwaf_destroy(handle1);
 
-    ddwaf_handle handle3;
-    {
-        auto overrides = yaml_to_object(R"({rules_override: []})");
-        handle3 = ddwaf_update(handle2, &overrides, nullptr);
-        ddwaf_object_free(&overrides);
-    }
+    ddwaf_builder_remove_config(builder, LSTRARG("overrides"));
+    auto *handle3 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle3, nullptr);
 
     context2 = ddwaf_context_init(handle2);
     ASSERT_NE(context2, nullptr);
@@ -527,18 +503,25 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByTags)
     ddwaf_context_destroy(context3);
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle3);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestWafIntegration, UpdateActionsByID)
 {
-    auto rule = read_file("interface.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ASSERT_NE(builder, nullptr);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    {
+        auto rule = read_file("interface.yaml", base_dir);
+        ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
 
     {
         uint32_t actions_size;
@@ -551,8 +534,10 @@ TEST(TestWafIntegration, UpdateActionsByID)
     {
         auto overrides = yaml_to_object(
             R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [block]}]})");
-        handle2 = ddwaf_update(handle1, &overrides, nullptr);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
+
+        handle2 = ddwaf_builder_build_instance(builder);
 
         uint32_t actions_size;
         const char *const *actions = ddwaf_known_actions(handle2, &actions_size);
@@ -626,8 +611,10 @@ TEST(TestWafIntegration, UpdateActionsByID)
     {
         auto overrides = yaml_to_object(
             R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [redirect]}], actions: [{id: redirect, type: redirect_request, parameters: {location: http://google.com, status_code: 303}}]})");
-        handle3 = ddwaf_update(handle2, &overrides, nullptr);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
+
+        handle3 = ddwaf_builder_build_instance(builder);
 
         uint32_t actions_size;
         const char *const *actions = ddwaf_known_actions(handle3, &actions_size);
@@ -670,18 +657,24 @@ TEST(TestWafIntegration, UpdateActionsByID)
 
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle3);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestWafIntegration, UpdateActionsByTags)
 {
-    auto rule = read_file("interface.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_builder builder = ddwaf_builder_init(&config);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    {
+        auto rule = read_file("interface.yaml", base_dir);
+        ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
 
     {
         uint32_t actions_size;
@@ -694,8 +687,10 @@ TEST(TestWafIntegration, UpdateActionsByTags)
     {
         auto overrides = yaml_to_object(
             R"({rules_override: [{rules_target: [{tags: {confidence: 1}}], on_match: [block]}]})");
-        handle2 = ddwaf_update(handle1, &overrides, nullptr);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
+
+        handle2 = ddwaf_builder_build_instance(builder);
 
         uint32_t actions_size;
         const char *const *actions = ddwaf_known_actions(handle2, &actions_size);
@@ -766,26 +761,34 @@ TEST(TestWafIntegration, UpdateActionsByTags)
 
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle2);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestWafIntegration, UpdateTagsByID)
 {
-    auto rule = read_file("interface.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_builder builder = ddwaf_builder_init(&config);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    {
+        auto rule = read_file("interface.yaml", base_dir);
+        ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
 
-    ddwaf_handle handle2;
     {
         auto overrides = yaml_to_object(
             R"({rules_override: [{rules_target: [{rule_id: 1}], tags: {category: new_category, confidence: 0, new_tag: value}}]})");
-        handle2 = ddwaf_update(handle1, &overrides, nullptr);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
     }
+
+    auto *handle2 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle2, nullptr);
 
     {
         ddwaf_context context1 = ddwaf_context_init(handle1);
@@ -834,12 +837,8 @@ TEST(TestWafIntegration, UpdateTagsByID)
         ddwaf_context_destroy(context1);
     }
 
-    ddwaf_handle handle3;
-    {
-        auto overrides = yaml_to_object(R"({rules_override: []})");
-        handle3 = ddwaf_update(handle2, &overrides, nullptr);
-        ddwaf_object_free(&overrides);
-    }
+    ddwaf_builder_remove_config(builder, LSTRARG("overrides"));
+    auto *handle3 = ddwaf_builder_build_instance(builder);
 
     {
         ddwaf_context context3 = ddwaf_context_init(handle3);
@@ -891,26 +890,35 @@ TEST(TestWafIntegration, UpdateTagsByID)
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle3);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestWafIntegration, UpdateTagsByTags)
 {
-    auto rule = read_file("interface.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_builder builder = ddwaf_builder_init(&config);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    {
+        auto rule = read_file("interface.yaml", base_dir);
+        ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
 
-    ddwaf_handle handle2;
     {
         auto overrides = yaml_to_object(
             R"({rules_override: [{rules_target: [{tags: {confidence: 1}}], tags: {new_tag: value, confidence: 0}}]})");
-        handle2 = ddwaf_update(handle1, &overrides, nullptr);
+        ASSERT_TRUE(overrides.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
     }
+
+    auto *handle2 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle2, nullptr);
 
     {
         ddwaf_context context1 = ddwaf_context_init(handle1);
@@ -1052,13 +1060,8 @@ TEST(TestWafIntegration, UpdateTagsByTags)
         ddwaf_context_destroy(context1);
     }
 
-    ddwaf_handle handle3;
-    {
-        auto overrides = yaml_to_object(
-            R"({rules_override: [{rules_target: [{tags: {confidence: 0}}], tags: {should_not: exist}}]})");
-        handle3 = ddwaf_update(handle2, &overrides, nullptr);
-        ddwaf_object_free(&overrides);
-    }
+    ddwaf_builder_remove_config(builder, LSTRARG("overrides"));
+    auto *handle3 = ddwaf_builder_build_instance(builder);
 
     {
         ddwaf_context context3 = ddwaf_context_init(handle3);
@@ -1109,26 +1112,35 @@ TEST(TestWafIntegration, UpdateTagsByTags)
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle3);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
 {
-    auto rule = read_file("interface.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_builder builder = ddwaf_builder_init(&config);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    {
+        auto rule = read_file("interface.yaml", base_dir);
+        ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
 
-    ddwaf_handle handle2;
     {
         auto overrides = yaml_to_object(
             R"({rules_override: [{rules_target: [{tags: {type: flow1}}], tags: {new_tag: old_value}, on_match: ["block"], enabled: false}, {rules_target: [{rule_id: 1}], tags: {new_tag: new_value}, enabled: true}]})");
-        handle2 = ddwaf_update(handle1, &overrides, nullptr);
+        ASSERT_TRUE(overrides.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
     }
+
+    auto *handle2 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle2, nullptr);
 
     {
         ddwaf_context context1 = ddwaf_context_init(handle1);
@@ -1183,13 +1195,16 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
         ddwaf_context_destroy(context2);
     }
 
-    ddwaf_handle handle3;
     {
         auto overrides = yaml_to_object(
             R"({rules_override: [{rules_target: [{tags: {type: flow1}}], on_match: ["block"]}, {rules_target: [{rule_id: 1}], on_match: []}]})");
-        handle3 = ddwaf_update(handle2, &overrides, nullptr);
+        ASSERT_TRUE(overrides.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
     }
+
+    auto *handle3 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle3, nullptr);
 
     {
         ddwaf_context context2 = ddwaf_context_init(handle2);
@@ -1244,13 +1259,16 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
         ddwaf_context_destroy(context3);
     }
 
-    ddwaf_handle handle4;
     {
         auto overrides = yaml_to_object(
             R"({rules_override: [{rules_target: [{tags: {type: flow1}}], enabled: true}, {rules_target: [{rule_id: 1}], enabled: false}]})");
-        handle4 = ddwaf_update(handle3, &overrides, nullptr);
+        ASSERT_TRUE(overrides.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
     }
+
+    auto *handle4 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle4, nullptr);
 
     {
         ddwaf_context context3 = ddwaf_context_init(handle3);
@@ -1276,54 +1294,70 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle3);
     ddwaf_destroy(handle4);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestWafIntegration, UpdateInvalidOverrides)
 {
+    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_builder builder = ddwaf_builder_init(&config);
+
     auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
-
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
-    ASSERT_NE(handle1, nullptr);
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
     ddwaf_object_free(&rule);
 
+    ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle1, nullptr);
+
     auto overrides = yaml_to_object(R"({rules_override: [{enabled: false}]})");
-    ddwaf_handle handle2 = ddwaf_update(handle1, &overrides, nullptr);
-    ASSERT_NE(handle2, nullptr);
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
     ddwaf_object_free(&overrides);
+
+    ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle2, nullptr);
 
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle2);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestWafIntegration, UpdateRuleData)
 {
-    auto rule = read_file("rule_data.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_builder builder = ddwaf_builder_init(&config);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    {
+        auto rule = read_file("rules_requiring_data.yaml", base_dir);
+        ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
 
-    ddwaf_handle handle2;
     {
-        auto data = yaml_to_object(
+        auto rule_data = yaml_to_object(
             R"({rules_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 0}]}]})");
-        handle2 = ddwaf_update(handle1, &data, nullptr);
-        ddwaf_object_free(&data);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rule_data"), &rule_data, nullptr);
+        ddwaf_object_free(&rule_data);
     }
 
-    ddwaf_handle handle3;
+    auto *handle2 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle2, nullptr);
+
     {
-        auto data = yaml_to_object(
+        auto rule_data = yaml_to_object(
             R"({rules_data: [{id: usr_data, type: data_with_expiration, data: [{value: paco, expiration: 0}]}]})");
-        handle3 = ddwaf_update(handle2, &data, nullptr);
-        ddwaf_object_free(&data);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rule_data"), &rule_data, nullptr);
+        ddwaf_object_free(&rule_data);
     }
+
+    auto *handle3 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle3, nullptr);
 
     ddwaf_context context1 = ddwaf_context_init(handle1);
     ASSERT_NE(context1, nullptr);
@@ -1365,26 +1399,34 @@ TEST(TestWafIntegration, UpdateRuleData)
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle3);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestWafIntegration, UpdateAndRevertRuleData)
 {
-    auto rule = read_file("rule_data.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_builder builder = ddwaf_builder_init(&config);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
-    ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
-
-    ddwaf_handle handle2;
     {
-        auto data = yaml_to_object(
-            R"({rules_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 0}]}]})");
-        handle2 = ddwaf_update(handle1, &data, nullptr);
-        ddwaf_object_free(&data);
+        auto rule = read_file("rules_requiring_data.yaml", base_dir);
+        ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
     }
+
+    auto *handle1 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle1, nullptr);
+
+    {
+        auto rule_data = yaml_to_object(
+            R"({rules_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 0}]}]})");
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rule_data"), &rule_data, nullptr);
+        ddwaf_object_free(&rule_data);
+    }
+
+    auto *handle2 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle2, nullptr);
 
     ddwaf_object tmp;
     {
@@ -1407,12 +1449,9 @@ TEST(TestWafIntegration, UpdateAndRevertRuleData)
         ddwaf_context_destroy(context2);
     }
 
-    ddwaf_handle handle3;
-    {
-        auto data = yaml_to_object(R"({rules_data: []})");
-        handle3 = ddwaf_update(handle2, &data, nullptr);
-        ddwaf_object_free(&data);
-    }
+    ddwaf_builder_remove_config(builder, LSTRARG("rule_data"));
+    auto *handle3 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle3, nullptr);
 
     {
         ddwaf_context context2 = ddwaf_context_init(handle2);
@@ -1437,48 +1476,35 @@ TEST(TestWafIntegration, UpdateAndRevertRuleData)
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle3);
-}
 
-TEST(TestWafIntegration, UpdateInvalidRuleData)
-{
-    auto rule = read_file("rule_data.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
-
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
-    ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
-
-    // A rules_data with unrelated keys is considered an empty rules_data
-    auto data = yaml_to_object(
-        R"({rules_data: [{id: ipo_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 0}]}]})");
-    ddwaf_handle handle2 = ddwaf_update(handle1, &data, nullptr);
-    EXPECT_NE(handle2, nullptr);
-    ddwaf_object_free(&data);
-
-    ddwaf_destroy(handle1);
-    ddwaf_destroy(handle2);
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestWafIntegration, UpdateRuleExclusions)
 {
-    auto rule = read_file("interface.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_builder builder = ddwaf_builder_init(&config);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    {
+        auto rule = read_file("interface.yaml", base_dir);
+        ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
 
-    ddwaf_handle handle2;
     {
         auto exclusions =
             yaml_to_object(R"({exclusions: [{id: 1, rules_target: [{rule_id: 1}]}]})");
-        handle2 = ddwaf_update(handle1, &exclusions, nullptr);
+        ASSERT_NE(exclusions.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusions"), &exclusions, nullptr);
         ddwaf_object_free(&exclusions);
     }
+
+    ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle2, nullptr);
 
     {
         ddwaf_context context1 = ddwaf_context_init(handle1);
@@ -1521,12 +1547,9 @@ TEST(TestWafIntegration, UpdateRuleExclusions)
     }
     ddwaf_destroy(handle1);
 
-    ddwaf_handle handle3;
-    {
-        auto exclusions = yaml_to_object(R"({exclusions: []})");
-        handle3 = ddwaf_update(handle2, &exclusions, nullptr);
-        ddwaf_object_free(&exclusions);
-    }
+    ddwaf_builder_remove_config(builder, LSTRARG("exclusions"));
+    ddwaf_handle handle3 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle3, nullptr);
 
     {
         ddwaf_context context2 = ddwaf_context_init(handle2);
@@ -1550,25 +1573,34 @@ TEST(TestWafIntegration, UpdateRuleExclusions)
 
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle3);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestWafIntegration, UpdateInputExclusions)
 {
-    auto rule = read_file("interface.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_builder builder = ddwaf_builder_init(&config);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    {
+        auto rule = read_file("interface.yaml", base_dir);
+        ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
 
-    ddwaf_handle handle2;
     {
         auto exclusions = yaml_to_object(R"({exclusions: [{id: 1, inputs: [{address: value1}]}]})");
-        handle2 = ddwaf_update(handle1, &exclusions, nullptr);
+        ASSERT_NE(exclusions.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusions"), &exclusions, nullptr);
         ddwaf_object_free(&exclusions);
     }
+
+    ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle2, nullptr);
 
     {
         ddwaf_context context1 = ddwaf_context_init(handle1);
@@ -1631,12 +1663,9 @@ TEST(TestWafIntegration, UpdateInputExclusions)
     }
     ddwaf_destroy(handle1);
 
-    ddwaf_handle handle3;
-    {
-        auto exclusions = yaml_to_object(R"({exclusions: []})");
-        handle3 = ddwaf_update(handle2, &exclusions, nullptr);
-        ddwaf_object_free(&exclusions);
-    }
+    ddwaf_builder_remove_config(builder, LSTRARG("exclusions"));
+    ddwaf_handle handle3 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle3, nullptr);
 
     {
         ddwaf_context context2 = ddwaf_context_init(handle2);
@@ -1660,28 +1689,37 @@ TEST(TestWafIntegration, UpdateInputExclusions)
 
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle3);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestWafIntegration, UpdateEverything)
 {
-    auto rule = read_file("interface_with_data.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_builder builder = ddwaf_builder_init(&config);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    {
+        auto rule = read_file("interface_with_data.yaml", base_dir);
+        ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
 
     // After this update:
     //   - No rule will match server.request.query
-    ddwaf_handle handle2;
     {
         auto exclusions =
             yaml_to_object(R"({exclusions: [{id: 1, inputs: [{address: server.request.query}]}]})");
-        handle2 = ddwaf_update(handle1, &exclusions, nullptr);
+        ASSERT_NE(exclusions.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusions"), &exclusions, nullptr);
         ddwaf_object_free(&exclusions);
     }
+
+    ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle2, nullptr);
 
     {
         ddwaf_context context1 = ddwaf_context_init(handle1);
@@ -1728,13 +1766,16 @@ TEST(TestWafIntegration, UpdateEverything)
     // After this update:
     //   - No rule will match server.request.query
     //   - Rules with confidence=1 will provide a block action
-    ddwaf_handle handle3;
     {
         auto overrides = yaml_to_object(
             R"({rules_override: [{rules_target: [{tags: {confidence: 1}}], on_match: [block]}]})");
-        handle3 = ddwaf_update(handle2, &overrides, nullptr);
+        ASSERT_NE(overrides.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
     }
+
+    ddwaf_handle handle3 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle3, nullptr);
 
     {
         ddwaf_context context2 = ddwaf_context_init(handle2);
@@ -1793,14 +1834,15 @@ TEST(TestWafIntegration, UpdateEverything)
     //   - No rule will match server.request.query
     //   - Rules with confidence=1 will provide a block action
     //   - Rules with ip_data or usr_data will now match
-    ddwaf_handle handle4;
     {
         auto data = yaml_to_object(
             R"({rules_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 0}]},{id: usr_data, type: data_with_expiration, data: [{value: admin, expiration 0}]}]})");
-        handle4 = ddwaf_update(handle3, &data, nullptr);
+        ASSERT_NE(data.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rule_data"), &data, nullptr);
         ddwaf_object_free(&data);
     }
 
+    ddwaf_handle handle4 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle4, nullptr);
 
     {
@@ -1856,13 +1898,14 @@ TEST(TestWafIntegration, UpdateEverything)
     //   - Rules with confidence=1 will provide a block action
     //   - Rules with ip_data or usr_data will now match
     //   - The following rules will be removed: rule3, rule4, rule5
-    ddwaf_handle handle5;
     {
-        auto data = read_file("rule_data.yaml", base_dir);
-        handle5 = ddwaf_update(handle4, &data, nullptr);
-        ddwaf_object_free(&data);
+        auto rule = read_file("rules_requiring_data.yaml", base_dir);
+        ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
     }
 
+    ddwaf_handle handle5 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle5, nullptr);
 
     {
@@ -1956,13 +1999,14 @@ TEST(TestWafIntegration, UpdateEverything)
     //   - Rules with confidence=1 will provide a block action
     //   - Rules with ip_data or usr_data will now match
     //   - The following rules be back: rule3, rule4, rule5
-    ddwaf_handle handle6;
     {
-        auto data = read_file("interface_with_data.yaml", base_dir);
-        handle6 = ddwaf_update(handle5, &data, nullptr);
-        ddwaf_object_free(&data);
+        auto rule = read_file("interface_with_data.yaml", base_dir);
+        ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
     }
 
+    ddwaf_handle handle6 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle6, nullptr);
 
     {
@@ -2050,13 +2094,8 @@ TEST(TestWafIntegration, UpdateEverything)
     // After this update:
     //   - Rules with confidence=1 will provide a block action
     //   - Rules with ip_data or usr_data will now match
-    ddwaf_handle handle7;
-    {
-        auto exclusions = yaml_to_object(R"({exclusions: []})");
-        handle7 = ddwaf_update(handle6, &exclusions, nullptr);
-        ddwaf_object_free(&exclusions);
-    }
-
+    ddwaf_builder_remove_config(builder, LSTRARG("exclusions"));
+    ddwaf_handle handle7 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle7, nullptr);
 
     {
@@ -2093,12 +2132,9 @@ TEST(TestWafIntegration, UpdateEverything)
 
     // After this update:
     //   - Rules with ip_data or usr_data will now match
-    ddwaf_handle handle8;
-    {
-        auto exclusions = yaml_to_object(R"({rules_override: []})");
-        handle8 = ddwaf_update(handle7, &exclusions, nullptr);
-        ddwaf_object_free(&exclusions);
-    }
+    ddwaf_builder_remove_config(builder, LSTRARG("overrides"));
+    ddwaf_handle handle8 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle8, nullptr);
 
     ASSERT_NE(handle8, nullptr);
 
@@ -2167,13 +2203,8 @@ TEST(TestWafIntegration, UpdateEverything)
     }
 
     // After this update, back to the original behaviour
-    ddwaf_handle handle9;
-    {
-        auto exclusions = yaml_to_object(R"({rules_data: []})");
-        handle9 = ddwaf_update(handle8, &exclusions, nullptr);
-        ddwaf_object_free(&exclusions);
-    }
-
+    ddwaf_builder_remove_config(builder, LSTRARG("rule_data"));
+    ddwaf_handle handle9 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle9, nullptr);
 
     {
@@ -2270,34 +2301,41 @@ TEST(TestWafIntegration, UpdateEverything)
     ddwaf_destroy(handle3);
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle1);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestWafIntegration, KnownAddressesDisabledRule)
 {
-    auto rule = read_file("ruleset_with_disabled_rule.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_builder builder = ddwaf_builder_init(&config);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    {
+        auto rule = read_file("ruleset_with_disabled_rule.yaml", base_dir);
+        ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("ruleset"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+    auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
 
-    ddwaf_handle handle2;
     {
         auto overrides = yaml_to_object(
             R"({rules_override: [{rules_target: [{rule_id: id-rule-1}], enabled: true}]})");
-        handle2 = ddwaf_update(handle1, &overrides, nullptr);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("override"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
     }
+    auto *handle2 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle2, nullptr);
 
-    ddwaf_handle handle3;
     {
         auto overrides = yaml_to_object(
             R"({rules_override: [{rules_target: [{rule_id: id-rule-1}], enabled: false}]})");
-        handle3 = ddwaf_update(handle2, &overrides, nullptr);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("override"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
     }
+    auto *handle3 = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle3, nullptr);
 
     {
         uint32_t size;
@@ -2330,18 +2368,24 @@ TEST(TestWafIntegration, KnownAddressesDisabledRule)
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle3);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestWafIntegration, KnownActions)
 {
-    auto rule = read_file("interface.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
     ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_builder builder = ddwaf_builder_init(&config);
 
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    {
+        auto rule = read_file("interface.yaml", base_dir);
+        ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
-    ddwaf_object_free(&rule);
 
     {
         uint32_t size;
@@ -2355,8 +2399,11 @@ TEST(TestWafIntegration, KnownActions)
     {
         auto overrides = yaml_to_object(
             R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [block]}]})");
-        handle2 = ddwaf_update(handle1, &overrides, nullptr);
+        ASSERT_NE(overrides.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
+
+        handle2 = ddwaf_builder_build_instance(builder);
 
         uint32_t size;
         const char *const *actions = ddwaf_known_actions(handle2, &size);
@@ -2376,8 +2423,11 @@ TEST(TestWafIntegration, KnownActions)
     {
         auto overrides =
             yaml_to_object(R"({rules_override: [{rules_target: [{rule_id: 1}], enabled: false}]})");
-        handle3 = ddwaf_update(handle2, &overrides, nullptr);
+        ASSERT_NE(overrides.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
+
+        handle3 = ddwaf_builder_build_instance(builder);
 
         uint32_t size;
         const char *const *actions = ddwaf_known_actions(handle3, &size);
@@ -2390,10 +2440,19 @@ TEST(TestWafIntegration, KnownActions)
     // Add a new action type and update another rule to use it
     ddwaf_handle handle4;
     {
+        auto action_cfg = yaml_to_object(
+            R"({actions: [{id: redirect, type: redirect_request, parameters: {location: http://google.com, status_code: 303}}]})");
+        ASSERT_NE(action_cfg.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("actions"), &action_cfg, nullptr);
+        ddwaf_object_free(&action_cfg);
+
         auto overrides = yaml_to_object(
-            R"({rules_override: [{rules_target: [{rule_id: 2}], on_match: [redirect]}], actions: [{id: redirect, type: redirect_request, parameters: {location: http://google.com, status_code: 303}}]})");
-        handle4 = ddwaf_update(handle3, &overrides, nullptr);
+            R"({rules_override: [{rules_target: [{rule_id: 2}], on_match: [redirect]}]})");
+        ASSERT_NE(overrides.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
+
+        handle4 = ddwaf_builder_build_instance(builder);
 
         uint32_t size;
         const char *const *actions = ddwaf_known_actions(handle4, &size);
@@ -2413,8 +2472,11 @@ TEST(TestWafIntegration, KnownActions)
     {
         auto overrides = yaml_to_object(
             R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [block]}, {rules_target: [{rule_id: 2}], on_match: [redirect]}]})");
-        handle5 = ddwaf_update(handle4, &overrides, nullptr);
+        ASSERT_NE(overrides.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
+
+        handle5 = ddwaf_builder_build_instance(builder);
 
         uint32_t size;
         const char *const *actions = ddwaf_known_actions(handle5, &size);
@@ -2434,8 +2496,11 @@ TEST(TestWafIntegration, KnownActions)
     {
         auto overrides = yaml_to_object(
             R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [block]}, {rules_target: [{rule_id: 2}], on_match: [redirect]}, {rules_target: [{rule_id: 3}], on_match: [block, stack_trace]}]})");
-        handle6 = ddwaf_update(handle5, &overrides, nullptr);
+        ASSERT_NE(overrides.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
+
+        handle6 = ddwaf_builder_build_instance(builder);
 
         uint32_t size;
         const char *const *actions = ddwaf_known_actions(handle6, &size);
@@ -2455,9 +2520,18 @@ TEST(TestWafIntegration, KnownActions)
     ddwaf_handle handle7;
     {
         auto overrides = yaml_to_object(
-            R"({exclusions: [{id: 1, rules_target: [{rule_id: 1}], on_match: block}], rules_override: [{rules_target: [{rule_id: 2}], on_match: [redirect]}, {rules_target: [{rule_id: 3}], on_match: [block, stack_trace]}]})");
-        handle7 = ddwaf_update(handle6, &overrides, nullptr);
+            R"({rules_override: [{rules_target: [{rule_id: 2}], on_match: [redirect]}, {rules_target: [{rule_id: 3}], on_match: [block, stack_trace]}]})");
+        ASSERT_NE(overrides.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
+
+        auto exclusions = yaml_to_object(
+            R"({exclusions: [{id: 1, rules_target: [{rule_id: 1}], on_match: block}]})");
+        ASSERT_NE(exclusions.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusions"), &exclusions, nullptr);
+        ddwaf_object_free(&exclusions);
+
+        handle7 = ddwaf_builder_build_instance(builder);
 
         uint32_t size;
         const char *const *actions = ddwaf_known_actions(handle7, &size);
@@ -2476,9 +2550,9 @@ TEST(TestWafIntegration, KnownActions)
     // Remove actions from all other rules
     ddwaf_handle handle8;
     {
-        auto overrides = yaml_to_object(R"({rules_override: []})");
-        handle8 = ddwaf_update(handle7, &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_builder_remove_config(builder, LSTRARG("overrides"));
+
+        handle8 = ddwaf_builder_build_instance(builder);
 
         uint32_t size;
         const char *const *actions = ddwaf_known_actions(handle8, &size);
@@ -2496,9 +2570,9 @@ TEST(TestWafIntegration, KnownActions)
     // Remove exclusions
     ddwaf_handle handle9;
     {
-        auto overrides = yaml_to_object(R"({exclusions: []})");
-        handle9 = ddwaf_update(handle8, &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_builder_remove_config(builder, LSTRARG("exclusions"));
+
+        handle9 = ddwaf_builder_build_instance(builder);
 
         uint32_t size;
         const char *const *actions = ddwaf_known_actions(handle9, &size);
@@ -2513,8 +2587,11 @@ TEST(TestWafIntegration, KnownActions)
     {
         auto overrides = yaml_to_object(
             R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [whatever]}]})");
-        handle10 = ddwaf_update(handle9, &overrides, nullptr);
+        ASSERT_NE(overrides.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
         ddwaf_object_free(&overrides);
+
+        handle10 = ddwaf_builder_build_instance(builder);
 
         uint32_t size;
         const char *const *actions = ddwaf_known_actions(handle10, &size);
@@ -2525,6 +2602,7 @@ TEST(TestWafIntegration, KnownActions)
     }
 
     ddwaf_destroy(handle10);
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestWafIntegration, KnownActionsNullHandle)

@@ -24,7 +24,7 @@ eval_result expression::eval(cache_type &cache, const object_store &store,
     ddwaf::timer &deadline) const
 {
     if (cache.result || conditions_.empty()) {
-        return {true, false};
+        return {.outcome = true, .ephemeral = false};
     }
 
     if (cache.conditions.size() < conditions_.size()) {
@@ -43,13 +43,13 @@ eval_result expression::eval(cache_type &cache, const object_store &store,
         auto [res, ephemeral] =
             cond->eval(cond_cache, store, objects_excluded, dynamic_matchers, deadline);
         if (!res) {
-            return {false, false};
+            return {.outcome = false, .ephemeral = false};
         }
         ephemeral_match = ephemeral_match || ephemeral;
     }
     cache.result = !ephemeral_match;
 
-    return {true, ephemeral_match};
+    return {.outcome = true, .ephemeral = ephemeral_match};
 }
 
 } // namespace ddwaf
