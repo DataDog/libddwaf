@@ -109,6 +109,8 @@ inline std::shared_ptr<ddwaf::ruleset> get_default_ruleset()
     auto ruleset = std::make_shared<ddwaf::ruleset>();
     ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
     ruleset->actions = std::make_shared<ddwaf::action_mapper>();
+    ruleset->rule_filters = std::make_shared<std::vector<exclusion::rule_filter>>();
+    ruleset->input_filters = std::make_shared<std::vector<exclusion::input_filter>>();
     return ruleset;
 }
 

@@ -171,21 +171,20 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating rule filters");
 
-    for (const auto &[id, filter] : ruleset_->rule_filters) {
+    for (const auto &filter : *ruleset_->rule_filters) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating rule filters");
             throw timeout_exception();
         }
 
-        auto it = rule_filter_cache_.find(filter.get());
+        auto it = rule_filter_cache_.find(&filter);
         if (it == rule_filter_cache_.end()) {
-            auto [new_it, res] =
-                rule_filter_cache_.emplace(filter.get(), rule_filter::cache_type{});
+            auto [new_it, res] = rule_filter_cache_.emplace(&filter, rule_filter::cache_type{});
             it = new_it;
         }
 
         rule_filter::cache_type &cache = it->second;
-        auto exclusion = filter->match(store_, cache, ruleset_->exclusion_matchers, deadline);
+        auto exclusion = filter.match(store_, cache, ruleset_->exclusion_matchers, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 exclusion_policy_.add_rule_exclusion(
@@ -196,21 +195,20 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
 
     DDWAF_DEBUG("Evaluating input filters");
 
-    for (const auto &[id, filter] : ruleset_->input_filters) {
+    for (const auto &filter : *ruleset_->input_filters) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating input filters");
             throw timeout_exception();
         }
 
-        auto it = input_filter_cache_.find(filter.get());
+        auto it = input_filter_cache_.find(&filter);
         if (it == input_filter_cache_.end()) {
-            auto [new_it, res] =
-                input_filter_cache_.emplace(filter.get(), input_filter::cache_type{});
+            auto [new_it, res] = input_filter_cache_.emplace(&filter, input_filter::cache_type{});
             it = new_it;
         }
 
         input_filter::cache_type &cache = it->second;
-        auto exclusion = filter->match(store_, cache, ruleset_->exclusion_matchers, deadline);
+        auto exclusion = filter.match(store_, cache, ruleset_->exclusion_matchers, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 exclusion_policy_.add_input_exclusion(rule, exclusion->objects);

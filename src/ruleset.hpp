@@ -42,7 +42,7 @@ struct ruleset {
     }
 
     template <typename T>
-    void insert_filters(const std::unordered_map<std::string_view, std::shared_ptr<T>> &filters)
+    void insert_filters(const std::shared_ptr<std::vector<T>> &filters)
         requires std::is_same_v<T, exclusion::rule_filter> or
                  std::is_same_v<T, exclusion::input_filter>
     {
@@ -52,21 +52,21 @@ struct ruleset {
             input_filters = filters;
         }
 
-        for (const auto &[key, filter] : filters) { filter->get_addresses(filter_addresses); }
+        for (const auto &filter : *filters) { filter.get_addresses(filter_addresses); }
     }
 
-    template <typename T>
-    void insert_filter(const std::shared_ptr<T> &filter)
-        requires std::is_same_v<T, exclusion::rule_filter> or
-                 std::is_same_v<T, exclusion::input_filter>
-    {
-        if constexpr (std::is_same_v<T, exclusion::rule_filter>) {
-            rule_filters.emplace(filter->get_id(), filter);
-        } else if constexpr (std::is_same_v<T, exclusion::input_filter>) {
-            input_filters.emplace(filter->get_id(), filter);
-        }
-        filter->get_addresses(filter_addresses);
-    }
+    /*template <typename T>*/
+    /*void insert_filter(const std::shared_ptr<T> &filter)*/
+    /*requires std::is_same_v<T, exclusion::rule_filter> or*/
+    /*std::is_same_v<T, exclusion::input_filter>*/
+    /*{*/
+    /*if constexpr (std::is_same_v<T, exclusion::rule_filter>) {*/
+    /*rule_filters.emplace(filter->get_id(), filter);*/
+    /*} else if constexpr (std::is_same_v<T, exclusion::input_filter>) {*/
+    /*input_filters.emplace(filter->get_id(), filter);*/
+    /*}*/
+    /*filter->get_addresses(filter_addresses);*/
+    /*}*/
 
     void insert_preprocessors(const auto &processors)
     {
@@ -138,9 +138,7 @@ struct ruleset {
                 for (const auto &action : rule->get_actions()) { maybe_add_action(action); }
             }
 
-            for (const auto &[name, filter] : rule_filters) {
-                maybe_add_action(filter->get_action());
-            }
+            for (const auto &filter : *rule_filters) { maybe_add_action(filter.get_action()); }
         }
         return available_action_types;
     }
@@ -151,8 +149,8 @@ struct ruleset {
     std::unordered_map<std::string_view, std::shared_ptr<base_processor>> preprocessors;
     std::unordered_map<std::string_view, std::shared_ptr<base_processor>> postprocessors;
 
-    std::unordered_map<std::string_view, std::shared_ptr<exclusion::rule_filter>> rule_filters;
-    std::unordered_map<std::string_view, std::shared_ptr<exclusion::input_filter>> input_filters;
+    std::shared_ptr<std::vector<exclusion::rule_filter>> rule_filters;
+    std::shared_ptr<std::vector<exclusion::input_filter>> input_filters;
 
     std::vector<std::shared_ptr<core_rule>> rules;
     std::unordered_map<std::string, std::shared_ptr<matcher::base>> rule_matchers;

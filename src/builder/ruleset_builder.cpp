@@ -117,29 +117,30 @@ std::shared_ptr<ruleset> ruleset_builder::build(
         }
     }
 
-    // Generate exclusion filters targetting all final rules
-    if (contains(current_changes, filters_update)) {
-        rule_filters_.clear();
-        input_filters_.clear();
+    // Generate rule filters targetting all final rules
+    if (!rule_filters_ || contains(current_changes, filters_update)) {
+        rule_filters_ = std::make_shared<std::vector<exclusion::rule_filter>>();
+        rule_filters_->reserve(global_config.rule_filters.size());
 
         // First generate rule filters
         for (const auto &[id, filter] : global_config.rule_filters) {
             auto rule_targets = resolve_references(filter.targets, final_base_rules_);
             rule_targets.merge(resolve_references(filter.targets, final_user_rules_));
-
-            auto filter_ptr = std::make_shared<exclusion::rule_filter>(
+            rule_filters_->emplace_back(
                 id, filter.expr, std::move(rule_targets), filter.on_match, filter.custom_action);
-            rule_filters_.emplace(id, filter_ptr);
         }
+    }
+
+    // Generate input filters targetting all final rules
+    if (!input_filters_ || contains(current_changes, filters_update)) {
+        input_filters_ = std::make_shared<std::vector<exclusion::input_filter>>();
+        input_filters_->reserve(global_config.input_filters.size());
 
         // Finally input filters
         for (const auto &[id, filter] : global_config.input_filters) {
             auto rule_targets = resolve_references(filter.targets, final_base_rules_);
             rule_targets.merge(resolve_references(filter.targets, final_user_rules_));
-
-            auto filter_ptr = std::make_shared<exclusion::input_filter>(
-                id, filter.expr, std::move(rule_targets), filter.filter);
-            input_filters_.emplace(id, filter_ptr);
+            input_filters_->emplace_back(id, filter.expr, std::move(rule_targets), filter.filter);
         }
     }
 

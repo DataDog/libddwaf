@@ -32,8 +32,8 @@ public:
     explicit context(std::shared_ptr<ruleset> ruleset) : ruleset_(std::move(ruleset))
     {
         processor_cache_.reserve(ruleset_->preprocessors.size() + ruleset_->postprocessors.size());
-        rule_filter_cache_.reserve(ruleset_->rule_filters.size());
-        input_filter_cache_.reserve(ruleset_->input_filters.size());
+        rule_filter_cache_.reserve(ruleset_->rule_filters->size());
+        input_filter_cache_.reserve(ruleset_->input_filters->size());
 
         for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
             ruleset_->rule_modules[i].init_cache(rule_module_cache_[i]);
@@ -87,8 +87,8 @@ protected:
     memory::unordered_map<base_processor *, processor_cache> processor_cache_;
 
     // Caches of filters and conditions
-    memory::unordered_map<rule_filter *, rule_filter::cache_type> rule_filter_cache_;
-    memory::unordered_map<input_filter *, input_filter::cache_type> input_filter_cache_;
+    memory::unordered_map<const rule_filter *, rule_filter::cache_type> rule_filter_cache_;
+    memory::unordered_map<const input_filter *, input_filter::cache_type> input_filter_cache_;
     exclusion::context_policy exclusion_policy_;
 
     // Cache of modules to avoid processing once a result has been obtained

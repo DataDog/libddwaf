@@ -15,12 +15,14 @@
 
 namespace ddwaf {
 
-template <typename T> class indexer {
+template <typename T, template <typename, typename...> class PtrType = std::shared_ptr>
+class indexer {
 public:
-    using iterator = typename std::vector<std::shared_ptr<T>>::iterator;
-    using const_iterator = typename std::vector<std::shared_ptr<T>>::const_iterator;
+    using Ptr = PtrType<T>;
+    using iterator = typename std::vector<Ptr>::iterator;
+    using const_iterator = typename std::vector<Ptr>::const_iterator;
 
-    void emplace(const std::shared_ptr<T> &item)
+    void emplace(const Ptr &item)
     {
         items_.emplace_back(item);
         by_id_.emplace(item->get_id(), item.get());
@@ -80,10 +82,10 @@ public:
     const_iterator begin() const { return items_.begin(); }
     const_iterator end() const { return items_.end(); }
 
-    const std::vector<std::shared_ptr<T>> &items() const { return items_; }
+    const std::vector<Ptr> &items() const { return items_; }
 
 protected:
-    std::vector<std::shared_ptr<T>> items_;
+    std::vector<Ptr> items_;
     std::unordered_map<std::string_view, T *> by_id_;
     multi_key_map<std::string, T *> by_tags_;
 };

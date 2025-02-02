@@ -51,8 +51,8 @@ protected:
     indexer<core_rule> final_user_rules_;
 
     // Filters
-    std::unordered_map<std::string_view, std::shared_ptr<exclusion::rule_filter>> rule_filters_;
-    std::unordered_map<std::string_view, std::shared_ptr<exclusion::input_filter>> input_filters_;
+    std::shared_ptr<std::vector<exclusion::rule_filter>> rule_filters_;
+    std::shared_ptr<std::vector<exclusion::input_filter>> input_filters_;
 
     // Processors
     std::unordered_map<std::string_view, std::shared_ptr<base_processor>> preprocessors_;
