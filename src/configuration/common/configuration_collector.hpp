@@ -97,12 +97,12 @@ public:
         config_.processors.emplace(std::move(id), std::move(spec));
     }
 
-    void emplace_scanner(std::shared_ptr<scanner> scanner)
+    void emplace_scanner(std::string id, scanner scnr)
     {
         change_.content |= change_set::scanners;
 
-        change_.scanners.emplace(scanner->get_id());
-        config_.scanners.emplace(std::move(scanner));
+        change_.scanners.emplace(id);
+        config_.scanners.emplace(std::move(id), std::move(scnr));
     }
 
     void emplace_action(std::string id, action_spec spec)

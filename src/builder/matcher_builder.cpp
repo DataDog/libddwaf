@@ -13,13 +13,13 @@
 
 namespace ddwaf {
 
-std::shared_ptr<matcher::base> matcher_builder::build(const data_spec &data)
+std::unique_ptr<matcher::base> matcher_builder::build(const data_spec &data)
 {
-    std::shared_ptr<matcher::base> matcher;
+    std::unique_ptr<matcher::base> matcher;
     if (data.type == data_type::ip_with_expiration) {
-        matcher = std::make_shared<matcher::ip_match>(data.values);
+        matcher = std::make_unique<matcher::ip_match>(data.values);
     } else if (data.type == data_type::data_with_expiration) {
-        matcher = std::make_shared<matcher::exact_match>(data.values);
+        matcher = std::make_unique<matcher::exact_match>(data.values);
     }
 
     return matcher;

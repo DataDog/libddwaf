@@ -47,7 +47,7 @@ protected:
     // we allow an empty key as a way to revert or remove the contents of the
     // relevant feature.
 
-    // Rules
+    // Base Rules
     std::shared_ptr<std::vector<core_rule>> final_base_rules_;
     std::shared_ptr<std::vector<core_rule>> final_user_rules_;
     indexer<core_rule> rule_index_;
@@ -61,8 +61,12 @@ protected:
     std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> postprocessors_;
 
     // Matchers
-    matcher_mapper rule_matchers_;
-    matcher_mapper exclusion_matchers_;
+    std::shared_ptr<matcher_mapper> rule_matchers_;
+    std::shared_ptr<matcher_mapper> exclusion_matchers_;
+
+    // Scanners
+    std::shared_ptr<std::vector<scanner>> scanners_;
+    indexer<const scanner> scanner_index_;
 
     // Actions
     std::shared_ptr<const action_mapper> actions_;

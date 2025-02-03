@@ -15,68 +15,36 @@
 
 namespace ddwaf {
 
-template <typename T>
-struct is_smart_ptr : std::false_type {};
+/*template <typename T>*/
+/*struct is_smart_ptr : std::false_type {};*/
 
-template <typename T>
-struct is_smart_ptr<std::shared_ptr<T>> : std::true_type {};
+/*template <typename T>*/
+/*struct is_smart_ptr<std::shared_ptr<T>> : std::true_type {};*/
 
-template <typename T, typename D>
-struct is_smart_ptr<std::unique_ptr<T, D>> : std::true_type {};
+/*template <typename T, typename D>*/
+/*struct is_smart_ptr<std::unique_ptr<T, D>> : std::true_type {};*/
 
-template <typename T>
-concept is_smart_ptr_v = is_smart_ptr<T>::value;
+/*template <typename T>*/
+/*concept is_smart_ptr_v = is_smart_ptr<T>::value;*/
 
-template <typename T>
-struct remove_ptr : T {};
+/*template <typename T>*/
+/*struct remove_ptr : T {};*/
 
-template <typename T>
-struct remove_ptr<std::shared_ptr<T>> : T {};
+/*template <typename T>*/
+/*struct remove_ptr<std::shared_ptr<T>> : T {};*/
 
+/*template <typename T, typename D>*/
+/*struct remove_ptr<std::unique_ptr<T, D>> : T {};*/
 
-template <typename T, typename D>
-struct remove_ptr<std::unique_ptr<T, D>> : T {};
-
-template <typename T>
-class indexer {
+template <typename T> class indexer {
 public:
-    using iterator = typename std::vector<T>::iterator;
-    using const_iterator = typename std::vector<T>::const_iterator;
+    using iterator = typename std::unordered_map<std::string_view, T>::iterator;
+    using const_iterator = typename std::unordered_map<std::string_view, T>::const_iterator;
 
-    void emplace(const T &item)
+    void emplace(T *item)
     {
-        items_.emplace_back(item);
-        if constexpr (is_smart_ptr_v<T>) {
-            by_id_.emplace(item->get_id(), item.get());
-            by_tags_.insert(item->get_tags(), item.get());
-        } else {
-            by_id_.emplace(item->get_id(), item.back());
-            by_tags_.insert(item->get_tags(), item.get());
-        }
-    }
-
-    iterator erase(iterator &it)
-    {
-        auto &item = *it;
-        by_tags_.erase(item->get_tags(), item.get());
-        by_id_.erase(item->get_id());
-        return items_.erase(it);
-    }
-
-    void erase(std::string_view id)
-    {
-        iterator it;
-        for (it = items_.begin(); it != items_.end(); ++it) {
-            if (id == (*it)->get_id()) {
-                break;
-            }
-        }
-
-        if (it == items_.end()) {
-            return;
-        }
-
-        erase(it);
+        by_id_.emplace(item->get_id(), item);
+        by_tags_.insert(item->get_tags(), item);
     }
 
     [[nodiscard]] bool contains(std::string_view id) const { return by_id_.contains(id); }
@@ -92,29 +60,24 @@ public:
         return by_tags_.multifind(tags);
     }
 
-    [[nodiscard]] std::size_t size() const { return items_.size(); }
-    [[nodiscard]] bool empty() const { return items_.empty(); }
+    [[nodiscard]] std::size_t size() const { return by_id_.size(); }
+    [[nodiscard]] bool empty() const { return by_id_.empty(); }
 
     void clear()
     {
-        items_.clear();
         by_id_.clear();
         by_tags_.clear();
     }
 
-    iterator begin() { return items_.begin(); }
-    iterator end() { return items_.end(); }
+    iterator begin() { return by_id_.begin(); }
+    iterator end() { return by_id_.end(); }
 
-    const_iterator begin() const { return items_.begin(); }
-    const_iterator end() const { return items_.end(); }
-
-    const std::vector<T> &items() const { return items_; }
-    std::vector<T> move_items() { return items_; }
+    const_iterator begin() const { return by_id_.begin(); }
+    const_iterator end() const { return by_id_.end(); }
 
 protected:
-    std::vector<T> items_;
-    std::unordered_map<std::string_view, remove_ptr<T> *> by_id_;
-    multi_key_map<std::string, remove_ptr<T> *> by_tags_;
+    std::unordered_map<std::string_view, T *> by_id_;
+    multi_key_map<std::string, T *> by_tags_;
 };
 
 } // namespace ddwaf

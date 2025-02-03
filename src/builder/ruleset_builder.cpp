@@ -47,7 +47,7 @@ std::set<T *> resolve_references(
         }
     } else {
         // An empty rules reference applies to all rules
-        for (const auto &rule : rules) { rule_refs.emplace(rule.get()); }
+        for (const auto &[id, rule] : rules) { rule_refs.emplace(rule); }
     }
     return rule_refs;
 }
@@ -75,46 +75,57 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     // When a configuration with 'rules' or 'rules_override' is received, we
     // need to regenerate the ruleset from the base rules as we want to ensure
     // that there are no side-effects on running contexts.
-    if (contains(current_changes, base_rule_update)) {
+    if (!final_base_rules_ || contains(current_changes, base_rule_update)) {
         final_base_rules_ = std::make_shared<std::vector<core_rule>>();
 
-        indexer<rule_builder, std::unique_ptr> rule_builders;
+        std::vector<rule_builder> rule_builders;
+        rule_builders.reserve(global_config.base_rules.size());
+
+        indexer<rule_builder> rule_builder_index;
+
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : global_config.base_rules) {
-            rule_builders.emplace(std::make_unique<rule_builder>(id, spec));
+            rule_builders.emplace_back(id, spec);
+            rule_builder_index.emplace(&rule_builders.back());
         }
 
         // Overrides only impact base rules since user rules can already be modified by the user
         for (const auto &[id, ovrd] : global_config.overrides_by_tags) {
-            auto rule_builder_targets = resolve_references(ovrd.targets, rule_builders);
+            auto rule_builder_targets = resolve_references(ovrd.targets, rule_builder_index);
             for (const auto &rule_builder_ptr : rule_builder_targets) {
                 rule_builder_ptr->apply_override(ovrd);
             }
         }
 
         for (const auto &[id, ovrd] : global_config.overrides_by_id) {
-            auto rule_builder_targets = resolve_references(ovrd.targets, rule_builders);
+            auto rule_builder_targets = resolve_references(ovrd.targets, rule_builder_index);
             for (const auto &rule_builder_ptr : rule_builder_targets) {
                 rule_builder_ptr->apply_override(ovrd);
             }
         }
 
-        for (const auto &builder : rule_builders) {
-            if (builder->is_enabled()) {
-                final_base_rules_.emplace(builder->build(*actions_));
+        for (auto &builder : rule_builders) {
+            if (builder.is_enabled()) {
+                final_base_rules_->emplace_back(builder.build(*actions_));
             }
         }
     }
 
-    if (contains(current_changes, custom_rule_update)) {
-        final_user_rules_.clear();
+    if (!final_user_rules_ || contains(current_changes, custom_rule_update)) {
+        final_user_rules_ = std::make_shared<std::vector<core_rule>>();
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : global_config.user_rules) {
             rule_builder builder{id, spec};
             if (builder.is_enabled()) {
-                final_user_rules_.emplace(builder.build(*actions_));
+                final_user_rules_->emplace_back(builder.build(*actions_));
             }
         }
+    }
+
+    if (contains(current_changes, base_rule_update | custom_rule_update)) {
+        rule_index_.clear();
+        for (const auto &rule : *final_base_rules_) { rule_index_.emplace(&rule); }
+        for (const auto &rule : *final_user_rules_) { rule_index_.emplace(&rule); }
     }
 
     // Generate rule filters targetting all final rules
@@ -124,8 +135,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(
 
         // First generate rule filters
         for (const auto &[id, filter] : global_config.rule_filters) {
-            auto rule_targets = resolve_references(filter.targets, final_base_rules_);
-            rule_targets.merge(resolve_references(filter.targets, final_user_rules_));
+            auto rule_targets = resolve_references(filter.targets, rule_index_);
             rule_filters_->emplace_back(
                 id, filter.expr, std::move(rule_targets), filter.on_match, filter.custom_action);
         }
@@ -138,19 +148,27 @@ std::shared_ptr<ruleset> ruleset_builder::build(
 
         // Finally input filters
         for (const auto &[id, filter] : global_config.input_filters) {
-            auto rule_targets = resolve_references(filter.targets, final_base_rules_);
-            rule_targets.merge(resolve_references(filter.targets, final_user_rules_));
+            auto rule_targets = resolve_references(filter.targets, rule_index_);
             input_filters_->emplace_back(id, filter.expr, std::move(rule_targets), filter.filter);
         }
     }
 
+    // Generate new scanners
+    if (!scanners_ || contains(current_changes, change_set::scanners)) {
+        scanners_ = std::make_shared<std::vector<scanner>>();
+        scanners_->reserve(global_config.scanners.size());
+
+        for (const auto &[id, scnr] : global_config.scanners) { scanners_->emplace_back(scnr); }
+        for (const auto &scnr : *scanners_) { scanner_index_.emplace(&scnr); }
+    }
+
     // Generate new processors
-    if (contains(current_changes, processors_update)) {
+    if (!preprocessors_ || !postprocessors_ || contains(current_changes, processors_update)) {
         preprocessors_ = std::make_shared<std::vector<std::unique_ptr<base_processor>>>();
         postprocessors_ = std::make_shared<std::vector<std::unique_ptr<base_processor>>>();
 
         for (const auto &[id, spec] : global_config.processors) {
-            auto proc = processor_builder::build(id, spec, global_config.scanners);
+            auto proc = processor_builder::build(id, spec, scanner_index_);
             if (spec.evaluate) {
                 preprocessors_->emplace_back(std::move(proc));
             } else {
@@ -159,36 +177,38 @@ std::shared_ptr<ruleset> ruleset_builder::build(
         }
     }
 
-    if (contains(current_changes, change_set::rule_data)) {
-        rule_matchers_.clear();
+    if (!rule_matchers_ || contains(current_changes, change_set::rule_data)) {
+        rule_matchers_ = std::make_shared<matcher_mapper>();
+        rule_matchers_->reserve(global_config.rule_data.size());
         for (const auto &[id, spec] : global_config.rule_data) {
-            rule_matchers_.emplace(id, matcher_builder::build(spec));
+            rule_matchers_->emplace(id, matcher_builder::build(spec));
         }
     }
 
-    if (contains(current_changes, change_set::exclusion_data)) {
-        exclusion_matchers_.clear();
+    if (!exclusion_matchers_ || contains(current_changes, change_set::exclusion_data)) {
+        exclusion_matchers_ = std::make_shared<matcher_mapper>();
+        exclusion_matchers_->reserve(global_config.exclusion_data.size());
         for (const auto &[id, spec] : global_config.exclusion_data) {
-            exclusion_matchers_.emplace(id, matcher_builder::build(spec));
+            exclusion_matchers_->emplace(id, matcher_builder::build(spec));
         }
     }
 
     auto rs = std::make_shared<ruleset>();
-    rs->insert_rules(final_base_rules_.items(), final_user_rules_.items());
+    rs->insert_rules(final_base_rules_, final_user_rules_);
     rs->insert_filters(rule_filters_);
     rs->insert_filters(input_filters_);
     rs->insert_preprocessors(preprocessors_);
     rs->insert_postprocessors(postprocessors_);
     rs->rule_matchers = rule_matchers_;
     rs->exclusion_matchers = exclusion_matchers_;
-    rs->scanners = global_config.scanners.items();
+    rs->scanners = scanners_;
     rs->actions = actions_;
     rs->free_fn = free_fn_;
     rs->event_obfuscator = event_obfuscator_;
 
     // An instance is valid if it contains primitives with side-effects, such as
     // rules or postprocessors.
-    if (rs->rules.empty() && rs->postprocessors->empty()) {
+    if (rs->base_rules->empty() && rs->user_rules->empty() && rs->postprocessors->empty()) {
         DDWAF_WARN("No valid rules or postprocessors found");
         throw parsing_error("no valid or enabled rules or postprocessors found");
     }

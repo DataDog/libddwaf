@@ -99,10 +99,9 @@ void parse_scanners(const parameter::vector &scanner_array, configuration_collec
             }
 
             DDWAF_DEBUG("Parsed scanner {}", id);
-            auto scnr = std::make_shared<scanner>(scanner{
-                std::move(id), std::move(tags), std::move(key_matcher), std::move(value_matcher)});
-            info.add_loaded(scnr->get_id());
-            cfg.emplace_scanner(scnr);
+            info.add_loaded(id);
+            scanner scnr{id, std::move(tags), std::move(key_matcher), std::move(value_matcher)};
+            cfg.emplace_scanner(std::move(id), std::move(scnr));
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = index_to_id(i);
