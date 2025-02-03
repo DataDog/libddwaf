@@ -55,33 +55,16 @@ struct ruleset {
         for (const auto &filter : *filters) { filter.get_addresses(filter_addresses); }
     }
 
-    /*template <typename T>*/
-    /*void insert_filter(const std::shared_ptr<T> &filter)*/
-    /*requires std::is_same_v<T, exclusion::rule_filter> or*/
-    /*std::is_same_v<T, exclusion::input_filter>*/
-    /*{*/
-    /*if constexpr (std::is_same_v<T, exclusion::rule_filter>) {*/
-    /*rule_filters.emplace(filter->get_id(), filter);*/
-    /*} else if constexpr (std::is_same_v<T, exclusion::input_filter>) {*/
-    /*input_filters.emplace(filter->get_id(), filter);*/
-    /*}*/
-    /*filter->get_addresses(filter_addresses);*/
-    /*}*/
-
     void insert_preprocessors(const auto &processors)
     {
         preprocessors = processors;
-        for (const auto &[key, proc] : preprocessors) {
-            proc->get_addresses(preprocessor_addresses);
-        }
+        for (const auto &proc : *preprocessors) { proc->get_addresses(preprocessor_addresses); }
     }
 
     void insert_postprocessors(const auto &processors)
     {
         postprocessors = processors;
-        for (const auto &[key, proc] : postprocessors) {
-            proc->get_addresses(postprocessor_addresses);
-        }
+        for (const auto &proc : *postprocessors) { proc->get_addresses(postprocessor_addresses); }
     }
 
     [[nodiscard]] const std::vector<const char *> &get_root_addresses()
@@ -146,8 +129,8 @@ struct ruleset {
     ddwaf_object_free_fn free_fn{ddwaf_object_free};
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator;
 
-    std::unordered_map<std::string_view, std::shared_ptr<base_processor>> preprocessors;
-    std::unordered_map<std::string_view, std::shared_ptr<base_processor>> postprocessors;
+    std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> preprocessors;
+    std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> postprocessors;
 
     std::shared_ptr<std::vector<exclusion::rule_filter>> rule_filters;
     std::shared_ptr<std::vector<exclusion::input_filter>> input_filters;

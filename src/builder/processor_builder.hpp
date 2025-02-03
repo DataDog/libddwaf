@@ -15,7 +15,7 @@
 namespace ddwaf {
 
 struct processor_builder {
-    static std::shared_ptr<base_processor> build(
+    static std::unique_ptr<base_processor> build(
         const std::string &id, const processor_spec &spec, const indexer<const scanner> &scanners);
 };
 

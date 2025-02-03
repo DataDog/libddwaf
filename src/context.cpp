@@ -131,7 +131,7 @@ void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::tim
 {
     DDWAF_DEBUG("Evaluating preprocessors");
 
-    for (const auto &[id, preproc] : ruleset_->preprocessors) {
+    for (const auto &preproc : *ruleset_->preprocessors) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating preprocessors");
             throw timeout_exception();
@@ -151,7 +151,7 @@ void context::eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::ti
 {
     DDWAF_DEBUG("Evaluating postprocessors");
 
-    for (const auto &[id, postproc] : ruleset_->postprocessors) {
+    for (const auto &postproc : *ruleset_->postprocessors) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating postprocessors");
             throw timeout_exception();

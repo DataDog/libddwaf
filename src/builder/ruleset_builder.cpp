@@ -146,15 +146,15 @@ std::shared_ptr<ruleset> ruleset_builder::build(
 
     // Generate new processors
     if (contains(current_changes, processors_update)) {
-        preprocessors_.clear();
-        postprocessors_.clear();
+        preprocessors_ = std::make_shared<std::vector<std::unique_ptr<base_processor>>>();
+        postprocessors_ = std::make_shared<std::vector<std::unique_ptr<base_processor>>>();
 
         for (const auto &[id, spec] : global_config.processors) {
             auto proc = processor_builder::build(id, spec, global_config.scanners);
             if (spec.evaluate) {
-                preprocessors_.emplace(proc->get_id(), std::move(proc));
+                preprocessors_->emplace_back(std::move(proc));
             } else {
-                postprocessors_.emplace(proc->get_id(), std::move(proc));
+                postprocessors_->emplace_back(std::move(proc));
             }
         }
     }
@@ -188,7 +188,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(
 
     // An instance is valid if it contains primitives with side-effects, such as
     // rules or postprocessors.
-    if (rs->rules.empty() && rs->postprocessors.empty()) {
+    if (rs->rules.empty() && rs->postprocessors->empty()) {
         DDWAF_WARN("No valid rules or postprocessors found");
         throw parsing_error("no valid or enabled rules or postprocessors found");
     }

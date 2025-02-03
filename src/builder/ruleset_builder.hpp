@@ -18,8 +18,9 @@ namespace ddwaf {
 
 class ruleset_builder {
 public:
-    ruleset_builder(object_limits limits, ddwaf_object_free_fn free_fn,
-        std::shared_ptr<ddwaf::obfuscator> event_obfuscator)
+    explicit ruleset_builder(object_limits limits = {},
+        ddwaf_object_free_fn free_fn = ddwaf_object_free,
+        std::shared_ptr<ddwaf::obfuscator> event_obfuscator = std::make_shared<ddwaf::obfuscator>())
         : limits_(limits), free_fn_(free_fn), event_obfuscator_(std::move(event_obfuscator))
     {}
 
@@ -55,8 +56,8 @@ protected:
     std::shared_ptr<std::vector<exclusion::input_filter>> input_filters_;
 
     // Processors
-    std::unordered_map<std::string_view, std::shared_ptr<base_processor>> preprocessors_;
-    std::unordered_map<std::string_view, std::shared_ptr<base_processor>> postprocessors_;
+    std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> preprocessors_;
+    std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> postprocessors_;
 
     // Matchers
     std::unordered_map<std::string, std::shared_ptr<matcher::base>> rule_matchers_;

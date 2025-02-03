@@ -31,7 +31,8 @@ public:
 
     explicit context(std::shared_ptr<ruleset> ruleset) : ruleset_(std::move(ruleset))
     {
-        processor_cache_.reserve(ruleset_->preprocessors.size() + ruleset_->postprocessors.size());
+        processor_cache_.reserve(
+            ruleset_->preprocessors->size() + ruleset_->postprocessors->size());
         rule_filter_cache_.reserve(ruleset_->rule_filters->size());
         input_filter_cache_.reserve(ruleset_->input_filters->size());
 

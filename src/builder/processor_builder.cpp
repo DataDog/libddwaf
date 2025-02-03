@@ -42,42 +42,42 @@ std::set<const scanner *> references_to_scanners(
 template <typename T> struct typed_processor_builder;
 
 template <> struct typed_processor_builder<extract_schema> {
-    std::shared_ptr<base_processor> build(const auto &id, const auto &spec, const auto &scanners)
+    std::unique_ptr<base_processor> build(const auto &id, const auto &spec, const auto &scanners)
     {
         auto ref_scanners = references_to_scanners(spec.scanners, scanners);
-        return std::make_shared<extract_schema>(
+        return std::make_unique<extract_schema>(
             id, spec.expr, spec.mappings, std::move(ref_scanners), spec.evaluate, spec.output);
     }
 };
 
 template <> struct typed_processor_builder<http_endpoint_fingerprint> {
-    std::shared_ptr<base_processor> build(const auto &id, const auto &spec)
+    std::unique_ptr<base_processor> build(const auto &id, const auto &spec)
     {
-        return std::make_shared<http_endpoint_fingerprint>(
+        return std::make_unique<http_endpoint_fingerprint>(
             id, spec.expr, spec.mappings, spec.evaluate, spec.output);
     }
 };
 
 template <> struct typed_processor_builder<http_header_fingerprint> {
-    std::shared_ptr<base_processor> build(const auto &id, const auto &spec)
+    std::unique_ptr<base_processor> build(const auto &id, const auto &spec)
     {
-        return std::make_shared<http_header_fingerprint>(
+        return std::make_unique<http_header_fingerprint>(
             id, spec.expr, spec.mappings, spec.evaluate, spec.output);
     }
 };
 
 template <> struct typed_processor_builder<http_network_fingerprint> {
-    std::shared_ptr<base_processor> build(const auto &id, const auto &spec)
+    std::unique_ptr<base_processor> build(const auto &id, const auto &spec)
     {
-        return std::make_shared<http_network_fingerprint>(
+        return std::make_unique<http_network_fingerprint>(
             id, spec.expr, spec.mappings, spec.evaluate, spec.output);
     }
 };
 
 template <> struct typed_processor_builder<session_fingerprint> {
-    std::shared_ptr<base_processor> build(const auto &id, const auto &spec)
+    std::unique_ptr<base_processor> build(const auto &id, const auto &spec)
     {
-        return std::make_shared<session_fingerprint>(
+        return std::make_unique<session_fingerprint>(
             id, spec.expr, spec.mappings, spec.evaluate, spec.output);
     }
 };
@@ -87,11 +87,11 @@ concept has_build_with_scanners =
     requires(typed_processor_builder<T> b, Id id, Spec spec, Scanners scanners) {
         {
             b.build(id, spec, scanners)
-        } -> std::same_as<std::shared_ptr<base_processor>>;
+        } -> std::same_as<std::unique_ptr<base_processor>>;
     };
 
 template <typename T>
-[[nodiscard]] std::shared_ptr<base_processor> build_with_type(
+[[nodiscard]] std::unique_ptr<base_processor> build_with_type(
     const auto &id, const auto &spec, const auto &scanners)
     requires std::is_base_of_v<base_processor, T>
 {
@@ -105,7 +105,7 @@ template <typename T>
 } // namespace
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-std::shared_ptr<base_processor> processor_builder::build(
+std::unique_ptr<base_processor> processor_builder::build(
     const std::string &id, const processor_spec &spec, const indexer<const scanner> &scanners)
 {
     switch (spec.type) {
