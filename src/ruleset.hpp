@@ -24,21 +24,17 @@ namespace ddwaf {
 
 struct ruleset {
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    void insert_rules(const std::vector<std::shared_ptr<core_rule>> &base,
-        const std::vector<std::shared_ptr<core_rule>> &user)
+    void insert_rules(const std::shared_ptr<const std::vector<core_rule>> &base,
+        const std::shared_ptr<std::vector<core_rule>> &user)
     {
-        for (const auto &rule : base) {
-            rule->get_addresses(rule_addresses);
-            rules.emplace_back(rule);
-        }
-        for (const auto &rule : user) {
-            rule->get_addresses(rule_addresses);
-            rules.emplace_back(rule);
-        }
+        base_rules = base;
+        user_rules = user;
 
-        // TODO this could be done with rules vector
+        for (const auto &rule : *base_rules) { rule.get_addresses(rule_addresses); }
+        for (const auto &rule : *user_rules) { rule.get_addresses(rule_addresses); }
+
         rule_module_set_builder builder;
-        rule_modules = builder.build(rules);
+        rule_modules = builder.build(*base_rules, *user_rules);
     }
 
     template <typename T>
@@ -117,8 +113,12 @@ struct ruleset {
                 }
             };
 
-            for (const auto &rule : rules) {
-                for (const auto &action : rule->get_actions()) { maybe_add_action(action); }
+            for (const auto &rule : *base_rules) {
+                for (const auto &action : rule.get_actions()) { maybe_add_action(action); }
+            }
+
+            for (const auto &rule : *user_rules) {
+                for (const auto &action : rule.get_actions()) { maybe_add_action(action); }
             }
 
             for (const auto &filter : *rule_filters) { maybe_add_action(filter.get_action()); }
@@ -129,17 +129,19 @@ struct ruleset {
     ddwaf_object_free_fn free_fn{ddwaf_object_free};
     std::shared_ptr<ddwaf::obfuscator> event_obfuscator;
 
-    std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> preprocessors;
-    std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> postprocessors;
+    std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> preprocessors;
+    std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> postprocessors;
 
-    std::shared_ptr<std::vector<exclusion::rule_filter>> rule_filters;
-    std::shared_ptr<std::vector<exclusion::input_filter>> input_filters;
+    std::shared_ptr<const std::vector<exclusion::rule_filter>> rule_filters;
+    std::shared_ptr<const std::vector<exclusion::input_filter>> input_filters;
 
-    std::vector<std::shared_ptr<core_rule>> rules;
-    std::unordered_map<std::string, std::shared_ptr<matcher::base>> rule_matchers;
-    std::unordered_map<std::string, std::shared_ptr<matcher::base>> exclusion_matchers;
+    std::shared_ptr<const std::vector<core_rule>> base_rules;
+    std::shared_ptr<const std::vector<core_rule>> user_rules;
 
-    std::vector<std::shared_ptr<const scanner>> scanners;
+    std::shared_ptr<const matcher_mapper> rule_matchers;
+    std::shared_ptr<const matcher_mapper> exclusion_matchers;
+
+    std::shared_ptr<const std::vector<scanner>> scanners;
     std::shared_ptr<const action_mapper> actions;
 
     // Rule modules

@@ -15,18 +15,44 @@
 
 namespace ddwaf {
 
-template <typename T, template <typename, typename...> class PtrType = std::shared_ptr>
+template <typename T>
+struct is_smart_ptr : std::false_type {};
+
+template <typename T>
+struct is_smart_ptr<std::shared_ptr<T>> : std::true_type {};
+
+template <typename T, typename D>
+struct is_smart_ptr<std::unique_ptr<T, D>> : std::true_type {};
+
+template <typename T>
+concept is_smart_ptr_v = is_smart_ptr<T>::value;
+
+template <typename T>
+struct remove_ptr : T {};
+
+template <typename T>
+struct remove_ptr<std::shared_ptr<T>> : T {};
+
+
+template <typename T, typename D>
+struct remove_ptr<std::unique_ptr<T, D>> : T {};
+
+template <typename T>
 class indexer {
 public:
-    using Ptr = PtrType<T>;
-    using iterator = typename std::vector<Ptr>::iterator;
-    using const_iterator = typename std::vector<Ptr>::const_iterator;
+    using iterator = typename std::vector<T>::iterator;
+    using const_iterator = typename std::vector<T>::const_iterator;
 
-    void emplace(const Ptr &item)
+    void emplace(const T &item)
     {
         items_.emplace_back(item);
-        by_id_.emplace(item->get_id(), item.get());
-        by_tags_.insert(item->get_tags(), item.get());
+        if constexpr (is_smart_ptr_v<T>) {
+            by_id_.emplace(item->get_id(), item.get());
+            by_tags_.insert(item->get_tags(), item.get());
+        } else {
+            by_id_.emplace(item->get_id(), item.back());
+            by_tags_.insert(item->get_tags(), item.get());
+        }
     }
 
     iterator erase(iterator &it)
@@ -82,12 +108,13 @@ public:
     const_iterator begin() const { return items_.begin(); }
     const_iterator end() const { return items_.end(); }
 
-    const std::vector<Ptr> &items() const { return items_; }
+    const std::vector<T> &items() const { return items_; }
+    std::vector<T> move_items() { return items_; }
 
 protected:
-    std::vector<Ptr> items_;
-    std::unordered_map<std::string_view, T *> by_id_;
-    multi_key_map<std::string, T *> by_tags_;
+    std::vector<T> items_;
+    std::unordered_map<std::string_view, remove_ptr<T> *> by_id_;
+    multi_key_map<std::string, remove_ptr<T> *> by_tags_;
 };
 
 } // namespace ddwaf

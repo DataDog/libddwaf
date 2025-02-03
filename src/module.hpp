@@ -52,15 +52,13 @@ public:
     [[nodiscard]] bool may_expire() const { return policy_ == expiration_policy::expiring; }
 
     verdict_type eval(std::vector<event> &events, object_store &store, cache_type &cache,
-        const exclusion::context_policy &exclusion,
-        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
+        const exclusion::context_policy &exclusion, const matcher_mapper &dynamic_matchers,
         ddwaf::timer &deadline) const;
 
 protected:
     verdict_type eval_with_collections(std::vector<event> &events, object_store &store,
         cache_type &cache, const exclusion::context_policy &exclusion,
-        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-        ddwaf::timer &deadline) const;
+        const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const;
 
     ddwaf::timer &get_deadline(ddwaf::timer &deadline) const;
 
@@ -71,13 +69,13 @@ protected:
         std::size_t end;
     };
 
-    explicit rule_module(std::vector<core_rule *> &&rules,
+    explicit rule_module(std::vector<const core_rule *> &&rules,
         std::vector<rule_collection> &&collections,
         expiration_policy policy = expiration_policy::expiring)
         : rules_(std::move(rules)), collections_(std::move(collections)), policy_(policy)
     {}
 
-    std::vector<core_rule *> rules_;
+    std::vector<const core_rule *> rules_;
     std::vector<rule_collection> collections_;
     expiration_policy policy_{expiration_policy::expiring};
 

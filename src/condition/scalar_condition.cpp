@@ -114,8 +114,7 @@ ResultType eval_target(Iterator &it, std::string_view address, bool ephemeral,
 }
 
 const matcher::base *get_matcher(const std::unique_ptr<matcher::base> &matcher,
-    const std::string &data_id,
-    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers)
+    const std::string &data_id, const matcher_mapper &dynamic_matchers)
 {
     if (matcher || data_id.empty()) {
         return matcher.get();
@@ -132,8 +131,7 @@ const matcher::base *get_matcher(const std::unique_ptr<matcher::base> &matcher,
 } // namespace
 
 eval_result scalar_condition::eval(condition_cache &cache, const object_store &store,
-    const exclusion::object_set_ref &objects_excluded,
-    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
+    const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
     const auto *matcher = get_matcher(matcher_, data_id_, dynamic_matchers);
@@ -183,8 +181,7 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
 }
 
 eval_result scalar_negated_condition::eval(condition_cache &cache, const object_store &store,
-    const exclusion::object_set_ref &objects_excluded,
-    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
+    const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
     if (deadline.expired()) {

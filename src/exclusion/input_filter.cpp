@@ -36,8 +36,7 @@ input_filter::input_filter(std::string id, std::shared_ptr<expression> expr,
 }
 
 std::optional<excluded_set> input_filter::match(const object_store &store, cache_type &cache,
-    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-    ddwaf::timer &deadline) const
+    const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const
 {
     DDWAF_DEBUG("Evaluating input filter '{}'", id_);
 

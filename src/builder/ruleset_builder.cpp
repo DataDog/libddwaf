@@ -76,12 +76,12 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     // need to regenerate the ruleset from the base rules as we want to ensure
     // that there are no side-effects on running contexts.
     if (contains(current_changes, base_rule_update)) {
-        final_base_rules_.clear();
+        final_base_rules_ = std::make_shared<std::vector<core_rule>>();
 
-        indexer<rule_builder> rule_builders;
+        indexer<rule_builder, std::unique_ptr> rule_builders;
         // Initially, new rules are generated from their spec
         for (const auto &[id, spec] : global_config.base_rules) {
-            rule_builders.emplace(std::make_shared<rule_builder>(id, spec));
+            rule_builders.emplace(std::make_unique<rule_builder>(id, spec));
         }
 
         // Overrides only impact base rules since user rules can already be modified by the user

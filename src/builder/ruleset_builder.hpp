@@ -48,8 +48,9 @@ protected:
     // relevant feature.
 
     // Rules
-    indexer<core_rule> final_base_rules_;
-    indexer<core_rule> final_user_rules_;
+    std::shared_ptr<std::vector<core_rule>> final_base_rules_;
+    std::shared_ptr<std::vector<core_rule>> final_user_rules_;
+    indexer<core_rule> rule_index_;
 
     // Filters
     std::shared_ptr<std::vector<exclusion::rule_filter>> rule_filters_;
@@ -60,8 +61,8 @@ protected:
     std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> postprocessors_;
 
     // Matchers
-    std::unordered_map<std::string, std::shared_ptr<matcher::base>> rule_matchers_;
-    std::unordered_map<std::string, std::shared_ptr<matcher::base>> exclusion_matchers_;
+    matcher_mapper rule_matchers_;
+    matcher_mapper exclusion_matchers_;
 
     // Actions
     std::shared_ptr<const action_mapper> actions_;
