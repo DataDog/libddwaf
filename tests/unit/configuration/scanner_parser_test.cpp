@@ -52,20 +52,19 @@ TEST(TestScannerParser, ParseKeyOnlyScanner)
     ASSERT_EQ(cfg.scanners.size(), 1);
     EXPECT_TRUE(cfg.scanners.contains("ecd"));
 
-    const auto *const scnr = cfg.scanners.find_by_id("ecd");
-    ASSERT_NE(scnr, nullptr);
-    EXPECT_STREQ(scnr->get_id().data(), "ecd");
+    const auto &scnr = cfg.scanners.at("ecd");
+    EXPECT_STRV(scnr.get_id(), "ecd");
     std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
-    EXPECT_EQ(scnr->get_tags(), tags);
+    EXPECT_EQ(scnr.get_tags(), tags);
 
     ddwaf_object value;
     ddwaf_object_string(&value, "dog@datadoghq.com");
-    EXPECT_TRUE(scnr->eval("email", value));
-    EXPECT_FALSE(scnr->eval("mail", value));
+    EXPECT_TRUE(scnr.eval("email", value));
+    EXPECT_FALSE(scnr.eval("mail", value));
     ddwaf_object_free(&value);
 
     ddwaf_object_string(&value, "ansodinsod");
-    EXPECT_TRUE(scnr->eval("email", value));
+    EXPECT_TRUE(scnr.eval("email", value));
     ddwaf_object_free(&value);
 }
 
@@ -107,20 +106,19 @@ TEST(TestScannerParser, ParseValueOnlyScanner)
     ASSERT_EQ(cfg.scanners.size(), 1);
     EXPECT_TRUE(cfg.scanners.contains("ecd"));
 
-    const auto *const scnr = cfg.scanners.find_by_id("ecd");
-    ASSERT_NE(scnr, nullptr);
-    EXPECT_STREQ(scnr->get_id().data(), "ecd");
+    const auto &scnr = cfg.scanners.at("ecd");
+    EXPECT_STRV(scnr.get_id(), "ecd");
     std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
-    EXPECT_EQ(scnr->get_tags(), tags);
+    EXPECT_EQ(scnr.get_tags(), tags);
 
     ddwaf_object value;
     ddwaf_object_string(&value, "dog@datadoghq.com");
-    EXPECT_TRUE(scnr->eval("email", value));
-    EXPECT_TRUE(scnr->eval("mail", value));
+    EXPECT_TRUE(scnr.eval("email", value));
+    EXPECT_TRUE(scnr.eval("mail", value));
     ddwaf_object_free(&value);
 
     ddwaf_object_string(&value, "ansodinsod");
-    EXPECT_FALSE(scnr->eval("email", value));
+    EXPECT_FALSE(scnr.eval("email", value));
     ddwaf_object_free(&value);
 }
 
@@ -162,20 +160,19 @@ TEST(TestScannerParser, ParseKeyValueScanner)
     ASSERT_EQ(cfg.scanners.size(), 1);
     EXPECT_TRUE(cfg.scanners.contains("ecd"));
 
-    const auto *const scnr = cfg.scanners.find_by_id("ecd");
-    ASSERT_NE(scnr, nullptr);
-    EXPECT_STREQ(scnr->get_id().data(), "ecd");
+    const auto &scnr = cfg.scanners.at("ecd");
+    EXPECT_STRV(scnr.get_id(), "ecd");
     std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
-    EXPECT_EQ(scnr->get_tags(), tags);
+    EXPECT_EQ(scnr.get_tags(), tags);
 
     ddwaf_object value;
     ddwaf_object_string(&value, "dog@datadoghq.com");
-    EXPECT_TRUE(scnr->eval("email", value));
-    EXPECT_FALSE(scnr->eval("mail", value));
+    EXPECT_TRUE(scnr.eval("email", value));
+    EXPECT_FALSE(scnr.eval("mail", value));
     ddwaf_object_free(&value);
 
     ddwaf_object_string(&value, "ansodinsod");
-    EXPECT_FALSE(scnr->eval("email", value));
+    EXPECT_FALSE(scnr.eval("email", value));
     ddwaf_object_free(&value);
 }
 

@@ -161,6 +161,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     if (!scanners_ || contains(current_changes, change_set::scanners)) {
         scanners_ = std::make_shared<std::vector<scanner>>();
         scanners_->reserve(global_config.scanners.size());
+        scanner_index_.clear();
 
         for (const auto &[id, scnr] : global_config.scanners) { scanners_->emplace_back(scnr); }
         for (const auto &scnr : *scanners_) { scanner_index_.emplace(&scnr); }

@@ -6,35 +6,12 @@
 
 #pragma once
 
-#include <memory>
 #include <set>
 #include <unordered_map>
-#include <vector>
 
 #include "mkmap.hpp"
 
 namespace ddwaf {
-
-/*template <typename T>*/
-/*struct is_smart_ptr : std::false_type {};*/
-
-/*template <typename T>*/
-/*struct is_smart_ptr<std::shared_ptr<T>> : std::true_type {};*/
-
-/*template <typename T, typename D>*/
-/*struct is_smart_ptr<std::unique_ptr<T, D>> : std::true_type {};*/
-
-/*template <typename T>*/
-/*concept is_smart_ptr_v = is_smart_ptr<T>::value;*/
-
-/*template <typename T>*/
-/*struct remove_ptr : T {};*/
-
-/*template <typename T>*/
-/*struct remove_ptr<std::shared_ptr<T>> : T {};*/
-
-/*template <typename T, typename D>*/
-/*struct remove_ptr<std::unique_ptr<T, D>> : T {};*/
 
 template <typename T> class indexer {
 public:
