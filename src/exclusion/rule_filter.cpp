@@ -8,7 +8,6 @@
 #include <set>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
 #include <utility>
 
 #include "clock.hpp"

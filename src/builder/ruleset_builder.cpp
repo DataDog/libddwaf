@@ -20,8 +20,12 @@
 #include "exclusion/rule_filter.hpp"
 #include "indexer.hpp"
 #include "log.hpp"
+#include "matcher/base.hpp"
+#include "processor/base.hpp"
+#include "rule.hpp"
 #include "ruleset.hpp"
 #include "ruleset_builder.hpp"
+#include "scanner.hpp"
 
 namespace ddwaf {
 
@@ -124,8 +128,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(
 
     if (contains(current_changes, base_rule_update | custom_rule_update)) {
         rule_index_.clear();
-        for (const auto &rule : *final_base_rules_) { rule_index_.emplace(&rule); }
-        for (const auto &rule : *final_user_rules_) { rule_index_.emplace(&rule); }
+        for (auto &rule : *final_base_rules_) { rule_index_.emplace(&rule); }
+        for (auto &rule : *final_user_rules_) { rule_index_.emplace(&rule); }
     }
 
     // Generate rule filters targetting all final rules

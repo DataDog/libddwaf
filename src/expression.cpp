@@ -5,8 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <memory>
-#include <string>
-#include <unordered_map>
 
 #include "clock.hpp"
 #include "condition/base.hpp"

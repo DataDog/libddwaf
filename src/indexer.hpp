@@ -38,8 +38,8 @@ namespace ddwaf {
 
 template <typename T> class indexer {
 public:
-    using iterator = typename std::unordered_map<std::string_view, T>::iterator;
-    using const_iterator = typename std::unordered_map<std::string_view, T>::const_iterator;
+    using iterator = typename std::unordered_map<std::string_view, T *>::iterator;
+    using const_iterator = typename std::unordered_map<std::string_view, T *>::const_iterator;
 
     void emplace(T *item)
     {
