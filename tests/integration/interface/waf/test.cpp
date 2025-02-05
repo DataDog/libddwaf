@@ -2601,7 +2601,31 @@ TEST(TestWafIntegration, KnownActions)
         ddwaf_destroy(handle9);
     }
 
-    ddwaf_destroy(handle10);
+    // Add a custom rule with a custom action
+    ddwaf_handle handle11;
+    {
+        auto overrides = yaml_to_object(
+            R"({custom_rules:  [{id: u1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}], on_match: [random]}], actions: [{id: random, type: generate_schema, parameters: {}}]})");
+        ASSERT_NE(overrides.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(
+            builder, LSTRARG("custom_rules_and_actions"), &overrides, nullptr);
+        ddwaf_object_free(&overrides);
+
+        handle11 = ddwaf_builder_build_instance(builder);
+
+        uint32_t size;
+        const char *const *actions = ddwaf_known_actions(handle11, &size);
+        EXPECT_EQ(size, 1);
+        EXPECT_NE(actions, nullptr);
+        std::set<std::string_view> available_actions{"generate_schema"};
+        while ((size--) != 0U) {
+            EXPECT_NE(available_actions.find(actions[size]), available_actions.end());
+        }
+
+        ddwaf_destroy(handle10);
+    }
+
+    ddwaf_destroy(handle11);
     ddwaf_builder_destroy(builder);
 }
 
