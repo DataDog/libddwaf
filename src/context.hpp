@@ -100,7 +100,7 @@ protected:
 
     const action_mapper &actions_;
 
-    obfuscator &event_obfuscator_;
+    const obfuscator &event_obfuscator_;
     // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 
     using input_filter = exclusion::input_filter;

@@ -65,7 +65,7 @@ public:
 
         ancillary_tags_.merge(spec_.tags);
 
-        return core_rule{std::move(id_), std::move(spec_.name), std::move(ancillary_tags_),
+        return {std::move(id_), std::move(spec_.name), std::move(ancillary_tags_),
             std::move(spec_.expr), std::move(spec_.actions), spec_.enabled, spec_.source, verdict};
     }
 
