@@ -513,7 +513,6 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
 TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
 {
     test::ruleset_builder rbuilder;
-    auto ruleset = test::get_default_ruleset();
     std::vector<std::shared_ptr<core_rule>> rules;
     {
         test::expression_builder builder(1);
@@ -591,7 +590,6 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
 TEST(TestContext, MatchMultipleCollectionsSingleRun)
 {
     test::ruleset_builder rbuilder;
-    auto ruleset = test::get_default_ruleset();
     std::vector<std::shared_ptr<core_rule>> rules;
     {
         test::expression_builder builder(1);
@@ -636,7 +634,6 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
 TEST(TestContext, MatchPriorityCollectionsSingleRun)
 {
     test::ruleset_builder rbuilder;
-    auto ruleset = test::get_default_ruleset();
     std::vector<std::shared_ptr<core_rule>> rules;
     {
         test::expression_builder builder(1);
@@ -684,7 +681,6 @@ TEST(TestContext, MatchPriorityCollectionsSingleRun)
 TEST(TestContext, MatchMultipleCollectionsDoubleRun)
 {
     test::ruleset_builder rbuilder;
-    auto ruleset = test::get_default_ruleset();
     std::vector<std::shared_ptr<core_rule>> rules;
     {
         test::expression_builder builder(1);
@@ -741,7 +737,6 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
 TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
 {
     test::ruleset_builder rbuilder;
-    auto ruleset = test::get_default_ruleset();
     std::vector<std::shared_ptr<core_rule>> rules;
     {
         test::expression_builder builder(1);

@@ -193,17 +193,4 @@ struct ruleset_builder {
     std::shared_ptr<action_mapper> actions;
 };
 
-inline std::shared_ptr<ddwaf::ruleset> get_default_ruleset()
-{
-    auto ruleset = std::make_shared<ddwaf::ruleset>();
-    ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
-
-    ruleset->actions = std::make_shared<ddwaf::action_mapper>();
-    ruleset->base_rules = std::make_shared<std::vector<core_rule>>();
-    ruleset->user_rules = std::make_shared<std::vector<core_rule>>();
-    ruleset->rule_filters = std::make_shared<std::vector<exclusion::rule_filter>>();
-    ruleset->input_filters = std::make_shared<std::vector<exclusion::input_filter>>();
-    return ruleset;
-}
-
 } // namespace ddwaf::test

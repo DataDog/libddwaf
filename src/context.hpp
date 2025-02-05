@@ -29,7 +29,12 @@ class context {
 public:
     using object_set = std::unordered_set<const ddwaf_object *>;
 
-    explicit context(std::shared_ptr<ruleset> ruleset) : ruleset_(std::move(ruleset))
+    explicit context(std::shared_ptr<ruleset> ruleset)
+        : ruleset_(std::move(ruleset)), preprocessors_(*ruleset_->preprocessors),
+          postprocessors_(*ruleset_->postprocessors), rule_filters_(*ruleset_->rule_filters),
+          input_filters_(*ruleset_->input_filters), rule_matchers_(*ruleset_->rule_matchers),
+          exclusion_matchers_(*ruleset_->exclusion_matchers), actions_(*ruleset_->actions),
+          event_obfuscator_(*ruleset_->event_obfuscator)
     {
         processor_cache_.reserve(
             ruleset_->preprocessors->size() + ruleset_->postprocessors->size());
@@ -79,8 +84,24 @@ protected:
         }
         return false;
     }
+
     std::shared_ptr<ruleset> ruleset_;
     ddwaf::object_store store_;
+
+    // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
+    const std::vector<std::unique_ptr<base_processor>> &preprocessors_;
+    const std::vector<std::unique_ptr<base_processor>> &postprocessors_;
+
+    const std::vector<exclusion::rule_filter> &rule_filters_;
+    const std::vector<exclusion::input_filter> &input_filters_;
+
+    const matcher_mapper &rule_matchers_;
+    const matcher_mapper &exclusion_matchers_;
+
+    const action_mapper &actions_;
+
+    obfuscator &event_obfuscator_;
+    // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 
     using input_filter = exclusion::input_filter;
     using rule_filter = exclusion::rule_filter;
