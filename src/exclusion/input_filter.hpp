@@ -20,7 +20,7 @@ namespace ddwaf::exclusion {
 class input_filter {
 public:
     struct excluded_set {
-        const std::set<core_rule *> &rules;
+        const std::set<const core_rule *> &rules;
         object_set objects;
     };
 
@@ -30,7 +30,7 @@ public:
     };
 
     input_filter(std::string id, std::shared_ptr<expression> expr,
-        std::set<core_rule *> rule_targets, std::shared_ptr<object_filter> filter);
+        std::set<const core_rule *> rule_targets, std::shared_ptr<object_filter> filter);
     input_filter(const input_filter &) = delete;
     input_filter &operator=(const input_filter &) = delete;
     input_filter(input_filter &&) = default;
@@ -51,7 +51,7 @@ public:
 protected:
     std::string id_;
     std::shared_ptr<expression> expr_;
-    const std::set<core_rule *> rule_targets_;
+    std::set<const core_rule *> rule_targets_;
     std::shared_ptr<object_filter> filter_;
 };
 

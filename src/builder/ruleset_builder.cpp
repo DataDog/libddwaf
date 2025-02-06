@@ -80,8 +80,6 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     // need to regenerate the ruleset from the base rules as we want to ensure
     // that there are no side-effects on running contexts.
     if (!final_base_rules_ || contains(current_changes, base_rule_update)) {
-        final_base_rules_ = std::make_shared<std::vector<core_rule>>();
-
         std::vector<rule_builder> rule_builders;
         rule_builders.reserve(global_config.base_rules.size());
 
@@ -108,94 +106,107 @@ std::shared_ptr<ruleset> ruleset_builder::build(
             }
         }
 
+        std::vector<core_rule> rules;
+        rules.reserve(rule_builders.size());
         for (auto &builder : rule_builders) {
             if (builder.is_enabled()) {
-                final_base_rules_->emplace_back(builder.build(*actions_));
+                rules.emplace_back(builder.build(*actions_));
             }
         }
+        final_base_rules_ = std::make_shared<const std::vector<core_rule>>(std::move(rules));
     }
 
     if (!final_user_rules_ || contains(current_changes, custom_rule_update)) {
-        final_user_rules_ = std::make_shared<std::vector<core_rule>>();
         // Initially, new rules are generated from their spec
+        std::vector<core_rule> rules;
+        rules.reserve(global_config.user_rules.size());
         for (const auto &[id, spec] : global_config.user_rules) {
             rule_builder builder{id, spec};
             if (builder.is_enabled()) {
-                final_user_rules_->emplace_back(builder.build(*actions_));
+                rules.emplace_back(builder.build(*actions_));
             }
         }
+        final_user_rules_ = std::make_shared<const std::vector<core_rule>>(std::move(rules));
     }
 
     if (contains(current_changes, base_rule_update | custom_rule_update)) {
         rule_index_.clear();
-        for (auto &rule : *final_base_rules_) { rule_index_.emplace(&rule); }
-        for (auto &rule : *final_user_rules_) { rule_index_.emplace(&rule); }
+        for (const auto &rule : *final_base_rules_) { rule_index_.emplace(&rule); }
+        for (const auto &rule : *final_user_rules_) { rule_index_.emplace(&rule); }
     }
 
     // Generate rule filters targetting all final rules
     if (!rule_filters_ || contains(current_changes, filters_update)) {
-        rule_filters_ = std::make_shared<std::vector<exclusion::rule_filter>>();
-        rule_filters_->reserve(global_config.rule_filters.size());
-
         // First generate rule filters
+        std::vector<exclusion::rule_filter> filters;
+        filters.reserve(global_config.rule_filters.size());
         for (const auto &[id, filter] : global_config.rule_filters) {
             auto rule_targets = resolve_references(filter.targets, rule_index_);
-            rule_filters_->emplace_back(
+            filters.emplace_back(
                 id, filter.expr, std::move(rule_targets), filter.on_match, filter.custom_action);
         }
+        rule_filters_ =
+            std::make_shared<const std::vector<exclusion::rule_filter>>(std::move(filters));
     }
 
     // Generate input filters targetting all final rules
     if (!input_filters_ || contains(current_changes, filters_update)) {
-        input_filters_ = std::make_shared<std::vector<exclusion::input_filter>>();
-        input_filters_->reserve(global_config.input_filters.size());
-
         // Finally input filters
+        std::vector<exclusion::input_filter> filters;
+        filters.reserve(global_config.input_filters.size());
         for (const auto &[id, filter] : global_config.input_filters) {
             auto rule_targets = resolve_references(filter.targets, rule_index_);
-            input_filters_->emplace_back(id, filter.expr, std::move(rule_targets), filter.filter);
+            filters.emplace_back(id, filter.expr, std::move(rule_targets), filter.filter);
         }
+        input_filters_ =
+            std::make_shared<const std::vector<exclusion::input_filter>>(std::move(filters));
     }
 
     // Generate new scanners
     if (!scanners_ || contains(current_changes, change_set::scanners)) {
-        scanners_ = std::make_shared<std::vector<scanner>>();
-        scanners_->reserve(global_config.scanners.size());
-        scanner_index_.clear();
+        std::vector<scanner> new_scanners;
+        new_scanners.reserve(global_config.scanners.size());
+        for (const auto &[id, scnr] : global_config.scanners) { new_scanners.emplace_back(scnr); }
 
-        for (const auto &[id, scnr] : global_config.scanners) { scanners_->emplace_back(scnr); }
+        scanner_index_.clear();
+        scanners_ = std::make_shared<const std::vector<scanner>>(std::move(new_scanners));
         for (const auto &scnr : *scanners_) { scanner_index_.emplace(&scnr); }
     }
 
     // Generate new processors
     if (!preprocessors_ || !postprocessors_ || contains(current_changes, processors_update)) {
-        preprocessors_ = std::make_shared<std::vector<std::unique_ptr<base_processor>>>();
-        postprocessors_ = std::make_shared<std::vector<std::unique_ptr<base_processor>>>();
-
+        std::vector<std::unique_ptr<base_processor>> preprocessors;
+        std::vector<std::unique_ptr<base_processor>> postprocessors;
         for (const auto &[id, spec] : global_config.processors) {
             auto proc = processor_builder::build(id, spec, scanner_index_);
             if (spec.evaluate) {
-                preprocessors_->emplace_back(std::move(proc));
+                preprocessors.emplace_back(std::move(proc));
             } else {
-                postprocessors_->emplace_back(std::move(proc));
+                postprocessors.emplace_back(std::move(proc));
             }
         }
+        preprocessors_ = std::make_shared<const std::vector<std::unique_ptr<base_processor>>>(
+            std::move(preprocessors));
+        postprocessors_ = std::make_shared<const std::vector<std::unique_ptr<base_processor>>>(
+            std::move(postprocessors));
     }
 
     if (!rule_matchers_ || contains(current_changes, change_set::rule_data)) {
-        rule_matchers_ = std::make_shared<matcher_mapper>();
-        rule_matchers_->reserve(global_config.rule_data.size());
+        matcher_mapper matchers;
+        matchers.reserve(global_config.rule_data.size());
         for (const auto &[id, spec] : global_config.rule_data) {
-            rule_matchers_->emplace(id, matcher_builder::build(spec));
+            matchers.emplace(id, matcher_builder::build(spec));
         }
+        rule_matchers_ = std::make_shared<matcher_mapper>(std::move(matchers));
     }
 
     if (!exclusion_matchers_ || contains(current_changes, change_set::exclusion_data)) {
-        exclusion_matchers_ = std::make_shared<matcher_mapper>();
-        exclusion_matchers_->reserve(global_config.exclusion_data.size());
+        matcher_mapper matchers;
+        matchers.reserve(global_config.rule_data.size());
         for (const auto &[id, spec] : global_config.exclusion_data) {
-            exclusion_matchers_->emplace(id, matcher_builder::build(spec));
+            matchers.emplace(id, matcher_builder::build(spec));
         }
+        exclusion_matchers_ = std::make_shared<matcher_mapper>(std::move(matchers));
     }
 
     auto rs = std::make_shared<ruleset>();

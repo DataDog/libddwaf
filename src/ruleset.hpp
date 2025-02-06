@@ -25,8 +25,8 @@ namespace ddwaf {
 
 struct ruleset {
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    void insert_rules(
-        std::shared_ptr<std::vector<core_rule>> base, std::shared_ptr<std::vector<core_rule>> user)
+    void insert_rules(std::shared_ptr<const std::vector<core_rule>> base,
+        std::shared_ptr<const std::vector<core_rule>> user)
     {
         base_rules = std::move(base);
         user_rules = std::move(user);
@@ -38,29 +38,27 @@ struct ruleset {
         rule_modules = builder.build(*base_rules, *user_rules);
     }
 
-    template <typename T>
-    void insert_filters(std::shared_ptr<std::vector<T>> filters)
-        requires std::is_same_v<T, exclusion::rule_filter> or
-                 std::is_same_v<T, exclusion::input_filter>
+    void insert_filters(std::shared_ptr<const std::vector<exclusion::rule_filter>> filters)
     {
-        if constexpr (std::is_same_v<T, exclusion::rule_filter>) {
-            rule_filters = std::move(filters);
-            for (const auto &filter : *rule_filters) { filter.get_addresses(filter_addresses); }
-        } else if constexpr (std::is_same_v<T, exclusion::input_filter>) {
-            input_filters = std::move(filters);
-            for (const auto &filter : *input_filters) { filter.get_addresses(filter_addresses); }
-        }
+        rule_filters = std::move(filters);
+        for (const auto &filter : *rule_filters) { filter.get_addresses(filter_addresses); }
+    }
+
+    void insert_filters(std::shared_ptr<const std::vector<exclusion::input_filter>> filters)
+    {
+        input_filters = std::move(filters);
+        for (const auto &filter : *input_filters) { filter.get_addresses(filter_addresses); }
     }
 
     void insert_preprocessors(
-        std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> processors)
+        std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> processors)
     {
         preprocessors = std::move(processors);
         for (const auto &proc : *preprocessors) { proc->get_addresses(preprocessor_addresses); }
     }
 
     void insert_postprocessors(
-        std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> processors)
+        std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> processors)
     {
         postprocessors = std::move(processors);
         for (const auto &proc : *postprocessors) { proc->get_addresses(postprocessor_addresses); }

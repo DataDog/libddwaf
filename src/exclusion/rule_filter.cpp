@@ -24,7 +24,7 @@ namespace ddwaf::exclusion {
 using excluded_set = rule_filter::excluded_set;
 
 rule_filter::rule_filter(std::string id, std::shared_ptr<expression> expr,
-    std::set<core_rule *> rule_targets, filter_mode mode, std::string action)
+    std::set<const core_rule *> rule_targets, filter_mode mode, std::string action)
     : id_(std::move(id)), expr_(std::move(expr)), mode_(mode), action_(std::move(action))
 {
     if (!expr_) {

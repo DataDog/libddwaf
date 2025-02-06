@@ -48,24 +48,24 @@ protected:
     // relevant feature.
 
     // Base Rules
-    std::shared_ptr<std::vector<core_rule>> final_base_rules_;
-    std::shared_ptr<std::vector<core_rule>> final_user_rules_;
-    indexer<core_rule> rule_index_;
+    std::shared_ptr<const std::vector<core_rule>> final_base_rules_;
+    std::shared_ptr<const std::vector<core_rule>> final_user_rules_;
+    indexer<const core_rule> rule_index_;
 
     // Filters
-    std::shared_ptr<std::vector<exclusion::rule_filter>> rule_filters_;
-    std::shared_ptr<std::vector<exclusion::input_filter>> input_filters_;
+    std::shared_ptr<const std::vector<exclusion::rule_filter>> rule_filters_;
+    std::shared_ptr<const std::vector<exclusion::input_filter>> input_filters_;
 
     // Processors
-    std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> preprocessors_;
-    std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> postprocessors_;
+    std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> preprocessors_;
+    std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> postprocessors_;
 
     // Matchers
-    std::shared_ptr<matcher_mapper> rule_matchers_;
-    std::shared_ptr<matcher_mapper> exclusion_matchers_;
+    std::shared_ptr<const matcher_mapper> rule_matchers_;
+    std::shared_ptr<const matcher_mapper> exclusion_matchers_;
 
     // Scanners
-    std::shared_ptr<std::vector<scanner>> scanners_;
+    std::shared_ptr<const std::vector<scanner>> scanners_;
     indexer<const scanner> scanner_index_;
 
     // Actions

@@ -729,7 +729,8 @@ TEST(TestContext, RuleFilterWithCondition)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        rbuilder.insert_filter(rule_filter{"1", builder.build(), std::set<core_rule *>{rule}});
+        rbuilder.insert_filter(
+            rule_filter{"1", builder.build(), std::set<const core_rule *>{rule}});
     }
 
     ddwaf::timer deadline{2s};
@@ -777,7 +778,8 @@ TEST(TestContext, RuleFilterWithEphemeralConditionMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        rbuilder.insert_filter(rule_filter{"1", builder.build(), std::set<core_rule *>{rule}});
+        rbuilder.insert_filter(
+            rule_filter{"1", builder.build(), std::set<const core_rule *>{rule}});
     }
 
     ddwaf::test::context ctx(rbuilder.build());
@@ -836,7 +838,8 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        rbuilder.insert_filter(rule_filter{"1", builder.build(), std::set<core_rule *>{rule}});
+        rbuilder.insert_filter(
+            rule_filter{"1", builder.build(), std::set<const core_rule *>{rule}});
     }
 
     {
@@ -846,8 +849,8 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
         builder.add_target("http.route");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"unrouted"});
 
-        rbuilder.insert_filter(rule_filter{
-            "2", builder.build(), std::set<core_rule *>{rule}, exclusion::filter_mode::monitor});
+        rbuilder.insert_filter(rule_filter{"2", builder.build(), std::set<const core_rule *>{rule},
+            exclusion::filter_mode::monitor});
     }
 
     ddwaf::test::context ctx(rbuilder.build());
@@ -910,8 +913,8 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        rbuilder.insert_filter(rule_filter{
-            "1", builder.build(), std::set<core_rule *>{rule}, exclusion::filter_mode::monitor});
+        rbuilder.insert_filter(rule_filter{"1", builder.build(), std::set<const core_rule *>{rule},
+            exclusion::filter_mode::monitor});
     }
 
     {
@@ -921,7 +924,8 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
         builder.add_target("http.route");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"unrouted"});
 
-        rbuilder.insert_filter(rule_filter{"2", builder.build(), std::set<core_rule *>{rule}});
+        rbuilder.insert_filter(
+            rule_filter{"2", builder.build(), std::set<const core_rule *>{rule}});
     }
 
     ddwaf::test::context ctx(rbuilder.build());
@@ -979,7 +983,8 @@ TEST(TestContext, RuleFilterTimeout)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        rbuilder.insert_filter(rule_filter{"1", builder.build(), std::set<core_rule *>{rule}});
+        rbuilder.insert_filter(
+            rule_filter{"1", builder.build(), std::set<const core_rule *>{rule}});
     }
 
     ddwaf::timer deadline{0s};
@@ -1022,7 +1027,8 @@ TEST(TestContext, NoRuleFilterWithCondition)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        rbuilder.insert_filter(rule_filter{"1", builder.build(), std::set<core_rule *>{rule}});
+        rbuilder.insert_filter(
+            rule_filter{"1", builder.build(), std::set<const core_rule *>{rule}});
     }
 
     ddwaf::timer deadline{2s};
@@ -1069,7 +1075,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
 
     {
         rbuilder.insert_filter(rule_filter{"1", std::make_shared<expression>(),
-            std::set<core_rule *>{rules[0], rules[1], rules[2]}});
+            std::set<const core_rule *>{rules[0], rules[1], rules[2]}});
         ddwaf::test::context ctx(rbuilder.build());
 
         auto rules_to_exclude = ctx.eval_filters(deadline);
@@ -1081,7 +1087,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
 
     {
         rbuilder.insert_filter(rule_filter{"2", std::make_shared<expression>(),
-            std::set<core_rule *>{rules[3], rules[4], rules[5]}});
+            std::set<const core_rule *>{rules[3], rules[4], rules[5]}});
         ddwaf::test::context ctx(rbuilder.build());
 
         auto rules_to_exclude = ctx.eval_filters(deadline);
@@ -1096,7 +1102,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
 
     {
         rbuilder.insert_filter(rule_filter{"3", std::make_shared<expression>(),
-            std::set<core_rule *>{rules[6], rules[7], rules[8]}});
+            std::set<const core_rule *>{rules[6], rules[7], rules[8]}});
         ddwaf::test::context ctx(rbuilder.build());
 
         auto rules_to_exclude = ctx.eval_filters(deadline);
@@ -1141,7 +1147,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
 
     {
         rbuilder.insert_filter(rule_filter{"1", std::make_shared<expression>(),
-            std::set<core_rule *>{rules[0], rules[1], rules[2], rules[3]}});
+            std::set<const core_rule *>{rules[0], rules[1], rules[2], rules[3]}});
         ddwaf::test::context ctx(rbuilder.build());
 
         auto rules_to_exclude = ctx.eval_filters(deadline);
@@ -1154,7 +1160,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
 
     {
         rbuilder.insert_filter(rule_filter{"2", std::make_shared<expression>(),
-            std::set<core_rule *>{rules[2], rules[3], rules[4]}});
+            std::set<const core_rule *>{rules[2], rules[3], rules[4]}});
         ddwaf::test::context ctx(rbuilder.build());
 
         auto rules_to_exclude = ctx.eval_filters(deadline);
@@ -1168,7 +1174,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
 
     {
         rbuilder.insert_filter(rule_filter{"3", std::make_shared<expression>(),
-            std::set<core_rule *>{rules[0], rules[5], rules[6]}});
+            std::set<const core_rule *>{rules[0], rules[5], rules[6]}});
         ddwaf::test::context ctx(rbuilder.build());
 
         auto rules_to_exclude = ctx.eval_filters(deadline);
@@ -1184,7 +1190,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
 
     {
         rbuilder.insert_filter(rule_filter{"4", std::make_shared<expression>(),
-            std::set<core_rule *>{rules[7], rules[8], rules[6]}});
+            std::set<const core_rule *>{rules[7], rules[8], rules[6]}});
         ddwaf::test::context ctx(rbuilder.build());
 
         auto rules_to_exclude = ctx.eval_filters(deadline);
@@ -1202,7 +1208,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
 
     {
         rbuilder.insert_filter(rule_filter{"5", std::make_shared<expression>(),
-            std::set<core_rule *>{rules[0], rules[1], rules[2], rules[3], rules[4], rules[5],
+            std::set<const core_rule *>{rules[0], rules[1], rules[2], rules[3], rules[4], rules[5],
                 rules[6], rules[7], rules[8]}});
         ddwaf::test::context ctx(rbuilder.build());
 
@@ -1245,7 +1251,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         rbuilder.insert_filter(rule_filter{"1", builder.build(),
-            std::set<core_rule *>{rules[0], rules[1], rules[2], rules[3], rules[4]}});
+            std::set<const core_rule *>{rules[0], rules[1], rules[2], rules[3], rules[4]}});
     }
 
     {
@@ -1256,7 +1262,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         rbuilder.insert_filter(rule_filter{"2", builder.build(),
-            std::set<core_rule *>{rules[5], rules[6], rules[7], rules[8], rules[9]}});
+            std::set<const core_rule *>{rules[5], rules[6], rules[7], rules[8], rules[9]}});
     }
 
     ddwaf::timer deadline{2s};
@@ -1326,7 +1332,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         rbuilder.insert_filter(rule_filter{"1", builder.build(),
-            std::set<core_rule *>{
+            std::set<const core_rule *>{
                 rules[0], rules[1], rules[2], rules[3], rules[4], rules[5], rules[6]}});
     }
 
@@ -1338,7 +1344,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         rbuilder.insert_filter(rule_filter{"2", builder.build(),
-            std::set<core_rule *>{
+            std::set<const core_rule *>{
                 rules[3], rules[4], rules[5], rules[6], rules[7], rules[8], rules[9]}});
     }
 
@@ -1402,8 +1408,8 @@ TEST(TestContext, InputFilterExclude)
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
-    rbuilder.insert_filter(input_filter{
-        "1", std::make_shared<expression>(), std::set<core_rule *>{rule}, std::move(obj_filter)});
+    rbuilder.insert_filter(input_filter{"1", std::make_shared<expression>(),
+        std::set<const core_rule *>{rule}, std::move(obj_filter)});
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(rbuilder.build());
@@ -1439,8 +1445,8 @@ TEST(TestContext, InputFilterExcludeEphemeral)
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
-    rbuilder.insert_filter(input_filter{
-        "1", std::make_shared<expression>(), std::set<core_rule *>{rule}, std::move(obj_filter)});
+    rbuilder.insert_filter(input_filter{"1", std::make_shared<expression>(),
+        std::set<const core_rule *>{rule}, std::move(obj_filter)});
 
     ddwaf::test::context ctx(rbuilder.build());
 
@@ -1487,8 +1493,8 @@ TEST(TestContext, InputFilterExcludeEphemeralReuseObject)
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
-    rbuilder.insert_filter(input_filter{
-        "1", std::make_shared<expression>(), std::set<core_rule *>{rule}, std::move(obj_filter)});
+    rbuilder.insert_filter(input_filter{"1", std::make_shared<expression>(),
+        std::set<const core_rule *>{rule}, std::move(obj_filter)});
 
     ddwaf::test::context ctx(rbuilder.build());
 
@@ -1524,10 +1530,10 @@ TEST(TestContext, InputFilterExcludeRule)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
-    rbuilder.insert_filter(input_filter{
-        "1", std::make_shared<expression>(), std::set<core_rule *>{rule}, std::move(obj_filter)});
+    rbuilder.insert_filter(input_filter{"1", std::make_shared<expression>(),
+        std::set<const core_rule *>{rule}, std::move(obj_filter)});
     rbuilder.insert_filter(
-        rule_filter{"1", std::make_shared<expression>(), std::set<core_rule *>{rule}});
+        rule_filter{"1", std::make_shared<expression>(), std::set<const core_rule *>{rule}});
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(rbuilder.build());
@@ -1568,10 +1574,10 @@ TEST(TestContext, InputFilterExcludeRuleEphemeral)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
-    rbuilder.insert_filter(input_filter{
-        "1", std::make_shared<expression>(), std::set<core_rule *>{rule}, std::move(obj_filter)});
+    rbuilder.insert_filter(input_filter{"1", std::make_shared<expression>(),
+        std::set<const core_rule *>{rule}, std::move(obj_filter)});
     rbuilder.insert_filter(
-        rule_filter{"1", std::make_shared<expression>(), std::set<core_rule *>{rule}});
+        rule_filter{"1", std::make_shared<expression>(), std::set<const core_rule *>{rule}});
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(rbuilder.build());
@@ -1607,10 +1613,10 @@ TEST(TestContext, InputFilterMonitorRuleEphemeral)
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
-    rbuilder.insert_filter(input_filter{
-        "1", std::make_shared<expression>(), std::set<core_rule *>{rule}, std::move(obj_filter)});
-    rbuilder.insert_filter(rule_filter{
-        "1", std::make_shared<expression>(), std::set<core_rule *>{rule}, filter_mode::monitor});
+    rbuilder.insert_filter(input_filter{"1", std::make_shared<expression>(),
+        std::set<const core_rule *>{rule}, std::move(obj_filter)});
+    rbuilder.insert_filter(rule_filter{"1", std::make_shared<expression>(),
+        std::set<const core_rule *>{rule}, filter_mode::monitor});
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(rbuilder.build());
@@ -1652,10 +1658,10 @@ TEST(TestContext, InputFilterExcluderRuleEphemeralAndPersistent)
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
     obj_filter->insert(get_target_index("usr.id"), "usr.id");
-    rbuilder.insert_filter(input_filter{
-        "1", std::make_shared<expression>(), std::set<core_rule *>{rule}, std::move(obj_filter)});
+    rbuilder.insert_filter(input_filter{"1", std::make_shared<expression>(),
+        std::set<const core_rule *>{rule}, std::move(obj_filter)});
     rbuilder.insert_filter(
-        rule_filter{"1", std::make_shared<expression>(), std::set<core_rule *>{rule}});
+        rule_filter{"1", std::make_shared<expression>(), std::set<const core_rule *>{rule}});
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(rbuilder.build());
@@ -1702,10 +1708,10 @@ TEST(TestContext, InputFilterMonitorRuleEphemeralAndPersistent)
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
     obj_filter->insert(get_target_index("usr.id"), "usr.id");
-    rbuilder.insert_filter(input_filter{
-        "1", std::make_shared<expression>(), std::set<core_rule *>{rule}, std::move(obj_filter)});
-    rbuilder.insert_filter(rule_filter{
-        "1", std::make_shared<expression>(), std::set<core_rule *>{rule}, filter_mode::monitor});
+    rbuilder.insert_filter(input_filter{"1", std::make_shared<expression>(),
+        std::set<const core_rule *>{rule}, std::move(obj_filter)});
+    rbuilder.insert_filter(rule_filter{"1", std::make_shared<expression>(),
+        std::set<const core_rule *>{rule}, filter_mode::monitor});
 
     ddwaf::timer deadline{2s};
     ddwaf::test::context ctx(rbuilder.build());
@@ -1768,7 +1774,7 @@ TEST(TestContext, InputFilterWithCondition)
         auto obj_filter = std::make_shared<object_filter>();
         obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
-        std::set<core_rule *> eval_filters{rule};
+        std::set<const core_rule *> eval_filters{rule};
         rbuilder.insert_filter(
             input_filter{"1", builder.build(), std::move(eval_filters), std::move(obj_filter)});
     }
@@ -1855,7 +1861,7 @@ TEST(TestContext, InputFilterWithEphemeralCondition)
         auto obj_filter = std::make_shared<object_filter>();
         obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
-        std::set<core_rule *> eval_filters{rule};
+        std::set<const core_rule *> eval_filters{rule};
         rbuilder.insert_filter(
             input_filter{"1", builder.build(), std::move(eval_filters), std::move(obj_filter)});
     }
@@ -1923,7 +1929,7 @@ TEST(TestContext, InputFilterMultipleRules)
         obj_filter->insert(get_target_index("usr.id"), "usr.id");
 
         rbuilder.insert_filter(input_filter{"1", std::make_shared<expression>(),
-            std::set<core_rule *>{rules[0], rules[1]}, std::move(obj_filter)});
+            std::set<const core_rule *>{rules[0], rules[1]}, std::move(obj_filter)});
     }
 
     // Without usr.id, nothing should be excluded
@@ -2029,7 +2035,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
         rbuilder.insert_filter(input_filter{"1", std::make_shared<expression>(),
-            std::set<core_rule *>{rules[0]}, std::move(obj_filter)});
+            std::set<const core_rule *>{rules[0]}, std::move(obj_filter)});
     }
 
     {
@@ -2037,7 +2043,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         obj_filter->insert(get_target_index("usr.id"), "usr.id");
 
         rbuilder.insert_filter(input_filter{"2", std::make_shared<expression>(),
-            std::set<core_rule *>{rules[1]}, std::move(obj_filter)});
+            std::set<const core_rule *>{rules[1]}, std::move(obj_filter)});
     }
 
     // Without usr.id, nothing should be excluded
@@ -2161,7 +2167,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
         obj_filter->insert(get_target_index("server.request.headers"), "server.request.headers");
 
-        std::set<core_rule *> eval_filters{ip_rule, cookie_rule};
+        std::set<const core_rule *> eval_filters{ip_rule, cookie_rule};
         rbuilder.insert_filter(input_filter{
             "1", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter)});
     }
@@ -2171,7 +2177,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         obj_filter->insert(get_target_index("usr.id"), "usr.id");
         obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
 
-        std::set<core_rule *> eval_filters{usr_rule, ip_rule};
+        std::set<const core_rule *> eval_filters{usr_rule, ip_rule};
         rbuilder.insert_filter(input_filter{
             "2", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter)});
     }
@@ -2181,7 +2187,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         obj_filter->insert(get_target_index("usr.id"), "usr.id");
         obj_filter->insert(get_target_index("server.request.headers"), "server.request.headers");
 
-        std::set<core_rule *> eval_filters{usr_rule, cookie_rule};
+        std::set<const core_rule *> eval_filters{usr_rule, cookie_rule};
         rbuilder.insert_filter(input_filter{
             "3", std::make_shared<expression>(), std::move(eval_filters), std::move(obj_filter)});
     }
