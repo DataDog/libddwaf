@@ -81,7 +81,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
         return DDWAF_OK;
     }
 
-    const event_serializer serializer(*ruleset_->event_obfuscator, *ruleset_->actions);
+    const event_serializer serializer(event_obfuscator_, actions_);
 
     optional_ref<ddwaf_object> derived;
     if (res.has_value()) {
@@ -131,7 +131,7 @@ void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::tim
 {
     DDWAF_DEBUG("Evaluating preprocessors");
 
-    for (const auto &[id, preproc] : ruleset_->preprocessors) {
+    for (const auto &preproc : preprocessors_) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating preprocessors");
             throw timeout_exception();
@@ -151,7 +151,7 @@ void context::eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::ti
 {
     DDWAF_DEBUG("Evaluating postprocessors");
 
-    for (const auto &[id, postproc] : ruleset_->postprocessors) {
+    for (const auto &postproc : postprocessors_) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating postprocessors");
             throw timeout_exception();
@@ -171,21 +171,20 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating rule filters");
 
-    for (const auto &[id, filter] : ruleset_->rule_filters) {
+    for (const auto &filter : rule_filters_) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating rule filters");
             throw timeout_exception();
         }
 
-        auto it = rule_filter_cache_.find(filter.get());
+        auto it = rule_filter_cache_.find(&filter);
         if (it == rule_filter_cache_.end()) {
-            auto [new_it, res] =
-                rule_filter_cache_.emplace(filter.get(), rule_filter::cache_type{});
+            auto [new_it, res] = rule_filter_cache_.emplace(&filter, rule_filter::cache_type{});
             it = new_it;
         }
 
         rule_filter::cache_type &cache = it->second;
-        auto exclusion = filter->match(store_, cache, ruleset_->exclusion_matchers, deadline);
+        auto exclusion = filter.match(store_, cache, exclusion_matchers_, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 exclusion_policy_.add_rule_exclusion(
@@ -196,21 +195,20 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
 
     DDWAF_DEBUG("Evaluating input filters");
 
-    for (const auto &[id, filter] : ruleset_->input_filters) {
+    for (const auto &filter : input_filters_) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating input filters");
             throw timeout_exception();
         }
 
-        auto it = input_filter_cache_.find(filter.get());
+        auto it = input_filter_cache_.find(&filter);
         if (it == input_filter_cache_.end()) {
-            auto [new_it, res] =
-                input_filter_cache_.emplace(filter.get(), input_filter::cache_type{});
+            auto [new_it, res] = input_filter_cache_.emplace(&filter, input_filter::cache_type{});
             it = new_it;
         }
 
         input_filter::cache_type &cache = it->second;
-        auto exclusion = filter->match(store_, cache, ruleset_->exclusion_matchers, deadline);
+        auto exclusion = filter.match(store_, cache, exclusion_matchers_, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 exclusion_policy_.add_input_exclusion(rule, exclusion->objects);
@@ -230,7 +228,7 @@ std::vector<event> context::eval_rules(
         const auto &mod = ruleset_->rule_modules[i];
         auto &cache = rule_module_cache_[i];
 
-        auto verdict = mod.eval(events, store_, cache, policy, ruleset_->rule_matchers, deadline);
+        auto verdict = mod.eval(events, store_, cache, policy, rule_matchers_, deadline);
         if (verdict == rule_module::verdict_type::block) {
             break;
         }

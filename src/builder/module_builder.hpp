@@ -52,14 +52,14 @@ public:
     rule_module_builder &operator=(rule_module_builder &&) = delete;
     rule_module_builder &operator=(const rule_module_builder &) = delete;
 
-    void insert(core_rule *rule) { rules_.emplace_back(rule); }
+    void insert(const core_rule *rule) { rules_.emplace_back(rule); }
 
     rule_module build();
 
 protected:
     source_precedence_fn_type source_precedence_fn_;
     grouping_key_fn_type grouping_key_fn_;
-    std::vector<core_rule *> rules_;
+    std::vector<const core_rule *> rules_;
     std::vector<rule_module::rule_collection> collections_;
     expiration_policy policy_;
 };
@@ -74,7 +74,7 @@ public:
     rule_module_set_builder &operator=(const rule_module_set_builder &) = delete;
 
     std::array<rule_module, rule_module_count> build(
-        const std::vector<std::shared_ptr<core_rule>> &rules);
+        const std::vector<core_rule> &base_rules, const std::vector<core_rule> &user_rules);
 
 protected:
     /* Rules Ordering

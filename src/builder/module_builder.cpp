@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
-#include <memory>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -58,13 +57,19 @@ rule_module rule_module_builder::build()
 }
 
 std::array<rule_module, rule_module_count> rule_module_set_builder::build(
-    const std::vector<std::shared_ptr<core_rule>> &rules)
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    const std::vector<core_rule> &base_rules, const std::vector<core_rule> &user_rules)
 {
     std::array<rule_module, rule_module_count> all_modules;
 
-    for (const auto &rule : rules) {
-        auto &builder = builders_[static_cast<std::size_t>(rule->get_module())];
-        builder.insert(rule.get());
+    for (const auto &rule : base_rules) {
+        auto &builder = builders_[static_cast<std::size_t>(rule.get_module())];
+        builder.insert(&rule);
+    }
+
+    for (const auto &rule : user_rules) {
+        auto &builder = builders_[static_cast<std::size_t>(rule.get_module())];
+        builder.insert(&rule);
     }
 
     for (std::size_t i = 0; i < builders_.size(); ++i) { all_modules[i] = builders_[i].build(); }

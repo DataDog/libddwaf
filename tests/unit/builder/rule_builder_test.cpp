@@ -22,21 +22,23 @@ TEST(TestRuleBuilder, SimpleRule)
     exp_builder.add_target("http.client_ip");
     exp_builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    rule_spec spec{true, core_rule::source_type::base, "Test rule", {{"type", "flow1"}},
-        exp_builder.build(), {}};
+    rule_spec spec{.enabled = true,
+        .source = core_rule::source_type::base,
+        .name = "Test rule",
+        .tags = {{"type", "flow1"}},
+        .expr = exp_builder.build(),
+        .actions = {}};
 
     rule_builder builder{"test", spec};
 
     auto rule = builder.build({});
-    EXPECT_NE(rule, nullptr);
-
-    EXPECT_STRV(rule->get_id(), "test");
-    EXPECT_TRUE(rule->is_enabled());
-    EXPECT_STRV(rule->get_name(), "Test rule");
-    EXPECT_TRUE(rule->get_actions().empty());
-    EXPECT_EQ(rule->get_source(), core_rule::source_type::base);
-    EXPECT_EQ(rule->get_module(), rule_module_category::waf);
-    EXPECT_EQ(rule->get_verdict(), core_rule::verdict_type::monitor);
+    EXPECT_STRV(rule.get_id(), "test");
+    EXPECT_TRUE(rule.is_enabled());
+    EXPECT_STRV(rule.get_name(), "Test rule");
+    EXPECT_TRUE(rule.get_actions().empty());
+    EXPECT_EQ(rule.get_source(), core_rule::source_type::base);
+    EXPECT_EQ(rule.get_module(), rule_module_category::waf);
+    EXPECT_EQ(rule.get_verdict(), core_rule::verdict_type::monitor);
 }
 
 } // namespace

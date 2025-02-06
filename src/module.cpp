@@ -5,12 +5,9 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <cstddef>
-#include <memory>
 #include <module.hpp>
 #include <optional>
-#include <string>
 #include <string_view>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -30,8 +27,7 @@ using verdict_type = rule_module::verdict_type;
 
 std::pair<std::optional<event>, verdict_type> eval_rule(const core_rule &rule,
     const object_store &store, core_rule::cache_type &cache,
-    const exclusion::context_policy &policy,
-    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
+    const exclusion::context_policy &policy, const matcher_mapper &dynamic_matchers,
     ddwaf::timer &deadline)
 {
     const auto &id = rule.get_id();
@@ -93,8 +89,7 @@ ddwaf::timer &rule_module::get_deadline(ddwaf::timer &deadline) const
 
 verdict_type rule_module::eval_with_collections(std::vector<event> &events, object_store &store,
     cache_type &cache, const exclusion::context_policy &exclusion,
-    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-    ddwaf::timer &deadline) const
+    const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const
 {
     verdict_type final_verdict = verdict_type::none;
     for (const auto &collection : collections_) {
@@ -113,7 +108,7 @@ verdict_type rule_module::eval_with_collections(std::vector<event> &events, obje
         }
 
         for (std::size_t i = collection.begin; i < collection.end; ++i) {
-            auto &rule = *rules_[i];
+            const auto &rule = *rules_[i];
             auto [event, verdict] =
                 eval_rule(rule, store, cache.rules[i], exclusion, dynamic_matchers, deadline);
             if (event.has_value()) {
@@ -136,8 +131,7 @@ verdict_type rule_module::eval_with_collections(std::vector<event> &events, obje
 }
 
 verdict_type rule_module::eval(std::vector<event> &events, object_store &store, cache_type &cache,
-    const exclusion::context_policy &exclusion,
-    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
+    const exclusion::context_policy &exclusion, const matcher_mapper &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
     auto &apt_deadline = get_deadline(deadline);

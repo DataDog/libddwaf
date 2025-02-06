@@ -18,8 +18,9 @@ namespace ddwaf {
 
 class ruleset_builder {
 public:
-    ruleset_builder(object_limits limits, ddwaf_object_free_fn free_fn,
-        std::shared_ptr<ddwaf::obfuscator> event_obfuscator)
+    explicit ruleset_builder(object_limits limits = {},
+        ddwaf_object_free_fn free_fn = ddwaf_object_free,
+        std::shared_ptr<ddwaf::obfuscator> event_obfuscator = std::make_shared<ddwaf::obfuscator>())
         : limits_(limits), free_fn_(free_fn), event_obfuscator_(std::move(event_obfuscator))
     {}
 
@@ -46,21 +47,26 @@ protected:
     // we allow an empty key as a way to revert or remove the contents of the
     // relevant feature.
 
-    // Rules
-    indexer<core_rule> final_base_rules_;
-    indexer<core_rule> final_user_rules_;
+    // Base Rules
+    std::shared_ptr<const std::vector<core_rule>> final_base_rules_;
+    std::shared_ptr<const std::vector<core_rule>> final_user_rules_;
+    indexer<const core_rule> rule_index_;
 
     // Filters
-    std::unordered_map<std::string_view, std::shared_ptr<exclusion::rule_filter>> rule_filters_;
-    std::unordered_map<std::string_view, std::shared_ptr<exclusion::input_filter>> input_filters_;
+    std::shared_ptr<const std::vector<exclusion::rule_filter>> rule_filters_;
+    std::shared_ptr<const std::vector<exclusion::input_filter>> input_filters_;
 
     // Processors
-    std::unordered_map<std::string_view, std::shared_ptr<base_processor>> preprocessors_;
-    std::unordered_map<std::string_view, std::shared_ptr<base_processor>> postprocessors_;
+    std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> preprocessors_;
+    std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> postprocessors_;
 
     // Matchers
-    std::unordered_map<std::string, std::shared_ptr<matcher::base>> rule_matchers_;
-    std::unordered_map<std::string, std::shared_ptr<matcher::base>> exclusion_matchers_;
+    std::shared_ptr<const matcher_mapper> rule_matchers_;
+    std::shared_ptr<const matcher_mapper> exclusion_matchers_;
+
+    // Scanners
+    std::shared_ptr<const std::vector<scanner>> scanners_;
+    indexer<const scanner> scanner_index_;
 
     // Actions
     std::shared_ptr<const action_mapper> actions_;

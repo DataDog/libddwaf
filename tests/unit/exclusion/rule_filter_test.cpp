@@ -93,10 +93,12 @@ TEST(TestRuleFilter, MatchWithDynamicMatcher)
 
         ddwaf::timer deadline{2s};
 
-        std::unordered_map<std::string, std::shared_ptr<matcher::base>> matchers{{"ip_data",
-            std::make_shared<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"})}};
+        std::unordered_map<std::string, std::unique_ptr<matcher::base>> matchers;
+        matchers["ip_data"] =
+            std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        exclusion::rule_filter::excluded_set default_set{{}, true, {}, {}};
+        exclusion::rule_filter::excluded_set default_set{
+            .rules = {}, .ephemeral = true, .mode = {}, .action = {}};
 
         ddwaf::exclusion::rule_filter::cache_type cache;
         auto res = filter.match(store, cache, matchers, deadline);

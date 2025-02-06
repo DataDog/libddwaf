@@ -4,6 +4,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "matcher/exact_match.hpp"
+#include "matcher/ip_match.hpp"
 #include "ruleset.hpp"
 
 #include "common/gtest_utils.hpp"
@@ -11,287 +13,151 @@
 using namespace ddwaf;
 
 namespace {
-std::shared_ptr<core_rule> make_rule(std::string id, std::string name,
-    std::unordered_map<std::string, std::string> tags, std::vector<std::string> actions,
-    core_rule::source_type source = core_rule::source_type::base)
+
+TEST(TestRuleset, InsertSingleBaseRule)
 {
-    return std::make_shared<core_rule>(std::move(id), std::move(name), std::move(tags),
-        std::make_shared<expression>(), std::move(actions), true, source);
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
+    builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+
+    auto rules = std::make_shared<std::vector<core_rule>>();
+    rules->emplace_back(
+        core_rule{"id", "name", {{"type", "type0"}, {"category", "category0"}}, builder.build()});
+
+    ddwaf::ruleset ruleset;
+    ruleset.insert_rules(rules, std::make_shared<std::vector<core_rule>>());
+
+    EXPECT_EQ(ruleset.base_rules->size(), 1);
+    EXPECT_EQ(ruleset.user_rules->size(), 0);
+    EXPECT_EQ(ruleset.rule_addresses.size(), 1);
+
+    EXPECT_TRUE(ruleset.rule_addresses.contains(get_target_index("http.client_ip")));
 }
 
-TEST(TestRuleset, InsertSingleRegularBaseRules)
+TEST(TestRuleset, InsertSingleUserRule)
 {
-    std::vector<std::shared_ptr<core_rule>> rules{
-        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {}),
-        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {}),
-        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {}),
-        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {}),
-        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {}),
-        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {}),
-    };
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
+    builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    {
-        ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules, {});
+    auto rules = std::make_shared<std::vector<core_rule>>();
+    rules->emplace_back(
+        core_rule{"id", "name", {{"type", "type0"}, {"category", "category0"}}, builder.build()});
 
-        EXPECT_EQ(ruleset.rules.size(), 6);
-    }
+    ddwaf::ruleset ruleset;
+    ruleset.insert_rules(std::make_shared<std::vector<core_rule>>(), rules);
 
-    {
-        ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules, {});
+    EXPECT_EQ(ruleset.base_rules->size(), 0);
+    EXPECT_EQ(ruleset.user_rules->size(), 1);
+    EXPECT_EQ(ruleset.rule_addresses.size(), 1);
 
-        EXPECT_EQ(ruleset.rules.size(), 6);
-    }
+    EXPECT_TRUE(ruleset.rule_addresses.contains(get_target_index("http.client_ip")));
 }
 
-TEST(TestRuleset, InsertSinglePriorityBaseRules)
+TEST(TestRuleset, InsertBaseAndUserRule)
 {
-    std::vector<std::shared_ptr<core_rule>> rules{
-        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {"block"}),
-        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"}),
-        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"}),
-        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {"block"}),
-        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"}),
-        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"}),
-    };
+    auto base_rules = std::make_shared<std::vector<core_rule>>();
+    auto user_rules = std::make_shared<std::vector<core_rule>>();
 
     {
-        ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules, {});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        EXPECT_EQ(ruleset.rules.size(), 6);
+        base_rules->emplace_back(core_rule{
+            "id", "name", {{"type", "type0"}, {"category", "category0"}}, builder.build()});
     }
 
     {
-        ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules, {});
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        EXPECT_EQ(ruleset.rules.size(), 6);
+        user_rules->emplace_back(core_rule{
+            "id2", "name", {{"type", "type0"}, {"category", "category0"}}, builder.build()});
     }
+
+    ddwaf::ruleset ruleset;
+    ruleset.insert_rules(base_rules, user_rules);
+
+    EXPECT_EQ(ruleset.base_rules->size(), 1);
+    EXPECT_EQ(ruleset.user_rules->size(), 1);
+    EXPECT_EQ(ruleset.rule_addresses.size(), 2);
+
+    EXPECT_TRUE(ruleset.rule_addresses.contains(get_target_index("http.client_ip")));
+    EXPECT_TRUE(ruleset.rule_addresses.contains(get_target_index("usr.id")));
 }
 
-TEST(TestRuleset, InsertSingleMixedBaseRules)
+TEST(TestRuleset, InsertMultipleBaseAndUserRule)
 {
-    std::vector<std::shared_ptr<core_rule>> rules{
-        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {}),
-        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {}),
-        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"}),
-        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {}),
-        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"}),
-        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"}),
-    };
+    auto base_rules = std::make_shared<std::vector<core_rule>>();
+    auto user_rules = std::make_shared<std::vector<core_rule>>();
 
+    std::shared_ptr<ddwaf::expression> ip_expr;
     {
-        ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules, {});
-
-        EXPECT_EQ(ruleset.rules.size(), 6);
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+        ip_expr = builder.build();
     }
 
+    std::shared_ptr<ddwaf::expression> usr_expr;
     {
-        ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules, {});
-
-        EXPECT_EQ(ruleset.rules.size(), 6);
-    }
-}
-
-TEST(TestRuleset, InsertSingleRegularUserRules)
-{
-    std::vector<std::shared_ptr<core_rule>> rules{
-        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {},
-            core_rule::source_type::user),
-        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {},
-            core_rule::source_type::user),
-        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {},
-            core_rule::source_type::user),
-        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {},
-            core_rule::source_type::user),
-        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {},
-            core_rule::source_type::user),
-        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {},
-            core_rule::source_type::user),
-    };
-
-    {
-        ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules, {});
-
-        EXPECT_EQ(ruleset.rules.size(), 6);
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("usr.id");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
+        usr_expr = builder.build();
     }
 
+    std::shared_ptr<ddwaf::expression> route_expr;
     {
-        ddwaf::ruleset ruleset;
-
-        ruleset.insert_rules(rules, {});
-
-        EXPECT_EQ(ruleset.rules.size(), 6);
-    }
-}
-
-TEST(TestRuleset, InsertSinglePriorityUserRules)
-{
-    std::vector<std::shared_ptr<core_rule>> rules{
-        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {"block"},
-            core_rule::source_type::user),
-        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
-            core_rule::source_type::user),
-        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
-            core_rule::source_type::user),
-        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {"block"},
-            core_rule::source_type::user),
-        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
-            core_rule::source_type::user),
-        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
-            core_rule::source_type::user),
-    };
-    {
-        ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules, {});
-
-        EXPECT_EQ(ruleset.rules.size(), 6);
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("http.route");
+        builder.end_condition<matcher::exact_match>(std::vector<std::string>{"unrouted"});
+        route_expr = builder.build();
     }
 
-    {
-        ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules, {});
+    base_rules->emplace_back(
+        core_rule{"1", "name", {{"type", "type0"}, {"category", "category0"}}, ip_expr});
+    base_rules->emplace_back(
+        core_rule{"2", "name", {{"type", "type0"}, {"category", "category0"}}, usr_expr});
+    base_rules->emplace_back(
+        core_rule{"3", "name", {{"type", "type0"}, {"category", "category0"}}, usr_expr});
+    base_rules->emplace_back(
+        core_rule{"4", "name", {{"type", "type0"}, {"category", "category0"}}, ip_expr});
+    user_rules->emplace_back(
+        core_rule{"5", "name", {{"type", "type0"}, {"category", "category0"}}, route_expr});
+    user_rules->emplace_back(
+        core_rule{"6", "name", {{"type", "type0"}, {"category", "category0"}}, ip_expr});
+    user_rules->emplace_back(
+        core_rule{"7", "name", {{"type", "type0"}, {"category", "category0"}}, route_expr});
+    user_rules->emplace_back(
+        core_rule{"8", "name", {{"type", "type0"}, {"category", "category0"}}, ip_expr});
 
-        EXPECT_EQ(ruleset.rules.size(), 6);
-    }
-}
+    ddwaf::ruleset ruleset;
+    ruleset.insert_rules(base_rules, user_rules);
 
-TEST(TestRuleset, InsertSingleMixedUserRules)
-{
-    std::vector<std::shared_ptr<core_rule>> rules{
-        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {},
-            core_rule::source_type::user),
-        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {},
-            core_rule::source_type::user),
-        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
-            core_rule::source_type::user),
-        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {},
-            core_rule::source_type::user),
-        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
-            core_rule::source_type::user),
-        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
-            core_rule::source_type::user),
-    };
+    EXPECT_EQ(ruleset.base_rules->size(), 4);
+    EXPECT_EQ(ruleset.user_rules->size(), 4);
+    EXPECT_EQ(ruleset.rule_addresses.size(), 3);
 
-    {
-        ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules, {});
-
-        EXPECT_EQ(ruleset.rules.size(), 6);
-    }
-
-    {
-        ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules, {});
-
-        EXPECT_EQ(ruleset.rules.size(), 6);
-    }
-}
-
-TEST(TestRuleset, InsertSingleRegularMixedRules)
-{
-    std::vector<std::shared_ptr<core_rule>> rules{
-        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {},
-            core_rule::source_type::base),
-        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {},
-            core_rule::source_type::user),
-        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {},
-            core_rule::source_type::base),
-        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {},
-            core_rule::source_type::user),
-        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {},
-            core_rule::source_type::base),
-        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {},
-            core_rule::source_type::user),
-    };
-
-    {
-        ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules, {});
-
-        EXPECT_EQ(ruleset.rules.size(), 6);
-    }
-
-    {
-        ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules, {});
-
-        EXPECT_EQ(ruleset.rules.size(), 6);
-    }
-}
-
-TEST(TestRuleset, InsertSinglePriorityMixedRules)
-{
-    std::vector<std::shared_ptr<core_rule>> rules{
-        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {"block"},
-            core_rule::source_type::base),
-        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
-            core_rule::source_type::user),
-        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
-            core_rule::source_type::base),
-        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {"block"},
-            core_rule::source_type::user),
-        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
-            core_rule::source_type::base),
-        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
-            core_rule::source_type::user),
-    };
-    {
-        ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules, {});
-
-        EXPECT_EQ(ruleset.rules.size(), 6);
-    }
-
-    {
-        ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules, {});
-
-        EXPECT_EQ(ruleset.rules.size(), 6);
-    }
-}
-
-TEST(TestRuleset, InsertSingleMixedMixedRules)
-{
-    std::vector<std::shared_ptr<core_rule>> rules{
-        make_rule("id0", "name", {{"type", "type0"}, {"category", "category0"}}, {},
-            core_rule::source_type::user),
-        make_rule("id1", "name", {{"type", "type1"}, {"category", "category0"}}, {},
-            core_rule::source_type::user),
-        make_rule("id2", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"},
-            core_rule::source_type::user),
-        make_rule("id3", "name", {{"type", "type2"}, {"category", "category0"}}, {},
-            core_rule::source_type::user),
-        make_rule("id4", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
-            core_rule::source_type::user),
-        make_rule("id5", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"},
-            core_rule::source_type::user),
-        make_rule("id6", "name", {{"type", "type0"}, {"category", "category0"}}, {}),
-        make_rule("id7", "name", {{"type", "type1"}, {"category", "category0"}}, {}),
-        make_rule("id8", "name", {{"type", "type1"}, {"category", "category0"}}, {"block"}),
-        make_rule("id9", "name", {{"type", "type2"}, {"category", "category0"}}, {}),
-        make_rule("id10", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"}),
-        make_rule("id11", "name", {{"type", "type2"}, {"category", "category1"}}, {"block"}),
-    };
-
-    {
-        ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules, {});
-
-        EXPECT_EQ(ruleset.rules.size(), 12);
-    }
-
-    {
-        ddwaf::ruleset ruleset;
-        ruleset.insert_rules(rules, {});
-
-        EXPECT_EQ(ruleset.rules.size(), 12);
-    }
+    EXPECT_TRUE(ruleset.rule_addresses.contains(get_target_index("http.client_ip")));
+    EXPECT_TRUE(ruleset.rule_addresses.contains(get_target_index("usr.id")));
+    EXPECT_TRUE(ruleset.rule_addresses.contains(get_target_index("http.route")));
 }
 
 } // namespace

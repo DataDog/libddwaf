@@ -20,7 +20,7 @@ namespace ddwaf::exclusion {
 class rule_filter {
 public:
     struct excluded_set {
-        const std::unordered_set<core_rule *> &rules;
+        const std::unordered_set<const core_rule *> &rules;
         bool ephemeral{false};
         filter_mode mode{filter_mode::none};
         std::string_view action;
@@ -29,7 +29,7 @@ public:
     using cache_type = expression::cache_type;
 
     rule_filter(std::string id, std::shared_ptr<expression> expr,
-        std::set<core_rule *> rule_targets, filter_mode mode = filter_mode::bypass,
+        std::set<const core_rule *> rule_targets, filter_mode mode = filter_mode::bypass,
         std::string action = {});
     rule_filter(const rule_filter &) = delete;
     rule_filter &operator=(const rule_filter &) = delete;
@@ -38,8 +38,7 @@ public:
     virtual ~rule_filter() = default;
 
     virtual std::optional<excluded_set> match(const object_store &store, cache_type &cache,
-        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-        ddwaf::timer &deadline) const;
+        const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const;
 
     std::string_view get_id() const { return id_; }
 
@@ -53,7 +52,7 @@ public:
 protected:
     std::string id_;
     std::shared_ptr<expression> expr_;
-    std::unordered_set<core_rule *> rule_targets_;
+    std::unordered_set<const core_rule *> rule_targets_;
     filter_mode mode_;
     std::string action_;
 };

@@ -47,7 +47,7 @@ public:
 
     // The builder should be considered invalid after calling build, as the memory
     // associated with the rule_spec and overrides is transferred to the generated rule.
-    std::shared_ptr<core_rule> build(const action_mapper &mapper)
+    core_rule build(const action_mapper &mapper)
     {
         core_rule::verdict_type verdict = core_rule::verdict_type::monitor;
         for (const auto &action : spec_.actions) {
@@ -65,9 +65,8 @@ public:
 
         ancillary_tags_.merge(spec_.tags);
 
-        return std::make_shared<core_rule>(std::move(id_), std::move(spec_.name),
-            std::move(ancillary_tags_), std::move(spec_.expr), std::move(spec_.actions),
-            spec_.enabled, spec_.source, verdict);
+        return {std::move(id_), std::move(spec_.name), std::move(ancillary_tags_),
+            std::move(spec_.expr), std::move(spec_.actions), spec_.enabled, spec_.source, verdict};
     }
 
 protected:

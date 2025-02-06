@@ -179,7 +179,7 @@ struct configuration_spec {
     std::unordered_map<std::string, processor_spec> processors;
     // Obtained from 'scanners'
     // Scanners are stored directly in an indexer to simplify their use
-    indexer<const scanner> scanners;
+    std::unordered_map<std::string, scanner> scanners;
     // Obtained from 'actions'
     std::unordered_map<std::string, action_spec> actions;
 };
