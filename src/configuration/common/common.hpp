@@ -40,17 +40,6 @@ T at(const parameter::map &map, const Key &key, const T &default_)
 
 inline std::string index_to_id(unsigned idx) { return "index:" + to_string<std::string>(idx); }
 
-struct address_container {
-    std::unordered_set<std::string> required;
-    std::unordered_set<std::string> optional;
-};
-
-inline void add_addresses_to_info(const address_container &addresses, base_section_info &info)
-{
-    for (const auto &address : addresses.required) { info.add_required_address(address); }
-    for (const auto &address : addresses.optional) { info.add_optional_address(address); }
-}
-
 inline unsigned parse_schema_version(parameter::map &ruleset)
 {
     auto version = at<std::string_view>(ruleset, "version", {});

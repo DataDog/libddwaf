@@ -32,7 +32,7 @@ namespace ddwaf {
 
 namespace {
 std::vector<processor_mapping> parse_processor_mappings(
-    const parameter::vector &root, address_container &addresses, const auto &param_names)
+    const parameter::vector &root, const auto &param_names)
 {
     if (root.empty()) {
         throw ddwaf::parsing_error("empty mappings");
@@ -53,7 +53,6 @@ std::vector<processor_mapping> parse_processor_mappings(
             auto input = static_cast<parameter::map>(inputs[0]);
             auto input_address = at<std::string>(input, "address");
 
-            addresses.optional.emplace(input_address);
             parameters.emplace_back(
                 processor_parameter{{processor_target{.index = get_target_index(input_address),
                     .name = std::move(input_address),
@@ -78,8 +77,6 @@ void parse_processors(const parameter::vector &processor_array, configuration_co
         auto node = static_cast<parameter::map>(node_param);
         std::string id;
         try {
-            address_container addresses;
-
             id = at<std::string>(node, "id");
             if (cfg.contains_processor(id)) {
                 DDWAF_WARN("Duplicate processor: {}", id);
@@ -117,26 +114,26 @@ void parse_processors(const parameter::vector &processor_array, configuration_co
             }
 
             auto conditions_array = at<parameter::vector>(node, "conditions", {});
-            auto expr = parse_simplified_expression(conditions_array, addresses, limits);
+            auto expr = parse_simplified_expression(conditions_array, limits);
 
             auto params = at<parameter::map>(node, "parameters");
             auto mappings_vec = at<parameter::vector>(params, "mappings");
             std::vector<processor_mapping> mappings;
             if (type == processor_type::extract_schema) {
                 mappings =
-                    parse_processor_mappings(mappings_vec, addresses, extract_schema::param_names);
+                    parse_processor_mappings(mappings_vec, extract_schema::param_names);
             } else if (type == processor_type::http_endpoint_fingerprint) {
                 mappings = parse_processor_mappings(
-                    mappings_vec, addresses, http_endpoint_fingerprint::param_names);
+                    mappings_vec, http_endpoint_fingerprint::param_names);
             } else if (type == processor_type::http_header_fingerprint) {
                 mappings = parse_processor_mappings(
-                    mappings_vec, addresses, http_header_fingerprint::param_names);
+                    mappings_vec, http_header_fingerprint::param_names);
             } else if (type == processor_type::http_network_fingerprint) {
                 mappings = parse_processor_mappings(
-                    mappings_vec, addresses, http_network_fingerprint::param_names);
+                    mappings_vec, http_network_fingerprint::param_names);
             } else {
                 mappings = parse_processor_mappings(
-                    mappings_vec, addresses, session_fingerprint::param_names);
+                    mappings_vec, session_fingerprint::param_names);
             }
 
             std::vector<reference_spec> scanners;
@@ -153,7 +150,7 @@ void parse_processors(const parameter::vector &processor_array, configuration_co
 
             if (!eval && !output) {
                 DDWAF_WARN("Processor {} not used for evaluation or output", id);
-                info.add_failed(id, "processor not used for evaluation or output");
+                info.add_failed(id, diagnostic_severity::error, "processor not used for evaluation or output");
                 continue;
             }
             const processor_spec spec{.type = type,
@@ -165,7 +162,6 @@ void parse_processors(const parameter::vector &processor_array, configuration_co
 
             DDWAF_DEBUG("Parsed processor {}", id);
             info.add_loaded(id);
-            add_addresses_to_info(addresses, info);
             cfg.emplace_processor(std::move(id), spec);
         } catch (const unsupported_operator_version &e) {
             DDWAF_WARN("Skipping processor '{}': {}", id, e.what());
@@ -175,7 +171,7 @@ void parse_processors(const parameter::vector &processor_array, configuration_co
                 id = index_to_id(i);
             }
             DDWAF_WARN("Failed to parse processor '{}': {}", id, e.what());
-            info.add_failed(id, e.what());
+            info.add_failed(id, diagnostic_severity::error, e.what());
         }
     }
 }

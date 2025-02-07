@@ -32,12 +32,11 @@ namespace ddwaf {
 
 namespace {
 
-input_filter_spec parse_input_filter(
-    const parameter::map &filter, address_container &addresses, const object_limits &limits)
+input_filter_spec parse_input_filter(const parameter::map &filter, const object_limits &limits)
 {
     // Check for conditions first
     auto conditions_array = at<parameter::vector>(filter, "conditions", {});
-    auto expr = parse_expression(conditions_array, data_source::values, {}, addresses, limits);
+    auto expr = parse_expression(conditions_array, data_source::values, {}, limits);
 
     std::vector<reference_spec> rules_target;
     auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
@@ -59,7 +58,6 @@ input_filter_spec parse_input_filter(
         auto target = get_target_index(address);
         auto key_path = at<std::vector<std::string_view>>(input_map, "key_path", {});
 
-        addresses.optional.emplace(address);
         obj_filter->insert(target, std::move(address), key_path);
     }
 
@@ -72,12 +70,11 @@ input_filter_spec parse_input_filter(
         .targets = std::move(rules_target)};
 }
 
-rule_filter_spec parse_rule_filter(
-    const parameter::map &filter, address_container &addresses, const object_limits &limits)
+rule_filter_spec parse_rule_filter(const parameter::map &filter, const object_limits &limits)
 {
     // Check for conditions first
     auto conditions_array = at<parameter::vector>(filter, "conditions", {});
-    auto expr = parse_expression(conditions_array, data_source::values, {}, addresses, limits);
+    auto expr = parse_expression(conditions_array, data_source::values, {}, limits);
 
     std::vector<reference_spec> rules_target;
     auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
@@ -123,11 +120,10 @@ void parse_filters(const parameter::vector &filter_array, configuration_collecto
         auto node = static_cast<parameter::map>(node_param);
         std::string id;
         try {
-            address_container addresses;
             id = at<std::string>(node, "id");
             if (cfg.contains_filter(id)) {
                 DDWAF_WARN("Duplicate filter: {}", id);
-                info.add_failed(id, "duplicate filter");
+                info.add_failed(id, diagnostic_severity::error, "duplicate filter");
                 continue;
             }
 
@@ -142,15 +138,14 @@ void parse_filters(const parameter::vector &filter_array, configuration_collecto
             }
 
             if (node.find("inputs") != node.end()) {
-                auto filter = parse_input_filter(node, addresses, limits);
+                auto filter = parse_input_filter(node, limits);
                 cfg.emplace_filter(id, std::move(filter));
             } else {
-                auto filter = parse_rule_filter(node, addresses, limits);
+                auto filter = parse_rule_filter(node, limits);
                 cfg.emplace_filter(id, std::move(filter));
             }
             DDWAF_DEBUG("Parsed exclusion filter {}", id);
             info.add_loaded(std::move(id));
-            add_addresses_to_info(addresses, info);
         } catch (const unsupported_operator_version &e) {
             DDWAF_WARN("Skipping filter '{}': {}", id, e.what());
             info.add_skipped(id);
@@ -159,7 +154,7 @@ void parse_filters(const parameter::vector &filter_array, configuration_collecto
                 id = index_to_id(i);
             }
             DDWAF_WARN("Failed to parse filter '{}': {}", id, e.what());
-            info.add_failed(id, e.what());
+            info.add_failed(id, diagnostic_severity::error, e.what());
         }
     }
 }

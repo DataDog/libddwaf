@@ -21,7 +21,7 @@ public:
 protected:
     explicit exception(std::string what) : what_(std::move(what)) {}
 
-    const std::string what_;
+    std::string what_;
 };
 
 class unsupported_version : public exception {
@@ -38,9 +38,29 @@ public:
     {}
 };
 
+class unknown_operator : public exception {
+public:
+    explicit unknown_operator(std::string_view name) : exception("unknown operator: " + std::string{name}) {}
+};
+
+class unknown_generator: public exception {
+public:
+    explicit unknown_generator(std::string_view name) : exception("unknown generator: " + std::string{name}) {}
+};
+
+class unknown_transformer : public exception {
+public:
+    explicit unknown_transformer(std::string_view name) : exception("unknown transformer: " + std::string{name}) {}
+};
+
 class parsing_error : public exception {
 public:
     explicit parsing_error(const std::string &what) : exception(what) {}
+};
+
+class missing_key : public parsing_error {
+public:
+    explicit missing_key(const std::string &key) : parsing_error("missing key '" + key + "'") {}
 };
 
 class malformed_object : public exception {
@@ -59,13 +79,8 @@ public:
     [[nodiscard]] std::string obtained() const { return obtained_; }
 
 protected:
-    const std::string expected_;
-    const std::string obtained_;
-};
-
-class missing_key : public parsing_error {
-public:
-    explicit missing_key(const std::string &key) : parsing_error("missing key '" + key + "'") {}
+   std::string expected_;
+   std::string obtained_;
 };
 
 class invalid_type : public parsing_error {
@@ -78,6 +93,7 @@ public:
         : parsing_error("invalid type for key '" + key + "', expected '" + type + "'")
     {}
 };
+
 
 class timeout_exception : public exception {
 public:

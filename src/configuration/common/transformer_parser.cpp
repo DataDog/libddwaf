@@ -85,7 +85,7 @@ std::vector<transformer_id> parse_transformers(const parameter::vector &root, da
         } else if (transformer == "values_only") {
             source = ddwaf::data_source::values;
         } else {
-            throw ddwaf::parsing_error("invalid transformer " + std::string(transformer));
+            throw unsupported_transformer(transformer);
         }
     }
     return transformers;

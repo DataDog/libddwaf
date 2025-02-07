@@ -29,8 +29,7 @@ namespace ddwaf {
 
 namespace {
 
-rule_spec parse_rule(parameter::map &rule, const object_limits &limits,
-    core_rule::source_type source, address_container &addresses)
+rule_spec parse_rule(parameter::map &rule, const object_limits &limits, core_rule::source_type source)
 {
     std::vector<transformer_id> rule_transformers;
     auto data_source = ddwaf::data_source::values;
@@ -43,7 +42,7 @@ rule_spec parse_rule(parameter::map &rule, const object_limits &limits,
 
     auto conditions_array = at<parameter::vector>(rule, "conditions");
     auto expr =
-        parse_expression(conditions_array, data_source, rule_transformers, addresses, limits);
+        parse_expression(conditions_array, data_source, rule_transformers, limits);
     if (expr->empty()) {
         // This is likely unreachable
         throw ddwaf::parsing_error("rule has no valid conditions");
@@ -79,12 +78,10 @@ void parse_rules(const parameter::vector &rule_array, configuration_collector &c
             const auto &rule_param = rule_array[i];
             auto node = static_cast<parameter::map>(rule_param);
 
-            address_container addresses;
-
             id = at<std::string>(node, "id");
             if (cfg.contains_rule(id)) {
                 DDWAF_WARN("Duplicate rule {}", id);
-                info.add_failed(id, "duplicate rule");
+                info.add_failed(id, diagnostic_severity::error, "duplicate rule");
                 continue;
             }
 
@@ -98,21 +95,26 @@ void parse_rules(const parameter::vector &rule_array, configuration_collector &c
                 continue;
             }
 
-            auto rule = parse_rule(node, limits, source, addresses);
+            auto rule = parse_rule(node, limits, source);
 
             DDWAF_DEBUG("Parsed rule {}", id);
             info.add_loaded(id);
-            add_addresses_to_info(addresses, info);
             cfg.emplace_rule(std::move(id), std::move(rule));
         } catch (const unsupported_operator_version &e) {
             DDWAF_WARN("Skipping rule '{}': {}", id, e.what());
             info.add_skipped(id);
+        } catch (const unknown_operator &e) {
+            if (id.empty()) {
+                id = index_to_id(i);
+            }
+            DDWAF_WARN("Failed to parse rule '{}': {}", id, e.what());
+            info.add_failed(id, diagnostic_severity::warning, e.what());
         } catch (const std::exception &e) {
             if (id.empty()) {
                 id = index_to_id(i);
             }
             DDWAF_WARN("Failed to parse rule '{}': {}", id, e.what());
-            info.add_failed(id, e.what());
+            info.add_failed(id, diagnostic_severity::error, e.what());
         }
     }
 }
