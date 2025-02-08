@@ -9,7 +9,7 @@
 
 #include "context.hpp"
 #include "ddwaf.h"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "ruleset.hpp"
 #include "ruleset_info.hpp"
 #include "utils.hpp"

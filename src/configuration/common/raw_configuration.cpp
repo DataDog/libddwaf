@@ -15,7 +15,7 @@
 
 #include "ddwaf.h"
 #include "exception.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "semver.hpp"
 #include "utils.hpp"
 
@@ -50,7 +50,7 @@ std::string strtype(int type)
 
 namespace ddwaf {
 
-parameter::operator parameter::map() const
+raw_configuration::operator raw_configuration::map() const
 {
     if (type != DDWAF_OBJ_MAP) {
         throw bad_cast("map", strtype(type));
@@ -60,10 +60,10 @@ parameter::operator parameter::map() const
         return {};
     }
 
-    std::unordered_map<std::string_view, parameter> map;
+    std::unordered_map<std::string_view, raw_configuration> map;
     map.reserve(nbEntries);
     for (unsigned i = 0; i < nbEntries; i++) {
-        const parameter &kv = array[i];
+        const raw_configuration &kv = array[i];
         if (kv.parameterName == nullptr) {
             throw malformed_object("invalid key on map entry");
         }
@@ -74,7 +74,7 @@ parameter::operator parameter::map() const
     return map;
 }
 
-parameter::operator parameter::vector() const
+raw_configuration::operator raw_configuration::vector() const
 {
     if (type != DDWAF_OBJ_ARRAY) {
         throw bad_cast("array", strtype(type));
@@ -86,7 +86,7 @@ parameter::operator parameter::vector() const
     return {array, array + nbEntries};
 }
 
-parameter::operator parameter::string_set() const
+raw_configuration::operator raw_configuration::string_set() const
 {
     if (type != DDWAF_OBJ_ARRAY) {
         throw bad_cast("array", strtype(type));
@@ -96,7 +96,7 @@ parameter::operator parameter::string_set() const
         return {};
     }
 
-    parameter::string_set set;
+    raw_configuration::string_set set;
     set.reserve(nbEntries);
     for (unsigned i = 0; i < nbEntries; i++) {
         if (array[i].type != DDWAF_OBJ_STRING) {
@@ -109,7 +109,7 @@ parameter::operator parameter::string_set() const
     return set;
 }
 
-parameter::operator std::string_view() const
+raw_configuration::operator std::string_view() const
 {
     if (type != DDWAF_OBJ_STRING || stringValue == nullptr) {
         throw bad_cast("string_view", strtype(type));
@@ -118,7 +118,7 @@ parameter::operator std::string_view() const
     return {stringValue, static_cast<size_t>(nbEntries)};
 }
 
-parameter::operator std::string() const
+raw_configuration::operator std::string() const
 {
     switch (type) {
     case DDWAF_OBJ_SIGNED:
@@ -141,7 +141,7 @@ parameter::operator std::string() const
     throw bad_cast("string", strtype(type));
 }
 
-parameter::operator uint64_t() const
+raw_configuration::operator uint64_t() const
 {
     if (type == DDWAF_OBJ_UNSIGNED) {
         return uintValue;
@@ -170,7 +170,7 @@ parameter::operator uint64_t() const
     throw bad_cast("unsigned", strtype(type));
 }
 
-parameter::operator int64_t() const
+raw_configuration::operator int64_t() const
 {
     if (type == DDWAF_OBJ_SIGNED) {
         return intValue;
@@ -200,7 +200,7 @@ parameter::operator int64_t() const
     throw bad_cast("signed", strtype(type));
 }
 
-parameter::operator double() const
+raw_configuration::operator double() const
 {
     if (type == DDWAF_OBJ_FLOAT) {
         return f64;
@@ -216,7 +216,7 @@ parameter::operator double() const
     throw bad_cast("double", strtype(type));
 }
 
-parameter::operator bool() const
+raw_configuration::operator bool() const
 {
     if (type == DDWAF_OBJ_BOOL) {
         return boolean;
@@ -244,7 +244,7 @@ parameter::operator bool() const
     throw bad_cast("bool", strtype(type));
 }
 
-parameter::operator std::vector<std::string>() const
+raw_configuration::operator std::vector<std::string>() const
 {
     if (type != DDWAF_OBJ_ARRAY) {
         throw bad_cast("array", strtype(type));
@@ -257,13 +257,13 @@ parameter::operator std::vector<std::string>() const
     std::vector<std::string> data;
     data.reserve(nbEntries);
     for (unsigned i = 0; i < nbEntries; i++) {
-        data.emplace_back(static_cast<std::string>(parameter(array[i])));
+        data.emplace_back(static_cast<std::string>(raw_configuration(array[i])));
     }
 
     return data;
 }
 
-parameter::operator std::vector<std::string_view>() const
+raw_configuration::operator std::vector<std::string_view>() const
 {
     if (type != DDWAF_OBJ_ARRAY) {
         throw bad_cast("array", strtype(type));
@@ -286,7 +286,7 @@ parameter::operator std::vector<std::string_view>() const
     return data;
 }
 
-parameter::operator std::unordered_map<std::string, std::string>() const
+raw_configuration::operator std::unordered_map<std::string, std::string>() const
 {
     if (type != DDWAF_OBJ_MAP) {
         throw bad_cast("map", strtype(type));
@@ -301,13 +301,13 @@ parameter::operator std::unordered_map<std::string, std::string>() const
     for (unsigned i = 0; i < nbEntries; i++) {
         std::string key{
             array[i].parameterName, static_cast<std::size_t>(array[i].parameterNameLength)};
-        data.emplace(std::move(key), static_cast<std::string>(parameter(array[i])));
+        data.emplace(std::move(key), static_cast<std::string>(raw_configuration(array[i])));
     }
 
     return data;
 }
 
-parameter::operator semantic_version() const
+raw_configuration::operator semantic_version() const
 {
     if (type != DDWAF_OBJ_STRING || stringValue == nullptr) {
         throw bad_cast("string", strtype(type));

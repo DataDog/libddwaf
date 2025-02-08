@@ -8,7 +8,7 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/processor_parser.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 
 using namespace ddwaf;
 
@@ -24,29 +24,29 @@ TEST(TestProcessorParser, ParseNoGenerator)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto array = static_cast<parameter::vector>(parameter(object));
+    auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("1"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'generator'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -91,29 +91,29 @@ TEST(TestProcessorParser, ParseNoID)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto array = static_cast<parameter::vector>(parameter(object));
+    auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("index:0"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'id'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
 
@@ -158,29 +158,29 @@ TEST(TestProcessorParser, ParseNoParameters)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto array = static_cast<parameter::vector>(parameter(object));
+    auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("1"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'parameters'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -225,29 +225,29 @@ TEST(TestProcessorParser, ParseNoMappings)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto array = static_cast<parameter::vector>(parameter(object));
+    auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("1"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'mappings'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -293,29 +293,29 @@ TEST(TestProcessorParser, ParseEmptyMappings)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto array = static_cast<parameter::vector>(parameter(object));
+    auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("1"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("empty mappings");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -361,29 +361,29 @@ TEST(TestProcessorParser, ParseNoInput)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto array = static_cast<parameter::vector>(parameter(object));
+    auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("1"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'inputs'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -429,29 +429,29 @@ TEST(TestProcessorParser, ParseEmptyInput)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto array = static_cast<parameter::vector>(parameter(object));
+    auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("1"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("empty processor input mapping");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -497,29 +497,29 @@ TEST(TestProcessorParser, ParseNoOutput)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto array = static_cast<parameter::vector>(parameter(object));
+    auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("1"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'output'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -565,29 +565,29 @@ TEST(TestProcessorParser, ParseUnknownGenerator)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto array = static_cast<parameter::vector>(parameter(object));
+    auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("1"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("unknown generator 'unknown'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -608,29 +608,29 @@ TEST(TestProcessorParser, ParseUseless)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto array = static_cast<parameter::vector>(parameter(object));
+    auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("1"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("processor not used for evaluation or output");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -676,7 +676,7 @@ TEST(TestProcessorParser, ParsePreprocessor)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto array = static_cast<parameter::vector>(parameter(object));
+    auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
@@ -698,7 +698,7 @@ TEST(TestProcessorParser, ParsePreprocessorWithOutput)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto array = static_cast<parameter::vector>(parameter(object));
+    auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
@@ -720,7 +720,7 @@ TEST(TestProcessorParser, ParsePostprocessor)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto array = static_cast<parameter::vector>(parameter(object));
+    auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
@@ -742,7 +742,7 @@ TEST(TestProcessorParser, ParseDuplicate)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto array = static_cast<parameter::vector>(parameter(object));
+    auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
@@ -753,25 +753,25 @@ TEST(TestProcessorParser, ParseDuplicate)
     EXPECT_TRUE(cfg.processors.contains("1"));
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("1"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("1"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("duplicate processor");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -790,7 +790,7 @@ TEST(TestProcessorParser, IncompatibleMinVersion)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto array = static_cast<parameter::vector>(parameter(object));
+    auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
@@ -820,22 +820,22 @@ TEST(TestProcessorParser, IncompatibleMinVersion)
     EXPECT_TRUE(cfg.overrides_by_tags.empty());
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = at<parameter::string_set>(root_map, "skipped");
+        auto skipped = at<raw_configuration::string_set>(root_map, "skipped");
         EXPECT_EQ(skipped.size(), 1);
         EXPECT_NE(skipped.find("1"), skipped.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -853,7 +853,7 @@ TEST(TestProcessorParser, IncompatibleMaxVersion)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto array = static_cast<parameter::vector>(parameter(object));
+    auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
@@ -883,22 +883,22 @@ TEST(TestProcessorParser, IncompatibleMaxVersion)
     EXPECT_TRUE(cfg.overrides_by_tags.empty());
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = at<parameter::string_set>(root_map, "skipped");
+        auto skipped = at<raw_configuration::string_set>(root_map, "skipped");
         EXPECT_EQ(skipped.size(), 1);
         EXPECT_NE(skipped.find("1"), skipped.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -916,7 +916,7 @@ TEST(TestProcessorParser, CompatibleVersion)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto array = static_cast<parameter::vector>(parameter(object));
+    auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section, limits);
     ddwaf_object_free(&object);
 
@@ -927,22 +927,22 @@ TEST(TestProcessorParser, CompatibleVersion)
     EXPECT_TRUE(cfg.processors.contains("1"));
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("1"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = at<parameter::string_set>(root_map, "skipped");
+        auto skipped = at<raw_configuration::string_set>(root_map, "skipped");
         EXPECT_EQ(skipped.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);

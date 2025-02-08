@@ -12,7 +12,7 @@
 #include "condition/base.hpp"
 #include "configuration/common/transformer_parser.hpp"
 #include "exception.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "transformer/base.hpp"
 
 namespace ddwaf {
@@ -66,7 +66,8 @@ std::optional<transformer_id> transformer_from_string(std::string_view str)
     return std::nullopt;
 }
 
-std::vector<transformer_id> parse_transformers(const parameter::vector &root, data_source &source)
+std::vector<transformer_id> parse_transformers(
+    const raw_configuration::vector &root, data_source &source)
 {
     if (root.empty()) {
         return {};

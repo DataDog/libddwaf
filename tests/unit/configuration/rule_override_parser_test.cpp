@@ -8,7 +8,7 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/rule_override_parser.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 
 using namespace ddwaf;
 
@@ -22,30 +22,30 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutSideEffects)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto override_array = static_cast<parameter::vector>(parameter(object));
+    auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("index:0"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
 
         auto it = errors.find("rule override without side-effects");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
 
@@ -86,30 +86,30 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutTargets)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto override_array = static_cast<parameter::vector>(parameter(object));
+    auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("index:0"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
 
         auto it = errors.find("rule override with no targets");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
 
@@ -151,24 +151,24 @@ TEST(TestRuleOverrideParser, ParseRuleOverride)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto override_array = static_cast<parameter::vector>(parameter(object));
+    auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("index:0"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -203,25 +203,25 @@ TEST(TestRuleOverrideParser, ParseMultipleRuleOverrides)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto override_array = static_cast<parameter::vector>(parameter(object));
+    auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 2);
         EXPECT_NE(loaded.find("index:0"), loaded.end());
         EXPECT_NE(loaded.find("index:1"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -271,30 +271,30 @@ TEST(TestRuleOverrideParser, ParseInconsistentRuleOverride)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto override_array = static_cast<parameter::vector>(parameter(object));
+    auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("index:0"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
 
         auto it = errors.find("rule override targets rules and tags");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
 
@@ -336,24 +336,24 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideForTags)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto override_array = static_cast<parameter::vector>(parameter(object));
+    auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("index:0"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -391,30 +391,30 @@ TEST(TestRuleOverrideParser, ParseInvalidTagsField)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto override_array = static_cast<parameter::vector>(parameter(object));
+    auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("index:0"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
 
         auto it = errors.find("bad cast, expected 'map', obtained 'array'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
 

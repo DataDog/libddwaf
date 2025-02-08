@@ -34,7 +34,7 @@
 #include "matcher/lower_than.hpp"
 #include "matcher/phrase_match.hpp"
 #include "matcher/regex_match.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "target_address.hpp"
 #include "transformer/base.hpp"
 #include "utils.hpp"
@@ -44,9 +44,9 @@ namespace ddwaf {
 namespace {
 
 template <typename T>
-std::vector<condition_parameter> parse_arguments(const parameter::map &params, data_source source,
-    const std::vector<transformer_id> &transformers, address_container &addresses,
-    const object_limits &limits)
+std::vector<condition_parameter> parse_arguments(const raw_configuration::map &params,
+    data_source source, const std::vector<transformer_id> &transformers,
+    address_container &addresses, const object_limits &limits)
 {
     const auto &specification = T::arguments();
     std::vector<condition_parameter> definitions;
@@ -57,7 +57,7 @@ std::vector<condition_parameter> parse_arguments(const parameter::map &params, d
         definitions.emplace_back();
         condition_parameter &def = definitions.back();
 
-        auto inputs = at<parameter::vector>(params, spec.name);
+        auto inputs = at<raw_configuration::vector>(params, spec.name);
         if (inputs.empty()) {
             if (!spec.optional) {
                 throw ddwaf::parsing_error("empty non-optional argument");
@@ -71,7 +71,7 @@ std::vector<condition_parameter> parse_arguments(const parameter::map &params, d
 
         auto &targets = def.targets;
         for (const auto &input_param : inputs) {
-            auto input = static_cast<parameter::map>(input_param);
+            auto input = static_cast<raw_configuration::map>(input_param);
             auto address = at<std::string>(input, "address");
 
             DDWAF_DEBUG("Found address {}", address);
@@ -100,7 +100,7 @@ std::vector<condition_parameter> parse_arguments(const parameter::map &params, d
                     .transformers = transformers,
                     .source = source});
             } else {
-                auto input_transformers = static_cast<parameter::vector>(it->second);
+                auto input_transformers = static_cast<raw_configuration::vector>(it->second);
                 if (input_transformers.size() > limits.max_transformers_per_address) {
                     throw ddwaf::parsing_error("number of transformers beyond allowed limit");
                 }
@@ -120,7 +120,7 @@ std::vector<condition_parameter> parse_arguments(const parameter::map &params, d
 }
 
 template <typename T, typename... Matchers>
-auto build_condition(std::string_view operator_name, const parameter::map &params,
+auto build_condition(std::string_view operator_name, const raw_configuration::map &params,
     data_source source, const std::vector<transformer_id> &transformers,
     address_container &addresses, const object_limits &limits)
 {
@@ -131,7 +131,7 @@ auto build_condition(std::string_view operator_name, const parameter::map &param
 
 template <typename Condition>
 auto build_versioned_condition(std::string_view operator_name, unsigned version,
-    const parameter::map &params, data_source source,
+    const raw_configuration::map &params, data_source source,
     const std::vector<transformer_id> &transformers, address_container &addresses,
     const object_limits &limits)
 {
@@ -145,16 +145,16 @@ auto build_versioned_condition(std::string_view operator_name, unsigned version,
 
 } // namespace
 
-std::shared_ptr<expression> parse_expression(const parameter::vector &conditions_array,
+std::shared_ptr<expression> parse_expression(const raw_configuration::vector &conditions_array,
     data_source source, const std::vector<transformer_id> &transformers,
     address_container &addresses, const object_limits &limits)
 {
     std::vector<std::unique_ptr<base_condition>> conditions;
     for (const auto &cond_param : conditions_array) {
-        auto root = static_cast<parameter::map>(cond_param);
+        auto root = static_cast<raw_configuration::map>(cond_param);
 
         auto operator_name = at<std::string_view>(root, "operator");
-        auto params = at<parameter::map>(root, "parameters");
+        auto params = at<raw_configuration::map>(root, "parameters");
 
         // Exploit Prevention Operators may have a single-digit version
         unsigned version = 0;
@@ -210,8 +210,9 @@ std::shared_ptr<expression> parse_expression(const parameter::vector &conditions
     return std::make_shared<expression>(std::move(conditions));
 }
 
-std::shared_ptr<expression> parse_simplified_expression(const parameter::vector &conditions_array,
-    address_container &addresses, const object_limits &limits)
+std::shared_ptr<expression> parse_simplified_expression(
+    const raw_configuration::vector &conditions_array, address_container &addresses,
+    const object_limits &limits)
 {
     return parse_expression(conditions_array, data_source::values, {}, addresses, limits);
 }

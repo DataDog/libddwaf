@@ -8,7 +8,7 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/rule_parser.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 
 using namespace ddwaf;
 
@@ -25,25 +25,25 @@ TEST(TestBaseRuleParser, ParseRule)
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
-    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     parse_base_rules(rule_array, collector, section, limits);
 
     ddwaf_object_free(&rule_object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("1"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -100,30 +100,30 @@ TEST(TestBaseRuleParser, ParseRuleWithoutType)
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
-    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     parse_base_rules(rule_array, collector, section, limits);
 
     ddwaf_object_free(&rule_object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("1"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'type'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -167,30 +167,30 @@ TEST(TestBaseRuleParser, ParseRuleInvalidTransformer)
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y], transformers: [unknown]}], regex: .*}}]}])");
 
-    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     parse_base_rules(rule_array, collector, section, limits);
 
     ddwaf_object_free(&rule_object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("1"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("invalid transformer unknown");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -234,30 +234,30 @@ TEST(TestBaseRuleParser, ParseRuleWithoutID)
     auto rule_object = yaml_to_object(
         R"([{name: rule1, tags: {type: type1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
-    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     parse_base_rules(rule_array, collector, section, limits);
 
     ddwaf_object_free(&rule_object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("index:0"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'id'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
 
@@ -301,7 +301,7 @@ TEST(TestBaseRuleParser, ParseMultipleRules)
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]},{id: secondrule, name: rule2, tags: {type: flow2, category: category2, confidence: none}, conditions: [{operator: ip_match, parameters: {inputs: [{address: http.client_ip}], data: blocked_ips}}], on_match: [block]}])");
 
-    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 2);
 
     parse_base_rules(rule_array, collector, section, limits);
@@ -309,20 +309,20 @@ TEST(TestBaseRuleParser, ParseMultipleRules)
     ddwaf_object_free(&rule_object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 2);
         EXPECT_NE(loaded.find("1"), loaded.end());
         EXPECT_NE(loaded.find("secondrule"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -374,33 +374,33 @@ TEST(TestBaseRuleParser, ParseMultipleRulesOneInvalid)
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]},{id: secondrule, name: rule2, tags: {type: flow2, category: category2, confidence: none}, conditions: [{operator: ip_match, parameters: {inputs: [{address: http.client_ip}], data: blocked_ips}}], on_match: [block]}, {id: error}])");
 
-    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
 
     parse_base_rules(rule_array, collector, section, limits);
 
     ddwaf_object_free(&rule_object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 2);
         EXPECT_NE(loaded.find("1"), loaded.end());
         EXPECT_NE(loaded.find("secondrule"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("error"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'conditions'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("error"), error_rules.end());
 
@@ -453,7 +453,7 @@ TEST(TestBaseRuleParser, ParseMultipleRulesOneDuplicate)
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]},{id: 1, name: rule2, tags: {type: flow2, category: category2, confidence: none}, conditions: [{operator: ip_match, parameters: {inputs: [{address: http.client_ip}], data: blocked_ips}}], on_match: [block]}])");
 
-    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 2);
 
     parse_base_rules(rule_array, collector, section, limits);
@@ -461,25 +461,25 @@ TEST(TestBaseRuleParser, ParseMultipleRulesOneDuplicate)
     ddwaf_object_free(&rule_object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("1"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("1"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("duplicate rule");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -518,7 +518,7 @@ TEST(TestBaseRuleParser, KeyPathTooLong)
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x, y, z]}], regex: .*}}]}])");
 
-    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 1);
 
     parse_base_rules(rule_array, collector, section, limits);
@@ -526,24 +526,24 @@ TEST(TestBaseRuleParser, KeyPathTooLong)
     ddwaf_object_free(&rule_object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("1"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("key_path beyond maximum container depth");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -588,7 +588,7 @@ TEST(TestBaseRuleParser, NegatedMatcherTooManyParameters)
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: "!match_regex", parameters: {inputs: [{address: arg1}, {address: arg2}], regex: .*}}]}])");
 
-    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 1);
 
     parse_base_rules(rule_array, collector, section, limits);
@@ -596,24 +596,24 @@ TEST(TestBaseRuleParser, NegatedMatcherTooManyParameters)
     ddwaf_object_free(&rule_object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("1"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("multiple targets for non-variadic argument");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -658,7 +658,7 @@ TEST(TestBaseRuleParser, SupportedVersionedOperator)
     auto rule_object = yaml_to_object(
         R"([{"id":"rsp-930-003","name":"SQLi Exploit detection","tags":{"type":"sqli","category":"exploit_detection","module":"rasp"},"conditions":[{"parameters":{"resource":[{"address":"server.db.statement"}],"params":[{"address":"server.request.query"},{"address":"server.request.body"},{"address":"server.request.path_params"},{"address":"grpc.server.request.message"},{"address":"graphql.server.all_resolvers"},{"address":"graphql.server.resolver"}],"db_type":[{"address":"server.db.system"}]},"operator":"sqli_detector@v2"}]}])");
 
-    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 1);
 
     parse_base_rules(rule_array, collector, section, limits);
@@ -666,22 +666,22 @@ TEST(TestBaseRuleParser, SupportedVersionedOperator)
     ddwaf_object_free(&rule_object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_TRUE(loaded.contains("rsp-930-003"));
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = at<parameter::string_set>(root_map, "skipped");
+        auto skipped = at<raw_configuration::string_set>(root_map, "skipped");
         EXPECT_EQ(skipped.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -705,7 +705,7 @@ TEST(TestBaseRuleParser, UnsupportedVersionedOperator)
     auto rule_object = yaml_to_object(
         R"([{"id":"rsp-930-003","name":"SQLi Exploit detection","tags":{"type":"sqli","category":"exploit_detection","module":"rasp"},"conditions":[{"parameters":{"resource":[{"address":"server.db.statement"}],"params":[{"address":"server.request.query"},{"address":"server.request.body"},{"address":"server.request.path_params"},{"address":"grpc.server.request.message"},{"address":"graphql.server.all_resolvers"},{"address":"graphql.server.resolver"}],"db_type":[{"address":"server.db.system"}]},"operator":"sqli_detector@v20"}]}])");
 
-    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 1);
 
     parse_base_rules(rule_array, collector, section, limits);
@@ -713,22 +713,22 @@ TEST(TestBaseRuleParser, UnsupportedVersionedOperator)
     ddwaf_object_free(&rule_object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = at<parameter::string_set>(root_map, "skipped");
+        auto skipped = at<raw_configuration::string_set>(root_map, "skipped");
         EXPECT_EQ(skipped.size(), 1);
         EXPECT_TRUE(skipped.contains("rsp-930-003"));
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -772,7 +772,7 @@ TEST(TestBaseRuleParser, IncompatibleMinVersion)
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, min_version: 99.0.0, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
-    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 1);
 
     parse_base_rules(rule_array, collector, section, limits);
@@ -780,22 +780,22 @@ TEST(TestBaseRuleParser, IncompatibleMinVersion)
     ddwaf_object_free(&rule_object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = at<parameter::string_set>(root_map, "skipped");
+        auto skipped = at<raw_configuration::string_set>(root_map, "skipped");
         EXPECT_EQ(skipped.size(), 1);
         EXPECT_TRUE(skipped.contains("1"));
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -839,7 +839,7 @@ TEST(TestBaseRuleParser, IncompatibleMaxVersion)
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, max_version: 0.0.99, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
-    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 1);
 
     parse_base_rules(rule_array, collector, section, limits);
@@ -847,22 +847,22 @@ TEST(TestBaseRuleParser, IncompatibleMaxVersion)
     ddwaf_object_free(&rule_object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = at<parameter::string_set>(root_map, "skipped");
+        auto skipped = at<raw_configuration::string_set>(root_map, "skipped");
         EXPECT_EQ(skipped.size(), 1);
         EXPECT_TRUE(skipped.contains("1"));
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -906,7 +906,7 @@ TEST(TestBaseRuleParser, CompatibleVersion)
     auto rule_object = yaml_to_object(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, min_version: 0.0.99, max_version: 2.0.0, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
-    auto rule_array = static_cast<parameter::vector>(parameter(rule_object));
+    auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 1);
 
     parse_base_rules(rule_array, collector, section, limits);
@@ -914,22 +914,22 @@ TEST(TestBaseRuleParser, CompatibleVersion)
     ddwaf_object_free(&rule_object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_TRUE(loaded.contains("1"));
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = at<parameter::string_set>(root_map, "skipped");
+        auto skipped = at<raw_configuration::string_set>(root_map, "skipped");
         EXPECT_EQ(skipped.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);

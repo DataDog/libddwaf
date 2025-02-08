@@ -8,7 +8,7 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/data_parser.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 
 using namespace ddwaf;
 
@@ -18,7 +18,7 @@ TEST(TestRuleDataParser, ParseIPData)
 {
     auto object = yaml_to_object(
         R"([{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
-    auto input = static_cast<parameter::vector>(parameter(object));
+    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -28,19 +28,19 @@ TEST(TestRuleDataParser, ParseIPData)
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("ip_data"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -58,7 +58,7 @@ TEST(TestRuleDataParser, ParseStringData)
 {
     auto object = yaml_to_object(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]}])");
-    auto input = static_cast<parameter::vector>(parameter(object));
+    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -68,19 +68,19 @@ TEST(TestRuleDataParser, ParseStringData)
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("usr_data"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -98,7 +98,7 @@ TEST(TestRuleDataParser, ParseMultipleData)
 {
     auto object = yaml_to_object(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
-    auto input = static_cast<parameter::vector>(parameter(object));
+    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -108,20 +108,20 @@ TEST(TestRuleDataParser, ParseMultipleData)
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 2);
         EXPECT_NE(loaded.find("ip_data"), loaded.end());
         EXPECT_NE(loaded.find("usr_data"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -140,7 +140,7 @@ TEST(TestRuleDataParser, ParseUnknownDataID)
 {
     auto object = yaml_to_object(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
-    auto input = static_cast<parameter::vector>(parameter(object));
+    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -150,20 +150,20 @@ TEST(TestRuleDataParser, ParseUnknownDataID)
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 2);
         EXPECT_NE(loaded.find("ip_data"), loaded.end());
         EXPECT_NE(loaded.find("usr_data"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -182,7 +182,7 @@ TEST(TestRuleDataParser, ParseUnsupportedTypes)
 {
     auto object = yaml_to_object(
         R"([{id: usr_data, type: blob_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: whatever, data: [{value: 192.168.1.1, expiration: 500}]}])");
-    auto input = static_cast<parameter::vector>(parameter(object));
+    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -192,26 +192,26 @@ TEST(TestRuleDataParser, ParseUnsupportedTypes)
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 2);
         EXPECT_NE(failed.find("ip_data"), failed.end());
         EXPECT_NE(failed.find("usr_data"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 2);
         {
             auto it = errors.find("unknown type 'blob_with_expiration'");
             EXPECT_NE(it, errors.end());
 
-            auto error_rules = static_cast<parameter::string_set>(it->second);
+            auto error_rules = static_cast<raw_configuration::string_set>(it->second);
             EXPECT_EQ(error_rules.size(), 1);
             EXPECT_NE(error_rules.find("usr_data"), error_rules.end());
         }
@@ -220,7 +220,7 @@ TEST(TestRuleDataParser, ParseUnsupportedTypes)
             auto it = errors.find("unknown type 'whatever'");
             EXPECT_NE(it, errors.end());
 
-            auto error_rules = static_cast<parameter::string_set>(it->second);
+            auto error_rules = static_cast<raw_configuration::string_set>(it->second);
             EXPECT_EQ(error_rules.size(), 1);
             EXPECT_NE(error_rules.find("ip_data"), error_rules.end());
         }
@@ -258,7 +258,7 @@ TEST(TestRuleDataParser, ParseUnknownDataIDWithUnsupportedType)
 {
     auto object = yaml_to_object(
         R"([{id: usr_data, type: blob_with_expiration, data: [{value: user, expiration: 500}]}])");
-    auto input = static_cast<parameter::vector>(parameter(object));
+    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -268,24 +268,24 @@ TEST(TestRuleDataParser, ParseUnknownDataIDWithUnsupportedType)
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("usr_data"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("unknown type 'blob_with_expiration'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("usr_data"), error_rules.end());
 
@@ -322,7 +322,7 @@ TEST(TestRuleDataParser, ParseMissingType)
 {
     auto object =
         yaml_to_object(R"([{id: ip_data, data: [{value: 192.168.1.1, expiration: 500}]}])");
-    auto input = static_cast<parameter::vector>(parameter(object));
+    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -332,24 +332,24 @@ TEST(TestRuleDataParser, ParseMissingType)
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("ip_data"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'type'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ip_data"), error_rules.end());
 
@@ -386,7 +386,7 @@ TEST(TestRuleDataParser, ParseMissingID)
 {
     auto object = yaml_to_object(
         R"([{type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
-    auto input = static_cast<parameter::vector>(parameter(object));
+    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -396,24 +396,24 @@ TEST(TestRuleDataParser, ParseMissingID)
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("index:0"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'id'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
 
@@ -449,7 +449,7 @@ TEST(TestRuleDataParser, ParseMissingID)
 TEST(TestRuleDataParser, ParseMissingData)
 {
     auto object = yaml_to_object(R"([{id: ip_data, type: ip_with_expiration}])");
-    auto input = static_cast<parameter::vector>(parameter(object));
+    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -459,24 +459,24 @@ TEST(TestRuleDataParser, ParseMissingData)
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("ip_data"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'data'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ip_data"), error_rules.end());
 

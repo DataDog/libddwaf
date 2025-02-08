@@ -8,7 +8,7 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/scanner_parser.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 
 using namespace ddwaf;
 
@@ -18,7 +18,7 @@ TEST(TestScannerParser, ParseKeyOnlyScanner)
 {
     auto definition = json_to_object(
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}}])");
-    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+    auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -28,19 +28,19 @@ TEST(TestScannerParser, ParseKeyOnlyScanner)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::parameter root;
+        ddwaf::raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("ecd"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -72,7 +72,7 @@ TEST(TestScannerParser, ParseValueOnlyScanner)
 {
     auto definition = json_to_object(
         R"([{"id":"ecd","value":{"operator":"match_regex","parameters":{"regex":"@"}},"tags":{"type":"email","category":"pii"}}])");
-    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+    auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -82,19 +82,19 @@ TEST(TestScannerParser, ParseValueOnlyScanner)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::parameter root;
+        ddwaf::raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("ecd"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -126,7 +126,7 @@ TEST(TestScannerParser, ParseKeyValueScanner)
 {
     auto definition = json_to_object(
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"value":{"operator":"match_regex","parameters":{"regex":"@"}},"tags":{"type":"email","category":"pii"}}])");
-    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+    auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -136,19 +136,19 @@ TEST(TestScannerParser, ParseKeyValueScanner)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::parameter root;
+        ddwaf::raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("ecd"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -180,7 +180,7 @@ TEST(TestScannerParser, ParseNoID)
 {
     auto definition = json_to_object(
         R"([{"key":{"operator":"match_regex","parameters":{"regex":"email"}},"value":{"operator":"match_regex","parameters":{"regex":"@"}},"tags":{"type":"email","category":"pii"}}])");
-    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+    auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -190,24 +190,24 @@ TEST(TestScannerParser, ParseNoID)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::parameter root;
+        ddwaf::raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("index:0"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'id'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
 
@@ -244,7 +244,7 @@ TEST(TestScannerParser, ParseNoTags)
 {
     auto definition = json_to_object(
         R"([{"id":"error","key":{"operator":"match_regex","parameters":{"regex":"email"}},"value":{"operator":"match_regex","parameters":{"regex":"@"}}}])");
-    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+    auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -254,24 +254,24 @@ TEST(TestScannerParser, ParseNoTags)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::parameter root;
+        ddwaf::raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("error"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'tags'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("error"), error_rules.end());
 
@@ -308,7 +308,7 @@ TEST(TestScannerParser, ParseNoKeyValue)
 {
     auto definition =
         json_to_object(R"([{"id":"error","tags":{"type":"email","category":"pii"}}])");
-    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+    auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -318,24 +318,24 @@ TEST(TestScannerParser, ParseNoKeyValue)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::parameter root;
+        ddwaf::raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("error"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("scanner has no key or value matcher");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("error"), error_rules.end());
 
@@ -372,7 +372,7 @@ TEST(TestScannerParser, ParseDuplicate)
 {
     auto definition = json_to_object(
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}},{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}}])");
-    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+    auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -382,25 +382,25 @@ TEST(TestScannerParser, ParseDuplicate)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::parameter root;
+        ddwaf::raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("ecd"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("ecd"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("duplicate scanner");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
 
@@ -418,7 +418,7 @@ TEST(TestScannerParser, ParseKeyNoOperator)
 {
     auto definition = json_to_object(
         R"([{"id":"ecd","key":{"parameters":{"regex":"email"}},"value":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}}])");
-    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+    auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -429,24 +429,24 @@ TEST(TestScannerParser, ParseKeyNoOperator)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::parameter root;
+        ddwaf::raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("ecd"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'operator'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
 
@@ -483,7 +483,7 @@ TEST(TestScannerParser, ParseKeyNoParameters)
 {
     auto definition = json_to_object(
         R"([{"id":"ecd","key":{"operator":"match_regex"},"value":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}}])");
-    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+    auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -493,24 +493,24 @@ TEST(TestScannerParser, ParseKeyNoParameters)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::parameter root;
+        ddwaf::raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("ecd"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'parameters'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
 
@@ -547,7 +547,7 @@ TEST(TestScannerParser, ParseValueNoOperator)
 {
     auto definition = json_to_object(
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"value":{"parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}}])");
-    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+    auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -557,24 +557,24 @@ TEST(TestScannerParser, ParseValueNoOperator)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::parameter root;
+        ddwaf::raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("ecd"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'operator'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
 
@@ -611,7 +611,7 @@ TEST(TestScannerParser, ParseValueNoParameters)
 {
     auto definition = json_to_object(
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"value":{"operator":"match_regex"},"tags":{"type":"email","category":"pii"}}])");
-    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+    auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -621,24 +621,24 @@ TEST(TestScannerParser, ParseValueNoParameters)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::parameter root;
+        ddwaf::raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("ecd"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'parameters'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
 
@@ -675,7 +675,7 @@ TEST(TestScannerParser, ParseUnknownMatcher)
 {
     auto definition = json_to_object(
         R"([{"id":"ecd","key":{"operator":"what","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}}])");
-    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+    auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -686,24 +686,24 @@ TEST(TestScannerParser, ParseUnknownMatcher)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::parameter root;
+        ddwaf::raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("ecd"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("unknown matcher: what");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
 
@@ -740,7 +740,7 @@ TEST(TestScannerParser, ParseRuleDataID)
 {
     auto definition = json_to_object(
         R"([{"id":"ecd","key":{"operator":"exact_match","parameters":{"data":"invalid"}},"tags":{"type":"email","category":"pii"}}])");
-    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+    auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -751,24 +751,24 @@ TEST(TestScannerParser, ParseRuleDataID)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::parameter root;
+        ddwaf::raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("ecd"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("dynamic data on scanner condition");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
 
@@ -805,7 +805,7 @@ TEST(TestScannerParser, IncompatibleMinVersion)
 {
     auto definition = json_to_object(
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}, "min_version": "99.0.0"}])");
-    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+    auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -816,22 +816,22 @@ TEST(TestScannerParser, IncompatibleMinVersion)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::parameter root;
+        ddwaf::raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = at<parameter::string_set>(root_map, "skipped");
+        auto skipped = at<raw_configuration::string_set>(root_map, "skipped");
         EXPECT_EQ(skipped.size(), 1);
         EXPECT_TRUE(skipped.contains("ecd"));
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -867,7 +867,7 @@ TEST(TestScannerParser, IncompatibleMaxVersion)
 {
     auto definition = json_to_object(
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}, "max_version": "0.0.99"}])");
-    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+    auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -878,22 +878,22 @@ TEST(TestScannerParser, IncompatibleMaxVersion)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::parameter root;
+        ddwaf::raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = at<parameter::string_set>(root_map, "skipped");
+        auto skipped = at<raw_configuration::string_set>(root_map, "skipped");
         EXPECT_EQ(skipped.size(), 1);
         EXPECT_TRUE(skipped.contains("ecd"));
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -929,7 +929,7 @@ TEST(TestScannerParser, CompatibleVersion)
 {
     auto definition = json_to_object(
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}, "min_version": "0.0.99", "max_version": "2.0.0"}])");
-    auto scanners_array = static_cast<parameter::vector>(parameter(definition));
+    auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -939,22 +939,22 @@ TEST(TestScannerParser, CompatibleVersion)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::parameter root;
+        ddwaf::raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_TRUE(loaded.contains("ecd"));
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = at<parameter::string_set>(root_map, "skipped");
+        auto skipped = at<raw_configuration::string_set>(root_map, "skipped");
         EXPECT_EQ(skipped.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);

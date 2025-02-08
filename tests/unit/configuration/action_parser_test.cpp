@@ -10,7 +10,7 @@
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
 #include "fmt/core.h"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 
 using namespace ddwaf;
 
@@ -24,7 +24,7 @@ TEST(TestActionParser, EmptyActions)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
@@ -62,24 +62,24 @@ TEST(TestActionParser, SingleAction)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("block_1"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -141,17 +141,17 @@ TEST(TestActionParser, RedirectAction)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 6);
         EXPECT_NE(loaded.find("redirect_301"), loaded.end());
         EXPECT_NE(loaded.find("redirect_302"), loaded.end());
@@ -160,10 +160,10 @@ TEST(TestActionParser, RedirectAction)
         EXPECT_NE(loaded.find("redirect_https"), loaded.end());
         EXPECT_NE(loaded.find("redirect_path"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -220,24 +220,24 @@ TEST(TestActionParser, RedirectActionInvalidStatusCode)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("redirect"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -272,24 +272,24 @@ TEST(TestActionParser, RedirectActionInvalid300StatusCode)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("redirect"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -324,24 +324,24 @@ TEST(TestActionParser, RedirectActionMissingStatusCode)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("redirect"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -376,24 +376,24 @@ TEST(TestActionParser, RedirectActionMissingLocation)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("redirect"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -429,24 +429,24 @@ TEST(TestActionParser, RedirectActionNonHttpURL)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("redirect"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -482,24 +482,24 @@ TEST(TestActionParser, RedirectActionInvalidRelativePathURL)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("redirect"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -535,25 +535,25 @@ TEST(TestActionParser, OverrideDefaultBlockAction)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
 
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("block"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -588,24 +588,24 @@ TEST(TestActionParser, BlockActionMissingStatusCode)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("block"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -641,24 +641,24 @@ TEST(TestActionParser, UnknownActionType)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("sanitize"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -682,24 +682,24 @@ TEST(TestActionParser, BlockActionMissingGrpcStatusCode)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("block"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -735,24 +735,24 @@ TEST(TestActionParser, BlockActionMissingType)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("block"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -787,24 +787,24 @@ TEST(TestActionParser, BlockActionMissingParameters)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("block"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -840,7 +840,7 @@ TEST(TestActionParser, MissingID)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
@@ -848,25 +848,25 @@ TEST(TestActionParser, MissingID)
     EXPECT_EQ(cfg.actions.size(), 0);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("index:0"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
 
         auto it = errors.find("missing key 'id'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
 
@@ -883,7 +883,7 @@ TEST(TestActionParser, MissingType)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
@@ -891,25 +891,25 @@ TEST(TestActionParser, MissingType)
     EXPECT_EQ(cfg.actions.size(), 0);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("sanitize"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
 
         auto it = errors.find("missing key 'type'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("sanitize"), error_rules.end());
 
@@ -925,7 +925,7 @@ TEST(TestActionParser, MissingParameters)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
@@ -933,25 +933,25 @@ TEST(TestActionParser, MissingParameters)
     EXPECT_EQ(cfg.actions.size(), 0);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("sanitize"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
 
         auto it = errors.find("missing key 'parameters'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("sanitize"), error_rules.end());
 
@@ -968,30 +968,30 @@ TEST(TestActionParser, DuplicateAction)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto actions_array = static_cast<parameter::vector>(parameter(object));
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("block_1"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
 
         auto it = errors.find("duplicate action");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("block_1"), error_rules.end());
 

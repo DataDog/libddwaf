@@ -21,8 +21,8 @@ ddwaf::waf build_instance(std::string_view rule_file)
         throw std::runtime_error("Invalid ruleset object");
     }
 
-    parameter ruleset = object;
-    parameter::map ruleset_map = static_cast<parameter::map>(ruleset);
+    raw_configuration ruleset = object;
+    raw_configuration::map ruleset_map = static_cast<raw_configuration::map>(ruleset);
 
     waf_builder builder{object_limits{}, ddwaf_object_free, std::make_shared<obfuscator>()};
     ddwaf::null_ruleset_info info;

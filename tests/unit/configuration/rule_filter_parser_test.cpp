@@ -8,7 +8,7 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/exclusion_parser.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 
 using namespace ddwaf;
 
@@ -24,29 +24,29 @@ TEST(TestRuleFilterParser, ParseEmptyFilter)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("1"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("empty exclusion filter");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -89,29 +89,29 @@ TEST(TestRuleFilterParser, ParseFilterWithoutID)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("index:0"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("missing key 'id'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
 
@@ -155,30 +155,30 @@ TEST(TestRuleFilterParser, ParseDuplicateUnconditional)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("1"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("1"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("duplicate filter");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -206,24 +206,24 @@ TEST(TestRuleFilterParser, ParseUnconditionalTargetID)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("1"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -260,24 +260,24 @@ TEST(TestRuleFilterParser, ParseUnconditionalTargetTags)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("1"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -316,24 +316,24 @@ TEST(TestRuleFilterParser, ParseUnconditionalTargetPriority)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("1"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -370,24 +370,24 @@ TEST(TestRuleFilterParser, ParseUnconditionalMultipleTargets)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("1"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -435,25 +435,25 @@ TEST(TestRuleFilterParser, ParseMultipleUnconditional)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 2);
         EXPECT_NE(loaded.find("1"), loaded.end());
         EXPECT_NE(loaded.find("2"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -509,7 +509,7 @@ TEST(TestRuleFilterParser, ParseDuplicateConditional)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
@@ -534,24 +534,24 @@ TEST(TestRuleFilterParser, ParseConditionalSingleCondition)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("1"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -588,24 +588,24 @@ TEST(TestRuleFilterParser, ParseConditionalGlobal)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("1"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -638,24 +638,24 @@ TEST(TestRuleFilterParser, ParseConditionalMultipleConditions)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("1"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -693,24 +693,24 @@ TEST(TestRuleFilterParser, ParseOnMatchMonitor)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("1"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -740,24 +740,24 @@ TEST(TestRuleFilterParser, ParseOnMatchBypass)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("1"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -788,24 +788,24 @@ TEST(TestRuleFilterParser, ParseCustomOnMatch)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("1"), loaded.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -836,29 +836,29 @@ TEST(TestRuleFilterParser, ParseInvalidOnMatch)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 1);
         EXPECT_NE(failed.find("1"), failed.end());
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
         auto it = errors.find("empty on_match value");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<parameter::string_set>(it->second);
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -902,27 +902,27 @@ TEST(TestRuleFilterParser, IncompatibleMinVersion)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto skipped = at<parameter::string_set>(root_map, "skipped");
+        auto skipped = at<raw_configuration::string_set>(root_map, "skipped");
         EXPECT_EQ(skipped.size(), 1);
         EXPECT_NE(skipped.find("1"), skipped.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -965,27 +965,27 @@ TEST(TestRuleFilterParser, IncompatibleMaxVersion)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 0);
 
-        auto skipped = at<parameter::string_set>(root_map, "skipped");
+        auto skipped = at<raw_configuration::string_set>(root_map, "skipped");
         EXPECT_EQ(skipped.size(), 1);
         EXPECT_NE(skipped.find("1"), skipped.end());
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -1028,27 +1028,27 @@ TEST(TestRuleFilterParser, CompatibleVersion)
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    auto filters_array = static_cast<parameter::vector>(parameter(object));
+    auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section, limits);
     ddwaf_object_free(&object);
 
     {
-        parameter root;
+        raw_configuration root;
         section.to_object(root);
 
-        auto root_map = static_cast<parameter::map>(root);
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto loaded = at<parameter::string_set>(root_map, "loaded");
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("1"), loaded.end());
 
-        auto skipped = at<parameter::string_set>(root_map, "skipped");
+        auto skipped = at<raw_configuration::string_set>(root_map, "skipped");
         EXPECT_EQ(skipped.size(), 0);
 
-        auto failed = at<parameter::string_set>(root_map, "failed");
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = at<parameter::map>(root_map, "errors");
+        auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);

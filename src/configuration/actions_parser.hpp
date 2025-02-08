@@ -12,11 +12,11 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 
 namespace ddwaf {
 
-void parse_actions(
-    const parameter::vector &actions_array, configuration_collector &cfg, base_section_info &info);
+void parse_actions(const raw_configuration::vector &actions_array, configuration_collector &cfg,
+    base_section_info &info);
 
 } // namespace ddwaf

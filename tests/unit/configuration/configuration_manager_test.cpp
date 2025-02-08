@@ -8,7 +8,7 @@
 #include "configuration/actions_parser.hpp"
 #include "configuration/common/common.hpp"
 #include "configuration/configuration_manager.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 
 using namespace ddwaf;
 

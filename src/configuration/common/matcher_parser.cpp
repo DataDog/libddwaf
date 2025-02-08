@@ -30,18 +30,18 @@
 #include "matcher/lower_than.hpp"
 #include "matcher/phrase_match.hpp"
 #include "matcher/regex_match.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 
 namespace ddwaf {
 
 template <>
 std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::phrase_match>(
-    const parameter::map &params)
+    const raw_configuration::map &params)
 {
-    parameter::map options;
+    raw_configuration::map options;
 
-    auto list = at<parameter::vector>(params, "list");
-    options = at<parameter::map>(params, "options", options);
+    auto list = at<raw_configuration::vector>(params, "list");
+    options = at<raw_configuration::map>(params, "options", options);
     auto word_boundary = at<bool>(options, "enforce_word_boundary", false);
 
     std::vector<const char *> patterns;
@@ -65,12 +65,12 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::ph
 
 template <>
 std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::regex_match>(
-    const parameter::map &params)
+    const raw_configuration::map &params)
 {
-    parameter::map options;
+    raw_configuration::map options;
 
     auto regex = at<std::string>(params, "regex");
-    options = at<parameter::map>(params, "options", options);
+    options = at<raw_configuration::map>(params, "options", options);
 
     auto case_sensitive = at<bool>(options, "case_sensitive", false);
     auto min_length = at<int64_t>(options, "min_length", 0);
@@ -84,21 +84,21 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::re
 
 template <>
 std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::is_xss>(
-    const parameter::map & /*params*/)
+    const raw_configuration::map & /*params*/)
 {
     return {std::string{}, std::make_unique<matcher::is_xss>()};
 }
 
 template <>
 std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::is_sqli>(
-    const parameter::map & /*params*/)
+    const raw_configuration::map & /*params*/)
 {
     return {std::string{}, std::make_unique<matcher::is_sqli>()};
 }
 
 template <>
 std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::ip_match>(
-    const parameter::map &params)
+    const raw_configuration::map &params)
 {
     std::unique_ptr<matcher::base> matcher;
     std::string rule_data_id;
@@ -116,7 +116,7 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::ip
 
 template <>
 std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::exact_match>(
-    const parameter::map &params)
+    const raw_configuration::map &params)
 {
     std::unique_ptr<matcher::base> matcher;
     std::string rule_data_id;
@@ -134,7 +134,7 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::ex
 
 template <>
 std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::equals<>>(
-    const parameter::map &params)
+    const raw_configuration::map &params)
 {
     std::unique_ptr<matcher::base> matcher;
     auto value_type = at<std::string>(params, "type");
@@ -162,7 +162,7 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::eq
 
 template <>
 std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::lower_than<>>(
-    const parameter::map &params)
+    const raw_configuration::map &params)
 {
     std::unique_ptr<matcher::base> matcher;
     auto value_type = at<std::string>(params, "type");
@@ -184,7 +184,7 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::lo
 
 template <>
 std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::greater_than<>>(
-    const parameter::map &params)
+    const raw_configuration::map &params)
 {
     std::unique_ptr<matcher::base> matcher;
 

@@ -18,7 +18,7 @@
 #include "ddwaf.h"
 #include "log.hpp"
 #include "obfuscator.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "ruleset_info.hpp"
 #include "utils.hpp"
 #include "version.hpp"
@@ -99,18 +99,18 @@ ddwaf::waf *ddwaf_init(
             ddwaf::waf_builder builder(
                 limits_from_config(config), free_fn, obfuscator_from_config(config));
 
-            const ddwaf::parameter input = *ruleset;
+            const ddwaf::raw_configuration input = *ruleset;
             if (diagnostics == nullptr) {
                 ddwaf::null_ruleset_info ri;
 
-                auto input_map = static_cast<ddwaf::parameter::map>(input);
+                auto input_map = static_cast<ddwaf::raw_configuration::map>(input);
                 builder.add_or_update("default", input_map, ri);
                 return new ddwaf::waf{builder.build()};
             }
 
             ddwaf::ruleset_info ri;
             const ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });
-            auto input_map = static_cast<ddwaf::parameter::map>(input);
+            auto input_map = static_cast<ddwaf::raw_configuration::map>(input);
             builder.add_or_update("default", input_map, ri);
             return new ddwaf::waf{builder.build()};
         }
@@ -289,8 +289,8 @@ bool ddwaf_builder_add_or_update_config(ddwaf::waf_builder *builder, const char 
     }
 
     try {
-        auto input = static_cast<ddwaf::parameter>(*config);
-        auto input_map = static_cast<ddwaf::parameter::map>(input);
+        auto input = static_cast<ddwaf::raw_configuration>(*config);
+        auto input_map = static_cast<ddwaf::raw_configuration::map>(input);
 
         if (diagnostics == nullptr) {
             ddwaf::null_ruleset_info ri;

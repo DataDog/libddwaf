@@ -8,7 +8,7 @@
 #include "common/gtest_utils.hpp"
 #include "configuration/common/configuration.hpp"
 #include "matcher/ip_match.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 
 using namespace ddwaf;
 
