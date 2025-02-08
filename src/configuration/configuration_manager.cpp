@@ -15,6 +15,7 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "configuration/configuration_manager.hpp"
 #include "configuration/data_parser.hpp"
 #include "configuration/exclusion_parser.hpp"
@@ -24,7 +25,6 @@
 #include "configuration/rule_parser.hpp"
 #include "configuration/scanner_parser.hpp"
 #include "log.hpp"
-#include "configuration/common/raw_configuration.hpp"
 #include "ruleset_info.hpp"
 
 namespace ddwaf {

@@ -18,6 +18,7 @@
 
 #include "configuration/common/common.hpp"
 #include "configuration/common/matcher_parser.hpp" // IWYU pragma: keep
+#include "configuration/common/raw_configuration.hpp"
 #include "ddwaf.h"
 #include "exception.hpp"
 #include "matcher/base.hpp"
@@ -30,7 +31,6 @@
 #include "matcher/lower_than.hpp"
 #include "matcher/phrase_match.hpp"
 #include "matcher/regex_match.hpp"
-#include "configuration/common/raw_configuration.hpp"
 
 namespace ddwaf {
 

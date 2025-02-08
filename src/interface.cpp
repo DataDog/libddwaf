@@ -14,11 +14,11 @@
 #include <string_view>
 
 #include "builder/waf_builder.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "context.hpp"
 #include "ddwaf.h"
 #include "log.hpp"
 #include "obfuscator.hpp"
-#include "configuration/common/raw_configuration.hpp"
 #include "ruleset_info.hpp"
 #include "utils.hpp"
 #include "version.hpp"

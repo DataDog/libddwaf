@@ -12,11 +12,11 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "configuration/common/reference_parser.hpp"
 #include "configuration/rule_override_parser.hpp"
 #include "exception.hpp"
 #include "log.hpp"
-#include "configuration/common/raw_configuration.hpp"
 #include "ruleset_info.hpp"
 #include "uuid.hpp"
 

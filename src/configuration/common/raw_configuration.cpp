@@ -13,9 +13,9 @@
 #include <utility>
 #include <vector>
 
+#include "configuration/common/raw_configuration.hpp"
 #include "ddwaf.h"
 #include "exception.hpp"
-#include "configuration/common/raw_configuration.hpp"
 #include "semver.hpp"
 #include "utils.hpp"
 

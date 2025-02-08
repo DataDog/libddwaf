@@ -10,6 +10,7 @@
 #include <string>
 #include <utility>
 
+#include "configuration/common/raw_configuration.hpp"
 #include "matcher/base.hpp"
 #include "matcher/equals.hpp"
 #include "matcher/exact_match.hpp"
@@ -20,7 +21,6 @@
 #include "matcher/lower_than.hpp"
 #include "matcher/phrase_match.hpp"
 #include "matcher/regex_match.hpp"
-#include "configuration/common/raw_configuration.hpp"
 
 namespace ddwaf {
 

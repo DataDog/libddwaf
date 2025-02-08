@@ -15,8 +15,8 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
-#include "log.hpp"
 #include "configuration/common/raw_configuration.hpp"
+#include "log.hpp"
 #include "uri_utils.hpp"
 
 namespace ddwaf {

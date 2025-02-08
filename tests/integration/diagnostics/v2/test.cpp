@@ -7,8 +7,8 @@
 #include "common/gtest_utils.hpp"
 
 #include "configuration/common/common.hpp"
-#include "ddwaf.h"
 #include "configuration/common/raw_configuration.hpp"
+#include "ddwaf.h"
 
 using namespace ddwaf;
 

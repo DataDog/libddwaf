@@ -13,10 +13,10 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "configuration/data_parser.hpp"
 #include "exception.hpp"
 #include "log.hpp"
-#include "configuration/common/raw_configuration.hpp"
 #include "uuid.hpp"
 
 namespace ddwaf {

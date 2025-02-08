@@ -9,8 +9,8 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
-#include "fmt/core.h"
 #include "configuration/common/raw_configuration.hpp"
+#include "fmt/core.h"
 
 using namespace ddwaf;
 

@@ -7,8 +7,8 @@
 #include "common/gtest_utils.hpp"
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
-#include "configuration/rule_override_parser.hpp"
 #include "configuration/common/raw_configuration.hpp"
+#include "configuration/rule_override_parser.hpp"
 
 using namespace ddwaf;
 

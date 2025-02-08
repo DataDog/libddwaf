@@ -10,9 +10,9 @@
 #include <vector>
 
 #include "condition/base.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "configuration/common/transformer_parser.hpp"
 #include "exception.hpp"
-#include "configuration/common/raw_configuration.hpp"
 #include "transformer/base.hpp"
 
 namespace ddwaf {

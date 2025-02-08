@@ -7,9 +7,9 @@
 
 #include <memory>
 
+#include "configuration/common/raw_configuration.hpp"
 #include "context.hpp"
 #include "ddwaf.h"
-#include "configuration/common/raw_configuration.hpp"
 #include "ruleset.hpp"
 #include "ruleset_info.hpp"
 #include "utils.hpp"

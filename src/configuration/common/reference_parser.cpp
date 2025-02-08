@@ -10,8 +10,8 @@
 
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
-#include "configuration/common/reference_parser.hpp"
 #include "configuration/common/raw_configuration.hpp"
+#include "configuration/common/reference_parser.hpp"
 
 namespace ddwaf {
 

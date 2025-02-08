@@ -7,8 +7,8 @@
 #pragma once
 
 #include "configuration/common/common.hpp"
-#include "expression.hpp"
 #include "configuration/common/raw_configuration.hpp"
+#include "expression.hpp"
 
 namespace ddwaf {
 
