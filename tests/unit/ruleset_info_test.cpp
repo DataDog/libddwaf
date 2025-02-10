@@ -44,7 +44,7 @@ TEST(TestRulesetInfo, ValidRulesetInfo)
 
         {
             auto &section = info.add_section("rules_override");
-            section.add_loaded("third");
+            section.add_loaded(10);
         }
 
         info.to_object(root);
@@ -57,7 +57,7 @@ TEST(TestRulesetInfo, ValidRulesetInfo)
     EXPECT_STREQ(version.c_str(), "2.3.4");
 
     std::unordered_map<std::string, std::string> kv{
-        {"rules", "first"}, {"exclusions", "second"}, {"rules_override", "third"}};
+        {"rules", "first"}, {"exclusions", "second"}, {"rules_override", "index:10"}};
     for (auto &[key, value] : kv) {
         auto section = ddwaf::at<raw_configuration::map>(root_map, key);
         EXPECT_EQ(section.size(), 5);
@@ -167,6 +167,7 @@ TEST(TestRulesetInfo, SkippedRulesetInfo)
         section.add_skipped("third");
         section.add_skipped("fourth");
         section.add_skipped("fifth");
+        section.add_skipped(5);
 
         info.to_object(root);
     }
@@ -187,7 +188,7 @@ TEST(TestRulesetInfo, SkippedRulesetInfo)
     EXPECT_EQ(failed.size(), 0);
 
     auto skipped = ddwaf::at<raw_configuration::vector>(section, "skipped");
-    EXPECT_EQ(skipped.size(), 5);
+    EXPECT_EQ(skipped.size(), 6);
 
     auto errors = ddwaf::at<raw_configuration::map>(section, "errors");
     EXPECT_EQ(errors.size(), 0);
