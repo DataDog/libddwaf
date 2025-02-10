@@ -45,7 +45,8 @@ namespace {
 
 template <typename T>
 std::vector<condition_parameter> parse_arguments(const raw_configuration::map &params,
-    data_source source, const std::vector<transformer_id> &transformers, const object_limits &limits)
+    data_source source, const std::vector<transformer_id> &transformers,
+    const object_limits &limits)
 {
     const auto &specification = T::arguments();
     std::vector<condition_parameter> definitions;
@@ -119,7 +120,8 @@ std::vector<condition_parameter> parse_arguments(const raw_configuration::map &p
 
 template <typename T, typename... Matchers>
 auto build_condition(std::string_view operator_name, const raw_configuration::map &params,
-    data_source source, const std::vector<transformer_id> &transformers, const object_limits &limits)
+    data_source source, const std::vector<transformer_id> &transformers,
+    const object_limits &limits)
 {
     auto [data_id, matcher] = parse_matcher<Matchers...>(operator_name, params);
     auto arguments = parse_arguments<T>(params, source, transformers, limits);
@@ -142,7 +144,8 @@ auto build_versioned_condition(std::string_view operator_name, unsigned version,
 } // namespace
 
 std::shared_ptr<expression> parse_expression(const raw_configuration::vector &conditions_array,
-    data_source source, const std::vector<transformer_id> &transformers, const object_limits &limits)
+    data_source source, const std::vector<transformer_id> &transformers,
+    const object_limits &limits)
 {
     std::vector<std::unique_ptr<base_condition>> conditions;
     for (const auto &cond_param : conditions_array) {
@@ -184,8 +187,8 @@ std::shared_ptr<expression> parse_expression(const raw_configuration::vector &co
             conditions.emplace_back(
                 std::make_unique<exists_condition>(std::move(arguments), limits));
         } else if (operator_name == "!exists") {
-            auto arguments = parse_arguments<exists_negated_condition>(
-                params, source, transformers, limits);
+            auto arguments =
+                parse_arguments<exists_negated_condition>(params, source, transformers, limits);
             conditions.emplace_back(
                 std::make_unique<exists_negated_condition>(std::move(arguments), limits));
         } else if (operator_name.starts_with('!')) {

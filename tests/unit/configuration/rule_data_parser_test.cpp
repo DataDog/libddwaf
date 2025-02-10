@@ -208,7 +208,7 @@ TEST(TestRuleDataParser, ParseUnsupportedTypes)
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 2);
         {
-            auto it = errors.find("unknown type 'blob_with_expiration'");
+            auto it = errors.find("unknown type: 'blob_with_expiration'");
             EXPECT_NE(it, errors.end());
 
             auto error_rules = static_cast<raw_configuration::string_set>(it->second);
@@ -217,7 +217,7 @@ TEST(TestRuleDataParser, ParseUnsupportedTypes)
         }
 
         {
-            auto it = errors.find("unknown type 'whatever'");
+            auto it = errors.find("unknown type: 'whatever'");
             EXPECT_NE(it, errors.end());
 
             auto error_rules = static_cast<raw_configuration::string_set>(it->second);
@@ -282,7 +282,7 @@ TEST(TestRuleDataParser, ParseUnknownDataIDWithUnsupportedType)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
-        auto it = errors.find("unknown type 'blob_with_expiration'");
+        auto it = errors.find("unknown type: 'blob_with_expiration'");
         EXPECT_NE(it, errors.end());
 
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);

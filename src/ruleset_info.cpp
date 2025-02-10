@@ -4,12 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <cstddef>
 #include <cstdint>
 #include <string_view>
 #include <utility>
 
 #include "ddwaf.h"
+#include "exception.hpp"
 #include "ruleset_info.hpp"
 
 namespace ddwaf {
@@ -33,9 +33,11 @@ void ruleset_info::section_info::add_loaded(std::string_view id)
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-void ruleset_info::section_info::add_failed(std::string_view id, diagnostic_severity sev, std::string_view error)
+void ruleset_info::section_info::add_failed(
+    std::string_view id, parser_error_severity sev, std::string_view error)
 {
-    const auto &inserter = [&](auto &cache, auto &diagnostics_array) {
+    const auto &inserter = [](auto &id, auto &error, auto &cache, auto &diagnostics_array,
+                               auto &failed_array) {
         ddwaf_object id_str;
         auto it = cache.find(error);
         if (it == cache.end()) {
@@ -45,7 +47,7 @@ void ruleset_info::section_info::add_failed(std::string_view id, diagnostic_seve
             auto [index, array] = object_map_add_helper(&diagnostics_array, error, &tmp_array);
 
             const std::string_view key(array->parameterName, array->parameterNameLength);
-            error_obj_cache_[key] = index;
+            cache[key] = index;
 
             ddwaf_object_stringl(&id_str, id.data(), id.size());
             ddwaf_object_array_add(array, &id_str);
@@ -56,13 +58,13 @@ void ruleset_info::section_info::add_failed(std::string_view id, diagnostic_seve
         }
 
         ddwaf_object_stringl(&id_str, id.data(), id.size());
-        ddwaf_object_array_add(&failed_, &id_str);
+        ddwaf_object_array_add(&failed_array, &id_str);
     };
 
-    if (sev == diagnostic_severity::error) {
-        inserter(error_obj_cache_, errors_);
+    if (sev == parser_error_severity::error) {
+        inserter(id, error, error_obj_cache_, errors_, failed_);
     } else {
-        inserter(warning_obj_cache_, warnings_);
+        inserter(id, error, warning_obj_cache_, warnings_, failed_);
     }
 }
 

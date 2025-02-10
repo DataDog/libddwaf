@@ -16,6 +16,7 @@
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
 #include "configuration/common/raw_configuration.hpp"
+#include "exception.hpp"
 #include "log.hpp"
 #include "uri_utils.hpp"
 
@@ -97,7 +98,7 @@ void parse_actions(const raw_configuration::vector &actions_array, configuration
             id = at<std::string>(node, "id");
             if (cfg.contains_action(id)) {
                 DDWAF_WARN("Duplicate action: {}", id);
-                info.add_failed(id, "duplicate action");
+                info.add_failed(id, parser_error_severity::error, "duplicate action");
                 continue;
             }
 
@@ -118,12 +119,12 @@ void parse_actions(const raw_configuration::vector &actions_array, configuration
             }
 
             info.add_loaded(std::move(id));
-        } catch (const std::exception &e) {
-            if (id.empty()) {
-                id = index_to_id(i);
-            }
+        } catch (const parsing_exception &e) {
             DDWAF_WARN("Failed to parse action '{}': {}", id, e.what());
-            info.add_failed(id, e.what());
+            info.add_failed(i, id, e.severity(), e.what());
+        } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse action '{}': {}", id, e.what());
+            info.add_failed(i, id, parser_error_severity::error, e.what());
         }
     }
 }

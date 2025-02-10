@@ -39,8 +39,6 @@ T at(const raw_configuration::map &map, const Key &key, const T &default_)
     }
 }
 
-inline std::string index_to_id(unsigned idx) { return "index:" + to_string<std::string>(idx); }
-
 inline unsigned parse_schema_version(raw_configuration::map &ruleset)
 {
     auto version = at<std::string_view>(ruleset, "version", {});

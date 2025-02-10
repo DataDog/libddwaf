@@ -140,7 +140,7 @@ void parse_legacy_rules(const raw_configuration::vector &rule_array, configurati
             id = at<std::string>(node, "id");
             if (cfg.contains_rule(id)) {
                 DDWAF_WARN("Duplicate rule {}", id);
-                info.add_failed(id, "duplicate rule");
+                info.add_failed(id, parser_error_severity::error, "duplicate rule");
                 continue;
             }
 
@@ -187,12 +187,12 @@ void parse_legacy_rules(const raw_configuration::vector &rule_array, configurati
             DDWAF_DEBUG("Parsed rule {}", id);
             info.add_loaded(id);
             cfg.emplace_rule(std::move(id), std::move(spec));
-        } catch (const std::exception &e) {
-            if (id.empty()) {
-                id = index_to_id(i);
-            }
+        } catch (const parsing_exception &e) {
             DDWAF_WARN("Failed to parse rule '{}': {}", id, e.what());
-            info.add_failed(id, e.what());
+            info.add_failed(i, id, e.severity(), e.what());
+        } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse rule '{}': {}", id, e.what());
+            info.add_failed(i, id, parser_error_severity::error, e.what());
         }
     }
 }

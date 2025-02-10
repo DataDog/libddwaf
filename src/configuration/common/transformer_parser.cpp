@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2021 Datadog, Inc.
 #include <optional>
-#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -86,7 +85,7 @@ std::vector<transformer_id> parse_transformers(
         } else if (transformer == "values_only") {
             source = ddwaf::data_source::values;
         } else {
-            throw unsupported_transformer(transformer);
+            throw unknown_transformer(transformer);
         }
     }
     return transformers;

@@ -12,11 +12,12 @@
 #include <unordered_set>
 
 #include "ddwaf.h"
+#include "exception.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
 
-enum class diagnostic_severity : uint8_t { warning, error };
+inline std::string index_to_id(unsigned idx) { return "index:" + to_string<std::string>(idx); }
 
 class base_ruleset_info {
 public:
@@ -30,9 +31,38 @@ public:
         base_section_info &operator=(base_section_info &&) noexcept = delete;
 
         virtual void set_error(std::string_view error) = 0;
+
+        virtual void add_loaded(unsigned index)
+        {
+            auto id_str = index_to_id(index);
+            add_loaded(id_str);
+        }
         virtual void add_loaded(std::string_view id) = 0;
+
+        virtual void add_skipped(unsigned index)
+        {
+            auto id_str = index_to_id(index);
+            add_skipped(id_str);
+        }
         virtual void add_skipped(std::string_view id) = 0;
-        virtual void add_failed(std::string_view id, diagnostic_severity sev, std::string_view error) = 0;
+
+        virtual void add_failed(unsigned index, parser_error_severity sev, std::string_view error)
+        {
+            auto id_str = index_to_id(index);
+            add_failed(id_str, sev, error);
+        }
+        virtual void add_failed(
+            unsigned index, std::string_view id, parser_error_severity sev, std::string_view error)
+        {
+            if (id.empty()) {
+                auto id_str = index_to_id(index);
+                add_failed(id_str, sev, error);
+            } else {
+                add_failed(id, sev, error);
+            }
+        }
+        virtual void add_failed(
+            std::string_view id, parser_error_severity sev, std::string_view error) = 0;
     };
 
     base_ruleset_info() = default;
@@ -61,7 +91,9 @@ public:
 
         void set_error(std::string_view /*error*/) override {}
         void add_loaded(std::string_view /*id*/) override {}
-        void add_failed(std::string_view /*id*/, diagnostic_severity /*sev*/, std::string_view /*error*/) override {}
+        void add_failed(std::string_view /*id*/, parser_error_severity /*sev*/,
+            std::string_view /*error*/) override
+        {}
         void add_skipped(std::string_view /*id*/) override {}
     };
 
@@ -93,6 +125,7 @@ public:
             ddwaf_object_array(&failed_);
             ddwaf_object_array(&skipped_);
             ddwaf_object_map(&errors_);
+            ddwaf_object_map(&warnings_);
         }
 
         ~section_info() override
@@ -101,6 +134,7 @@ public:
             ddwaf_object_free(&failed_);
             ddwaf_object_free(&skipped_);
             ddwaf_object_free(&errors_);
+            ddwaf_object_free(&warnings_);
         }
 
         section_info(const section_info &) = delete;
@@ -110,7 +144,8 @@ public:
 
         void set_error(std::string_view error) override { error_ = error; }
         void add_loaded(std::string_view id) override;
-        void add_failed(std::string_view id, diagnostic_severity sev, std::string_view error) override;
+        void add_failed(
+            std::string_view id, parser_error_severity sev, std::string_view error) override;
         void add_skipped(std::string_view id) override;
 
         // This matcher effectively moves the contents
@@ -127,6 +162,7 @@ public:
                 ddwaf_object_map_add(&output, "failed", &failed_);
                 ddwaf_object_map_add(&output, "skipped", &skipped_);
                 ddwaf_object_map_add(&output, "errors", &errors_);
+                ddwaf_object_map_add(&output, "warnings", &warnings_);
 
                 ddwaf_object_invalid(&loaded_);
                 ddwaf_object_invalid(&failed_);
@@ -134,6 +170,9 @@ public:
 
                 ddwaf_object_invalid(&errors_);
                 error_obj_cache_.clear();
+
+                ddwaf_object_invalid(&warnings_);
+                warning_obj_cache_.clear();
             }
         }
 
@@ -153,7 +192,6 @@ public:
          *  that warning was raised. {warning: [ids]} **/
         ddwaf_object warnings_{};
         std::map<std::string_view, uint64_t> warning_obj_cache_;
-
     };
 
     ruleset_info() = default;

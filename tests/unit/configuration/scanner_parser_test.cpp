@@ -699,13 +699,16 @@ TEST(TestScannerParser, ParseUnknownMatcher)
         EXPECT_NE(failed.find("ecd"), failed.end());
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
-        EXPECT_EQ(errors.size(), 1);
-        auto it = errors.find("unknown matcher: what");
-        EXPECT_NE(it, errors.end());
+        EXPECT_EQ(errors.size(), 0);
 
-        auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
-        EXPECT_EQ(error_rules.size(), 1);
-        EXPECT_NE(error_rules.find("ecd"), error_rules.end());
+        auto warnings = at<raw_configuration::map>(root_map, "warnings");
+        EXPECT_EQ(warnings.size(), 1);
+        auto it = warnings.find("unknown operator: 'what'");
+        EXPECT_NE(it, warnings.end());
+
+        auto warning_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
+        EXPECT_EQ(warning_rules.size(), 1);
+        EXPECT_NE(warning_rules.find("ecd"), warning_rules.end());
 
         ddwaf_object_free(&root);
     }

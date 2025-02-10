@@ -164,13 +164,16 @@ TEST(TestUserRuleParser, ParseRuleInvalidTransformer)
         EXPECT_NE(failed.find("1"), failed.end());
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
-        EXPECT_EQ(errors.size(), 1);
-        auto it = errors.find("invalid transformer unknown");
-        EXPECT_NE(it, errors.end());
+        EXPECT_EQ(errors.size(), 0);
 
-        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
-        EXPECT_EQ(error_rules.size(), 1);
-        EXPECT_NE(error_rules.find("1"), error_rules.end());
+        auto warnings = at<raw_configuration::map>(root_map, "warnings");
+        EXPECT_EQ(warnings.size(), 1);
+        auto it = warnings.find("unknown transformer: 'unknown'");
+        EXPECT_NE(it, warnings.end());
+
+        auto warning_rules = static_cast<raw_configuration::string_set>(it->second);
+        EXPECT_EQ(warning_rules.size(), 1);
+        EXPECT_NE(warning_rules.find("1"), warning_rules.end());
 
         ddwaf_object_free(&root);
     }

@@ -32,11 +32,12 @@ namespace ddwaf {
 
 namespace {
 
-input_filter_spec parse_input_filter(const raw_configuration::map &filter, const object_limits &limits)
+input_filter_spec parse_input_filter(
+    const raw_configuration::map &filter, const object_limits &limits)
 {
     // Check for conditions first
     auto conditions_array = at<raw_configuration::vector>(filter, "conditions", {});
-    auto expr = parse_expression(conditions_array, data_source::values, {}, addresses, limits);
+    auto expr = parse_expression(conditions_array, data_source::values, {}, limits);
 
     std::vector<reference_spec> rules_target;
     auto rules_target_array = at<raw_configuration::vector>(filter, "rules_target", {});
@@ -70,12 +71,12 @@ input_filter_spec parse_input_filter(const raw_configuration::map &filter, const
         .targets = std::move(rules_target)};
 }
 
-
-rule_filter_spec parse_rule_filter(const raw_configuration::map &filter, const object_limits &limits)
+rule_filter_spec parse_rule_filter(
+    const raw_configuration::map &filter, const object_limits &limits)
 {
     // Check for conditions first
     auto conditions_array = at<raw_configuration::vector>(filter, "conditions", {});
-    auto expr = parse_expression(conditions_array, data_source::values, {}, addresses, limits);
+    auto expr = parse_expression(conditions_array, data_source::values, {}, limits);
 
     std::vector<reference_spec> rules_target;
     auto rules_target_array = at<raw_configuration::vector>(filter, "rules_target", {});
@@ -124,7 +125,7 @@ void parse_filters(const raw_configuration::vector &filter_array, configuration_
             id = at<std::string>(node, "id");
             if (cfg.contains_filter(id)) {
                 DDWAF_WARN("Duplicate filter: {}", id);
-                info.add_failed(id, diagnostic_severity::error, "duplicate filter");
+                info.add_failed(id, parser_error_severity::error, "duplicate filter");
                 continue;
             }
 
@@ -150,12 +151,12 @@ void parse_filters(const raw_configuration::vector &filter_array, configuration_
         } catch (const unsupported_operator_version &e) {
             DDWAF_WARN("Skipping filter '{}': {}", id, e.what());
             info.add_skipped(id);
-        } catch (const std::exception &e) {
-            if (id.empty()) {
-                id = index_to_id(i);
-            }
+        } catch (const parsing_exception &e) {
             DDWAF_WARN("Failed to parse filter '{}': {}", id, e.what());
-            info.add_failed(id, diagnostic_severity::error, e.what());
+            info.add_failed(i, id, e.severity(), e.what());
+        } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse filter '{}': {}", id, e.what());
+            info.add_failed(i, id, parser_error_severity::error, e.what());
         }
     }
 }

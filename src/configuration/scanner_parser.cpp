@@ -54,7 +54,7 @@ void parse_scanners(const raw_configuration::vector &scanner_array, configuratio
             id = at<std::string>(node, "id");
             if (cfg.contains_scanner(id)) {
                 DDWAF_WARN("Duplicate scanner: {}", id);
-                info.add_failed(id, "duplicate scanner");
+                info.add_failed(id, parser_error_severity::error, "duplicate scanner");
                 continue;
             }
 
@@ -94,7 +94,8 @@ void parse_scanners(const raw_configuration::vector &scanner_array, configuratio
 
             if (!key_matcher && !value_matcher) {
                 DDWAF_WARN("Scanner {} has no key or value matcher", id);
-                info.add_failed(id, "scanner has no key or value matcher");
+                info.add_failed(
+                    id, parser_error_severity::error, "scanner has no key or value matcher");
                 continue;
             }
 
@@ -102,12 +103,12 @@ void parse_scanners(const raw_configuration::vector &scanner_array, configuratio
             info.add_loaded(id);
             scanner scnr{id, std::move(tags), std::move(key_matcher), std::move(value_matcher)};
             cfg.emplace_scanner(std::move(id), std::move(scnr));
-        } catch (const std::exception &e) {
-            if (id.empty()) {
-                id = index_to_id(i);
-            }
+        } catch (const parsing_exception &e) {
             DDWAF_WARN("Failed to parse scanner '{}': {}", id, e.what());
-            info.add_failed(id, e.what());
+            info.add_failed(i, id, e.severity(), e.what());
+        } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse scanner '{}': {}", id, e.what());
+            info.add_failed(i, id, parser_error_severity::error, e.what());
         }
     }
 }

@@ -14,7 +14,8 @@ namespace ddwaf {
 
 // TODO: merge these and use default arguments
 std::shared_ptr<expression> parse_expression(const raw_configuration::vector &conditions_array,
-    data_source source, const std::vector<transformer_id> &transformers, const object_limits &limits);
+    data_source source, const std::vector<transformer_id> &transformers,
+    const object_limits &limits);
 
 std::shared_ptr<expression> parse_simplified_expression(
     const raw_configuration::vector &conditions_array, const object_limits &limits);
