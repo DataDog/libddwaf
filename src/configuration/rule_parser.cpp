@@ -14,11 +14,11 @@
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
 #include "configuration/common/expression_parser.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "configuration/common/transformer_parser.hpp"
 #include "configuration/rule_parser.hpp"
 #include "exception.hpp"
 #include "log.hpp"
-#include "parameter.hpp"
 #include "rule.hpp"
 #include "semver.hpp"
 #include "transformer/base.hpp"
@@ -29,19 +29,19 @@ namespace ddwaf {
 
 namespace {
 
-rule_spec parse_rule(parameter::map &rule, const object_limits &limits,
+rule_spec parse_rule(raw_configuration::map &rule, const object_limits &limits,
     core_rule::source_type source, address_container &addresses)
 {
     std::vector<transformer_id> rule_transformers;
     auto data_source = ddwaf::data_source::values;
-    auto transformers = at<parameter::vector>(rule, "transformers", {});
+    auto transformers = at<raw_configuration::vector>(rule, "transformers", {});
     if (transformers.size() > limits.max_transformers_per_address) {
         throw ddwaf::parsing_error("number of transformers beyond allowed limit");
     }
 
     rule_transformers = parse_transformers(transformers, data_source);
 
-    auto conditions_array = at<parameter::vector>(rule, "conditions");
+    auto conditions_array = at<raw_configuration::vector>(rule, "conditions");
     auto expr =
         parse_expression(conditions_array, data_source, rule_transformers, addresses, limits);
     if (expr->empty()) {
@@ -50,7 +50,7 @@ rule_spec parse_rule(parameter::map &rule, const object_limits &limits,
     }
 
     std::unordered_map<std::string, std::string> tags;
-    for (auto &[key, value] : at<parameter::map>(rule, "tags")) {
+    for (auto &[key, value] : at<raw_configuration::map>(rule, "tags")) {
         try {
             tags.emplace(key, std::string(value));
         } catch (const bad_cast &e) {
@@ -70,14 +70,14 @@ rule_spec parse_rule(parameter::map &rule, const object_limits &limits,
         .actions = at<std::vector<std::string>>(rule, "on_match", {})};
 }
 
-void parse_rules(const parameter::vector &rule_array, configuration_collector &cfg,
+void parse_rules(const raw_configuration::vector &rule_array, configuration_collector &cfg,
     base_section_info &info, core_rule::source_type source, const object_limits &limits)
 {
     for (unsigned i = 0; i < rule_array.size(); ++i) {
         std::string id;
         try {
             const auto &rule_param = rule_array[i];
-            auto node = static_cast<parameter::map>(rule_param);
+            auto node = static_cast<raw_configuration::map>(rule_param);
 
             address_container addresses;
 
@@ -119,13 +119,13 @@ void parse_rules(const parameter::vector &rule_array, configuration_collector &c
 
 } // namespace
 
-void parse_base_rules(const parameter::vector &rule_array, configuration_collector &cfg,
+void parse_base_rules(const raw_configuration::vector &rule_array, configuration_collector &cfg,
     base_section_info &info, const object_limits &limits)
 {
     parse_rules(rule_array, cfg, info, core_rule::source_type::base, limits);
 }
 
-void parse_user_rules(const parameter::vector &rule_array, configuration_collector &cfg,
+void parse_user_rules(const raw_configuration::vector &rule_array, configuration_collector &cfg,
     base_section_info &info, const object_limits &limits)
 {
     parse_rules(rule_array, cfg, info, core_rule::source_type::user, limits);

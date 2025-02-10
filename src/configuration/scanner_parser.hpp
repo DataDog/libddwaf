@@ -8,12 +8,12 @@
 
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "ruleset_info.hpp"
 
 namespace ddwaf {
 
-void parse_scanners(const parameter::vector &scanner_array, configuration_collector &cfg,
+void parse_scanners(const raw_configuration::vector &scanner_array, configuration_collector &cfg,
     ruleset_info::base_section_info &info);
 
 } // namespace ddwaf

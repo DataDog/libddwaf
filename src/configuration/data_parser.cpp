@@ -13,25 +13,26 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "configuration/data_parser.hpp"
 #include "exception.hpp"
 #include "log.hpp"
-#include "parameter.hpp"
 #include "uuid.hpp"
 
 namespace ddwaf {
 
 namespace {
-template <typename T> std::vector<T> parse_data(parameter &input);
+template <typename T> std::vector<T> parse_data(raw_configuration &input);
 
-template <> std::vector<data_spec::value_type> parse_data<data_spec::value_type>(parameter &input)
+template <>
+std::vector<data_spec::value_type> parse_data<data_spec::value_type>(raw_configuration &input)
 {
     std::vector<data_spec::value_type> data;
     data.reserve(input.nbEntries);
 
-    auto array = static_cast<parameter::vector>(input);
+    auto array = static_cast<raw_configuration::vector>(input);
     for (const auto &values_param : array) {
-        auto values = static_cast<parameter::map>(values_param);
+        auto values = static_cast<raw_configuration::map>(values_param);
         data.emplace_back(at<std::string>(values, "value"), at<uint64_t>(values, "expiration", 0));
     }
 
@@ -51,20 +52,21 @@ data_type data_type_from_string(std::string_view str_type)
     return data_type::unknown;
 }
 
-void parse_data(const parameter::vector &data_array, base_section_info &info, auto &&emplace_fn)
+void parse_data(
+    const raw_configuration::vector &data_array, base_section_info &info, auto &&emplace_fn)
 {
     for (unsigned i = 0; i < data_array.size(); ++i) {
-        const ddwaf::parameter object = data_array[i];
+        const ddwaf::raw_configuration object = data_array[i];
         std::string data_id;
         try {
-            const auto entry = static_cast<ddwaf::parameter::map>(object);
+            const auto entry = static_cast<ddwaf::raw_configuration::map>(object);
 
             std::string id = uuidv4_generate_pseudo();
             data_id = at<std::string>(entry, "id");
 
             auto type_str = at<std::string_view>(entry, "type");
             auto type = data_type_from_string(type_str);
-            auto data = at<parameter>(entry, "data");
+            auto data = at<raw_configuration>(entry, "data");
             if (type != data_type::data_with_expiration && type != data_type::ip_with_expiration) {
                 DDWAF_DEBUG("Unknown type '{}' for data id '{}'", type_str, data_id);
                 info.add_failed(data_id, "unknown type '" + std::string{type_str} + "'");
@@ -88,8 +90,8 @@ void parse_data(const parameter::vector &data_array, base_section_info &info, au
 
 } // namespace
 
-void parse_rule_data(
-    const parameter::vector &data_array, configuration_collector &cfg, base_section_info &info)
+void parse_rule_data(const raw_configuration::vector &data_array, configuration_collector &cfg,
+    base_section_info &info)
 {
     parse_data(data_array, info,
         [&cfg](std::string &&data_id, std::string &&id, data_type type,
@@ -98,8 +100,8 @@ void parse_rule_data(
         });
 }
 
-void parse_exclusion_data(
-    const parameter::vector &data_array, configuration_collector &cfg, base_section_info &info)
+void parse_exclusion_data(const raw_configuration::vector &data_array, configuration_collector &cfg,
+    base_section_info &info)
 {
     parse_data(data_array, info,
         [&cfg](std::string &&data_id, std::string &&id, data_type type,

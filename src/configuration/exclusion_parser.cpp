@@ -16,13 +16,13 @@
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
 #include "configuration/common/expression_parser.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "configuration/common/reference_parser.hpp"
 #include "configuration/exclusion_parser.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "exclusion/object_filter.hpp"
 #include "log.hpp"
-#include "parameter.hpp"
 #include "semver.hpp"
 #include "target_address.hpp"
 #include "utils.hpp"
@@ -33,27 +33,27 @@ namespace ddwaf {
 namespace {
 
 input_filter_spec parse_input_filter(
-    const parameter::map &filter, address_container &addresses, const object_limits &limits)
+    const raw_configuration::map &filter, address_container &addresses, const object_limits &limits)
 {
     // Check for conditions first
-    auto conditions_array = at<parameter::vector>(filter, "conditions", {});
+    auto conditions_array = at<raw_configuration::vector>(filter, "conditions", {});
     auto expr = parse_expression(conditions_array, data_source::values, {}, addresses, limits);
 
     std::vector<reference_spec> rules_target;
-    auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
+    auto rules_target_array = at<raw_configuration::vector>(filter, "rules_target", {});
     if (!rules_target_array.empty()) {
         rules_target.reserve(rules_target_array.size());
 
         for (const auto &target : rules_target_array) {
-            rules_target.emplace_back(parse_reference(static_cast<parameter::map>(target)));
+            rules_target.emplace_back(parse_reference(static_cast<raw_configuration::map>(target)));
         }
     }
 
     auto obj_filter = std::make_shared<exclusion::object_filter>(limits);
-    auto inputs_array = at<parameter::vector>(filter, "inputs");
+    auto inputs_array = at<raw_configuration::vector>(filter, "inputs");
 
     for (const auto &input_param : inputs_array) {
-        auto input_map = static_cast<parameter::map>(input_param);
+        auto input_map = static_cast<raw_configuration::map>(input_param);
         auto address = at<std::string>(input_map, "address");
 
         auto target = get_target_index(address);
@@ -73,19 +73,19 @@ input_filter_spec parse_input_filter(
 }
 
 rule_filter_spec parse_rule_filter(
-    const parameter::map &filter, address_container &addresses, const object_limits &limits)
+    const raw_configuration::map &filter, address_container &addresses, const object_limits &limits)
 {
     // Check for conditions first
-    auto conditions_array = at<parameter::vector>(filter, "conditions", {});
+    auto conditions_array = at<raw_configuration::vector>(filter, "conditions", {});
     auto expr = parse_expression(conditions_array, data_source::values, {}, addresses, limits);
 
     std::vector<reference_spec> rules_target;
-    auto rules_target_array = at<parameter::vector>(filter, "rules_target", {});
+    auto rules_target_array = at<raw_configuration::vector>(filter, "rules_target", {});
     if (!rules_target_array.empty()) {
         rules_target.reserve(rules_target_array.size());
 
         for (const auto &target : rules_target_array) {
-            rules_target.emplace_back(parse_reference(static_cast<parameter::map>(target)));
+            rules_target.emplace_back(parse_reference(static_cast<raw_configuration::map>(target)));
         }
     }
 
@@ -115,12 +115,12 @@ rule_filter_spec parse_rule_filter(
 
 } // namespace
 
-void parse_filters(const parameter::vector &filter_array, configuration_collector &cfg,
+void parse_filters(const raw_configuration::vector &filter_array, configuration_collector &cfg,
     base_section_info &info, const object_limits &limits)
 {
     for (unsigned i = 0; i < filter_array.size(); i++) {
         const auto &node_param = filter_array[i];
-        auto node = static_cast<parameter::map>(node_param);
+        auto node = static_cast<raw_configuration::map>(node_param);
         std::string id;
         try {
             address_container addresses;

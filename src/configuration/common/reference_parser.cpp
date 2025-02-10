@@ -10,12 +10,12 @@
 
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "configuration/common/reference_parser.hpp"
-#include "parameter.hpp"
 
 namespace ddwaf {
 
-reference_spec parse_reference(const parameter::map &target)
+reference_spec parse_reference(const raw_configuration::map &target)
 {
     auto ref_id = at<std::string>(target, "rule_id", {});
     if (!ref_id.empty()) {
@@ -27,7 +27,7 @@ reference_spec parse_reference(const parameter::map &target)
         return {.type = reference_type::id, .ref_id = std::move(ref_id), .tags = {}};
     }
 
-    auto tag_map = at<parameter::map>(target, "tags", {});
+    auto tag_map = at<raw_configuration::map>(target, "tags", {});
     if (!tag_map.empty()) {
         std::unordered_map<std::string, std::string> tags;
         for (auto &[key, value] : tag_map) { tags.emplace(key, value); }

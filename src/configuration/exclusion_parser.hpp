@@ -7,12 +7,12 @@
 #pragma once
 
 #include "configuration/common/configuration_collector.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "ruleset_info.hpp"
 
 namespace ddwaf {
 
-void parse_filters(const parameter::vector &filter_array, configuration_collector &cfg,
+void parse_filters(const raw_configuration::vector &filter_array, configuration_collector &cfg,
     ruleset_info::base_section_info &info, const object_limits &limits);
 
 } // namespace ddwaf

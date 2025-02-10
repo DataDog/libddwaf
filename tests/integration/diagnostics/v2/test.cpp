@@ -7,8 +7,8 @@
 #include "common/gtest_utils.hpp"
 
 #include "configuration/common/common.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "ddwaf.h"
-#include "parameter.hpp"
 
 using namespace ddwaf;
 
@@ -27,22 +27,22 @@ TEST(TestDiagnosticsV2Integration, BasicRule)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf::parameter root(diagnostics);
-    auto root_map = static_cast<ddwaf::parameter::map>(root);
+    ddwaf::raw_configuration root(diagnostics);
+    auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
     EXPECT_STREQ(version.c_str(), "1.2.7");
 
-    auto rules = ddwaf::at<parameter::map>(root_map, "rules");
+    auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
 
-    auto loaded = ddwaf::at<parameter::string_set>(rules, "loaded");
+    auto loaded = ddwaf::at<raw_configuration::string_set>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 1);
     EXPECT_NE(loaded.find("1"), loaded.end());
 
-    auto failed = ddwaf::at<parameter::string_set>(rules, "failed");
+    auto failed = ddwaf::at<raw_configuration::string_set>(rules, "failed");
     EXPECT_EQ(failed.size(), 0);
 
-    auto errors = ddwaf::at<parameter::map>(rules, "errors");
+    auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 0);
 
     ddwaf_object_free(&diagnostics);
@@ -62,22 +62,22 @@ TEST(TestDiagnosticsV2Integration, BasicRuleWithUpdate)
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
 
     {
-        ddwaf::parameter root(diagnostics);
-        auto root_map = static_cast<ddwaf::parameter::map>(root);
+        ddwaf::raw_configuration root(diagnostics);
+        auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
         EXPECT_STREQ(version.c_str(), "1.2.7");
 
-        auto rules = ddwaf::at<parameter::map>(root_map, "rules");
+        auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
 
-        auto loaded = ddwaf::at<parameter::string_set>(rules, "loaded");
+        auto loaded = ddwaf::at<raw_configuration::string_set>(rules, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("1"), loaded.end());
 
-        auto failed = ddwaf::at<parameter::string_set>(rules, "failed");
+        auto failed = ddwaf::at<raw_configuration::string_set>(rules, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = ddwaf::at<parameter::map>(rules, "errors");
+        auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&diagnostics);
@@ -86,22 +86,22 @@ TEST(TestDiagnosticsV2Integration, BasicRuleWithUpdate)
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
 
     {
-        ddwaf::parameter root(diagnostics);
-        auto root_map = static_cast<ddwaf::parameter::map>(root);
+        ddwaf::raw_configuration root(diagnostics);
+        auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
         EXPECT_STREQ(version.c_str(), "1.2.7");
 
-        auto rules = ddwaf::at<parameter::map>(root_map, "rules");
+        auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
 
-        auto loaded = ddwaf::at<parameter::string_set>(rules, "loaded");
+        auto loaded = ddwaf::at<raw_configuration::string_set>(rules, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_NE(loaded.find("1"), loaded.end());
 
-        auto failed = ddwaf::at<parameter::string_set>(rules, "failed");
+        auto failed = ddwaf::at<raw_configuration::string_set>(rules, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto errors = ddwaf::at<parameter::map>(rules, "errors");
+        auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&diagnostics);
@@ -132,25 +132,25 @@ TEST(TestDiagnosticsV2Integration, InvalidRule)
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf::parameter root(diagnostics);
-    auto root_map = static_cast<ddwaf::parameter::map>(root);
+    ddwaf::raw_configuration root(diagnostics);
+    auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
-    auto rules = ddwaf::at<parameter::map>(root_map, "rules");
+    auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
 
-    auto loaded = ddwaf::at<parameter::string_set>(rules, "loaded");
+    auto loaded = ddwaf::at<raw_configuration::string_set>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 0);
 
-    auto failed = ddwaf::at<parameter::string_set>(rules, "failed");
+    auto failed = ddwaf::at<raw_configuration::string_set>(rules, "failed");
     EXPECT_EQ(failed.size(), 1);
     EXPECT_NE(failed.find("1"), failed.end());
 
-    auto errors = ddwaf::at<parameter::map>(rules, "errors");
+    auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 1);
 
     auto it = errors.find("missing key 'type'");
     EXPECT_NE(it, errors.end());
 
-    auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+    auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
     EXPECT_EQ(error_rules.size(), 1);
     EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -168,26 +168,26 @@ TEST(TestDiagnosticsV2Integration, MultipleSameInvalidRules)
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf::parameter root(diagnostics);
-    auto root_map = static_cast<ddwaf::parameter::map>(root);
+    ddwaf::raw_configuration root(diagnostics);
+    auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
-    auto rules = ddwaf::at<parameter::map>(root_map, "rules");
+    auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
 
-    auto loaded = ddwaf::at<parameter::string_set>(rules, "loaded");
+    auto loaded = ddwaf::at<raw_configuration::string_set>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 0);
 
-    auto failed = ddwaf::at<parameter::string_set>(rules, "failed");
+    auto failed = ddwaf::at<raw_configuration::string_set>(rules, "failed");
     EXPECT_EQ(failed.size(), 2);
     EXPECT_NE(failed.find("1"), failed.end());
     EXPECT_NE(failed.find("2"), failed.end());
 
-    auto errors = ddwaf::at<parameter::map>(rules, "errors");
+    auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 1);
 
     auto it = errors.find("missing key 'type'");
     EXPECT_NE(it, errors.end());
 
-    auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+    auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
     EXPECT_EQ(error_rules.size(), 2);
     EXPECT_NE(error_rules.find("1"), error_rules.end());
     EXPECT_NE(error_rules.find("2"), error_rules.end());
@@ -206,27 +206,27 @@ TEST(TestDiagnosticsV2Integration, MultipleDiffInvalidRules)
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf::parameter root(diagnostics);
-    auto root_map = static_cast<ddwaf::parameter::map>(root);
+    ddwaf::raw_configuration root(diagnostics);
+    auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
-    auto rules = ddwaf::at<parameter::map>(root_map, "rules");
+    auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
 
-    auto loaded = ddwaf::at<parameter::string_set>(rules, "loaded");
+    auto loaded = ddwaf::at<raw_configuration::string_set>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 0);
 
-    auto failed = ddwaf::at<parameter::string_set>(rules, "failed");
+    auto failed = ddwaf::at<raw_configuration::string_set>(rules, "failed");
     EXPECT_EQ(failed.size(), 2);
     EXPECT_NE(failed.find("1"), failed.end());
     EXPECT_NE(failed.find("2"), failed.end());
 
-    auto errors = ddwaf::at<parameter::map>(rules, "errors");
+    auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 2);
 
     {
         auto it = errors.find("missing key 'type'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
     }
@@ -235,7 +235,7 @@ TEST(TestDiagnosticsV2Integration, MultipleDiffInvalidRules)
         auto it = errors.find("unknown matcher: squash");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("2"), error_rules.end());
     }
@@ -254,30 +254,30 @@ TEST(TestDiagnosticsV2Integration, MultipleMixInvalidRules)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf::parameter root(diagnostics);
-    auto root_map = static_cast<ddwaf::parameter::map>(root);
+    ddwaf::raw_configuration root(diagnostics);
+    auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
-    auto rules = ddwaf::at<parameter::map>(root_map, "rules");
+    auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
 
-    auto loaded = ddwaf::at<parameter::string_set>(rules, "loaded");
+    auto loaded = ddwaf::at<raw_configuration::string_set>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 1);
     EXPECT_NE(loaded.find("5"), loaded.end());
 
-    auto failed = ddwaf::at<parameter::string_set>(rules, "failed");
+    auto failed = ddwaf::at<raw_configuration::string_set>(rules, "failed");
     EXPECT_EQ(failed.size(), 4);
     EXPECT_NE(failed.find("1"), failed.end());
     EXPECT_NE(failed.find("2"), failed.end());
     EXPECT_NE(failed.find("3"), failed.end());
     EXPECT_NE(failed.find("4"), failed.end());
 
-    auto errors = ddwaf::at<parameter::map>(rules, "errors");
+    auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 3);
 
     {
         auto it = errors.find("missing key 'type'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 2);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
         EXPECT_NE(error_rules.find("3"), error_rules.end());
@@ -287,7 +287,7 @@ TEST(TestDiagnosticsV2Integration, MultipleMixInvalidRules)
         auto it = errors.find("unknown matcher: squash");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("2"), error_rules.end());
     }
@@ -296,7 +296,7 @@ TEST(TestDiagnosticsV2Integration, MultipleMixInvalidRules)
         auto it = errors.find("missing key 'inputs'");
         EXPECT_NE(it, errors.end());
 
-        auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+        auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("4"), error_rules.end());
     }
@@ -317,26 +317,26 @@ TEST(TestDiagnosticsV2Integration, InvalidDuplicate)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf::parameter root(diagnostics);
-    auto root_map = static_cast<ddwaf::parameter::map>(root);
+    ddwaf::raw_configuration root(diagnostics);
+    auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
-    auto rules = ddwaf::at<parameter::map>(root_map, "rules");
+    auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
 
-    auto loaded = ddwaf::at<parameter::string_set>(rules, "loaded");
+    auto loaded = ddwaf::at<raw_configuration::string_set>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 1);
     EXPECT_NE(loaded.find("1"), loaded.end());
 
-    auto failed = ddwaf::at<parameter::string_set>(rules, "failed");
+    auto failed = ddwaf::at<raw_configuration::string_set>(rules, "failed");
     EXPECT_EQ(failed.size(), 1);
     EXPECT_NE(failed.find("1"), failed.end());
 
-    auto errors = ddwaf::at<parameter::map>(rules, "errors");
+    auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 1);
 
     auto it = errors.find("duplicate rule");
     EXPECT_NE(it, errors.end());
 
-    auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+    auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
     EXPECT_EQ(error_rules.size(), 1);
     EXPECT_NE(error_rules.find("1"), error_rules.end());
 
@@ -356,22 +356,22 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleset)
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf::parameter root(diagnostics);
-    auto root_map = static_cast<ddwaf::parameter::map>(root);
+    ddwaf::raw_configuration root(diagnostics);
+    auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
-    auto rules = ddwaf::at<parameter::map>(root_map, "rules");
+    auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
 
-    auto loaded = ddwaf::at<parameter::string_set>(rules, "loaded");
+    auto loaded = ddwaf::at<raw_configuration::string_set>(rules, "loaded");
     EXPECT_EQ(loaded.size(), 0);
 
-    auto failed = ddwaf::at<parameter::string_set>(rules, "failed");
+    auto failed = ddwaf::at<raw_configuration::string_set>(rules, "failed");
     EXPECT_EQ(failed.size(), 400);
 
-    auto errors = ddwaf::at<parameter::map>(rules, "errors");
+    auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 20);
 
     for (auto &[key, value] : errors) {
-        auto rules = static_cast<ddwaf::parameter::vector>(parameter(value));
+        auto rules = static_cast<ddwaf::raw_configuration::vector>(raw_configuration(value));
         EXPECT_EQ(rules.size(), 20);
     }
 
@@ -391,35 +391,35 @@ TEST(TestDiagnosticsV2Integration, MultipleRules)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::parameter root = diagnostics;
-        auto root_map = static_cast<parameter::map>(root);
+        ddwaf::raw_configuration root = diagnostics;
+        auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
         EXPECT_STR(version, "5.4.2");
 
-        auto rules = ddwaf::at<parameter::map>(root_map, "rules");
+        auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
         EXPECT_EQ(rules.size(), 5);
 
-        auto loaded = ddwaf::at<parameter::string_set>(rules, "loaded");
+        auto loaded = ddwaf::at<raw_configuration::string_set>(rules, "loaded");
         EXPECT_EQ(loaded.size(), 4);
         EXPECT_TRUE(loaded.contains("rule1"));
         EXPECT_TRUE(loaded.contains("rule2"));
         EXPECT_TRUE(loaded.contains("rule3"));
         EXPECT_TRUE(loaded.contains("rule4"));
 
-        auto failed = ddwaf::at<parameter::string_set>(rules, "failed");
+        auto failed = ddwaf::at<raw_configuration::string_set>(rules, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = ddwaf::at<parameter::string_set>(rules, "skipped");
+        auto skipped = ddwaf::at<raw_configuration::string_set>(rules, "skipped");
         EXPECT_EQ(skipped.size(), 0);
 
-        auto errors = ddwaf::at<parameter::map>(rules, "errors");
+        auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        auto addresses = ddwaf::at<parameter::map>(rules, "addresses");
+        auto addresses = ddwaf::at<raw_configuration::map>(rules, "addresses");
         EXPECT_EQ(addresses.size(), 2);
 
-        auto required = ddwaf::at<parameter::string_set>(addresses, "required");
+        auto required = ddwaf::at<raw_configuration::string_set>(addresses, "required");
         EXPECT_EQ(required.size(), 5);
         EXPECT_TRUE(required.contains("value1"));
         EXPECT_TRUE(required.contains("value2"));
@@ -427,7 +427,7 @@ TEST(TestDiagnosticsV2Integration, MultipleRules)
         EXPECT_TRUE(required.contains("value4"));
         EXPECT_TRUE(required.contains("value34"));
 
-        auto optional = ddwaf::at<parameter::string_set>(addresses, "optional");
+        auto optional = ddwaf::at<raw_configuration::string_set>(addresses, "optional");
         EXPECT_EQ(optional.size(), 0);
 
         ddwaf_object_free(&root);
@@ -449,37 +449,37 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::parameter root = diagnostics;
-        auto root_map = static_cast<parameter::map>(root);
+        ddwaf::raw_configuration root = diagnostics;
+        auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
         EXPECT_STR(version, "5.4.2");
 
-        auto rules = ddwaf::at<parameter::map>(root_map, "rules");
+        auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
         EXPECT_EQ(rules.size(), 5);
 
-        auto loaded = ddwaf::at<parameter::string_set>(rules, "loaded");
+        auto loaded = ddwaf::at<raw_configuration::string_set>(rules, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_TRUE(loaded.contains("rule1"));
 
-        auto failed = ddwaf::at<parameter::string_set>(rules, "failed");
+        auto failed = ddwaf::at<raw_configuration::string_set>(rules, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = ddwaf::at<parameter::string_set>(rules, "skipped");
+        auto skipped = ddwaf::at<raw_configuration::string_set>(rules, "skipped");
         EXPECT_EQ(skipped.size(), 1);
         EXPECT_TRUE(skipped.contains("rule2"));
 
-        auto errors = ddwaf::at<parameter::map>(rules, "errors");
+        auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        auto addresses = ddwaf::at<parameter::map>(rules, "addresses");
+        auto addresses = ddwaf::at<raw_configuration::map>(rules, "addresses");
         EXPECT_EQ(addresses.size(), 2);
 
-        auto required = ddwaf::at<parameter::string_set>(addresses, "required");
+        auto required = ddwaf::at<raw_configuration::string_set>(addresses, "required");
         EXPECT_EQ(required.size(), 1);
         EXPECT_TRUE(required.contains("value1"));
 
-        auto optional = ddwaf::at<parameter::string_set>(addresses, "optional");
+        auto optional = ddwaf::at<raw_configuration::string_set>(addresses, "optional");
         EXPECT_EQ(optional.size(), 0);
 
         ddwaf_object_free(&root);
@@ -501,37 +501,37 @@ TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::parameter root = diagnostics;
-        auto root_map = static_cast<parameter::map>(root);
+        ddwaf::raw_configuration root = diagnostics;
+        auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
         EXPECT_STR(version, "5.4.2");
 
-        auto rules = ddwaf::at<parameter::map>(root_map, "rules");
+        auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
         EXPECT_EQ(rules.size(), 5);
 
-        auto loaded = ddwaf::at<parameter::string_set>(rules, "loaded");
+        auto loaded = ddwaf::at<raw_configuration::string_set>(rules, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_TRUE(loaded.contains("rule1"));
 
-        auto failed = ddwaf::at<parameter::string_set>(rules, "failed");
+        auto failed = ddwaf::at<raw_configuration::string_set>(rules, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = ddwaf::at<parameter::string_set>(rules, "skipped");
+        auto skipped = ddwaf::at<raw_configuration::string_set>(rules, "skipped");
         EXPECT_EQ(skipped.size(), 1);
         EXPECT_TRUE(skipped.contains("rule2"));
 
-        auto errors = ddwaf::at<parameter::map>(rules, "errors");
+        auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        auto addresses = ddwaf::at<parameter::map>(rules, "addresses");
+        auto addresses = ddwaf::at<raw_configuration::map>(rules, "addresses");
         EXPECT_EQ(addresses.size(), 2);
 
-        auto required = ddwaf::at<parameter::string_set>(addresses, "required");
+        auto required = ddwaf::at<raw_configuration::string_set>(addresses, "required");
         EXPECT_EQ(required.size(), 1);
         EXPECT_TRUE(required.contains("value1"));
 
-        auto optional = ddwaf::at<parameter::string_set>(addresses, "optional");
+        auto optional = ddwaf::at<raw_configuration::string_set>(addresses, "optional");
         EXPECT_EQ(optional.size(), 0);
 
         ddwaf_object_free(&root);
@@ -553,38 +553,38 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::parameter root = diagnostics;
-        auto root_map = static_cast<parameter::map>(root);
+        ddwaf::raw_configuration root = diagnostics;
+        auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
         EXPECT_STR(version, "5.4.2");
 
-        auto rules = ddwaf::at<parameter::map>(root_map, "rules");
+        auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
         EXPECT_EQ(rules.size(), 5);
 
-        auto loaded = ddwaf::at<parameter::string_set>(rules, "loaded");
+        auto loaded = ddwaf::at<raw_configuration::string_set>(rules, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_TRUE(loaded.contains("rule1"));
 
-        auto failed = ddwaf::at<parameter::string_set>(rules, "failed");
+        auto failed = ddwaf::at<raw_configuration::string_set>(rules, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = ddwaf::at<parameter::string_set>(rules, "skipped");
+        auto skipped = ddwaf::at<raw_configuration::string_set>(rules, "skipped");
         EXPECT_EQ(skipped.size(), 2);
         EXPECT_TRUE(skipped.contains("rule2"));
         EXPECT_TRUE(skipped.contains("rule3"));
 
-        auto errors = ddwaf::at<parameter::map>(rules, "errors");
+        auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        auto addresses = ddwaf::at<parameter::map>(rules, "addresses");
+        auto addresses = ddwaf::at<raw_configuration::map>(rules, "addresses");
         EXPECT_EQ(addresses.size(), 2);
 
-        auto required = ddwaf::at<parameter::string_set>(addresses, "required");
+        auto required = ddwaf::at<raw_configuration::string_set>(addresses, "required");
         EXPECT_EQ(required.size(), 1);
         EXPECT_TRUE(required.contains("value1"));
 
-        auto optional = ddwaf::at<parameter::string_set>(addresses, "optional");
+        auto optional = ddwaf::at<raw_configuration::string_set>(addresses, "optional");
         EXPECT_EQ(optional.size(), 0);
 
         ddwaf_object_free(&root);
@@ -606,23 +606,23 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::parameter root = diagnostics;
-        auto root_map = static_cast<parameter::map>(root);
+        ddwaf::raw_configuration root = diagnostics;
+        auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
         EXPECT_STR(version, "5.4.1");
 
-        auto rules = ddwaf::at<parameter::map>(root_map, "rules");
+        auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
         EXPECT_EQ(rules.size(), 5);
 
-        auto loaded = ddwaf::at<parameter::string_set>(rules, "loaded");
+        auto loaded = ddwaf::at<raw_configuration::string_set>(rules, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_TRUE(loaded.contains("rule1"));
 
-        auto skipped = ddwaf::at<parameter::string_set>(rules, "skipped");
+        auto skipped = ddwaf::at<raw_configuration::string_set>(rules, "skipped");
         EXPECT_EQ(skipped.size(), 0);
 
-        auto failed = ddwaf::at<parameter::string_set>(rules, "failed");
+        auto failed = ddwaf::at<raw_configuration::string_set>(rules, "failed");
         EXPECT_EQ(failed.size(), 5);
         EXPECT_TRUE(failed.contains("rule1"));
         EXPECT_TRUE(failed.contains("index:2"));
@@ -630,14 +630,14 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
         EXPECT_TRUE(failed.contains("rule5"));
         EXPECT_TRUE(failed.contains("rule6"));
 
-        auto errors = ddwaf::at<parameter::map>(rules, "errors");
+        auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 4);
 
         {
             auto it = errors.find("duplicate rule");
             EXPECT_NE(it, errors.end());
 
-            auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+            auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
             EXPECT_EQ(error_rules.size(), 1);
             EXPECT_TRUE(error_rules.contains("rule1"));
         }
@@ -646,7 +646,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
             auto it = errors.find("missing key 'id'");
             EXPECT_NE(it, errors.end());
 
-            auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+            auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
             EXPECT_EQ(error_rules.size(), 1);
             EXPECT_TRUE(error_rules.contains("index:2"));
         }
@@ -655,7 +655,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
             auto it = errors.find("missing key 'type'");
             EXPECT_NE(it, errors.end());
 
-            auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+            auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
             EXPECT_EQ(error_rules.size(), 2);
             EXPECT_TRUE(error_rules.contains("rule4"));
             EXPECT_TRUE(error_rules.contains("rule5"));
@@ -665,19 +665,19 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
             auto it = errors.find("missing key 'name'");
             EXPECT_NE(it, errors.end());
 
-            auto error_rules = static_cast<ddwaf::parameter::string_set>(it->second);
+            auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
             EXPECT_EQ(error_rules.size(), 1);
             EXPECT_TRUE(error_rules.contains("rule6"));
         }
 
-        auto addresses = ddwaf::at<parameter::map>(rules, "addresses");
+        auto addresses = ddwaf::at<raw_configuration::map>(rules, "addresses");
         EXPECT_EQ(addresses.size(), 2);
 
-        auto required = ddwaf::at<parameter::string_set>(addresses, "required");
+        auto required = ddwaf::at<raw_configuration::string_set>(addresses, "required");
         EXPECT_EQ(required.size(), 1);
         EXPECT_TRUE(required.contains("value1"));
 
-        auto optional = ddwaf::at<parameter::string_set>(addresses, "optional");
+        auto optional = ddwaf::at<raw_configuration::string_set>(addresses, "optional");
         EXPECT_EQ(optional.size(), 0);
 
         ddwaf_object_free(&root);
@@ -699,35 +699,35 @@ TEST(TestDiagnosticsV2Integration, CustomRules)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::parameter root = diagnostics;
-        auto root_map = static_cast<parameter::map>(root);
+        ddwaf::raw_configuration root = diagnostics;
+        auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
         EXPECT_STR(version, "5.4.3");
 
-        auto rules = ddwaf::at<parameter::map>(root_map, "custom_rules");
+        auto rules = ddwaf::at<raw_configuration::map>(root_map, "custom_rules");
         EXPECT_EQ(rules.size(), 5);
 
-        auto loaded = ddwaf::at<parameter::string_set>(rules, "loaded");
+        auto loaded = ddwaf::at<raw_configuration::string_set>(rules, "loaded");
         EXPECT_EQ(loaded.size(), 4);
         EXPECT_TRUE(loaded.contains("custom_rule1"));
         EXPECT_TRUE(loaded.contains("custom_rule2"));
         EXPECT_TRUE(loaded.contains("custom_rule3"));
         EXPECT_TRUE(loaded.contains("custom_rule4"));
 
-        auto failed = ddwaf::at<parameter::string_set>(rules, "failed");
+        auto failed = ddwaf::at<raw_configuration::string_set>(rules, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = ddwaf::at<parameter::string_set>(rules, "skipped");
+        auto skipped = ddwaf::at<raw_configuration::string_set>(rules, "skipped");
         EXPECT_EQ(skipped.size(), 0);
 
-        auto errors = ddwaf::at<parameter::map>(rules, "errors");
+        auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        auto addresses = ddwaf::at<parameter::map>(rules, "addresses");
+        auto addresses = ddwaf::at<raw_configuration::map>(rules, "addresses");
         EXPECT_EQ(addresses.size(), 2);
 
-        auto required = ddwaf::at<parameter::string_set>(addresses, "required");
+        auto required = ddwaf::at<raw_configuration::string_set>(addresses, "required");
         EXPECT_EQ(required.size(), 5);
         EXPECT_TRUE(required.contains("value1"));
         EXPECT_TRUE(required.contains("value2"));
@@ -735,7 +735,7 @@ TEST(TestDiagnosticsV2Integration, CustomRules)
         EXPECT_TRUE(required.contains("value4"));
         EXPECT_TRUE(required.contains("value34"));
 
-        auto optional = ddwaf::at<parameter::string_set>(addresses, "optional");
+        auto optional = ddwaf::at<raw_configuration::string_set>(addresses, "optional");
         EXPECT_EQ(optional.size(), 0);
 
         ddwaf_object_free(&root);
@@ -757,33 +757,33 @@ TEST(TestDiagnosticsV2Integration, InputFilter)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::parameter root = diagnostics;
-        auto root_map = static_cast<parameter::map>(root);
+        ddwaf::raw_configuration root = diagnostics;
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto exclusions = ddwaf::at<parameter::map>(root_map, "exclusions");
+        auto exclusions = ddwaf::at<raw_configuration::map>(root_map, "exclusions");
         EXPECT_EQ(exclusions.size(), 5);
 
-        auto loaded = ddwaf::at<parameter::string_set>(exclusions, "loaded");
+        auto loaded = ddwaf::at<raw_configuration::string_set>(exclusions, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_TRUE(loaded.contains("1"));
 
-        auto failed = ddwaf::at<parameter::string_set>(exclusions, "failed");
+        auto failed = ddwaf::at<raw_configuration::string_set>(exclusions, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = ddwaf::at<parameter::string_set>(exclusions, "skipped");
+        auto skipped = ddwaf::at<raw_configuration::string_set>(exclusions, "skipped");
         EXPECT_EQ(skipped.size(), 0);
 
-        auto errors = ddwaf::at<parameter::map>(exclusions, "errors");
+        auto errors = ddwaf::at<raw_configuration::map>(exclusions, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        auto addresses = ddwaf::at<parameter::map>(exclusions, "addresses");
+        auto addresses = ddwaf::at<raw_configuration::map>(exclusions, "addresses");
         EXPECT_EQ(addresses.size(), 2);
 
-        auto required = ddwaf::at<parameter::string_set>(addresses, "required");
+        auto required = ddwaf::at<raw_configuration::string_set>(addresses, "required");
         EXPECT_EQ(required.size(), 1);
         EXPECT_TRUE(required.contains("exclusion-filter-1-input"));
 
-        auto optional = ddwaf::at<parameter::string_set>(addresses, "optional");
+        auto optional = ddwaf::at<raw_configuration::string_set>(addresses, "optional");
         EXPECT_EQ(optional.size(), 2);
         EXPECT_TRUE(optional.contains("rule1-input1"));
         EXPECT_TRUE(optional.contains("rule1-input2"));
@@ -807,24 +807,24 @@ TEST(TestDiagnosticsV2Integration, RuleData)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::parameter root = diagnostics;
-        auto root_map = static_cast<parameter::map>(root);
+        ddwaf::raw_configuration root = diagnostics;
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto rule_data = ddwaf::at<parameter::map>(root_map, "rules_data");
+        auto rule_data = ddwaf::at<raw_configuration::map>(root_map, "rules_data");
         EXPECT_EQ(rule_data.size(), 4);
 
-        auto loaded = ddwaf::at<parameter::string_set>(rule_data, "loaded");
+        auto loaded = ddwaf::at<raw_configuration::string_set>(rule_data, "loaded");
         EXPECT_EQ(loaded.size(), 2);
         EXPECT_TRUE(loaded.contains("ip_data"));
         EXPECT_TRUE(loaded.contains("usr_data"));
 
-        auto failed = ddwaf::at<parameter::string_set>(rule_data, "failed");
+        auto failed = ddwaf::at<raw_configuration::string_set>(rule_data, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = ddwaf::at<parameter::string_set>(rule_data, "skipped");
+        auto skipped = ddwaf::at<raw_configuration::string_set>(rule_data, "skipped");
         EXPECT_EQ(skipped.size(), 0);
 
-        auto errors = ddwaf::at<parameter::map>(rule_data, "errors");
+        auto errors = ddwaf::at<raw_configuration::map>(rule_data, "errors");
         EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
@@ -846,33 +846,33 @@ TEST(TestDiagnosticsV2Integration, Processor)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::parameter root = diagnostics;
-        auto root_map = static_cast<parameter::map>(root);
+        ddwaf::raw_configuration root = diagnostics;
+        auto root_map = static_cast<raw_configuration::map>(root);
 
-        auto processor = ddwaf::at<parameter::map>(root_map, "processors");
+        auto processor = ddwaf::at<raw_configuration::map>(root_map, "processors");
         EXPECT_EQ(processor.size(), 5);
 
-        auto loaded = ddwaf::at<parameter::string_set>(processor, "loaded");
+        auto loaded = ddwaf::at<raw_configuration::string_set>(processor, "loaded");
         EXPECT_EQ(loaded.size(), 1);
         EXPECT_TRUE(loaded.contains("processor-001"));
 
-        auto failed = ddwaf::at<parameter::string_set>(processor, "failed");
+        auto failed = ddwaf::at<raw_configuration::string_set>(processor, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = ddwaf::at<parameter::string_set>(processor, "skipped");
+        auto skipped = ddwaf::at<raw_configuration::string_set>(processor, "skipped");
         EXPECT_EQ(skipped.size(), 0);
 
-        auto errors = ddwaf::at<parameter::map>(processor, "errors");
+        auto errors = ddwaf::at<raw_configuration::map>(processor, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        auto addresses = ddwaf::at<parameter::map>(processor, "addresses");
+        auto addresses = ddwaf::at<raw_configuration::map>(processor, "addresses");
         EXPECT_EQ(addresses.size(), 2);
 
-        auto required = ddwaf::at<parameter::string_set>(addresses, "required");
+        auto required = ddwaf::at<raw_configuration::string_set>(addresses, "required");
         EXPECT_EQ(required.size(), 1);
         EXPECT_TRUE(required.contains("waf.context.processor"));
 
-        auto optional = ddwaf::at<parameter::string_set>(addresses, "optional");
+        auto optional = ddwaf::at<raw_configuration::string_set>(addresses, "optional");
         EXPECT_EQ(optional.size(), 1);
         EXPECT_TRUE(optional.contains("server.request.body"));
 
@@ -895,13 +895,13 @@ TEST(TestDiagnosticsV2Integration, InvalidRulesContainer)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::parameter root(diagnostics);
-        auto root_map = static_cast<ddwaf::parameter::map>(root);
+        ddwaf::raw_configuration root(diagnostics);
+        auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
         EXPECT_STREQ(version.c_str(), "1.2.7");
 
-        auto rules = ddwaf::at<parameter::map>(root_map, "rules");
+        auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
 
         auto errors = ddwaf::at<std::string>(rules, "error");
         EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
@@ -925,13 +925,13 @@ TEST(TestDiagnosticsV2Integration, InvalidCustomRulesContainer)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::parameter root(diagnostics);
-        auto root_map = static_cast<ddwaf::parameter::map>(root);
+        ddwaf::raw_configuration root(diagnostics);
+        auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
         EXPECT_STREQ(version.c_str(), "1.2.7");
 
-        auto rules = ddwaf::at<parameter::map>(root_map, "custom_rules");
+        auto rules = ddwaf::at<raw_configuration::map>(root_map, "custom_rules");
 
         auto errors = ddwaf::at<std::string>(rules, "error");
         EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
@@ -955,13 +955,13 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionsContainer)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::parameter root(diagnostics);
-        auto root_map = static_cast<ddwaf::parameter::map>(root);
+        ddwaf::raw_configuration root(diagnostics);
+        auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
         EXPECT_STREQ(version.c_str(), "1.2.7");
 
-        auto rules = ddwaf::at<parameter::map>(root_map, "exclusions");
+        auto rules = ddwaf::at<raw_configuration::map>(root_map, "exclusions");
 
         auto errors = ddwaf::at<std::string>(rules, "error");
         EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
@@ -985,13 +985,13 @@ TEST(TestDiagnosticsV2Integration, InvalidOverridesContainer)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::parameter root(diagnostics);
-        auto root_map = static_cast<ddwaf::parameter::map>(root);
+        ddwaf::raw_configuration root(diagnostics);
+        auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
         EXPECT_STREQ(version.c_str(), "1.2.7");
 
-        auto rules = ddwaf::at<parameter::map>(root_map, "rules_override");
+        auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules_override");
 
         auto errors = ddwaf::at<std::string>(rules, "error");
         EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
@@ -1015,13 +1015,13 @@ TEST(TestDiagnosticsV2Integration, InvalidScannersContainer)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::parameter root(diagnostics);
-        auto root_map = static_cast<ddwaf::parameter::map>(root);
+        ddwaf::raw_configuration root(diagnostics);
+        auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
         EXPECT_STREQ(version.c_str(), "1.2.7");
 
-        auto rules = ddwaf::at<parameter::map>(root_map, "scanners");
+        auto rules = ddwaf::at<raw_configuration::map>(root_map, "scanners");
 
         auto errors = ddwaf::at<std::string>(rules, "error");
         EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
@@ -1045,13 +1045,13 @@ TEST(TestDiagnosticsV2Integration, InvalidProcessorsContainer)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::parameter root(diagnostics);
-        auto root_map = static_cast<ddwaf::parameter::map>(root);
+        ddwaf::raw_configuration root(diagnostics);
+        auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
         EXPECT_STREQ(version.c_str(), "1.2.7");
 
-        auto rules = ddwaf::at<parameter::map>(root_map, "processors");
+        auto rules = ddwaf::at<raw_configuration::map>(root_map, "processors");
 
         auto errors = ddwaf::at<std::string>(rules, "error");
         EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
@@ -1075,13 +1075,13 @@ TEST(TestDiagnosticsV2Integration, InvalidActionsContainer)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::parameter root(diagnostics);
-        auto root_map = static_cast<ddwaf::parameter::map>(root);
+        ddwaf::raw_configuration root(diagnostics);
+        auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
         EXPECT_STREQ(version.c_str(), "1.2.7");
 
-        auto rules = ddwaf::at<parameter::map>(root_map, "actions");
+        auto rules = ddwaf::at<raw_configuration::map>(root_map, "actions");
 
         auto errors = ddwaf::at<std::string>(rules, "error");
         EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
@@ -1105,13 +1105,13 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleDataContainer)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::parameter root(diagnostics);
-        auto root_map = static_cast<ddwaf::parameter::map>(root);
+        ddwaf::raw_configuration root(diagnostics);
+        auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
         EXPECT_STREQ(version.c_str(), "1.2.7");
 
-        auto rules = ddwaf::at<parameter::map>(root_map, "rules_data");
+        auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules_data");
 
         auto errors = ddwaf::at<std::string>(rules, "error");
         EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
@@ -1135,13 +1135,13 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionDataContainer)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::parameter root(diagnostics);
-        auto root_map = static_cast<ddwaf::parameter::map>(root);
+        ddwaf::raw_configuration root(diagnostics);
+        auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
         EXPECT_STREQ(version.c_str(), "1.2.7");
 
-        auto rules = ddwaf::at<parameter::map>(root_map, "exclusion_data");
+        auto rules = ddwaf::at<raw_configuration::map>(root_map, "exclusion_data");
 
         auto errors = ddwaf::at<std::string>(rules, "error");
         EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");

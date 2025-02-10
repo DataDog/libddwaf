@@ -1,6 +1,5 @@
 set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/clock.cpp
-    ${libddwaf_SOURCE_DIR}/src/parameter.cpp
     ${libddwaf_SOURCE_DIR}/src/interface.cpp
     ${libddwaf_SOURCE_DIR}/src/context.cpp
     ${libddwaf_SOURCE_DIR}/src/context_allocator.cpp
@@ -37,6 +36,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/configuration/common/expression_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/common/matcher_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/common/transformer_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/common/raw_configuration.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/common/reference_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/actions_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/data_parser.cpp

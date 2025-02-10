@@ -19,6 +19,7 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "configuration/common/transformer_parser.hpp"
 #include "configuration/legacy_rule_parser.hpp"
 #include "ddwaf.h"
@@ -30,7 +31,6 @@
 #include "matcher/is_xss.hpp"
 #include "matcher/phrase_match.hpp"
 #include "matcher/regex_match.hpp"
-#include "parameter.hpp"
 #include "rule.hpp"
 #include "target_address.hpp"
 #include "transformer/base.hpp"
@@ -40,21 +40,21 @@ namespace ddwaf {
 
 namespace {
 
-std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array,
+std::shared_ptr<expression> parse_expression(raw_configuration::vector &conditions_array,
     const std::vector<transformer_id> &transformers, ddwaf::object_limits limits)
 {
     std::vector<std::unique_ptr<base_condition>> conditions;
 
     for (const auto &cond_param : conditions_array) {
-        auto cond = static_cast<parameter::map>(cond_param);
+        auto cond = static_cast<raw_configuration::map>(cond_param);
 
         auto matcher_name = at<std::string_view>(cond, "operation");
-        auto params = at<parameter::map>(cond, "parameters");
+        auto params = at<raw_configuration::map>(cond, "parameters");
 
-        parameter::map options;
+        raw_configuration::map options;
         std::unique_ptr<matcher::base> matcher;
         if (matcher_name == "phrase_match") {
-            auto list = at<parameter::vector>(params, "list");
+            auto list = at<raw_configuration::vector>(params, "list");
 
             std::vector<const char *> patterns;
             std::vector<uint32_t> lengths;
@@ -74,7 +74,7 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
             matcher = std::make_unique<matcher::phrase_match>(patterns, lengths);
         } else if (matcher_name == "match_regex") {
             auto regex = at<std::string>(params, "regex");
-            options = at<parameter::map>(params, "options", options);
+            options = at<raw_configuration::map>(params, "options", options);
 
             auto case_sensitive = at<bool>(options, "case_sensitive", false);
             auto min_length = at<int64_t>(options, "min_length", 0);
@@ -95,7 +95,7 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
         definitions.emplace_back();
         condition_parameter &def = definitions.back();
 
-        auto inputs = at<parameter::vector>(params, "inputs");
+        auto inputs = at<raw_configuration::vector>(params, "inputs");
         for (const auto &input_param : inputs) {
             auto input = static_cast<std::string>(input_param);
             if (input.empty()) {
@@ -128,14 +128,14 @@ std::shared_ptr<expression> parse_expression(parameter::vector &conditions_array
 
 } // namespace
 
-void parse_legacy_rules(const parameter::vector &rule_array, configuration_collector &cfg,
+void parse_legacy_rules(const raw_configuration::vector &rule_array, configuration_collector &cfg,
     base_section_info &info, object_limits limits)
 {
     for (unsigned i = 0; i < rule_array.size(); ++i) {
         std::string id;
         try {
             const auto &rule_param = rule_array[i];
-            auto node = static_cast<parameter::map>(rule_param);
+            auto node = static_cast<raw_configuration::map>(rule_param);
 
             id = at<std::string>(node, "id");
             if (cfg.contains_rule(id)) {
@@ -145,7 +145,8 @@ void parse_legacy_rules(const parameter::vector &rule_array, configuration_colle
             }
 
             std::vector<transformer_id> rule_transformers;
-            auto transformers = at<parameter::vector>(node, "transformers", parameter::vector());
+            auto transformers =
+                at<raw_configuration::vector>(node, "transformers", raw_configuration::vector());
             if (transformers.size() > limits.max_transformers_per_address) {
                 throw ddwaf::parsing_error("number of transformers beyond allowed limit");
             }
@@ -160,11 +161,11 @@ void parse_legacy_rules(const parameter::vector &rule_array, configuration_colle
                 rule_transformers.emplace_back(transformer.value());
             }
 
-            auto conditions_array = at<parameter::vector>(node, "conditions");
+            auto conditions_array = at<raw_configuration::vector>(node, "conditions");
             auto expression = parse_expression(conditions_array, rule_transformers, limits);
 
             std::unordered_map<std::string, std::string> tags;
-            for (auto &[key, value] : at<parameter::map>(node, "tags")) {
+            for (auto &[key, value] : at<raw_configuration::map>(node, "tags")) {
                 try {
                     tags.emplace(key, std::string(value));
                 } catch (const bad_cast &e) {

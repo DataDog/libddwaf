@@ -14,11 +14,11 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration_collector.hpp"
 #include "configuration/common/matcher_parser.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "configuration/scanner_parser.hpp"
 #include "exception.hpp"
 #include "log.hpp"
 #include "matcher/base.hpp"
-#include "parameter.hpp"
 #include "ruleset_info.hpp"
 #include "scanner.hpp"
 #include "semver.hpp"
@@ -28,10 +28,10 @@ namespace ddwaf {
 
 namespace {
 
-std::unique_ptr<matcher::base> parse_scanner_matcher(const parameter::map &root)
+std::unique_ptr<matcher::base> parse_scanner_matcher(const raw_configuration::map &root)
 {
     auto matcher_name = at<std::string_view>(root, "operator");
-    auto matcher_params = at<parameter::map>(root, "parameters");
+    auto matcher_params = at<raw_configuration::map>(root, "parameters");
 
     auto [rule_data_id, matcher] = parse_any_matcher(matcher_name, matcher_params);
     if (!rule_data_id.empty()) {
@@ -43,12 +43,12 @@ std::unique_ptr<matcher::base> parse_scanner_matcher(const parameter::map &root)
 
 } // namespace
 
-void parse_scanners(const parameter::vector &scanner_array, configuration_collector &cfg,
+void parse_scanners(const raw_configuration::vector &scanner_array, configuration_collector &cfg,
     ruleset_info::base_section_info &info)
 {
     for (unsigned i = 0; i < scanner_array.size(); i++) {
         const auto &node_param = scanner_array[i];
-        auto node = static_cast<parameter::map>(node_param);
+        auto node = static_cast<raw_configuration::map>(node_param);
         std::string id;
         try {
             id = at<std::string>(node, "id");
@@ -69,7 +69,7 @@ void parse_scanners(const parameter::vector &scanner_array, configuration_collec
             }
 
             std::unordered_map<std::string, std::string> tags;
-            for (auto &[key, value] : at<parameter::map>(node, "tags")) {
+            for (auto &[key, value] : at<raw_configuration::map>(node, "tags")) {
                 try {
                     tags.emplace(key, std::string(value));
                 } catch (const bad_cast &e) {
@@ -82,13 +82,13 @@ void parse_scanners(const parameter::vector &scanner_array, configuration_collec
 
             auto it = node.find("key");
             if (it != node.end()) {
-                auto matcher_node = parameter::map(it->second);
+                auto matcher_node = raw_configuration::map(it->second);
                 key_matcher = parse_scanner_matcher(matcher_node);
             }
 
             it = node.find("value");
             if (it != node.end()) {
-                auto matcher_node = parameter::map(it->second);
+                auto matcher_node = raw_configuration::map(it->second);
                 value_matcher = parse_scanner_matcher(matcher_node);
             }
 
