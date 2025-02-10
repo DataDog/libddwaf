@@ -8,14 +8,14 @@
 
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration_collector.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 
 namespace ddwaf {
 
-void parse_base_rules(const parameter::vector &rule_array, configuration_collector &cfg,
+void parse_base_rules(const raw_configuration::vector &rule_array, configuration_collector &cfg,
     base_section_info &info, const object_limits &limits);
 
-void parse_user_rules(const parameter::vector &rule_array, configuration_collector &cfg,
+void parse_user_rules(const raw_configuration::vector &rule_array, configuration_collector &cfg,
     base_section_info &info, const object_limits &limits);
 
 } // namespace ddwaf

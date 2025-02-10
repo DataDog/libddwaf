@@ -7,10 +7,10 @@
 #pragma once
 
 #include "configuration/common/configuration.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 
 namespace ddwaf {
 
-reference_spec parse_reference(const parameter::map &target);
+reference_spec parse_reference(const raw_configuration::map &target);
 
 } // namespace ddwaf

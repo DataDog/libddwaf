@@ -7,8 +7,8 @@
 #include "common/gtest_utils.hpp"
 #include "configuration/actions_parser.hpp"
 #include "configuration/common/common.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "configuration/configuration_manager.hpp"
-#include "parameter.hpp"
 
 using namespace ddwaf;
 

@@ -19,21 +19,21 @@
 
 namespace ddwaf {
 
-class parameter : public ddwaf_object {
+class raw_configuration : public ddwaf_object {
 public:
-    using map = std::unordered_map<std::string_view, parameter>;
-    using vector = std::vector<parameter>;
+    using map = std::unordered_map<std::string_view, raw_configuration>;
+    using vector = std::vector<raw_configuration>;
     using string_set = std::unordered_set<std::string_view>;
 
-    parameter() = default;
+    raw_configuration() = default;
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-    parameter(const ddwaf_object &arg) : _ddwaf_object() { *((ddwaf_object *)this) = arg; }
+    raw_configuration(const ddwaf_object &arg) : _ddwaf_object() { *((ddwaf_object *)this) = arg; }
 
-    parameter(const parameter &) = default;
-    parameter &operator=(const parameter &) = default;
+    raw_configuration(const raw_configuration &) = default;
+    raw_configuration &operator=(const raw_configuration &) = default;
 
-    parameter(parameter &&) = delete;
-    parameter operator=(parameter &&) = delete;
+    raw_configuration(raw_configuration &&) = delete;
+    raw_configuration operator=(raw_configuration &&) = delete;
 
     void print();
 
@@ -51,46 +51,46 @@ public:
     explicit operator std::unordered_map<std::string, std::string>() const;
     explicit operator semantic_version() const;
 
-    ~parameter() = default;
+    ~raw_configuration() = default;
 };
 
-template <typename T> struct parameter_traits {
+template <typename T> struct raw_configuration_traits {
     static const char *name() { return typeid(T).name(); }
 };
 
-template <> struct parameter_traits<std::string> {
+template <> struct raw_configuration_traits<std::string> {
     static const char *name() { return "std::string"; }
 };
 
-template <> struct parameter_traits<std::string_view> {
+template <> struct raw_configuration_traits<std::string_view> {
     static const char *name() { return "std::string_view"; }
 };
 
-template <> struct parameter_traits<parameter::map> {
+template <> struct raw_configuration_traits<raw_configuration::map> {
     static const char *name() { return "parameter::map"; }
 };
 
-template <> struct parameter_traits<parameter::vector> {
+template <> struct raw_configuration_traits<raw_configuration::vector> {
     static const char *name() { return "parameter::vector"; }
 };
 
-template <> struct parameter_traits<parameter::string_set> {
+template <> struct raw_configuration_traits<raw_configuration::string_set> {
     static const char *name() { return "parameter::string_set"; }
 };
 
-template <> struct parameter_traits<std::vector<std::string>> {
+template <> struct raw_configuration_traits<std::vector<std::string>> {
     static const char *name() { return "std::vector<std::string>"; }
 };
 
-template <> struct parameter_traits<std::vector<std::string_view>> {
+template <> struct raw_configuration_traits<std::vector<std::string_view>> {
     static const char *name() { return "std::vector<std::string_view>"; }
 };
 
-template <> struct parameter_traits<std::unordered_map<std::string, std::string>> {
+template <> struct raw_configuration_traits<std::unordered_map<std::string, std::string>> {
     static const char *name() { return "std::unordered_map<std::string, std::string>"; }
 };
 
-template <> struct parameter_traits<semantic_version> {
+template <> struct raw_configuration_traits<semantic_version> {
     static const char *name() { return "semantic_version"; }
 };
 

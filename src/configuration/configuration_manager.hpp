@@ -11,7 +11,7 @@
 
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "ruleset_info.hpp"
 
 namespace ddwaf {
@@ -25,7 +25,8 @@ public:
     configuration_manager &operator=(configuration_manager &&) = delete;
     configuration_manager &operator=(const configuration_manager &) = delete;
 
-    bool add_or_update(const std::string &path, parameter::map &root, base_ruleset_info &info);
+    bool add_or_update(
+        const std::string &path, raw_configuration::map &root, base_ruleset_info &info);
     bool remove(const std::string &path);
 
     std::pair<const configuration_spec &, change_set> consolidate();
@@ -33,7 +34,8 @@ public:
 protected:
     void remove_config(const configuration_change_spec &cfg);
 
-    void load(parameter::map &root, configuration_collector &collector, base_ruleset_info &info);
+    void load(
+        raw_configuration::map &root, configuration_collector &collector, base_ruleset_info &info);
 
     std::unordered_map<std::string, configuration_change_spec> configs_;
     configuration_spec global_config_;

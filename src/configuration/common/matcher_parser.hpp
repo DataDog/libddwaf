@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "exception.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "matcher/base.hpp"
 #include "matcher/equals.hpp"
 #include "matcher/exact_match.hpp"
@@ -21,16 +22,16 @@
 #include "matcher/lower_than.hpp"
 #include "matcher/phrase_match.hpp"
 #include "matcher/regex_match.hpp"
-#include "parameter.hpp"
 
 namespace ddwaf {
 
 template <typename Matcher>
-std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(const parameter::map &params);
+std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
+    const raw_configuration::map &params);
 
 template <typename Matcher, typename... Rest>
 std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
-    std::string_view name, const parameter::map &params)
+    std::string_view name, const raw_configuration::map &params)
 {
     if (Matcher::matcher_name == name) {
         return parse_matcher<Matcher>(params);
@@ -39,12 +40,12 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
     if constexpr (sizeof...(Rest) > 0) {
         return parse_matcher<Rest...>(name, params);
     } else {
-        throw ddwaf::unsupported_operator(name);
+        throw ddwaf::unsupported_operator_version(name);
     }
 }
 
 inline std::pair<std::string, std::unique_ptr<matcher::base>> parse_any_matcher(
-    std::string_view name, const parameter::map &params)
+    std::string_view name, const raw_configuration::map &params)
 {
     return parse_matcher<matcher::equals<>, matcher::exact_match, matcher::greater_than<>,
         matcher::ip_match, matcher::is_sqli, matcher::is_xss, matcher::lower_than<>,

@@ -7,8 +7,8 @@
 #include "builder/rule_builder.hpp"
 #include "common/gtest_utils.hpp"
 #include "configuration/common/configuration.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "matcher/ip_match.hpp"
-#include "parameter.hpp"
 
 using namespace ddwaf;
 

@@ -15,6 +15,7 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "configuration/configuration_manager.hpp"
 #include "configuration/data_parser.hpp"
 #include "configuration/exclusion_parser.hpp"
@@ -24,15 +25,14 @@
 #include "configuration/rule_parser.hpp"
 #include "configuration/scanner_parser.hpp"
 #include "log.hpp"
-#include "parameter.hpp"
 #include "ruleset_info.hpp"
 
 namespace ddwaf {
 
 void configuration_manager::load(
-    parameter::map &root, configuration_collector &collector, base_ruleset_info &info)
+    raw_configuration::map &root, configuration_collector &collector, base_ruleset_info &info)
 {
-    auto metadata = at<parameter::map>(root, "metadata", {});
+    auto metadata = at<raw_configuration::map>(root, "metadata", {});
     auto rules_version = at<std::string_view>(metadata, "rules_version", {});
     if (!rules_version.empty()) {
         info.set_ruleset_version(rules_version);
@@ -47,7 +47,7 @@ void configuration_manager::load(
         if (it != root.end()) {
             auto &section = info.add_section("rules");
             try {
-                auto rules = static_cast<parameter::vector>(it->second);
+                auto rules = static_cast<raw_configuration::vector>(it->second);
                 if (!rules.empty()) {
                     parse_legacy_rules(rules, collector, section, limits_);
                 }
@@ -65,7 +65,7 @@ void configuration_manager::load(
         DDWAF_DEBUG("Parsing actions");
         auto &section = info.add_section("actions");
         try {
-            auto actions = static_cast<parameter::vector>(it->second);
+            auto actions = static_cast<raw_configuration::vector>(it->second);
             if (!actions.empty()) {
                 parse_actions(actions, collector, section);
             }
@@ -80,7 +80,7 @@ void configuration_manager::load(
         DDWAF_DEBUG("Parsing base rules");
         auto &section = info.add_section("rules");
         try {
-            auto rules = static_cast<parameter::vector>(it->second);
+            auto rules = static_cast<raw_configuration::vector>(it->second);
             if (!rules.empty()) {
                 parse_base_rules(rules, collector, section, limits_);
             }
@@ -95,7 +95,7 @@ void configuration_manager::load(
         DDWAF_DEBUG("Parsing custom rules");
         auto &section = info.add_section("custom_rules");
         try {
-            auto rules = static_cast<parameter::vector>(it->second);
+            auto rules = static_cast<raw_configuration::vector>(it->second);
             if (!rules.empty()) {
                 parse_user_rules(rules, collector, section, limits_);
             }
@@ -110,7 +110,7 @@ void configuration_manager::load(
         DDWAF_DEBUG("Parsing rule data");
         auto &section = info.add_section("rules_data");
         try {
-            auto rules_data = static_cast<parameter::vector>(it->second);
+            auto rules_data = static_cast<raw_configuration::vector>(it->second);
             if (!rules_data.empty()) {
                 parse_rule_data(rules_data, collector, section);
             }
@@ -125,7 +125,7 @@ void configuration_manager::load(
         DDWAF_DEBUG("Parsing overrides");
         auto &section = info.add_section("rules_override");
         try {
-            auto overrides = static_cast<parameter::vector>(it->second);
+            auto overrides = static_cast<raw_configuration::vector>(it->second);
             if (!overrides.empty()) {
                 parse_overrides(overrides, collector, section);
             }
@@ -140,7 +140,7 @@ void configuration_manager::load(
         DDWAF_DEBUG("Parsing exclusions");
         auto &section = info.add_section("exclusions");
         try {
-            auto exclusions = static_cast<parameter::vector>(it->second);
+            auto exclusions = static_cast<raw_configuration::vector>(it->second);
             if (!exclusions.empty()) {
                 parse_filters(exclusions, collector, section, limits_);
             }
@@ -155,7 +155,7 @@ void configuration_manager::load(
         DDWAF_DEBUG("Parsing exclusion data");
         auto &section = info.add_section("exclusion_data");
         try {
-            auto exclusions_data = static_cast<parameter::vector>(it->second);
+            auto exclusions_data = static_cast<raw_configuration::vector>(it->second);
             if (!exclusions_data.empty()) {
                 parse_exclusion_data(exclusions_data, collector, section);
             }
@@ -170,7 +170,7 @@ void configuration_manager::load(
         DDWAF_DEBUG("Parsing processors");
         auto &section = info.add_section("processors");
         try {
-            auto processors = static_cast<parameter::vector>(it->second);
+            auto processors = static_cast<raw_configuration::vector>(it->second);
             if (!processors.empty()) {
                 parse_processors(processors, collector, section, limits_);
             }
@@ -185,7 +185,7 @@ void configuration_manager::load(
         DDWAF_DEBUG("Parsing scanners");
         auto &section = info.add_section("scanners");
         try {
-            auto scanners = static_cast<parameter::vector>(it->second);
+            auto scanners = static_cast<raw_configuration::vector>(it->second);
             if (!scanners.empty()) {
                 parse_scanners(scanners, collector, section);
             }
@@ -224,7 +224,7 @@ void configuration_manager::remove_config(const configuration_change_spec &cfg)
 }
 
 bool configuration_manager::add_or_update(
-    const std::string &path, parameter::map &root, base_ruleset_info &info)
+    const std::string &path, raw_configuration::map &root, base_ruleset_info &info)
 {
     auto it = configs_.find(path);
     if (it != configs_.end()) {

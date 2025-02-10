@@ -8,15 +8,16 @@
 
 #include <string>
 
+#include "configuration/common/raw_configuration.hpp"
 #include "exception.hpp"
-#include "parameter.hpp"
 #include "ruleset_info.hpp"
 
 using base_section_info = ddwaf::base_ruleset_info::base_section_info;
 
 namespace ddwaf {
 
-template <typename T, typename Key = std::string> T at(const parameter::map &map, const Key &key)
+template <typename T, typename Key = std::string>
+T at(const raw_configuration::map &map, const Key &key)
 {
     try {
         return static_cast<T>(map.at(key));
@@ -28,7 +29,7 @@ template <typename T, typename Key = std::string> T at(const parameter::map &map
 }
 
 template <typename T, typename Key>
-T at(const parameter::map &map, const Key &key, const T &default_)
+T at(const raw_configuration::map &map, const Key &key, const T &default_)
 {
     try {
         auto it = map.find(key);
@@ -40,7 +41,7 @@ T at(const parameter::map &map, const Key &key, const T &default_)
 
 inline std::string index_to_id(unsigned idx) { return "index:" + to_string<std::string>(idx); }
 
-inline unsigned parse_schema_version(parameter::map &ruleset)
+inline unsigned parse_schema_version(raw_configuration::map &ruleset)
 {
     auto version = at<std::string_view>(ruleset, "version", {});
     if (version.empty()) {

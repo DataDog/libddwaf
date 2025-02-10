@@ -7,12 +7,12 @@
 #pragma once
 
 #include "configuration/common/configuration_collector.hpp"
-#include "parameter.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "ruleset_info.hpp"
 
 namespace ddwaf {
 
-void parse_overrides(const parameter::vector &override_array, configuration_collector &cfg,
+void parse_overrides(const raw_configuration::vector &override_array, configuration_collector &cfg,
     ruleset_info::base_section_info &info);
 
 } // namespace ddwaf

@@ -15,8 +15,8 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "log.hpp"
-#include "parameter.hpp"
 #include "uri_utils.hpp"
 
 namespace ddwaf {
@@ -85,12 +85,12 @@ void validate_and_add_redirect(auto &cfg, auto id, auto &type, auto &parameters)
 
 } // namespace
 
-void parse_actions(
-    const parameter::vector &actions_array, configuration_collector &cfg, base_section_info &info)
+void parse_actions(const raw_configuration::vector &actions_array, configuration_collector &cfg,
+    base_section_info &info)
 {
     for (unsigned i = 0; i < actions_array.size(); i++) {
         const auto &node_param = actions_array[i];
-        auto node = static_cast<parameter::map>(node_param);
+        auto node = static_cast<raw_configuration::map>(node_param);
 
         std::string id;
         try {

@@ -14,11 +14,11 @@
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
 #include "configuration/common/expression_parser.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "configuration/common/reference_parser.hpp"
 #include "configuration/processor_parser.hpp"
 #include "exception.hpp"
 #include "log.hpp"
-#include "parameter.hpp"
 #include "processor/base.hpp"
 #include "processor/extract_schema.hpp"
 #include "processor/fingerprint.hpp"
@@ -32,7 +32,7 @@ namespace ddwaf {
 
 namespace {
 std::vector<processor_mapping> parse_processor_mappings(
-    const parameter::vector &root, const auto &param_names)
+    const raw_configuration::vector &root, const auto &param_names)
 {
     if (root.empty()) {
         throw ddwaf::parsing_error("empty mappings");
@@ -40,17 +40,17 @@ std::vector<processor_mapping> parse_processor_mappings(
 
     std::vector<processor_mapping> mappings;
     for (const auto &node : root) {
-        auto mapping = static_cast<parameter::map>(node);
+        auto mapping = static_cast<raw_configuration::map>(node);
 
         std::vector<processor_parameter> parameters;
         for (const auto &param : param_names) {
             // TODO support n:1 mappings and key paths
-            auto inputs = at<parameter::vector>(mapping, param);
+            auto inputs = at<raw_configuration::vector>(mapping, param);
             if (inputs.empty()) {
                 throw ddwaf::parsing_error("empty processor input mapping");
             }
 
-            auto input = static_cast<parameter::map>(inputs[0]);
+            auto input = static_cast<raw_configuration::map>(inputs[0]);
             auto input_address = at<std::string>(input, "address");
 
             parameters.emplace_back(
@@ -69,12 +69,13 @@ std::vector<processor_mapping> parse_processor_mappings(
 
 } // namespace
 
-void parse_processors(const parameter::vector &processor_array, configuration_collector &cfg,
-    ruleset_info::base_section_info &info, const object_limits &limits)
+void parse_processors(const raw_configuration::vector &processor_array,
+    configuration_collector &cfg, ruleset_info::base_section_info &info,
+    const object_limits &limits)
 {
     for (unsigned i = 0; i < processor_array.size(); i++) {
         const auto &node_param = processor_array[i];
-        auto node = static_cast<parameter::map>(node_param);
+        auto node = static_cast<raw_configuration::map>(node_param);
         std::string id;
         try {
             id = at<std::string>(node, "id");
@@ -113,11 +114,11 @@ void parse_processors(const parameter::vector &processor_array, configuration_co
                 continue;
             }
 
-            auto conditions_array = at<parameter::vector>(node, "conditions", {});
+            auto conditions_array = at<raw_configuration::vector>(node, "conditions", {});
             auto expr = parse_simplified_expression(conditions_array, limits);
 
-            auto params = at<parameter::map>(node, "parameters");
-            auto mappings_vec = at<parameter::vector>(params, "mappings");
+            auto params = at<raw_configuration::map>(node, "parameters");
+            auto mappings_vec = at<raw_configuration::vector>(params, "mappings");
             std::vector<processor_mapping> mappings;
             if (type == processor_type::extract_schema) {
                 mappings =
@@ -137,11 +138,12 @@ void parse_processors(const parameter::vector &processor_array, configuration_co
             }
 
             std::vector<reference_spec> scanners;
-            auto scanners_ref_array = at<parameter::vector>(params, "scanners", {});
+            auto scanners_ref_array = at<raw_configuration::vector>(params, "scanners", {});
             if (!scanners_ref_array.empty()) {
                 scanners.reserve(scanners_ref_array.size());
                 for (const auto &ref : scanners_ref_array) {
-                    scanners.emplace_back(parse_reference(static_cast<parameter::map>(ref)));
+                    scanners.emplace_back(
+                        parse_reference(static_cast<raw_configuration::map>(ref)));
                 }
             }
 
