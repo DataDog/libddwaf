@@ -1,5 +1,10 @@
 # Upgrading libddwaf
 
+## Upgrading from `1.22.0` to `1.23.0`
+### WAF Builder
+
+### Warning and Error Diagnostics
+
 ## Upgrading from `1.16.x` to `1.17.x`
 
 ### Action semantics

@@ -1,4 +1,22 @@
 # libddwaf release
+
+## v1.23.0
+
+### New features
+
+### Release changelog
+#### Changes
+- WAF Builder: independent configuration manager to generate WAF instances ([#363](https://github.com/DataDog/libddwaf/pull/363))
+- Change endpoint fingerprint query parameter to optional ([#365](https://github.com/DataDog/libddwaf/pull/365))
+- Split diagnostics into warnings and errors ([#368](https://github.com/DataDog/libddwaf/pull/368))
+
+#### Fixes
+- Wrap containers in the ruleset within shared pointers to reduce copies ([#366](https://github.com/DataDog/libddwaf/pull/366))
+
+#### Miscellaneous
+- Rename parameter to `raw_configuration` ([#367](https://github.com/DataDog/libddwaf/pull/367))
+- Generate coverage at multiple log levels ([#364](https://github.com/DataDog/libddwaf/pull/364))
+
 ## v1.22.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 ### New features
 
