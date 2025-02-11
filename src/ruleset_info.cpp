@@ -8,8 +8,8 @@
 #include <string_view>
 #include <utility>
 
+#include "configuration/common/parser_exception.hpp"
 #include "ddwaf.h"
-#include "exception.hpp"
 #include "ruleset_info.hpp"
 
 namespace ddwaf {

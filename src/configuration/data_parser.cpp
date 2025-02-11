@@ -14,9 +14,9 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
+#include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
 #include "configuration/data_parser.hpp"
-#include "exception.hpp"
 #include "log.hpp"
 #include "uuid.hpp"
 

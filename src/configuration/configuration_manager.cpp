@@ -15,6 +15,7 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
+#include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
 #include "configuration/configuration_manager.hpp"
 #include "configuration/data_parser.hpp"
@@ -24,6 +25,7 @@
 #include "configuration/rule_override_parser.hpp"
 #include "configuration/rule_parser.hpp"
 #include "configuration/scanner_parser.hpp"
+#include "fmt/core.h"
 #include "log.hpp"
 #include "ruleset_info.hpp"
 
@@ -224,7 +226,7 @@ void configuration_manager::remove_config(const configuration_change_spec &cfg)
 }
 
 bool configuration_manager::add_or_update(
-    const std::string &path, raw_configuration::map &root, base_ruleset_info &info)
+    const std::string &path, raw_configuration &root, base_ruleset_info &info)
 {
     auto it = configs_.find(path);
     if (it != configs_.end()) {
@@ -243,7 +245,18 @@ bool configuration_manager::add_or_update(
     configuration_change_spec new_config;
     configuration_collector collector{new_config, global_config_};
 
-    load(root, collector, info);
+    raw_configuration::map root_map;
+    try {
+        root_map = static_cast<raw_configuration::map>(root);
+    } catch (const bad_cast &e) {
+        DDWAF_WARN(
+            "Invalid configuration type, expected '{}', obtained '{}'", e.expected(), e.obtained());
+        info.set_error(fmt::format("invalid configuration type, expected '{}', obtained '{}'",
+            e.expected(), e.obtained()));
+        return false;
+    }
+
+    load(root_map, collector, info);
     if (new_config.empty()) {
         configs_.erase(it);
         return false;

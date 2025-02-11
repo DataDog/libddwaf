@@ -15,6 +15,29 @@ using namespace ddwaf;
 namespace {
 constexpr std::string_view base_dir = "integration/diagnostics/v2/";
 
+TEST(TestDiagnosticsV2Integration, InvalidConfigType)
+{
+    auto rule = yaml_to_object(
+        R"([version, '2.1', [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]])");
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_object diagnostics;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ASSERT_EQ(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf::raw_configuration root(diagnostics);
+    auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
+
+    auto error = ddwaf::at<std::string>(root_map, "error");
+    EXPECT_STR(error, "invalid configuration type, expected 'map', obtained 'array'");
+
+    ddwaf_object_free(&diagnostics);
+
+    ddwaf_destroy(handle);
+}
+
 TEST(TestDiagnosticsV2Integration, BasicRule)
 {
     auto rule = yaml_to_object(

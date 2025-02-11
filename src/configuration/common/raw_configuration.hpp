@@ -13,8 +13,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "configuration/common/parser_exception.hpp"
 #include "ddwaf.h"
-#include "exception.hpp"
 #include "semver.hpp"
 
 namespace ddwaf {

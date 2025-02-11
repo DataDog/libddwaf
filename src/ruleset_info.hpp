@@ -11,8 +11,8 @@
 #include <string_view>
 #include <unordered_set>
 
+#include "configuration/common/parser_exception.hpp"
 #include "ddwaf.h"
-#include "exception.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
@@ -74,6 +74,7 @@ public:
 
     virtual base_section_info &add_section(std::string_view section) = 0;
     virtual void set_ruleset_version(std::string_view version) = 0;
+    virtual void set_error(std::string error) = 0;
 
     virtual void to_object(ddwaf_object &output) = 0;
 };
@@ -111,6 +112,7 @@ public:
     }
 
     void set_ruleset_version(std::string_view /*version*/) override{};
+    void set_error(std::string /*error*/) override {}
 
     void to_object(ddwaf_object & /*output*/) override{};
 };
@@ -214,25 +216,35 @@ public:
     void to_object(ddwaf_object &output) override
     {
         ddwaf_object_map(&output);
-        for (auto &[name, section] : sections_) {
-            ddwaf_object section_object;
-            section.to_object(section_object);
+        if (!error_.empty()) {
+            ddwaf_object error_object;
+            ddwaf_object_stringl(&error_object, error_.c_str(), error_.size());
+            ddwaf_object_map_add(&output, "error", &error_object);
+            error_.clear();
+        } else {
+            for (auto &[name, section] : sections_) {
+                ddwaf_object section_object;
+                section.to_object(section_object);
 
-            ddwaf_object_map_addl(&output, name.c_str(), name.length(), &section_object);
-        }
-        sections_.clear();
+                ddwaf_object_map_addl(&output, name.c_str(), name.length(), &section_object);
+            }
+            sections_.clear();
 
-        if (!ruleset_version_.empty()) {
-            ddwaf_object version_object;
-            ddwaf_object_stringl(
-                &version_object, ruleset_version_.c_str(), ruleset_version_.size());
-            ddwaf_object_map_add(&output, "ruleset_version", &version_object);
-            ruleset_version_.clear();
+            if (!ruleset_version_.empty()) {
+                ddwaf_object version_object;
+                ddwaf_object_stringl(
+                    &version_object, ruleset_version_.c_str(), ruleset_version_.size());
+                ddwaf_object_map_add(&output, "ruleset_version", &version_object);
+                ruleset_version_.clear();
+            }
         }
     }
 
+    void set_error(std::string error) override { error_ = std::move(error); }
+
 protected:
     std::string ruleset_version_;
+    std::string error_;
     std::map<std::string, section_info, std::less<>> sections_;
 };
 

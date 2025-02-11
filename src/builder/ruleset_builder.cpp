@@ -226,7 +226,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     // rules or postprocessors.
     if (rs->base_rules->empty() && rs->user_rules->empty() && rs->postprocessors->empty()) {
         DDWAF_WARN("No valid rules or postprocessors found");
-        throw parsing_error("no valid or enabled rules or postprocessors found");
+        throw incomplete_ruleset();
     }
 
     return rs;
