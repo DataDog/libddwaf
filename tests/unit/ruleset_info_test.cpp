@@ -44,7 +44,7 @@ TEST(TestRulesetInfo, ValidRulesetInfo)
 
         {
             auto &section = info.add_section("rules_override");
-            section.add_loaded("third");
+            section.add_loaded(10);
         }
 
         info.to_object(root);
@@ -57,10 +57,10 @@ TEST(TestRulesetInfo, ValidRulesetInfo)
     EXPECT_STREQ(version.c_str(), "2.3.4");
 
     std::unordered_map<std::string, std::string> kv{
-        {"rules", "first"}, {"exclusions", "second"}, {"rules_override", "third"}};
+        {"rules", "first"}, {"exclusions", "second"}, {"rules_override", "index:10"}};
     for (auto &[key, value] : kv) {
         auto section = ddwaf::at<raw_configuration::map>(root_map, key);
-        EXPECT_EQ(section.size(), 4);
+        EXPECT_EQ(section.size(), 5);
 
         auto loaded = ddwaf::at<raw_configuration::vector>(section, "loaded");
         EXPECT_EQ(loaded.size(), 1);
@@ -88,11 +88,11 @@ TEST(TestRulesetInfo, FailedWithErrorsRulesetInfo)
         info.set_ruleset_version("2.3.4");
 
         auto &section = info.add_section("rules");
-        section.add_failed("first", "error1");
-        section.add_failed("second", "error1");
-        section.add_failed("third", "error2");
-        section.add_failed("fourth", "error2");
-        section.add_failed("fifth", "error3");
+        section.add_failed("first", parser_error_severity::error, "error1");
+        section.add_failed("second", parser_error_severity::error, "error1");
+        section.add_failed("third", parser_error_severity::error, "error2");
+        section.add_failed("fourth", parser_error_severity::error, "error2");
+        section.add_failed("fifth", parser_error_severity::error, "error3");
 
         info.to_object(root);
     }
@@ -104,7 +104,7 @@ TEST(TestRulesetInfo, FailedWithErrorsRulesetInfo)
     EXPECT_STREQ(version.c_str(), "2.3.4");
 
     auto section = ddwaf::at<raw_configuration::map>(root_map, "rules");
-    EXPECT_EQ(section.size(), 4);
+    EXPECT_EQ(section.size(), 5);
 
     auto loaded = ddwaf::at<raw_configuration::vector>(section, "loaded");
     EXPECT_EQ(loaded.size(), 0);
@@ -167,6 +167,7 @@ TEST(TestRulesetInfo, SkippedRulesetInfo)
         section.add_skipped("third");
         section.add_skipped("fourth");
         section.add_skipped("fifth");
+        section.add_skipped(5);
 
         info.to_object(root);
     }
@@ -178,7 +179,7 @@ TEST(TestRulesetInfo, SkippedRulesetInfo)
     EXPECT_STREQ(version.c_str(), "2.3.4");
 
     auto section = ddwaf::at<raw_configuration::map>(root_map, "rules");
-    EXPECT_EQ(section.size(), 4);
+    EXPECT_EQ(section.size(), 5);
 
     auto loaded = ddwaf::at<raw_configuration::vector>(section, "loaded");
     EXPECT_EQ(loaded.size(), 0);
@@ -187,10 +188,13 @@ TEST(TestRulesetInfo, SkippedRulesetInfo)
     EXPECT_EQ(failed.size(), 0);
 
     auto skipped = ddwaf::at<raw_configuration::vector>(section, "skipped");
-    EXPECT_EQ(skipped.size(), 5);
+    EXPECT_EQ(skipped.size(), 6);
 
     auto errors = ddwaf::at<raw_configuration::map>(section, "errors");
     EXPECT_EQ(errors.size(), 0);
+
+    auto warnings = ddwaf::at<raw_configuration::map>(section, "warnings");
+    EXPECT_EQ(warnings.size(), 0);
 
     ddwaf_object_free(&root);
 }
@@ -205,7 +209,7 @@ TEST(TestRulesetInfo, SectionErrorRulesetInfo)
         auto &section = info.add_section("rules_data");
         section.set_error("expected 'array' found 'map'");
         section.add_loaded("fourth");
-        section.add_failed("fifth", "error");
+        section.add_failed("fifth", parser_error_severity::error, "error");
 
         info.to_object(root);
     }
@@ -236,13 +240,13 @@ TEST(TestRulesetInfo, NullRulesetInfo)
     {
         auto &section = info.add_section("rules");
         section.add_loaded("loaded");
-        section.add_failed("failed", "error");
+        section.add_failed("failed", parser_error_severity::error, "error");
     }
 
     {
         auto &section = info.add_section("exclusions");
         section.add_loaded("loaded");
-        section.add_failed("failed", "error");
+        section.add_failed("failed", parser_error_severity::error, "error");
     }
 
     EXPECT_TRUE(true);

@@ -11,10 +11,13 @@
 #include <string_view>
 #include <unordered_set>
 
+#include "configuration/common/parser_exception.hpp"
 #include "ddwaf.h"
 #include "utils.hpp"
 
 namespace ddwaf {
+
+inline std::string index_to_id(unsigned idx) { return "index:" + to_string<std::string>(idx); }
 
 class base_ruleset_info {
 public:
@@ -28,11 +31,38 @@ public:
         base_section_info &operator=(base_section_info &&) noexcept = delete;
 
         virtual void set_error(std::string_view error) = 0;
+
+        virtual void add_loaded(unsigned index)
+        {
+            auto id_str = index_to_id(index);
+            add_loaded(id_str);
+        }
         virtual void add_loaded(std::string_view id) = 0;
-        virtual void add_failed(std::string_view id, std::string_view error) = 0;
+
+        virtual void add_skipped(unsigned index)
+        {
+            auto id_str = index_to_id(index);
+            add_skipped(id_str);
+        }
         virtual void add_skipped(std::string_view id) = 0;
-        virtual void add_required_address(std::string_view address) = 0;
-        virtual void add_optional_address(std::string_view address) = 0;
+
+        virtual void add_failed(unsigned index, parser_error_severity sev, std::string_view error)
+        {
+            auto id_str = index_to_id(index);
+            add_failed(id_str, sev, error);
+        }
+        virtual void add_failed(
+            unsigned index, std::string_view id, parser_error_severity sev, std::string_view error)
+        {
+            if (id.empty()) {
+                auto id_str = index_to_id(index);
+                add_failed(id_str, sev, error);
+            } else {
+                add_failed(id, sev, error);
+            }
+        }
+        virtual void add_failed(
+            std::string_view id, parser_error_severity sev, std::string_view error) = 0;
     };
 
     base_ruleset_info() = default;
@@ -44,6 +74,7 @@ public:
 
     virtual base_section_info &add_section(std::string_view section) = 0;
     virtual void set_ruleset_version(std::string_view version) = 0;
+    virtual void set_error(std::string error) = 0;
 
     virtual void to_object(ddwaf_object &output) = 0;
 };
@@ -61,10 +92,10 @@ public:
 
         void set_error(std::string_view /*error*/) override {}
         void add_loaded(std::string_view /*id*/) override {}
-        void add_failed(std::string_view /*id*/, std::string_view /*error*/) override {}
+        void add_failed(std::string_view /*id*/, parser_error_severity /*sev*/,
+            std::string_view /*error*/) override
+        {}
         void add_skipped(std::string_view /*id*/) override {}
-        void add_required_address(std::string_view /*address*/) override {}
-        void add_optional_address(std::string_view /*address*/) override {}
     };
 
     null_ruleset_info() = default;
@@ -81,6 +112,7 @@ public:
     }
 
     void set_ruleset_version(std::string_view /*version*/) override{};
+    void set_error(std::string /*error*/) override {}
 
     void to_object(ddwaf_object & /*output*/) override{};
 };
@@ -95,8 +127,7 @@ public:
             ddwaf_object_array(&failed_);
             ddwaf_object_array(&skipped_);
             ddwaf_object_map(&errors_);
-            ddwaf_object_array(&required_addresses_);
-            ddwaf_object_array(&optional_addresses_);
+            ddwaf_object_map(&warnings_);
         }
 
         ~section_info() override
@@ -105,8 +136,7 @@ public:
             ddwaf_object_free(&failed_);
             ddwaf_object_free(&skipped_);
             ddwaf_object_free(&errors_);
-            ddwaf_object_free(&required_addresses_);
-            ddwaf_object_free(&optional_addresses_);
+            ddwaf_object_free(&warnings_);
         }
 
         section_info(const section_info &) = delete;
@@ -116,10 +146,9 @@ public:
 
         void set_error(std::string_view error) override { error_ = error; }
         void add_loaded(std::string_view id) override;
-        void add_failed(std::string_view id, std::string_view error) override;
+        void add_failed(
+            std::string_view id, parser_error_severity sev, std::string_view error) override;
         void add_skipped(std::string_view id) override;
-        void add_required_address(std::string_view address) override;
-        void add_optional_address(std::string_view address) override;
 
         // This matcher effectively moves the contents
         void to_object(ddwaf_object &output)
@@ -135,14 +164,7 @@ public:
                 ddwaf_object_map_add(&output, "failed", &failed_);
                 ddwaf_object_map_add(&output, "skipped", &skipped_);
                 ddwaf_object_map_add(&output, "errors", &errors_);
-
-                if (!required_addresses_set_.empty() || !optional_addresses_set_.empty()) {
-                    ddwaf_object addresses;
-                    ddwaf_object_map(&addresses);
-                    ddwaf_object_map_add(&addresses, "required", &required_addresses_);
-                    ddwaf_object_map_add(&addresses, "optional", &optional_addresses_);
-                    ddwaf_object_map_add(&output, "addresses", &addresses);
-                }
+                ddwaf_object_map_add(&output, "warnings", &warnings_);
 
                 ddwaf_object_invalid(&loaded_);
                 ddwaf_object_invalid(&failed_);
@@ -151,11 +173,8 @@ public:
                 ddwaf_object_invalid(&errors_);
                 error_obj_cache_.clear();
 
-                ddwaf_object_invalid(&required_addresses_);
-                required_addresses_set_.clear();
-
-                ddwaf_object_invalid(&optional_addresses_);
-                optional_addresses_set_.clear();
+                ddwaf_object_invalid(&warnings_);
+                warning_obj_cache_.clear();
             }
         }
 
@@ -171,14 +190,10 @@ public:
          *  that error was raised. {error: [ids]} **/
         ddwaf_object errors_{};
         std::map<std::string_view, uint64_t> error_obj_cache_;
-
-        /** Array of required addresses **/
-        ddwaf_object required_addresses_{};
-        std::unordered_set<std::string_view> required_addresses_set_{};
-
-        /** Array of optional addresses **/
-        ddwaf_object optional_addresses_{};
-        std::unordered_set<std::string_view> optional_addresses_set_{};
+        /** Map from an warning string to an array of all the ids for which
+         *  that warning was raised. {warning: [ids]} **/
+        ddwaf_object warnings_{};
+        std::map<std::string_view, uint64_t> warning_obj_cache_;
     };
 
     ruleset_info() = default;
@@ -201,25 +216,35 @@ public:
     void to_object(ddwaf_object &output) override
     {
         ddwaf_object_map(&output);
-        for (auto &[name, section] : sections_) {
-            ddwaf_object section_object;
-            section.to_object(section_object);
+        if (!error_.empty()) {
+            ddwaf_object error_object;
+            ddwaf_object_stringl(&error_object, error_.c_str(), error_.size());
+            ddwaf_object_map_add(&output, "error", &error_object);
+            error_.clear();
+        } else {
+            for (auto &[name, section] : sections_) {
+                ddwaf_object section_object;
+                section.to_object(section_object);
 
-            ddwaf_object_map_addl(&output, name.c_str(), name.length(), &section_object);
-        }
-        sections_.clear();
+                ddwaf_object_map_addl(&output, name.c_str(), name.length(), &section_object);
+            }
+            sections_.clear();
 
-        if (!ruleset_version_.empty()) {
-            ddwaf_object version_object;
-            ddwaf_object_stringl(
-                &version_object, ruleset_version_.c_str(), ruleset_version_.size());
-            ddwaf_object_map_add(&output, "ruleset_version", &version_object);
-            ruleset_version_.clear();
+            if (!ruleset_version_.empty()) {
+                ddwaf_object version_object;
+                ddwaf_object_stringl(
+                    &version_object, ruleset_version_.c_str(), ruleset_version_.size());
+                ddwaf_object_map_add(&output, "ruleset_version", &version_object);
+                ruleset_version_.clear();
+            }
         }
     }
 
+    void set_error(std::string error) override { error_ = std::move(error); }
+
 protected:
     std::string ruleset_version_;
+    std::string error_;
     std::map<std::string, section_info, std::less<>> sections_;
 };
 

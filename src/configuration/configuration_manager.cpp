@@ -15,6 +15,7 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
+#include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
 #include "configuration/configuration_manager.hpp"
 #include "configuration/data_parser.hpp"
@@ -24,6 +25,7 @@
 #include "configuration/rule_override_parser.hpp"
 #include "configuration/rule_parser.hpp"
 #include "configuration/scanner_parser.hpp"
+#include "fmt/core.h"
 #include "log.hpp"
 #include "ruleset_info.hpp"
 
@@ -39,6 +41,10 @@ void configuration_manager::load(
     }
 
     auto schema_version = parse_schema_version(root);
+    if (schema_version > 2) {
+        throw unsupported_schema_version(schema_version);
+    }
+
     if (schema_version == 1) {
         // Legacy configurations with schema version 1 will only provide rules
         DDWAF_DEBUG("Parsing legacy configuration");
@@ -224,35 +230,49 @@ void configuration_manager::remove_config(const configuration_change_spec &cfg)
 }
 
 bool configuration_manager::add_or_update(
-    const std::string &path, raw_configuration::map &root, base_ruleset_info &info)
+    const std::string &path, raw_configuration &root, base_ruleset_info &info)
 {
-    auto it = configs_.find(path);
-    if (it != configs_.end()) {
-        // Track the change, i.e. removed stuff
-        changes_ = changes_ | it->second.content;
+    try {
+        raw_configuration::map root_map = static_cast<raw_configuration::map>(root);
 
-        remove_config(it->second);
-    } else {
-        auto [new_it, res] = configs_.emplace(path, configuration_change_spec{});
-        if (!res) {
+        auto it = configs_.find(path);
+        if (it != configs_.end()) {
+            // Track the change, i.e. removed stuff
+            changes_ = changes_ | it->second.content;
+
+            remove_config(it->second);
+        } else {
+            auto [new_it, res] = configs_.emplace(path, configuration_change_spec{});
+            if (!res) {
+                return false;
+            }
+            it = new_it;
+        }
+
+        configuration_change_spec new_config;
+        configuration_collector collector{new_config, global_config_};
+
+        load(root_map, collector, info);
+        if (new_config.empty()) {
+            configs_.erase(it);
             return false;
         }
-        it = new_it;
+
+        changes_ |= new_config.content;
+        it->second = std::move(new_config);
+
+        return true;
+    } catch (const bad_cast &e) {
+        DDWAF_WARN(
+            "Invalid configuration type, expected '{}', obtained '{}'", e.expected(), e.obtained());
+        info.set_error(fmt::format("invalid configuration type, expected '{}', obtained '{}'",
+            e.expected(), e.obtained()));
+    } catch (const unsupported_schema_version &e) {
+        DDWAF_WARN("Unsupported schema version: '{}'", e.version());
+        info.set_error(e.what());
     }
 
-    configuration_change_spec new_config;
-    configuration_collector collector{new_config, global_config_};
-
-    load(root, collector, info);
-    if (new_config.empty()) {
-        configs_.erase(it);
-        return false;
-    }
-
-    changes_ |= new_config.content;
-    it->second = std::move(new_config);
-
-    return true;
+    return false;
 }
 
 bool configuration_manager::remove(const std::string &path)

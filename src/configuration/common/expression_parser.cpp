@@ -21,9 +21,9 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/expression_parser.hpp"
 #include "configuration/common/matcher_parser.hpp"
+#include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
 #include "configuration/common/transformer_parser.hpp"
-#include "exception.hpp"
 #include "expression.hpp"
 #include "log.hpp"
 #include "matcher/equals.hpp"
@@ -46,7 +46,7 @@ namespace {
 template <typename T>
 std::vector<condition_parameter> parse_arguments(const raw_configuration::map &params,
     data_source source, const std::vector<transformer_id> &transformers,
-    address_container &addresses, const object_limits &limits)
+    const object_limits &limits)
 {
     const auto &specification = T::arguments();
     std::vector<condition_parameter> definitions;
@@ -91,7 +91,6 @@ std::vector<condition_parameter> parse_arguments(const raw_configuration::map &p
                 }
             }
 
-            addresses.required.emplace(address);
             auto it = input.find("transformers");
             if (it == input.end()) {
                 targets.emplace_back(condition_target{.name = address,
@@ -122,24 +121,23 @@ std::vector<condition_parameter> parse_arguments(const raw_configuration::map &p
 template <typename T, typename... Matchers>
 auto build_condition(std::string_view operator_name, const raw_configuration::map &params,
     data_source source, const std::vector<transformer_id> &transformers,
-    address_container &addresses, const object_limits &limits)
+    const object_limits &limits)
 {
     auto [data_id, matcher] = parse_matcher<Matchers...>(operator_name, params);
-    auto arguments = parse_arguments<T>(params, source, transformers, addresses, limits);
+    auto arguments = parse_arguments<T>(params, source, transformers, limits);
     return std::make_unique<T>(std::move(matcher), data_id, std::move(arguments), limits);
 }
 
 template <typename Condition>
 auto build_versioned_condition(std::string_view operator_name, unsigned version,
     const raw_configuration::map &params, data_source source,
-    const std::vector<transformer_id> &transformers, address_container &addresses,
-    const object_limits &limits)
+    const std::vector<transformer_id> &transformers, const object_limits &limits)
 {
     if (version > Condition::version) {
         throw unsupported_operator_version(operator_name, version, Condition::version);
     }
 
-    auto arguments = parse_arguments<Condition>(params, source, transformers, addresses, limits);
+    auto arguments = parse_arguments<Condition>(params, source, transformers, limits);
     return std::make_unique<Condition>(std::move(arguments), limits);
 }
 
@@ -147,7 +145,7 @@ auto build_versioned_condition(std::string_view operator_name, unsigned version,
 
 std::shared_ptr<expression> parse_expression(const raw_configuration::vector &conditions_array,
     data_source source, const std::vector<transformer_id> &transformers,
-    address_container &addresses, const object_limits &limits)
+    const object_limits &limits)
 {
     std::vector<std::unique_ptr<base_condition>> conditions;
     for (const auto &cond_param : conditions_array) {
@@ -170,40 +168,40 @@ std::shared_ptr<expression> parse_expression(const raw_configuration::vector &co
 
         if (operator_name == "lfi_detector") {
             conditions.emplace_back(build_versioned_condition<lfi_detector>(
-                operator_name, version, params, source, transformers, addresses, limits));
+                operator_name, version, params, source, transformers, limits));
         } else if (operator_name == "ssrf_detector") {
             conditions.emplace_back(build_versioned_condition<ssrf_detector>(
-                operator_name, version, params, source, transformers, addresses, limits));
+                operator_name, version, params, source, transformers, limits));
         } else if (operator_name == "sqli_detector") {
             conditions.emplace_back(build_versioned_condition<sqli_detector>(
-                operator_name, version, params, source, transformers, addresses, limits));
+                operator_name, version, params, source, transformers, limits));
         } else if (operator_name == "shi_detector") {
             conditions.emplace_back(build_versioned_condition<shi_detector>(
-                operator_name, version, params, source, transformers, addresses, limits));
+                operator_name, version, params, source, transformers, limits));
         } else if (operator_name == "cmdi_detector") {
             conditions.emplace_back(build_versioned_condition<cmdi_detector>(
-                operator_name, version, params, source, transformers, addresses, limits));
+                operator_name, version, params, source, transformers, limits));
         } else if (operator_name == "exists") {
             auto arguments =
-                parse_arguments<exists_condition>(params, source, transformers, addresses, limits);
+                parse_arguments<exists_condition>(params, source, transformers, limits);
             conditions.emplace_back(
                 std::make_unique<exists_condition>(std::move(arguments), limits));
         } else if (operator_name == "!exists") {
-            auto arguments = parse_arguments<exists_negated_condition>(
-                params, source, transformers, addresses, limits);
+            auto arguments =
+                parse_arguments<exists_negated_condition>(params, source, transformers, limits);
             conditions.emplace_back(
                 std::make_unique<exists_negated_condition>(std::move(arguments), limits));
         } else if (operator_name.starts_with('!')) {
             conditions.emplace_back(
                 build_condition<scalar_negated_condition, matcher::ip_match, matcher::exact_match,
                     matcher::regex_match, matcher::phrase_match, matcher::equals<>>(
-                    operator_name.substr(1), params, source, transformers, addresses, limits));
+                    operator_name.substr(1), params, source, transformers, limits));
         } else {
             conditions.emplace_back(
                 build_condition<scalar_condition, matcher::equals<>, matcher::exact_match,
                     matcher::greater_than<>, matcher::ip_match, matcher::is_sqli, matcher::is_xss,
                     matcher::lower_than<>, matcher::phrase_match, matcher::regex_match>(
-                    operator_name, params, source, transformers, addresses, limits));
+                    operator_name, params, source, transformers, limits));
         }
     }
 
@@ -211,10 +209,9 @@ std::shared_ptr<expression> parse_expression(const raw_configuration::vector &co
 }
 
 std::shared_ptr<expression> parse_simplified_expression(
-    const raw_configuration::vector &conditions_array, address_container &addresses,
-    const object_limits &limits)
+    const raw_configuration::vector &conditions_array, const object_limits &limits)
 {
-    return parse_expression(conditions_array, data_source::values, {}, addresses, limits);
+    return parse_expression(conditions_array, data_source::values, {}, limits);
 }
 
 } // namespace ddwaf

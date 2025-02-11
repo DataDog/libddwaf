@@ -25,8 +25,7 @@ public:
     configuration_manager &operator=(configuration_manager &&) = delete;
     configuration_manager &operator=(const configuration_manager &) = delete;
 
-    bool add_or_update(
-        const std::string &path, raw_configuration::map &root, base_ruleset_info &info);
+    bool add_or_update(const std::string &path, raw_configuration &root, base_ruleset_info &info);
     bool remove(const std::string &path);
 
     std::pair<const configuration_spec &, change_set> consolidate();

@@ -14,10 +14,10 @@
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
 #include "configuration/common/expression_parser.hpp"
+#include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
 #include "configuration/common/transformer_parser.hpp"
 #include "configuration/rule_parser.hpp"
-#include "exception.hpp"
 #include "log.hpp"
 #include "rule.hpp"
 #include "semver.hpp"
@@ -29,8 +29,8 @@ namespace ddwaf {
 
 namespace {
 
-rule_spec parse_rule(raw_configuration::map &rule, const object_limits &limits,
-    core_rule::source_type source, address_container &addresses)
+rule_spec parse_rule(
+    raw_configuration::map &rule, const object_limits &limits, core_rule::source_type source)
 {
     std::vector<transformer_id> rule_transformers;
     auto data_source = ddwaf::data_source::values;
@@ -42,8 +42,7 @@ rule_spec parse_rule(raw_configuration::map &rule, const object_limits &limits,
     rule_transformers = parse_transformers(transformers, data_source);
 
     auto conditions_array = at<raw_configuration::vector>(rule, "conditions");
-    auto expr =
-        parse_expression(conditions_array, data_source, rule_transformers, addresses, limits);
+    auto expr = parse_expression(conditions_array, data_source, rule_transformers, limits);
     if (expr->empty()) {
         // This is likely unreachable
         throw ddwaf::parsing_error("rule has no valid conditions");
@@ -79,12 +78,10 @@ void parse_rules(const raw_configuration::vector &rule_array, configuration_coll
             const auto &rule_param = rule_array[i];
             auto node = static_cast<raw_configuration::map>(rule_param);
 
-            address_container addresses;
-
             id = at<std::string>(node, "id");
             if (cfg.contains_rule(id)) {
                 DDWAF_WARN("Duplicate rule {}", id);
-                info.add_failed(id, "duplicate rule");
+                info.add_failed(id, parser_error_severity::error, "duplicate rule");
                 continue;
             }
 
@@ -98,21 +95,20 @@ void parse_rules(const raw_configuration::vector &rule_array, configuration_coll
                 continue;
             }
 
-            auto rule = parse_rule(node, limits, source, addresses);
+            auto rule = parse_rule(node, limits, source);
 
             DDWAF_DEBUG("Parsed rule {}", id);
             info.add_loaded(id);
-            add_addresses_to_info(addresses, info);
             cfg.emplace_rule(std::move(id), std::move(rule));
         } catch (const unsupported_operator_version &e) {
             DDWAF_WARN("Skipping rule '{}': {}", id, e.what());
             info.add_skipped(id);
-        } catch (const std::exception &e) {
-            if (id.empty()) {
-                id = index_to_id(i);
-            }
+        } catch (const parsing_exception &e) {
             DDWAF_WARN("Failed to parse rule '{}': {}", id, e.what());
-            info.add_failed(id, e.what());
+            info.add_failed(i, id, e.severity(), e.what());
+        } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse rule '{}': {}", id, e.what());
+            info.add_failed(i, id, parser_error_severity::error, e.what());
         }
     }
 }

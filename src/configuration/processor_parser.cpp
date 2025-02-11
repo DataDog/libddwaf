@@ -6,7 +6,6 @@
 
 #include <exception>
 #include <string>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -14,10 +13,10 @@
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
 #include "configuration/common/expression_parser.hpp"
+#include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
 #include "configuration/common/reference_parser.hpp"
 #include "configuration/processor_parser.hpp"
-#include "exception.hpp"
 #include "log.hpp"
 #include "processor/base.hpp"
 #include "processor/extract_schema.hpp"
@@ -32,7 +31,7 @@ namespace ddwaf {
 
 namespace {
 std::vector<processor_mapping> parse_processor_mappings(
-    const raw_configuration::vector &root, address_container &addresses, const auto &param_names)
+    const raw_configuration::vector &root, const auto &param_names)
 {
     if (root.empty()) {
         throw ddwaf::parsing_error("empty mappings");
@@ -53,7 +52,6 @@ std::vector<processor_mapping> parse_processor_mappings(
             auto input = static_cast<raw_configuration::map>(inputs[0]);
             auto input_address = at<std::string>(input, "address");
 
-            addresses.optional.emplace(input_address);
             parameters.emplace_back(
                 processor_parameter{{processor_target{.index = get_target_index(input_address),
                     .name = std::move(input_address),
@@ -79,12 +77,10 @@ void parse_processors(const raw_configuration::vector &processor_array,
         auto node = static_cast<raw_configuration::map>(node_param);
         std::string id;
         try {
-            address_container addresses;
-
             id = at<std::string>(node, "id");
             if (cfg.contains_processor(id)) {
                 DDWAF_WARN("Duplicate processor: {}", id);
-                info.add_failed(id, "duplicate processor");
+                info.add_failed(id, parser_error_severity::error, "duplicate processor");
                 continue;
             }
 
@@ -112,32 +108,28 @@ void parse_processors(const raw_configuration::vector &processor_array,
             } else if (generator_id == "session_fingerprint") {
                 type = processor_type::session_fingerprint;
             } else {
-                DDWAF_WARN("Unknown generator: {}", generator_id);
-                info.add_failed(id, "unknown generator '" + generator_id + "'");
-                continue;
+                throw unknown_generator(generator_id);
             }
 
             auto conditions_array = at<raw_configuration::vector>(node, "conditions", {});
-            auto expr = parse_simplified_expression(conditions_array, addresses, limits);
+            auto expr = parse_simplified_expression(conditions_array, limits);
 
             auto params = at<raw_configuration::map>(node, "parameters");
             auto mappings_vec = at<raw_configuration::vector>(params, "mappings");
             std::vector<processor_mapping> mappings;
             if (type == processor_type::extract_schema) {
-                mappings =
-                    parse_processor_mappings(mappings_vec, addresses, extract_schema::param_names);
+                mappings = parse_processor_mappings(mappings_vec, extract_schema::param_names);
             } else if (type == processor_type::http_endpoint_fingerprint) {
-                mappings = parse_processor_mappings(
-                    mappings_vec, addresses, http_endpoint_fingerprint::param_names);
+                mappings =
+                    parse_processor_mappings(mappings_vec, http_endpoint_fingerprint::param_names);
             } else if (type == processor_type::http_header_fingerprint) {
-                mappings = parse_processor_mappings(
-                    mappings_vec, addresses, http_header_fingerprint::param_names);
+                mappings =
+                    parse_processor_mappings(mappings_vec, http_header_fingerprint::param_names);
             } else if (type == processor_type::http_network_fingerprint) {
-                mappings = parse_processor_mappings(
-                    mappings_vec, addresses, http_network_fingerprint::param_names);
+                mappings =
+                    parse_processor_mappings(mappings_vec, http_network_fingerprint::param_names);
             } else {
-                mappings = parse_processor_mappings(
-                    mappings_vec, addresses, session_fingerprint::param_names);
+                mappings = parse_processor_mappings(mappings_vec, session_fingerprint::param_names);
             }
 
             std::vector<reference_spec> scanners;
@@ -155,7 +147,8 @@ void parse_processors(const raw_configuration::vector &processor_array,
 
             if (!eval && !output) {
                 DDWAF_WARN("Processor {} not used for evaluation or output", id);
-                info.add_failed(id, "processor not used for evaluation or output");
+                info.add_failed(id, parser_error_severity::error,
+                    "processor not used for evaluation or output");
                 continue;
             }
             const processor_spec spec{.type = type,
@@ -167,17 +160,16 @@ void parse_processors(const raw_configuration::vector &processor_array,
 
             DDWAF_DEBUG("Parsed processor {}", id);
             info.add_loaded(id);
-            add_addresses_to_info(addresses, info);
             cfg.emplace_processor(std::move(id), spec);
         } catch (const unsupported_operator_version &e) {
             DDWAF_WARN("Skipping processor '{}': {}", id, e.what());
             info.add_skipped(id);
-        } catch (const std::exception &e) {
-            if (id.empty()) {
-                id = index_to_id(i);
-            }
+        } catch (const parsing_exception &e) {
             DDWAF_WARN("Failed to parse processor '{}': {}", id, e.what());
-            info.add_failed(id, e.what());
+            info.add_failed(i, id, e.severity(), e.what());
+        } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse processor '{}': {}", id, e.what());
+            info.add_failed(i, id, parser_error_severity::error, e.what());
         }
     }
 }

@@ -22,11 +22,9 @@ ddwaf::waf build_instance(std::string_view rule_file)
     }
 
     raw_configuration ruleset = object;
-    raw_configuration::map ruleset_map = static_cast<raw_configuration::map>(ruleset);
-
     waf_builder builder{object_limits{}, ddwaf_object_free, std::make_shared<obfuscator>()};
     ddwaf::null_ruleset_info info;
-    auto res = builder.add_or_update("default", ruleset_map, info);
+    auto res = builder.add_or_update("default", ruleset, info);
     ddwaf_object_free(&object);
 
     if (!res) {

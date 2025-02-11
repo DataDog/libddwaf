@@ -12,10 +12,10 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
+#include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
 #include "configuration/common/reference_parser.hpp"
 #include "configuration/rule_override_parser.hpp"
-#include "exception.hpp"
 #include "log.hpp"
 #include "ruleset_info.hpp"
 #include "uuid.hpp"
@@ -82,7 +82,6 @@ void parse_overrides(const raw_configuration::vector &override_array, configurat
     ruleset_info::base_section_info &info)
 {
     for (unsigned i = 0; i < override_array.size(); ++i) {
-        auto id = index_to_id(i);
         const auto &node_param = override_array[i];
         auto node = static_cast<raw_configuration::map>(node_param);
         try {
@@ -90,18 +89,21 @@ void parse_overrides(const raw_configuration::vector &override_array, configurat
             if (spec.type == reference_type::none) {
                 // This code is likely unreachable
                 DDWAF_WARN("Rule override with no targets");
-                info.add_failed(id, "rule override with no targets");
+                info.add_failed(i, parser_error_severity::error, "rule override with no targets");
                 continue;
             }
 
-            DDWAF_DEBUG("Parsed override {}", id);
-            info.add_loaded(id);
+            DDWAF_DEBUG("Parsed override index:{}", i);
+            info.add_loaded(i);
             // We use a UUID since we want to have a unique identifier across
             // all configurations
             cfg.emplace_override(uuidv4_generate_pseudo(), std::move(spec));
+        } catch (const parsing_exception &e) {
+            DDWAF_WARN("Failed to parse rule override: {}", e.what());
+            info.add_failed(i, e.severity(), e.what());
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse rule override: {}", e.what());
-            info.add_failed(id, e.what());
+            info.add_failed(i, parser_error_severity::error, e.what());
         }
     }
 }

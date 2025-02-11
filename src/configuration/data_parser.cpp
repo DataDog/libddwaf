@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <cstdint>
+#include <exception>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -13,9 +14,9 @@
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
+#include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
 #include "configuration/data_parser.hpp"
-#include "exception.hpp"
 #include "log.hpp"
 #include "uuid.hpp"
 
@@ -69,7 +70,8 @@ void parse_data(
             auto data = at<raw_configuration>(entry, "data");
             if (type != data_type::data_with_expiration && type != data_type::ip_with_expiration) {
                 DDWAF_DEBUG("Unknown type '{}' for data id '{}'", type_str, data_id);
-                info.add_failed(data_id, "unknown type '" + std::string{type_str} + "'");
+                info.add_failed(data_id, parser_error_severity::error,
+                    "unknown type: '" + std::string{type_str} + "'");
                 continue;
             }
             auto values = parse_data<data_spec::value_type>(data);
@@ -77,13 +79,12 @@ void parse_data(
             DDWAF_DEBUG("Parsed dynamic data '{}' of type '{}'", data_id, type_str);
             info.add_loaded(data_id);
             emplace_fn(std::move(data_id), std::move(id), type, std::move(values));
-        } catch (const ddwaf::exception &e) {
-            if (data_id.empty()) {
-                data_id = index_to_id(i);
-            }
-
+        } catch (const parsing_exception &e) {
             DDWAF_ERROR("Failed to parse data id '{}': {}", data_id, e.what());
-            info.add_failed(data_id, e.what());
+            info.add_failed(i, data_id, e.severity(), e.what());
+        } catch (const std::exception &e) {
+            DDWAF_ERROR("Failed to parse data id '{}': {}", data_id, e.what());
+            info.add_failed(i, data_id, parser_error_severity::error, e.what());
         }
     }
 }

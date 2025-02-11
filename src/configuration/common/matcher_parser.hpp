@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "configuration/common/raw_configuration.hpp"
+#include "exception.hpp"
 #include "matcher/base.hpp"
 #include "matcher/equals.hpp"
 #include "matcher/exact_match.hpp"
@@ -39,7 +40,7 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher(
     if constexpr (sizeof...(Rest) > 0) {
         return parse_matcher<Rest...>(name, params);
     } else {
-        throw ddwaf::parsing_error("unknown matcher: " + std::string(name));
+        throw unknown_operator(name);
     }
 }
 

@@ -4,15 +4,14 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2021 Datadog, Inc.
 #include <optional>
-#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
 
 #include "condition/base.hpp"
+#include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
 #include "configuration/common/transformer_parser.hpp"
-#include "exception.hpp"
 #include "transformer/base.hpp"
 
 namespace ddwaf {
@@ -86,7 +85,7 @@ std::vector<transformer_id> parse_transformers(
         } else if (transformer == "values_only") {
             source = ddwaf::data_source::values;
         } else {
-            throw ddwaf::parsing_error("invalid transformer " + std::string(transformer));
+            throw unknown_transformer(transformer);
         }
     }
     return transformers;

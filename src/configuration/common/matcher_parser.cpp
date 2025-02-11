@@ -18,9 +18,9 @@
 
 #include "configuration/common/common.hpp"
 #include "configuration/common/matcher_parser.hpp" // IWYU pragma: keep
+#include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
 #include "ddwaf.h"
-#include "exception.hpp"
 #include "matcher/base.hpp"
 #include "matcher/equals.hpp"
 #include "matcher/exact_match.hpp"
