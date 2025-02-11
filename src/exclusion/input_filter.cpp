@@ -9,7 +9,6 @@
 #include <set>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
 #include <utility>
 
 #include "clock.hpp"
@@ -26,7 +25,7 @@ namespace ddwaf::exclusion {
 using excluded_set = input_filter::excluded_set;
 
 input_filter::input_filter(std::string id, std::shared_ptr<expression> expr,
-    std::set<rule *> rule_targets, std::shared_ptr<object_filter> filter)
+    std::set<const core_rule *> rule_targets, std::shared_ptr<object_filter> filter)
     : id_(std::move(id)), expr_(std::move(expr)), rule_targets_(std::move(rule_targets)),
       filter_(std::move(filter))
 {
@@ -36,8 +35,7 @@ input_filter::input_filter(std::string id, std::shared_ptr<expression> expr,
 }
 
 std::optional<excluded_set> input_filter::match(const object_store &store, cache_type &cache,
-    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-    ddwaf::timer &deadline) const
+    const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const
 {
     DDWAF_DEBUG("Evaluating input filter '{}'", id_);
 
@@ -53,7 +51,7 @@ std::optional<excluded_set> input_filter::match(const object_store &store, cache
         return std::nullopt;
     }
 
-    return {{rule_targets_, std::move(objects)}};
+    return {{.rules = rule_targets_, .objects = std::move(objects)}};
 }
 
 } // namespace ddwaf::exclusion

@@ -30,6 +30,7 @@ bool compress_whitespace::transform_impl(cow_string &str)
         //  We check with read - 1 to make sure at least one space is commited
         if (str.at(read) == ' ' && str.at(read - 1) == ' ') {
             // Skip ahead
+            // NOLINTNEXTLINE(bugprone-inc-dec-in-conditions)
             while (++read < str.length() && str.at(read) == ' ') {}
 
             // Should we run the end of the loop?

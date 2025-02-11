@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <new>
@@ -168,10 +169,8 @@ void normalize_value(std::string_view key, std::string &buffer, bool trailing_se
 template <typename Derived, typename Output = std::string> struct field_generator {
     using output_type = Output;
 
-    field_generator() = default;
+public:
     ~field_generator() = default;
-    field_generator(const field_generator &) = default;
-    field_generator(field_generator &&) noexcept = default;
     field_generator &operator=(const field_generator &) = default;
     field_generator &operator=(field_generator &&) noexcept = default;
 
@@ -185,6 +184,12 @@ template <typename Derived, typename Output = std::string> struct field_generato
         }
     }
     output_type operator()() { return static_cast<Derived *>(this)->generate(); }
+
+private:
+    field_generator(const field_generator &) = default;
+    field_generator() = default;
+    field_generator(field_generator &&) noexcept = default;
+    friend Derived;
 };
 
 struct string_field : field_generator<string_field> {
@@ -254,9 +259,7 @@ struct key_hash_field : field_generator<key_hash_field> {
 
             const std::string_view key{
                 child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
-            if (max_string_size > key.size()) {
-                max_string_size = key.size();
-            }
+            max_string_size = std::max(max_string_size, key.size());
 
             keys.emplace_back(key);
         }
@@ -334,9 +337,7 @@ struct kv_hash_fields : field_generator<kv_hash_fields, std::pair<std::string, s
             }
 
             auto larger_size = std::max(key.size(), val.size());
-            if (max_string_size < larger_size) {
-                max_string_size = larger_size;
-            }
+            max_string_size = std::max(max_string_size, larger_size);
 
             kv_sorted.emplace_back(key, val);
         }
@@ -512,7 +513,7 @@ ddwaf_object generate_fragment_cached(std::string_view header,
     return buffer.to_object();
 }
 
-enum class header_type { unknown, standard, ip_origin, user_agent, datadog };
+enum class header_type : uint8_t { unknown, standard, ip_origin, user_agent, datadog };
 
 constexpr std::size_t standard_headers_length = 10;
 constexpr std::size_t ip_origin_headers_length = 10;
@@ -553,7 +554,7 @@ std::pair<header_type, unsigned> get_header_type_and_index(std::string_view head
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval_impl(
     const unary_argument<std::string_view> &method, const unary_argument<std::string_view> &uri_raw,
-    const unary_argument<const ddwaf_object *> &query,
+    const optional_argument<const ddwaf_object *> &query,
     const optional_argument<const ddwaf_object *> &body, processor_cache &cache,
     ddwaf::timer &deadline) const
 {
@@ -573,7 +574,7 @@ std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval
     try {
         res = generate_fragment_cached("http", cache.fingerprint.fragment_fields,
             string_field{method.value}, string_hash_field{stripped_uri},
-            key_hash_field{query.value}, optional_generator<key_hash_field>{body});
+            optional_generator<key_hash_field>{query}, optional_generator<key_hash_field>{body});
     } catch (const std::out_of_range &e) {
         DDWAF_WARN("Failed to generate http endpoint fingerprint: {}", e.what());
     }
@@ -586,6 +587,10 @@ std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_i
     const unary_argument<const ddwaf_object *> &headers, processor_cache & /*cache*/,
     ddwaf::timer &deadline) const
 {
+    if (headers.value->type != DDWAF_OBJ_MAP) {
+        return {{}, object_store::attribute::none};
+    }
+
     std::string known_header_bitset;
     known_header_bitset.resize(standard_headers_length, '0');
 
@@ -632,6 +637,10 @@ std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_
     const unary_argument<const ddwaf_object *> &headers, processor_cache & /*cache*/,
     ddwaf::timer &deadline) const
 {
+    if (headers.value->type != DDWAF_OBJ_MAP) {
+        return {{}, object_store::attribute::none};
+    }
+
     std::string ip_origin_bitset;
     ip_origin_bitset.resize(ip_origin_headers_length, '0');
 

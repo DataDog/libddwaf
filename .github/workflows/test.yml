@@ -156,8 +156,40 @@ jobs:
         run: VERBOSE=1 make -j $(nproc) waf_test waf_validator
         working-directory: Debug
 
-      - name: Test
+      - name: "Test (level: trace)"
         run: make test
+        env:
+          DDWAF_TEST_LOG_LEVEL: trace
+        working-directory: Debug
+
+      - name: "Test (level: debug)"
+        run: make test
+        env:
+          DDWAF_TEST_LOG_LEVEL: debug
+        working-directory: Debug
+
+      - name: "Test (level: error)"
+        run: make test
+        env:
+          DDWAF_TEST_LOG_LEVEL: error
+        working-directory: Debug
+
+      - name: "Test (level: warn)"
+        run: make test
+        env:
+          DDWAF_TEST_LOG_LEVEL: warn
+        working-directory: Debug
+
+      - name: "Test (level: info)"
+        run: make test
+        env:
+          DDWAF_TEST_LOG_LEVEL: info
+        working-directory: Debug
+
+      - name: "Test (level: off)"
+        run: make test
+        env:
+          DDWAF_TEST_LOG_LEVEL: off
         working-directory: Debug
 
       - name: Validate

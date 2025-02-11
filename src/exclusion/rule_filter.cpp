@@ -8,7 +8,6 @@
 #include <set>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
 #include <utility>
 
 #include "clock.hpp"
@@ -25,7 +24,7 @@ namespace ddwaf::exclusion {
 using excluded_set = rule_filter::excluded_set;
 
 rule_filter::rule_filter(std::string id, std::shared_ptr<expression> expr,
-    std::set<rule *> rule_targets, filter_mode mode, std::string action)
+    std::set<const core_rule *> rule_targets, filter_mode mode, std::string action)
     : id_(std::move(id)), expr_(std::move(expr)), mode_(mode), action_(std::move(action))
 {
     if (!expr_) {
@@ -39,8 +38,7 @@ rule_filter::rule_filter(std::string id, std::shared_ptr<expression> expr,
 }
 
 std::optional<excluded_set> rule_filter::match(const object_store &store, cache_type &cache,
-    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
-    ddwaf::timer &deadline) const
+    const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const
 {
     DDWAF_DEBUG("Evaluating rule filter '{}'", id_);
 
@@ -54,7 +52,7 @@ std::optional<excluded_set> rule_filter::match(const object_store &store, cache_
         return std::nullopt;
     }
 
-    return {{rule_targets_, res.ephemeral, mode_, action_}};
+    return {{.rules = rule_targets_, .ephemeral = res.ephemeral, .mode = mode_, .action = action_}};
 }
 
 } // namespace ddwaf::exclusion

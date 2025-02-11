@@ -8,7 +8,6 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <utility>
 
 #include "clock.hpp"
@@ -114,8 +113,7 @@ ResultType eval_target(Iterator &it, std::string_view address, bool ephemeral,
 }
 
 const matcher::base *get_matcher(const std::unique_ptr<matcher::base> &matcher,
-    const std::string &data_id,
-    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers)
+    const std::string &data_id, const matcher_mapper &dynamic_matchers)
 {
     if (matcher || data_id.empty()) {
         return matcher.get();
@@ -132,8 +130,7 @@ const matcher::base *get_matcher(const std::unique_ptr<matcher::base> &matcher,
 } // namespace
 
 eval_result scalar_condition::eval(condition_cache &cache, const object_store &store,
-    const exclusion::object_set_ref &objects_excluded,
-    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
+    const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
     const auto *matcher = get_matcher(matcher_, data_id_, dynamic_matchers);
@@ -183,8 +180,7 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
 }
 
 eval_result scalar_negated_condition::eval(condition_cache &cache, const object_store &store,
-    const exclusion::object_set_ref &objects_excluded,
-    const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
+    const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
     if (deadline.expired()) {
@@ -222,9 +218,14 @@ eval_result scalar_negated_condition::eval(condition_cache &cache, const object_
     }
 
     if (!match) {
-        cache.match = {{{{"input"sv, object_to_string(*object), target_.name,
-                            {target_.key_path.begin(), target_.key_path.end()}}},
-            {}, matcher->negated_name(), matcher->to_string(), ephemeral}};
+        cache.match = {{.args = {{.name = "input"sv,
+                            .resolved = object_to_string(*object),
+                            .address = target_.name,
+                            .key_path = {target_.key_path.begin(), target_.key_path.end()}}},
+            .highlights = {},
+            .operator_name = matcher->negated_name(),
+            .operator_value = matcher->to_string(),
+            .ephemeral = ephemeral}};
         return {.outcome = true, .ephemeral = ephemeral};
     }
 

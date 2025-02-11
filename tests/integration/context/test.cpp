@@ -987,4 +987,54 @@ TEST(TestContextIntegration, MultipleModuleSingleCollectionMatch)
     ddwaf_destroy(handle);
 }
 
+TEST(TestContextIntegration, TimeoutBeyondLimit)
+{
+    // Initialize a WAF rule
+    auto rule = read_file("processor.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    // Setup the parameter structure
+    ddwaf_object parameter = DDWAF_OBJECT_MAP;
+    ddwaf_object subMap = DDWAF_OBJECT_MAP;
+    ddwaf_object tmp;
+    ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule2"));
+    ddwaf_object_map_add(&subMap, "key", ddwaf_object_string(&tmp, "rule3"));
+    ddwaf_object_map_add(&parameter, "value2", &subMap); // ddwaf_object_string(&,"rule3"));
+
+    ddwaf_result ret;
+    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &ret, std::numeric_limits<uint64_t>::max()),
+        DDWAF_MATCH);
+
+    EXPECT_FALSE(ret.timeout);
+    EXPECT_EVENTS(ret, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                                           .op_value = "rule2",
+                                           .highlight = "rule2",
+                                           .args = {{
+                                               .value = "rule2",
+                                               .address = "value",
+                                           }}},
+                               {.op = "match_regex",
+                                   .op_value = "rule3",
+                                   .highlight = "rule3",
+                                   .args = {{
+                                       .value = "rule3",
+                                       .address = "value2",
+                                       .path = {"key"},
+                                   }}}}});
+
+    ddwaf_result_free(&ret);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
 } // namespace

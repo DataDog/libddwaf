@@ -66,7 +66,7 @@
 namespace ddwaf {
 
 namespace {
-enum class token_type {
+enum class token_type : uint8_t {
     none,
     scheme,
     scheme_authority_or_path,

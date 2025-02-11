@@ -8,12 +8,14 @@
 
 #include <memory>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "action_mapper.hpp"
-#include "collection.hpp"
+#include "builder/module_builder.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
+#include "module.hpp"
 #include "obfuscator.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
@@ -22,76 +24,44 @@
 namespace ddwaf {
 
 struct ruleset {
-    void insert_rule(const std::shared_ptr<rule> &rule)
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    void insert_rules(std::shared_ptr<const std::vector<core_rule>> base,
+        std::shared_ptr<const std::vector<core_rule>> user)
     {
-        rules.emplace_back(rule);
-        std::string_view type = rule->get_tag("type");
-        std::string_view mod = rule->get_tag_or("module", "waf");
+        base_rules = std::move(base);
+        user_rules = std::move(user);
 
-        auto [it, res] = collection_types.emplace(ddwaf::fmt::format("{}.{}", mod, type));
-        const auto &collection = *it;
-        if (rule->get_actions().empty()) {
-            if (rule->get_source() == rule::source_type::user) {
-                user_collections[collection].insert(rule);
-            } else {
-                base_collections[collection].insert(rule);
-            }
-        } else {
-            if (rule->get_source() == rule::source_type::user) {
-                user_priority_collections[collection].insert(rule);
-            } else {
-                base_priority_collections[collection].insert(rule);
-            }
-        }
-        rule->get_addresses(rule_addresses);
+        for (const auto &rule : *base_rules) { rule.get_addresses(rule_addresses); }
+        for (const auto &rule : *user_rules) { rule.get_addresses(rule_addresses); }
+
+        rule_module_set_builder builder;
+        rule_modules = builder.build(*base_rules, *user_rules);
     }
 
-    void insert_rules(const std::vector<std::shared_ptr<rule>> &rules_)
+    void insert_filters(std::shared_ptr<const std::vector<exclusion::rule_filter>> filters)
     {
-        for (const auto &rule : rules_) { insert_rule(rule); }
+        rule_filters = std::move(filters);
+        for (const auto &filter : *rule_filters) { filter.get_addresses(filter_addresses); }
     }
 
-    template <typename T>
-    void insert_filters(const std::unordered_map<std::string_view, std::shared_ptr<T>> &filters)
-        requires std::is_same_v<T, exclusion::rule_filter> or
-                 std::is_same_v<T, exclusion::input_filter>
+    void insert_filters(std::shared_ptr<const std::vector<exclusion::input_filter>> filters)
     {
-        if constexpr (std::is_same_v<T, exclusion::rule_filter>) {
-            rule_filters = filters;
-        } else if constexpr (std::is_same_v<T, exclusion::input_filter>) {
-            input_filters = filters;
-        }
-
-        for (const auto &[key, filter] : filters) { filter->get_addresses(filter_addresses); }
+        input_filters = std::move(filters);
+        for (const auto &filter : *input_filters) { filter.get_addresses(filter_addresses); }
     }
 
-    template <typename T>
-    void insert_filter(const std::shared_ptr<T> &filter)
-        requires std::is_same_v<T, exclusion::rule_filter> or
-                 std::is_same_v<T, exclusion::input_filter>
+    void insert_preprocessors(
+        std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> processors)
     {
-        if constexpr (std::is_same_v<T, exclusion::rule_filter>) {
-            rule_filters.emplace(filter->get_id(), filter);
-        } else if constexpr (std::is_same_v<T, exclusion::input_filter>) {
-            input_filters.emplace(filter->get_id(), filter);
-        }
-        filter->get_addresses(filter_addresses);
+        preprocessors = std::move(processors);
+        for (const auto &proc : *preprocessors) { proc->get_addresses(preprocessor_addresses); }
     }
 
-    void insert_preprocessors(const auto &processors)
+    void insert_postprocessors(
+        std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> processors)
     {
-        preprocessors = processors;
-        for (const auto &[key, proc] : preprocessors) {
-            proc->get_addresses(preprocessor_addresses);
-        }
-    }
-
-    void insert_postprocessors(const auto &processors)
-    {
-        postprocessors = processors;
-        for (const auto &[key, proc] : postprocessors) {
-            proc->get_addresses(postprocessor_addresses);
-        }
+        postprocessors = std::move(processors);
+        for (const auto &proc : *postprocessors) { proc->get_addresses(postprocessor_addresses); }
     }
 
     [[nodiscard]] const std::vector<const char *> &get_root_addresses()
@@ -144,39 +114,39 @@ struct ruleset {
                 }
             };
 
-            for (const auto &rule : rules) {
-                for (const auto &action : rule->get_actions()) { maybe_add_action(action); }
+            for (const auto &rule : *base_rules) {
+                for (const auto &action : rule.get_actions()) { maybe_add_action(action); }
             }
 
-            for (const auto &[name, filter] : rule_filters) {
-                maybe_add_action(filter->get_action());
+            for (const auto &rule : *user_rules) {
+                for (const auto &action : rule.get_actions()) { maybe_add_action(action); }
             }
+
+            for (const auto &filter : *rule_filters) { maybe_add_action(filter.get_action()); }
         }
         return available_action_types;
     }
 
     ddwaf_object_free_fn free_fn{ddwaf_object_free};
-    std::shared_ptr<ddwaf::obfuscator> event_obfuscator;
+    std::shared_ptr<const ddwaf::obfuscator> event_obfuscator;
 
-    std::unordered_map<std::string_view, std::shared_ptr<base_processor>> preprocessors;
-    std::unordered_map<std::string_view, std::shared_ptr<base_processor>> postprocessors;
+    std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> preprocessors;
+    std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> postprocessors;
 
-    std::unordered_map<std::string_view, std::shared_ptr<exclusion::rule_filter>> rule_filters;
-    std::unordered_map<std::string_view, std::shared_ptr<exclusion::input_filter>> input_filters;
+    std::shared_ptr<const std::vector<exclusion::rule_filter>> rule_filters;
+    std::shared_ptr<const std::vector<exclusion::input_filter>> input_filters;
 
-    std::vector<std::shared_ptr<rule>> rules;
-    std::unordered_map<std::string, std::shared_ptr<matcher::base>> rule_matchers;
-    std::unordered_map<std::string, std::shared_ptr<matcher::base>> exclusion_matchers;
+    std::shared_ptr<const std::vector<core_rule>> base_rules;
+    std::shared_ptr<const std::vector<core_rule>> user_rules;
 
-    std::vector<std::shared_ptr<const scanner>> scanners;
-    std::shared_ptr<action_mapper> actions;
+    std::shared_ptr<const matcher_mapper> rule_matchers;
+    std::shared_ptr<const matcher_mapper> exclusion_matchers;
 
-    // The key used to organise collections is "${rule.module}.${rule.type}"
-    std::unordered_set<std::string> collection_types;
-    std::unordered_map<std::string_view, priority_collection> user_priority_collections;
-    std::unordered_map<std::string_view, priority_collection> base_priority_collections;
-    std::unordered_map<std::string_view, collection> user_collections;
-    std::unordered_map<std::string_view, collection> base_collections;
+    std::shared_ptr<const std::vector<scanner>> scanners;
+    std::shared_ptr<const action_mapper> actions;
+
+    // Rule modules
+    std::array<rule_module, rule_module_count> rule_modules;
 
     std::unordered_map<target_index, std::string> rule_addresses;
     std::unordered_map<target_index, std::string> filter_addresses;

@@ -15,10 +15,10 @@
 
 namespace ddwaf {
 
-class rule;
+class core_rule;
 
 struct event {
-    const ddwaf::rule *rule{nullptr};
+    const core_rule *rule{nullptr};
     std::vector<condition_match> matches;
     bool ephemeral{false};
     std::string_view action_override;

@@ -6,12 +6,15 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 #include "ddwaf.h"
 
-namespace ddwaf::matcher {
+namespace ddwaf {
+namespace matcher {
 
 class base {
 public:
@@ -104,4 +107,8 @@ public:
     }
 };
 
-} // namespace ddwaf::matcher
+} // namespace matcher
+
+using matcher_mapper = std::unordered_map<std::string, std::unique_ptr<matcher::base>>;
+
+} // namespace ddwaf

@@ -13,6 +13,8 @@
 
 namespace ddwaf::object {
 
+namespace {
+
 void clone_helper(const ddwaf_object &source, ddwaf_object &destination)
 {
     switch (source.type) {
@@ -45,6 +47,8 @@ void clone_helper(const ddwaf_object &source, ddwaf_object &destination)
         break;
     }
 }
+
+} // namespace
 
 ddwaf_object clone(ddwaf_object *input)
 {

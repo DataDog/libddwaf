@@ -9,6 +9,12 @@
 #include <atomic>
 #include <chrono>
 
+#if defined __has_builtin
+#  if __has_builtin(__builtin_add_overflow)
+#    define HAS_BUILTIN_ADD_OVERFLOW
+#  endif
+#endif
+
 namespace ddwaf {
 #ifndef __linux__
 using monotonic_clock = std::chrono::steady_clock;
@@ -28,14 +34,14 @@ private:
 };
 #endif // __linux__
 
-class timer {
+// Syscall period refers to the number of calls to expired() before
+// clock_gettime is called. This approach is only feasible because the
+// WAF calls expired() quite often, otherwise another solution would be
+// required to minimise syscalls.
+template <std::size_t SyscallPeriod = 16> class base_timer {
 public:
-    // Syscall period refers to the number of calls to expired() before
-    // clock_gettime is called. This approach is only feasible because the
-    // WAF calls expired() quite often, otherwise another solution would be
-    // required to minimise syscalls.
-    explicit timer(std::chrono::microseconds exp, uint32_t syscall_period = default_syscall_period)
-        : start_(monotonic_clock::now()), end_(start_ + exp), syscall_period_(syscall_period)
+    explicit base_timer(std::chrono::nanoseconds exp)
+        : start_(monotonic_clock::now()), end_(add_saturated(start_, exp))
     {}
 
     bool expired()
@@ -44,7 +50,7 @@ public:
             if (end_ <= monotonic_clock::now()) {
                 expired_ = true;
             } else {
-                calls_ = syscall_period_;
+                calls_ = SyscallPeriod;
             }
         }
         return expired_;
@@ -58,12 +64,36 @@ public:
     }
 
 protected:
-    constexpr static uint32_t default_syscall_period{16};
+    static monotonic_clock::time_point add_saturated(
+        monotonic_clock::time_point augend, std::chrono::nanoseconds addend)
+    {
+#ifdef HAS_BUILTIN_ADD_OVERFLOW
+        using duration = monotonic_clock::duration;
+
+        duration::rep augend_count = augend.time_since_epoch().count();
+        duration::rep addend_count = addend.count();
+        duration::rep result;
+
+        if (__builtin_add_overflow(augend_count, addend_count, &result)) {
+            return monotonic_clock::time_point::max();
+        }
+
+        return monotonic_clock::time_point(duration(result));
+#else
+        return (addend > (monotonic_clock::time_point::max() - augend))
+                   ? monotonic_clock::time_point::max()
+                   : augend + addend;
+#endif
+    }
 
     monotonic_clock::time_point start_;
     monotonic_clock::time_point end_;
-    const uint32_t syscall_period_;
     uint32_t calls_{1};
     bool expired_{false};
 };
+
+using timer = base_timer<16>;
+
+inline timer endless_timer() { return timer{std::chrono::nanoseconds::max()}; }
+
 } // namespace ddwaf

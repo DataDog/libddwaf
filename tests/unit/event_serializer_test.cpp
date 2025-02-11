@@ -6,6 +6,7 @@
 
 #include "common/gtest_utils.hpp"
 
+#include "builder/action_mapper_builder.hpp"
 #include "event.hpp"
 #include "rule.hpp"
 #include "utils.hpp"
@@ -41,7 +42,7 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
 
 TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
 {
-    ddwaf::rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
+    core_rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
         std::make_shared<expression>(), {"block", "monitor_request"}};
 
     ddwaf::event event;
@@ -78,7 +79,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
 
 TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
 {
-    ddwaf::rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
+    core_rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
         std::make_shared<expression>(), {"block", "monitor_request"}};
 
     ddwaf::event event;
@@ -153,9 +154,9 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
-    ddwaf::rule rule1{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
+    core_rule rule1{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
         std::make_shared<expression>(), {"block", "monitor_request"}};
-    ddwaf::rule rule2{"xasd1023", "pseudorandom rule", {{"type", "test"}, {"category", "none"}},
+    core_rule rule2{"xasd1023", "pseudorandom rule", {{"type", "test"}, {"category", "none"}},
         std::make_shared<expression>(), {"unblock"}};
     std::vector<ddwaf::event> events;
     {
@@ -227,7 +228,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
 
 TEST(TestEventSerializer, SerializeEventNoActions)
 {
-    ddwaf::rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
+    core_rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
         std::make_shared<expression>()};
 
     ddwaf::event event;
@@ -265,7 +266,7 @@ TEST(TestEventSerializer, SerializeEventNoActions)
 
 TEST(TestEventSerializer, SerializeAllTags)
 {
-    ddwaf::rule rule{"xasd1022", "random rule",
+    core_rule rule{"xasd1022", "random rule",
         {{"type", "test"}, {"category", "none"}, {"tag0", "value0"}, {"tag1", "value1"},
             {"confidence", "none"}},
         std::make_shared<expression>(), {"unblock"}};
@@ -307,7 +308,7 @@ TEST(TestEventSerializer, SerializeAllTags)
 
 TEST(TestEventSerializer, NoMonitorActions)
 {
-    ddwaf::rule rule{"xasd1022", "random rule",
+    core_rule rule{"xasd1022", "random rule",
         {{"type", "test"}, {"category", "none"}, {"tag0", "value0"}, {"tag1", "value1"},
             {"confidence", "none"}},
         std::make_shared<expression>(), {"monitor"}};
@@ -347,7 +348,7 @@ TEST(TestEventSerializer, NoMonitorActions)
 
 TEST(TestEventSerializer, UndefinedActions)
 {
-    ddwaf::rule rule{"xasd1022", "random rule",
+    core_rule rule{"xasd1022", "random rule",
         {{"type", "test"}, {"category", "none"}, {"tag0", "value0"}, {"tag1", "value1"},
             {"confidence", "none"}},
         std::make_shared<expression>(), {"unblock_request"}};
@@ -387,7 +388,7 @@ TEST(TestEventSerializer, UndefinedActions)
 
 TEST(TestEventSerializer, StackTraceAction)
 {
-    ddwaf::rule rule{"xasd1022", "random rule",
+    core_rule rule{"xasd1022", "random rule",
         {{"type", "test"}, {"category", "none"}, {"tag0", "value0"}, {"tag1", "value1"},
             {"confidence", "none"}},
         std::make_shared<expression>(), {"stack_trace"}};

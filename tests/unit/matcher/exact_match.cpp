@@ -67,9 +67,61 @@ TEST(TestExactMatch, Expiration)
         std::chrono::system_clock::now().time_since_epoch())
                        .count();
 
-    exact_match matcher(std::vector<std::pair<std::string_view, uint64_t>>{{"aaaa", now - 1},
+    exact_match matcher(std::vector<std::pair<std::string, uint64_t>>{{"aaaa", now - 1},
         {"bbbb", now + 100}, {"cccc", now - 1}, {"dddd", 0}, {"dddd", now - 1}, {"eeee", now - 1},
         {"eeee", 0}, {"ffff", now + 100}, {"ffff", now}});
+
+    EXPECT_STREQ(matcher.name().data(), "exact_match");
+    EXPECT_STREQ(matcher.to_string().data(), "");
+
+    EXPECT_FALSE(matcher.match("aaaa").first);
+    EXPECT_FALSE(matcher.match("cccc").first);
+
+    std::string_view input{"bbbb"};
+    auto [res, highlight] = matcher.match(input);
+    EXPECT_TRUE(res);
+    EXPECT_STREQ(highlight.c_str(), input.data());
+
+    EXPECT_TRUE(matcher.match("dddd").first);
+    EXPECT_TRUE(matcher.match("eeee").first);
+    EXPECT_TRUE(matcher.match("ffff").first);
+}
+
+TEST(TestExactMatch, MultivectorConstructor)
+{
+    ddwaf::indexed_multivector<std::string, std::pair<std::string, uint64_t>> ivec;
+    ivec.emplace("vec1", {{"aaaa", 0}, {"bbbb", 0}, {"cccc", 0}, {"dddd", 0}});
+    ivec.emplace("vec2", {{"eeee", 0}, {"ffff", 0}});
+    exact_match matcher(ivec);
+
+    EXPECT_STREQ(matcher.name().data(), "exact_match");
+    EXPECT_STREQ(matcher.to_string().data(), "");
+
+    EXPECT_TRUE(matcher.match("aaaa").first);
+    EXPECT_TRUE(matcher.match("cccc").first);
+
+    std::string_view input{"bbbb"};
+    auto [res, highlight] = matcher.match(input);
+    EXPECT_TRUE(res);
+    EXPECT_STREQ(highlight.c_str(), input.data());
+
+    EXPECT_TRUE(matcher.match("dddd").first);
+    EXPECT_TRUE(matcher.match("eeee").first);
+    EXPECT_TRUE(matcher.match("ffff").first);
+    EXPECT_FALSE(matcher.match("gggg").first);
+}
+
+TEST(TestExactMatch, MultivectorConstructorExpiration)
+{
+    uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::system_clock::now().time_since_epoch())
+                       .count();
+
+    ddwaf::indexed_multivector<std::string, std::pair<std::string, uint64_t>> ivec;
+    ivec.emplace("vec1", {{"aaaa", now - 1}, {"bbbb", now + 100}, {"cccc", now - 1}, {"dddd", 0}});
+    ivec.emplace("vec2", {{"dddd", now - 1}, {"eeee", now - 1}});
+    ivec.emplace("vec3", {{"eeee", 0}, {"ffff", now + 100}, {"ffff", now}});
+    exact_match matcher(ivec);
 
     EXPECT_STREQ(matcher.name().data(), "exact_match");
     EXPECT_STREQ(matcher.to_string().data(), "");

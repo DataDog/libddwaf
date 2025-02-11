@@ -11,7 +11,7 @@
 #include <string_view>
 #include <utility>
 
-#include "exception.hpp"
+#include "configuration/common/parser_exception.hpp"
 #include "matcher/regex_match.hpp"
 #include "re2.h"
 #include "stringpiece.h"

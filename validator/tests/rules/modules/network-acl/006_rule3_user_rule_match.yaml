@@ -1,0 +1,21 @@
+{
+  name: "Validate that base rules still match when there's no contention",
+  runs: [
+    {
+      persistent-input: {
+        custom-rule3-input: 192.168.0.1
+      },
+      rules: [
+        {
+          custom-3: [
+            {
+              address: custom-rule3-input,
+              value: 192.168.0.1
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

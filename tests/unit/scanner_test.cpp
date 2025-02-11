@@ -23,7 +23,7 @@ TEST(TestScanner, SimpleMatch)
 
     std::unordered_map<std::string, std::string> tags{{"type", "PII"}, {"category", "IP"}};
     scanner scnr{"something", tags, std::move(key_matcher), std::move(value_matcher)};
-    EXPECT_STREQ(scnr.get_id().data(), "something");
+    EXPECT_STRV(scnr.get_id(), "something");
     EXPECT_EQ(scnr.get_tags(), tags);
 
     ddwaf_object key;
@@ -48,7 +48,7 @@ TEST(TestScanner, SimpleMatchNoKeyMatcher)
 
     std::unordered_map<std::string, std::string> tags{{"type", "PII"}, {"category", "IP"}};
     scanner scnr{"something", tags, {}, std::move(value_matcher)};
-    EXPECT_STREQ(scnr.get_id().data(), "something");
+    EXPECT_STRV(scnr.get_id(), "something");
     EXPECT_EQ(scnr.get_tags(), tags);
 
     ddwaf_object key;
@@ -73,7 +73,7 @@ TEST(TestScanner, SimpleMatchNoValueMatcher)
 
     std::unordered_map<std::string, std::string> tags{{"type", "PII"}, {"category", "IP"}};
     scanner scnr{"something", tags, std::move(key_matcher), {}};
-    EXPECT_STREQ(scnr.get_id().data(), "something");
+    EXPECT_STRV(scnr.get_id(), "something");
     EXPECT_EQ(scnr.get_tags(), tags);
 
     ddwaf_object key;
@@ -102,7 +102,7 @@ TEST(TestScanner, NoMatchOnKey)
     std::unordered_map<std::string, std::string> tags{
         {"type", "PII"}, {"category", "IP"}, {"danger", "0"}};
     scanner scnr{"0", tags, std::move(key_matcher), std::move(value_matcher)};
-    EXPECT_STREQ(scnr.get_id().data(), "0");
+    EXPECT_STRV(scnr.get_id(), "0");
     EXPECT_EQ(scnr.get_tags(), tags);
 
     ddwaf_object key;
@@ -130,7 +130,7 @@ TEST(TestScanner, NoMatchOnValue)
 
     std::unordered_map<std::string, std::string> tags{};
     scanner scnr{"null", tags, std::move(key_matcher), std::move(value_matcher)};
-    EXPECT_STREQ(scnr.get_id().data(), "null");
+    EXPECT_STRV(scnr.get_id(), "null");
     EXPECT_EQ(scnr.get_tags(), tags);
 
     ddwaf_object key;
@@ -159,7 +159,7 @@ TEST(TestScanner, InvalidKey)
     std::unordered_map<std::string, std::string> tags{
         {"type", "PII"}, {"category", "IP"}, {"danger", "0"}};
     scanner scnr{"0", tags, std::move(key_matcher), std::move(value_matcher)};
-    EXPECT_STREQ(scnr.get_id().data(), "0");
+    EXPECT_STRV(scnr.get_id(), "0");
     EXPECT_EQ(scnr.get_tags(), tags);
 
     ddwaf_object key;
@@ -187,7 +187,7 @@ TEST(TestScanner, InvalidValue)
 
     std::unordered_map<std::string, std::string> tags{};
     scanner scnr{"null", tags, std::move(key_matcher), std::move(value_matcher)};
-    EXPECT_STREQ(scnr.get_id().data(), "null");
+    EXPECT_STRV(scnr.get_id(), "null");
     EXPECT_EQ(scnr.get_tags(), tags);
 
     ddwaf_object key;

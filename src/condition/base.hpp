@@ -80,8 +80,7 @@ public:
     base_condition &operator=(base_condition &&) = default;
 
     virtual eval_result eval(condition_cache &cache, const object_store &store,
-        const exclusion::object_set_ref &objects_excluded,
-        const std::unordered_map<std::string, std::shared_ptr<matcher::base>> &dynamic_matchers,
+        const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
         ddwaf::timer &deadline) const = 0;
 
     virtual void get_addresses(std::unordered_map<target_index, std::string> &addresses) const = 0;

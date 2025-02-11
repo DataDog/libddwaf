@@ -129,19 +129,27 @@ eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path
     for (const auto &param : params) {
         auto res = lfi_impl(path.value, *param.value, objects_excluded, limits_, deadline);
         if (res.has_value()) {
-            std::vector<std::string> path_kp{path.key_path.begin(), path.key_path.end()};
+            const std::vector<std::string> path_kp{path.key_path.begin(), path.key_path.end()};
             const bool ephemeral = path.ephemeral || param.ephemeral;
 
             auto &[highlight, param_kp] = res.value();
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
 
-            cache.match =
-                condition_match{{{"resource"sv, std::string{path.value}, path.address, path_kp},
-                                    {"params"sv, highlight, param.address, param_kp}},
-                    {std::move(highlight)}, "lfi_detector", {}, ephemeral};
+            cache.match = condition_match{.args = {{.name = "resource"sv,
+                                                       .resolved = std::string{path.value},
+                                                       .address = path.address,
+                                                       .key_path = path_kp},
+                                              {.name = "params"sv,
+                                                  .resolved = highlight,
+                                                  .address = param.address,
+                                                  .key_path = param_kp}},
+                .highlights = {std::move(highlight)},
+                .operator_name = "lfi_detector",
+                .operator_value = {},
+                .ephemeral = ephemeral};
 
-            return {true, path.ephemeral || param.ephemeral};
+            return {.outcome = true, .ephemeral = path.ephemeral || param.ephemeral};
         }
     }
 
