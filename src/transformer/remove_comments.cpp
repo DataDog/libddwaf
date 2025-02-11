@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 #include <cstddef>
+#include <cstdint>
 #include <utility>
 
 #include "transformer/common/cow_string.hpp"
@@ -13,7 +14,7 @@ namespace ddwaf::transformer {
 
 bool remove_comments::transform_impl(cow_string &str)
 {
-    enum class comment_type { unknown, html, c, eol } type = comment_type::unknown;
+    enum class comment_type : uint8_t { unknown, html, c, eol } type = comment_type::unknown;
 
     bool comment_found = false;
 

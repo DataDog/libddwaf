@@ -215,11 +215,13 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
             }
         }
 
-        // If the injection includes the scheme check if it's still a valid one
+        // If the injection includes the scheme and beyond, check if the
+        // potentially injected scheme is still a valid one
         //
         //  scheme://userinfo@host:port/path?query#fragment
-        //  ───────────────────>
-        if (param_index == 0 && !authorised_scheme_set.contains(uri.scheme)) {
+        //  ───────>
+        if (!uri.scheme.empty() && param_index == 0 && param.size() > uri.scheme.size() &&
+            !authorised_scheme_set.contains(uri.scheme)) {
             return {{std::string(param), it.get_current_path()}};
         }
 
@@ -267,19 +269,27 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
         auto res = ssrf_impl(*decomposed, *param.value, objects_excluded, limits_,
             dangerous_ip_matcher_, authorised_schemes_, deadline);
         if (res.has_value()) {
-            std::vector<std::string> uri_kp{uri.key_path.begin(), uri.key_path.end()};
+            const std::vector<std::string> uri_kp{uri.key_path.begin(), uri.key_path.end()};
             const bool ephemeral = uri.ephemeral || param.ephemeral;
 
             auto &[highlight, param_kp] = res.value();
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
 
-            cache.match =
-                condition_match{{{"resource"sv, std::string{uri.value}, uri.address, uri_kp},
-                                    {"params"sv, highlight, param.address, param_kp}},
-                    {std::move(highlight)}, "ssrf_detector", {}, ephemeral};
+            cache.match = condition_match{.args = {{.name = "resource"sv,
+                                                       .resolved = std::string{uri.value},
+                                                       .address = uri.address,
+                                                       .key_path = uri_kp},
+                                              {.name = "params"sv,
+                                                  .resolved = highlight,
+                                                  .address = param.address,
+                                                  .key_path = param_kp}},
+                .highlights = {std::move(highlight)},
+                .operator_name = "ssrf_detector",
+                .operator_value = {},
+                .ephemeral = ephemeral};
 
-            return {true, ephemeral};
+            return {.outcome = true, .ephemeral = ephemeral};
         }
     }
 

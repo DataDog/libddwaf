@@ -22,8 +22,8 @@ public:
           value_matcher_(std::move(value_matcher))
     {}
 
-    scanner(const scanner &) = delete;
-    scanner &operator=(const scanner &) = delete;
+    scanner(const scanner &) = default;
+    scanner &operator=(const scanner &) = default;
 
     scanner(scanner &&) = default;
     scanner &operator=(scanner &&) = default;
@@ -49,9 +49,10 @@ public:
 
     const std::unordered_map<std::string, std::string> &get_tags() const { return tags_; }
     std::string_view get_id() const { return id_; }
+    const std::string &get_id_ref() const { return id_; }
 
 protected:
-    static bool eval_matcher(const std::unique_ptr<matcher::base> &matcher, const ddwaf_object &obj)
+    static bool eval_matcher(const std::shared_ptr<matcher::base> &matcher, const ddwaf_object &obj)
     {
         if (!matcher) {
             return true;
@@ -64,8 +65,8 @@ protected:
 
     std::string id_;
     std::unordered_map<std::string, std::string> tags_;
-    std::unique_ptr<matcher::base> key_matcher_;
-    std::unique_ptr<matcher::base> value_matcher_;
+    std::shared_ptr<matcher::base> key_matcher_;
+    std::shared_ptr<matcher::base> value_matcher_;
 };
 
 } // namespace ddwaf

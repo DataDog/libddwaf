@@ -1,14 +1,12 @@
 set(LIBDDWAF_SOURCE
-    ${libddwaf_SOURCE_DIR}/src/ruleset_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/clock.cpp
-    ${libddwaf_SOURCE_DIR}/src/parameter.cpp
     ${libddwaf_SOURCE_DIR}/src/interface.cpp
     ${libddwaf_SOURCE_DIR}/src/context.cpp
     ${libddwaf_SOURCE_DIR}/src/context_allocator.cpp
     ${libddwaf_SOURCE_DIR}/src/event.cpp
     ${libddwaf_SOURCE_DIR}/src/object.cpp
     ${libddwaf_SOURCE_DIR}/src/object_store.cpp
-    ${libddwaf_SOURCE_DIR}/src/collection.cpp
+    ${libddwaf_SOURCE_DIR}/src/module.cpp
     ${libddwaf_SOURCE_DIR}/src/expression.cpp
     ${libddwaf_SOURCE_DIR}/src/ruleset_info.cpp
     ${libddwaf_SOURCE_DIR}/src/ip_utils.cpp
@@ -17,12 +15,15 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/obfuscator.cpp
     ${libddwaf_SOURCE_DIR}/src/uri_utils.cpp
     ${libddwaf_SOURCE_DIR}/src/utils.cpp
-    ${libddwaf_SOURCE_DIR}/src/waf.cpp
     ${libddwaf_SOURCE_DIR}/src/platform.cpp
     ${libddwaf_SOURCE_DIR}/src/sha256.cpp
     ${libddwaf_SOURCE_DIR}/src/uuid.cpp
     ${libddwaf_SOURCE_DIR}/src/action_mapper.cpp
+    ${libddwaf_SOURCE_DIR}/src/builder/action_mapper_builder.cpp
+    ${libddwaf_SOURCE_DIR}/src/builder/matcher_builder.cpp
+    ${libddwaf_SOURCE_DIR}/src/builder/module_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/processor_builder.cpp
+    ${libddwaf_SOURCE_DIR}/src/builder/ruleset_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/sql_base.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/pgsql.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/mysql.cpp
@@ -32,19 +33,20 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/exclusion/input_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/object_filter.cpp
     ${libddwaf_SOURCE_DIR}/src/exclusion/rule_filter.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/actions_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/common.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/parser_v1.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/data_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/processor_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/expression_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/matcher_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/transformer_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/rule_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/rule_override_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/scanner_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/parser/exclusion_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/common/expression_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/common/matcher_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/common/transformer_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/common/raw_configuration.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/common/reference_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/actions_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/data_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/exclusion_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/processor_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/rule_override_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/rule_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/legacy_rule_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/scanner_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/configuration_manager.cpp
     ${libddwaf_SOURCE_DIR}/src/processor/extract_schema.cpp
     ${libddwaf_SOURCE_DIR}/src/processor/fingerprint.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/exists.cpp

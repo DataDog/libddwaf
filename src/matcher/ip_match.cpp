@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "indexed_multivector.hpp"
 #include "ip_utils.hpp"
 #include "matcher/ip_match.hpp"
 #include "radixlib.h"
@@ -28,14 +29,34 @@ ip_match::ip_match(const std::vector<std::string_view> &ip_list)
     init_tree(ip_list);
 }
 
-ip_match::ip_match(const std::vector<std::pair<std::string_view, uint64_t>> &ip_list)
+ip_match::ip_match(
+    const indexed_multivector<std::string, std::pair<std::string, uint64_t>> &ip_list)
     : rtree_(radix_new(radix_tree_bits), radix_free)
 {
     if (!rtree_) {
         throw std::runtime_error("failed to instantiate radix tree");
     }
 
-    for (auto [str, expiration] : ip_list) {
+    for (const auto &[str, expiration] : ip_list) {
+        // Parse and populate each IP/network
+        ipaddr ip{};
+        if (ddwaf::parse_cidr(str, ip)) {
+            prefix_t prefix;
+            // NOLINTNEXTLINE(hicpp-no-array-decay,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+            radix_prefix_init(FAMILY_IPv6, ip.data, ip.mask, &prefix);
+            radix_put_if_absent(rtree_.get(), &prefix, expiration);
+        }
+    }
+}
+
+ip_match::ip_match(const std::vector<std::pair<std::string, uint64_t>> &ip_list)
+    : rtree_(radix_new(radix_tree_bits), radix_free)
+{
+    if (!rtree_) {
+        throw std::runtime_error("failed to instantiate radix tree");
+    }
+
+    for (const auto &[str, expiration] : ip_list) {
         // Parse and populate each IP/network
         ipaddr ip{};
         if (ddwaf::parse_cidr(str, ip)) {

@@ -1,0 +1,29 @@
+{
+  name: "All rules are provided in monitoring mode",
+  runs: [
+    {
+      persistent-input: {
+        rule1-input: 192.168.0.1
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              value: 192.168.0.1
+            }
+          ],
+        },
+        {
+          custom-1: [
+            {
+              address: rule1-input,
+              value: 192.168.0.1
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

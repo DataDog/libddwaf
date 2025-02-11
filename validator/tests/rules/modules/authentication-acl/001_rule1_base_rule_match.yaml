@@ -1,0 +1,29 @@
+{
+  name: "All rules are provided in monitoring mode",
+  runs: [
+    {
+      persistent-input: {
+        rule1-input: admin
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              value: admin
+            }
+          ]
+        },
+        {
+          custom-1: [
+            {
+              address: rule1-input,
+              value: admin
+            }
+          ]
+        },
+      ],
+      code: match
+    }
+  ]
+}

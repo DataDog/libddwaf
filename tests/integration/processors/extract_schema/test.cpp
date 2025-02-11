@@ -14,7 +14,7 @@ constexpr std::string_view base_dir = "integration/processors/extract_schema";
 TEST(TestExtractSchemaIntegration, Postprocessor)
 {
     auto rule = read_json_file("postprocessor.json", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
@@ -58,7 +58,7 @@ TEST(TestExtractSchemaIntegration, Postprocessor)
 TEST(TestExtractSchemaIntegration, Preprocessor)
 {
     auto rule = read_json_file("preprocessor.json", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
@@ -111,7 +111,7 @@ TEST(TestExtractSchemaIntegration, Preprocessor)
 TEST(TestExtractSchemaIntegration, Processor)
 {
     auto rule = read_json_file("processor.json", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
@@ -168,11 +168,20 @@ TEST(TestExtractSchemaIntegration, Processor)
 
 TEST(TestExtractSchemaIntegration, ProcessorWithScannerByTags)
 {
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+
     auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
-    ASSERT_NE(handle, nullptr);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
     ddwaf_object_free(&rule);
+
+    auto scanner = read_json_file("scanners.json", base_dir);
+    ASSERT_NE(scanner.type, DDWAF_OBJ_INVALID);
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("scanners"), &scanner, nullptr);
+    ddwaf_object_free(&scanner);
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle, nullptr);
 
     ddwaf_object value;
     ddwaf_object map = DDWAF_OBJECT_MAP;
@@ -201,15 +210,26 @@ TEST(TestExtractSchemaIntegration, ProcessorWithScannerByTags)
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestExtractSchemaIntegration, ProcessorWithScannerByID)
 {
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+
     auto rule = read_json_file("processor_with_scanner_by_id.json", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
-    ASSERT_NE(handle, nullptr);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
     ddwaf_object_free(&rule);
+
+    auto scanner = read_json_file("scanners.json", base_dir);
+    ASSERT_NE(scanner.type, DDWAF_OBJ_INVALID);
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("scanners"), &scanner, nullptr);
+    ddwaf_object_free(&scanner);
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle, nullptr);
 
     ddwaf_object value;
     ddwaf_object map = DDWAF_OBJECT_MAP;
@@ -239,15 +259,27 @@ TEST(TestExtractSchemaIntegration, ProcessorWithScannerByID)
     ddwaf_context_destroy(context);
 
     ddwaf_destroy(handle);
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestExtractSchemaIntegration, ProcessorUpdate)
 {
-    auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+
+    {
+        auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
+        ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+
+        auto scanner = read_json_file("scanners.json", base_dir);
+        ASSERT_NE(scanner.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("scanners"), &scanner, nullptr);
+        ddwaf_object_free(&scanner);
+    }
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
 
     ddwaf_object value;
 
@@ -280,13 +312,16 @@ TEST(TestExtractSchemaIntegration, ProcessorUpdate)
     }
 
     {
-        auto new_ruleset = read_json_file("postprocessor.json", base_dir);
-        auto *new_handle = ddwaf_update(handle, &new_ruleset, nullptr);
-        ddwaf_object_free(&new_ruleset);
         ddwaf_destroy(handle);
 
-        handle = new_handle;
+        auto rule = read_json_file("postprocessor.json", base_dir);
+        ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
     }
+
+    handle = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle, nullptr);
 
     {
         ddwaf_object map = DDWAF_OBJECT_MAP;
@@ -316,15 +351,28 @@ TEST(TestExtractSchemaIntegration, ProcessorUpdate)
     }
 
     ddwaf_destroy(handle);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestExtractSchemaIntegration, ScannerUpdate)
 {
-    auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+
+    {
+        auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
+        ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+
+        auto scanner = read_json_file("scanners.json", base_dir);
+        ASSERT_NE(scanner.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("scanners"), &scanner, nullptr);
+        ddwaf_object_free(&scanner);
+    }
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
 
     ddwaf_object value;
 
@@ -357,14 +405,17 @@ TEST(TestExtractSchemaIntegration, ScannerUpdate)
     }
 
     {
-        auto new_scanners = json_to_object(
-            R"({"scanners":[{"id":"scanner-002","value":{"operator":"match_regex","parameters":{"regex":"notanemail","options":{"case_sensitive":false,"min_length":1}}},"tags":{"type":"email","category":"pii"}}]})");
-        auto *new_handle = ddwaf_update(handle, &new_scanners, nullptr);
-        ddwaf_object_free(&new_scanners);
         ddwaf_destroy(handle);
 
-        handle = new_handle;
+        auto scanner = json_to_object(
+            R"({"scanners":[{"id":"scanner-002","value":{"operator":"match_regex","parameters":{"regex":"notanemail","options":{"case_sensitive":false,"min_length":1}}},"tags":{"type":"email","category":"pii"}}]})");
+        ASSERT_NE(scanner.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("scanners"), &scanner, nullptr);
+        ddwaf_object_free(&scanner);
     }
+
+    handle = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle, nullptr);
 
     {
         ddwaf_object map = DDWAF_OBJECT_MAP;
@@ -395,15 +446,28 @@ TEST(TestExtractSchemaIntegration, ScannerUpdate)
     }
 
     ddwaf_destroy(handle);
+
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
 {
-    auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+
+    {
+        auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
+        ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+
+        auto scanner = read_json_file("scanners.json", base_dir);
+        ASSERT_NE(scanner.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("scanners"), &scanner, nullptr);
+        ddwaf_object_free(&scanner);
+    }
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
 
     ddwaf_object value;
 
@@ -436,13 +500,16 @@ TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
     }
 
     {
-        auto new_ruleset = read_json_file("processor_with_scanner_by_id.json", base_dir);
-        auto *new_handle = ddwaf_update(handle, &new_ruleset, nullptr);
-        ddwaf_object_free(&new_ruleset);
         ddwaf_destroy(handle);
 
-        handle = new_handle;
+        auto rule = read_json_file("processor_with_scanner_by_id.json", base_dir);
+        ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
     }
+
+    handle = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle, nullptr);
 
     {
         ddwaf_object map = DDWAF_OBJECT_MAP;
@@ -473,15 +540,27 @@ TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
     }
 
     ddwaf_destroy(handle);
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
 {
-    auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+
+    {
+        auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
+        ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+
+        auto scanner = read_json_file("scanners.json", base_dir);
+        ASSERT_NE(scanner.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("scanners"), &scanner, nullptr);
+        ddwaf_object_free(&scanner);
+    }
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
 
     ddwaf_object value;
 
@@ -513,14 +592,10 @@ TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
         ddwaf_context_destroy(context);
     }
 
-    {
-        auto new_ruleset = json_to_object(R"({"scanners":[]})");
-        auto *new_handle = ddwaf_update(handle, &new_ruleset, nullptr);
-        ddwaf_object_free(&new_ruleset);
-        ddwaf_destroy(handle);
-
-        handle = new_handle;
-    }
+    ddwaf_destroy(handle);
+    ddwaf_builder_remove_config(builder, LSTRARG("scanners"));
+    handle = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle, nullptr);
 
     {
         ddwaf_object map = DDWAF_OBJECT_MAP;
@@ -550,15 +625,27 @@ TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
     }
 
     ddwaf_destroy(handle);
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestExtractSchemaIntegration, EmptyProcessorUpdate)
 {
-    auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+
+    {
+        auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
+        ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+
+        auto scanner = read_json_file("scanners.json", base_dir);
+        ASSERT_NE(scanner.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("scanners"), &scanner, nullptr);
+        ddwaf_object_free(&scanner);
+    }
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
 
     ddwaf_object value;
 
@@ -591,13 +678,16 @@ TEST(TestExtractSchemaIntegration, EmptyProcessorUpdate)
     }
 
     {
-        auto new_ruleset = json_to_object(R"({"processors":[]})");
-        auto *new_handle = ddwaf_update(handle, &new_ruleset, nullptr);
-        ddwaf_object_free(&new_ruleset);
         ddwaf_destroy(handle);
-
-        handle = new_handle;
+        auto rule = json_to_object(
+            R"({"version": "2.2", "metadata": {"rules_version": "1.8.0"}, "rules": [{"id": "rule1", "name": "rule1", "tags": {"type": "flow1", "category": "category1"}, "conditions": [{"parameters": {"inputs": [{"address": "server.request.body.schema"}], "value": 8, "type": "unsigned"}, "operator": "equals"}]}], "processors": []})");
+        ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
     }
+
+    handle = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle, nullptr);
 
     {
         ddwaf_object map = DDWAF_OBJECT_MAP;
@@ -625,12 +715,13 @@ TEST(TestExtractSchemaIntegration, EmptyProcessorUpdate)
     }
 
     ddwaf_destroy(handle);
+    ddwaf_builder_destroy(builder);
 }
 
 TEST(TestExtractSchemaIntegration, PostprocessorWithEphemeralMapping)
 {
     auto rule = read_json_file("postprocessor.json", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
@@ -697,7 +788,7 @@ TEST(TestExtractSchemaIntegration, PostprocessorWithEphemeralMapping)
 TEST(TestExtractSchemaIntegration, PreprocessorWithEphemeralMapping)
 {
     auto rule = read_json_file("preprocessor.json", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
@@ -780,7 +871,7 @@ TEST(TestExtractSchemaIntegration, PreprocessorWithEphemeralMapping)
 TEST(TestExtractSchemaIntegration, ProcessorEphemeralExpression)
 {
     auto rule = read_json_file("processor.json", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);

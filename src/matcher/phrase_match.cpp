@@ -52,12 +52,12 @@ std::pair<bool, std::string> phrase_match::match_impl(std::string_view pattern) 
         return {false, {}};
     }
 
-    auto u32_size = static_cast<uint32_t>(pattern.size());
     ac_result_t result;
     if (!enforce_word_boundary_) {
-        result = ac_match(acStructure, pattern.data(), u32_size);
+        result = ac_match(acStructure, pattern.data(), static_cast<uint32_t>(pattern.size()));
     } else {
-        result = ac_match_longest_l(acStructure, pattern.data(), u32_size);
+        result =
+            ac_match_longest_l(acStructure, pattern.data(), static_cast<uint32_t>(pattern.size()));
     }
 
     auto begin = static_cast<std::size_t>(result.match_begin);

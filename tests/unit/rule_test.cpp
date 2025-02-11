@@ -25,8 +25,7 @@ TEST(TestRule, Match)
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
-    ddwaf::rule rule(
-        "id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
+    core_rule rule("id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -37,7 +36,7 @@ TEST(TestRule, Match)
 
     ddwaf::timer deadline{2s};
 
-    rule::cache_type cache;
+    core_rule::cache_type cache;
     {
         auto scope = store.get_eval_scope();
         store.insert(root, object_store::attribute::none, nullptr);
@@ -45,8 +44,8 @@ TEST(TestRule, Match)
         auto event = rule.match(store, cache, {}, {}, deadline);
         EXPECT_TRUE(event.has_value());
 
-        EXPECT_STREQ(event->rule->get_id().c_str(), "id");
-        EXPECT_STREQ(event->rule->get_name().c_str(), "name");
+        EXPECT_STREQ(event->rule->get_id().data(), "id");
+        EXPECT_STREQ(event->rule->get_name().data(), "name");
         EXPECT_STREQ(event->rule->get_tag("type").data(), "type");
         EXPECT_STREQ(event->rule->get_tag("category").data(), "category");
         std::vector<std::string> expected_actions{"update", "block", "passlist"};
@@ -86,8 +85,7 @@ TEST(TestRule, EphemeralMatch)
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
-    ddwaf::rule rule(
-        "id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
+    core_rule rule("id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
 
     ddwaf::object_store store;
 
@@ -98,7 +96,7 @@ TEST(TestRule, EphemeralMatch)
 
     ddwaf::timer deadline{2s};
 
-    rule::cache_type cache;
+    core_rule::cache_type cache;
     {
         auto scope = store.get_eval_scope();
         store.insert(root, object_store::attribute::ephemeral, nullptr);
@@ -131,7 +129,7 @@ TEST(TestRule, NoMatch)
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{});
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
-    ddwaf::rule rule("id", "name", std::move(tags), builder.build());
+    core_rule rule("id", "name", std::move(tags), builder.build());
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -143,7 +141,7 @@ TEST(TestRule, NoMatch)
 
     ddwaf::timer deadline{2s};
 
-    rule::cache_type cache;
+    core_rule::cache_type cache;
     auto match = rule.match(store, cache, {}, {}, deadline);
     EXPECT_FALSE(match.has_value());
 }
@@ -163,8 +161,8 @@ TEST(TestRule, ValidateCachedMatch)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    ddwaf::rule rule("id", "name", std::move(tags), builder.build());
-    ddwaf::rule::cache_type cache;
+    core_rule rule("id", "name", std::move(tags), builder.build());
+    core_rule::cache_type cache;
 
     // To validate that the cache works, we pass an object store containing
     // only the latest address. This ensures that the IP condition can't be
@@ -195,8 +193,8 @@ TEST(TestRule, ValidateCachedMatch)
         ddwaf::timer deadline{2s};
         auto event = rule.match(store, cache, {}, {}, deadline);
         EXPECT_TRUE(event.has_value());
-        EXPECT_STREQ(event->rule->get_id().c_str(), "id");
-        EXPECT_STREQ(event->rule->get_name().c_str(), "name");
+        EXPECT_STREQ(event->rule->get_id().data(), "id");
+        EXPECT_STREQ(event->rule->get_name().data(), "name");
         EXPECT_STREQ(event->rule->get_tag("type").data(), "type");
         EXPECT_STREQ(event->rule->get_tag("category").data(), "category");
         EXPECT_TRUE(event->rule->get_actions().empty());
@@ -238,7 +236,7 @@ TEST(TestRule, MatchWithoutCache)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    ddwaf::rule rule("id", "name", std::move(tags), builder.build());
+    core_rule rule("id", "name", std::move(tags), builder.build());
 
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
@@ -252,7 +250,7 @@ TEST(TestRule, MatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        ddwaf::rule::cache_type cache;
+        core_rule::cache_type cache;
         auto event = rule.match(store, cache, {}, {}, deadline);
         EXPECT_FALSE(event.has_value());
     }
@@ -265,7 +263,7 @@ TEST(TestRule, MatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        ddwaf::rule::cache_type cache;
+        core_rule::cache_type cache;
         auto event = rule.match(store, cache, {}, {}, deadline);
         EXPECT_TRUE(event.has_value());
 
@@ -305,7 +303,7 @@ TEST(TestRule, NoMatchWithoutCache)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    ddwaf::rule rule("id", "name", std::move(tags), builder.build());
+    core_rule rule("id", "name", std::move(tags), builder.build());
 
     // In this test we validate that when the cache is empty and only one
     // address is passed, the filter doesn't match (as it should be).
@@ -318,7 +316,7 @@ TEST(TestRule, NoMatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        ddwaf::rule::cache_type cache;
+        core_rule::cache_type cache;
         auto event = rule.match(store, cache, {}, {}, deadline);
         EXPECT_FALSE(event.has_value());
     }
@@ -332,7 +330,7 @@ TEST(TestRule, NoMatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        ddwaf::rule::cache_type cache;
+        core_rule::cache_type cache;
         auto event = rule.match(store, cache, {}, {}, deadline);
         EXPECT_FALSE(event.has_value());
     }
@@ -353,12 +351,12 @@ TEST(TestRule, FullCachedMatchSecondRun)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    ddwaf::rule rule("id", "name", std::move(tags), builder.build());
+    core_rule rule("id", "name", std::move(tags), builder.build());
 
     // In this test we validate that when a match has already occurred, the
     // second run for the same rule returns no events regardless of input.
 
-    ddwaf::rule::cache_type cache;
+    core_rule::cache_type cache;
     {
         ddwaf_object root, tmp;
         ddwaf_object_map(&root);
@@ -398,8 +396,7 @@ TEST(TestRule, ExcludeObject)
 
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
 
-    ddwaf::rule rule(
-        "id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
+    core_rule rule("id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
 
     ddwaf_object root, tmp;
     ddwaf_object_map(&root);
@@ -411,7 +408,7 @@ TEST(TestRule, ExcludeObject)
     ddwaf::timer deadline{2s};
 
     std::unordered_set<const ddwaf_object *> excluded_set{&root.array[0]};
-    rule::cache_type cache;
+    core_rule::cache_type cache;
     auto event = rule.match(store, cache, {excluded_set, {}}, {}, deadline);
     EXPECT_FALSE(event.has_value());
 }

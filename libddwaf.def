@@ -1,8 +1,12 @@
 LIBRARY ddwaf
 EXPORTS
   ddwaf_init
-  ddwaf_update
   ddwaf_destroy
+  ddwaf_builder_init
+  ddwaf_builder_add_or_update_config
+  ddwaf_builder_remove_config
+  ddwaf_builder_build_instance
+  ddwaf_builder_destroy
   ddwaf_known_addresses
   ddwaf_context_init
   ddwaf_run

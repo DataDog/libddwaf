@@ -3,7 +3,9 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <span>
 #include <stdexcept>
@@ -39,7 +41,7 @@ namespace {
 constexpr auto &npos = std::string_view::npos;
 constexpr std::size_t min_token_count = 4;
 
-enum class sqli_error {
+enum class sqli_error : uint8_t {
     none,
     invalid_sql,
 };
@@ -209,7 +211,7 @@ bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
 
 bool has_order_by_structure(std::span<sql_token> tokens)
 {
-    enum class order_by_state {
+    enum class order_by_state : uint8_t {
         invalid,
         begin,
         table_or_column_name,
@@ -409,9 +411,7 @@ std::pair<std::span<sql_token>, std::size_t> get_consecutive_tokens(
         auto rtoken_end = rtoken.index + rtoken.str.size();
         if (rtoken_end > begin) {
             if (rtoken.index < end) {
-                if (i < index_begin) {
-                    index_begin = i;
-                }
+                index_begin = std::min(i, index_begin);
 
                 if (i > index_end || i == (resource_tokens.size() - 1)) {
                     index_end = i;
@@ -484,7 +484,6 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
                 return sqli_error::invalid_sql;
             }
         }
-
         auto [param_tokens, param_tokens_begin] =
             get_consecutive_tokens(resource_tokens, param_index, param_index + value.size());
         if (param_tokens.empty()) {
@@ -521,7 +520,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
         auto res = internal::sqli_impl(
             sql.value, resource_tokens, *param.value, dialect, objects_excluded, limits_, deadline);
         if (std::holds_alternative<internal::matched_param>(res)) {
-            std::vector<std::string> sql_kp{sql.key_path.begin(), sql.key_path.end()};
+            const std::vector<std::string> sql_kp{sql.key_path.begin(), sql.key_path.end()};
             const bool ephemeral = sql.ephemeral || param.ephemeral;
 
             auto stripped_stmt = internal::strip_literals(sql.value, resource_tokens);
@@ -530,13 +529,24 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
 
-            cache.match =
-                condition_match{{{"resource"sv, stripped_stmt, sql.address, sql_kp},
-                                    {"params"sv, highlight, param.address, param_kp},
-                                    {"db_type"sv, std::string{db_type.value}, db_type.address, {}}},
-                    {std::move(highlight)}, "sqli_detector", {}, ephemeral};
+            cache.match = condition_match{.args = {{.name = "resource"sv,
+                                                       .resolved = stripped_stmt,
+                                                       .address = sql.address,
+                                                       .key_path = sql_kp},
+                                              {.name = "params"sv,
+                                                  .resolved = highlight,
+                                                  .address = param.address,
+                                                  .key_path = param_kp},
+                                              {.name = "db_type"sv,
+                                                  .resolved = std::string{db_type.value},
+                                                  .address = db_type.address,
+                                                  .key_path = {}}},
+                .highlights = {std::move(highlight)},
+                .operator_name = "sqli_detector",
+                .operator_value = {},
+                .ephemeral = ephemeral};
 
-            return {true, ephemeral};
+            return {.outcome = true, .ephemeral = ephemeral};
         }
 
         if (std::holds_alternative<internal::sqli_error>(res)) {

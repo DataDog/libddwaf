@@ -248,6 +248,8 @@ public:
         targets_.emplace(target, std::move(name));
     }
 
+    [[nodiscard]] bool empty() const { return target_paths_.empty(); }
+
     object_set match(
         const object_store &store, cache_type &cache, bool ephemeral, ddwaf::timer &deadline) const;
 

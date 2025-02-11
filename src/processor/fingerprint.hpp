@@ -26,7 +26,7 @@ public:
     std::pair<ddwaf_object, object_store::attribute> eval_impl(
         const unary_argument<std::string_view> &method,
         const unary_argument<std::string_view> &uri_raw,
-        const unary_argument<const ddwaf_object *> &query,
+        const optional_argument<const ddwaf_object *> &query,
         const optional_argument<const ddwaf_object *> &body, processor_cache &cache,
         ddwaf::timer &deadline) const;
 };

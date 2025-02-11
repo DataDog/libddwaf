@@ -151,7 +151,7 @@ void add_action_to_tracker(action_tracker &actions, std::string_view id, action_
     }
 }
 
-void serialize_rule(const ddwaf::rule &rule, ddwaf_object &rule_map)
+void serialize_rule(const core_rule &rule, ddwaf_object &rule_map)
 {
     ddwaf_object tmp;
     ddwaf_object tags_map;
@@ -163,9 +163,6 @@ void serialize_rule(const ddwaf::rule &rule, ddwaf_object &rule_map)
     ddwaf_object_map_add(&rule_map, "name", to_object(tmp, rule.get_name()));
 
     for (const auto &[key, value] : rule.get_tags()) {
-        ddwaf_object_map_addl(&tags_map, key.c_str(), key.size(), to_object(tmp, value));
-    }
-    for (const auto &[key, value] : rule.get_ancillary_tags()) {
         ddwaf_object_map_addl(&tags_map, key.c_str(), key.size(), to_object(tmp, value));
     }
     ddwaf_object_map_add(&rule_map, "tags", &tags_map);
@@ -186,7 +183,7 @@ void serialize_empty_rule(ddwaf_object &rule_map)
     ddwaf_object_map_add(&rule_map, "tags", &tags_map);
 }
 
-void serialize_and_consolidate_rule_actions(const ddwaf::rule &rule, ddwaf_object &rule_map,
+void serialize_and_consolidate_rule_actions(const core_rule &rule, ddwaf_object &rule_map,
     std::string_view action_override, action_tracker &actions, ddwaf_object &stack_id)
 {
     const auto &rule_actions = rule.get_actions();
@@ -295,7 +292,8 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_result 
         return;
     }
 
-    action_tracker actions{.mapper = actions_};
+    action_tracker actions{
+        .blocking_action = {}, .stack_id = {}, .non_blocking_actions = {}, .mapper = actions_};
 
     ddwaf_object_array(&output.events);
     for (const auto &event : events) {

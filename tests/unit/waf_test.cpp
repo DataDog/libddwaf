@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "builder/waf_builder.hpp"
 #include "common/gtest_utils.hpp"
 #include "waf.hpp"
 
@@ -13,15 +14,29 @@ namespace {
 
 constexpr std::string_view base_dir = "unit";
 
+ddwaf::waf build_instance(std::string_view rule_file)
+{
+    auto object = read_file(rule_file, base_dir);
+    if (object.type == DDWAF_OBJ_INVALID) {
+        throw std::runtime_error("Invalid ruleset object");
+    }
+
+    raw_configuration ruleset = object;
+    waf_builder builder{object_limits{}, ddwaf_object_free, std::make_shared<obfuscator>()};
+    ddwaf::null_ruleset_info info;
+    auto res = builder.add_or_update("default", ruleset, info);
+    ddwaf_object_free(&object);
+
+    if (!res) {
+        throw std::runtime_error("Failed to load ruleset");
+    }
+
+    return builder.build();
+}
+
 TEST(TestWaf, RootAddresses)
 {
-    auto rule = read_file("interface.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf::null_ruleset_info info;
-    ddwaf::waf instance{
-        rule, info, ddwaf::object_limits(), ddwaf_object_free, std::make_shared<obfuscator>()};
-    ddwaf_object_free(&rule);
+    auto instance = build_instance("interface.yaml");
 
     std::set<std::string_view> available_addresses{"value1", "value2"};
     for (const auto *address : instance.get_root_addresses()) {
@@ -31,13 +46,7 @@ TEST(TestWaf, RootAddresses)
 
 TEST(TestWaf, BasicContextRun)
 {
-    auto rule = read_file("interface.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf::null_ruleset_info info;
-    ddwaf::waf instance{
-        rule, info, ddwaf::object_limits(), ddwaf_object_free, std::make_shared<obfuscator>()};
-    ddwaf_object_free(&rule);
+    auto instance = build_instance("interface.yaml");
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -47,19 +56,6 @@ TEST(TestWaf, BasicContextRun)
     auto *ctx = instance.create_context();
     EXPECT_EQ(ctx->run(root, std::nullopt, std::nullopt, LONG_TIME), DDWAF_MATCH);
     delete ctx;
-}
-
-TEST(TestWaf, RuleDisabledInRuleset)
-{
-    auto rule = read_file("rule_disabled.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-
-    ddwaf::null_ruleset_info info;
-    EXPECT_THROW((ddwaf::waf{rule, info, ddwaf::object_limits(), ddwaf_object_free,
-                     std::make_shared<obfuscator>()}),
-        ddwaf::parsing_error);
-
-    ddwaf_object_free(&rule);
 }
 
 TEST(TestWaf, AddressUniqueness)

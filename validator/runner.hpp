@@ -48,6 +48,7 @@ protected:
     static constexpr unsigned timeout = 1000000;
     ddwaf_handle handle_;
     std::map<std::string, YAML::Node> rules_;
+    std::map<std::string, YAML::Node> custom_rules_;
     std::stringstream output_;
     std::stringstream error_;
 };
