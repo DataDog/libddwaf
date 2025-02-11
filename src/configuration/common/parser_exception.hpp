@@ -61,12 +61,16 @@ public:
 
 class unsupported_schema_version : public parsing_warning {
 public:
-    unsupported_schema_version() = default;
+    explicit unsupported_schema_version(unsigned version): parsing_warning(fmt::format("unsupported schema version: {}.x", version)), version_(version) {}
     unsupported_schema_version(unsupported_schema_version &&) = default;
     unsupported_schema_version(const unsupported_schema_version &) = default;
     unsupported_schema_version &operator=(unsupported_schema_version &&) = default;
     unsupported_schema_version &operator=(const unsupported_schema_version &) = default;
     ~unsupported_schema_version() override = default;
+
+    [[nodiscard]] unsigned version() const { return version_; }
+protected:
+    unsigned version_;
 };
 
 class unsupported_operator_version : public parsing_warning {

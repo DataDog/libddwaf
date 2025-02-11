@@ -38,6 +38,64 @@ TEST(TestDiagnosticsV2Integration, InvalidConfigType)
     ddwaf_destroy(handle);
 }
 
+TEST(TestDiagnosticsV2Integration, UnsupportedSchema)
+{
+    auto rule = yaml_to_object(
+        R"({version: '3.0', metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_object diagnostics;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ASSERT_EQ(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf::raw_configuration root(diagnostics);
+    auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
+
+    auto error = ddwaf::at<std::string>(root_map, "error");
+    EXPECT_STR(error, "unsupported schema version: 3.x");
+
+    ddwaf_object_free(&diagnostics);
+
+    ddwaf_destroy(handle);
+}
+
+TEST(TestDiagnosticsV2Integration, NoSchema)
+{
+    auto rule = yaml_to_object(
+        R"({ metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_object diagnostics;
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf::raw_configuration root(diagnostics);
+    auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
+
+    auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
+    EXPECT_STREQ(version.c_str(), "1.2.7");
+
+    auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
+
+    auto loaded = ddwaf::at<raw_configuration::string_set>(rules, "loaded");
+    EXPECT_EQ(loaded.size(), 1);
+    EXPECT_NE(loaded.find("1"), loaded.end());
+
+    auto failed = ddwaf::at<raw_configuration::string_set>(rules, "failed");
+    EXPECT_EQ(failed.size(), 0);
+
+    auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
+    EXPECT_EQ(errors.size(), 0);
+
+    ddwaf_object_free(&diagnostics);
+
+    ddwaf_destroy(handle);
+}
+
 TEST(TestDiagnosticsV2Integration, BasicRule)
 {
     auto rule = yaml_to_object(
