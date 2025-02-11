@@ -26,6 +26,7 @@
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
 #include "log.hpp"
+#include "object_view.hpp"
 #include "platform.hpp"
 #include "tokenizer/shell.hpp"
 #include "transformer/common/cow_string.hpp"
@@ -41,9 +42,9 @@ namespace {
 // used directly with a scalar without the need for a fully-fledged object iterator
 class scalar_iterator {
 public:
-    explicit scalar_iterator(const ddwaf_object *obj, const std::span<const std::string> & /*path*/,
+    explicit scalar_iterator(const ddwaf_object &obj, const std::span<const std::string> & /*path*/,
         const exclusion::object_set_ref & /*exclude*/, const object_limits & /*limits*/)
-        : current_(obj)
+        : current_(&obj)
     {}
 
     ~scalar_iterator() = default;
@@ -54,7 +55,7 @@ public:
     scalar_iterator &operator=(const scalar_iterator &) = delete;
     scalar_iterator &operator=(scalar_iterator &&) noexcept = delete;
 
-    [[nodiscard]] const ddwaf_object *operator*() { return current_; }
+    [[nodiscard]] optional_object_view operator*() { return current_; }
     bool operator++()
     {
         current_ = nullptr;
@@ -382,13 +383,13 @@ std::optional<shi_result> cmdi_impl(const ddwaf_object &exec_args,
         return std::nullopt;
     }
 
-    object::kv_iterator it(&params, {}, objects_excluded, limits);
+    kv_iterator it(params, {}, objects_excluded, limits);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const ddwaf_object &param = *(*it);
+        const ddwaf_object &param = (*it).ref();
         if (param.type != DDWAF_OBJ_STRING) {
             continue;
         }

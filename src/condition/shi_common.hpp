@@ -43,13 +43,13 @@ struct shell_argument_array {
     std::string resource;
 };
 
-template <typename ResourceType, typename IteratorType = object::kv_iterator>
+template <typename ResourceType, typename IteratorType = kv_iterator>
 std::optional<shi_result> find_shi_from_params(const ResourceType &resource,
     std::vector<shell_token> &resource_tokens, const ddwaf_object &params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
-    match_iterator<2, IteratorType, ResourceType> it(resource, &params, objects_excluded, limits);
+    match_iterator<2, IteratorType, ResourceType> it(resource, params, objects_excluded, limits);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
