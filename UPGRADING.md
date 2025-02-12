@@ -1,7 +1,13 @@
 # Upgrading libddwaf
 
 ## Upgrading from `1.22.0` to `1.23.0`
+
 ### WAF Builder
+The WAF builder is new mechanism to generate WAF instances through the use of independent, partial and potentially overlapping configurations, effectively mirroring the process performed by the libraries when consolidating configurations obtained through remote configuration. The outcome of the builder is effectively equivalent to merging all available configurations into a single one, however the process is tailored towards partial and continuous generation and update of independent objects within the WAF instance.
+
+> [!WARNING]
+> As a consequence of the introduction of this new interface, the `ddwaf_update` function has been deprecated and removed, as the semantics of the configurations expected by this function are incompatible with those used by the new builder API. ***
+
 
 ### Warning and Error Diagnostics
 
