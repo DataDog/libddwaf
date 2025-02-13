@@ -3,11 +3,20 @@
 ## Upgrading from `1.22.0` to `1.23.0`
 
 ### WAF Builder
-The WAF builder is new mechanism to generate WAF instances through the use of independent, partial and potentially overlapping configurations, effectively mirroring the process performed by the libraries when consolidating configurations obtained through remote configuration. The outcome of the builder is effectively equivalent to merging all available configurations into a single one, however the process is tailored towards partial and continuous generation and update of independent objects within the WAF instance.
+The WAF builder is a new mechanism for generating WAF instances through the use of independent, partial and potentially overlapping configurations, effectively mirroring the process performed by the security libraries when consolidating configurations obtained through remote configuration. The outcome of the builder is effectively equivalent to merging all available configurations into a single one, however the process is tailored towards continuous generation of instances based on the addition, update and removal of partial or complete configurations, while reusing internal objects as much as possible.
 
 > [!WARNING]
 > As a consequence of the introduction of this new interface, the `ddwaf_update` function has been deprecated and removed, as the semantics of the configurations expected by this function are incompatible with those used by the new builder API. ***
 
+In previous versions of `libddwaf`, configurations provided during `ddwaf_update` were required to contain at least one of the supported top-level keys and each of these represented the complete set of primitives of the given type. For example, a configuration containing `rules` was required to contain all rules, meaning that a future configuration update containing `rules` would result in the complete replacement of the old set by the new one. With this model, when generating a single WAF instance with multiple configurations, each of them was required to be non-overlapping.
+
+In this new interface, configurations are provided as a `ddwaf_object` containing a map, and at least one of the supported top-level keys (`rules`, `exclusions`, `processors`, etc). In addition, configurations must now be provided with their `path`, which represents a unique identifier for the given configuration and does not need to follow any particular schema, albeit this value will typically be obtained from remote configuration.
+
+```c
+ddwaf_builder builder = ddwaf_builder_init(...);
+
+ddwaf_builder_add_or_update_config
+```
 
 ### Warning and Error Diagnostics
 
