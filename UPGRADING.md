@@ -8,9 +8,22 @@ The WAF builder is a new mechanism for generating WAF instances through the use 
 > [!WARNING]
 > As a consequence of the introduction of this new interface, the `ddwaf_update` function has been deprecated and removed, as the semantics of the configurations expected by this function are incompatible with those used by the new builder API. ***
 
-In previous versions of `libddwaf`, configurations provided during `ddwaf_update` were required to contain at least one of the supported top-level keys and each of these represented the complete set of primitives of the given type. For example, a configuration containing `rules` was required to contain all rules, meaning that a future configuration update containing `rules` would result in the complete replacement of the old set by the new one. With this model, when generating a single WAF instance with multiple configurations, each of them was required to be non-overlapping.
+In previous versions of `libddwaf`, configurations provided during `ddwaf_update` were required to be a map containing at least one of the supported top-level keys (e.g. `rules`, `exclusions`, `processors`, etc) and each of these represented the complete set of primitives of the given type. For example, a configuration containing `rules` was required to contain all rules, meaning that a future configuration update containing `rules` would result in the complete replacement of the old set by the new one. With this model, when generating a single WAF instance with multiple configurations, each of them was required to be non-overlapping.
 
-In this new interface, configurations are provided as a `ddwaf_object` containing a map, and at least one of the supported top-level keys (`rules`, `exclusions`, `processors`, etc). In addition, configurations must now be provided with their `path`, which represents a unique identifier for the given configuration and does not need to follow any particular schema, albeit this value will typically be obtained from remote configuration.
+In this new version, configurations are still required to be a map, containing  at least one of the supported top-level keys, however they must also be provided with a "path", which represents a unique identifier for the given configuration and does not need to follow any particular schema, albeit this value will typically be obtained from remote configuration. In addition, configurations are now assumed to be overlapping, meaning that the top-level key need not represent the complete set of primitives for the given type as they will be treated as though the set is always partial and may be extended through other configurations. For example, two configurations may contribute new rules by providing the `rules` top-level key, trusting that the WAF builder will take care of the "merge" process.
+
+The following subsections more specifically cover the interface, any nuance and differences with the `ddwaf_update` interface.
+
+#### Builder Lifecycle
+
+The lifetime of the WAF builder must be strictly linked to that of the remote configuration client, as it's main purpose is to consume configuration additions, updates and removals as they are produced. In addition
+```c
+ddwaf_config
+ddwaf_builder builder = ddwaf_builder_init(config);
+
+ddwaf_builder_add_or_update_config
+```
+#### Adding, updating and removing configurations
 
 ```c
 ddwaf_builder builder = ddwaf_builder_init(...);
@@ -19,6 +32,59 @@ ddwaf_builder_add_or_update_config
 ```
 
 ### Warning and Error Diagnostics
+
+```json
+{
+  "exclusions": {
+    "loaded": [
+      "1d058b7b-9b35-4a01-9b60-74c9a2a3bd78",
+    ],
+    "failed": [
+      "index:2"
+    ],
+    "errors": {
+      "missing key 'id'": [
+        "index:2"
+      ]
+    }
+  },
+  "rules": {
+    "loaded": [
+      "blk-001-001"
+    ],
+    "failed": [
+      "blk-001-002"
+    ],
+    "errors": {
+      "missing key 'conditions'": [
+        "blk-001-002"
+      ]
+    }
+  },
+  "rules_override": {
+    "loaded": [
+      "index:1"
+    ],
+    "failed": [
+      "index:0"
+    ],
+    "errors": {
+      "invalid type 'map' for key 'rules_target', expected 'array'": [
+        "index:0"
+      ]
+    }
+  },
+  "ruleset_version": "1.7.0"
+}
+```
+#### Rephrased diagnostics
+
+The following diagnostics have been slightly changed or rephrased, any monitors targetting them may need to be updated:
+
+- `unknown matcher: <name>` is now `unknown operator: '<name>'`
+- `invalid transformer <name>` is now `unkown transformer: '<name>'`
+- `unknown generator '<name'` is now `unknown generator: '<name>'`
+- `unknown type '<name>'"` is now `unknown type: '<name>'"`
 
 ## Upgrading from `1.16.x` to `1.17.x`
 
