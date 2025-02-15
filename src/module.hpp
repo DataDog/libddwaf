@@ -53,12 +53,13 @@ public:
 
     verdict_type eval(std::vector<event> &events, object_store &store, cache_type &cache,
         const exclusion::context_policy &exclusion, const matcher_mapper &dynamic_matchers,
-        ddwaf::timer &deadline) const;
+        const object_limits &limits, ddwaf::timer &deadline) const;
 
 protected:
     verdict_type eval_with_collections(std::vector<event> &events, object_store &store,
         cache_type &cache, const exclusion::context_policy &exclusion,
-        const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const;
+        const matcher_mapper &dynamic_matchers, const object_limits &limits,
+        ddwaf::timer &deadline) const;
 
     ddwaf::timer &get_deadline(ddwaf::timer &deadline) const;
 

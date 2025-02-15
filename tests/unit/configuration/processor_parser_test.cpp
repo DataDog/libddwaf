@@ -16,8 +16,6 @@ namespace {
 
 TEST(TestProcessorParser, ParseNoGenerator)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(R"([{id: 1}])");
 
     configuration_spec cfg;
@@ -25,7 +23,7 @@ TEST(TestProcessorParser, ParseNoGenerator)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_processors(array, collector, section, limits);
+    parse_processors(array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -83,8 +81,6 @@ TEST(TestProcessorParser, ParseNoGenerator)
 
 TEST(TestProcessorParser, ParseNoID)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(R"([{}])");
 
     configuration_spec cfg;
@@ -92,7 +88,7 @@ TEST(TestProcessorParser, ParseNoID)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_processors(array, collector, section, limits);
+    parse_processors(array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -150,8 +146,6 @@ TEST(TestProcessorParser, ParseNoID)
 
 TEST(TestProcessorParser, ParseNoParameters)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(R"([{id: 1, generator: extract_schema}])");
 
     configuration_spec cfg;
@@ -159,7 +153,7 @@ TEST(TestProcessorParser, ParseNoParameters)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_processors(array, collector, section, limits);
+    parse_processors(array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -217,8 +211,6 @@ TEST(TestProcessorParser, ParseNoParameters)
 
 TEST(TestProcessorParser, ParseNoMappings)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(R"([{id: 1, generator: extract_schema, parameters: {}}])");
 
     configuration_spec cfg;
@@ -226,7 +218,7 @@ TEST(TestProcessorParser, ParseNoMappings)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_processors(array, collector, section, limits);
+    parse_processors(array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -284,8 +276,6 @@ TEST(TestProcessorParser, ParseNoMappings)
 
 TEST(TestProcessorParser, ParseEmptyMappings)
 {
-    object_limits limits;
-
     auto object =
         yaml_to_object(R"([{id: 1, generator: extract_schema, parameters: {mappings: []}}])");
 
@@ -294,7 +284,7 @@ TEST(TestProcessorParser, ParseEmptyMappings)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_processors(array, collector, section, limits);
+    parse_processors(array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -352,8 +342,6 @@ TEST(TestProcessorParser, ParseEmptyMappings)
 
 TEST(TestProcessorParser, ParseNoInput)
 {
-    object_limits limits;
-
     auto object =
         yaml_to_object(R"([{id: 1, generator: extract_schema, parameters: {mappings: [{}]}}])");
 
@@ -362,7 +350,7 @@ TEST(TestProcessorParser, ParseNoInput)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_processors(array, collector, section, limits);
+    parse_processors(array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -420,8 +408,6 @@ TEST(TestProcessorParser, ParseNoInput)
 
 TEST(TestProcessorParser, ParseEmptyInput)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [], output: out}]}}])");
 
@@ -430,7 +416,7 @@ TEST(TestProcessorParser, ParseEmptyInput)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_processors(array, collector, section, limits);
+    parse_processors(array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -488,8 +474,6 @@ TEST(TestProcessorParser, ParseEmptyInput)
 
 TEST(TestProcessorParser, ParseNoOutput)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}]}]}}])");
 
@@ -498,7 +482,7 @@ TEST(TestProcessorParser, ParseNoOutput)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_processors(array, collector, section, limits);
+    parse_processors(array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -556,8 +540,6 @@ TEST(TestProcessorParser, ParseNoOutput)
 
 TEST(TestProcessorParser, ParseUnknownGenerator)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(
         R"([{id: 1, generator: unknown, parameters: {mappings: [{inputs: [{address: in}], output: out}]}}])");
 
@@ -566,7 +548,7 @@ TEST(TestProcessorParser, ParseUnknownGenerator)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_processors(array, collector, section, limits);
+    parse_processors(array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -602,8 +584,6 @@ TEST(TestProcessorParser, ParseUnknownGenerator)
 
 TEST(TestProcessorParser, ParseUseless)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: false, output: false}])");
 
@@ -612,7 +592,7 @@ TEST(TestProcessorParser, ParseUseless)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_processors(array, collector, section, limits);
+    parse_processors(array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -670,8 +650,6 @@ TEST(TestProcessorParser, ParseUseless)
 
 TEST(TestProcessorParser, ParsePreprocessor)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: true, output: false}])");
 
@@ -680,7 +658,7 @@ TEST(TestProcessorParser, ParsePreprocessor)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_processors(array, collector, section, limits);
+    parse_processors(array, collector, section);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(change.content, change_set::processors);
@@ -692,8 +670,6 @@ TEST(TestProcessorParser, ParsePreprocessor)
 
 TEST(TestProcessorParser, ParsePreprocessorWithOutput)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: true, output: true}])");
 
@@ -702,7 +678,7 @@ TEST(TestProcessorParser, ParsePreprocessorWithOutput)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_processors(array, collector, section, limits);
+    parse_processors(array, collector, section);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(change.content, change_set::processors);
@@ -714,8 +690,6 @@ TEST(TestProcessorParser, ParsePreprocessorWithOutput)
 
 TEST(TestProcessorParser, ParsePostprocessor)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: false, output: true}])");
 
@@ -724,7 +698,7 @@ TEST(TestProcessorParser, ParsePostprocessor)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_processors(array, collector, section, limits);
+    parse_processors(array, collector, section);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(change.content, change_set::processors);
@@ -736,8 +710,6 @@ TEST(TestProcessorParser, ParsePostprocessor)
 
 TEST(TestProcessorParser, ParseDuplicate)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: false, output: true},{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: true, output: false}])");
 
@@ -746,7 +718,7 @@ TEST(TestProcessorParser, ParseDuplicate)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_processors(array, collector, section, limits);
+    parse_processors(array, collector, section);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(change.content, change_set::processors);
@@ -784,8 +756,6 @@ TEST(TestProcessorParser, ParseDuplicate)
 
 TEST(TestProcessorParser, IncompatibleMinVersion)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, min_version: 99.0.0, evaluate: false, output: true}])");
 
@@ -794,7 +764,7 @@ TEST(TestProcessorParser, IncompatibleMinVersion)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_processors(array, collector, section, limits);
+    parse_processors(array, collector, section);
     ddwaf_object_free(&object);
 
     EXPECT_TRUE(change.empty());
@@ -847,8 +817,6 @@ TEST(TestProcessorParser, IncompatibleMinVersion)
 
 TEST(TestProcessorParser, IncompatibleMaxVersion)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, max_version: 0.0.99, evaluate: false, output: true}])");
 
@@ -857,7 +825,7 @@ TEST(TestProcessorParser, IncompatibleMaxVersion)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_processors(array, collector, section, limits);
+    parse_processors(array, collector, section);
     ddwaf_object_free(&object);
 
     EXPECT_TRUE(change.empty());
@@ -910,8 +878,6 @@ TEST(TestProcessorParser, IncompatibleMaxVersion)
 
 TEST(TestProcessorParser, CompatibleVersion)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, min_version: 0.0.99, max_version: 2.0.0, evaluate: false, output: true}])");
 
@@ -920,7 +886,7 @@ TEST(TestProcessorParser, CompatibleVersion)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_processors(array, collector, section, limits);
+    parse_processors(array, collector, section);
     ddwaf_object_free(&object);
 
     EXPECT_EQ(change.content, change_set::processors);

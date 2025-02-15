@@ -13,6 +13,6 @@
 namespace ddwaf {
 
 void parse_filters(const raw_configuration::vector &filter_array, configuration_collector &cfg,
-    ruleset_info::base_section_info &info, const object_limits &limits);
+    ruleset_info::base_section_info &info);
 
 } // namespace ddwaf

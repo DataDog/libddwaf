@@ -25,19 +25,17 @@
 #include "log.hpp"
 #include "semver.hpp"
 #include "target_address.hpp"
-#include "utils.hpp"
 #include "version.hpp"
 
 namespace ddwaf {
 
 namespace {
 
-input_filter_spec parse_input_filter(
-    const raw_configuration::map &filter, const object_limits &limits)
+input_filter_spec parse_input_filter(const raw_configuration::map &filter)
 {
     // Check for conditions first
     auto conditions_array = at<raw_configuration::vector>(filter, "conditions", {});
-    auto expr = parse_expression(conditions_array, data_source::values, {}, limits);
+    auto expr = parse_expression(conditions_array, data_source::values, {});
 
     std::vector<reference_spec> rules_target;
     auto rules_target_array = at<raw_configuration::vector>(filter, "rules_target", {});
@@ -49,7 +47,7 @@ input_filter_spec parse_input_filter(
         }
     }
 
-    auto obj_filter = std::make_shared<exclusion::object_filter>(limits);
+    auto obj_filter = std::make_shared<exclusion::object_filter>();
     auto inputs_array = at<raw_configuration::vector>(filter, "inputs");
 
     for (const auto &input_param : inputs_array) {
@@ -71,12 +69,11 @@ input_filter_spec parse_input_filter(
         .targets = std::move(rules_target)};
 }
 
-rule_filter_spec parse_rule_filter(
-    const raw_configuration::map &filter, const object_limits &limits)
+rule_filter_spec parse_rule_filter(const raw_configuration::map &filter)
 {
     // Check for conditions first
     auto conditions_array = at<raw_configuration::vector>(filter, "conditions", {});
-    auto expr = parse_expression(conditions_array, data_source::values, {}, limits);
+    auto expr = parse_expression(conditions_array, data_source::values, {});
 
     std::vector<reference_spec> rules_target;
     auto rules_target_array = at<raw_configuration::vector>(filter, "rules_target", {});
@@ -115,7 +112,7 @@ rule_filter_spec parse_rule_filter(
 } // namespace
 
 void parse_filters(const raw_configuration::vector &filter_array, configuration_collector &cfg,
-    base_section_info &info, const object_limits &limits)
+    base_section_info &info)
 {
     for (unsigned i = 0; i < filter_array.size(); i++) {
         const auto &node_param = filter_array[i];
@@ -140,10 +137,10 @@ void parse_filters(const raw_configuration::vector &filter_array, configuration_
             }
 
             if (node.find("inputs") != node.end()) {
-                auto filter = parse_input_filter(node, limits);
+                auto filter = parse_input_filter(node);
                 cfg.emplace_filter(id, std::move(filter));
             } else {
-                auto filter = parse_rule_filter(node, limits);
+                auto filter = parse_rule_filter(node);
                 cfg.emplace_filter(id, std::move(filter));
             }
             DDWAF_DEBUG("Parsed exclusion filter {}", id);
