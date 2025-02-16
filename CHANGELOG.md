@@ -9,6 +9,7 @@
 - WAF Builder: independent configuration manager to generate WAF instances ([#363](https://github.com/DataDog/libddwaf/pull/363))
 - Change endpoint fingerprint query parameter to optional ([#365](https://github.com/DataDog/libddwaf/pull/365))
 - Split diagnostics into warnings and errors ([#368](https://github.com/DataDog/libddwaf/pull/368))
+-  Pass object limits at evaluation time rather than parsing ([#370](https://github.com/DataDog/libddwaf/pull/370))
 
 #### Fixes
 - Wrap containers in the ruleset within shared pointers to reduce copies ([#366](https://github.com/DataDog/libddwaf/pull/366))

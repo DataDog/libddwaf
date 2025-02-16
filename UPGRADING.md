@@ -17,11 +17,27 @@ The following subsections more specifically cover the interface, any nuance and 
 #### Builder Lifecycle
 
 The lifetime of the WAF builder must be strictly linked to that of the remote configuration client, as it's main purpose is to consume configuration additions, updates and removals as they are produced. In addition
-```c
-ddwaf_config
+```cpp
+ddwaf_config config{/* Configuration */};
+
 ddwaf_builder builder = ddwaf_builder_init(config);
 
-ddwaf_builder_add_or_update_config
+// Add, update or remove configurations
+...
+
+// Generate a new handle from the current builder state
+ddwaf_handle handle = ddwaf_bulder_build_instance(&builder)
+
+// At this point, the handle is used, until a new one is required; configurations
+// can be added, updated and removed and a new handle is generated
+
+ddwaf_handle new_handle = ddwaf_bulder_build_instance(&builder)
+if (new_handle != NULL) {
+    ddwaf_destroy(&handle);
+}
+
+// At the end of application's lifetime, destroy the builder
+ddwaf_builder_destroy(&builder);
 ```
 #### Adding, updating and removing configurations
 
