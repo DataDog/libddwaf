@@ -50,10 +50,14 @@ struct object_limits {
     static constexpr uint32_t default_max_container_size{DDWAF_MAX_CONTAINER_SIZE};
     static constexpr uint32_t default_max_string_length{DDWAF_MAX_STRING_LENGTH};
 
+    // Non-overridable limits
+    static constexpr uint32_t max_transformers_per_address{10};
+    static constexpr uint32_t max_key_path_depth{DDWAF_MAX_CONTAINER_DEPTH};
+
+    // User provided limits
     uint32_t max_container_depth{DDWAF_MAX_CONTAINER_DEPTH};
     uint32_t max_container_size{DDWAF_MAX_CONTAINER_SIZE};
     uint32_t max_string_length{DDWAF_MAX_STRING_LENGTH};
-    uint32_t max_transformers_per_address{10}; // can't be overridden for now
 };
 
 inline size_t find_string_cutoff(const char *str, size_t length, object_limits limits = {})

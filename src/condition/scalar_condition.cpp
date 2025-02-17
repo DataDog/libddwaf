@@ -131,7 +131,7 @@ const matcher::base *get_matcher(const std::unique_ptr<matcher::base> &matcher,
 
 eval_result scalar_condition::eval(condition_cache &cache, const object_store &store,
     const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
-    ddwaf::timer &deadline) const
+    const object_limits &limits, ddwaf::timer &deadline) const
 {
     const auto *matcher = get_matcher(matcher_, data_id_, dynamic_matchers);
     if (matcher == nullptr) {
@@ -161,13 +161,13 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
         std::optional<condition_match> match;
         // TODO: iterators could be cached to avoid reinitialisation
         if (target.source == data_source::keys) {
-            object::key_iterator it(object, target.key_path, objects_excluded, limits_);
+            object::key_iterator it(object, target.key_path, objects_excluded, limits);
             match = eval_target<std::optional<condition_match>>(
-                it, target.name, ephemeral, *matcher, target.transformers, limits_, deadline);
+                it, target.name, ephemeral, *matcher, target.transformers, limits, deadline);
         } else {
-            object::value_iterator it(object, target.key_path, objects_excluded, limits_);
+            object::value_iterator it(object, target.key_path, objects_excluded, limits);
             match = eval_target<std::optional<condition_match>>(
-                it, target.name, ephemeral, *matcher, target.transformers, limits_, deadline);
+                it, target.name, ephemeral, *matcher, target.transformers, limits, deadline);
         }
 
         if (match.has_value()) {
@@ -181,7 +181,7 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
 
 eval_result scalar_negated_condition::eval(condition_cache &cache, const object_store &store,
     const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
-    ddwaf::timer &deadline) const
+    const object_limits &limits, ddwaf::timer &deadline) const
 {
     if (deadline.expired()) {
         throw ddwaf::timeout_exception();
@@ -208,13 +208,13 @@ eval_result scalar_negated_condition::eval(condition_cache &cache, const object_
 
     bool match = false;
     if (target_.source == data_source::keys) {
-        object::key_iterator it(object, target_.key_path, objects_excluded, limits_);
+        object::key_iterator it(object, target_.key_path, objects_excluded, limits);
         match = eval_target<bool>(
-            it, target_.name, ephemeral, *matcher, target_.transformers, limits_, deadline);
+            it, target_.name, ephemeral, *matcher, target_.transformers, limits, deadline);
     } else {
-        object::value_iterator it(object, target_.key_path, objects_excluded, limits_);
+        object::value_iterator it(object, target_.key_path, objects_excluded, limits);
         match = eval_target<bool>(
-            it, target_.name, ephemeral, *matcher, target_.transformers, limits_, deadline);
+            it, target_.name, ephemeral, *matcher, target_.transformers, limits, deadline);
     }
 
     if (!match) {

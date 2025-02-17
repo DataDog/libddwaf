@@ -28,7 +28,8 @@ namespace ddwaf {
 
 eval_result shi_detector::eval_string(const unary_argument<const ddwaf_object *> &resource,
     const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
+    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+    ddwaf::timer &deadline)
 {
     if (resource.value->nbEntries == 0 || resource.value->stringValue == nullptr) {
         return {};
@@ -41,7 +42,7 @@ eval_result shi_detector::eval_string(const unary_argument<const ddwaf_object *>
     std::vector<shell_token> resource_tokens;
     for (const auto &param : params) {
         auto res = find_shi_from_params(
-            resource_sv, resource_tokens, *param.value, objects_excluded, limits_, deadline);
+            resource_sv, resource_tokens, *param.value, objects_excluded, limits, deadline);
         if (res.has_value()) {
             const std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
@@ -73,7 +74,8 @@ eval_result shi_detector::eval_string(const unary_argument<const ddwaf_object *>
 
 eval_result shi_detector::eval_array(const unary_argument<const ddwaf_object *> &resource,
     const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
+    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+    ddwaf::timer &deadline)
 {
     shell_argument_array arguments{*resource.value};
     if (arguments.empty()) {
@@ -83,7 +85,7 @@ eval_result shi_detector::eval_array(const unary_argument<const ddwaf_object *> 
     std::vector<shell_token> resource_tokens;
     for (const auto &param : params) {
         auto res = find_shi_from_params(
-            arguments, resource_tokens, *param.value, objects_excluded, limits_, deadline);
+            arguments, resource_tokens, *param.value, objects_excluded, limits, deadline);
         if (res.has_value()) {
             const std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
@@ -113,20 +115,22 @@ eval_result shi_detector::eval_array(const unary_argument<const ddwaf_object *> 
     return {};
 }
 
-shi_detector::shi_detector(std::vector<condition_parameter> args, const object_limits &limits)
-    : base_impl<shi_detector>(std::move(args), limits)
+shi_detector::shi_detector(std::vector<condition_parameter> args)
+    : base_impl<shi_detector>(std::move(args))
 {}
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 eval_result shi_detector::eval_impl(const unary_argument<const ddwaf_object *> &resource,
     const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
+    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+    ddwaf::timer &deadline) const
 {
     if (resource.value->type == DDWAF_OBJ_STRING) {
-        return eval_string(resource, params, cache, objects_excluded, deadline);
+        return eval_string(resource, params, cache, objects_excluded, limits, deadline);
     }
 
     if (resource.value->type == DDWAF_OBJ_ARRAY) {
-        return eval_array(resource, params, cache, objects_excluded, deadline);
+        return eval_array(resource, params, cache, objects_excluded, limits, deadline);
     }
 
     return {};

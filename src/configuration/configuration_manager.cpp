@@ -55,7 +55,7 @@ void configuration_manager::load(
             try {
                 auto rules = static_cast<raw_configuration::vector>(it->second);
                 if (!rules.empty()) {
-                    parse_legacy_rules(rules, collector, section, limits_);
+                    parse_legacy_rules(rules, collector, section);
                 }
             } catch (const std::exception &e) {
                 DDWAF_WARN("Failed to parse rules: {}", e.what());
@@ -88,7 +88,7 @@ void configuration_manager::load(
         try {
             auto rules = static_cast<raw_configuration::vector>(it->second);
             if (!rules.empty()) {
-                parse_base_rules(rules, collector, section, limits_);
+                parse_base_rules(rules, collector, section);
             }
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse rules: {}", e.what());
@@ -103,7 +103,7 @@ void configuration_manager::load(
         try {
             auto rules = static_cast<raw_configuration::vector>(it->second);
             if (!rules.empty()) {
-                parse_user_rules(rules, collector, section, limits_);
+                parse_user_rules(rules, collector, section);
             }
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse custom rules: {}", e.what());
@@ -148,7 +148,7 @@ void configuration_manager::load(
         try {
             auto exclusions = static_cast<raw_configuration::vector>(it->second);
             if (!exclusions.empty()) {
-                parse_filters(exclusions, collector, section, limits_);
+                parse_filters(exclusions, collector, section);
             }
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse exclusions: {}", e.what());
@@ -178,7 +178,7 @@ void configuration_manager::load(
         try {
             auto processors = static_cast<raw_configuration::vector>(it->second);
             if (!processors.empty()) {
-                parse_processors(processors, collector, section, limits_);
+                parse_processors(processors, collector, section);
             }
         } catch (const std::exception &e) {
             DDWAF_WARN("Failed to parse processors: {}", e.what());

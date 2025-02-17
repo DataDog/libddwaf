@@ -16,20 +16,25 @@ public:
     static constexpr unsigned version = 1;
     static constexpr std::array<std::string_view, 2> param_names{"resource", "params"};
 
-    explicit shi_detector(std::vector<condition_parameter> args, const object_limits &limits = {});
+    explicit shi_detector(std::vector<condition_parameter> args);
 
 protected:
     [[nodiscard]] eval_result eval_impl(const unary_argument<const ddwaf_object *> &resource,
         const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
-        const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const;
+        const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+        ddwaf::timer &deadline) const;
 
-    [[nodiscard]] eval_result eval_string(const unary_argument<const ddwaf_object *> &resource,
+    [[nodiscard]] static eval_result eval_string(
+        const unary_argument<const ddwaf_object *> &resource,
         const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
-        const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const;
+        const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+        ddwaf::timer &deadline);
 
-    [[nodiscard]] eval_result eval_array(const unary_argument<const ddwaf_object *> &resource,
+    [[nodiscard]] static eval_result eval_array(
+        const unary_argument<const ddwaf_object *> &resource,
         const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
-        const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const;
+        const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+        ddwaf::timer &deadline);
 
     friend class base_impl<shi_detector>;
 };

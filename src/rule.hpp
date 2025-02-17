@@ -60,14 +60,14 @@ public:
 
     virtual std::optional<event> match(const object_store &store, cache_type &cache,
         const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
-        ddwaf::timer &deadline) const
+        const object_limits &limits, ddwaf::timer &deadline) const
     {
         if (expression::get_result(cache)) {
             // An event was already produced, so we skip the rule
             return std::nullopt;
         }
 
-        auto res = expr_->eval(cache, store, objects_excluded, dynamic_matchers, deadline);
+        auto res = expr_->eval(cache, store, objects_excluded, dynamic_matchers, limits, deadline);
         if (!res.outcome) {
             return std::nullopt;
         }

@@ -29,20 +29,19 @@ namespace ddwaf {
 
 namespace {
 
-rule_spec parse_rule(
-    raw_configuration::map &rule, const object_limits &limits, core_rule::source_type source)
+rule_spec parse_rule(raw_configuration::map &rule, core_rule::source_type source)
 {
     std::vector<transformer_id> rule_transformers;
     auto data_source = ddwaf::data_source::values;
     auto transformers = at<raw_configuration::vector>(rule, "transformers", {});
-    if (transformers.size() > limits.max_transformers_per_address) {
+    if (transformers.size() > object_limits::max_transformers_per_address) {
         throw ddwaf::parsing_error("number of transformers beyond allowed limit");
     }
 
     rule_transformers = parse_transformers(transformers, data_source);
 
     auto conditions_array = at<raw_configuration::vector>(rule, "conditions");
-    auto expr = parse_expression(conditions_array, data_source, rule_transformers, limits);
+    auto expr = parse_expression(conditions_array, data_source, rule_transformers);
     if (expr->empty()) {
         // This is likely unreachable
         throw ddwaf::parsing_error("rule has no valid conditions");
@@ -70,7 +69,7 @@ rule_spec parse_rule(
 }
 
 void parse_rules(const raw_configuration::vector &rule_array, configuration_collector &cfg,
-    base_section_info &info, core_rule::source_type source, const object_limits &limits)
+    base_section_info &info, core_rule::source_type source)
 {
     for (unsigned i = 0; i < rule_array.size(); ++i) {
         std::string id;
@@ -95,7 +94,7 @@ void parse_rules(const raw_configuration::vector &rule_array, configuration_coll
                 continue;
             }
 
-            auto rule = parse_rule(node, limits, source);
+            auto rule = parse_rule(node, source);
 
             DDWAF_DEBUG("Parsed rule {}", id);
             info.add_loaded(id);
@@ -116,14 +115,14 @@ void parse_rules(const raw_configuration::vector &rule_array, configuration_coll
 } // namespace
 
 void parse_base_rules(const raw_configuration::vector &rule_array, configuration_collector &cfg,
-    base_section_info &info, const object_limits &limits)
+    base_section_info &info)
 {
-    parse_rules(rule_array, cfg, info, core_rule::source_type::base, limits);
+    parse_rules(rule_array, cfg, info, core_rule::source_type::base);
 }
 
 void parse_user_rules(const raw_configuration::vector &rule_array, configuration_collector &cfg,
-    base_section_info &info, const object_limits &limits)
+    base_section_info &info)
 {
-    parse_rules(rule_array, cfg, info, core_rule::source_type::user, limits);
+    parse_rules(rule_array, cfg, info, core_rule::source_type::user);
 }
 } // namespace ddwaf

@@ -23,9 +23,8 @@ template <typename... Args> condition_parameter gen_variadic_param(Args... addre
 
 TEST(TestScalarNegatedCondition, VariadicTargetInConstructor)
 {
-    EXPECT_THROW(
-        (scalar_negated_condition{std::make_unique<matcher::regex_match>(".*", 0, true), {},
-            {gen_variadic_param("server.request.uri.raw", "server.request.query")}, {}}),
+    EXPECT_THROW((scalar_negated_condition{std::make_unique<matcher::regex_match>(".*", 0, true),
+                     {}, {gen_variadic_param("server.request.uri.raw", "server.request.query")}}),
         std::invalid_argument);
 }
 
@@ -34,22 +33,21 @@ TEST(TestScalarNegatedCondition, TooManyAddressesInConstructor)
     EXPECT_THROW(
         (scalar_negated_condition{std::make_unique<matcher::regex_match>(".*", 0, true), {},
             {gen_variadic_param("server.request.uri.raw"),
-                gen_variadic_param("server.request.query")},
-            {}}),
+                gen_variadic_param("server.request.query")}}),
         std::invalid_argument);
 }
 
 TEST(TestScalarNegatedCondition, NoAddressesInConstructor)
 {
-    EXPECT_THROW((scalar_negated_condition{
-                     std::make_unique<matcher::regex_match>(".*", 0, true), {}, {}, {}}),
+    EXPECT_THROW(
+        (scalar_negated_condition{std::make_unique<matcher::regex_match>(".*", 0, true), {}, {}}),
         std::invalid_argument);
 }
 
 TEST(TestScalarNegatedCondition, NoMatch)
 {
     scalar_negated_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
-        {gen_variadic_param("server.request.uri.raw")}, {}};
+        {gen_variadic_param("server.request.uri.raw")}};
 
     ddwaf_object tmp;
     ddwaf_object root;
@@ -61,7 +59,7 @@ TEST(TestScalarNegatedCondition, NoMatch)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 }
@@ -69,7 +67,7 @@ TEST(TestScalarNegatedCondition, NoMatch)
 TEST(TestScalarNegatedCondition, Timeout)
 {
     scalar_negated_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
-        {gen_variadic_param("server.request.uri.raw")}, {}};
+        {gen_variadic_param("server.request.uri.raw")}};
 
     ddwaf_object tmp;
     ddwaf_object root;
@@ -81,13 +79,13 @@ TEST(TestScalarNegatedCondition, Timeout)
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
-    EXPECT_THROW(cond.eval(cache, store, {}, {}, deadline), ddwaf::timeout_exception);
+    EXPECT_THROW(cond.eval(cache, store, {}, {}, {}, deadline), ddwaf::timeout_exception);
 }
 
 TEST(TestScalarNegatedCondition, SimpleMatch)
 {
     scalar_negated_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
-        {gen_variadic_param("server.request.uri.raw")}, {}};
+        {gen_variadic_param("server.request.uri.raw")}};
 
     ddwaf_object tmp;
     ddwaf_object root;
@@ -99,7 +97,7 @@ TEST(TestScalarNegatedCondition, SimpleMatch)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 }
@@ -107,7 +105,7 @@ TEST(TestScalarNegatedCondition, SimpleMatch)
 TEST(TestScalarNegatedCondition, CachedMatch)
 {
     scalar_negated_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
-        {gen_variadic_param("server.request.uri.raw")}, {}};
+        {gen_variadic_param("server.request.uri.raw")}};
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -121,7 +119,7 @@ TEST(TestScalarNegatedCondition, CachedMatch)
         object_store store;
         store.insert(root, object_store::attribute::none, nullptr);
 
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         ASSERT_FALSE(res.ephemeral);
     }
@@ -130,7 +128,7 @@ TEST(TestScalarNegatedCondition, CachedMatch)
         object_store store;
         store.insert(root, object_store::attribute::none, nullptr);
 
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_FALSE(res.outcome);
         ASSERT_FALSE(res.ephemeral);
     }
@@ -144,7 +142,7 @@ TEST(TestScalarNegatedCondition, SimpleMatchOnKeys)
     target.targets[0].source = data_source::keys;
 
     scalar_negated_condition cond{
-        std::make_unique<matcher::regex_match>("hello", 0, true), {}, {std::move(target)}, {}};
+        std::make_unique<matcher::regex_match>("hello", 0, true), {}, {std::move(target)}};
 
     ddwaf_object tmp;
     ddwaf_object root;
@@ -159,7 +157,7 @@ TEST(TestScalarNegatedCondition, SimpleMatchOnKeys)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 }
@@ -167,7 +165,7 @@ TEST(TestScalarNegatedCondition, SimpleMatchOnKeys)
 TEST(TestScalarNegatedCondition, SimpleEphemeralMatch)
 {
     scalar_negated_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
-        {gen_variadic_param("server.request.uri.raw")}, {}};
+        {gen_variadic_param("server.request.uri.raw")}};
 
     ddwaf_object tmp;
     ddwaf_object root;
@@ -182,7 +180,7 @@ TEST(TestScalarNegatedCondition, SimpleEphemeralMatch)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         ASSERT_TRUE(res.ephemeral);
     }
@@ -194,7 +192,7 @@ TEST(TestScalarNegatedCondition, SimpleEphemeralMatch)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         ASSERT_TRUE(res.ephemeral);
     }
