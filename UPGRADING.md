@@ -10,7 +10,7 @@ The WAF builder is a new mechanism for generating WAF instances through the use 
 
 In previous versions of `libddwaf`, configurations provided during `ddwaf_update` were required to be a map containing at least one of the supported top-level keys (e.g. `rules`, `exclusions`, `processors`, etc) and each of these represented the complete set of primitives of the given type. For example, a configuration containing `rules` was required to contain all rules, meaning that a future configuration update containing `rules` would result in the complete replacement of the old set with the new one. With this model, when generating a single WAF instance with multiple configurations, each of them was required to be non-overlapping.
 
-In this new version, configurations are still required to be a map, containing  at least one of the supported top-level keys, however they must also be provided with a "path", which represents a unique identifier for the given configuration and does not need to follow any particular schema, albeit this value will typically be obtained from remote configuration. In addition, configurations are now assumed to be overlapping, meaning that the top-level key need not represent the complete set of primitives for the given type as they will be treated as though the set is always partial and may be extended through other configurations. For example, two configurations may contribute new rules by providing the `rules` top-level key, trusting that the WAF builder will take care of the merging process.
+In this new version, configurations are still required to be a map, containing  at least one of the supported top-level keys, however they must also be provided with a "path", which represents a unique identifier for the given configuration and does not need to follow any particular schema; when the configuration is obtained through remote configuration, the path value must be the one obtained through it. In addition, configurations are now assumed to be overlapping, meaning that the top-level key need not represent the complete set of primitives for the given type as they will be treated as though the set is always partial and may be extended through other configurations. For example, two configurations may contribute new rules by providing the `rules` top-level key, trusting that the WAF builder will take care of the merging process.
 
 #### Builder Lifecycle
 
@@ -34,14 +34,14 @@ At this stage, configurations may be added, updated and removed and, once ready,
 
 ```cpp
 // Build a new WAF instance, handle any potential failure by checking for NULL
-ddwaf_handle handle = ddwaf_bulder_build_instance(&builder);
+ddwaf_handle handle = ddwaf_builder_build_instance(&builder);
 if (handle == NULL) { /* handle failure */ }
 ```
 
 The generated WAF instance is then available for use, and it's completely independent of the builder itself, meaning that freeing one should have no impact on the other and vice-versa. The builder can continue being used in the background and once all configuration changes have been performed, a new handle can be instantiated:
 
 ```cpp
-ddwaf_handle new_handle = ddwaf_bulder_build_instance(&builder)
+ddwaf_handle new_handle = ddwaf_builder_build_instance(&builder)
 if (new_handle == NULL) {
     // handle failure
 }
