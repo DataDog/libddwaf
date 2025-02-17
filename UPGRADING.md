@@ -112,13 +112,13 @@ With that in mind, the schema of the diagnostics is roughly as follows:
     },
     "warnings": {
       "<message>" : [ "<ids>" ],
-    },
+    }
   }
 }
 ```
 #### Rephrased diagnostics
 
-The following diagnostics have been slightly changed or rephrased, any monitors targetting them may need to be updated:
+The following diagnostics have been slightly changed or rephrased, any monitors targeting them may need to be updated:
 - `unknown type '<name>'` is now `unknown type: '<name>'`.
 - `unknown matcher: <name>` is now `unknown operator: '<name>'` and has been demoted to a `warning`.
 - `invalid transformer <name>` is now `unknown transformer: '<name>'` and has been demoted to a `warning`.
