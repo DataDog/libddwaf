@@ -378,6 +378,9 @@ ddwaf_builder ddwaf_builder_init(const ddwaf_config *config);
  * @param diagnostics Optional ruleset parsing diagnostics. (nullable)
  *
  * @return Whether the operation succeeded (true) or failed (false).
+ *
+ * @note if any of the arguments are NULL, the diagnostics object will not be initialised.
+ * @note The memory associated with the path, config and diagnostics must be freed by the caller.
  **/
 bool ddwaf_builder_add_or_update_config(ddwaf_builder builder, const char *path, uint32_t path_len, ddwaf_object *config, ddwaf_object *diagnostics);
 
@@ -391,6 +394,8 @@ bool ddwaf_builder_add_or_update_config(ddwaf_builder builder, const char *path,
  * @param path_len The length of the string contained within path.
  *
  * @return Whether the operation succeeded (true) or failed (false).
+ *
+ * @note The memory associated with the path must be freed by the caller.
  **/
 bool ddwaf_builder_remove_config(ddwaf_builder builder, const char *path, uint32_t path_len);
 
