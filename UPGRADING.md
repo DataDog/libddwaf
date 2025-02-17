@@ -61,7 +61,7 @@ ddwaf_builder_destroy(&builder);
 
 The process of adding or updating configurations is a relatively simple one. Firstly, configurations must be provided as a `ddwaf_object` of type `map` and a separate `path` representing its unique identifier. For example: 
 ```c
-// Generate the configuration as a map containing any of the expected top-level keys, such as `rules`, `exclusions`, etc.
+// Generate the configuration as a map containing any of the expected top-level keys, such as `rules, exclusions, etc.
 ddwaf_object configuration;
 ddwaf_object_map(&configuration);
 ...
@@ -82,7 +82,7 @@ ddwaf_object_free(&configuration);
 
 if (!result) { /* Failed to load configuration, check diagnostics */ }
 ```
-The addition or update may fail in certain circumstances, as denoted by the returned boolean value. This may happen when invalid arguments are provided, when the configuration couldn't be parsed or when it doesn't yield any meaningful results, e.g. none of the primitives within are compatible.
+The addition or update may fail in certain circumstances, as denoted by the returned boolean value. This may happen when invalid arguments are provided, when the configuration could not be parsed or when it doesn't yield any meaningful results, e.g. none of the primitives within are compatible.
 
 In contrast, the removal process only requires the path and it's performed through the `ddwaf_builder_remove_config` function, as can be seen on the example below:
 
@@ -119,10 +119,10 @@ With that in mind, the schema of the diagnostics is roughly as follows:
 #### Rephrased diagnostics
 
 The following diagnostics have been slightly changed or rephrased, any monitors targetting them may need to be updated:
-- `unknown type '<name>'"` is now `unknown type: '<name>'"`.
+- `unknown type '<name>'` is now `unknown type: '<name>'`.
 - `unknown matcher: <name>` is now `unknown operator: '<name>'` and has been demoted to a `warning`.
-- `invalid transformer <name>` is now `unkown transformer: '<name>'` and has been demoted to a `warning`.
-- `unknown generator '<name'` is now `unknown generator: '<name>'`  and has been demoted to a `warning`.
+- `invalid transformer <name>` is now `unknown transformer: '<name>'` and has been demoted to a `warning`.
+- `unknown generator '<name>'` is now `unknown generator: '<name>'`  and has been demoted to a `warning`.
 
 The following diagnostics have only been downgraded to warnings:
 - `unsupported schema version: <number>.x`
