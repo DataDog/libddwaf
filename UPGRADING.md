@@ -56,6 +56,9 @@ ddwaf_builder_destroy(&builder);
 
 #### Adding, updating and removing configurations
 
+> [!CAUTION] 
+> Builder is access is not thread-safe, users must ensure that it's only used from one thread or they must synchronize uses from separate threads, e.g. using a mutex.
+
 The process of adding or updating configurations is a relatively simple one. Firstly, configurations must be provided as a `ddwaf_object` of type `map` and a separate `path` representing its unique identifier. For example: 
 ```c
 // Generate the configuration as a map containing any of the expected top-level keys, such as `rules`, `exclusions`, etc.
