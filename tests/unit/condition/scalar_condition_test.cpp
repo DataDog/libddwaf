@@ -50,7 +50,7 @@ TEST(TestScalarCondition, NoMatch)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 }
@@ -70,7 +70,7 @@ TEST(TestScalarCondition, Timeout)
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
-    EXPECT_THROW(cond.eval(cache, store, {}, {}, deadline), ddwaf::timeout_exception);
+    EXPECT_THROW(cond.eval(cache, store, {}, {}, {}, deadline), ddwaf::timeout_exception);
 }
 
 TEST(TestScalarCondition, SimpleMatch)
@@ -88,7 +88,7 @@ TEST(TestScalarCondition, SimpleMatch)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 }
@@ -96,7 +96,7 @@ TEST(TestScalarCondition, SimpleMatch)
 TEST(TestScalarCondition, CachedMatch)
 {
     scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
-        {gen_variadic_param("server.request.uri.raw")}, {}};
+        {gen_variadic_param("server.request.uri.raw")}};
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -110,7 +110,7 @@ TEST(TestScalarCondition, CachedMatch)
         object_store store;
         store.insert(root, object_store::attribute::none, nullptr);
 
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         ASSERT_FALSE(res.ephemeral);
     }
@@ -119,7 +119,7 @@ TEST(TestScalarCondition, CachedMatch)
         object_store store;
         store.insert(root, object_store::attribute::none, nullptr);
 
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_FALSE(res.outcome);
         ASSERT_FALSE(res.ephemeral);
     }
@@ -148,7 +148,7 @@ TEST(TestScalarCondition, SimpleMatchOnKeys)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 }
@@ -171,7 +171,7 @@ TEST(TestScalarCondition, SimpleEphemeralMatch)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         ASSERT_TRUE(res.ephemeral);
     }
@@ -183,7 +183,7 @@ TEST(TestScalarCondition, SimpleEphemeralMatch)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         ASSERT_TRUE(res.ephemeral);
     }

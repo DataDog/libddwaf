@@ -15,14 +15,15 @@ public:
     static constexpr unsigned version = 2;
     static constexpr std::array<std::string_view, 2> param_names{"resource", "params"};
 
-    explicit lfi_detector(std::vector<condition_parameter> args, const object_limits &limits = {})
-        : base_impl<lfi_detector>(std::move(args), limits)
+    explicit lfi_detector(std::vector<condition_parameter> args)
+        : base_impl<lfi_detector>(std::move(args))
     {}
 
 protected:
     [[nodiscard]] eval_result eval_impl(const unary_argument<std::string_view> &path,
         const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
-        const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const;
+        const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+        ddwaf::timer &deadline) const;
 
     friend class base_impl<lfi_detector>;
 };
