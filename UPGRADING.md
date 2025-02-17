@@ -16,35 +16,57 @@ The following subsections more specifically cover the interface, any nuance and 
 
 #### Builder Lifecycle
 
-The lifetime of the WAF builder must be strictly linked to that of the remote configuration client, as it's main purpose is to consume configuration additions, updates and removals as they are produced. In addition
+The lifetime of the WAF builder should be linked to that of the remote configuration client, as its main purpose is to consume configuration additions, updates and removals as they are produced. Generally, a builder should have a consistent state throughout its lifetime, ensuring that memory use is always limited to objects contained within the loaded configurations. 
+
+Currently, the instantiation of the builder optionally requires `ddwaf_config`, a structure which allows the user to configure the evaluation limits, the obfuscator regexes and the object free function. The interaction with `ddwaf_config` follows the same principles as `ddwaf_init`, i.e. if provided it'll override existing values, if `nullptr`, defaults will be used instead. Note that this structure may be removed in the future in favour of passing obfuscator regexes and evaluation limits through configuration. 
+
+The following snippet shows the instantiation of a builder:
+
 ```cpp
-ddwaf_config config{/* Configuration */};
+ddwaf_config config{/* standard configuration */};
 
 ddwaf_builder builder = ddwaf_builder_init(config);
+```
 
-// Add, update or remove configurations
-...
+At this stage, configurations may be added, updated and removed and, once ready, a WAF instance can be create as follows:
 
-// Generate a new handle from the current builder state
-ddwaf_handle handle = ddwaf_bulder_build_instance(&builder)
+```cpp
+ddwaf_handle handle = ddwaf_bulder_build_instance(&builder);
+if (handle == NULL) { /* Fail */ }
+```
 
-// At this point, the handle is used, until a new one is required; configurations
-// can be added, updated and removed and a new handle is generated
+The generated WAF instance is then available for use, and it's completely independent of the builder itself, meaning that freeing one should have no impact on the other and vice-versa. The builder can continue being used in the background and once ready, a new handle can be instantiated:
 
+```cpp
 ddwaf_handle new_handle = ddwaf_bulder_build_instance(&builder)
 if (new_handle != NULL) {
     ddwaf_destroy(&handle);
+} else {
+   // Fail
 }
+```
+Note that the two WAF instances can coexist if needed, albeit it's more likely that only one will be required. Finally, at the end of the builder's lifecycle, the memory associated to it must be released as follows:
 
+```cpp
 // At the end of application's lifetime, destroy the builder
 ddwaf_builder_destroy(&builder);
 ```
+
 #### Adding, updating and removing configurations
 
-```c
-ddwaf_builder builder = ddwaf_builder_init(...);
+```cpp
+ddwaf_object configuration = ...;
 
-ddwaf_builder_add_or_update_config
+ddwaf_object diagnostics;
+ddwaf_object_invalid(&diagnostics);
+
+const char *path = "path/to/configuration/rules-c555e7ee647a3d72c2cb60a32767d586";
+uint32_t path_len = (uint32_t)strlen(path);
+
+bool result = ddwaf_builder_add_or_update_config(&builder, path, path_len, &configuration, &diagnostics);
+ddwaf_object_free(&configuration);
+
+if (!result) { /* Failed to load configuration, check diagnostics */ }
 ```
 
 ### Warning and Error Diagnostics
