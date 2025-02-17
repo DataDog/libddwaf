@@ -18,32 +18,36 @@ The following subsections more specifically cover the interface, any nuance and 
 
 The lifetime of the WAF builder should be linked to that of the remote configuration client, as its main purpose is to consume configuration additions, updates and removals as they are produced. Generally, a builder should have a consistent state throughout its lifetime, ensuring that memory use is always limited to objects contained within the loaded configurations. 
 
-Currently, the instantiation of the builder optionally requires `ddwaf_config`, a structure which allows the user to configure the evaluation limits, the obfuscator regexes and the object free function. The interaction with `ddwaf_config` follows the same principles as `ddwaf_init`, i.e. if provided it'll override existing values, if `nullptr`, defaults will be used instead. Note that this structure may be removed in the future in favour of passing obfuscator regexes and evaluation limits through configuration. 
+Currently, the instantiation of the builder optionally requires `ddwaf_config`, a structure which allows the user to configure the evaluation limits, the obfuscator regexes and the object free function. The interaction with `ddwaf_config` follows the same principles as `ddwaf_init`, i.e. if provided it'll override existing values, if `nullptr`, defaults will be used instead. 
+
+> [!NOTE]
+> `ddwaf_config` should not be confused with the configurations required by the builder, which are provided as a `ddwaf_object`. This structure be removed in the future in favour of passing obfuscator regexes and evaluation limits through configuration. 
 
 The following snippet shows the instantiation of a builder:
 
 ```cpp
-ddwaf_config config{/* standard configuration */};
+ddwaf_config config{/* limits, obfuscator regexes and free function */};
 
+// Instantiate a new builder using the previously defined ddwaf_config
 ddwaf_builder builder = ddwaf_builder_init(config);
 ```
 
-At this stage, configurations may be added, updated and removed and, once ready, a WAF instance can be create as follows:
+At this stage, configurations may be added, updated and removed and, once ready, a WAF instance can be created as follows:
 
 ```cpp
+// Build a new WAF instance, handle any potential failure by checking for NULL
 ddwaf_handle handle = ddwaf_bulder_build_instance(&builder);
-if (handle == NULL) { /* Fail */ }
+if (handle == NULL) { /* handle failure */ }
 ```
 
-The generated WAF instance is then available for use, and it's completely independent of the builder itself, meaning that freeing one should have no impact on the other and vice-versa. The builder can continue being used in the background and once ready, a new handle can be instantiated:
+The generated WAF instance is then available for use, and it's completely independent of the builder itself, meaning that freeing one should have no impact on the other and vice-versa. The builder can continue being used in the background and once all configuration changes have been performed, a new handle can be instantiated:
 
 ```cpp
 ddwaf_handle new_handle = ddwaf_bulder_build_instance(&builder)
-if (new_handle != NULL) {
-    ddwaf_destroy(&handle);
-} else {
-   // Fail
+if (new_handle == NULL) {
+    // handle failure
 }
+ddwaf_destroy(&handle);  
 ```
 Note that the two WAF instances can coexist if needed, albeit it's more likely that only one will be required. Finally, at the end of the builder's lifecycle, the memory associated to it must be released as follows:
 
@@ -54,75 +58,73 @@ ddwaf_builder_destroy(&builder);
 
 #### Adding, updating and removing configurations
 
-```cpp
-ddwaf_object configuration = ...;
+The process of adding or updating configurations is a relatively simple one. Firstly, configurations must be provided as a `ddwaf_object` of type `map` and a separate `path` representing its unique identifier. For example: 
+```c
+// Generate the configuration as a map containing any of the expected top-level keys, such as `rules`, `exclusions`, etc.
+ddwaf_object configuration;
+ddwaf_object_map(&configuration);
+...
 
-ddwaf_object diagnostics;
-ddwaf_object_invalid(&diagnostics);
-
+// Use a unique path for this configuration
 const char *path = "path/to/configuration/rules-c555e7ee647a3d72c2cb60a32767d586";
 uint32_t path_len = (uint32_t)strlen(path);
+```
+
+With that in hand, configurations can be added or updated with `ddwaf_builder_add_or_update_config`, letting the builder handle any update-specific logic. This function will also provide any diagnostics derived from the parsing and conversion process, this will include any errors and warnings as well as details regarding the IDs of the elements loaded, failed or skipped. Note that once the configuration is loaded, the memory associated with it must be freed by the caller:
+```c
+ddwaf_object diagnostics;
+ddwaf_object_invalid(&diagnostics);
 
 bool result = ddwaf_builder_add_or_update_config(&builder, path, path_len, &configuration, &diagnostics);
 ddwaf_object_free(&configuration);
 
 if (!result) { /* Failed to load configuration, check diagnostics */ }
 ```
+In this instance, the addition or update may fail in certain circumstances, as denoted by the returned boolean value. This may happen when invalid arguments are provided, when the configuration couldn't be parsed or when it doesn't yield any meaningful results (e.g. none of the primitives within are compatible).
+
+In contrast, the removal process only requires the path and it's performed through the `ddwaf_builder_remove_config` function, as can be seen on the example below:
+
+```c
+bool result = ddwaf_builder_remove_config(&builder, path, path_len, &configuration, &diagnostics);
+if (!result) { /* Non critical error, possibly indicating a bug in the user's implementation */}
+```
+
+Note that the removal process returns a boolean value indicating success or failure, however failure in this instance only indicates that either the arguments provided were invalid or the configuration didn't actually exist.
 
 ### Warning and Error Diagnostics
+In this new version, diagnostics have been split into two categories: warnings and errors. Warnings represent diagnostics which typically indicate an incompatibility between the provided configuration and the given version of `libddwaf`. On the other hand, errors indicate a more relevant failure, one which may indicate that the configuration is malformed or incomplete. In addition, a new top-level `error` field has been introduced to account for a potential global configuration parsing error.
+
+With that in mind, the schema of the diagnostics is roughly as follows:
 
 ```json
 {
-  "exclusions": {
-    "loaded": [
-      "1d058b7b-9b35-4a01-9b60-74c9a2a3bd78",
-    ],
-    "failed": [
-      "index:2"
-    ],
+  "error": "<string, when present, no other keys should be available>",
+  "ruleset_version": "<version string>",
+  "(exclusions|rules|processors|rules_override|rules_data|custom_rules|actions|scanners)" : {
+    "error": "<string, when present, no other keys should be available>",
+    "loaded": [ "<ids>" ],
+    "failed": [ "<ids>" ],
+    "skipped": [ "<ids>" ],
     "errors": {
-      "missing key 'id'": [
-        "index:2"
-      ]
-    }
-  },
-  "rules": {
-    "loaded": [
-      "blk-001-001"
-    ],
-    "failed": [
-      "blk-001-002"
-    ],
-    "errors": {
-      "missing key 'conditions'": [
-        "blk-001-002"
-      ]
-    }
-  },
-  "rules_override": {
-    "loaded": [
-      "index:1"
-    ],
-    "failed": [
-      "index:0"
-    ],
-    "errors": {
-      "invalid type 'map' for key 'rules_target', expected 'array'": [
-        "index:0"
-      ]
-    }
-  },
-  "ruleset_version": "1.7.0"
+      "<message>" : [ "<ids>" ],
+    },
+    "warnings": {
+      "<message>" : [ "<ids>" ],
+    },
+  }
 }
 ```
 #### Rephrased diagnostics
 
 The following diagnostics have been slightly changed or rephrased, any monitors targetting them may need to be updated:
+- `unknown type '<name>'"` is now `unknown type: '<name>'"`.
+- `unknown matcher: <name>` is now `unknown operator: '<name>'` and has been demoted to a `warning`.
+- `invalid transformer <name>` is now `unkown transformer: '<name>'` and has been demoted to a `warning`.
+- `unknown generator '<name'` is now `unknown generator: '<name>'`  and has been demoted to a `warning`.
 
-- `unknown matcher: <name>` is now `unknown operator: '<name>'`
-- `invalid transformer <name>` is now `unkown transformer: '<name>'`
-- `unknown generator '<name'` is now `unknown generator: '<name>'`
-- `unknown type '<name>'"` is now `unknown type: '<name>'"`
+The following diagnostics have only been downgraded to warnings:
+- `unsupported schema version: <number>.x`
+- `unsupported operator version <operator name>@<version>, current <operator name>@<current version>`
 
 ## Upgrading from `1.16.x` to `1.17.x`
 
