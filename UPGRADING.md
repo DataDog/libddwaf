@@ -3,25 +3,23 @@
 ## Upgrading from `1.22.0` to `1.23.0`
 
 ### WAF Builder
-The WAF builder is a new mechanism for generating WAF instances through the use of independent, partial and potentially overlapping configurations, effectively mirroring the process performed by the security libraries when consolidating configurations obtained through remote configuration. The outcome of the builder is effectively equivalent to merging all available configurations into a single one, however the process is tailored towards continuous generation of instances based on the addition, update and removal of partial or complete configurations, while reusing internal objects as much as possible.
+The WAF builder is a new mechanism for generating WAF instances through the use of independent, partial and potentially overlapping configurations, effectively mirroring the process performed by the security libraries when consolidating configurations obtained through remote configuration. The outcome of the builder is equivalent to merging all available configurations into a single one, however the process is tailored towards continuous generation of instances based on the addition, update and removal of partial or complete configurations, while reusing internal objects as much as possible.
 
 > [!WARNING]
 > As a consequence of the introduction of this new interface, the `ddwaf_update` function has been deprecated and removed, as the semantics of the configurations expected by this function are incompatible with those used by the new builder API. ***
 
-In previous versions of `libddwaf`, configurations provided during `ddwaf_update` were required to be a map containing at least one of the supported top-level keys (e.g. `rules`, `exclusions`, `processors`, etc) and each of these represented the complete set of primitives of the given type. For example, a configuration containing `rules` was required to contain all rules, meaning that a future configuration update containing `rules` would result in the complete replacement of the old set by the new one. With this model, when generating a single WAF instance with multiple configurations, each of them was required to be non-overlapping.
+In previous versions of `libddwaf`, configurations provided during `ddwaf_update` were required to be a map containing at least one of the supported top-level keys (e.g. `rules`, `exclusions`, `processors`, etc) and each of these represented the complete set of primitives of the given type. For example, a configuration containing `rules` was required to contain all rules, meaning that a future configuration update containing `rules` would result in the complete replacement of the old set with the new one. With this model, when generating a single WAF instance with multiple configurations, each of them was required to be non-overlapping.
 
-In this new version, configurations are still required to be a map, containing  at least one of the supported top-level keys, however they must also be provided with a "path", which represents a unique identifier for the given configuration and does not need to follow any particular schema, albeit this value will typically be obtained from remote configuration. In addition, configurations are now assumed to be overlapping, meaning that the top-level key need not represent the complete set of primitives for the given type as they will be treated as though the set is always partial and may be extended through other configurations. For example, two configurations may contribute new rules by providing the `rules` top-level key, trusting that the WAF builder will take care of the "merge" process.
-
-The following subsections more specifically cover the interface, any nuance and differences with the `ddwaf_update` interface.
+In this new version, configurations are still required to be a map, containing  at least one of the supported top-level keys, however they must also be provided with a "path", which represents a unique identifier for the given configuration and does not need to follow any particular schema, albeit this value will typically be obtained from remote configuration. In addition, configurations are now assumed to be overlapping, meaning that the top-level key need not represent the complete set of primitives for the given type as they will be treated as though the set is always partial and may be extended through other configurations. For example, two configurations may contribute new rules by providing the `rules` top-level key, trusting that the WAF builder will take care of the merging process.
 
 #### Builder Lifecycle
 
-The lifetime of the WAF builder should be linked to that of the remote configuration client, as its main purpose is to consume configuration additions, updates and removals as they are produced. Generally, a builder should have a consistent state throughout its lifetime, ensuring that memory use is always limited to objects contained within the loaded configurations. 
+The lifetime of the WAF builder should be linked to that of the remote configuration client, as its main purpose is to consume configuration additions, updates and removals as they are produced. Generally, a builder will have a consistent state throughout its lifetime, ensuring that memory use is always limited to objects contained within the loaded configurations. 
 
-Currently, the instantiation of the builder optionally requires `ddwaf_config`, a structure which allows the user to configure the evaluation limits, the obfuscator regexes and the object free function. The interaction with `ddwaf_config` follows the same principles as `ddwaf_init`, i.e. if provided it'll override existing values, if `nullptr`, defaults will be used instead. 
+Currently, the instantiation of the builder optionally requires `ddwaf_config`, a structure which allows the user to configure the evaluation limits, the obfuscator regexes and the object free function. The interaction with `ddwaf_config` follows the same principles as `ddwaf_init`, i.e. if provided it'll override existing values, if `NULL`, defaults will be used instead. 
 
 > [!NOTE]
-> `ddwaf_config` should not be confused with the configurations required by the builder, which are provided as a `ddwaf_object`. This structure be removed in the future in favour of passing obfuscator regexes and evaluation limits through configuration. 
+> `ddwaf_config` should not be confused with the configurations obtained through remote configuration, which are provided as a `ddwaf_object`. This structure be removed in the future in favour of passing obfuscator regexes and evaluation limits through configuration. 
 
 The following snippet shows the instantiation of a builder:
 
@@ -49,7 +47,7 @@ if (new_handle == NULL) {
 }
 ddwaf_destroy(&handle);  
 ```
-Note that the two WAF instances can coexist if needed, albeit it's more likely that only one will be required. Finally, at the end of the builder's lifecycle, the memory associated to it must be released as follows:
+Note that the two WAF instances can coexist if needed, albeit it's more likely that only one will be required. Finally, at the end of the builder's lifecycle, the memory associated with it must be released as follows:
 
 ```cpp
 // At the end of application's lifetime, destroy the builder
@@ -71,6 +69,7 @@ uint32_t path_len = (uint32_t)strlen(path);
 ```
 
 With that in hand, configurations can be added or updated with `ddwaf_builder_add_or_update_config`, letting the builder handle any update-specific logic. This function will also provide any diagnostics derived from the parsing and conversion process, this will include any errors and warnings as well as details regarding the IDs of the elements loaded, failed or skipped. Note that once the configuration is loaded, the memory associated with it must be freed by the caller:
+
 ```c
 ddwaf_object diagnostics;
 ddwaf_object_invalid(&diagnostics);
@@ -80,7 +79,7 @@ ddwaf_object_free(&configuration);
 
 if (!result) { /* Failed to load configuration, check diagnostics */ }
 ```
-In this instance, the addition or update may fail in certain circumstances, as denoted by the returned boolean value. This may happen when invalid arguments are provided, when the configuration couldn't be parsed or when it doesn't yield any meaningful results (e.g. none of the primitives within are compatible).
+The addition or update may fail in certain circumstances, as denoted by the returned boolean value. This may happen when invalid arguments are provided, when the configuration couldn't be parsed or when it doesn't yield any meaningful results, e.g. none of the primitives within are compatible.
 
 In contrast, the removal process only requires the path and it's performed through the `ddwaf_builder_remove_config` function, as can be seen on the example below:
 
@@ -89,7 +88,7 @@ bool result = ddwaf_builder_remove_config(&builder, path, path_len, &configurati
 if (!result) { /* Non critical error, possibly indicating a bug in the user's implementation */}
 ```
 
-Note that the removal process returns a boolean value indicating success or failure, however failure in this instance only indicates that either the arguments provided were invalid or the configuration didn't actually exist.
+The removal process returns a boolean value indicating success or failure, however failure in this instance only indicates that either the arguments provided were invalid or the configuration didn't actually exist.
 
 ### Warning and Error Diagnostics
 In this new version, diagnostics have been split into two categories: warnings and errors. Warnings represent diagnostics which typically indicate an incompatibility between the provided configuration and the given version of `libddwaf`. On the other hand, errors indicate a more relevant failure, one which may indicate that the configuration is malformed or incomplete. In addition, a new top-level `error` field has been introduced to account for a potential global configuration parsing error.
