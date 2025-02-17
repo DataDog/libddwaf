@@ -2,12 +2,15 @@
 
 ## v1.23.0
 
-### New features
+### New features ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
 This new version of `libddwaf` introduces the WAF builder, a new mechanism to generate WAF instances through complete or partial configurations. This new mechanism aims to standardise the WAF update process across all WAF users, eliminating the possibility for incomplete or inconsistent implementations. With the introduction of the WAF builder, the `ddwaf_update` function has been deprecated, as the semantics have been drastically changed. More information about the builder can be found ([here](https://github.com/DataDog/libddwaf/blob/release/1.23.0/UPGRADING.md#waf-builder)).
 
 With this new WAF builder, diagnostics have now been split into warnings and errors to better differentiate those which can indicate a potential issue from those which may indicate a potential, but expected, incompatibility. More information about the diagnostic changes can be found ([here](https://github.com/DataDog/libddwaf/blob/release/1.23.0/UPGRADING.md#warning-and-error-diagnostics)).
 
 Finally, a small but consequential change has been introduced to the endpoint fingerprint generation, which makes the `query` parameter of the postprocessor optional, meaning that fingerprints may be generated without it.
+
+Since this release introduces breaking changes, a new section has been added to the [upgrading guide](https://github.com/DataDog/libddwaf/blob/release/1.23.0/UPGRADING.md#upgrading-from-1220-to-1230). 
 
 ### Release changelog
 #### Changes
