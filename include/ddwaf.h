@@ -381,6 +381,7 @@ ddwaf_builder ddwaf_builder_init(const ddwaf_config *config);
  *
  * @note if any of the arguments are NULL, the diagnostics object will not be initialised.
  * @note The memory associated with the path, config and diagnostics must be freed by the caller.
+ * @note This function is not thread-safe.
  **/
 bool ddwaf_builder_add_or_update_config(ddwaf_builder builder, const char *path, uint32_t path_len, ddwaf_object *config, ddwaf_object *diagnostics);
 
@@ -396,6 +397,7 @@ bool ddwaf_builder_add_or_update_config(ddwaf_builder builder, const char *path,
  * @return Whether the operation succeeded (true) or failed (false).
  *
  * @note The memory associated with the path must be freed by the caller.
+ * @note This function is not thread-safe.
  **/
 bool ddwaf_builder_remove_config(ddwaf_builder builder, const char *path, uint32_t path_len);
 
@@ -407,6 +409,8 @@ bool ddwaf_builder_remove_config(ddwaf_builder builder, const char *path, uint32
  * @param builder Builder to perform the operation on. (nonnull)
  *
  * @return Handle to the new WAF instance or NULL if there was an error.
+ *
+ * @note This function is not thread-safe.
  **/
 ddwaf_handle ddwaf_builder_build_instance(ddwaf_builder builder);
 
