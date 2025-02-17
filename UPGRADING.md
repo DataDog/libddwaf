@@ -19,7 +19,7 @@ The lifetime of the WAF builder should be linked to that of the remote configura
 Currently, the instantiation of the builder optionally requires `ddwaf_config`, a structure which allows the user to configure the evaluation limits, the obfuscator regexes and the object free function. The interaction with `ddwaf_config` follows the same principles as `ddwaf_init`, i.e. if provided it'll override existing values, if `NULL`, defaults will be used instead. 
 
 > [!NOTE]
-> `ddwaf_config` should not be confused with the configurations obtained through remote configuration, which are provided as a `ddwaf_object`. This structure be removed in the future in favour of passing obfuscator regexes and evaluation limits through configuration. 
+> `ddwaf_config` should not be confused with the configurations obtained through remote configuration, which are provided as a `ddwaf_object`. This structure may be removed in the future in favour of passing obfuscator regexes and evaluation limits through configuration. 
 
 The following snippet shows the instantiation of a builder:
 
