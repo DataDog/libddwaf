@@ -81,7 +81,7 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
     optional_ref<ddwaf_object> derived{output_map};
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 1);
     const auto *obtained = ddwaf_object_get_index(&output_map, 0);
@@ -130,7 +130,7 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
     optional_ref<ddwaf_object> derived{output_map};
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 1);
     const auto *obtained = ddwaf_object_get_index(&output_map, 0);
@@ -174,7 +174,7 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
     optional_ref<ddwaf_object> derived{output_map};
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
 
     ddwaf_object_free(&output_map);
@@ -213,7 +213,7 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
     optional_ref<ddwaf_object> derived{output_map};
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, derived, cache, {}, deadline);
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
 
     ddwaf_object_free(&output_map);

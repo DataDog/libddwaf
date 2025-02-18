@@ -17,7 +17,7 @@ public:
     static constexpr std::size_t npos = std::string_view::npos;
 
     explicit match_iterator(ResourceType resource, const ddwaf_object *obj,
-        const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits())
+        const exclusion::object_set_ref &exclude, const object_limits &limits = {})
         : resource_(resource), it_(obj, {}, exclude, limits)
     {
         for (; it_; ++it_) {

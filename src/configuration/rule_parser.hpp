@@ -13,9 +13,9 @@
 namespace ddwaf {
 
 void parse_base_rules(const raw_configuration::vector &rule_array, configuration_collector &cfg,
-    base_section_info &info, const object_limits &limits);
+    base_section_info &info);
 
 void parse_user_rules(const raw_configuration::vector &rule_array, configuration_collector &cfg,
-    base_section_info &info, const object_limits &limits);
+    base_section_info &info);
 
 } // namespace ddwaf

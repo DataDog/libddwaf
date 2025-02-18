@@ -33,13 +33,12 @@ public:
 protected:
     void remove_config(const configuration_change_spec &cfg);
 
-    void load(
+    static void load(
         raw_configuration::map &root, configuration_collector &collector, base_ruleset_info &info);
 
     std::unordered_map<std::string, configuration_change_spec> configs_;
     configuration_spec global_config_;
     change_set changes_{change_set::none};
-    object_limits limits_;
 };
 
 } // namespace ddwaf

@@ -282,7 +282,7 @@ bool ddwaf_builder_add_or_update_config(ddwaf::waf_builder *builder, const char 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     uint32_t path_len, ddwaf_object *config, ddwaf_object *diagnostics)
 {
-    if (builder == nullptr) {
+    if (builder == nullptr || path == nullptr || path_len == 0 || config == nullptr) {
         return false;
     }
 
@@ -308,7 +308,7 @@ bool ddwaf_builder_add_or_update_config(ddwaf::waf_builder *builder, const char 
 
 bool ddwaf_builder_remove_config(ddwaf::waf_builder *builder, const char *path, uint32_t path_len)
 {
-    if (builder == nullptr) {
+    if (builder == nullptr || path == nullptr || path_len == 0) {
         return false;
     }
 

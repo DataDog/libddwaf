@@ -16,7 +16,6 @@ namespace {
 
 TEST(TestUserRuleParser, ParseRule)
 {
-    object_limits limits;
     configuration_spec cfg;
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
@@ -26,7 +25,7 @@ TEST(TestUserRuleParser, ParseRule)
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
-    parse_user_rules(rule_array, collector, section, limits);
+    parse_user_rules(rule_array, collector, section);
 
     ddwaf_object_free(&rule_object);
 
@@ -69,7 +68,6 @@ TEST(TestUserRuleParser, ParseRule)
 
 TEST(TestUserRuleParser, ParseRuleWithoutType)
 {
-    object_limits limits;
     configuration_spec cfg;
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
@@ -79,7 +77,7 @@ TEST(TestUserRuleParser, ParseRuleWithoutType)
         R"([{id: 1, name: rule1, tags: {category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
-    parse_user_rules(rule_array, collector, section, limits);
+    parse_user_rules(rule_array, collector, section);
 
     ddwaf_object_free(&rule_object);
 
@@ -136,7 +134,6 @@ TEST(TestUserRuleParser, ParseRuleWithoutType)
 
 TEST(TestUserRuleParser, ParseRuleWithoutConditions)
 {
-    object_limits limits;
     configuration_spec cfg;
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
@@ -146,7 +143,7 @@ TEST(TestUserRuleParser, ParseRuleWithoutConditions)
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: []}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
-    parse_user_rules(rule_array, collector, section, limits);
+    parse_user_rules(rule_array, collector, section);
 
     ddwaf_object_free(&rule_object);
     {
@@ -205,7 +202,6 @@ TEST(TestUserRuleParser, ParseRuleWithoutConditions)
 
 TEST(TestUserRuleParser, ParseRuleInvalidTransformer)
 {
-    object_limits limits;
     configuration_spec cfg;
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
@@ -215,7 +211,7 @@ TEST(TestUserRuleParser, ParseRuleInvalidTransformer)
         R"([{id: 1, name: rule1, tags: {category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y], transformers: [unknown]}], regex: .*}}]}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
-    parse_user_rules(rule_array, collector, section, limits);
+    parse_user_rules(rule_array, collector, section);
 
     ddwaf_object_free(&rule_object);
 
@@ -275,7 +271,6 @@ TEST(TestUserRuleParser, ParseRuleInvalidTransformer)
 
 TEST(TestUserRuleParser, ParseRuleWithoutID)
 {
-    object_limits limits;
     configuration_spec cfg;
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
@@ -285,7 +280,7 @@ TEST(TestUserRuleParser, ParseRuleWithoutID)
         R"([{name: rule1, tags: {type: type1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
-    parse_user_rules(rule_array, collector, section, limits);
+    parse_user_rules(rule_array, collector, section);
 
     ddwaf_object_free(&rule_object);
 
@@ -342,7 +337,6 @@ TEST(TestUserRuleParser, ParseRuleWithoutID)
 
 TEST(TestUserRuleParser, ParseMultipleRules)
 {
-    object_limits limits;
     configuration_spec cfg;
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
@@ -354,7 +348,7 @@ TEST(TestUserRuleParser, ParseMultipleRules)
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 2);
 
-    parse_user_rules(rule_array, collector, section, limits);
+    parse_user_rules(rule_array, collector, section);
 
     ddwaf_object_free(&rule_object);
 
@@ -415,7 +409,6 @@ TEST(TestUserRuleParser, ParseMultipleRules)
 
 TEST(TestUserRuleParser, ParseMultipleRulesOneInvalid)
 {
-    object_limits limits;
     configuration_spec cfg;
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
@@ -426,7 +419,7 @@ TEST(TestUserRuleParser, ParseMultipleRulesOneInvalid)
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
 
-    parse_user_rules(rule_array, collector, section, limits);
+    parse_user_rules(rule_array, collector, section);
 
     ddwaf_object_free(&rule_object);
 
@@ -494,7 +487,6 @@ TEST(TestUserRuleParser, ParseMultipleRulesOneInvalid)
 
 TEST(TestUserRuleParser, ParseMultipleRulesOneDuplicate)
 {
-    object_limits limits;
     configuration_spec cfg;
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
@@ -506,7 +498,7 @@ TEST(TestUserRuleParser, ParseMultipleRulesOneDuplicate)
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 2);
 
-    parse_user_rules(rule_array, collector, section, limits);
+    parse_user_rules(rule_array, collector, section);
 
     ddwaf_object_free(&rule_object);
 
@@ -558,20 +550,18 @@ TEST(TestUserRuleParser, ParseMultipleRulesOneDuplicate)
 
 TEST(TestUserRuleParser, KeyPathTooLong)
 {
-    object_limits limits;
-    limits.max_container_depth = 2;
     configuration_spec cfg;
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
     auto rule_object = yaml_to_object(
-        R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x, y, z]}], regex: .*}}]}])");
+        R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z]}], regex: .*}}]}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 1);
 
-    parse_user_rules(rule_array, collector, section, limits);
+    parse_user_rules(rule_array, collector, section);
 
     ddwaf_object_free(&rule_object);
 
@@ -628,8 +618,6 @@ TEST(TestUserRuleParser, KeyPathTooLong)
 
 TEST(TestUserRuleParser, NegatedMatcherTooManyParameters)
 {
-    object_limits limits;
-    limits.max_container_depth = 2;
     configuration_spec cfg;
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
@@ -641,7 +629,7 @@ TEST(TestUserRuleParser, NegatedMatcherTooManyParameters)
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 1);
 
-    parse_user_rules(rule_array, collector, section, limits);
+    parse_user_rules(rule_array, collector, section);
 
     ddwaf_object_free(&rule_object);
 
@@ -698,8 +686,6 @@ TEST(TestUserRuleParser, NegatedMatcherTooManyParameters)
 
 TEST(TestUserRuleParser, SupportedVersionedOperator)
 {
-    object_limits limits;
-    limits.max_container_depth = 2;
     configuration_spec cfg;
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
@@ -711,7 +697,7 @@ TEST(TestUserRuleParser, SupportedVersionedOperator)
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 1);
 
-    parse_user_rules(rule_array, collector, section, limits);
+    parse_user_rules(rule_array, collector, section);
 
     ddwaf_object_free(&rule_object);
 
@@ -745,8 +731,6 @@ TEST(TestUserRuleParser, SupportedVersionedOperator)
 
 TEST(TestUserRuleParser, UnsupportedVersionedOperator)
 {
-    object_limits limits;
-    limits.max_container_depth = 2;
     configuration_spec cfg;
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
@@ -758,7 +742,7 @@ TEST(TestUserRuleParser, UnsupportedVersionedOperator)
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 1);
 
-    parse_user_rules(rule_array, collector, section, limits);
+    parse_user_rules(rule_array, collector, section);
 
     ddwaf_object_free(&rule_object);
 
@@ -812,8 +796,6 @@ TEST(TestUserRuleParser, UnsupportedVersionedOperator)
 
 TEST(TestUserRuleParser, IncompatibleMinVersion)
 {
-    object_limits limits;
-    limits.max_container_depth = 2;
     configuration_spec cfg;
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
@@ -825,7 +807,7 @@ TEST(TestUserRuleParser, IncompatibleMinVersion)
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 1);
 
-    parse_user_rules(rule_array, collector, section, limits);
+    parse_user_rules(rule_array, collector, section);
 
     ddwaf_object_free(&rule_object);
 
@@ -879,8 +861,6 @@ TEST(TestUserRuleParser, IncompatibleMinVersion)
 
 TEST(TestUserRuleParser, IncompatibleMaxVersion)
 {
-    object_limits limits;
-    limits.max_container_depth = 2;
     configuration_spec cfg;
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
@@ -892,7 +872,7 @@ TEST(TestUserRuleParser, IncompatibleMaxVersion)
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 1);
 
-    parse_user_rules(rule_array, collector, section, limits);
+    parse_user_rules(rule_array, collector, section);
 
     ddwaf_object_free(&rule_object);
 
@@ -946,8 +926,6 @@ TEST(TestUserRuleParser, IncompatibleMaxVersion)
 
 TEST(TestUserRuleParser, CompatibleVersion)
 {
-    object_limits limits;
-    limits.max_container_depth = 2;
     configuration_spec cfg;
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
@@ -959,7 +937,7 @@ TEST(TestUserRuleParser, CompatibleVersion)
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 1);
 
-    parse_user_rules(rule_array, collector, section, limits);
+    parse_user_rules(rule_array, collector, section);
 
     ddwaf_object_free(&rule_object);
 
