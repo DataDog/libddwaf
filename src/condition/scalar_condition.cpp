@@ -39,7 +39,7 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
 {
     // The iterator is guaranteed to be valid at this point, which means the
     // object pointer should not be nullptr
-    ddwaf_object src = *(*it);
+    ddwaf_object src = *((*it).ptr());
 
     if (src.type == DDWAF_OBJ_STRING) {
         if (src.stringValue == nullptr) {
@@ -98,7 +98,7 @@ ResultType eval_target(Iterator &it, std::string_view address, bool ephemeral,
             throw ddwaf::timeout_exception();
         }
 
-        if (!matcher.is_supported_type(it.type())) {
+        if (!matcher.is_supported_type(static_cast<DDWAF_OBJ_TYPE>(it.type()))) {
             continue;
         }
 
@@ -161,11 +161,11 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
         std::optional<condition_match> match;
         // TODO: iterators could be cached to avoid reinitialisation
         if (target.source == data_source::keys) {
-            object::key_iterator it(object, target.key_path, objects_excluded, limits);
+            key_iterator it(*object, target.key_path, objects_excluded, limits);
             match = eval_target<std::optional<condition_match>>(
                 it, target.name, ephemeral, *matcher, target.transformers, limits, deadline);
         } else {
-            object::value_iterator it(object, target.key_path, objects_excluded, limits);
+            value_iterator it(*object, target.key_path, objects_excluded, limits);
             match = eval_target<std::optional<condition_match>>(
                 it, target.name, ephemeral, *matcher, target.transformers, limits, deadline);
         }
@@ -208,11 +208,11 @@ eval_result scalar_negated_condition::eval(condition_cache &cache, const object_
 
     bool match = false;
     if (target_.source == data_source::keys) {
-        object::key_iterator it(object, target_.key_path, objects_excluded, limits);
+        key_iterator it(*object, target_.key_path, objects_excluded, limits);
         match = eval_target<bool>(
             it, target_.name, ephemeral, *matcher, target_.transformers, limits, deadline);
     } else {
-        object::value_iterator it(object, target_.key_path, objects_excluded, limits);
+        value_iterator it(*object, target_.key_path, objects_excluded, limits);
         match = eval_target<bool>(
             it, target_.name, ephemeral, *matcher, target_.transformers, limits, deadline);
     }
