@@ -161,11 +161,11 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
         std::optional<condition_match> match;
         // TODO: iterators could be cached to avoid reinitialisation
         if (target.source == data_source::keys) {
-            key_iterator it(*object, target.key_path, objects_excluded, limits_);
+            key_iterator it(*object, target.key_path, objects_excluded, limits);
             match = eval_target<std::optional<condition_match>>(
                 it, target.name, ephemeral, *matcher, target.transformers, limits, deadline);
         } else {
-            value_iterator it(*object, target.key_path, objects_excluded, limits_);
+            value_iterator it(*object, target.key_path, objects_excluded, limits);
             match = eval_target<std::optional<condition_match>>(
                 it, target.name, ephemeral, *matcher, target.transformers, limits, deadline);
         }
@@ -208,11 +208,11 @@ eval_result scalar_negated_condition::eval(condition_cache &cache, const object_
 
     bool match = false;
     if (target_.source == data_source::keys) {
-        key_iterator it(*object, target_.key_path, objects_excluded, limits_);
+        key_iterator it(*object, target_.key_path, objects_excluded, limits);
         match = eval_target<bool>(
             it, target_.name, ephemeral, *matcher, target_.transformers, limits, deadline);
     } else {
-        value_iterator it(*object, target_.key_path, objects_excluded, limits_);
+        value_iterator it(*object, target_.key_path, objects_excluded, limits);
         match = eval_target<bool>(
             it, target_.name, ephemeral, *matcher, target_.transformers, limits, deadline);
     }
