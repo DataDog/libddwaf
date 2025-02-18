@@ -44,7 +44,7 @@ TEST(TestRuleFilter, Match)
     exclusion::rule_filter::excluded_set default_set{{}, true, {}, {}};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
-    auto res = filter.match(store, cache, {}, deadline);
+    auto res = filter.match(store, cache, {}, {}, deadline);
     EXPECT_FALSE(res.value_or(default_set).rules.empty());
     EXPECT_FALSE(res.value_or(default_set).ephemeral);
     EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
@@ -78,7 +78,7 @@ TEST(TestRuleFilter, MatchWithDynamicMatcher)
         ddwaf::timer deadline{2s};
 
         ddwaf::exclusion::rule_filter::cache_type cache;
-        auto res = filter.match(store, cache, {}, deadline);
+        auto res = filter.match(store, cache, {}, {}, deadline);
         EXPECT_FALSE(res.has_value());
     }
 
@@ -101,7 +101,7 @@ TEST(TestRuleFilter, MatchWithDynamicMatcher)
             .rules = {}, .ephemeral = true, .mode = {}, .action = {}};
 
         ddwaf::exclusion::rule_filter::cache_type cache;
-        auto res = filter.match(store, cache, matchers, deadline);
+        auto res = filter.match(store, cache, matchers, {}, deadline);
         EXPECT_FALSE(res.value_or(default_set).rules.empty());
         EXPECT_FALSE(res.value_or(default_set).ephemeral);
         EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
@@ -137,7 +137,7 @@ TEST(TestRuleFilter, EphemeralMatch)
     exclusion::rule_filter::excluded_set default_set{{}, false, {}, {}};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
-    auto res = filter.match(store, cache, {}, deadline);
+    auto res = filter.match(store, cache, {}, {}, deadline);
     EXPECT_FALSE(res.value_or(default_set).rules.empty());
     EXPECT_TRUE(res.value_or(default_set).ephemeral);
     EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
@@ -164,7 +164,7 @@ TEST(TestRuleFilter, NoMatch)
     ddwaf::timer deadline{2s};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
-    EXPECT_FALSE(filter.match(store, cache, {}, deadline));
+    EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline));
 }
 
 TEST(TestRuleFilter, ValidateCachedMatch)
@@ -199,7 +199,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline));
     }
 
     {
@@ -215,7 +215,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
 
         exclusion::rule_filter::excluded_set default_set{{}, false, {}, {}};
 
-        auto res = filter.match(store, cache, {}, deadline);
+        auto res = filter.match(store, cache, {}, {}, deadline);
         EXPECT_FALSE(res.value_or(default_set).rules.empty());
         EXPECT_FALSE(res.value_or(default_set).ephemeral);
         EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
@@ -256,7 +256,7 @@ TEST(TestRuleFilter, CachedMatchAndEphemeralMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline));
     }
 
     {
@@ -272,7 +272,7 @@ TEST(TestRuleFilter, CachedMatchAndEphemeralMatch)
         ddwaf::timer deadline{2s};
         exclusion::rule_filter::excluded_set default_set{{}, false, {}, {}};
 
-        auto res = filter.match(store, cache, {}, deadline);
+        auto res = filter.match(store, cache, {}, {}, deadline);
         EXPECT_FALSE(res.value_or(default_set).rules.empty());
         EXPECT_TRUE(res.value_or(default_set).ephemeral);
         EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
@@ -313,7 +313,7 @@ TEST(TestRuleFilter, ValidateEphemeralMatchCache)
         store.insert(root, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline));
     }
 
     {
@@ -327,7 +327,7 @@ TEST(TestRuleFilter, ValidateEphemeralMatchCache)
         store.insert(root, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline));
     }
 }
 
@@ -362,7 +362,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline));
     }
 
     {
@@ -375,7 +375,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline)->rules.empty());
+        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline)->rules.empty());
     }
 }
 
@@ -409,7 +409,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline));
     }
 
     {
@@ -423,7 +423,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline));
     }
 }
 
@@ -459,7 +459,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline)->rules.empty());
+        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline)->rules.empty());
         EXPECT_TRUE(cache.result);
     }
 
@@ -472,7 +472,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline));
     }
 }
 

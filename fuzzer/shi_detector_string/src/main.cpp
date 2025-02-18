@@ -123,7 +123,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    (void)cond.eval(cache, store, {}, {}, deadline);
+    (void)cond.eval(cache, store, {}, {}, {}, deadline);
 
     return 0;
 }

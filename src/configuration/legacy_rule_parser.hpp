@@ -13,6 +13,6 @@
 namespace ddwaf {
 
 void parse_legacy_rules(const raw_configuration::vector &rule_array, configuration_collector &cfg,
-    base_section_info &info, object_limits limits);
+    base_section_info &info);
 
 } // namespace ddwaf

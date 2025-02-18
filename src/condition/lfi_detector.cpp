@@ -122,12 +122,14 @@ lfi_result lfi_impl(std::string_view path, const ddwaf_object &params,
 }
 } // namespace
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path,
     const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
+    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+    ddwaf::timer &deadline) const
 {
     for (const auto &param : params) {
-        auto res = lfi_impl(path.value, *param.value, objects_excluded, limits_, deadline);
+        auto res = lfi_impl(path.value, *param.value, objects_excluded, limits, deadline);
         if (res.has_value()) {
             const std::vector<std::string> path_kp{path.key_path.begin(), path.key_path.end()};
             const bool ephemeral = path.ephemeral || param.ephemeral;

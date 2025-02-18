@@ -86,16 +86,18 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
 
 } // namespace
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[nodiscard]] eval_result exists_condition::eval_impl(
     const variadic_argument<const ddwaf_object *> &inputs, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
+    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+    ddwaf::timer &deadline) const
 {
     for (const auto &input : inputs) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        if (exists(input.value, input.key_path, objects_excluded, limits_) ==
+        if (exists(input.value, input.key_path, objects_excluded, limits) ==
             search_outcome::found) {
             std::vector<std::string> key_path{input.key_path.begin(), input.key_path.end()};
             cache.match = {{.args = {{.name = "input",
@@ -112,14 +114,16 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
     return {.outcome = false, .ephemeral = false};
 }
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[nodiscard]] eval_result exists_negated_condition::eval_impl(
     const unary_argument<const ddwaf_object *> &input, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer & /*deadline*/) const
+    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+    ddwaf::timer & /*deadline*/) const
 {
     // We need to make sure the key path hasn't been found. If the result is
     // unknown, we can't guarantee that the key path isn't actually present in
     // the data set
-    if (exists(input.value, input.key_path, objects_excluded, limits_) !=
+    if (exists(input.value, input.key_path, objects_excluded, limits) !=
         search_outcome::not_found) {
         return {.outcome = false, .ephemeral = false};
     }

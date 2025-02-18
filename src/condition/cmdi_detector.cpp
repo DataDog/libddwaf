@@ -437,13 +437,15 @@ std::string generate_string_resource(const ddwaf_object &root)
 
 } // namespace
 
-cmdi_detector::cmdi_detector(std::vector<condition_parameter> args, const object_limits &limits)
-    : base_impl<cmdi_detector>(std::move(args), limits)
+cmdi_detector::cmdi_detector(std::vector<condition_parameter> args)
+    : base_impl<cmdi_detector>(std::move(args))
 {}
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 eval_result cmdi_detector::eval_impl(const unary_argument<const ddwaf_object *> &resource,
     const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
+    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+    ddwaf::timer &deadline) const
 {
     if (resource.value->type != DDWAF_OBJ_ARRAY || resource.value->nbEntries == 0) {
         return {};
@@ -452,7 +454,7 @@ eval_result cmdi_detector::eval_impl(const unary_argument<const ddwaf_object *> 
     std::vector<shell_token> resource_tokens;
     for (const auto &param : params) {
         auto res = cmdi_impl(
-            *resource.value, resource_tokens, *param.value, objects_excluded, limits_, deadline);
+            *resource.value, resource_tokens, *param.value, objects_excluded, limits, deadline);
         if (res.has_value()) {
             const std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
