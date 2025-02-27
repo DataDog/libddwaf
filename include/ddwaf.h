@@ -383,7 +383,7 @@ ddwaf_builder ddwaf_builder_init(const ddwaf_config *config);
  * @note The memory associated with the path, config and diagnostics must be freed by the caller.
  * @note This function is not thread-safe.
  **/
-bool ddwaf_builder_add_or_update_config(ddwaf_builder builder, const char *path, uint32_t path_len, ddwaf_object *config, ddwaf_object *diagnostics);
+bool ddwaf_builder_add_or_update_config(ddwaf_builder builder, const char *path, uint32_t path_len, const ddwaf_object *config, ddwaf_object *diagnostics);
 
 /**
  * ddwaf_builder_remove_config
