@@ -10,8 +10,9 @@ RUN apk --no-cache add clang cmake make musl-dev lld
 RUN tar -xf packages/libddwaf-*-${ARCH}-linux-*.tar.gz --strip-components=1
 
 RUN mkdir build && cd build && \
-    export CC=/usr/bin/clang  && export CXX=/usr/bin/clang++ &&
     cmake -DCMAKE_C_FLAGS="-I/include" \
+          -DCMAKE_C_COMPILER="/usr/bin/clang-16" \
+          -DCMAKE_CXX_COMPILER="/usr/bin/clang++-16" \
           -DLIBDDWAF_SMOKE_LINK_STATIC=ON \
           -DCMAKE_EXE_LINKER_FLAGS="-v -fuse-ld=lld" /smoketest && \
     make && ./smoketest
