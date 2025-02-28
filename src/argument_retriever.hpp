@@ -85,7 +85,6 @@ template <typename T> std::optional<T> convert(const ddwaf_object *obj)
     return {};
 }
 
-
 template <typename T> std::optional<T> convert(const object_view &obj)
 {
     if constexpr (std::is_same_v<T, std::remove_reference<decltype(obj)>>) {
@@ -125,7 +124,6 @@ template <typename T> std::optional<T> convert(const object_view &obj)
 
     return {};
 }
-
 
 struct default_argument_retriever {
     static constexpr bool is_variadic = false;

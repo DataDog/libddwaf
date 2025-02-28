@@ -3,8 +3,6 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-#include <algorithm>
-#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string>
@@ -16,9 +14,10 @@
 #include "clock.hpp"
 #include "condition/base.hpp"
 #include "condition/exists.hpp"
-#include "ddwaf.h"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
+#include "object_type.hpp"
+#include "object_view.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
@@ -27,14 +26,14 @@ namespace {
 
 enum class search_outcome : uint8_t { found, not_found, unknown };
 
-const ddwaf_object *find_key(
+optional_object_view find_key(
     const object_view &parent, std::string_view key, const object_limits &limits)
 {
-    for (auto it = parent.begin(limits); it ; ++it) {
+    for (auto it = parent.begin(limits); it; ++it) {
         const auto &child_key = it.key();
 
         if (key == child_key) {
-            return it.value().ptr();
+            return it.value();
         }
     }
 
