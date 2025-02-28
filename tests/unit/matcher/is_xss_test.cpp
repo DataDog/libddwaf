@@ -20,7 +20,7 @@ TEST(TestIsXSS, TestBasic)
     ddwaf_object param;
     ddwaf_object_string(&param, "<script>alert(1);</script>");
 
-    auto [res, highlight] = matcher.match(param);
+    auto [res, highlight] = matcher.match(ddwaf::object_view{param});
     EXPECT_TRUE(res);
     EXPECT_STREQ(highlight.c_str(), "");
 
@@ -34,7 +34,7 @@ TEST(TestIsXSS, TestNoMatch)
     ddwaf_object param;
     ddwaf_object_string(&param, "non-xss");
 
-    EXPECT_FALSE(matcher.match(param).first);
+    EXPECT_FALSE(matcher.match(ddwaf::object_view{param}).first);
 
     ddwaf_object_free(&param);
 }

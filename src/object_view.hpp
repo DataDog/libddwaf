@@ -33,6 +33,8 @@ public:
     // The default constructor results in a view without value
     object_key() = default;
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    object_key(detail::object *underlying_object) : obj_(underlying_object) {}
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     object_key(const detail::object *underlying_object) : obj_(underlying_object) {}
 
     ~object_key() = default;
@@ -148,6 +150,8 @@ protected:
 
 class object_view {
 public:
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    object_view(detail::object &underlying_object) : obj_(underlying_object) {}
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     object_view(const detail::object &underlying_object) : obj_(underlying_object) {}
 
