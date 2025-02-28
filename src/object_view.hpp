@@ -324,23 +324,23 @@ public:
 
         [[nodiscard]] object_key key() const
         {
-            assert(obj_ != nullptr && obj_->array != nullptr && index_ < size_);
+            assert(obj_ != nullptr && index_ < size_);
 
-            return &obj_->array[index_];
+            return &obj_[index_];
         }
 
         [[nodiscard]] object_view value() const
         {
-            assert(obj_ != nullptr && obj_->array != nullptr && index_ < size_);
+            assert(obj_ != nullptr && index_ < size_);
 
-            return obj_->array[index_];
+            return obj_[index_];
         }
 
         std::pair<object_key, object_view> operator*() const
         {
-            assert(obj_ != nullptr && obj_->array != nullptr && index_ < size_);
+            assert(obj_ != nullptr && index_ < size_);
 
-            auto &slot = obj_->array[index_];
+            auto &slot = obj_[index_];
             return {&slot, slot};
         }
 
@@ -365,9 +365,9 @@ public:
 
         explicit iterator(
             const detail::object *obj, const object_limits &limits = {}, uint16_t idx = 0)
-            : obj_(obj), size_(std::min(static_cast<uint16_t>(limits.max_container_size),
+            : obj_(obj->array), size_(std::min(static_cast<uint16_t>(limits.max_container_size),
                              static_cast<uint16_t>(obj->nbEntries))),
-              index_(std::min(idx, size_)), type_(static_cast<object_type>(obj->type))
+              index_(idx), type_(static_cast<object_type>(obj->type))
         {}
 
         iterator(
