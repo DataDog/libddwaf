@@ -198,27 +198,23 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          - name: x86_64
-            arch: x86_64
-            qemu_action_arch: amd64
+          - arch: x86_64
             platform: linux/amd64
+            runner: ubuntu-latest
             package: libddwaf-x86_64-linux-musl
-          - name: i386
-            arch: i386
-            qemu_action_arch: i386
+          - arch: i386
             platform: linux/386
+            runner: ubuntu-latest
             package: libddwaf-i386-linux-musl
-          - name: aarch64
-            arch: aarch64
-            qemu_action_arch: arm64
+          - arch: aarch64
             platform: linux/arm64
+            runner: arm-4core-linux-arm-limited
             package: libddwaf-aarch64-linux-musl
-          - name: armv7
-            arch: armv7
-            qemu_action_arch: arm
+          - arch: armv7
             platform: linux/arm/v7
+            runner: arm-4core-linux-arm-limited
             package: libddwaf-armv7-linux-musl
-    runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-latest' || 'arm-4core-linux-arm-limited' }}
+    runs-on: ${{ matrix.target.runner }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -247,7 +243,7 @@ jobs:
           max_attempts: 3
           command: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu/Dockerfile  .
       - name: Smoketest gnu rhel 6 (gcc)
-        if: matrix.target.qemu_action_arch == 'amd64'
+        if: matrix.target.arch == 'x86_64'
         uses: nick-fields/retry@7152eba30c6575329ac0576536151aca5a72780e # v3
         with:
           timeout_minutes: 10
