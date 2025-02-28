@@ -388,7 +388,7 @@ public:
         friend class object_view;
     };
 
-    iterator begin(const object_limits &limits = {})
+    [[nodiscard]] iterator begin(const object_limits &limits = {}) const
     {
         // This check guarantees that the object is a container and not null
         if (!is_container()) {
@@ -397,7 +397,7 @@ public:
         return iterator{&obj_, limits};
     }
 
-    iterator end()
+    [[nodiscard]] iterator end() const
     {
         // This check guarantees that the object is a container and not null
         if (!is_container()) {
@@ -435,5 +435,4 @@ template <> struct hash<ddwaf::object_view> {
         return std::hash<const void *>{}(static_cast<const void *>(obj.ptr()));
     }
 };
-
 } // namespace std

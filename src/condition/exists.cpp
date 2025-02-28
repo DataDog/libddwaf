@@ -28,28 +28,20 @@ namespace {
 enum class search_outcome : uint8_t { found, not_found, unknown };
 
 const ddwaf_object *find_key(
-    const ddwaf_object &parent, std::string_view key, const object_limits &limits)
+    const object_view &parent, std::string_view key, const object_limits &limits)
 {
-    const std::size_t size =
-        std::min(static_cast<uint32_t>(parent.nbEntries), limits.max_container_size);
-    for (std::size_t i = 0; i < size; ++i) {
-        const auto &child = parent.array[i];
-
-        if (child.parameterName == nullptr) [[unlikely]] {
-            continue;
-        }
-        const std::string_view child_key{
-            child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
+    for (auto it = parent.begin(limits); it ; ++it) {
+        const auto &child_key = it.key();
 
         if (key == child_key) {
-            return &child;
+            return it.value().ptr();
         }
     }
 
     return nullptr;
 }
 
-search_outcome exists(const ddwaf_object *root, std::span<const std::string> key_path,
+search_outcome exists(optional_object_view root, std::span<const std::string> key_path,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits)
 {
     if (key_path.empty()) {
@@ -57,7 +49,7 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
     }
 
     // Since there's a key path, the object must be a map
-    if (root->type != DDWAF_OBJ_MAP) {
+    if (root.type() != object_type::map) {
         return search_outcome::not_found;
     }
 
@@ -65,9 +57,9 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
 
     // The parser ensures that the key path is within the limits specified by
     // the user, hence we don't need to check for depth
-    while ((root = find_key(*root, *it, limits)) != nullptr) {
-        if (objects_excluded.contains(root)) {
-            // We found the next root but it has been excluded, so we
+    while ((root = find_key(root.value(), *it, limits)).has_value()) {
+        if (objects_excluded.contains(root.ptr())) {
+            // We found the root root but it has been excluded, so we
             // can't know for sure if the required key path exists
             return search_outcome::unknown;
         }
@@ -76,7 +68,7 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
             return search_outcome::found;
         }
 
-        if (root->type != DDWAF_OBJ_MAP) {
+        if (root.type() != object_type::map) {
             return search_outcome::not_found;
         }
     }
@@ -88,7 +80,7 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[nodiscard]] eval_result exists_condition::eval_impl(
-    const variadic_argument<const ddwaf_object *> &inputs, condition_cache &cache,
+    const variadic_argument<optional_object_view> &inputs, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline) const
 {
@@ -116,7 +108,7 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[nodiscard]] eval_result exists_negated_condition::eval_impl(
-    const unary_argument<const ddwaf_object *> &input, condition_cache &cache,
+    const unary_argument<optional_object_view> &input, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer & /*deadline*/) const
 {
