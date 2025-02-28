@@ -366,7 +366,7 @@ public:
         explicit iterator(
             const detail::object *obj, const object_limits &limits = {}, uint16_t idx = 0)
             : obj_(obj->array), size_(std::min(static_cast<uint16_t>(limits.max_container_size),
-                             static_cast<uint16_t>(obj->nbEntries))),
+                                    static_cast<uint16_t>(obj->nbEntries))),
               index_(idx), type_(static_cast<object_type>(obj->type))
         {}
 
