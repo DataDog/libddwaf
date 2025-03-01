@@ -42,9 +42,9 @@ namespace {
 // used directly with a scalar without the need for a fully-fledged object iterator
 class scalar_iterator {
 public:
-    explicit scalar_iterator(const ddwaf_object &obj, const std::span<const std::string> & /*path*/,
+    explicit scalar_iterator(const object_view &obj, const std::span<const std::string> & /*path*/,
         const exclusion::object_set_ref & /*exclude*/, const object_limits & /*limits*/)
-        : current_(&obj)
+        : current_(obj)
     {}
 
     ~scalar_iterator() = default;
@@ -65,7 +65,7 @@ public:
     [[nodiscard]] static std::vector<std::string> get_current_path() { return {}; }
 
 protected:
-    const ddwaf_object *current_;
+    optional_object_view current_;
 };
 
 struct opt_spec {
