@@ -26,8 +26,7 @@ namespace {
 
 enum class search_outcome : uint8_t { found, not_found, unknown };
 
-optional_object_view find_key(
-    const object_view &parent, std::string_view key, const object_limits &limits)
+object_view find_key(const object_view &parent, std::string_view key, const object_limits &limits)
 {
     for (auto it = parent.begin(limits); it; ++it) {
         const auto &child_key = it.key();
@@ -40,7 +39,7 @@ optional_object_view find_key(
     return nullptr;
 }
 
-search_outcome exists(optional_object_view root, std::span<const std::string> key_path,
+search_outcome exists(object_view root, std::span<const std::string> key_path,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits)
 {
     if (key_path.empty()) {
@@ -56,7 +55,7 @@ search_outcome exists(optional_object_view root, std::span<const std::string> ke
 
     // The parser ensures that the key path is within the limits specified by
     // the user, hence we don't need to check for depth
-    while ((root = find_key(root.value(), *it, limits)).has_value()) {
+    while ((root = find_key(root, *it, limits)).has_value()) {
         if (objects_excluded.contains(root.ptr())) {
             // We found the root root but it has been excluded, so we
             // can't know for sure if the required key path exists
@@ -78,10 +77,9 @@ search_outcome exists(optional_object_view root, std::span<const std::string> ke
 } // namespace
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-[[nodiscard]] eval_result exists_condition::eval_impl(
-    const variadic_argument<optional_object_view> &inputs, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline) const
+[[nodiscard]] eval_result exists_condition::eval_impl(const variadic_argument<object_view> &inputs,
+    condition_cache &cache, const exclusion::object_set_ref &objects_excluded,
+    const object_limits &limits, ddwaf::timer &deadline) const
 {
     for (const auto &input : inputs) {
         if (deadline.expired()) {
@@ -107,7 +105,7 @@ search_outcome exists(optional_object_view root, std::span<const std::string> ke
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[nodiscard]] eval_result exists_negated_condition::eval_impl(
-    const unary_argument<optional_object_view> &input, condition_cache &cache,
+    const unary_argument<object_view> &input, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer & /*deadline*/) const
 {

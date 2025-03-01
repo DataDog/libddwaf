@@ -126,7 +126,7 @@ void value_iterator::initialise_cursor_with_path(
         const std::string_view key = path[i];
         auto &parent_it = stack_.back();
 
-        std::pair<object_key, optional_object_view> child;
+        std::pair<object_key, object_view> child;
         if (parent_it.container_type() == object_type::map) {
             for (; parent_it; ++parent_it) {
                 auto possible_child = *parent_it;
@@ -164,7 +164,7 @@ void value_iterator::initialise_cursor_with_path(
             }
 
             // Replace the stack top
-            stack_.back() = child.second.value().begin(limits_);
+            stack_.back() = child.second.begin(limits_);
 
             if ((i + 1) < path.size()) {
                 continue;
@@ -262,7 +262,7 @@ void key_iterator::initialise_cursor_with_path(
         const std::string_view key = path[i];
         auto &parent_it = stack_.back();
 
-        std::pair<object_key, optional_object_view> child;
+        std::pair<object_key, object_view> child;
         if (parent_it.container_type() == object_type::map) {
             for (; parent_it; ++parent_it) {
                 auto possible_child = *parent_it;
@@ -286,7 +286,7 @@ void key_iterator::initialise_cursor_with_path(
         }
 
         if (child.second.is_container()) {
-            stack_.back() = child.second.value().begin(limits_);
+            stack_.back() = child.second.begin(limits_);
 
             if ((i + 1) < path.size()) {
                 continue;
@@ -398,7 +398,7 @@ void kv_iterator::initialise_cursor_with_path(
         const std::string_view key = path[i];
         auto &parent_it = stack_.back();
 
-        std::pair<object_key, optional_object_view> child;
+        std::pair<object_key, object_view> child;
         if (parent_it.container_type() == object_type::map) {
             for (; parent_it; ++parent_it) {
                 auto possible_child = *parent_it;
@@ -436,7 +436,7 @@ void kv_iterator::initialise_cursor_with_path(
             }
 
             // Replace the stack top
-            stack_.back() = child.second.value().begin(limits_);
+            stack_.back() = child.second.begin(limits_);
 
             if ((i + 1) < path.size()) {
                 continue;

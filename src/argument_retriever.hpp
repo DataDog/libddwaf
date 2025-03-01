@@ -51,8 +51,8 @@ template <typename T> std::optional<T> convert(const ddwaf_object *obj)
         return obj;
     }
 
-    if constexpr (std::is_same_v<T, optional_object_view>) {
-        return optional_object_view{obj};
+    if constexpr (std::is_same_v<T, object_view>) {
+        return object_view{obj};
     }
 
     if constexpr (std::is_same_v<T, std::string_view> || std::is_same_v<T, std::string>) {

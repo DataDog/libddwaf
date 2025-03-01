@@ -55,17 +55,17 @@ public:
     scalar_iterator &operator=(const scalar_iterator &) = delete;
     scalar_iterator &operator=(scalar_iterator &&) noexcept = delete;
 
-    [[nodiscard]] optional_object_view operator*() { return current_; }
+    [[nodiscard]] object_view operator*() { return current_; }
     bool operator++()
     {
         current_ = nullptr;
         return false;
     }
-    [[nodiscard]] explicit operator bool() const { return current_ != nullptr; }
+    [[nodiscard]] explicit operator bool() const { return current_.has_value(); }
     [[nodiscard]] static std::vector<std::string> get_current_path() { return {}; }
 
 protected:
-    optional_object_view current_;
+    object_view current_;
 };
 
 struct opt_spec {
