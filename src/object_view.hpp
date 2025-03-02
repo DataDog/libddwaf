@@ -177,6 +177,22 @@ public:
         return {&slot, slot};
     }
 
+    [[nodiscard]] object_key at_key_unchecked(std::size_t index) const noexcept
+    {
+        assert(obj_ != nullptr && index < size() && obj_->array != nullptr);
+
+        const auto &slot = obj_->array[index];
+        return &slot;
+    }
+
+    [[nodiscard]] object_view at_value_unchecked(std::size_t index) const noexcept
+    {
+        assert(obj_ != nullptr && index < size() && obj_->array != nullptr);
+
+        const auto &slot = obj_->array[index];
+        return slot;
+    }
+
     [[nodiscard]] std::pair<object_key, object_view> at(std::size_t index) const noexcept
     {
         assert(obj_ != nullptr);

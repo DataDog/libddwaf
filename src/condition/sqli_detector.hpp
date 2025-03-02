@@ -22,7 +22,7 @@ public:
 
 protected:
     [[nodiscard]] eval_result eval_impl(const unary_argument<std::string_view> &sql,
-        const variadic_argument<const ddwaf_object *> &params,
+        const variadic_argument<const object_view> &params,
         const unary_argument<std::string_view> &db_type, condition_cache &cache,
         const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
         ddwaf::timer &deadline) const;

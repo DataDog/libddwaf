@@ -51,7 +51,7 @@ template <typename T> std::optional<T> convert(const ddwaf_object *obj)
         return obj;
     }
 
-    if constexpr (std::is_same_v<T, object_view>) {
+    if constexpr (std::is_same_v<std::remove_cv_t<T>, object_view>) {
         return object_view{obj};
     }
 
@@ -87,7 +87,7 @@ template <typename T> std::optional<T> convert(const ddwaf_object *obj)
 
 template <typename T> std::optional<T> convert(const object_view &obj)
 {
-    if constexpr (std::is_same_v<T, std::remove_reference<decltype(obj)>>) {
+    if constexpr (std::is_same_v<std::remove_cv_t<T>, object_view>) {
         return obj;
     }
 
