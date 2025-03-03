@@ -151,7 +151,7 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
 
         // TODO Fix this once store returns view
         const auto &target = targets_[i];
-        auto [object, attr] = store.get_target<object_view>(target.index);
+        auto [object, attr] = store.get_target(target.index);
         if (!object.has_value() || object == cache.targets[i]) {
             continue;
         }
@@ -199,7 +199,7 @@ eval_result scalar_negated_condition::eval(condition_cache &cache, const object_
         cache.targets.assign(1, {});
     }
 
-    auto [object, attr] = store.get_target<object_view>(target_.index);
+    auto [object, attr] = store.get_target(target_.index);
     if (!object.has_value() || object == cache.targets[0]) {
         return {};
     }

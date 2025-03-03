@@ -287,10 +287,10 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
         EXPECT_NE(store.get_target(query).first, nullptr);
         EXPECT_EQ(store.get_target(url).first, nullptr);
 
-        auto *object = store.get_target(query).first;
+        auto object = store.get_target(query).first;
         EXPECT_NE(object, nullptr);
-        EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
-        EXPECT_STREQ(object->stringValue, "hello");
+        EXPECT_EQ(object.type(), object_type::string);
+        EXPECT_STRV(object.as<std::string_view>(), "hello");
     }
 
     {
@@ -309,17 +309,17 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
         EXPECT_TRUE(store.is_new_target(url));
 
         {
-            auto *object = store.get_target(url).first;
+            auto object = store.get_target(url).first;
             EXPECT_NE(object, nullptr);
-            EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
-            EXPECT_STREQ(object->stringValue, "hello");
+            EXPECT_EQ(object.type(), object_type::string);
+            EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
 
         {
-            auto *object = store.get_target(query).first;
+            auto object = store.get_target(query).first;
             EXPECT_NE(object, nullptr);
-            EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
-            EXPECT_STREQ(object->stringValue, "bye");
+            EXPECT_EQ(object.type(), object_type::string);
+            EXPECT_STRV(object.as<std::string_view>(), "bye");
         }
     }
 
@@ -337,10 +337,10 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
         EXPECT_TRUE(store.is_new_target(url));
         EXPECT_NE(store.get_target(query).first, nullptr);
 
-        auto *object = store.get_target(url).first;
+        auto object = store.get_target(url).first;
         EXPECT_NE(object, nullptr);
-        EXPECT_EQ(object->type, DDWAF_OBJ_STRING);
-        EXPECT_STREQ(object->stringValue, "bye");
+        EXPECT_EQ(object.type(), object_type::string);
+        EXPECT_STRV(object.as<std::string_view>(), "bye");
     }
 }
 
@@ -451,7 +451,7 @@ TEST(TestObjectStore, DuplicatePersistentTarget)
         auto [object, attr] = store.get_target(query);
         EXPECT_EQ(attr, object_store::attribute::none);
         EXPECT_NE(object, nullptr);
-        EXPECT_STREQ(object->stringValue, "hello");
+        EXPECT_STRV(object.as<std::string_view>(), "hello");
     }
 
     {
@@ -470,7 +470,7 @@ TEST(TestObjectStore, DuplicatePersistentTarget)
         auto [object, attr] = store.get_target(query);
         EXPECT_EQ(attr, object_store::attribute::none);
         EXPECT_NE(object, nullptr);
-        EXPECT_STREQ(object->stringValue, "bye");
+        EXPECT_STRV(object.as<std::string_view>(), "bye");
     }
 
     EXPECT_FALSE(store.empty());
@@ -501,7 +501,7 @@ TEST(TestObjectStore, DuplicateEphemeralTarget)
             auto [object, attr] = store.get_target(query);
             EXPECT_EQ(attr, object_store::attribute::ephemeral);
             EXPECT_NE(object, nullptr);
-            EXPECT_STREQ(object->stringValue, "hello");
+            EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
 
         {
@@ -518,7 +518,7 @@ TEST(TestObjectStore, DuplicateEphemeralTarget)
             auto [object, attr] = store.get_target(query);
             EXPECT_EQ(attr, object_store::attribute::ephemeral);
             EXPECT_NE(object, nullptr);
-            EXPECT_STREQ(object->stringValue, "bye");
+            EXPECT_STRV(object.as<std::string_view>(), "bye");
         }
     }
 
@@ -550,7 +550,7 @@ TEST(TestObjectStore, FailtoReplaceEphemeralWithPersistent)
             auto [object, attr] = store.get_target(query);
             EXPECT_EQ(attr, object_store::attribute::ephemeral);
             EXPECT_NE(object, nullptr);
-            EXPECT_STREQ(object->stringValue, "hello");
+            EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
 
         {
@@ -567,7 +567,7 @@ TEST(TestObjectStore, FailtoReplaceEphemeralWithPersistent)
             auto [object, attr] = store.get_target(query);
             EXPECT_EQ(attr, object_store::attribute::ephemeral);
             EXPECT_NE(object, nullptr);
-            EXPECT_STREQ(object->stringValue, "hello");
+            EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
     }
 
@@ -599,7 +599,7 @@ TEST(TestObjectStore, FailToReplacePersistentWithEphemeralSameBatch)
             auto [object, attr] = store.get_target(query);
             EXPECT_EQ(attr, object_store::attribute::none);
             EXPECT_NE(object, nullptr);
-            EXPECT_STREQ(object->stringValue, "hello");
+            EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
 
         {
@@ -616,7 +616,7 @@ TEST(TestObjectStore, FailToReplacePersistentWithEphemeralSameBatch)
             auto [object, attr] = store.get_target(query);
             EXPECT_EQ(attr, object_store::attribute::none);
             EXPECT_NE(object, nullptr);
-            EXPECT_STREQ(object->stringValue, "hello");
+            EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
     }
 
@@ -647,7 +647,7 @@ TEST(TestObjectStore, FailToReplacePersistentWithEphemeralDifferentBatch)
         auto [object, attr] = store.get_target(query);
         EXPECT_EQ(attr, object_store::attribute::none);
         EXPECT_NE(object, nullptr);
-        EXPECT_STREQ(object->stringValue, "hello");
+        EXPECT_STRV(object.as<std::string_view>(), "hello");
     }
 
     {
@@ -666,7 +666,7 @@ TEST(TestObjectStore, FailToReplacePersistentWithEphemeralDifferentBatch)
         auto [object, attr] = store.get_target(query);
         EXPECT_EQ(attr, object_store::attribute::none);
         EXPECT_NE(object, nullptr);
-        EXPECT_STREQ(object->stringValue, "hello");
+        EXPECT_STRV(object.as<std::string_view>(), "hello");
     }
 
     EXPECT_FALSE(store.empty());
