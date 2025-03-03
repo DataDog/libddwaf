@@ -27,7 +27,7 @@ shell_argument_array::shell_argument_array(const object_view &root)
     // Calculate the final resource length
     std::size_t resource_len = 0;
     for (std::size_t i = 0; i < argc; ++i) {
-        const auto &child = root.at_value_unchecked(i);
+        const auto &child = root.at_value(i);
         if (child.type() == object_type::string && !child.empty()) {
             // if the string is valid or non-empty, increase the resource
             // length + 1 for the extra space when relevant
@@ -40,12 +40,12 @@ shell_argument_array::shell_argument_array(const object_view &root)
 
     std::size_t index = 0;
     for (std::size_t i = 0; i < argc; ++i) {
-        const auto &child = root.at_value_unchecked(i);
+        const auto &child = root.at_value(i);
         if (child.type() != object_type::string || child.empty()) {
             continue;
         }
 
-        const auto str = child.as_unchecked<std::string_view>();
+        const auto str = child.as<std::string_view>();
 
         indices.emplace_back(index, index + str.size() - 1);
 

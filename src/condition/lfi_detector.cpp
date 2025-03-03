@@ -113,7 +113,7 @@ lfi_result lfi_impl(std::string_view path, const object_view &params,
             continue;
         }
 
-        const auto value = param->as_unchecked<std::string_view>();
+        const auto value = param->as<std::string_view>();
         if (lfi_fn(path, value)) {
             return {{std::string(value), it.get_current_path()}};
         }

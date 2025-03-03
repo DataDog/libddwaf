@@ -97,28 +97,28 @@ template <typename T> std::optional<T> convert(const object_view &obj)
 
     if constexpr (std::is_same_v<T, std::string_view> || std::is_same_v<T, std::string>) {
         if (obj.type() == object_type::string) {
-            return T{obj.as_unchecked<std::string_view>()};
+            return T{obj.as<std::string_view>()};
         }
     }
 
     if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, unsigned>) {
         using limits = std::numeric_limits<T>;
-        if (obj.type() == object_type::uint64 && obj.as_unchecked<uint64_t>() <= limits::max()) {
-            return obj.as_unchecked<T>();
+        if (obj.type() == object_type::uint64 && obj.as<uint64_t>() <= limits::max()) {
+            return obj.as<T>();
         }
     }
 
     if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, int>) {
         using limits = std::numeric_limits<T>;
-        if (obj.type() == object_type::int64 && obj.as_unchecked<int64_t>() >= limits::min() &&
-            obj.as_unchecked<int64_t>() <= limits::max()) {
-            return obj.as_unchecked<T>();
+        if (obj.type() == object_type::int64 && obj.as<int64_t>() >= limits::min() &&
+            obj.as<int64_t>() <= limits::max()) {
+            return obj.as<T>();
         }
     }
 
     if constexpr (std::is_same_v<T, bool>) {
         if (obj.type() == object_type::boolean) {
-            return obj.as_unchecked<T>();
+            return obj.as<T>();
         }
     }
 

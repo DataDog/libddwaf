@@ -76,31 +76,31 @@ public:
         const auto *ptr = static_cast<const T *>(this);
         if constexpr (T::is_supported_type_impl(object_type::string)) {
             if (obj.type() == object_type::string) {
-                return ptr->match_impl(obj.as_unchecked<std::string_view>());
+                return ptr->match_impl(obj.as<std::string_view>());
             }
         }
 
         if constexpr (T::is_supported_type_impl(object_type::int64)) {
             if (obj.type() == object_type::int64) {
-                return ptr->match_impl(obj.as_unchecked<int64_t>());
+                return ptr->match_impl(obj.as<int64_t>());
             }
         }
 
         if constexpr (T::is_supported_type_impl(object_type::int64)) {
             if (obj.type() == object_type::uint64) {
-                return ptr->match_impl(obj.as_unchecked<uint64_t>());
+                return ptr->match_impl(obj.as<uint64_t>());
             }
         }
 
         if constexpr (T::is_supported_type_impl(object_type::boolean)) {
             if (obj.type() == object_type::boolean) {
-                return ptr->match_impl(obj.as_unchecked<bool>());
+                return ptr->match_impl(obj.as<bool>());
             }
         }
 
         if constexpr (T::is_supported_type_impl(object_type::float64)) {
             if (obj.type() == object_type::float64) {
-                return ptr->match_impl(obj.as_unchecked<double>());
+                return ptr->match_impl(obj.as<double>());
             }
         }
 

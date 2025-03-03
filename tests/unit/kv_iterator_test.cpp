@@ -89,7 +89,7 @@ TEST(TestKVIterator, TestArraySingleItem)
     exclusion::object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
     EXPECT_TRUE(it);
-    EXPECT_STREQ((*it)->as_unchecked<const char *>(), "string");
+    EXPECT_STREQ((*it)->as<const char *>(), "string");
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 1);
@@ -117,7 +117,7 @@ TEST(TestKVIterator, TestArrayMultipleItems)
     do {
         auto index_str = std::to_string(index);
         EXPECT_TRUE(it);
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), index_str.c_str());
+        EXPECT_STREQ((*it)->as<const char *>(), index_str.c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -151,7 +151,7 @@ TEST(TestKVIterator, TestArrayMultipleNullAndInvalid)
     unsigned index = 0;
     do {
         EXPECT_TRUE(it);
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), std::to_string(index).c_str());
+        EXPECT_STREQ((*it)->as<const char *>(), std::to_string(index).c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -182,7 +182,7 @@ TEST(TestKVIterator, TestArrayPastSizeLimit)
     for (unsigned i = 0; i < limits.max_container_size; i++) {
         auto index_str = std::to_string(i);
         EXPECT_TRUE(it);
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), index_str.c_str());
+        EXPECT_STREQ((*it)->as<const char *>(), index_str.c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -222,7 +222,7 @@ TEST(TestKVIterator, TestDeepArray)
     for (unsigned i = 0; i < 10; i++) {
         auto index = std::to_string(i);
 
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), ("val" + index).c_str());
+        EXPECT_STREQ((*it)->as<const char *>(), ("val" + index).c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), i + 1);
@@ -263,7 +263,7 @@ TEST(TestKVIterator, TestDeepArrayPastLimit)
     for (unsigned i = 0; i < limits.max_container_depth; i++) {
         auto index = std::to_string(i);
 
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), ("val" + index).c_str());
+        EXPECT_STREQ((*it)->as<const char *>(), ("val" + index).c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), i + 1);
@@ -306,7 +306,7 @@ TEST(TestKVIterator, TestMapSingleItem)
     {
         EXPECT_TRUE((bool)it);
         EXPECT_EQ((*it).ptr()->parameterName, nullptr);
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), "key");
+        EXPECT_STREQ((*it)->as<const char *>(), "key");
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -315,7 +315,7 @@ TEST(TestKVIterator, TestMapSingleItem)
 
     {
         EXPECT_TRUE(++it);
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), "value");
+        EXPECT_STREQ((*it)->as<const char *>(), "value");
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -349,14 +349,14 @@ TEST(TestKVIterator, TestMapMultipleItems)
         std::string value = "value" + index;
 
         EXPECT_TRUE((bool)it);
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), key.c_str());
+        EXPECT_STREQ((*it)->as<const char *>(), key.c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
         EXPECT_STREQ(path[0].c_str(), key.c_str());
 
         EXPECT_TRUE(++it);
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), value.c_str());
+        EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
         EXPECT_STREQ((*it).ptr()->parameterName, key.c_str());
 
         path = it.get_current_path();
@@ -408,14 +408,14 @@ TEST(TestKVIterator, TestMapMultipleNullAndInvalid)
             std::string value = "value" + index;
 
             EXPECT_TRUE((bool)it);
-            EXPECT_STREQ((*it)->as_unchecked<const char *>(), key.c_str());
+            EXPECT_STREQ((*it)->as<const char *>(), key.c_str());
 
             auto path = it.get_current_path();
             EXPECT_EQ(path.size(), 1);
             EXPECT_STREQ(path[0].c_str(), key.c_str());
 
             EXPECT_TRUE(++it);
-            EXPECT_STREQ((*it)->as_unchecked<const char *>(), value.c_str());
+            EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
 
             path = it.get_current_path();
             EXPECT_EQ(path.size(), 1);
@@ -478,14 +478,14 @@ TEST(TestKVIterator, TestMapPastSizeLimit)
         std::string value = "value" + index;
 
         EXPECT_TRUE((bool)it);
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), key.c_str());
+        EXPECT_STREQ((*it)->as<const char *>(), key.c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
         EXPECT_STREQ(path[0].c_str(), key.c_str());
 
         EXPECT_TRUE(++it);
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), value.c_str());
+        EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
         EXPECT_STREQ((*it).ptr()->parameterName, key.c_str());
 
         path = it.get_current_path();
@@ -526,7 +526,7 @@ TEST(TestKVIterator, TestDeepMap)
     for (unsigned i = 0; i < 10; i++) {
         auto index = std::to_string(i);
 
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), ("str" + index).c_str());
+        EXPECT_STREQ((*it)->as<const char *>(), ("str" + index).c_str());
 
         {
             auto path = it.get_current_path();
@@ -539,7 +539,7 @@ TEST(TestKVIterator, TestDeepMap)
         }
 
         EXPECT_TRUE(++it);
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), ("val" + index).c_str());
+        EXPECT_STREQ((*it)->as<const char *>(), ("val" + index).c_str());
         {
             auto path = it.get_current_path();
             EXPECT_EQ(path.size(), i + 1);
@@ -550,7 +550,7 @@ TEST(TestKVIterator, TestDeepMap)
         }
 
         EXPECT_TRUE(++it);
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), ("map" + index).c_str());
+        EXPECT_STREQ((*it)->as<const char *>(), ("map" + index).c_str());
         {
             auto path = it.get_current_path();
             EXPECT_EQ(path.size(), i + 1);
@@ -595,7 +595,7 @@ TEST(TestKVIterator, TestMapPastDepthLimit)
     for (unsigned i = 0; i < limits.max_container_depth; i++) {
         auto index = std::to_string(i);
 
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), ("str" + index).c_str());
+        EXPECT_STREQ((*it)->as<const char *>(), ("str" + index).c_str());
 
         {
             auto path = it.get_current_path();
@@ -608,7 +608,7 @@ TEST(TestKVIterator, TestMapPastDepthLimit)
         }
 
         EXPECT_TRUE(++it);
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), ("val" + index).c_str());
+        EXPECT_STREQ((*it)->as<const char *>(), ("val" + index).c_str());
 
         {
             auto path = it.get_current_path();
@@ -621,7 +621,7 @@ TEST(TestKVIterator, TestMapPastDepthLimit)
         }
 
         EXPECT_TRUE(++it);
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), ("map" + index).c_str());
+        EXPECT_STREQ((*it)->as<const char *>(), ("map" + index).c_str());
 
         {
             auto path = it.get_current_path();
@@ -657,14 +657,14 @@ TEST(TestKVIterator, TestNoRootKey)
     exclusion::object_set_ref exclude;
     ddwaf::kv_iterator it(root.array[0], {}, exclude);
     EXPECT_TRUE((bool)it);
-    EXPECT_STREQ((*it)->as_unchecked<const char *>(), "key");
+    EXPECT_STREQ((*it)->as<const char *>(), "key");
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 1);
     EXPECT_STREQ(path[0].c_str(), "key");
 
     EXPECT_TRUE(++it);
-    EXPECT_STREQ((*it)->as_unchecked<const char *>(), "value");
+    EXPECT_STREQ((*it)->as<const char *>(), "value");
 
     path = it.get_current_path();
     EXPECT_EQ(path.size(), 1);
@@ -718,7 +718,7 @@ TEST(TestKVIterator, TestContainerMix)
         };
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->as_unchecked<const char *>(), value.c_str());
+            EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -745,7 +745,7 @@ TEST(TestKVIterator, TestMapNoScalars)
 
     for (unsigned i = 0; i < 50; i++) {
         EXPECT_TRUE((bool)it);
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), "key");
+        EXPECT_STREQ((*it)->as<const char *>(), "key");
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -842,7 +842,7 @@ TEST(TestKVIterator, TestMultiPath)
         ddwaf::kv_iterator it(object, key_path, exclude);
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->as_unchecked<const char *>(), value.c_str());
+            EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -864,7 +864,7 @@ TEST(TestKVIterator, TestMultiPath)
         ddwaf::kv_iterator it(object, key_path, exclude);
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->as_unchecked<const char *>(), value.c_str());
+            EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -883,7 +883,7 @@ TEST(TestKVIterator, TestMultiPath)
         ddwaf::kv_iterator it(object, key_path, exclude);
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->as_unchecked<const char *>(), value.c_str());
+            EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -928,7 +928,7 @@ TEST(TestKVIterator, TestContainerMixPath)
         };
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->as_unchecked<const char *>(), value.c_str());
+            EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -943,7 +943,7 @@ TEST(TestKVIterator, TestContainerMixPath)
         ddwaf::kv_iterator it(object, key_path, exclude);
         EXPECT_TRUE((bool)it);
 
-        EXPECT_STREQ((*it)->as_unchecked<const char *>(), "value1_0");
+        EXPECT_STREQ((*it)->as<const char *>(), "value1_0");
 
         auto path = it.get_current_path();
         EXPECT_EQ(path, key_path);
@@ -966,7 +966,7 @@ TEST(TestKVIterator, TestContainerMixPath)
         ddwaf::kv_iterator it(object, key_path, exclude);
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->as_unchecked<const char *>(), value.c_str());
+            EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -1071,7 +1071,7 @@ TEST(TestKVIterator, TestMapDepthLimitPath)
             auto it_path = it.get_current_path();
             std::vector<std::string> path = {"root", "child", "grandchild", "another"};
             EXPECT_EQ(it_path, path);
-            EXPECT_STREQ((*it)->as_unchecked<const char *>(), "value");
+            EXPECT_STREQ((*it)->as<const char *>(), "value");
         }
 
         EXPECT_FALSE(++it);
@@ -1218,16 +1218,16 @@ TEST(TestKVIterator, TestExcludeMultipleObjects)
     ddwaf::kv_iterator it(root, {}, exclude);
 
     EXPECT_TRUE(it);
-    EXPECT_STREQ((*it)->as_unchecked<const char *>(), "other");
+    EXPECT_STREQ((*it)->as<const char *>(), "other");
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 1);
     EXPECT_STREQ(path[0].c_str(), "other");
 
-    EXPECT_STREQ((*it)->as_unchecked<const char *>(), "other");
+    EXPECT_STREQ((*it)->as<const char *>(), "other");
 
     EXPECT_TRUE(++it);
-    EXPECT_STREQ((*it)->as_unchecked<const char *>(), "hello_key");
+    EXPECT_STREQ((*it)->as<const char *>(), "hello_key");
 
     path = it.get_current_path();
     EXPECT_EQ(path.size(), 2);
@@ -1235,7 +1235,7 @@ TEST(TestKVIterator, TestExcludeMultipleObjects)
     EXPECT_STREQ(path[1].c_str(), "hello_key");
 
     EXPECT_TRUE(++it);
-    EXPECT_STREQ((*it)->as_unchecked<const char *>(), "hello");
+    EXPECT_STREQ((*it)->as<const char *>(), "hello");
     path = it.get_current_path();
     EXPECT_EQ(path.size(), 2);
     EXPECT_STREQ(path[0].c_str(), "other");

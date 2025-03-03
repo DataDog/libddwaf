@@ -169,7 +169,7 @@ public:
 
     // Access the key and value at index. If the container is an array, the key
     // will be an empty string.
-    [[nodiscard]] std::pair<object_key, object_view> at_unchecked(std::size_t index) const noexcept
+    [[nodiscard]] std::pair<object_key, object_view> at(std::size_t index) const noexcept
     {
         assert(obj_ != nullptr && index < size() && obj_->array != nullptr);
 
@@ -177,34 +177,21 @@ public:
         return {&slot, slot};
     }
 
-    [[nodiscard]] object_key at_key_unchecked(std::size_t index) const noexcept
+    [[nodiscard]] object_key at_key(std::size_t index) const noexcept
     {
         assert(obj_ != nullptr && index < size() && obj_->array != nullptr);
-
-        const auto &slot = obj_->array[index];
-        return &slot;
+        return &obj_->array[index];
     }
 
-    [[nodiscard]] object_view at_value_unchecked(std::size_t index) const noexcept
+    [[nodiscard]] object_view at_value(std::size_t index) const noexcept
     {
         assert(obj_ != nullptr && index < size() && obj_->array != nullptr);
-
-        const auto &slot = obj_->array[index];
-        return slot;
-    }
-
-    [[nodiscard]] std::pair<object_key, object_view> at(std::size_t index) const noexcept
-    {
-        assert(obj_ != nullptr);
-        if (!is_container() || index > size()) {
-            [[unlikely]] return {};
-        }
-        return at_unchecked(index);
+        return obj_->array[index];
     }
 
     // Access the underlying value based on the required type
     template <typename T>
-    [[nodiscard]] T as_unchecked() const noexcept
+    [[nodiscard]] T as() const noexcept
         requires std::is_same_v<T, object_view>
     {
         assert(obj_ != nullptr);
@@ -212,7 +199,7 @@ public:
     }
 
     template <typename T>
-    [[nodiscard]] T as_unchecked() const noexcept
+    [[nodiscard]] T as() const noexcept
         requires std::is_same_v<T, bool>
     {
         assert(obj_ != nullptr);
@@ -220,7 +207,7 @@ public:
     }
 
     template <typename T>
-    [[nodiscard]] T as_unchecked() const noexcept
+    [[nodiscard]] T as() const noexcept
         requires std::is_same_v<T, int64_t>
     {
         assert(obj_ != nullptr);
@@ -228,7 +215,7 @@ public:
     }
 
     template <typename T>
-    [[nodiscard]] T as_unchecked() const noexcept
+    [[nodiscard]] T as() const noexcept
         requires std::is_same_v<T, uint64_t>
     {
         assert(obj_ != nullptr);
@@ -236,7 +223,7 @@ public:
     }
 
     template <typename T>
-    [[nodiscard]] T as_unchecked() const noexcept
+    [[nodiscard]] T as() const noexcept
         requires std::is_same_v<T, double>
     {
         assert(obj_ != nullptr);
@@ -244,7 +231,7 @@ public:
     }
 
     template <typename T>
-    [[nodiscard]] T as_unchecked() const noexcept
+    [[nodiscard]] T as() const noexcept
         requires std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>
     {
         assert(obj_ != nullptr);
@@ -252,40 +239,22 @@ public:
     }
 
     template <typename T>
-    [[nodiscard]] T as_unchecked() const noexcept
+    [[nodiscard]] T as() const noexcept
         requires std::is_same_v<T, const char *>
     {
         assert(obj_ != nullptr);
         return obj_->stringValue;
     }
 
-    // Access the underlying value based on the required type, these methods
-    // return an optional which will have no value if the requested type doesn't
-    // match the underlying type of this object_view.
-    template <typename T> [[nodiscard]] std::optional<T> as() const noexcept
-    {
-        assert(obj_ != nullptr);
-        if (!is_compatible_type<T>(type())) {
-            [[unlikely]] return std::nullopt;
-        }
-        return as_unchecked<T>();
-    }
-
+    // Access the underlying value based on the required type or return a default
+    // value otherwise.
     template <typename T> [[nodiscard]] T as(T default_value) const noexcept
     {
         assert(obj_ != nullptr);
         if (!is_compatible_type<T>(type())) {
             [[unlikely]] return std::move(default_value);
         }
-        return as_unchecked<T>();
-    }
-
-    template <typename T>
-    [[nodiscard]] std::optional<T> as() const noexcept
-        requires std::is_same_v<T, object_view>
-    {
-        assert(obj_ != nullptr);
-        return {*this};
+        return as<T>();
     }
 
     // Convert the underlying type to the requested type

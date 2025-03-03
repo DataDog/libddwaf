@@ -270,7 +270,7 @@ std::string_view find_shell_command(std::string_view executable, const object_vi
 
     bool command_opt_found = !spec.requires_command_opt;
     for (std::size_t i = 1; i < exec_args.size(); ++i) {
-        auto arg = exec_args.at_value_unchecked(i).as<std::string_view>({});
+        auto arg = exec_args.at_value(i).as<std::string_view>({});
         if (arg.empty()) {
             continue;
         }
@@ -290,7 +290,7 @@ std::string_view find_shell_command(std::string_view executable, const object_vi
                         return {};
                     }
 
-                    return exec_args.at_value_unchecked(i + 1).as<std::string_view>({});
+                    return exec_args.at_value(i + 1).as<std::string_view>({});
                 }
 
                 // Check if the option requires an argument
@@ -317,9 +317,8 @@ std::string_view find_shell_command(std::string_view executable, const object_vi
                     break;
                 }
 
-                return embedded_arg.empty()
-                           ? exec_args.at_value_unchecked(i + 1).as<std::string_view>({})
-                           : embedded_arg;
+                return embedded_arg.empty() ? exec_args.at_value(i + 1).as<std::string_view>({})
+                                            : embedded_arg;
             }
 
             // Check if the option requires an argument
@@ -335,7 +334,7 @@ std::string_view find_shell_command(std::string_view executable, const object_vi
                 break;
             }
 
-            return exec_args.at_value_unchecked(i + 1).as<std::string_view>({});
+            return exec_args.at_value(i + 1).as<std::string_view>({});
         } else {
             // Once the first non-option argument is reached, it must be the
             // shell command, unless the command opt is required and hasn't
@@ -357,7 +356,7 @@ std::optional<shi_result> cmdi_impl(const object_view &exec_args,
     ddwaf::timer &deadline)
 {
     const std::string_view executable =
-        trim_whitespaces(exec_args.at_value_unchecked(0).as<std::string_view>({}));
+        trim_whitespaces(exec_args.at_value(0).as<std::string_view>({}));
     if (executable.empty()) {
         return {};
     }
@@ -388,7 +387,7 @@ std::optional<shi_result> cmdi_impl(const object_view &exec_args,
 
         if (eval_executable) {
             // First check if the entire executable was injected
-            auto value = param.as_unchecked<std::string_view>();
+            auto value = param.as<std::string_view>();
             value = trim_whitespaces(value);
             if (executable == value) {
                 // When the full binary has been injected, we consider it an exploit
@@ -415,7 +414,7 @@ std::string generate_string_resource(const object_view &root)
 {
     std::string resource;
     for (std::size_t i = 0; i < root.size(); ++i) {
-        auto child = root.at_value_unchecked(i).as<std::string_view>({});
+        auto child = root.at_value(i).as<std::string_view>({});
         if (i > 0) {
             resource.append(R"( ")");
             resource.append(child);
