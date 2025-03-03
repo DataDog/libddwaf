@@ -78,7 +78,7 @@ bool call_transformer(transformer_id id, cow_string &str)
 
 } // namespace
 
-bool manager::transform(const object_view &source, ddwaf_object &destination,
+bool manager::transform(object_view source, ddwaf_object &destination,
     const std::span<const transformer_id> &transformers)
 {
     if (source.type() != object_type::string || source.empty()) {

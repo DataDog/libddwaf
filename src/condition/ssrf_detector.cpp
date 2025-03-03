@@ -150,7 +150,7 @@ bool detect_parameter_injection(
     return false;
 }
 
-ssrf_result ssrf_impl(const uri_decomposed &uri, const object_view &params,
+ssrf_result ssrf_impl(const uri_decomposed &uri, object_view params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     const std::unique_ptr<matcher::ip_match> &dangerous_ip_matcher,
     const std::unordered_set<std::string_view> &authorised_scheme_set, ddwaf::timer &deadline)
@@ -257,7 +257,7 @@ ssrf_detector::ssrf_detector(std::vector<condition_parameter> args)
 {}
 
 eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri,
-    const variadic_argument<const object_view> &params, condition_cache &cache,
+    const variadic_argument<object_view> &params, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline) const
 {

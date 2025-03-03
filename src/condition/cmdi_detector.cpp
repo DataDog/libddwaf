@@ -42,7 +42,7 @@ namespace {
 // used directly with a scalar without the need for a fully-fledged object iterator
 class scalar_iterator {
 public:
-    explicit scalar_iterator(const object_view &obj, const std::span<const std::string> & /*path*/,
+    explicit scalar_iterator(object_view obj, const std::span<const std::string> & /*path*/,
         const exclusion::object_set_ref & /*exclude*/, const object_limits & /*limits*/)
         : current_(obj)
     {}
@@ -240,7 +240,7 @@ inline std::tuple<std::string_view, std::string_view, opt_type> parse_option(
     return {{}, {}, opt_type::none};
 }
 
-std::string_view find_shell_command(std::string_view executable, const object_view &exec_args)
+std::string_view find_shell_command(std::string_view executable, object_view exec_args)
 {
     // By initialising the cow_string with the underlying data
     // contained within the std::string, we ensure a new one won't be
@@ -351,8 +351,8 @@ std::string_view find_shell_command(std::string_view executable, const object_vi
     return {};
 }
 
-std::optional<shi_result> cmdi_impl(const object_view &exec_args,
-    std::vector<shell_token> &resource_tokens, const object_view &params,
+std::optional<shi_result> cmdi_impl(object_view exec_args,
+    std::vector<shell_token> &resource_tokens, object_view params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
@@ -381,7 +381,7 @@ std::optional<shi_result> cmdi_impl(const object_view &exec_args,
             throw ddwaf::timeout_exception();
         }
 
-        const object_view &param = *it;
+        object_view param = *it;
         if (param.type() != object_type::string) {
             continue;
         }
@@ -411,7 +411,7 @@ std::optional<shi_result> cmdi_impl(const object_view &exec_args,
     return std::nullopt;
 }
 
-std::string generate_string_resource(const object_view &root)
+std::string generate_string_resource(object_view root)
 {
     std::string resource;
     for (std::size_t i = 0; i < root.size(); ++i) {

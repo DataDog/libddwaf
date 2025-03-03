@@ -276,7 +276,7 @@ namespace {
 ddwaf_object serialize(const base_node &node) { return std::visit(node_serialize{}, node); }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-base_node generate_helper(const object_view &object, std::string_view key,
+base_node generate_helper(object_view object, std::string_view key,
     const std::set<const scanner *> &scanners, std::size_t depth, ddwaf::timer &deadline)
 {
     if (deadline.expired()) {
@@ -343,7 +343,7 @@ base_node generate_helper(const object_view &object, std::string_view key,
 }
 
 ddwaf_object generate(
-    const object_view &object, const std::set<const scanner *> &scanners, ddwaf::timer &deadline)
+    object_view object, const std::set<const scanner *> &scanners, ddwaf::timer &deadline)
 {
     return serialize(
         generate_helper(object, {}, scanners, extract_schema::max_container_depth, deadline));

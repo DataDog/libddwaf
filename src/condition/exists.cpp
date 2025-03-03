@@ -26,7 +26,7 @@ namespace {
 
 enum class search_outcome : uint8_t { found, not_found, unknown };
 
-object_view find_key(const object_view &parent, std::string_view key, const object_limits &limits)
+object_view find_key(object_view parent, std::string_view key, const object_limits &limits)
 {
     for (auto it = parent.begin(limits); it; ++it) {
         const auto &child_key = it.key();

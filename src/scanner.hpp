@@ -30,13 +30,13 @@ public:
 
     virtual ~scanner() = default;
 
-    bool eval(const object_view &key, const object_view &value) const
+    bool eval(object_view key, object_view value) const
     {
         DDWAF_DEBUG("Evaluating scanner '{}'", id_);
         return eval_matcher(key_matcher_, key) && eval_matcher(value_matcher_, value);
     }
 
-    bool eval(std::string_view key, const object_view &value) const
+    bool eval(std::string_view key, object_view value) const
     {
         ddwaf_object key_obj;
         if (key.data() != nullptr && !key.empty()) {
@@ -52,7 +52,7 @@ public:
     const std::string &get_id_ref() const { return id_; }
 
 protected:
-    static bool eval_matcher(const std::shared_ptr<matcher::base> &matcher, const object_view &obj)
+    static bool eval_matcher(const std::shared_ptr<matcher::base> &matcher, object_view obj)
     {
         if (!matcher) {
             return true;

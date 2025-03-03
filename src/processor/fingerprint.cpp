@@ -243,7 +243,7 @@ struct string_hash_field : field_generator<string_hash_field> {
 };
 
 struct key_hash_field : field_generator<key_hash_field> {
-    explicit key_hash_field(const object_view &input) : value(input) {}
+    explicit key_hash_field(object_view input) : value(input) {}
 
     // NOLINTNEXTLINE(readability-make-member-function-const)
     [[nodiscard]] std::string generate()
@@ -310,7 +310,7 @@ struct vector_hash_field : field_generator<vector_hash_field> {
 // when both have to be processed together. This generator also includes the
 // relevant separator, whether the map is empty or not.
 struct kv_hash_fields : field_generator<kv_hash_fields, std::pair<std::string, std::string>> {
-    explicit kv_hash_fields(const object_view &input) : value(input) {}
+    explicit kv_hash_fields(object_view input) : value(input) {}
 
     // NOLINTNEXTLINE(readability-make-member-function-const)
     [[nodiscard]] std::pair<std::string, std::string> generate()

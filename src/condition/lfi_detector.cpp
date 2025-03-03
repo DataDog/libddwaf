@@ -93,7 +93,7 @@ bool lfi_impl_unix(std::string_view path, std::string_view param)
     return (param[0] == '/' && param == path) || find_directory_escape(param, "/");
 }
 
-lfi_result lfi_impl(std::string_view path, const object_view &params,
+lfi_result lfi_impl(std::string_view path, object_view params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {

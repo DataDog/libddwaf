@@ -16,7 +16,7 @@ using namespace std::literals;
 
 namespace ddwaf {
 
-shell_argument_array::shell_argument_array(const object_view &root)
+shell_argument_array::shell_argument_array(object_view root)
 {
     // Since the type check is performed elsewhere, we don't need to check again
     auto argc = root.size();

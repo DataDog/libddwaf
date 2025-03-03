@@ -461,9 +461,8 @@ std::vector<sql_token> tokenize(std::string_view statement, sql_dialect dialect)
 }
 
 sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resource_tokens,
-    const object_view &params, sql_dialect dialect,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline)
+    object_view params, sql_dialect dialect, const exclusion::object_set_ref &objects_excluded,
+    const object_limits &limits, ddwaf::timer &deadline)
 {
     static constexpr std::size_t min_str_len = 3;
 
@@ -509,10 +508,9 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[nodiscard]] eval_result sqli_detector::eval_impl(const unary_argument<std::string_view> &sql,
-    const variadic_argument<const object_view> &params,
-    const unary_argument<std::string_view> &db_type, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline) const
+    const variadic_argument<object_view> &params, const unary_argument<std::string_view> &db_type,
+    condition_cache &cache, const exclusion::object_set_ref &objects_excluded,
+    const object_limits &limits, ddwaf::timer &deadline) const
 {
     auto dialect = sql_dialect_from_type(db_type.value);
 
