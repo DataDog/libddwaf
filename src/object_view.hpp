@@ -23,7 +23,7 @@ namespace detail {
 using object = ddwaf_object;
 } // namespace detail
 
-template <typename T> struct converter;
+template <typename T> struct object_converter;
 
 class object_view;
 
@@ -248,17 +248,17 @@ public:
 
     // Access the underlying value based on the required type or return a default
     // value otherwise.
-    template <typename T> [[nodiscard]] T as(T default_value) const noexcept
+    template <typename T> [[nodiscard]] T as_or_default(T default_value) const noexcept
     {
         assert(obj_ != nullptr);
         if (!is_compatible_type<T>(type())) {
-            [[unlikely]] return std::move(default_value);
+            [[unlikely]] return default_value;
         }
         return as<T>();
     }
 
     // Convert the underlying type to the requested type
-    template <typename T> T convert() const { return converter<T>{*this}(); }
+    template <typename T> T convert() const { return object_converter<T>{*this}(); }
 
     class iterator {
     public:
