@@ -26,10 +26,11 @@ template <typename T> struct object_converter;
 
 class object_view;
 
-// Temporary abstraction
+// Temporary abstraction, this will be removed once the keys and values are
+// split within ddwaf_object.
 class object_key {
 public:
-    // The default constructor results in a view without value
+    // The default constructor results in a key without value
     object_key() = default;
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     object_key(detail::object *underlying_object) : obj_(underlying_object) {}
@@ -79,6 +80,7 @@ protected:
 
 class object_view {
 public:
+    // The default constructor results in a view without value
     object_view() = default;
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     object_view(const detail::object &underlying_object) : obj_(&underlying_object) {}
@@ -139,8 +141,7 @@ public:
         return obj_->nbEntries == 0;
     }
 
-    // These is_* methods provide further checks for consistency, albeit these
-    // perhaps should be replaced by assertions.
+    // The is_* methods can be used to check for collections of types
     [[nodiscard]] bool is_container() const noexcept
     {
         assert(obj_ != nullptr);
@@ -153,7 +154,7 @@ public:
         return (type() & scalar_object_type) != 0;
     }
 
-    // is<T> check whether the underlying type is compatible with the required
+    // is<T> checks whether the underlying type is compatible with the required
     // type. When it comes to numeric types, the request type must match the
     // one used within ddwaf_object, i.e. the type will not be cast to one of
     // a smaller size.
@@ -163,13 +164,9 @@ public:
         return is_compatible_type<T>(type());
     }
 
-    // The unchecked API assumes that the caller has already verified that the
-    // method preconditions are met:
+    // The API assumes that the caller has already verified that the method preconditions are met:
     //   - When using at, the accessed indexed is within bounds (using size*())
     //   - When using as, the accessed field matches the underlying object type (using is*())
-    //
-    // The checked API (without suffix), always validates preconditions so it is
-    // safer but introduces small overheads.
 
     // Access the key and value at index. If the container is an array, the key
     // will be an empty string.
@@ -181,12 +178,14 @@ public:
         return {&slot, slot};
     }
 
+    // Access the key at index. If the container is an array, the key will be an empty string.
     [[nodiscard]] object_key at_key(std::size_t index) const noexcept
     {
         assert(obj_ != nullptr && index < size() && obj_->array != nullptr);
         return &obj_->array[index];
     }
 
+    // Access the value at index.
     [[nodiscard]] object_view at_value(std::size_t index) const noexcept
     {
         assert(obj_ != nullptr && index < size() && obj_->array != nullptr);
@@ -261,7 +260,8 @@ public:
         return as<T>();
     }
 
-    // Convert the underlying type to the requested type
+    // Convert the underlying type to the requested type, converters are defined
+    // in the object_converter header
     template <typename T> T convert() const { return object_converter<T>{*this}(); }
 
     class iterator {
@@ -285,14 +285,12 @@ public:
         [[nodiscard]] object_key key() const
         {
             assert(obj_ != nullptr && index_ < size_);
-
             return &obj_[index_];
         }
 
         [[nodiscard]] object_view value() const
         {
             assert(obj_ != nullptr && index_ < size_);
-
             return obj_[index_];
         }
 
