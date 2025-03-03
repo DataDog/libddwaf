@@ -271,6 +271,15 @@ public:
         return as_unchecked<T>();
     }
 
+    template <typename T> [[nodiscard]] T as(T default_value) const noexcept
+    {
+        assert(obj_ != nullptr);
+        if (!is_compatible_type<T>(type())) {
+            [[unlikely]] return std::move(default_value);
+        }
+        return as_unchecked<T>();
+    }
+
     template <typename T>
     [[nodiscard]] std::optional<T> as() const noexcept
         requires std::is_same_v<T, object_view>

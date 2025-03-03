@@ -21,11 +21,11 @@
 #include "condition/cmdi_detector.hpp"
 #include "condition/shi_common.hpp"
 #include "condition/structured_condition.hpp"
-#include "ddwaf.h"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
 #include "log.hpp"
+#include "object_type.hpp"
 #include "object_view.hpp"
 #include "platform.hpp"
 #include "tokenizer/shell.hpp"
@@ -182,17 +182,6 @@ std::string_view trim_whitespaces(std::string_view str)
     return str.substr(start, 1 + end - start);
 }
 
-std::size_t object_size(const ddwaf_object &obj) { return static_cast<std::size_t>(obj.nbEntries); }
-
-std::string_view object_at(const ddwaf_object &obj, std::size_t idx)
-{
-    const ddwaf_object &child = obj.array[idx];
-    if (child.type != DDWAF_OBJ_STRING) {
-        return {};
-    }
-    return {child.stringValue, object_size(child)};
-}
-
 enum class opt_type : uint8_t { none, short_opt, long_opt, end_opt };
 
 inline std::pair<std::string_view, std::string_view> split_long_opt_with_arg(std::string_view opt)
@@ -251,7 +240,7 @@ inline std::tuple<std::string_view, std::string_view, opt_type> parse_option(
     return {{}, {}, opt_type::none};
 }
 
-std::string_view find_shell_command(std::string_view executable, const ddwaf_object &exec_args)
+std::string_view find_shell_command(std::string_view executable, const object_view &exec_args)
 {
     // By initialising the cow_string with the underlying data
     // contained within the std::string, we ensure a new one won't be
@@ -280,8 +269,8 @@ std::string_view find_shell_command(std::string_view executable, const ddwaf_obj
     auto &spec = shell_it->second;
 
     bool command_opt_found = !spec.requires_command_opt;
-    for (std::size_t i = 1; i < object_size(exec_args); ++i) {
-        auto arg = object_at(exec_args, i);
+    for (std::size_t i = 1; i < exec_args.size(); ++i) {
+        auto arg = exec_args.at_value_unchecked(i).as<std::string_view>({});
         if (arg.empty()) {
             continue;
         }
@@ -297,11 +286,11 @@ std::string_view find_shell_command(std::string_view executable, const ddwaf_obj
                 // If the shell requires the command immediately after the opt, we
                 // simply return the next argument
                 if (spec.command_after_opt && command_opt_found) {
-                    if (i + 1 >= object_size(exec_args)) {
+                    if (i + 1 >= exec_args.size()) {
                         return {};
                     }
 
-                    return object_at(exec_args, i + 1);
+                    return exec_args.at_value_unchecked(i + 1).as<std::string_view>({});
                 }
 
                 // Check if the option requires an argument
@@ -324,11 +313,13 @@ std::string_view find_shell_command(std::string_view executable, const ddwaf_obj
             // If the shell requires the command immediately after the opt, we
             // simply return the next argument
             if (spec.command_after_opt && command_opt_found) {
-                if (embedded_arg.empty() && i + 1 >= object_size(exec_args)) {
+                if (embedded_arg.empty() && i + 1 >= exec_args.size()) {
                     break;
                 }
 
-                return embedded_arg.empty() ? object_at(exec_args, i + 1) : embedded_arg;
+                return embedded_arg.empty()
+                           ? exec_args.at_value_unchecked(i + 1).as<std::string_view>({})
+                           : embedded_arg;
             }
 
             // Check if the option requires an argument
@@ -340,11 +331,11 @@ std::string_view find_shell_command(std::string_view executable, const ddwaf_obj
             // Since we found the end of options, the next argument must be
             // the shell invocation, but only if we have found the relevant
             // command option (assuming it's required)
-            if (!command_opt_found || i + 1 >= object_size(exec_args)) {
+            if (!command_opt_found || i + 1 >= exec_args.size()) {
                 break;
             }
 
-            return object_at(exec_args, i + 1);
+            return exec_args.at_value_unchecked(i + 1).as<std::string_view>({});
         } else {
             // Once the first non-option argument is reached, it must be the
             // shell command, unless the command opt is required and hasn't
@@ -360,12 +351,13 @@ std::string_view find_shell_command(std::string_view executable, const ddwaf_obj
     return {};
 }
 
-std::optional<shi_result> cmdi_impl(const ddwaf_object &exec_args,
-    std::vector<shell_token> &resource_tokens, const ddwaf_object &params,
+std::optional<shi_result> cmdi_impl(const object_view &exec_args,
+    std::vector<shell_token> &resource_tokens, const object_view &params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
-    const std::string_view executable = trim_whitespaces(object_at(exec_args, 0));
+    const std::string_view executable =
+        trim_whitespaces(exec_args.at_value_unchecked(0).as<std::string_view>({}));
     if (executable.empty()) {
         return {};
     }
@@ -389,14 +381,14 @@ std::optional<shi_result> cmdi_impl(const ddwaf_object &exec_args,
             throw ddwaf::timeout_exception();
         }
 
-        const ddwaf_object &param = (*it).ref();
-        if (param.type != DDWAF_OBJ_STRING) {
+        const object_view &param = *it;
+        if (param.type() != object_type::string) {
             continue;
         }
 
         if (eval_executable) {
             // First check if the entire executable was injected
-            std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
+            auto value = param.as_unchecked<std::string_view>();
             value = trim_whitespaces(value);
             if (executable == value) {
                 // When the full binary has been injected, we consider it an exploit
@@ -419,11 +411,11 @@ std::optional<shi_result> cmdi_impl(const ddwaf_object &exec_args,
     return std::nullopt;
 }
 
-std::string generate_string_resource(const ddwaf_object &root)
+std::string generate_string_resource(const object_view &root)
 {
     std::string resource;
-    for (std::size_t i = 0; i < object_size(root); ++i) {
-        auto child = object_at(root, i);
+    for (std::size_t i = 0; i < root.size(); ++i) {
+        auto child = root.at_value_unchecked(i).as<std::string_view>({});
         if (i > 0) {
             resource.append(R"( ")");
             resource.append(child);
@@ -442,19 +434,19 @@ cmdi_detector::cmdi_detector(std::vector<condition_parameter> args)
 {}
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-eval_result cmdi_detector::eval_impl(const unary_argument<const ddwaf_object *> &resource,
-    const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
+eval_result cmdi_detector::eval_impl(const unary_argument<object_view> &resource,
+    const variadic_argument<object_view> &params, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline) const
 {
-    if (resource.value->type != DDWAF_OBJ_ARRAY || resource.value->nbEntries == 0) {
+    if (resource.value.type() != object_type::array || resource.value.empty()) {
         return {};
     }
 
     std::vector<shell_token> resource_tokens;
     for (const auto &param : params) {
         auto res = cmdi_impl(
-            *resource.value, resource_tokens, *param.value, objects_excluded, limits, deadline);
+            resource.value, resource_tokens, param.value, objects_excluded, limits, deadline);
         if (res.has_value()) {
             const std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
@@ -466,7 +458,7 @@ eval_result cmdi_detector::eval_impl(const unary_argument<const ddwaf_object *> 
 
             cache.match =
                 condition_match{.args = {{.name = "resource"sv,
-                                             .resolved = generate_string_resource(*resource.value),
+                                             .resolved = generate_string_resource(resource.value),
                                              .address = resource.address,
                                              .key_path = resource_kp},
                                     {.name = "params"sv,
