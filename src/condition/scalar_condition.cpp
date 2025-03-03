@@ -149,7 +149,6 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
             throw ddwaf::timeout_exception();
         }
 
-        // TODO Fix this once store returns view
         const auto &target = targets_[i];
         auto [object, attr] = store.get_target(target.index);
         if (!object.has_value() || object == cache.targets[i]) {

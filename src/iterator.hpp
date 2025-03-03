@@ -38,7 +38,6 @@ public:
     [[nodiscard]] explicit operator bool() const { return current_.second.has_value(); }
     [[nodiscard]] size_t depth() { return stack_.size() + path_.size(); }
     [[nodiscard]] std::vector<std::string> get_current_path() const;
-    [[nodiscard]] object_view get_underlying_object() { return current_.second; }
 
 protected:
     static constexpr std::size_t initial_stack_size = 32;
@@ -71,7 +70,10 @@ public:
 
     [[nodiscard]] object_view operator*() { return current_.second; }
 
-    [[nodiscard]] object_type type() const { return current_.second.type(); }
+    [[nodiscard]] object_type type() const
+    {
+        return current_.second.has_value() ? current_.second.type() : object_type::invalid;
+    }
 
 protected:
     void initialise_cursor(object_view obj, std::span<const std::string> path);
