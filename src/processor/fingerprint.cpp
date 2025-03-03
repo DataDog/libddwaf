@@ -25,6 +25,8 @@
 #include "exception.hpp"
 #include "log.hpp"
 #include "object_store.hpp"
+#include "object_type.hpp"
+#include "object_view.hpp"
 #include "processor/base.hpp"
 #include "processor/fingerprint.hpp"
 #include "sha256.hpp"
@@ -241,24 +243,21 @@ struct string_hash_field : field_generator<string_hash_field> {
 };
 
 struct key_hash_field : field_generator<key_hash_field> {
-    explicit key_hash_field(const ddwaf_object *input) : value(input) {}
+    explicit key_hash_field(const object_view &input) : value(input) {}
 
     // NOLINTNEXTLINE(readability-make-member-function-const)
     [[nodiscard]] std::string generate()
     {
-        if (value == nullptr || value->type != DDWAF_OBJ_MAP || value->nbEntries == 0) {
+        if (!value.has_value() || value.type() != object_type::map || value.empty()) {
             return {};
         }
 
         std::vector<std::string_view> keys;
-        keys.reserve(value->nbEntries);
+        keys.reserve(value.size());
 
         std::size_t max_string_size = 0;
-        for (unsigned i = 0; i < value->nbEntries; ++i) {
-            const auto &child = value->array[i];
-
-            const std::string_view key{
-                child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
+        for (auto it = value.begin(); it != value.end(); ++it) {
+            const auto key = it.key();
             max_string_size = std::max(max_string_size, key.size());
 
             keys.emplace_back(key);
@@ -280,7 +279,7 @@ struct key_hash_field : field_generator<key_hash_field> {
         return hasher.digest<8>();
     }
 
-    const ddwaf_object *value;
+    object_view value;
 };
 
 struct vector_hash_field : field_generator<vector_hash_field> {
@@ -311,30 +310,24 @@ struct vector_hash_field : field_generator<vector_hash_field> {
 // when both have to be processed together. This generator also includes the
 // relevant separator, whether the map is empty or not.
 struct kv_hash_fields : field_generator<kv_hash_fields, std::pair<std::string, std::string>> {
-    explicit kv_hash_fields(const ddwaf_object *input) : value(input) {}
+    explicit kv_hash_fields(const object_view &input) : value(input) {}
 
     // NOLINTNEXTLINE(readability-make-member-function-const)
     [[nodiscard]] std::pair<std::string, std::string> generate()
     {
-        if (value == nullptr || value->type != DDWAF_OBJ_MAP || value->nbEntries == 0) {
+        if (!value.has_value() || value.type() != object_type::map || value.empty()) {
             return {};
         }
 
         std::vector<std::pair<std::string_view, std::string_view>> kv_sorted;
-        kv_sorted.reserve(value->nbEntries);
+        kv_sorted.reserve(value.size());
 
         std::size_t max_string_size = 0;
-        for (std::size_t i = 0; i < value->nbEntries; ++i) {
-            const auto &child = value->array[i];
+        for (auto it = value.begin(); it != value.end(); ++it) {
+            const auto key = it.key();
+            const auto child = it.value();
 
-            const std::string_view key{
-                child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
-
-            std::string_view val;
-            if (child.type == DDWAF_OBJ_STRING) {
-                val =
-                    std::string_view{child.stringValue, static_cast<std::size_t>(child.nbEntries)};
-            }
+            auto val = child.as_or_default<std::string_view>({});
 
             auto larger_size = std::max(key.size(), val.size());
             max_string_size = std::max(max_string_size, larger_size);
@@ -366,7 +359,7 @@ struct kv_hash_fields : field_generator<kv_hash_fields, std::pair<std::string, s
         return {key_hasher.digest<8>(), val_hasher.digest<8>()};
     }
 
-    const ddwaf_object *value;
+    object_view value;
 };
 
 template <typename Generator> struct optional_generator {
@@ -554,9 +547,8 @@ std::pair<header_type, unsigned> get_header_type_and_index(std::string_view head
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval_impl(
     const unary_argument<std::string_view> &method, const unary_argument<std::string_view> &uri_raw,
-    const optional_argument<const ddwaf_object *> &query,
-    const optional_argument<const ddwaf_object *> &body, processor_cache &cache,
-    ddwaf::timer &deadline) const
+    const optional_argument<object_view> &query, const optional_argument<object_view> &body,
+    processor_cache &cache, ddwaf::timer &deadline) const
 {
     if (deadline.expired()) {
         throw ddwaf::timeout_exception();
@@ -584,10 +576,10 @@ std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_impl(
-    const unary_argument<const ddwaf_object *> &headers, processor_cache & /*cache*/,
+    const unary_argument<object_view> &headers, processor_cache & /*cache*/,
     ddwaf::timer &deadline) const
 {
-    if (headers.value->type != DDWAF_OBJ_MAP) {
+    if (headers.value.type() != object_type::map) {
         return {{}, object_store::attribute::none};
     }
 
@@ -597,14 +589,13 @@ std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_i
     std::string_view user_agent;
     std::vector<std::string> unknown_headers;
     std::string normalized_header;
-    for (std::size_t i = 0; i < headers.value->nbEntries; ++i) {
+    for (auto it = headers.value.begin(); it != headers.value.end(); ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const auto &child = headers.value->array[i];
-        const std::string_view header{
-            child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
+        const auto header = static_cast<std::string_view>(it.key());
+        const auto child = it.value();
 
         normalize_header(header, normalized_header);
         auto [type, index] = get_header_type_and_index(normalized_header);
@@ -612,8 +603,8 @@ std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_i
             known_header_bitset[index] = '1';
         } else if (type == header_type::unknown) {
             unknown_headers.emplace_back(normalized_header);
-        } else if (type == header_type::user_agent && child.type == DDWAF_OBJ_STRING) {
-            user_agent = {child.stringValue, static_cast<std::size_t>(child.nbEntries)};
+        } else if (type == header_type::user_agent && child.type() == object_type::string) {
+            user_agent = child.as<std::string_view>();
         }
     }
     std::sort(unknown_headers.begin(), unknown_headers.end());
@@ -634,10 +625,10 @@ std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_i
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_impl(
-    const unary_argument<const ddwaf_object *> &headers, processor_cache & /*cache*/,
+    const unary_argument<object_view> &headers, processor_cache & /*cache*/,
     ddwaf::timer &deadline) const
 {
-    if (headers.value->type != DDWAF_OBJ_MAP) {
+    if (headers.value.type() != object_type::map) {
         return {{}, object_store::attribute::none};
     }
 
@@ -647,15 +638,13 @@ std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_
     unsigned chosen_header = ip_origin_headers_length;
     std::string_view chosen_header_value;
     std::string normalized_header;
-    for (std::size_t i = 0; i < headers.value->nbEntries; ++i) {
+    for (auto it = headers.value.begin(); it != headers.value.end(); ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const auto &child = headers.value->array[i];
-
-        const std::string_view header{
-            child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
+        const auto header = static_cast<std::string_view>(it.key());
+        const auto &child = it.value();
 
         normalize_header(header, normalized_header);
         auto [type, index] = get_header_type_and_index(normalized_header);
@@ -664,9 +653,8 @@ std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_
             // Verify not only precedence but also type, as a header of an unexpected
             // type will be unlikely to be used unless the framework has somehow
             // broken down the header into constituent IPs
-            if (chosen_header > index && child.type == DDWAF_OBJ_STRING) {
-                chosen_header_value = {
-                    child.stringValue, static_cast<std::size_t>(child.nbEntries)};
+            if (chosen_header > index && child.type() == object_type::string) {
+                chosen_header_value = child.as<std::string_view>();
                 chosen_header = index;
             }
         }
@@ -692,7 +680,7 @@ std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<ddwaf_object, object_store::attribute> session_fingerprint::eval_impl(
-    const optional_argument<const ddwaf_object *> &cookies,
+    const optional_argument<object_view> &cookies,
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     const optional_argument<std::string_view> &session_id,
     const optional_argument<std::string_view> &user_id, processor_cache &cache,

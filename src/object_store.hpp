@@ -64,7 +64,8 @@ public:
     bool insert(target_index target, std::string_view key, ddwaf_object &input,
         attribute attr = attribute::none, ddwaf_object_free_fn free_fn = ddwaf_object_free);
 
-    std::pair<ddwaf_object *, attribute> get_target(target_index target) const
+    template <typename T = ddwaf_object *>
+    std::pair<T, attribute> get_target(target_index target) const
     {
         auto it = objects_.find(target);
         if (it != objects_.end()) {
