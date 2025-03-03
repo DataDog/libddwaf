@@ -133,7 +133,11 @@ public:
         return static_cast<std::size_t>(obj_->nbEntries);
     }
 
-    [[nodiscard]] bool empty() const noexcept { return obj_->nbEntries == 0; }
+    [[nodiscard]] bool empty() const noexcept
+    {
+        assert(obj_ != nullptr);
+        return obj_->nbEntries == 0;
+    }
 
     // These is_* methods provide further checks for consistency, albeit these
     // perhaps should be replaced by assertions.
@@ -142,6 +146,7 @@ public:
         assert(obj_ != nullptr);
         return (type() & container_object_type) != 0;
     }
+
     [[nodiscard]] bool is_scalar() const noexcept
     {
         assert(obj_ != nullptr);
