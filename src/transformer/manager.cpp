@@ -3,10 +3,11 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-#include <cstddef>
 #include <span>
+#include <string_view>
 
 #include "ddwaf.h"
+#include "object_type.hpp"
 #include "object_view.hpp"
 #include "transformer/base.hpp"
 #include "transformer/base64_decode.hpp"

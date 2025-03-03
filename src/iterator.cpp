@@ -73,14 +73,14 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
     return keys;
 }
 
-value_iterator::value_iterator(object_view obj, const std::span<const std::string> &path,
+value_iterator::value_iterator(object_view obj, std::span<const std::string> path,
     const exclusion::object_set_ref &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
 }
 
-void value_iterator::initialise_cursor(object_view obj, const std::span<const std::string> &path)
+void value_iterator::initialise_cursor(object_view obj, std::span<const std::string> path)
 {
     if (excluded_.contains(obj.ptr())) {
         return;
@@ -107,8 +107,7 @@ void value_iterator::initialise_cursor(object_view obj, const std::span<const st
     }
 }
 
-void value_iterator::initialise_cursor_with_path(
-    object_view obj, const std::span<const std::string> &path)
+void value_iterator::initialise_cursor_with_path(object_view obj, std::span<const std::string> path)
 {
     // An object with a path should always start with a container
     if (!obj.is_container()) {
@@ -220,14 +219,14 @@ void value_iterator::set_cursor_to_next_object()
     }
 }
 
-key_iterator::key_iterator(object_view obj, const std::span<const std::string> &path,
+key_iterator::key_iterator(object_view obj, std::span<const std::string> path,
     const exclusion::object_set_ref &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
 }
 
-void key_iterator::initialise_cursor(object_view obj, const std::span<const std::string> &path)
+void key_iterator::initialise_cursor(object_view obj, std::span<const std::string> path)
 {
     if (excluded_.contains(obj.ptr())) {
         return;
@@ -248,8 +247,7 @@ void key_iterator::initialise_cursor(object_view obj, const std::span<const std:
     }
 }
 
-void key_iterator::initialise_cursor_with_path(
-    object_view obj, const std::span<const std::string> &path)
+void key_iterator::initialise_cursor_with_path(object_view obj, std::span<const std::string> path)
 {
     if (path.size() >= limits_.max_container_depth) {
         return;
@@ -349,14 +347,14 @@ void key_iterator::set_cursor_to_next_object()
     }
 }
 
-kv_iterator::kv_iterator(object_view obj, const std::span<const std::string> &path,
+kv_iterator::kv_iterator(object_view obj, std::span<const std::string> path,
     const exclusion::object_set_ref &exclude, const object_limits &limits)
     : iterator_base(exclude, limits)
 {
     initialise_cursor(obj, path);
 }
 
-void kv_iterator::initialise_cursor(object_view obj, const std::span<const std::string> &path)
+void kv_iterator::initialise_cursor(object_view obj, std::span<const std::string> path)
 {
     if (excluded_.contains(obj.ptr())) {
         return;
@@ -384,8 +382,7 @@ void kv_iterator::initialise_cursor(object_view obj, const std::span<const std::
     }
 }
 
-void kv_iterator::initialise_cursor_with_path(
-    object_view obj, const std::span<const std::string> &path)
+void kv_iterator::initialise_cursor_with_path(object_view obj, std::span<const std::string> path)
 {
     if (path.size() >= limits_.max_container_depth) {
         return;

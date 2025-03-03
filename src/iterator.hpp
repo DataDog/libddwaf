@@ -58,7 +58,7 @@ protected:
 
 class value_iterator : public iterator_base<value_iterator> {
 public:
-    explicit value_iterator(object_view obj, const std::span<const std::string> &path,
+    explicit value_iterator(object_view obj, std::span<const std::string> path,
         const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
 
     ~value_iterator() = default;
@@ -74,8 +74,8 @@ public:
     [[nodiscard]] object_type type() const { return current_.second.type(); }
 
 protected:
-    void initialise_cursor(object_view obj, const std::span<const std::string> &path);
-    void initialise_cursor_with_path(object_view obj, const std::span<const std::string> &path);
+    void initialise_cursor(object_view obj, std::span<const std::string> path);
+    void initialise_cursor_with_path(object_view obj, std::span<const std::string> path);
 
     void set_cursor_to_next_object();
 
@@ -84,7 +84,7 @@ protected:
 
 class key_iterator : public iterator_base<key_iterator> {
 public:
-    explicit key_iterator(object_view obj, const std::span<const std::string> &path,
+    explicit key_iterator(object_view obj, std::span<const std::string> path,
         const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
 
     ~key_iterator() = default;
@@ -109,8 +109,8 @@ public:
     }
 
 protected:
-    void initialise_cursor(object_view obj, const std::span<const std::string> &path);
-    void initialise_cursor_with_path(object_view obj, const std::span<const std::string> &path);
+    void initialise_cursor(object_view obj, std::span<const std::string> path);
+    void initialise_cursor_with_path(object_view obj, std::span<const std::string> path);
 
     void set_cursor_to_next_object();
 
@@ -121,7 +121,7 @@ protected:
 
 class kv_iterator : public iterator_base<kv_iterator> {
 public:
-    explicit kv_iterator(object_view obj, const std::span<const std::string> &path,
+    explicit kv_iterator(object_view obj, std::span<const std::string> path,
         const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
 
     ~kv_iterator() = default;
@@ -162,8 +162,8 @@ public:
     }
 
 protected:
-    void initialise_cursor(object_view obj, const std::span<const std::string> &path);
-    void initialise_cursor_with_path(object_view obj, const std::span<const std::string> &path);
+    void initialise_cursor(object_view obj, std::span<const std::string> path);
+    void initialise_cursor_with_path(object_view obj, std::span<const std::string> path);
 
     void set_cursor_to_next_object();
 

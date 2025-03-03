@@ -381,7 +381,7 @@ std::optional<shi_result> cmdi_impl(object_view exec_args,
             throw ddwaf::timeout_exception();
         }
 
-        object_view param = *it;
+        const object_view param = *it;
         if (param.type() != object_type::string) {
             continue;
         }
