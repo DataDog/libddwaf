@@ -109,7 +109,7 @@ TEST(TestKVIterator, TestArrayMultipleItems)
         ddwaf_object_array_add(&object, ddwaf_object_string(&tmp, std::to_string(i).c_str()));
     }
 
-    std::unordered_set<const ddwaf_object *> persistent;
+    std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::kv_iterator it(object, {}, exclude);
 
@@ -143,7 +143,7 @@ TEST(TestKVIterator, TestArrayMultipleNullAndInvalid)
 
     EXPECT_EQ(ddwaf_object_size(&object), 75);
 
-    std::unordered_set<const ddwaf_object *> persistent;
+    std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::kv_iterator it(object, {}, exclude);
 
@@ -175,7 +175,7 @@ TEST(TestKVIterator, TestArrayPastSizeLimit)
         ddwaf_object_array_add(&object, ddwaf_object_string(&tmp, std::to_string(i).c_str()));
     }
 
-    std::unordered_set<const ddwaf_object *> persistent;
+    std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::kv_iterator it(object, {}, exclude);
 
@@ -216,7 +216,7 @@ TEST(TestKVIterator, TestDeepArray)
         array = &array->array[1];
     }
 
-    std::unordered_set<const ddwaf_object *> persistent;
+    std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::kv_iterator it(object, {}, exclude);
     for (unsigned i = 0; i < 10; i++) {
@@ -257,7 +257,7 @@ TEST(TestKVIterator, TestDeepArrayPastLimit)
         array = &array->array[1];
     }
 
-    std::unordered_set<const ddwaf_object *> persistent;
+    std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::kv_iterator it(object, {}, exclude);
     for (unsigned i = 0; i < limits.max_container_depth; i++) {
@@ -1192,7 +1192,7 @@ TEST(TestKVIterator, TestExcludeSingleObject)
     ddwaf_object_map(&object);
     ddwaf_object_map_add(&object, "key", ddwaf_object_string(&tmp, "value"));
 
-    std::unordered_set<const ddwaf_object *> persistent{&object.array[0]};
+    std::unordered_set<object_view> persistent{&object.array[0]};
 
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::kv_iterator it(object, {}, exclude);
@@ -1213,7 +1213,7 @@ TEST(TestKVIterator, TestExcludeMultipleObjects)
     ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
     ddwaf_object_map_add(&root, "other", &map);
 
-    std::unordered_set<const ddwaf_object *> persistent{&root.array[0], &map.array[1]};
+    std::unordered_set<object_view> persistent{&root.array[0], &map.array[1]};
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::kv_iterator it(root, {}, exclude);
 
@@ -1255,7 +1255,7 @@ TEST(TestKVIterator, TestExcludeObjectInKeyPath)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "parent", &child);
 
-    std::unordered_set<const ddwaf_object *> persistent{&child.array[0]};
+    std::unordered_set<object_view> persistent{&child.array[0]};
     exclusion::object_set_ref exclude{persistent, {}};
     std::vector<std::string> key_path{"parent", "child"};
     ddwaf::kv_iterator it(root, key_path, exclude);
@@ -1274,7 +1274,7 @@ TEST(TestKVIterator, TestExcludeRootOfKeyPath)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "parent", &child);
 
-    std::unordered_set<const ddwaf_object *> persistent{&root.array[0]};
+    std::unordered_set<object_view> persistent{&root.array[0]};
     exclusion::object_set_ref exclude{persistent, {}};
     std::vector<std::string> key_path{"parent", "child"};
     ddwaf::kv_iterator it(root, key_path, exclude);

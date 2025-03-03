@@ -899,7 +899,7 @@ TEST(TestExpression, ExcludeInput)
     store.insert(root);
 
     ddwaf::timer deadline{2s};
-    std::unordered_set<const ddwaf_object *> excluded_objects{&root.array[0]};
+    std::unordered_set<object_view> excluded_objects{&root.array[0]};
 
     expression::cache_type cache;
     EXPECT_FALSE(expr->eval(cache, store, {excluded_objects, {}}, {}, {}, deadline).outcome);
@@ -927,7 +927,7 @@ TEST(TestExpression, ExcludeKeyPath)
     store.insert(root);
 
     ddwaf::timer deadline{2s};
-    std::unordered_set<const ddwaf_object *> excluded_objects{&root.array[0]};
+    std::unordered_set<object_view> excluded_objects{&root.array[0]};
 
     expression::cache_type cache;
     EXPECT_FALSE(expr->eval(cache, store, {excluded_objects, {}}, {}, {}, deadline).outcome);
