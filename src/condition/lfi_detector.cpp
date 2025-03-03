@@ -14,11 +14,12 @@
 #include "clock.hpp"
 #include "condition/base.hpp"
 #include "condition/lfi_detector.hpp"
-#include "ddwaf.h"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
 #include "log.hpp"
+#include "object_type.hpp"
+#include "object_view.hpp"
 #include "platform.hpp"
 #include "utils.hpp"
 
@@ -92,7 +93,7 @@ bool lfi_impl_unix(std::string_view path, std::string_view param)
     return (param[0] == '/' && param == path) || find_directory_escape(param, "/");
 }
 
-lfi_result lfi_impl(std::string_view path, const ddwaf_object &params,
+lfi_result lfi_impl(std::string_view path, object_view params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
@@ -107,12 +108,12 @@ lfi_result lfi_impl(std::string_view path, const ddwaf_object &params,
             throw ddwaf::timeout_exception();
         }
 
-        const ddwaf_object &param = *((*it).ptr());
-        if (param.type != DDWAF_OBJ_STRING) {
+        const auto &param = *it;
+        if (param.type() != object_type::string) {
             continue;
         }
 
-        const std::string_view value{param.stringValue, static_cast<std::size_t>(param.nbEntries)};
+        const auto value = param->as<std::string_view>();
         if (lfi_fn(path, value)) {
             return {{std::string(value), it.get_current_path()}};
         }
@@ -124,12 +125,12 @@ lfi_result lfi_impl(std::string_view path, const ddwaf_object &params,
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path,
-    const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
+    const variadic_argument<object_view> &params, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline) const
 {
     for (const auto &param : params) {
-        auto res = lfi_impl(path.value, *param.value, objects_excluded, limits, deadline);
+        auto res = lfi_impl(path.value, param.value, objects_excluded, limits, deadline);
         if (res.has_value()) {
             const std::vector<std::string> path_kp{path.key_path.begin(), path.key_path.end()};
             const bool ephemeral = path.ephemeral || param.ephemeral;

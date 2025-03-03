@@ -23,14 +23,14 @@ TEST(TestObjectView, InvalidObject)
     EXPECT_EQ(view.size(), 0);
     EXPECT_TRUE(view.empty());
 
-    EXPECT_FALSE(view.as<bool>());
-    EXPECT_FALSE(view.as<int64_t>());
-    EXPECT_FALSE(view.as<uint64_t>());
-    EXPECT_FALSE(view.as<double>());
+    EXPECT_FALSE(view.is<bool>());
+    EXPECT_FALSE(view.is<int64_t>());
+    EXPECT_FALSE(view.is<uint64_t>());
+    EXPECT_FALSE(view.is<double>());
 
-    EXPECT_FALSE(view.as<std::string>());
-    EXPECT_FALSE(view.as<std::string_view>());
-    EXPECT_FALSE(view.as<const char *>());
+    EXPECT_FALSE(view.is<std::string>());
+    EXPECT_FALSE(view.is<std::string_view>());
+    EXPECT_FALSE(view.is<const char *>());
 }
 
 TEST(TestObjectView, NullObject)
@@ -45,15 +45,14 @@ TEST(TestObjectView, NullObject)
     EXPECT_EQ(view.size(), 0);
     EXPECT_TRUE(view.empty());
 
-    EXPECT_FALSE(view.as<bool>());
+    EXPECT_FALSE(view.is<bool>());
+    EXPECT_FALSE(view.is<int64_t>());
+    EXPECT_FALSE(view.is<uint64_t>());
+    EXPECT_FALSE(view.is<double>());
 
-    EXPECT_FALSE(view.as<int64_t>());
-    EXPECT_FALSE(view.as<uint64_t>());
-    EXPECT_FALSE(view.as<double>());
-
-    EXPECT_FALSE(view.as<std::string>());
-    EXPECT_FALSE(view.as<std::string_view>());
-    EXPECT_FALSE(view.as<const char *>());
+    EXPECT_FALSE(view.is<std::string>());
+    EXPECT_FALSE(view.is<std::string_view>());
+    EXPECT_FALSE(view.is<const char *>());
 }
 
 TEST(TestObjectView, BooleanObject)
@@ -68,18 +67,16 @@ TEST(TestObjectView, BooleanObject)
     EXPECT_EQ(view.size(), 0);
     EXPECT_TRUE(view.empty());
 
-    EXPECT_TRUE(view.as<bool>());
-    EXPECT_EQ(view.as<bool>().value(), true);
+    EXPECT_TRUE(view.is<bool>());
+    EXPECT_EQ(view.as<bool>(), true);
 
-    EXPECT_EQ(view.as_unchecked<bool>(), true);
+    EXPECT_FALSE(view.is<int64_t>());
+    EXPECT_FALSE(view.is<uint64_t>());
+    EXPECT_FALSE(view.is<double>());
 
-    EXPECT_FALSE(view.as<int64_t>());
-    EXPECT_FALSE(view.as<uint64_t>());
-    EXPECT_FALSE(view.as<double>());
-
-    EXPECT_FALSE(view.as<std::string>());
-    EXPECT_FALSE(view.as<std::string_view>());
-    EXPECT_FALSE(view.as<const char *>());
+    EXPECT_FALSE(view.is<std::string>());
+    EXPECT_FALSE(view.is<std::string_view>());
+    EXPECT_FALSE(view.is<const char *>());
 }
 
 TEST(TestObjectView, SignedObject)
@@ -94,18 +91,16 @@ TEST(TestObjectView, SignedObject)
     EXPECT_EQ(view.size(), 0);
     EXPECT_TRUE(view.empty());
 
-    EXPECT_TRUE(view.as<int64_t>());
-    EXPECT_EQ(view.as<int64_t>().value(), -20);
+    EXPECT_TRUE(view.is<int64_t>());
+    EXPECT_EQ(view.as<int64_t>(), -20);
 
-    EXPECT_EQ(view.as_unchecked<int64_t>(), -20);
+    EXPECT_FALSE(view.is<bool>());
+    EXPECT_FALSE(view.is<uint64_t>());
+    EXPECT_FALSE(view.is<double>());
 
-    EXPECT_FALSE(view.as<bool>());
-    EXPECT_FALSE(view.as<uint64_t>());
-    EXPECT_FALSE(view.as<double>());
-
-    EXPECT_FALSE(view.as<std::string>());
-    EXPECT_FALSE(view.as<std::string_view>());
-    EXPECT_FALSE(view.as<const char *>());
+    EXPECT_FALSE(view.is<std::string>());
+    EXPECT_FALSE(view.is<std::string_view>());
+    EXPECT_FALSE(view.is<const char *>());
 }
 
 TEST(TestObjectView, UnsignedObject)
@@ -120,18 +115,16 @@ TEST(TestObjectView, UnsignedObject)
     EXPECT_EQ(view.size(), 0);
     EXPECT_TRUE(view.empty());
 
-    EXPECT_TRUE(view.as<uint64_t>());
-    EXPECT_EQ(view.as<uint64_t>().value(), 20);
+    EXPECT_TRUE(view.is<uint64_t>());
+    EXPECT_EQ(view.as<uint64_t>(), 20);
 
-    EXPECT_EQ(view.as_unchecked<uint64_t>(), 20);
+    EXPECT_FALSE(view.is<bool>());
+    EXPECT_FALSE(view.is<int64_t>());
+    EXPECT_FALSE(view.is<double>());
 
-    EXPECT_FALSE(view.as<bool>());
-    EXPECT_FALSE(view.as<int64_t>());
-    EXPECT_FALSE(view.as<double>());
-
-    EXPECT_FALSE(view.as<std::string>());
-    EXPECT_FALSE(view.as<std::string_view>());
-    EXPECT_FALSE(view.as<const char *>());
+    EXPECT_FALSE(view.is<std::string>());
+    EXPECT_FALSE(view.is<std::string_view>());
+    EXPECT_FALSE(view.is<const char *>());
 }
 
 TEST(TestObjectView, FloatObject)
@@ -146,18 +139,16 @@ TEST(TestObjectView, FloatObject)
     EXPECT_EQ(view.size(), 0);
     EXPECT_TRUE(view.empty());
 
-    EXPECT_TRUE(view.as<double>());
-    EXPECT_EQ(view.as<double>().value(), 20.1);
+    EXPECT_TRUE(view.is<double>());
+    EXPECT_EQ(view.as<double>(), 20.1);
 
-    EXPECT_EQ(view.as_unchecked<double>(), 20.1);
+    EXPECT_FALSE(view.is<bool>());
+    EXPECT_FALSE(view.is<uint64_t>());
+    EXPECT_FALSE(view.is<int64_t>());
 
-    EXPECT_FALSE(view.as<bool>());
-    EXPECT_FALSE(view.as<uint64_t>());
-    EXPECT_FALSE(view.as<int64_t>());
-
-    EXPECT_FALSE(view.as<std::string>());
-    EXPECT_FALSE(view.as<std::string_view>());
-    EXPECT_FALSE(view.as<const char *>());
+    EXPECT_FALSE(view.is<std::string>());
+    EXPECT_FALSE(view.is<std::string_view>());
+    EXPECT_FALSE(view.is<const char *>());
 }
 
 TEST(TestObjectView, ArrayObject)
@@ -175,8 +166,8 @@ TEST(TestObjectView, ArrayObject)
     EXPECT_EQ(view.size(), 20);
 
     for (unsigned i = 0; i < 20; i++) {
-        auto [key, value] = view.at_unchecked(i);
-        EXPECT_STREQ(value->as_unchecked<const char *>(), std::to_string(100 + i).c_str());
+        auto [key, value] = view.at(i);
+        EXPECT_STREQ(value->as<const char *>(), std::to_string(100 + i).c_str());
     }
 
     ddwaf_object_free(&root);

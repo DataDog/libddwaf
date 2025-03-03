@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "condition/base.hpp"
+#include "object_view.hpp"
 #include "traits.hpp"
 #include "utils.hpp"
 
@@ -50,6 +51,10 @@ template <typename T> std::optional<T> convert(const ddwaf_object *obj)
         return obj;
     }
 
+    if constexpr (std::is_same_v<std::remove_cv_t<T>, object_view>) {
+        return object_view{obj};
+    }
+
     if constexpr (std::is_same_v<T, std::string_view> || std::is_same_v<T, std::string>) {
         if (obj->type == DDWAF_OBJ_STRING) {
             return T{obj->stringValue, static_cast<std::size_t>(obj->nbEntries)};
@@ -74,6 +79,46 @@ template <typename T> std::optional<T> convert(const ddwaf_object *obj)
     if constexpr (std::is_same_v<T, bool>) {
         if (obj->type == DDWAF_OBJ_BOOL) {
             return static_cast<T>(obj->boolean);
+        }
+    }
+
+    return {};
+}
+
+template <typename T> std::optional<T> convert(object_view obj)
+{
+    if constexpr (std::is_same_v<std::remove_cv_t<T>, object_view>) {
+        return obj;
+    }
+
+    if constexpr (std::is_same_v<std::remove_cv_t<T>, ddwaf_object *>) {
+        return obj.ptr();
+    }
+
+    if constexpr (std::is_same_v<T, std::string_view> || std::is_same_v<T, std::string>) {
+        if (obj.type() == object_type::string) {
+            return T{obj.as<std::string_view>()};
+        }
+    }
+
+    if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, unsigned>) {
+        using limits = std::numeric_limits<T>;
+        if (obj.type() == object_type::uint64 && obj.as<uint64_t>() <= limits::max()) {
+            return obj.as<T>();
+        }
+    }
+
+    if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, int>) {
+        using limits = std::numeric_limits<T>;
+        if (obj.type() == object_type::int64 && obj.as<int64_t>() >= limits::min() &&
+            obj.as<int64_t>() <= limits::max()) {
+            return obj.as<T>();
+        }
+    }
+
+    if constexpr (std::is_same_v<T, bool>) {
+        if (obj.type() == object_type::boolean) {
+            return obj.as<T>();
         }
     }
 

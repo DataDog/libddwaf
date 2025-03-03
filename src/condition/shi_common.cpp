@@ -5,7 +5,8 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "shi_common.hpp"
-#include "ddwaf.h"
+#include "object_type.hpp"
+#include "object_view.hpp"
 #include <algorithm>
 #include <cstddef>
 #include <string_view>
@@ -15,10 +16,10 @@ using namespace std::literals;
 
 namespace ddwaf {
 
-shell_argument_array::shell_argument_array(const ddwaf_object &root)
+shell_argument_array::shell_argument_array(object_view root)
 {
     // Since the type check is performed elsewhere, we don't need to check again
-    auto argc = static_cast<std::size_t>(root.nbEntries);
+    auto argc = root.size();
     if (argc == 0) {
         return;
     }
@@ -26,12 +27,11 @@ shell_argument_array::shell_argument_array(const ddwaf_object &root)
     // Calculate the final resource length
     std::size_t resource_len = 0;
     for (std::size_t i = 0; i < argc; ++i) {
-        const auto &child = root.array[i];
-        if (child.type == DDWAF_OBJ_STRING && child.stringValue != nullptr && child.nbEntries > 0) {
+        const auto &child = root.at_value(i);
+        if (child.type() == object_type::string && !child.empty()) {
             // if the string is valid or non-empty, increase the resource
             // length + 1 for the extra space when relevant
-            resource_len +=
-                static_cast<std::size_t>(child.nbEntries) + static_cast<std::size_t>(i > 0);
+            resource_len += child.size() + static_cast<std::size_t>(i > 0);
         }
     }
 
@@ -40,13 +40,12 @@ shell_argument_array::shell_argument_array(const ddwaf_object &root)
 
     std::size_t index = 0;
     for (std::size_t i = 0; i < argc; ++i) {
-        const auto &child = root.array[i];
-        if (child.type != DDWAF_OBJ_STRING || child.stringValue == nullptr ||
-            child.nbEntries == 0) {
+        const auto &child = root.at_value(i);
+        if (child.type() != object_type::string || child.empty()) {
             continue;
         }
 
-        const std::string_view str{child.stringValue, static_cast<std::size_t>(child.nbEntries)};
+        const auto str = child.as<std::string_view>();
 
         indices.emplace_back(index, index + str.size() - 1);
 

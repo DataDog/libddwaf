@@ -7,6 +7,7 @@
 #pragma once
 
 #include "iterator.hpp"
+#include "object_view.hpp"
 
 namespace ddwaf {
 
@@ -16,15 +17,17 @@ class match_iterator {
 public:
     static constexpr std::size_t npos = std::string_view::npos;
 
-    explicit match_iterator(ResourceType resource, const ddwaf_object &obj,
+    explicit match_iterator(ResourceType resource, object_view obj,
         const exclusion::object_set_ref &exclude, const object_limits &limits = {})
         : resource_(resource), it_(obj, {}, exclude, limits)
     {
         for (; it_; ++it_) {
-            const auto *current_obj = (*it_).ptr();
-            if (current_obj->type == DDWAF_OBJ_STRING && current_obj->nbEntries >= MinLength) {
-                current_param_ = std::string_view{
-                    current_obj->stringValue, static_cast<std::size_t>(current_obj->nbEntries)};
+            auto current_obj = *it_;
+            if (current_obj.type() == object_type::string && current_obj->size() >= MinLength) {
+                current_param_ = current_obj->template as<
+                    std::string_view>(); //{
+                                         // current_obj->stringValue,
+                                         // static_cast<std::size_t>(current_obj->nbEntries)};
                 current_index_ = resource_.find(current_param_, 0);
                 if (current_index_ != npos) {
                     break;
@@ -56,10 +59,9 @@ public:
         }
 
         while (++it_) {
-            const auto *current_obj = (*it_).ptr();
-            if (current_obj->type == DDWAF_OBJ_STRING && current_obj->nbEntries >= MinLength) {
-                current_param_ = std::string_view{
-                    current_obj->stringValue, static_cast<std::size_t>(current_obj->nbEntries)};
+            auto current_obj = *it_;
+            if (current_obj.type() == object_type::string && current_obj->size() >= MinLength) {
+                current_param_ = current_obj->template as<std::string_view>();
                 current_index_ = resource_.find(current_param_, 0);
                 if (current_index_ != npos) {
                     return true;

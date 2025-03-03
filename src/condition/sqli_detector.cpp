@@ -20,10 +20,10 @@
 #include "condition/base.hpp"
 #include "condition/match_iterator.hpp"
 #include "condition/sqli_detector.hpp"
-#include "ddwaf.h"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "log.hpp"
+#include "object_view.hpp"
 #include "tokenizer/generic_sql.hpp"
 #include "tokenizer/mysql.hpp"
 #include "tokenizer/pgsql.hpp"
@@ -461,9 +461,8 @@ std::vector<sql_token> tokenize(std::string_view statement, sql_dialect dialect)
 }
 
 sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resource_tokens,
-    const ddwaf_object &params, sql_dialect dialect,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline)
+    object_view params, sql_dialect dialect, const exclusion::object_set_ref &objects_excluded,
+    const object_limits &limits, ddwaf::timer &deadline)
 {
     static constexpr std::size_t min_str_len = 3;
 
@@ -509,10 +508,9 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[nodiscard]] eval_result sqli_detector::eval_impl(const unary_argument<std::string_view> &sql,
-    const variadic_argument<const ddwaf_object *> &params,
-    const unary_argument<std::string_view> &db_type, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline) const
+    const variadic_argument<object_view> &params, const unary_argument<std::string_view> &db_type,
+    condition_cache &cache, const exclusion::object_set_ref &objects_excluded,
+    const object_limits &limits, ddwaf::timer &deadline) const
 {
     auto dialect = sql_dialect_from_type(db_type.value);
 
@@ -520,7 +518,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
 
     for (const auto &param : params) {
         auto res = internal::sqli_impl(
-            sql.value, resource_tokens, *param.value, dialect, objects_excluded, limits, deadline);
+            sql.value, resource_tokens, param.value, dialect, objects_excluded, limits, deadline);
         if (std::holds_alternative<internal::matched_param>(res)) {
             const std::vector<std::string> sql_kp{sql.key_path.begin(), sql.key_path.end()};
             const bool ephemeral = sql.ephemeral || param.ephemeral;

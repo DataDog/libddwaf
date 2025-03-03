@@ -20,7 +20,7 @@ TEST(TestRegexMatch, TestBasicCaseInsensitive)
     ddwaf_object param;
     ddwaf_object_string(&param, "regex");
 
-    auto [res, highlight] = matcher.match(param);
+    auto [res, highlight] = matcher.match(ddwaf::object_view{param});
     EXPECT_TRUE(res);
     EXPECT_STREQ(highlight.c_str(), "regex");
 
@@ -34,12 +34,12 @@ TEST(TestRegexMatch, TestBasicCaseSensitive)
     ddwaf_object param;
     ddwaf_object_string(&param, "regex");
 
-    EXPECT_FALSE(matcher.match(param).first);
+    EXPECT_FALSE(matcher.match(ddwaf::object_view{param}).first);
 
     ddwaf_object param2;
     ddwaf_object_string(&param2, "rEgEx");
 
-    auto [res, highlight] = matcher.match(param2);
+    auto [res, highlight] = matcher.match(ddwaf::object_view{param2});
     EXPECT_TRUE(res);
     EXPECT_STREQ(highlight.c_str(), "rEgEx");
 
@@ -56,9 +56,9 @@ TEST(TestRegexMatch, TestMinLength)
     ddwaf_object_string(&param, "rEgEx");
     ddwaf_object_string(&param2, "rEgExe");
 
-    EXPECT_FALSE(matcher.match(param).first);
+    EXPECT_FALSE(matcher.match(ddwaf::object_view{param}).first);
 
-    auto [res, highlight] = matcher.match(param2);
+    auto [res, highlight] = matcher.match(ddwaf::object_view{param2});
     EXPECT_TRUE(res);
     EXPECT_STREQ(highlight.c_str(), "rEgExe");
 

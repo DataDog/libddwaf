@@ -18,7 +18,9 @@
 #include "iterator.hpp"
 #include "log.hpp"
 #include "matcher/base.hpp"
+#include "object_converter.hpp" // IWYU pragma: keep
 #include "object_store.hpp"
+#include "object_view.hpp"
 #include "scalar_condition.hpp"
 #include "transformer/base.hpp"
 #include "transformer/manager.hpp"
@@ -98,7 +100,7 @@ ResultType eval_target(Iterator &it, std::string_view address, bool ephemeral,
             throw ddwaf::timeout_exception();
         }
 
-        if (!matcher.is_supported_type(static_cast<DDWAF_OBJ_TYPE>(it.type()))) {
+        if (!matcher.is_supported_type(it.type())) {
             continue;
         }
 
@@ -139,7 +141,7 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
     }
 
     if (cache.targets.size() != targets_.size()) {
-        cache.targets.assign(targets_.size(), nullptr);
+        cache.targets.assign(targets_.size(), {});
     }
 
     for (unsigned i = 0; i < targets_.size(); ++i) {
@@ -147,9 +149,10 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
             throw ddwaf::timeout_exception();
         }
 
+        // TODO Fix this once store returns view
         const auto &target = targets_[i];
-        auto [object, attr] = store.get_target(target.index);
-        if (object == nullptr || object == cache.targets[i]) {
+        auto [object, attr] = store.get_target<object_view>(target.index);
+        if (!object.has_value() || object == cache.targets[i]) {
             continue;
         }
 
@@ -161,11 +164,11 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
         std::optional<condition_match> match;
         // TODO: iterators could be cached to avoid reinitialisation
         if (target.source == data_source::keys) {
-            key_iterator it(*object, target.key_path, objects_excluded, limits);
+            key_iterator it(object, target.key_path, objects_excluded, limits);
             match = eval_target<std::optional<condition_match>>(
                 it, target.name, ephemeral, *matcher, target.transformers, limits, deadline);
         } else {
-            value_iterator it(*object, target.key_path, objects_excluded, limits);
+            value_iterator it(object, target.key_path, objects_excluded, limits);
             match = eval_target<std::optional<condition_match>>(
                 it, target.name, ephemeral, *matcher, target.transformers, limits, deadline);
         }
@@ -193,11 +196,11 @@ eval_result scalar_negated_condition::eval(condition_cache &cache, const object_
     }
 
     if (cache.targets.size() != 1) {
-        cache.targets.assign(1, nullptr);
+        cache.targets.assign(1, {});
     }
 
-    auto [object, attr] = store.get_target(target_.index);
-    if (object == nullptr || object == cache.targets[0]) {
+    auto [object, attr] = store.get_target<object_view>(target_.index);
+    if (!object.has_value() || object == cache.targets[0]) {
         return {};
     }
 
@@ -208,18 +211,18 @@ eval_result scalar_negated_condition::eval(condition_cache &cache, const object_
 
     bool match = false;
     if (target_.source == data_source::keys) {
-        key_iterator it(*object, target_.key_path, objects_excluded, limits);
+        key_iterator it(object, target_.key_path, objects_excluded, limits);
         match = eval_target<bool>(
             it, target_.name, ephemeral, *matcher, target_.transformers, limits, deadline);
     } else {
-        value_iterator it(*object, target_.key_path, objects_excluded, limits);
+        value_iterator it(object, target_.key_path, objects_excluded, limits);
         match = eval_target<bool>(
             it, target_.name, ephemeral, *matcher, target_.transformers, limits, deadline);
     }
 
     if (!match) {
         cache.match = {{.args = {{.name = "input"sv,
-                            .resolved = object_to_string(*object),
+                            .resolved = object.convert<std::string>(), // object_to_string(*object),
                             .address = target_.name,
                             .key_path = {target_.key_path.begin(), target_.key_path.end()}}},
             .highlights = {},

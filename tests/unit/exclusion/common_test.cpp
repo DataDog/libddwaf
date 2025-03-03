@@ -74,20 +74,20 @@ TEST(ExclusionObjectSetRef, Empty)
     }
 
     {
-        std::unordered_set<const ddwaf_object *> persistent;
+        std::unordered_set<object_view> persistent;
         exclusion::object_set_ref excluded{persistent, {}};
         EXPECT_TRUE(excluded.empty());
     }
 
     {
-        std::unordered_set<const ddwaf_object *> ephemeral;
+        std::unordered_set<object_view> ephemeral;
         exclusion::object_set_ref excluded{{}, ephemeral};
         EXPECT_TRUE(excluded.empty());
     }
 
     {
-        std::unordered_set<const ddwaf_object *> persistent;
-        std::unordered_set<const ddwaf_object *> ephemeral;
+        std::unordered_set<object_view> persistent;
+        std::unordered_set<object_view> ephemeral;
         exclusion::object_set_ref excluded{persistent, ephemeral};
         EXPECT_TRUE(excluded.empty());
     }
@@ -100,7 +100,7 @@ TEST(ExclusionObjectSetRef, PersistentOnly)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "value", ddwaf_object_string(&tmp, "node"));
 
-    std::unordered_set<const ddwaf_object *> persistent{&root.array[0]};
+    std::unordered_set<object_view> persistent{&root.array[0]};
     exclusion::object_set_ref excluded{persistent, {}};
     EXPECT_FALSE(excluded.empty());
     EXPECT_EQ(excluded.size(), 1);
@@ -116,7 +116,7 @@ TEST(ExclusionObjectSetRef, EphemeralOnly)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "value", ddwaf_object_string(&tmp, "node"));
 
-    std::unordered_set<const ddwaf_object *> ephemeral{&root.array[0]};
+    std::unordered_set<object_view> ephemeral{&root.array[0]};
     exclusion::object_set_ref excluded{{}, ephemeral};
     EXPECT_FALSE(excluded.empty());
     EXPECT_EQ(excluded.size(), 1);
@@ -133,8 +133,8 @@ TEST(ExclusionObjectSetRef, EphemeralAndPersistent)
     ddwaf_object_map_add(&root, "first", ddwaf_object_string(&tmp, "node"));
     ddwaf_object_map_add(&root, "second", ddwaf_object_string(&tmp, "node"));
 
-    std::unordered_set<const ddwaf_object *> persistent{&root.array[1]};
-    std::unordered_set<const ddwaf_object *> ephemeral{&root.array[0]};
+    std::unordered_set<object_view> persistent{&root.array[1]};
+    std::unordered_set<object_view> ephemeral{&root.array[0]};
     exclusion::object_set_ref excluded{persistent, ephemeral};
     EXPECT_FALSE(excluded.empty());
     EXPECT_EQ(excluded.size(), 2);
