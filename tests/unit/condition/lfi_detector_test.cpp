@@ -332,8 +332,8 @@ TEST(TestLFIDetector, NoMatchExcludedPath)
     ddwaf_object_map_add(&params_map, "endpoint", ddwaf_object_string(&tmp, "../../../etc/passwd"));
     ddwaf_object_map_add(&root, "server.request.query", &params_map);
 
-    std::unordered_set<const ddwaf_object *> persistent{&params_map.array[0]};
-    exclusion::object_set_ref exclusion{persistent, {}};
+    std::unordered_set<object_view> persistent{&params_map.array[0]};
+    exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
 
     object_store store;
     store.insert(root);
@@ -362,8 +362,8 @@ TEST(TestLFIDetector, NoMatchExcludedAddress)
     ddwaf_object_map_add(&params_map, "endpoint", ddwaf_object_string(&tmp, "../../../etc/passwd"));
     ddwaf_object_map_add(&root, "server.request.query", &params_map);
 
-    std::unordered_set<const ddwaf_object *> persistent{&root.array[1]};
-    exclusion::object_set_ref exclusion{persistent, {}};
+    std::unordered_set<object_view> persistent{&root.array[1]};
+    exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
 
     object_store store;
     store.insert(root);
@@ -392,8 +392,8 @@ TEST(TestLFIDetector, Timeout)
     ddwaf_object_map_add(&params_map, "endpoint", ddwaf_object_string(&tmp, "../../../etc/passwd"));
     ddwaf_object_map_add(&root, "server.request.query", &params_map);
 
-    std::unordered_set<const ddwaf_object *> persistent{&root.array[1]};
-    exclusion::object_set_ref exclusion{persistent, {}};
+    std::unordered_set<object_view> persistent{&root.array[1]};
+    exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
 
     object_store store;
     store.insert(root);
@@ -417,8 +417,8 @@ TEST(TestLFIDetector, NoParams)
     ddwaf_object_map_add(
         &root, "server.io.fs.file", ddwaf_object_string(&tmp, "/var/www/html/../../../etc/passwd"));
 
-    std::unordered_set<const ddwaf_object *> persistent{&root.array[1]};
-    exclusion::object_set_ref exclusion{persistent, {}};
+    std::unordered_set<object_view> persistent{&root.array[1]};
+    exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
 
     object_store store;
     store.insert(root);

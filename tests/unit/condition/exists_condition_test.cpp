@@ -144,7 +144,7 @@ TEST(TestExistsCondition, KeyPathAvailableButExcluded)
     ddwaf::timer deadline{2s};
     condition_cache cache;
 
-    std::unordered_set<const ddwaf_object *> excluded = {&root.array[0]};
+    std::unordered_set<object_view> excluded = {&root.array[0]};
 
     exclusion::object_set_ref excluded_ref;
     excluded_ref.persistent = excluded;
@@ -314,7 +314,7 @@ TEST(TestExistsNegatedCondition, KeyPathAvailableButExcluded)
     ddwaf::timer deadline{2s};
     condition_cache cache;
 
-    std::unordered_set<const ddwaf_object *> excluded = {&root.array[0]};
+    std::unordered_set<object_view> excluded = {&root.array[0]};
 
     exclusion::object_set_ref excluded_ref;
     excluded_ref.persistent = excluded;
