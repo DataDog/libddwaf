@@ -18,7 +18,6 @@
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
 #include "log.hpp"
-#include "object_type.hpp"
 #include "object_view.hpp"
 #include "platform.hpp"
 #include "utils.hpp"
@@ -109,7 +108,7 @@ lfi_result lfi_impl(std::string_view path, object_view params,
         }
 
         const auto param = *it;
-        if (param.type() != object_type::string) {
+        if (!param.is<std::string_view>()) {
             continue;
         }
 

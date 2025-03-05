@@ -31,7 +31,7 @@ eval_result shi_detector::eval_string(const unary_argument<object_view> &resourc
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
-    if (resource.value.type() != object_type::string || resource.value.empty()) {
+    if (resource.value.empty()) {
         return {};
     }
 
@@ -123,7 +123,7 @@ eval_result shi_detector::eval_impl(const unary_argument<object_view> &resource,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline) const
 {
-    if (resource.value.type() == object_type::string) {
+    if (resource.value.is<std::string_view>()) {
         return eval_string(resource, params, cache, objects_excluded, limits, deadline);
     }
 

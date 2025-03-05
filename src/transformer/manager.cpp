@@ -7,7 +7,6 @@
 #include <string_view>
 
 #include "ddwaf.h"
-#include "object_type.hpp"
 #include "object_view.hpp"
 #include "transformer/base.hpp"
 #include "transformer/base64_decode.hpp"
@@ -82,7 +81,7 @@ bool call_transformer(transformer_id id, cow_string &str)
 bool manager::transform(object_view source, ddwaf_object &destination,
     const std::span<const transformer_id> &transformers)
 {
-    if (source.type() != object_type::string || source.empty()) {
+    if (!source.is<std::string_view>() || source.empty()) {
         return false;
     }
 
