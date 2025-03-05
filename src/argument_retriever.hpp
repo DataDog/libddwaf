@@ -6,17 +6,16 @@
 
 #pragma once
 
-#include <memory>
 #include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
 #include <vector>
 
-#include "condition/base.hpp"
+#include "exclusion/common.hpp"
+#include "object_store.hpp"
 #include "object_view.hpp"
 #include "traits.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -49,11 +48,8 @@ template <typename T> std::optional<T> convert(object_view obj)
 {
     if constexpr (std::is_same_v<std::remove_cv_t<T>, object_view>) {
         return obj;
-    } else if constexpr (is_type_in_set_v<T, std::string_view, std::string>) {
-        if (obj.type() == object_type::string) {
-            return T{obj.as<std::string_view>()};
-        }
-    } else if constexpr (is_type_in_set_v<T, uint64_t, unsigned, int64_t, int, bool>) {
+    } else if constexpr (is_type_in_set_v<T, uint64_t, unsigned, int64_t, int, bool, std::string,
+                             std::string_view>) {
         if (obj.is<T>()) {
             return obj.as<T>();
         }
@@ -76,7 +72,7 @@ template <typename T> struct argument_retriever<unary_argument<T>> : default_arg
         const exclusion::object_set_ref &objects_excluded, const TargetType &target)
     {
         auto [object, attr] = store.get_target(target.index);
-        if (object == nullptr || objects_excluded.contains(object)) {
+        if (!object.has_value() || objects_excluded.contains(object)) {
             return std::nullopt;
         }
 
