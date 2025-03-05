@@ -19,20 +19,18 @@ public:
     explicit shi_detector(std::vector<condition_parameter> args);
 
 protected:
-    [[nodiscard]] eval_result eval_impl(const unary_argument<const ddwaf_object *> &resource,
-        const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
+    [[nodiscard]] eval_result eval_impl(const unary_argument<object_view> &resource,
+        const variadic_argument<object_view> &params, condition_cache &cache,
         const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
         ddwaf::timer &deadline) const;
 
-    [[nodiscard]] static eval_result eval_string(
-        const unary_argument<const ddwaf_object *> &resource,
-        const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
+    [[nodiscard]] static eval_result eval_string(const unary_argument<object_view> &resource,
+        const variadic_argument<object_view> &params, condition_cache &cache,
         const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
         ddwaf::timer &deadline);
 
-    [[nodiscard]] static eval_result eval_array(
-        const unary_argument<const ddwaf_object *> &resource,
-        const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
+    [[nodiscard]] static eval_result eval_array(const unary_argument<object_view> &resource,
+        const variadic_argument<object_view> &params, condition_cache &cache,
         const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
         ddwaf::timer &deadline);
 

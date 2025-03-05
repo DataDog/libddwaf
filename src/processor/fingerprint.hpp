@@ -26,9 +26,8 @@ public:
     std::pair<ddwaf_object, object_store::attribute> eval_impl(
         const unary_argument<std::string_view> &method,
         const unary_argument<std::string_view> &uri_raw,
-        const optional_argument<const ddwaf_object *> &query,
-        const optional_argument<const ddwaf_object *> &body, processor_cache &cache,
-        ddwaf::timer &deadline) const;
+        const optional_argument<object_view> &query, const optional_argument<object_view> &body,
+        processor_cache &cache, ddwaf::timer &deadline) const;
 };
 
 class http_header_fingerprint : public structured_processor<http_header_fingerprint> {
@@ -42,7 +41,7 @@ public:
     {}
 
     std::pair<ddwaf_object, object_store::attribute> eval_impl(
-        const unary_argument<const ddwaf_object *> &headers, processor_cache &cache,
+        const unary_argument<object_view> &headers, processor_cache &cache,
         ddwaf::timer &deadline) const;
 };
 
@@ -57,7 +56,7 @@ public:
     {}
 
     std::pair<ddwaf_object, object_store::attribute> eval_impl(
-        const unary_argument<const ddwaf_object *> &headers, processor_cache &cache,
+        const unary_argument<object_view> &headers, processor_cache &cache,
         ddwaf::timer &deadline) const;
 };
 
@@ -73,7 +72,7 @@ public:
     {}
 
     std::pair<ddwaf_object, object_store::attribute> eval_impl(
-        const optional_argument<const ddwaf_object *> &cookies,
+        const optional_argument<object_view> &cookies,
         const optional_argument<std::string_view> &session_id,
         const optional_argument<std::string_view> &user_id, processor_cache &cache,
         ddwaf::timer &deadline) const;
