@@ -22,9 +22,9 @@ public:
         : resource_(resource), it_(obj, {}, exclude, limits)
     {
         for (; it_; ++it_) {
-            auto current_obj = *it_;
-            if (current_obj.type() == object_type::string && current_obj->size() >= MinLength) {
-                current_param_ = current_obj->template as<std::string_view>();
+            const auto current_obj = *it_;
+            if (current_obj.type() == object_type::string && current_obj.size() >= MinLength) {
+                current_param_ = current_obj.template as<std::string_view>();
                 current_index_ = resource_.find(current_param_, 0);
                 if (current_index_ != npos) {
                     break;
@@ -56,9 +56,9 @@ public:
         }
 
         while (++it_) {
-            auto current_obj = *it_;
-            if (current_obj.type() == object_type::string && current_obj->size() >= MinLength) {
-                current_param_ = current_obj->template as<std::string_view>();
+            const auto current_obj = *it_;
+            if (current_obj.type() == object_type::string && current_obj.size() >= MinLength) {
+                current_param_ = current_obj.template as<std::string_view>();
                 current_index_ = resource_.find(current_param_, 0);
                 if (current_index_ != npos) {
                     return true;

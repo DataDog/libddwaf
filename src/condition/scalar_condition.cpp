@@ -41,8 +41,7 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
 {
     // The iterator is guaranteed to be valid at this point, which means the
     // object pointer should not be nullptr
-    ddwaf_object src = *((*it).ptr());
-
+    ddwaf_object src = (*it).ref();
     if (src.type == DDWAF_OBJ_STRING) {
         if (src.stringValue == nullptr) {
             return {};

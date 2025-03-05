@@ -91,7 +91,7 @@ TEST(TestValueIterator, TestArraySingleItem)
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
     EXPECT_TRUE(it);
-    EXPECT_STREQ((*it)->as<const char *>(), "string");
+    EXPECT_STREQ((*it).as<const char *>(), "string");
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 1);
@@ -118,7 +118,7 @@ TEST(TestValueIterator, TestArrayMultipleItems)
     do {
         auto index_str = std::to_string(index);
         EXPECT_TRUE(it);
-        EXPECT_STREQ((*it)->as<const char *>(), index_str.c_str());
+        EXPECT_STREQ((*it).as<const char *>(), index_str.c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -152,7 +152,7 @@ TEST(TestValueIterator, TestArrayMultipleNullAndInvalid)
     unsigned index = 0;
     do {
         EXPECT_TRUE(it);
-        EXPECT_STREQ((*it)->as<const char *>(), std::to_string(index).c_str());
+        EXPECT_STREQ((*it).as<const char *>(), std::to_string(index).c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -182,7 +182,7 @@ TEST(TestValueIterator, TestArrayPastSizeLimit)
     for (unsigned i = 0; i < limits.max_container_size; i++) {
         auto index_str = std::to_string(i);
         EXPECT_TRUE(it);
-        EXPECT_STREQ((*it)->as<const char *>(), index_str.c_str());
+        EXPECT_STREQ((*it).as<const char *>(), index_str.c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -221,7 +221,7 @@ TEST(TestValueIterator, TestDeepArray)
     for (unsigned i = 0; i < 10; i++) {
         auto index = std::to_string(i);
 
-        EXPECT_STREQ((*it)->as<const char *>(), ("val" + index).c_str());
+        EXPECT_STREQ((*it).as<const char *>(), ("val" + index).c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), i + 1);
@@ -261,7 +261,7 @@ TEST(TestValueIterator, TestDeepArrayPastLimit)
     for (unsigned i = 0; i < limits.max_container_depth; i++) {
         auto index = std::to_string(i);
 
-        EXPECT_STREQ((*it)->as<const char *>(), ("val" + index).c_str());
+        EXPECT_STREQ((*it).as<const char *>(), ("val" + index).c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), i + 1);
@@ -302,7 +302,7 @@ TEST(TestValueIterator, TestMapSingleItem)
     ddwaf::value_iterator it(object, {}, exclude);
 
     EXPECT_TRUE(it);
-    EXPECT_STREQ((*it)->as<const char *>(), "value");
+    EXPECT_STREQ((*it).as<const char *>(), "value");
     EXPECT_STREQ((*it).ptr()->parameterName, "key");
 
     auto path = it.get_current_path();
@@ -336,7 +336,7 @@ TEST(TestValueIterator, TestMapMultipleItems)
         std::string value = "value" + index;
 
         EXPECT_TRUE(it);
-        EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
+        EXPECT_STREQ((*it).as<const char *>(), value.c_str());
         EXPECT_STREQ((*it).ptr()->parameterName, key.c_str());
 
         auto path = it.get_current_path();
@@ -387,7 +387,7 @@ TEST(TestValueIterator, TestMapMultipleMultipleNullAndInvalid)
         std::string value = "value" + index;
 
         EXPECT_TRUE(it);
-        EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
+        EXPECT_STREQ((*it).as<const char *>(), value.c_str());
         EXPECT_STREQ((*it).ptr()->parameterName, key.c_str());
 
         auto path = it.get_current_path();
@@ -424,7 +424,7 @@ TEST(TestValueIterator, TestMapPastSizeLimit)
         std::string value = "value" + index;
 
         EXPECT_TRUE(it);
-        EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
+        EXPECT_STREQ((*it).as<const char *>(), value.c_str());
         EXPECT_STREQ((*it).ptr()->parameterName, key.c_str());
 
         auto path = it.get_current_path();
@@ -465,7 +465,7 @@ TEST(TestValueIterator, TestDeepMap)
         auto index = std::to_string(i);
 
         EXPECT_STREQ((*it).ptr()->parameterName, ("str" + index).c_str());
-        EXPECT_STREQ((*it)->as<const char *>(), ("val" + index).c_str());
+        EXPECT_STREQ((*it).as<const char *>(), ("val" + index).c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), i + 1);
@@ -510,7 +510,7 @@ TEST(TestValueIterator, TestMapPastDepthLimit)
         auto index = std::to_string(i);
 
         EXPECT_STREQ((*it).ptr()->parameterName, ("str" + index).c_str());
-        EXPECT_STREQ((*it)->as<const char *>(), ("val" + index).c_str());
+        EXPECT_STREQ((*it).as<const char *>(), ("val" + index).c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), i + 1);
@@ -576,7 +576,7 @@ TEST(TestValueIterator, TestContainerMix)
             {"value2_3", {"root", "key2", "key2_2", "1"}}};
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
+            EXPECT_STREQ((*it).as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -701,7 +701,7 @@ TEST(TestValueIterator, TestMultiPath)
         ddwaf::value_iterator it(object, key_path, exclude);
         EXPECT_TRUE(it);
 
-        EXPECT_STREQ((*it)->as<const char *>(), "final");
+        EXPECT_STREQ((*it).as<const char *>(), "final");
 
         std::vector<std::string> expected_path = {"first", "second", "third"};
         auto path = it.get_current_path();
@@ -711,7 +711,7 @@ TEST(TestValueIterator, TestMultiPath)
         EXPECT_TRUE(++it);
         EXPECT_TRUE(it);
 
-        EXPECT_STREQ((*it)->as<const char *>(), "value_third");
+        EXPECT_STREQ((*it).as<const char *>(), "value_third");
 
         expected_path = decltype(expected_path){"first", "second", "value"};
         path = it.get_current_path();
@@ -721,7 +721,7 @@ TEST(TestValueIterator, TestMultiPath)
         EXPECT_TRUE(++it);
         EXPECT_TRUE(it);
 
-        EXPECT_STREQ((*it)->as<const char *>(), "value_second");
+        EXPECT_STREQ((*it).as<const char *>(), "value_second");
 
         expected_path = decltype(expected_path){"first", "value"};
         path = it.get_current_path();
@@ -736,7 +736,7 @@ TEST(TestValueIterator, TestMultiPath)
         ddwaf::value_iterator it(object, key_path, exclude);
         EXPECT_TRUE(it);
 
-        EXPECT_STREQ((*it)->as<const char *>(), "final");
+        EXPECT_STREQ((*it).as<const char *>(), "final");
 
         std::vector<std::string> expected_path = {"first", "second", "third"};
         auto path = it.get_current_path();
@@ -746,7 +746,7 @@ TEST(TestValueIterator, TestMultiPath)
         EXPECT_TRUE(++it);
         EXPECT_TRUE(it);
 
-        EXPECT_STREQ((*it)->as<const char *>(), "value_third");
+        EXPECT_STREQ((*it).as<const char *>(), "value_third");
 
         expected_path = decltype(expected_path){"first", "second", "value"};
         path = it.get_current_path();
@@ -761,7 +761,7 @@ TEST(TestValueIterator, TestMultiPath)
         ddwaf::value_iterator it(object, key_path, exclude);
         EXPECT_TRUE(it);
 
-        EXPECT_STREQ((*it)->as<const char *>(), "final");
+        EXPECT_STREQ((*it).as<const char *>(), "final");
 
         std::vector<std::string> expected_path = {"first", "second", "third"};
         auto path = it.get_current_path();
@@ -806,7 +806,7 @@ TEST(TestValueIterator, TestContainerMixPath)
         ddwaf::value_iterator it(object, key_path, exclude);
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
+            EXPECT_STREQ((*it).as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -819,7 +819,7 @@ TEST(TestValueIterator, TestContainerMixPath)
     {
         std::vector<std::string> key_path{"root", "key1"};
         ddwaf::value_iterator it(object, key_path, exclude);
-        EXPECT_STREQ((*it)->as<const char *>(), "value1_0");
+        EXPECT_STREQ((*it).as<const char *>(), "value1_0");
 
         auto it_path = it.get_current_path();
         std::vector<std::string> path = {"root", "key1"};
@@ -837,7 +837,7 @@ TEST(TestValueIterator, TestContainerMixPath)
         ddwaf::value_iterator it(object, key_path, exclude);
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
+            EXPECT_STREQ((*it).as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -1065,7 +1065,7 @@ TEST(TestValueIterator, TestExcludeMultipleObjects)
     ddwaf::value_iterator it(root, {}, exclude);
 
     EXPECT_TRUE(it);
-    EXPECT_STREQ((*it)->as<const char *>(), "hello");
+    EXPECT_STREQ((*it).as<const char *>(), "hello");
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 2);

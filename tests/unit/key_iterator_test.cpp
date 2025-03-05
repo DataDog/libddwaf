@@ -217,7 +217,7 @@ TEST(TestKeyIterator, TestMapSingleItem)
     ddwaf::key_iterator it(object, {}, exclude);
     EXPECT_TRUE((bool)it);
     EXPECT_EQ((*it).ptr()->parameterName, nullptr);
-    EXPECT_STREQ((*it)->as<const char *>(), "key");
+    EXPECT_STREQ((*it).as<const char *>(), "key");
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 1);
@@ -248,7 +248,7 @@ TEST(TestKeyIterator, TestMapMultipleItems)
         std::string key = "key" + index;
 
         EXPECT_TRUE((bool)it);
-        EXPECT_STREQ((*it)->as<const char *>(), key.c_str());
+        EXPECT_STREQ((*it).as<const char *>(), key.c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -296,7 +296,7 @@ TEST(TestKeyIterator, TestMapMultipleNullAndInvalid)
             std::string key = "key" + index;
 
             EXPECT_TRUE((bool)it);
-            EXPECT_STREQ((*it)->as<const char *>(), key.c_str());
+            EXPECT_STREQ((*it).as<const char *>(), key.c_str());
 
             auto path = it.get_current_path();
             EXPECT_EQ(path.size(), 1);
@@ -358,7 +358,7 @@ TEST(TestKeyIterator, TestMapPastSizeLimit)
         std::string value = "value" + index;
 
         EXPECT_TRUE((bool)it);
-        EXPECT_STREQ((*it)->as<const char *>(), key.c_str());
+        EXPECT_STREQ((*it).as<const char *>(), key.c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -398,7 +398,7 @@ TEST(TestKeyIterator, TestDeepMap)
         auto index = std::to_string(i);
 
         EXPECT_EQ((*it).ptr()->parameterName, nullptr);
-        EXPECT_STREQ((*it)->as<const char *>(), ("str" + index).c_str());
+        EXPECT_STREQ((*it).as<const char *>(), ("str" + index).c_str());
 
         {
             auto path = it.get_current_path();
@@ -412,7 +412,7 @@ TEST(TestKeyIterator, TestDeepMap)
 
         EXPECT_TRUE(++it);
         EXPECT_EQ((*it).ptr()->parameterName, nullptr);
-        EXPECT_STREQ((*it)->as<const char *>(), ("map" + index).c_str());
+        EXPECT_STREQ((*it).as<const char *>(), ("map" + index).c_str());
 
         {
             auto path = it.get_current_path();
@@ -459,7 +459,7 @@ TEST(TestKeyIterator, TestMapPastDepthLimit)
         auto index = std::to_string(i);
 
         EXPECT_EQ((*it).ptr()->parameterName, nullptr);
-        EXPECT_STREQ((*it)->as<const char *>(), ("str" + index).c_str());
+        EXPECT_STREQ((*it).as<const char *>(), ("str" + index).c_str());
 
         {
             auto path = it.get_current_path();
@@ -473,7 +473,7 @@ TEST(TestKeyIterator, TestMapPastDepthLimit)
 
         EXPECT_TRUE(++it);
         EXPECT_EQ((*it).ptr()->parameterName, nullptr);
-        EXPECT_STREQ((*it)->as<const char *>(), ("map" + index).c_str());
+        EXPECT_STREQ((*it).as<const char *>(), ("map" + index).c_str());
 
         {
             auto path = it.get_current_path();
@@ -508,7 +508,7 @@ TEST(TestKeyIterator, TestNoRootKey)
     ddwaf::key_iterator it(root.array[0], {}, exclude);
     EXPECT_TRUE((bool)it);
     EXPECT_EQ((*it).ptr()->parameterName, nullptr);
-    EXPECT_STREQ((*it)->as<const char *>(), "key");
+    EXPECT_STREQ((*it).as<const char *>(), "key");
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 1);
@@ -553,7 +553,7 @@ TEST(TestKeyIterator, TestContainerMix)
         };
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
+            EXPECT_STREQ((*it).as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -579,7 +579,7 @@ TEST(TestKeyIterator, TestMapNoScalars)
 
     for (unsigned i = 0; i < 50; i++) {
         EXPECT_TRUE((bool)it);
-        EXPECT_STREQ((*it)->as<const char *>(), "key");
+        EXPECT_STREQ((*it).as<const char *>(), "key");
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -677,7 +677,7 @@ TEST(TestKeyIterator, TestMultiPath)
         ddwaf::key_iterator it(object, key_path, exclude);
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
+            EXPECT_STREQ((*it).as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -697,7 +697,7 @@ TEST(TestKeyIterator, TestMultiPath)
         ddwaf::key_iterator it(object, key_path, exclude);
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
+            EXPECT_STREQ((*it).as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -739,7 +739,7 @@ TEST(TestKeyIterator, TestContainerMixPath)
         std::vector<std::string> key_path{"root", "key0"};
         ddwaf::key_iterator it(object, key_path, exclude);
         EXPECT_TRUE((bool)it);
-        EXPECT_STREQ((*it)->as<const char *>(), "key0_0");
+        EXPECT_STREQ((*it).as<const char *>(), "key0_0");
 
         auto it_path = it.get_current_path();
         std::vector<std::string> path = {"root", "key0", "2", "key0_0"};
@@ -767,7 +767,7 @@ TEST(TestKeyIterator, TestContainerMixPath)
         ddwaf::key_iterator it(object, key_path, exclude);
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->as<const char *>(), value.c_str());
+            EXPECT_STREQ((*it).as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -1006,16 +1006,16 @@ TEST(TestKeyIterator, TestExcludeMultipleObjects)
     ddwaf::key_iterator it(root, {}, exclude);
 
     EXPECT_TRUE(it);
-    EXPECT_STREQ((*it)->as<const char *>(), "other");
+    EXPECT_STREQ((*it).as<const char *>(), "other");
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 1);
     EXPECT_STREQ(path[0].c_str(), "other");
 
-    EXPECT_STREQ((*it)->as<const char *>(), "other");
+    EXPECT_STREQ((*it).as<const char *>(), "other");
 
     EXPECT_TRUE(++it);
-    EXPECT_STREQ((*it)->as<const char *>(), "hello_key");
+    EXPECT_STREQ((*it).as<const char *>(), "hello_key");
 
     path = it.get_current_path();
     EXPECT_EQ(path.size(), 2);

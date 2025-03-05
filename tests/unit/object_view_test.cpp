@@ -167,7 +167,7 @@ TEST(TestObjectView, ArrayObject)
 
     for (unsigned i = 0; i < 20; i++) {
         auto [key, value] = view.at(i);
-        EXPECT_STREQ(value->as<const char *>(), std::to_string(100 + i).c_str());
+        EXPECT_STREQ(value.as<const char *>(), std::to_string(100 + i).c_str());
     }
 
     ddwaf_object_free(&root);

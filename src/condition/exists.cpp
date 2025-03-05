@@ -28,7 +28,7 @@ enum class search_outcome : uint8_t { found, not_found, unknown };
 
 object_view find_key(object_view parent, std::string_view key, const object_limits &limits)
 {
-    for (auto it = parent.begin(limits); it; ++it) {
+    for (auto it = parent.begin(limits); it != parent.end(); ++it) {
         const auto &child_key = it.key();
 
         if (key == child_key) {
@@ -56,7 +56,7 @@ search_outcome exists(object_view root, std::span<const std::string> key_path,
     // The parser ensures that the key path is within the limits specified by
     // the user, hence we don't need to check for depth
     while ((root = find_key(root, *it, limits)).has_value()) {
-        if (objects_excluded.contains(root.ptr())) {
+        if (objects_excluded.contains(root)) {
             // We found the next root but it has been excluded, so we
             // can't know for sure if the required key path exists
             return search_outcome::unknown;

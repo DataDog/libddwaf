@@ -161,11 +161,19 @@ public:
     // a smaller size.
     template <typename T>
     [[nodiscard]] bool is() const noexcept
-        requires is_type_in_set_v<T, bool, int64_t, uint64_t, double, std::string, std::string_view,
-            const char *>
+        requires is_type_in_set_v<T, bool, int64_t, uint64_t, double>
     {
         assert(obj_ != nullptr);
         return is_compatible_type<T>(type());
+    }
+
+    // Overload to check that the type is valid and the string is non-null
+    template <typename T>
+    [[nodiscard]] bool is() const noexcept
+        requires is_type_in_set_v<T, std::string, std::string_view, const char *>
+    {
+        assert(obj_ != nullptr);
+        return is_compatible_type<T>(type()) && obj_->stringValue != nullptr;
     }
 
     // Overload for other unsigned integer types
@@ -387,9 +395,6 @@ public:
         }
         return iterator{obj_, {}, static_cast<uint16_t>(obj_->nbEntries)};
     }
-
-    [[nodiscard]] const object_view *operator->() const noexcept { return this; }
-    [[nodiscard]] object_view *operator->() noexcept { return this; }
 
 protected:
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)

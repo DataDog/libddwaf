@@ -108,12 +108,12 @@ lfi_result lfi_impl(std::string_view path, object_view params,
             throw ddwaf::timeout_exception();
         }
 
-        const auto &param = *it;
+        const auto param = *it;
         if (param.type() != object_type::string) {
             continue;
         }
 
-        const auto value = param->as<std::string_view>();
+        const auto value = param.as<std::string_view>();
         if (lfi_fn(path, value)) {
             return {{std::string(value), it.get_current_path()}};
         }
