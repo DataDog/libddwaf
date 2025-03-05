@@ -14,6 +14,7 @@
 
 #include "ddwaf.h"
 #include "object_type.hpp"
+#include "traits.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
@@ -158,10 +159,35 @@ public:
     // type. When it comes to numeric types, the request type must match the
     // one used within ddwaf_object, i.e. the type will not be cast to one of
     // a smaller size.
-    template <typename T> [[nodiscard]] bool is() const noexcept
+    template <typename T>
+    [[nodiscard]] bool is() const noexcept
+        requires is_type_in_set_v<T, bool, int64_t, uint64_t, double, std::string, std::string_view,
+            const char *>
     {
         assert(obj_ != nullptr);
         return is_compatible_type<T>(type());
+    }
+
+    // Overload for other unsigned integer types
+    template <typename T>
+    [[nodiscard]] bool is() const noexcept
+        requires(!std::is_same_v<T, uint64_t>) && std::is_integral_v<T> && std::is_unsigned_v<T> &&
+                (!std::is_same_v<T, bool>)
+    {
+        assert(obj_ != nullptr);
+        using limits = std::numeric_limits<T>;
+        return is_compatible_type<uint64_t>(type()) && obj_->uintValue <= limits::max();
+    }
+
+    // Overload for other signed integer types
+    template <typename T>
+    [[nodiscard]] bool is() const noexcept
+        requires(!std::is_same_v<T, int64_t>) && std::is_integral_v<T> && std::is_signed_v<T>
+    {
+        assert(obj_ != nullptr);
+        using limits = std::numeric_limits<T>;
+        return is_compatible_type<int64_t>(type()) && obj_->intValue >= limits::min() &&
+               obj_->intValue <= limits::max();
     }
 
     // The API assumes that the caller has already verified that the method preconditions are met:
@@ -211,7 +237,7 @@ public:
 
     template <typename T>
     [[nodiscard]] T as() const noexcept
-        requires std::is_same_v<T, int64_t>
+        requires std::is_integral_v<T> && std::is_signed_v<T>
     {
         assert(obj_ != nullptr);
         return static_cast<T>(obj_->intValue);
@@ -219,7 +245,7 @@ public:
 
     template <typename T>
     [[nodiscard]] T as() const noexcept
-        requires std::is_same_v<T, uint64_t>
+        requires std::is_integral_v<T> && std::is_unsigned_v<T> && (!std::is_same_v<T, bool>)
     {
         assert(obj_ != nullptr);
         return static_cast<T>(obj_->uintValue);

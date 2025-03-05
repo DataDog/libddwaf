@@ -49,35 +49,17 @@ template <typename T> std::optional<T> convert(object_view obj)
 {
     if constexpr (std::is_same_v<std::remove_cv_t<T>, object_view>) {
         return obj;
-    }
-
-    if constexpr (std::is_same_v<T, std::string_view> || std::is_same_v<T, std::string>) {
+    } else if constexpr (is_type_in_set_v<T, std::string_view, std::string>) {
         if (obj.type() == object_type::string) {
             return T{obj.as<std::string_view>()};
         }
-    }
-
-    if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, unsigned>) {
-        using limits = std::numeric_limits<T>;
-        if (obj.type() == object_type::uint64 && obj.as<uint64_t>() <= limits::max()) {
+    } else if constexpr (is_type_in_set_v<T, uint64_t, unsigned, int64_t, int, bool>) {
+        if (obj.is<T>()) {
             return obj.as<T>();
         }
+    } else {
+        static_assert(!std::is_same_v<T, T>, "unsupported type on argument_retriever::convert<T>");
     }
-
-    if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, int>) {
-        using limits = std::numeric_limits<T>;
-        if (obj.type() == object_type::int64 && obj.as<int64_t>() >= limits::min() &&
-            obj.as<int64_t>() <= limits::max()) {
-            return obj.as<T>();
-        }
-    }
-
-    if constexpr (std::is_same_v<T, bool>) {
-        if (obj.type() == object_type::boolean) {
-            return obj.as<T>();
-        }
-    }
-
     return {};
 }
 
