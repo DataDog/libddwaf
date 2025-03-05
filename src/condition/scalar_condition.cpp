@@ -221,7 +221,7 @@ eval_result scalar_negated_condition::eval(condition_cache &cache, const object_
 
     if (!match) {
         cache.match = {{.args = {{.name = "input"sv,
-                            .resolved = object.convert<std::string>(), // object_to_string(*object),
+                            .resolved = object.convert<std::string>(),
                             .address = target_.name,
                             .key_path = {target_.key_path.begin(), target_.key_path.end()}}},
             .highlights = {},

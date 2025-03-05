@@ -57,7 +57,7 @@ search_outcome exists(object_view root, std::span<const std::string> key_path,
     // the user, hence we don't need to check for depth
     while ((root = find_key(root, *it, limits)).has_value()) {
         if (objects_excluded.contains(root.ptr())) {
-            // We found the root root but it has been excluded, so we
+            // We found the next root but it has been excluded, so we
             // can't know for sure if the required key path exists
             return search_outcome::unknown;
         }
