@@ -130,6 +130,88 @@ TEST(TestObjectView, SignedObject)
     EXPECT_FALSE(view.is<const char *>());
 }
 
+TEST(TestObjectView, SignedObjectCompatibility)
+{
+    {
+        detail::object original;
+        ddwaf_object_signed(&original, -1);
+        object_view view(original);
+
+        EXPECT_TRUE(view.is<int8_t>());
+        EXPECT_TRUE(view.is<int16_t>());
+        EXPECT_TRUE(view.is<int32_t>());
+        EXPECT_TRUE(view.is<int64_t>());
+    }
+
+    {
+        detail::object original;
+        ddwaf_object_signed(&original, std::numeric_limits<int8_t>::min() - 1);
+        object_view view(original);
+
+        EXPECT_FALSE(view.is<int8_t>());
+        EXPECT_TRUE(view.is<int16_t>());
+        EXPECT_TRUE(view.is<int32_t>());
+        EXPECT_TRUE(view.is<int64_t>());
+    }
+
+    {
+        detail::object original;
+        ddwaf_object_signed(&original, std::numeric_limits<int8_t>::max() + 1);
+        object_view view(original);
+
+        EXPECT_FALSE(view.is<int8_t>());
+        EXPECT_TRUE(view.is<int16_t>());
+        EXPECT_TRUE(view.is<int32_t>());
+        EXPECT_TRUE(view.is<int64_t>());
+    }
+
+    {
+        detail::object original;
+        ddwaf_object_signed(&original, std::numeric_limits<int16_t>::min() - 1);
+        object_view view(original);
+
+        EXPECT_FALSE(view.is<int8_t>());
+        EXPECT_FALSE(view.is<int16_t>());
+        EXPECT_TRUE(view.is<int32_t>());
+        EXPECT_TRUE(view.is<int64_t>());
+    }
+
+    {
+        detail::object original;
+        ddwaf_object_signed(&original, std::numeric_limits<int16_t>::max() + 1);
+        object_view view(original);
+
+        EXPECT_FALSE(view.is<int8_t>());
+        EXPECT_FALSE(view.is<int16_t>());
+        EXPECT_TRUE(view.is<int32_t>());
+        EXPECT_TRUE(view.is<int64_t>());
+    }
+
+    {
+        detail::object original;
+        ddwaf_object_signed(
+            &original, static_cast<int64_t>(std::numeric_limits<int32_t>::min()) - 1);
+        object_view view(original);
+
+        EXPECT_FALSE(view.is<int8_t>());
+        EXPECT_FALSE(view.is<int16_t>());
+        EXPECT_FALSE(view.is<int32_t>());
+        EXPECT_TRUE(view.is<int64_t>());
+    }
+
+    {
+        detail::object original;
+        ddwaf_object_signed(
+            &original, static_cast<int64_t>(std::numeric_limits<int32_t>::max()) + 1);
+        object_view view(original);
+
+        EXPECT_FALSE(view.is<int8_t>());
+        EXPECT_FALSE(view.is<int16_t>());
+        EXPECT_FALSE(view.is<int32_t>());
+        EXPECT_TRUE(view.is<int64_t>());
+    }
+}
+
 TEST(TestObjectView, UnsignedObject)
 {
     detail::object original;
@@ -159,6 +241,53 @@ TEST(TestObjectView, UnsignedObject)
     EXPECT_FALSE(view.is<const char *>());
 }
 
+TEST(TestObjectView, UnsignedObjectCompatibility)
+{
+    {
+        detail::object original;
+        ddwaf_object_unsigned(&original, 1);
+        object_view view(original);
+
+        EXPECT_TRUE(view.is<uint8_t>());
+        EXPECT_TRUE(view.is<uint16_t>());
+        EXPECT_TRUE(view.is<uint32_t>());
+        EXPECT_TRUE(view.is<uint64_t>());
+    }
+
+    {
+        detail::object original;
+        ddwaf_object_unsigned(&original, std::numeric_limits<uint8_t>::max() + 1);
+        object_view view(original);
+
+        EXPECT_FALSE(view.is<uint8_t>());
+        EXPECT_TRUE(view.is<uint16_t>());
+        EXPECT_TRUE(view.is<uint32_t>());
+        EXPECT_TRUE(view.is<uint64_t>());
+    }
+
+    {
+        detail::object original;
+        ddwaf_object_unsigned(&original, std::numeric_limits<uint16_t>::max() + 1);
+        object_view view(original);
+
+        EXPECT_FALSE(view.is<uint8_t>());
+        EXPECT_FALSE(view.is<uint16_t>());
+        EXPECT_TRUE(view.is<uint32_t>());
+        EXPECT_TRUE(view.is<uint64_t>());
+    }
+
+    {
+        detail::object original;
+        ddwaf_object_unsigned(
+            &original, static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) + 1);
+        object_view view(original);
+
+        EXPECT_FALSE(view.is<uint8_t>());
+        EXPECT_FALSE(view.is<uint16_t>());
+        EXPECT_FALSE(view.is<uint32_t>());
+        EXPECT_TRUE(view.is<uint64_t>());
+    }
+}
 TEST(TestObjectView, FloatObject)
 {
     detail::object original;
@@ -215,6 +344,36 @@ TEST(TestObjectView, StringObject)
     EXPECT_TRUE(view.is<const char *>());
 
     ddwaf_object_free(&original);
+}
+
+TEST(TestObjectView, NullStringObject)
+{
+    // Inconsistent string object
+    detail::object original;
+    original.type = DDWAF_OBJ_STRING;
+    original.stringValue = nullptr;
+    original.nbEntries = 10;
+
+    object_view view(original);
+
+    ASSERT_TRUE(view.has_value());
+    EXPECT_EQ(view.type(), object_type::string);
+
+    EXPECT_EQ(view.ptr(), &original);
+
+    EXPECT_EQ(view.size(), 10);
+    EXPECT_FALSE(view.empty());
+    EXPECT_FALSE(view.is_container());
+    EXPECT_TRUE(view.is_scalar());
+
+    EXPECT_FALSE(view.is<bool>());
+    EXPECT_FALSE(view.is<uint64_t>());
+    EXPECT_FALSE(view.is<int64_t>());
+    EXPECT_FALSE(view.is<double>());
+
+    EXPECT_FALSE(view.is<std::string>());
+    EXPECT_FALSE(view.is<std::string_view>());
+    EXPECT_FALSE(view.is<const char *>());
 }
 
 TEST(TestObjectView, ArrayObject)
