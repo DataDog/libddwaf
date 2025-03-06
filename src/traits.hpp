@@ -35,7 +35,7 @@ using make_n_typelist_t = typename make_n_typelist<N, typelist<>, typelist<Ts...
 template <typename... Ts> struct tuple_from_typelist;
 
 template <typename... Ts> struct tuple_from_typelist<typelist<Ts...>> {
-    using type = std::tuple<std::remove_cv_t<std::remove_reference_t<Ts>>...>;
+    using type = std::tuple<std::decay_t<Ts>...>;
 };
 
 template <std::size_t N, typename... Args>

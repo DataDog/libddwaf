@@ -57,7 +57,7 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
     auto parent = stack_[0].prev();
     for (unsigned i = 0; i < (stack_.size() - 1); i++) {
         if (parent.container_type() == object_type::map) {
-            keys.emplace_back(static_cast<std::string_view>(parent.key()));
+            keys.emplace_back(parent.key().as<std::string_view>());
         } else if (parent.container_type() == object_type::array) {
             keys.emplace_back(to_string<std::string>(parent.index()));
         }
@@ -65,7 +65,7 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
     }
 
     if (parent.container_type() == object_type::map) {
-        keys.emplace_back(static_cast<std::string_view>(current_.first));
+        keys.emplace_back(current_.first.as<std::string_view>());
     } else if (parent.container_type() == object_type::array) {
         keys.emplace_back(to_string<std::string>(parent.index()));
     }

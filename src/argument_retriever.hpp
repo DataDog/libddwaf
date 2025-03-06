@@ -46,7 +46,7 @@ template <typename T> struct is_variadic_argument<variadic_argument<T>> : std::t
 
 template <typename T> std::optional<T> convert(object_view obj)
 {
-    if constexpr (std::is_same_v<std::remove_cv_t<T>, object_view>) {
+    if constexpr (std::is_same_v<std::decay_t<T>, object_view>) {
         return obj;
     } else if constexpr (is_type_in_set_v<T, uint64_t, unsigned, int64_t, int, bool, std::string,
                              std::string_view>) {

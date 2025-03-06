@@ -59,7 +59,9 @@ public:
 
     [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
-    explicit operator std::string_view() const noexcept
+    template <typename T>
+    [[nodiscard]] T as() const noexcept
+        requires std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>
     {
         if (obj_ == nullptr || obj_->parameterName == nullptr) {
             [[unlikely]] return {};
@@ -105,20 +107,34 @@ public:
     {
         if constexpr (std::is_same_v<T, std::nullptr_t>) {
             return ptr() == nullptr;
-        } else if constexpr (std::is_same_v<T, ddwaf_object *>) {
+        } else if constexpr (std::is_same_v<std::decay_t<T>, ddwaf_object *>) {
             return ptr() == other;
-        } else {
+        } else if constexpr (std::is_same_v<std::decay_t<T>, ddwaf_object>) {
+            return ptr() == &other;
+        } else if constexpr (std::is_same_v<std::decay_t<T>, object_view>) {
             return ptr() == other.ptr();
+        } else if constexpr (std::is_same_v<std::decay_t<T>, std::string_view>) {
+            return has_value() && is<std::string_view>() && as<std::string_view>() == other;
+        } else {
+            // Assume unknown types aren't equal
+            return false;
         }
     }
     template <typename T> bool operator!=(const T &other) const
     {
         if constexpr (std::is_same_v<T, std::nullptr_t>) {
             return ptr() != nullptr;
-        } else if constexpr (std::is_same_v<T, ddwaf_object *>) {
+        } else if constexpr (std::is_same_v<std::decay_t<T>, ddwaf_object *>) {
             return ptr() != other;
-        } else {
+        } else if constexpr (std::is_same_v<std::decay_t<T>, ddwaf_object>) {
+            return ptr() != &other;
+        } else if constexpr (std::is_same_v<std::decay_t<T>, object_view>) {
             return ptr() != other.ptr();
+        } else if constexpr (std::is_same_v<std::decay_t<T>, std::string_view>) {
+            return has_value() && (!is<std::string_view>() || as<std::string_view>() != other);
+        } else {
+            // Assume unknown types aren't equal
+            return true;
         }
     }
 

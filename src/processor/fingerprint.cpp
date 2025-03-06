@@ -260,7 +260,7 @@ struct key_hash_field : field_generator<key_hash_field> {
             const auto key = it.key();
             max_string_size = std::max(max_string_size, key.size());
 
-            keys.emplace_back(key);
+            keys.emplace_back(key.as<std::string_view>());
         }
 
         std::sort(keys.begin(), keys.end(), str_casei_cmp);
@@ -332,7 +332,7 @@ struct kv_hash_fields : field_generator<kv_hash_fields, std::pair<std::string, s
             auto larger_size = std::max(key.size(), val.size());
             max_string_size = std::max(max_string_size, larger_size);
 
-            kv_sorted.emplace_back(key, val);
+            kv_sorted.emplace_back(key.as<std::string_view>(), val);
         }
 
         std::sort(kv_sorted.begin(), kv_sorted.end(),
@@ -594,7 +594,7 @@ std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_i
             throw ddwaf::timeout_exception();
         }
 
-        const auto header = static_cast<std::string_view>(it.key());
+        const auto header = it.key().as<std::string_view>();
         const auto child = it.value();
 
         normalize_header(header, normalized_header);
@@ -643,7 +643,7 @@ std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_
             throw ddwaf::timeout_exception();
         }
 
-        const auto header = static_cast<std::string_view>(it.key());
+        const auto header = it.key().as<std::string_view>();
         const auto &child = it.value();
 
         normalize_header(header, normalized_header);

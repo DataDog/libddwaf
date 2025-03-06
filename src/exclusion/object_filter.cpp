@@ -66,7 +66,7 @@ void iterate_object(const path_trie::traverser &filter, object_view object,
             if (key.data() == nullptr || key.empty()) {
                 child_traverser = current_trie.descend_wildcard();
             } else {
-                child_traverser = current_trie.descend(static_cast<std::string_view>(key));
+                child_traverser = current_trie.descend(key.as<std::string_view>());
             }
             const auto filter_state = child_traverser.get_state();
 
