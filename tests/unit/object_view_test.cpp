@@ -674,4 +674,18 @@ TEST(TestObjectView, StringtObjectStringConversion)
     ddwaf_object_free(&original);
 }
 
+TEST(TestObjectView, AsOrDefault)
+{
+    detail::object original;
+    ddwaf_object_invalid(&original);
+
+    object_view view(original);
+
+    EXPECT_EQ(view.as_or_default<std::string_view>({}), std::string_view{});
+    EXPECT_EQ(view.as_or_default<double>(20.1), 20.1);
+    EXPECT_EQ(view.as_or_default<uint64_t>(0), 0);
+    EXPECT_EQ(view.as_or_default<int64_t>(0), 0);
+    EXPECT_EQ(view.as_or_default<bool>(false), false);
+}
+
 } // namespace
