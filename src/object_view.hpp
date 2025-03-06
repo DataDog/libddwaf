@@ -51,7 +51,7 @@ public:
 
     [[nodiscard]] std::size_t size() const noexcept
     {
-        if (obj_ == nullptr) {
+        if (obj_ == nullptr || obj_->parameterName == nullptr) {
             [[unlikely]] return 0;
         }
         return static_cast<std::size_t>(obj_->parameterNameLength);
@@ -63,7 +63,7 @@ public:
     [[nodiscard]] T as() const noexcept
         requires std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>
     {
-        if (obj_ == nullptr) {
+        if (obj_ == nullptr || obj_->parameterName == nullptr) {
             [[unlikely]] return {};
         }
         return {obj_->parameterName, static_cast<std::size_t>(obj_->parameterNameLength)};
