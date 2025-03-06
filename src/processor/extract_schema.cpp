@@ -311,7 +311,7 @@ base_node generate_helper(object_view object, std::string_view key,
         for (std::size_t i = 0; i < length && depth > 1; i++) {
             const auto child = object.at_value(i);
             const auto key = object.at_key(i).as<std::string_view>();
-            if (key.empty() || key.data() == nullptr) {
+            if (key.empty()) {
                 continue;
             }
 
@@ -357,7 +357,7 @@ std::pair<ddwaf_object, object_store::attribute> extract_schema::eval_impl(
     const unary_argument<object_view> &input, processor_cache & /*cache*/,
     ddwaf::timer &deadline) const
 {
-    if (input.value == nullptr) {
+    if (!input.value.has_value()) {
         return {};
     }
 

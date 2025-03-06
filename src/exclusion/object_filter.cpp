@@ -63,7 +63,7 @@ void iterate_object(const path_trie::traverser &filter, object_view object,
 
             path_trie::traverser child_traverser{nullptr};
             // Only consider children with keys
-            if (key.data() == nullptr || key.empty()) {
+            if (key.empty()) {
                 child_traverser = current_trie.descend_wildcard();
             } else {
                 child_traverser = current_trie.descend(key.as<std::string_view>());
@@ -107,7 +107,7 @@ object_set object_filter::match(const object_store &store, cache_type &cache, bo
         }
 
         auto [object, attr] = store.get_target(target);
-        if (object == nullptr || cache.contains(object)) {
+        if (!object.has_value() || cache.contains(object)) {
             continue;
         }
 
