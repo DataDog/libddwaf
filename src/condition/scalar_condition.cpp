@@ -41,7 +41,7 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
 {
     // The iterator is guaranteed to be valid at this point, which means the
     // object pointer should not be nullptr
-    detail::object src = (*it).ref();
+    ddwaf_object src = (*it).ref();
     if (src.type == DDWAF_OBJ_STRING) {
         if (src.stringValue == nullptr) {
             return {};
@@ -49,7 +49,7 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
 
         src.nbEntries = find_string_cutoff(src.stringValue, src.nbEntries, limits);
         if (!transformers.empty()) {
-            detail::object dst;
+            ddwaf_object dst;
             ddwaf_object_invalid(&dst);
 
             auto transformed = transformer::manager::transform(src, dst, transformers);
