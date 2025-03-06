@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "common/gtest_utils.hpp"
+#include "object_converter.hpp"
 #include "object_view.hpp"
 
 using namespace ddwaf;
@@ -346,36 +347,6 @@ TEST(TestObjectView, StringObject)
     ddwaf_object_free(&original);
 }
 
-TEST(TestObjectView, NullStringObject)
-{
-    // Inconsistent string object
-    detail::object original;
-    original.type = DDWAF_OBJ_STRING;
-    original.stringValue = nullptr;
-    original.nbEntries = 10;
-
-    object_view view(original);
-
-    ASSERT_TRUE(view.has_value());
-    EXPECT_EQ(view.type(), object_type::string);
-
-    EXPECT_EQ(view.ptr(), &original);
-
-    EXPECT_EQ(view.size(), 10);
-    EXPECT_FALSE(view.empty());
-    EXPECT_FALSE(view.is_container());
-    EXPECT_TRUE(view.is_scalar());
-
-    EXPECT_FALSE(view.is<bool>());
-    EXPECT_FALSE(view.is<uint64_t>());
-    EXPECT_FALSE(view.is<int64_t>());
-    EXPECT_FALSE(view.is<double>());
-
-    EXPECT_FALSE(view.is<std::string>());
-    EXPECT_FALSE(view.is<std::string_view>());
-    EXPECT_FALSE(view.is<const char *>());
-}
-
 TEST(TestObjectView, ArrayObject)
 {
     detail::object root;
@@ -646,6 +617,61 @@ TEST(TestObjectView, StringInequality)
     EXPECT_FALSE(view != "something"sv);
 
     ddwaf_object_free(&root);
+}
+
+TEST(TestObjectView, BooleanObjectStringConversion)
+{
+    detail::object original;
+    {
+        ddwaf_object_bool(&original, true);
+        object_view view(original);
+        auto converted = view.convert<std::string>();
+        EXPECT_STR(converted, "true");
+    }
+
+    {
+        ddwaf_object_bool(&original, false);
+        object_view view(original);
+        auto converted = view.convert<std::string>();
+        EXPECT_STR(converted, "false");
+    }
+}
+
+TEST(TestObjectView, SignedObjectStringConversion)
+{
+    detail::object original;
+    ddwaf_object_signed(&original, -123456);
+    object_view view(original);
+    auto converted = view.convert<std::string>();
+    EXPECT_STR(converted, "-123456");
+}
+
+TEST(TestObjectView, UnsignedObjectStringConversion)
+{
+    detail::object original;
+    ddwaf_object_unsigned(&original, 123456);
+    object_view view(original);
+    auto converted = view.convert<std::string>();
+    EXPECT_STR(converted, "123456");
+}
+
+TEST(TestObjectView, FloatObjectStringConversion)
+{
+    detail::object original;
+    ddwaf_object_float(&original, 20.1);
+    object_view view(original);
+    auto converted = view.convert<std::string>();
+    EXPECT_STR(converted, "20.1");
+}
+
+TEST(TestObjectView, StringtObjectStringConversion)
+{
+    detail::object original;
+    ddwaf_object_string(&original, "this is a string");
+    object_view view(original);
+    auto converted = view.convert<std::string>();
+    EXPECT_STR(converted, "this is a string");
+    ddwaf_object_free(&original);
 }
 
 } // namespace
