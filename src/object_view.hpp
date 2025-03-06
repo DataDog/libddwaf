@@ -51,7 +51,7 @@ public:
 
     [[nodiscard]] std::size_t size() const noexcept
     {
-        if (obj_ == nullptr) {
+        if (obj_ == nullptr || obj_->parameterName == nullptr) {
             [[unlikely]] return 0;
         }
         return static_cast<std::size_t>(obj_->parameterNameLength);
@@ -63,7 +63,7 @@ public:
     [[nodiscard]] T as() const noexcept
         requires std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>
     {
-        if (obj_ == nullptr) {
+        if (obj_ == nullptr || obj_->parameterName == nullptr) {
             [[unlikely]] return {};
         }
         return {obj_->parameterName, static_cast<std::size_t>(obj_->parameterNameLength)};
@@ -217,20 +217,14 @@ public:
         assert(obj_ != nullptr && index < size() && obj_->array != nullptr);
 
         const auto &slot = obj_->array[index];
-        if (type() == object_type::map) {
-            return {&slot, slot};
-        }
-        return {{}, slot};
+        return {&slot, slot};
     }
 
     // Access the key at index. If the container is an array, the key will be an empty string.
     [[nodiscard]] object_key at_key(std::size_t index) const noexcept
     {
         assert(obj_ != nullptr && index < size() && obj_->array != nullptr);
-        if (type() == object_type::map) {
-            return &obj_->array[index];
-        }
-        return {};
+        return &obj_->array[index];
     }
 
     // Access the value at index.
@@ -333,10 +327,7 @@ public:
         [[nodiscard]] object_key key() const
         {
             assert(obj_ != nullptr && index_ < size_);
-            if (type_ == object_type::map) {
-                return &obj_[index_];
-            }
-            return {};
+            return &obj_[index_];
         }
 
         [[nodiscard]] object_view value() const
@@ -348,11 +339,9 @@ public:
         std::pair<object_key, object_view> operator*() const
         {
             assert(obj_ != nullptr && index_ < size_);
+
             const auto &slot = obj_[index_];
-            if (type_ == object_type::map) {
-                return {&slot, slot};
-            }
-            return {{}, slot};
+            return {&slot, slot};
         }
 
         [[nodiscard]] std::size_t index() const { return static_cast<std::size_t>(index_); }
