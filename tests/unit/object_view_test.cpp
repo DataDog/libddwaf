@@ -35,6 +35,8 @@ TEST(TestObjectView, InvalidObject)
     EXPECT_TRUE(view.empty());
     EXPECT_FALSE(view.is_container());
     EXPECT_FALSE(view.is_scalar());
+    EXPECT_FALSE(view.is_map());
+    EXPECT_FALSE(view.is_array());
 
     EXPECT_FALSE(view.is<bool>());
     EXPECT_FALSE(view.is<int64_t>());
@@ -62,6 +64,8 @@ TEST(TestObjectView, NullObject)
     EXPECT_TRUE(view.empty());
     EXPECT_FALSE(view.is_container());
     EXPECT_FALSE(view.is_scalar());
+    EXPECT_FALSE(view.is_map());
+    EXPECT_FALSE(view.is_array());
 
     EXPECT_FALSE(view.is<bool>());
     EXPECT_FALSE(view.is<int64_t>());
@@ -89,6 +93,8 @@ TEST(TestObjectView, BooleanObject)
     EXPECT_TRUE(view.empty());
     EXPECT_FALSE(view.is_container());
     EXPECT_TRUE(view.is_scalar());
+    EXPECT_FALSE(view.is_map());
+    EXPECT_FALSE(view.is_array());
 
     EXPECT_TRUE(view.is<bool>());
     EXPECT_EQ(view.as<bool>(), true);
@@ -118,6 +124,8 @@ TEST(TestObjectView, SignedObject)
     EXPECT_TRUE(view.empty());
     EXPECT_FALSE(view.is_container());
     EXPECT_TRUE(view.is_scalar());
+    EXPECT_FALSE(view.is_map());
+    EXPECT_FALSE(view.is_array());
 
     EXPECT_TRUE(view.is<int64_t>());
     EXPECT_EQ(view.as<int64_t>(), -20);
@@ -229,6 +237,8 @@ TEST(TestObjectView, UnsignedObject)
     EXPECT_TRUE(view.empty());
     EXPECT_FALSE(view.is_container());
     EXPECT_TRUE(view.is_scalar());
+    EXPECT_FALSE(view.is_map());
+    EXPECT_FALSE(view.is_array());
 
     EXPECT_TRUE(view.is<uint64_t>());
     EXPECT_EQ(view.as<uint64_t>(), 20);
@@ -305,6 +315,8 @@ TEST(TestObjectView, FloatObject)
     EXPECT_TRUE(view.empty());
     EXPECT_FALSE(view.is_container());
     EXPECT_TRUE(view.is_scalar());
+    EXPECT_FALSE(view.is_map());
+    EXPECT_FALSE(view.is_array());
 
     EXPECT_TRUE(view.is<double>());
     EXPECT_EQ(view.as<double>(), 20.1);
@@ -334,6 +346,8 @@ TEST(TestObjectView, StringObject)
     EXPECT_FALSE(view.empty());
     EXPECT_FALSE(view.is_container());
     EXPECT_TRUE(view.is_scalar());
+    EXPECT_FALSE(view.is_map());
+    EXPECT_FALSE(view.is_array());
 
     EXPECT_FALSE(view.is<bool>());
     EXPECT_FALSE(view.is<uint64_t>());
@@ -363,6 +377,8 @@ TEST(TestObjectView, ArrayObject)
     EXPECT_EQ(view.type(), object_type::array);
     EXPECT_TRUE(view.is_container());
     EXPECT_FALSE(view.is_scalar());
+    EXPECT_FALSE(view.is_map());
+    EXPECT_TRUE(view.is_array());
 
     EXPECT_EQ(view.ptr(), &root);
 
@@ -405,6 +421,8 @@ TEST(TestObjectView, MapObject)
     EXPECT_EQ(view.type(), object_type::map);
     EXPECT_TRUE(view.is_container());
     EXPECT_FALSE(view.is_scalar());
+    EXPECT_TRUE(view.is_map());
+    EXPECT_FALSE(view.is_array());
 
     EXPECT_EQ(view.ptr(), &root);
 

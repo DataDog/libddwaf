@@ -171,6 +171,18 @@ public:
         return (type() & scalar_object_type) != 0;
     }
 
+    [[nodiscard]] bool is_map() const noexcept
+    {
+        assert(obj_ != nullptr);
+        return type() == object_type::map;
+    }
+
+    [[nodiscard]] bool is_array() const noexcept
+    {
+        assert(obj_ != nullptr);
+        return type() == object_type::array;
+    }
+
     // is<T> checks whether the underlying type is compatible with the required
     // type. When it comes to numeric types, the request type must match the
     // one used within ddwaf_object, i.e. the type will not be cast to one of
