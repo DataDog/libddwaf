@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "matcher/is_sqli.hpp"
+#include "object_view.hpp"
 
 #include "common/gtest_utils.hpp"
 
@@ -21,7 +22,7 @@ TEST(TestIsSQLi, TestBasic)
     ddwaf_object param;
     ddwaf_object_string(&param, "'OR 1=1/*");
 
-    auto [res, highlight] = matcher.match(param);
+    auto [res, highlight] = matcher.match(ddwaf::object_view{param});
     EXPECT_TRUE(res);
     EXPECT_STREQ(highlight.c_str(), "s&1c");
 
@@ -34,10 +35,10 @@ TEST(TestIsSQLi, TestMatch)
 
     auto match = {"1, -sin(1)) UNION SELECT 1"};
 
-    for (auto pattern : match) {
+    for (const auto *pattern : match) {
         ddwaf_object param;
         ddwaf_object_string(&param, pattern);
-        EXPECT_TRUE(matcher.match(param).first);
+        EXPECT_TRUE(matcher.match(ddwaf::object_view{param}).first);
         ddwaf_object_free(&param);
     }
 }
@@ -48,10 +49,10 @@ TEST(TestIsSQLi, TestNoMatch)
 
     auto no_match = {"*", "00119007249934829312950000808000953OR-240128165430155"};
 
-    for (auto pattern : no_match) {
+    for (const auto *pattern : no_match) {
         ddwaf_object param;
         ddwaf_object_string(&param, pattern);
-        EXPECT_FALSE(matcher.match(param).first);
+        EXPECT_FALSE(matcher.match(ddwaf::object_view{param}).first);
         ddwaf_object_free(&param);
     }
 }

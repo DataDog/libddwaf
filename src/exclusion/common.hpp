@@ -11,6 +11,7 @@
 #include "context_allocator.hpp"
 #include "ddwaf.h"
 #include "log.hpp"
+#include "object_view.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
@@ -22,12 +23,12 @@ namespace exclusion {
 enum class filter_mode : uint8_t { none = 0, custom = 1, monitor = 2, bypass = 3 };
 
 struct object_set {
-    std::unordered_set<const ddwaf_object *> persistent;
-    std::unordered_set<const ddwaf_object *> ephemeral;
+    std::unordered_set<object_view> persistent;
+    std::unordered_set<object_view> ephemeral;
     bool empty() const { return persistent.empty() && ephemeral.empty(); }
     [[nodiscard]] std::size_t size() const { return persistent.size() + ephemeral.size(); }
 
-    bool contains(const ddwaf_object *obj) const
+    bool contains(object_view obj) const
     {
         return persistent.contains(obj) || ephemeral.contains(obj);
     }
@@ -36,12 +37,12 @@ struct object_set {
 struct rule_policy {
     filter_mode mode{filter_mode::none};
     std::string_view action_override;
-    std::unordered_set<const ddwaf_object *> objects;
+    std::unordered_set<object_view> objects;
 };
 
 struct object_set_ref {
-    optional_ref<const std::unordered_set<const ddwaf_object *>> persistent{std::nullopt};
-    optional_ref<const std::unordered_set<const ddwaf_object *>> ephemeral{std::nullopt};
+    optional_ref<const std::unordered_set<object_view>> persistent{std::nullopt};
+    optional_ref<const std::unordered_set<object_view>> ephemeral{std::nullopt};
 
     [[nodiscard]] bool empty() const
     {
@@ -55,7 +56,7 @@ struct object_set_ref {
                (ephemeral.has_value() ? ephemeral->get().size() : 0);
     }
 
-    bool contains(const ddwaf_object *obj) const
+    [[nodiscard]] bool contains(object_view obj) const
     {
         return (persistent.has_value() && persistent->get().contains(obj)) ||
                (ephemeral.has_value() && ephemeral->get().contains(obj));
@@ -88,25 +89,32 @@ struct context_policy {
 
         if (p_it == persistent.end()) {
             if (e_it == ephemeral.end()) {
-                return {filter_mode::none, {}, {std::nullopt, std::nullopt}};
+                return {.mode = filter_mode::none,
+                    .action_override = {},
+                    .objects = {.persistent = std::nullopt, .ephemeral = std::nullopt}};
             }
 
             const auto &e_policy = e_it->second;
-            return {e_policy.mode, e_policy.action_override, {std::nullopt, e_policy.objects}};
+            return {.mode = e_policy.mode,
+                .action_override = e_policy.action_override,
+                .objects = {.persistent = std::nullopt, .ephemeral = e_policy.objects}};
         }
 
         if (e_it == ephemeral.end()) {
             const auto &p_policy = p_it->second;
             p_policy.objects.size();
-            return {p_policy.mode, p_policy.action_override, {p_policy.objects, std::nullopt}};
+            return {.mode = p_policy.mode,
+                .action_override = p_policy.action_override,
+                .objects = {.persistent = p_policy.objects, .ephemeral = std::nullopt}};
         }
 
         const auto &p_policy = p_it->second;
         const auto &e_policy = e_it->second;
 
         const auto &effective_policy = p_policy.mode > e_policy.mode ? p_policy : e_policy;
-        return {effective_policy.mode, effective_policy.action_override,
-            {p_policy.objects, e_policy.objects}};
+        return {.mode = effective_policy.mode,
+            .action_override = effective_policy.action_override,
+            .objects = {.persistent = p_policy.objects, .ephemeral = e_policy.objects}};
     }
 
     void add_rule_exclusion(
