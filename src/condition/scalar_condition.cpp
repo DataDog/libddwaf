@@ -18,6 +18,7 @@
 #include "iterator.hpp"
 #include "log.hpp"
 #include "matcher/base.hpp"
+#include "object.hpp"
 #include "object_converter.hpp" // IWYU pragma: keep
 #include "object_store.hpp"
 #include "object_view.hpp"
