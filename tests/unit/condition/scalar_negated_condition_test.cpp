@@ -55,7 +55,7 @@ TEST(TestScalarNegatedCondition, NoMatch)
     ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_string(&tmp, "hello"));
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -75,7 +75,7 @@ TEST(TestScalarNegatedCondition, Timeout)
     ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_string(&tmp, "hello"));
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
@@ -93,7 +93,7 @@ TEST(TestScalarNegatedCondition, SimpleMatch)
     ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_invalid(&tmp));
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -117,7 +117,7 @@ TEST(TestScalarNegatedCondition, CachedMatch)
 
     {
         object_store store;
-        store.insert(root, object_store::attribute::none, nullptr);
+        store.insert(owned_object{root, nullptr}, object_store::attribute::none);
 
         auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
@@ -126,7 +126,7 @@ TEST(TestScalarNegatedCondition, CachedMatch)
 
     {
         object_store store;
-        store.insert(root, object_store::attribute::none, nullptr);
+        store.insert(owned_object{root, nullptr}, object_store::attribute::none);
 
         auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_FALSE(res.outcome);
@@ -153,7 +153,7 @@ TEST(TestScalarNegatedCondition, SimpleMatchOnKeys)
     ddwaf_object_map_add(&root, "server.request.uri.raw", &map);
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -176,7 +176,7 @@ TEST(TestScalarNegatedCondition, SimpleEphemeralMatch)
     {
         auto scope = store.get_eval_scope();
 
-        store.insert(root, object_store::attribute::ephemeral, nullptr);
+        store.insert(owned_object{root, nullptr}, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -188,7 +188,7 @@ TEST(TestScalarNegatedCondition, SimpleEphemeralMatch)
     {
         auto scope = store.get_eval_scope();
 
-        store.insert(root, object_store::attribute::ephemeral, nullptr);
+        store.insert(owned_object{root, nullptr}, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
         condition_cache cache;

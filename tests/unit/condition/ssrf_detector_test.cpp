@@ -39,7 +39,7 @@ void match_path_and_input(
         ddwaf_object_map_add(&root, "server.request.query", &input);
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;

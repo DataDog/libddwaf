@@ -33,7 +33,7 @@ public:
 
     bool insert(ddwaf_object &object, attribute attr = attribute::none)
     {
-        return store_.insert(object, attr);
+        return store_.insert(owned_object{object}, attr);
     }
 };
 
