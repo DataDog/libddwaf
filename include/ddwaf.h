@@ -764,6 +764,7 @@ const ddwaf_object* ddwaf_object_get_index(const ddwaf_object *object, size_t in
  * @param object Object to free. (nonnull)
  **/
 void ddwaf_object_free(ddwaf_object *object);
+void ddwaf_object_free_not(ddwaf_object *object);
 
 /**
  * ddwaf_get_version

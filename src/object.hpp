@@ -78,12 +78,7 @@ public:
         : obj_(obj), free_fn_(free_fn)
     {}
 
-    ~owned_object()
-    {
-        if (free_fn_ != nullptr) {
-            free_fn_(&obj_);
-        }
-    }
+    ~owned_object() { free_fn_(&obj_); }
 
     owned_object(const owned_object &) = delete;
     owned_object &operator=(const owned_object &) = delete;

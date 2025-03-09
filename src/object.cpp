@@ -365,6 +365,8 @@ void ddwaf_object_free(ddwaf_object *object)
     ddwaf_object_invalid(object);
 }
 
+void ddwaf_object_free_not(ddwaf_object * /*object*/) {}
+
 DDWAF_OBJ_TYPE ddwaf_object_type(const ddwaf_object *object)
 {
     return object != nullptr ? object->type : DDWAF_OBJ_INVALID;
