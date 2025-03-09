@@ -108,7 +108,7 @@ protected:
 // Convenience structure to build rulesets
 struct ruleset_builder {
     explicit ruleset_builder(ddwaf_object_free_fn free_fn = ddwaf_object_free)
-        : free_fn(free_fn == nullptr ? ddwaf_object_free_not : free_fn),
+        : free_fn(free_fn),
           preprocessors(std::make_shared<typename decltype(preprocessors)::element_type>()),
           postprocessors(std::make_shared<typename decltype(postprocessors)::element_type>()),
           rule_filters(std::make_shared<typename decltype(rule_filters)::element_type>()),

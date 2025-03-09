@@ -39,7 +39,7 @@ TEST(TestRule, Match)
     core_rule::cache_type cache;
     {
         auto scope = store.get_eval_scope();
-        store.insert(owned_object{root, ddwaf_object_free_not}, object_store::attribute::none);
+        store.insert(owned_object{root, nullptr}, object_store::attribute::none);
 
         auto event = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_TRUE(event.has_value());
@@ -65,7 +65,7 @@ TEST(TestRule, Match)
 
     {
         auto scope = store.get_eval_scope();
-        store.insert(owned_object{root, ddwaf_object_free_not}, object_store::attribute::none);
+        store.insert(owned_object{root, nullptr}, object_store::attribute::none);
 
         auto event = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(event.has_value());
@@ -99,7 +99,7 @@ TEST(TestRule, EphemeralMatch)
     core_rule::cache_type cache;
     {
         auto scope = store.get_eval_scope();
-        store.insert(owned_object{root, ddwaf_object_free_not}, object_store::attribute::ephemeral);
+        store.insert(owned_object{root, nullptr}, object_store::attribute::ephemeral);
 
         auto event = rule.match(store, cache, {}, {}, {}, deadline);
         ASSERT_TRUE(event.has_value());
@@ -108,7 +108,7 @@ TEST(TestRule, EphemeralMatch)
 
     {
         auto scope = store.get_eval_scope();
-        store.insert(owned_object{root, ddwaf_object_free_not}, object_store::attribute::ephemeral);
+        store.insert(owned_object{root, nullptr}, object_store::attribute::ephemeral);
 
         auto event = rule.match(store, cache, {}, {}, {}, deadline);
         ASSERT_TRUE(event.has_value());
