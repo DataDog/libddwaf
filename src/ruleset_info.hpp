@@ -9,10 +9,9 @@
 #include <map>
 #include <string>
 #include <string_view>
-#include <unordered_set>
 
 #include "configuration/common/parser_exception.hpp"
-#include "ddwaf.h"
+#include "object.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
@@ -76,7 +75,7 @@ public:
     virtual void set_ruleset_version(std::string_view version) = 0;
     virtual void set_error(std::string error) = 0;
 
-    virtual void to_object(ddwaf_object &output) = 0;
+    virtual owned_object to_object() = 0;
 };
 
 class null_ruleset_info : public base_ruleset_info {
@@ -114,7 +113,7 @@ public:
     void set_ruleset_version(std::string_view /*version*/) override{};
     void set_error(std::string /*error*/) override {}
 
-    void to_object(ddwaf_object & /*output*/) override{};
+    owned_object to_object() override { return {}; };
 };
 
 class ruleset_info : public base_ruleset_info {
@@ -122,22 +121,12 @@ public:
     class section_info : public base_ruleset_info::base_section_info {
     public:
         section_info()
-        {
-            ddwaf_object_array(&loaded_);
-            ddwaf_object_array(&failed_);
-            ddwaf_object_array(&skipped_);
-            ddwaf_object_map(&errors_);
-            ddwaf_object_map(&warnings_);
-        }
+            : loaded_(owned_object::make_array()), failed_(owned_object::make_array()),
+              skipped_(owned_object::make_array()), errors_(owned_object::make_map()),
+              warnings_(owned_object::make_map())
+        {}
 
-        ~section_info() override
-        {
-            ddwaf_object_free(&loaded_);
-            ddwaf_object_free(&failed_);
-            ddwaf_object_free(&skipped_);
-            ddwaf_object_free(&errors_);
-            ddwaf_object_free(&warnings_);
-        }
+        ~section_info() override = default;
 
         section_info(const section_info &) = delete;
         section_info(section_info &&) noexcept = default;
@@ -151,48 +140,40 @@ public:
         void add_skipped(std::string_view id) override;
 
         // This matcher effectively moves the contents
-        void to_object(ddwaf_object &output)
+        owned_object to_object()
         {
-            ddwaf_object_map(&output);
+            auto output = owned_object::make_map();
             if (!error_.empty()) {
-                ddwaf_object error_str;
-                ddwaf_object_stringl(&error_str, error_.c_str(), error_.size());
-                ddwaf_object_map_add(&output, "error", &error_str);
+                output.emplace("error", owned_object::make_string(error_));
                 error_.clear();
             } else {
-                ddwaf_object_map_add(&output, "loaded", &loaded_);
-                ddwaf_object_map_add(&output, "failed", &failed_);
-                ddwaf_object_map_add(&output, "skipped", &skipped_);
-                ddwaf_object_map_add(&output, "errors", &errors_);
-                ddwaf_object_map_add(&output, "warnings", &warnings_);
+                output.emplace("loaded", std::move(loaded_));
+                output.emplace("failed", std::move(failed_));
+                output.emplace("skipped", std::move(skipped_));
+                output.emplace("errors", std::move(errors_));
+                output.emplace("warnings", std::move(warnings_));
 
-                ddwaf_object_invalid(&loaded_);
-                ddwaf_object_invalid(&failed_);
-                ddwaf_object_invalid(&skipped_);
-
-                ddwaf_object_invalid(&errors_);
                 error_obj_cache_.clear();
-
-                ddwaf_object_invalid(&warnings_);
                 warning_obj_cache_.clear();
             }
+            return output;
         }
 
     protected:
         std::string error_;
         /** Array of loaded elements */
-        ddwaf_object loaded_{};
+        owned_object loaded_;
         /** Array of failed elements */
-        ddwaf_object failed_{};
+        owned_object failed_;
         /** Array of skipped elements */
-        ddwaf_object skipped_{};
+        owned_object skipped_;
         /** Map from an error string to an array of all the ids for which
          *  that error was raised. {error: [ids]} **/
-        ddwaf_object errors_{};
+        owned_object errors_;
         std::map<std::string_view, uint64_t> error_obj_cache_;
         /** Map from an warning string to an array of all the ids for which
          *  that warning was raised. {warning: [ids]} **/
-        ddwaf_object warnings_{};
+        owned_object warnings_;
         std::map<std::string_view, uint64_t> warning_obj_cache_;
     };
 
@@ -213,31 +194,22 @@ public:
     void set_ruleset_version(std::string_view version) override { ruleset_version_ = version; }
 
     // This matcher effectively moves the contents
-    void to_object(ddwaf_object &output) override
+    owned_object to_object() override
     {
-        ddwaf_object_map(&output);
+        auto output = owned_object::make_map();
         if (!error_.empty()) {
-            ddwaf_object error_object;
-            ddwaf_object_stringl(&error_object, error_.c_str(), error_.size());
-            ddwaf_object_map_add(&output, "error", &error_object);
+            output.emplace("error", owned_object::make_string(error_));
             error_.clear();
         } else {
-            for (auto &[name, section] : sections_) {
-                ddwaf_object section_object;
-                section.to_object(section_object);
-
-                ddwaf_object_map_addl(&output, name.c_str(), name.length(), &section_object);
-            }
+            for (auto &[name, section] : sections_) { output.emplace(name, section.to_object()); }
             sections_.clear();
 
             if (!ruleset_version_.empty()) {
-                ddwaf_object version_object;
-                ddwaf_object_stringl(
-                    &version_object, ruleset_version_.c_str(), ruleset_version_.size());
-                ddwaf_object_map_add(&output, "ruleset_version", &version_object);
+                output.emplace("ruleset_version", owned_object::make_string(ruleset_version_));
                 ruleset_version_.clear();
             }
         }
+        return output;
     }
 
     void set_error(std::string error) override { error_ = std::move(error); }

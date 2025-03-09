@@ -17,7 +17,7 @@ TEST(TestRulesetInfo, EmptyRulesetInfo)
 {
     ddwaf::raw_configuration root;
     ruleset_info info;
-    info.to_object(root);
+    root = info.to_object().move();
 
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
     EXPECT_EQ(root_map.size(), 0);
@@ -47,7 +47,7 @@ TEST(TestRulesetInfo, ValidRulesetInfo)
             section.add_loaded(10);
         }
 
-        info.to_object(root);
+        root = info.to_object().move();
     }
 
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -94,7 +94,7 @@ TEST(TestRulesetInfo, FailedWithErrorsRulesetInfo)
         section.add_failed("fourth", parser_error_severity::error, "error2");
         section.add_failed("fifth", parser_error_severity::error, "error3");
 
-        info.to_object(root);
+        root = info.to_object().move();
     }
 
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -169,7 +169,7 @@ TEST(TestRulesetInfo, SkippedRulesetInfo)
         section.add_skipped("fifth");
         section.add_skipped(5);
 
-        info.to_object(root);
+        root = info.to_object().move();
     }
 
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -211,7 +211,7 @@ TEST(TestRulesetInfo, SectionErrorRulesetInfo)
         section.add_loaded("fourth");
         section.add_failed("fifth", parser_error_severity::error, "error");
 
-        info.to_object(root);
+        root = info.to_object().move();
     }
 
     {

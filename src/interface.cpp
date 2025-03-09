@@ -108,7 +108,7 @@ ddwaf::waf *ddwaf_init(
             }
 
             ddwaf::ruleset_info ri;
-            const ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });
+            const ddwaf::scope_exit on_exit([&]() { *diagnostics = ri.to_object().move(); });
             builder.add_or_update("default", input, ri);
             return new ddwaf::waf{builder.build()};
         }
@@ -294,7 +294,7 @@ bool ddwaf_builder_add_or_update_config(ddwaf::waf_builder *builder, const char 
         }
 
         ddwaf::ruleset_info ri;
-        const ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });
+        const ddwaf::scope_exit on_exit([&]() { *diagnostics = ri.to_object().move(); });
         return builder->add_or_update({path, path_len}, input, ri);
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());
