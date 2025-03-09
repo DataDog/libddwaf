@@ -7,13 +7,19 @@
 #include "common/gtest_utils.hpp"
 #include "object.hpp"
 #include "object_view.hpp"
+#include <stdexcept>
 
 using namespace ddwaf;
 using namespace std::literals;
 
 namespace {
 
-TEST(TestObject, InvlaidObject)
+TEST(TestObject, NullBorrowedObject)
+{
+    EXPECT_THROW(borrowed_object{nullptr}, std::invalid_argument);
+}
+
+TEST(TestObject, InvalidObject)
 {
     owned_object ow;
     EXPECT_EQ(ow.type(), object_type::invalid);
@@ -164,6 +170,18 @@ TEST(TestObject, MapObject)
             EXPECT_EQ(key.as<std::string_view>(), expected_key);
         }
     }
+}
+
+TEST(TestObject, EmplaceWrongObject)
+{
+    owned_object container;
+    EXPECT_THROW(container.emplace("key", owned_object::make_string("value")), std::out_of_range);
+}
+
+TEST(TestObject, EmplaceBackWrongObject)
+{
+    owned_object container;
+    EXPECT_THROW(container.emplace_back(owned_object::make_string("value")), std::out_of_range);
 }
 
 } // namespace
