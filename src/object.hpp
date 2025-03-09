@@ -37,7 +37,7 @@ public:
 
     [[nodiscard]] bool is_invalid() const noexcept { return type() == object_type::invalid; }
 
-    [[nodiscard]] borrowed_object at(std::size_t idx) const noexcept;
+    [[nodiscard]] borrowed_object at(std::size_t idx);
 
     borrowed_object emplace_back(owned_object &&value);
     borrowed_object emplace(std::string_view key, owned_object &&value);
@@ -185,11 +185,14 @@ protected:
     friend class object_view;
 };
 
-template <typename Derived>
-[[nodiscard]] borrowed_object base_object<Derived>::at(std::size_t idx) const noexcept
+template <typename Derived> [[nodiscard]] borrowed_object base_object<Derived>::at(std::size_t idx)
 {
-    auto *container = static_cast<Derived *>(this)->ptr();
-    return ddwaf_object_get_index(container, idx);
+    auto *container = static_cast<const Derived *>(this)->ptr();
+    auto *value = const_cast<detail::object *>(ddwaf_object_get_index(container, idx));
+    if (value == nullptr) {
+        throw std::out_of_range("invalid at() access");
+    }
+    return borrowed_object{value};
 }
 
 template <typename Derived> borrowed_object base_object<Derived>::emplace_back(owned_object &&value)
