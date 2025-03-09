@@ -234,31 +234,6 @@ template <typename T> std::pair<bool, T> from_string(std::string_view str)
     return {false, {}};
 }
 
-inline std::string object_to_string(const ddwaf_object &object)
-{
-    if (object.type == DDWAF_OBJ_STRING) {
-        return std::string{object.stringValue, static_cast<std::size_t>(object.nbEntries)};
-    }
-
-    if (object.type == DDWAF_OBJ_BOOL) {
-        return to_string<std::string>(object.boolean);
-    }
-
-    if (object.type == DDWAF_OBJ_SIGNED) {
-        return to_string<std::string>(object.intValue);
-    }
-
-    if (object.type == DDWAF_OBJ_UNSIGNED) {
-        return to_string<std::string>(object.uintValue);
-    }
-
-    if (object.type == DDWAF_OBJ_FLOAT) {
-        return to_string<std::string>(object.f64);
-    }
-
-    return {};
-}
-
 inline std::vector<std::string_view> split(std::string_view str, char sep)
 {
     std::vector<std::string_view> components;

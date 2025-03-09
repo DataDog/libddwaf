@@ -50,11 +50,9 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
 
         src.nbEntries = find_string_cutoff(src.stringValue, src.nbEntries, limits);
         if (!transformers.empty()) {
-            detail::object dst;
-            ddwaf_object_invalid(&dst);
+            owned_object dst;
 
             auto transformed = transformer::manager::transform(src, dst, transformers);
-            const scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
             if (transformed) {
                 auto [res, highlight] = matcher.match(dst);
                 if (!res) {
@@ -66,7 +64,8 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
                 if constexpr (std::is_same_v<ResultType, bool>) {
                     return true;
                 } else {
-                    return {{{{"input"sv, object_to_string(dst), address, it.get_current_path()}},
+                    return {{{{"input"sv, object_view{dst}.convert<std::string>(), address,
+                                 it.get_current_path()}},
                         {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
                 }
             }
@@ -83,8 +82,9 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
     if constexpr (std::is_same_v<ResultType, bool>) {
         return true;
     } else {
-        return {{{{"input"sv, object_to_string(src), address, it.get_current_path()}},
-            {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
+        return {
+            {{{"input"sv, object_view{src}.convert<std::string>(), address, it.get_current_path()}},
+                {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
     }
 }
 

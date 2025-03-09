@@ -151,6 +151,20 @@ public:
             .type = DDWAF_OBJ_FLOAT}};
     }
 
+    static owned_object make_string_nocopy(
+        const char *str, std::size_t len, ddwaf_object_free_fn free_fn = ddwaf_object_free)
+    {
+        detail::object tmp;
+        ddwaf_object_stringl_nc(&tmp, str, len);
+        return owned_object{tmp, free_fn};
+    }
+
+    static owned_object make_string_nocopy(
+        std::string_view str, ddwaf_object_free_fn free_fn = ddwaf_object_free)
+    {
+        return make_string_nocopy(str.data(), str.size(), free_fn);
+    }
+
     static owned_object make_string(const char *str, std::size_t len)
     {
         detail::object tmp;

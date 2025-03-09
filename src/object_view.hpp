@@ -158,6 +158,12 @@ public:
         return obj_->nbEntries == 0;
     }
 
+    [[nodiscard]] const char *data() const noexcept
+    {
+        assert(obj_ != nullptr);
+        return obj_->stringValue;
+    }
+
     // The is_* methods can be used to check for collections of types
     [[nodiscard]] bool is_container() const noexcept
     {
