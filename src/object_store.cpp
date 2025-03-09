@@ -17,38 +17,40 @@ namespace ddwaf {
 
 bool object_store::insert(owned_object &&input, attribute attr)
 {
-    if (input.type() != object_type::map) {
+    object_view view;
+    if (attr == attribute::ephemeral) {
+        view = ephemeral_objects_.emplace_back(std::move(input));
+    } else {
+        view = input_objects_.emplace_back(std::move(input));
+    }
+
+    if (view.type() != object_type::map) {
         return false;
     }
 
-    if (input.empty()) {
+    const auto size = view.size();
+    if (size == 0) {
         // Objects with no addresses are considered valid as they are harmless
         return true;
     }
 
-    objects_.reserve(objects_.size() + input.size());
+    objects_.reserve(objects_.size() + size);
 
-    latest_batch_.reserve(latest_batch_.size() + input.size());
+    latest_batch_.reserve(latest_batch_.size() + size);
 
     if (attr == attribute::ephemeral) {
-        ephemeral_targets_.reserve(input.size());
+        ephemeral_targets_.reserve(size);
     }
 
-    const object_view view = input;
     for (auto it = view.begin(); it != view.end(); ++it) {
-        auto key = it.key().as<std::string_view>();
-        if (key.empty()) {
+        auto key_obj = it.key();
+        if (key_obj.empty()) {
             continue;
         }
 
+        auto key = key_obj.as<std::string_view>();
         auto target = get_target_index(key);
         insert_target_helper(target, key, it.value(), attr);
-    }
-
-    if (attr == attribute::ephemeral) {
-        ephemeral_objects_.emplace_back(std::move(input));
-    } else {
-        input_objects_.emplace_back(std::move(input));
     }
 
     return true;
@@ -59,11 +61,9 @@ bool object_store::insert(
 {
     object_view view;
     if (attr == attribute::ephemeral) {
-        ephemeral_objects_.emplace_back(std::move(input));
-        view = ephemeral_objects_.back();
+        view = ephemeral_objects_.emplace_back(std::move(input));
     } else {
-        input_objects_.emplace_back(std::move(input));
-        view = input_objects_.back();
+        view = input_objects_.emplace_back(std::move(input));
     }
 
     return insert_target_helper(target, key, view, attr);
