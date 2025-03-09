@@ -2,7 +2,7 @@
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2021 Datadog, Inc.
+// Copyright 2025 Datadog, Inc.
 
 #pragma once
 
@@ -12,16 +12,12 @@
 #include <string_view>
 #include <type_traits>
 
-#include "ddwaf.h"
+#include "object.hpp"
 #include "object_type.hpp"
 #include "traits.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
-
-namespace detail {
-using object = ddwaf_object;
-} // namespace detail
 
 template <typename T> struct object_converter;
 
@@ -89,6 +85,10 @@ public:
     object_view(const detail::object &underlying_object) : obj_(&underlying_object) {}
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     object_view(const detail::object *underlying_object) : obj_(underlying_object) {}
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    object_view(const owned_object &ow) : obj_(&ow.obj_) {}
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    object_view(const borrowed_object &ow) : obj_(ow.obj_) {}
 
     ~object_view() = default;
     object_view(const object_view &) = default;
