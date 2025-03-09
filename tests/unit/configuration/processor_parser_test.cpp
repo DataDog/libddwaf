@@ -27,8 +27,7 @@ TEST(TestProcessorParser, ParseNoGenerator)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -92,8 +91,7 @@ TEST(TestProcessorParser, ParseNoID)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -157,8 +155,7 @@ TEST(TestProcessorParser, ParseNoParameters)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -222,8 +219,7 @@ TEST(TestProcessorParser, ParseNoMappings)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -288,8 +284,7 @@ TEST(TestProcessorParser, ParseEmptyMappings)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -354,8 +349,7 @@ TEST(TestProcessorParser, ParseNoInput)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -420,8 +414,7 @@ TEST(TestProcessorParser, ParseEmptyInput)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -486,8 +479,7 @@ TEST(TestProcessorParser, ParseNoOutput)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -552,8 +544,7 @@ TEST(TestProcessorParser, ParseUnknownGenerator)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -596,8 +587,7 @@ TEST(TestProcessorParser, ParseUseless)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -728,8 +718,7 @@ TEST(TestProcessorParser, ParseDuplicate)
     EXPECT_TRUE(cfg.processors.contains("1"));
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -793,8 +782,7 @@ TEST(TestProcessorParser, IncompatibleMinVersion)
     EXPECT_TRUE(cfg.overrides_by_tags.empty());
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -854,8 +842,7 @@ TEST(TestProcessorParser, IncompatibleMaxVersion)
     EXPECT_TRUE(cfg.overrides_by_tags.empty());
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -896,8 +883,7 @@ TEST(TestProcessorParser, CompatibleVersion)
     EXPECT_TRUE(cfg.processors.contains("1"));
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
