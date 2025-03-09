@@ -45,7 +45,7 @@ TEST(TestCmdiDetector, InvalidType)
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "whatever"));
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -65,7 +65,7 @@ TEST(TestCmdiDetector, EmptyResource)
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "whatever"));
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -122,7 +122,7 @@ TEST(TestCmdiDetector, NoInjection)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -170,7 +170,7 @@ TEST(TestCmdiDetector, NoExecutableInjection)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -235,7 +235,7 @@ TEST(TestCmdiDetector, NoShellInjection)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -279,7 +279,7 @@ TEST(TestCmdiDetector, ExecutableInjectionLinux)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -337,7 +337,7 @@ TEST(TestCmdiDetector, ExecutableInjectionWindows)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -390,7 +390,7 @@ TEST(TestCmdiDetector, ExecutableWithSpacesInjection)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -626,7 +626,7 @@ TEST(TestCmdiDetector, LinuxShellInjection)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -723,7 +723,7 @@ TEST(TestCmdiDetector, WindowsShellInjection)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -771,7 +771,7 @@ TEST(TestCmdiDetector, ExecutableInjectionMultipleArguments)
     ddwaf_object_map_add(&root, "server.request.query", &map);
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -818,7 +818,7 @@ TEST(TestCmdiDetector, EmptyExecutable)
     ddwaf_object_map_add(&root, "server.request.query", &map);
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -854,7 +854,7 @@ TEST(TestCmdiDetector, ShellInjectionMultipleArguments)
     ddwaf_object_map_add(&root, "server.request.query", &map);
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;

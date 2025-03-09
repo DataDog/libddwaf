@@ -28,6 +28,8 @@ public:
         return static_cast<std::size_t>(static_cast<const Derived *>(this)->ref().nbEntries);
     }
 
+    [[nodiscard]] bool empty() const noexcept { return size() == 0; }
+
     [[nodiscard]] object_type type() const noexcept
     {
         return static_cast<object_type>(static_cast<const Derived *>(this)->ref().type);
@@ -72,14 +74,21 @@ public:
     using length_type = decltype(detail::object::nbEntries);
 
     owned_object() = default;
-    explicit owned_object(detail::object obj) : obj_(obj) {}
+    explicit owned_object(detail::object obj, ddwaf_object_free_fn free_fn = ddwaf_object_free)
+        : obj_(obj), free_fn_(free_fn)
+    {}
 
-    ~owned_object() { ddwaf_object_free(&obj_); }
+    ~owned_object()
+    {
+        if (free_fn_ != nullptr) {
+            free_fn_(&obj_);
+        }
+    }
 
     owned_object(const owned_object &) = delete;
     owned_object &operator=(const owned_object &) = delete;
 
-    owned_object(owned_object &&other) noexcept : obj_(other.obj_)
+    owned_object(owned_object &&other) noexcept : obj_(other.obj_), free_fn_(other.free_fn_)
     {
         other.obj_ = detail::object{};
     }
@@ -87,6 +96,7 @@ public:
     owned_object &operator=(owned_object &&other) noexcept
     {
         obj_ = other.obj_;
+        free_fn_ = other.free_fn_;
         other.obj_ = detail::object{};
         return *this;
     }
@@ -179,6 +189,7 @@ public:
 
 protected:
     detail::object obj_{};
+    ddwaf_object_free_fn free_fn_{ddwaf_object_free};
 
     friend class base_object<borrowed_object>;
     friend class base_object<owned_object>;

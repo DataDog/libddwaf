@@ -39,7 +39,7 @@ TEST(TestRule, Match)
     core_rule::cache_type cache;
     {
         auto scope = store.get_eval_scope();
-        store.insert(root, object_store::attribute::none, nullptr);
+        store.insert(owned_object{root, nullptr}, object_store::attribute::none);
 
         auto event = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_TRUE(event.has_value());
@@ -65,7 +65,7 @@ TEST(TestRule, Match)
 
     {
         auto scope = store.get_eval_scope();
-        store.insert(root, object_store::attribute::none, nullptr);
+        store.insert(owned_object{root, nullptr}, object_store::attribute::none);
 
         auto event = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(event.has_value());
@@ -99,7 +99,7 @@ TEST(TestRule, EphemeralMatch)
     core_rule::cache_type cache;
     {
         auto scope = store.get_eval_scope();
-        store.insert(root, object_store::attribute::ephemeral, nullptr);
+        store.insert(owned_object{root, nullptr}, object_store::attribute::ephemeral);
 
         auto event = rule.match(store, cache, {}, {}, {}, deadline);
         ASSERT_TRUE(event.has_value());
@@ -108,7 +108,7 @@ TEST(TestRule, EphemeralMatch)
 
     {
         auto scope = store.get_eval_scope();
-        store.insert(root, object_store::attribute::ephemeral, nullptr);
+        store.insert(owned_object{root, nullptr}, object_store::attribute::ephemeral);
 
         auto event = rule.match(store, cache, {}, {}, {}, deadline);
         ASSERT_TRUE(event.has_value());
@@ -137,7 +137,7 @@ TEST(TestRule, NoMatch)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf::object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
 
@@ -174,7 +174,7 @@ TEST(TestRule, ValidateCachedMatch)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf::object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         auto event = rule.match(store, cache, {}, {}, {}, deadline);
@@ -188,7 +188,7 @@ TEST(TestRule, ValidateCachedMatch)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf::object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         auto event = rule.match(store, cache, {}, {}, {}, deadline);
@@ -247,7 +247,7 @@ TEST(TestRule, MatchWithoutCache)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
@@ -260,7 +260,7 @@ TEST(TestRule, MatchWithoutCache)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
@@ -313,7 +313,7 @@ TEST(TestRule, NoMatchWithoutCache)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf::object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
@@ -327,7 +327,7 @@ TEST(TestRule, NoMatchWithoutCache)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf::object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
@@ -364,7 +364,7 @@ TEST(TestRule, FullCachedMatchSecondRun)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf::object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         auto event = rule.match(store, cache, {}, {}, {}, deadline);
@@ -378,7 +378,7 @@ TEST(TestRule, FullCachedMatchSecondRun)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf::object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         auto event = rule.match(store, cache, {}, {}, {}, deadline);
@@ -403,7 +403,7 @@ TEST(TestRule, ExcludeObject)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf::object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
 

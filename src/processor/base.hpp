@@ -188,7 +188,7 @@ public:
             }
 
             if (evaluate_) {
-                store.insert(mapping.output.index, mapping.output.name, object, attr);
+                store.insert(mapping.output.index, mapping.output.name, owned_object{object}, attr);
             }
 
             if (output_ && derived.has_value()) {

@@ -29,7 +29,7 @@ TEST(TestExistsCondition, AddressAvailable)
     ddwaf_object_map_add(&root, "server.request.uri_raw", ddwaf_object_invalid(&tmp));
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -61,7 +61,7 @@ TEST(TestExistsCondition, KeyPathAvailable)
     ddwaf_object_map_add(&root, "server.request.uri_raw", &path);
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -79,7 +79,7 @@ TEST(TestExistsCondition, AddressNotAvaialble)
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_invalid(&tmp));
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -107,7 +107,7 @@ TEST(TestExistsCondition, KeyPathNotAvailable)
     ddwaf_object_map_add(&root, "server.request.uri_raw", &path);
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -139,7 +139,7 @@ TEST(TestExistsCondition, KeyPathAvailableButExcluded)
     ddwaf_object_map_add(&root, "server.request.uri_raw", &path);
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -168,7 +168,7 @@ TEST(TestExistsCondition, MultipleAddresses)
         ddwaf_object_map_add(&root, address.c_str(), ddwaf_object_invalid(&tmp));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -209,7 +209,7 @@ TEST(TestExistsCondition, MultipleAddressesAndKeyPaths)
         ddwaf_object_map_add(&root, address.c_str(), &tmp);
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -253,7 +253,7 @@ TEST(TestExistsNegatedCondition, KeyPathAvailable)
     ddwaf_object_map_add(&root, "server.request.uri_raw", &path);
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -281,7 +281,7 @@ TEST(TestExistsNegatedCondition, KeyPathNotAvailable)
     ddwaf_object_map_add(&root, "server.request.uri_raw", &path);
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -309,7 +309,7 @@ TEST(TestExistsNegatedCondition, KeyPathAvailableButExcluded)
     ddwaf_object_map_add(&root, "server.request.uri_raw", &path);
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;

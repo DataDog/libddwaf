@@ -29,7 +29,7 @@ TEST(TestShiDetectorArray, InvalidType)
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "whatever"));
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -49,7 +49,7 @@ TEST(TestShiDetectorArray, EmptyResource)
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "whatever"));
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -78,7 +78,7 @@ TEST(TestShiDetectorArray, InvalidTypeWithinArray)
         &root, "server.request.query", ddwaf_object_string(&tmp, "cat /etc/passwd"));
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -144,7 +144,7 @@ TEST(TestShiDetectorArray, NoMatchAndFalsePositives)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -195,7 +195,7 @@ TEST(TestShiDetectorArray, ExecutablesAndRedirections)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -256,7 +256,7 @@ TEST(TestShiDetectorArray, OverlappingInjections)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -302,7 +302,7 @@ TEST(TestShiDetectorArray, InjectionsWithinCommandSubstitution)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -353,7 +353,7 @@ TEST(TestShiDetectorArray, InjectionsWithinProcessSubstitution)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -410,7 +410,7 @@ TEST(TestShiDetectorArray, OffByOnePayloadsMatch)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;

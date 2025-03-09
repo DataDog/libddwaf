@@ -43,7 +43,7 @@ TEST(TestLFIDetector, MatchBasicUnix)
             &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -112,7 +112,7 @@ TEST(TestLFIDetector, MatchBasicWindows)
             &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -142,7 +142,7 @@ TEST(TestLFIDetector, MatchWithKeyPath)
         server.request.query: {array: [ {map: ../etc/passwd}]}})");
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -175,14 +175,14 @@ TEST(TestLFIDetector, PartiallyEphemeralMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.io.fs.file",
             ddwaf_object_string(&tmp, "/var/www/html/../../../etc/passwd"));
-        store.insert(root);
+        store.insert(owned_object{root});
     }
 
     {
         ddwaf_object_map(&root);
         ddwaf_object_map_add(
             &root, "server.request.query", ddwaf_object_string(&tmp, "../../../etc/passwd"));
-        store.insert(root, object_store::attribute::ephemeral);
+        store.insert(owned_object{root}, object_store::attribute::ephemeral);
     }
 
     ddwaf::timer deadline{2s};
@@ -217,7 +217,7 @@ TEST(TestLFIDetector, EphemeralMatch)
         &root, "server.io.fs.file", ddwaf_object_string(&tmp, "/var/www/html/../../../etc/passwd"));
     ddwaf_object_map_add(
         &root, "server.request.query", ddwaf_object_string(&tmp, "../../../etc/passwd"));
-    store.insert(root, object_store::attribute::ephemeral);
+    store.insert(owned_object{root}, object_store::attribute::ephemeral);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -261,7 +261,7 @@ TEST(TestLFIDetector, NoMatchUnix)
             &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -305,7 +305,7 @@ TEST(TestLFIDetector, NoMatchWindows)
             &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -336,7 +336,7 @@ TEST(TestLFIDetector, NoMatchExcludedPath)
     exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -366,7 +366,7 @@ TEST(TestLFIDetector, NoMatchExcludedAddress)
     exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -396,7 +396,7 @@ TEST(TestLFIDetector, Timeout)
     exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
@@ -421,7 +421,7 @@ TEST(TestLFIDetector, NoParams)
     exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
