@@ -58,7 +58,7 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
     for (unsigned i = 1; i < stack_.size(); i++) {
         auto [key, child] = parent.at(parent_index - 1);
         if (parent.type() == object_type::map) {
-            keys.emplace_back(key.as<std::string_view>());
+            keys.emplace_back(key.template as<std::string_view>());
         } else {
             keys.emplace_back(to_string<std::string>(parent_index - 1));
         }
