@@ -21,9 +21,9 @@
 
 #include "argument_retriever.hpp"
 #include "clock.hpp"
-#include "ddwaf.h"
 #include "exception.hpp"
 #include "log.hpp"
+#include "object.hpp"
 #include "object_store.hpp"
 #include "object_type.hpp"
 #include "object_view.hpp"
@@ -71,12 +71,11 @@ struct string_buffer {
         }
     }
 
-    ddwaf_object to_object()
+    owned_object to_object()
     {
         buffer[index] = '\0';
 
-        ddwaf_object object;
-        ddwaf_object_stringl_nc(&object, buffer, index);
+        auto object = owned_object::make_string_nocopy(buffer, index);
         buffer = nullptr;
         return object; // NOLINT(clang-analyzer-unix.Malloc)
     }
@@ -428,7 +427,7 @@ std::size_t generate_fragment_field(std::span<std::string, N> fields, T &generat
 }
 
 template <typename... Generators>
-ddwaf_object generate_fragment(std::string_view header, Generators... generators)
+owned_object generate_fragment(std::string_view header, Generators... generators)
 {
     constexpr std::size_t num_fields = generate_num_fields<Generators...>();
     std::array<std::string, num_fields> fields;
@@ -484,7 +483,7 @@ std::size_t generate_fragment_field_cached(
 }
 
 template <typename... Generators>
-ddwaf_object generate_fragment_cached(std::string_view header,
+owned_object generate_fragment_cached(std::string_view header,
     std::vector<std::optional<std::string>> &cache, Generators... generators)
 {
     constexpr std::size_t num_fields = generate_num_fields<Generators...>();
@@ -545,7 +544,7 @@ std::pair<header_type, unsigned> get_header_type_and_index(std::string_view head
 } // namespace
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval_impl(
+std::pair<owned_object, object_store::attribute> http_endpoint_fingerprint::eval_impl(
     const unary_argument<std::string_view> &method, const unary_argument<std::string_view> &uri_raw,
     const optional_argument<object_view> &query, const optional_argument<object_view> &body,
     processor_cache &cache, ddwaf::timer &deadline) const
@@ -561,8 +560,7 @@ std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval
         stripped_uri = stripped_uri.substr(0, query_or_frag_idx);
     }
 
-    ddwaf_object res;
-    ddwaf_object_invalid(&res);
+    owned_object res;
     try {
         res = generate_fragment_cached("http", cache.fingerprint.fragment_fields,
             string_field{method.value}, string_hash_field{stripped_uri},
@@ -571,16 +569,16 @@ std::pair<ddwaf_object, object_store::attribute> http_endpoint_fingerprint::eval
         DDWAF_WARN("Failed to generate http endpoint fingerprint: {}", e.what());
     }
 
-    return {res, object_store::attribute::none};
+    return {std::move(res), object_store::attribute::none};
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_impl(
+std::pair<owned_object, object_store::attribute> http_header_fingerprint::eval_impl(
     const unary_argument<object_view> &headers, processor_cache & /*cache*/,
     ddwaf::timer &deadline) const
 {
     if (headers.value.type() != object_type::map) {
-        return {{}, object_store::attribute::none};
+        return {owned_object{}, object_store::attribute::none};
     }
 
     std::string known_header_bitset;
@@ -610,8 +608,7 @@ std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_i
     std::sort(unknown_headers.begin(), unknown_headers.end());
 
     auto unknown_header_size = unknown_headers.size();
-    ddwaf_object res;
-    ddwaf_object_invalid(&res);
+    owned_object res;
     try {
         res = generate_fragment("hdr", string_field{known_header_bitset},
             string_hash_field{user_agent}, unsigned_field{unknown_header_size},
@@ -620,16 +617,16 @@ std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_i
         DDWAF_WARN("Failed to generate http header fingerprint: {}", e.what());
     }
 
-    return {res, object_store::attribute::none};
+    return {std::move(res), object_store::attribute::none};
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_impl(
+std::pair<owned_object, object_store::attribute> http_network_fingerprint::eval_impl(
     const unary_argument<object_view> &headers, processor_cache & /*cache*/,
     ddwaf::timer &deadline) const
 {
     if (headers.value.type() != object_type::map) {
-        return {{}, object_store::attribute::none};
+        return {owned_object{}, object_store::attribute::none};
     }
 
     std::string ip_origin_bitset;
@@ -667,19 +664,18 @@ std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_
         for (auto c : chosen_header_value) { ip_count += static_cast<unsigned int>(c == ','); }
     }
 
-    ddwaf_object res;
-    ddwaf_object_invalid(&res);
+    owned_object res;
     try {
         res = generate_fragment("net", unsigned_field{ip_count}, string_field{ip_origin_bitset});
     } catch (const std::out_of_range &e) {
         DDWAF_WARN("Failed to generate http network fingerprint: {}", e.what());
     }
 
-    return {res, object_store::attribute::none};
+    return {std::move(res), object_store::attribute::none};
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-std::pair<ddwaf_object, object_store::attribute> session_fingerprint::eval_impl(
+std::pair<owned_object, object_store::attribute> session_fingerprint::eval_impl(
     const optional_argument<object_view> &cookies,
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     const optional_argument<std::string_view> &session_id,
@@ -690,8 +686,7 @@ std::pair<ddwaf_object, object_store::attribute> session_fingerprint::eval_impl(
         throw ddwaf::timeout_exception();
     }
 
-    ddwaf_object res;
-    ddwaf_object_invalid(&res);
+    owned_object res;
     try {
         res = generate_fragment_cached("ssn", cache.fingerprint.fragment_fields,
             optional_generator<string_hash_field>{user_id},
@@ -701,7 +696,7 @@ std::pair<ddwaf_object, object_store::attribute> session_fingerprint::eval_impl(
         DDWAF_WARN("Failed to generate session fingerprint: {}", e.what());
     }
 
-    return {res, object_store::attribute::none};
+    return {std::move(res), object_store::attribute::none};
 }
 
 } // namespace ddwaf

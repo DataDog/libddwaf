@@ -14,6 +14,7 @@
 #include "common/gtest_utils.hpp"
 
 using ::testing::_;
+using ::testing::ByMove;
 using ::testing::Return;
 
 using namespace ddwaf;
@@ -32,7 +33,7 @@ public:
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
     {}
 
-    MOCK_METHOD((std::pair<ddwaf_object, object_store::attribute>), eval_impl,
+    MOCK_METHOD((std::pair<owned_object, object_store::attribute>), eval_impl,
         (const unary_argument<object_view> &unary,
             const optional_argument<std::string_view> &optional,
             const variadic_argument<uint64_t> &variadic, processor_cache &, ddwaf::timer &),
@@ -43,8 +44,7 @@ public:
 
 TEST(TestStructuredProcessor, AllParametersAvailable)
 {
-    ddwaf_object output;
-    ddwaf_object_string(&output, "output_string");
+    owned_object output = owned_object::make_string("output_string");
 
     ddwaf_object tmp;
 
@@ -69,17 +69,18 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _, _))
-        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
-            output, object_store::attribute::none}));
+        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
+            std::move(output), object_store::attribute::none})));
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
+    borrowed_object borrowed_map{output_map};
 
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<ddwaf_object> derived{output_map};
+    optional_ref<borrowed_object> derived{borrowed_map};
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
     proc.eval(store, derived, cache, {}, deadline);
@@ -94,8 +95,7 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
 
 TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
 {
-    ddwaf_object output;
-    ddwaf_object_string(&output, "output_string");
+    owned_object output = owned_object::make_string("output_string");
 
     ddwaf_object tmp;
 
@@ -118,17 +118,18 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _, _))
-        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
-            output, object_store::attribute::none}));
+        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
+            std::move(output), object_store::attribute::none})));
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
+    borrowed_object borrowed_map{output_map};
 
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<ddwaf_object> derived{output_map};
+    optional_ref<borrowed_object> derived{borrowed_map};
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
     proc.eval(store, derived, cache, {}, deadline);
@@ -169,10 +170,11 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
 
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
+    borrowed_object borrowed_map{output_map};
 
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<ddwaf_object> derived{output_map};
+    optional_ref<borrowed_object> derived{borrowed_map};
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
     proc.eval(store, derived, cache, {}, deadline);
@@ -208,10 +210,11 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
 
     ddwaf_object output_map;
     ddwaf_object_map(&output_map);
+    borrowed_object borrowed_map{output_map};
 
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<ddwaf_object> derived{output_map};
+    optional_ref<borrowed_object> derived{borrowed_map};
 
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
     proc.eval(store, derived, cache, {}, deadline);

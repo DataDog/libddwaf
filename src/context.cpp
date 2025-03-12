@@ -84,11 +84,11 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
 
     const event_serializer serializer(event_obfuscator_, actions_);
 
-    optional_ref<ddwaf_object> derived;
+    optional_ref<borrowed_object> derived;
+    borrowed_object derivatives;
     if (res.has_value()) {
-        ddwaf_result &output = *res;
-        ddwaf_object_map(&output.derivatives);
-        derived.emplace(output.derivatives);
+        derivatives = borrowed_object{&res->get().derivatives};
+        derived = derivatives;
     }
 
     std::vector<ddwaf::event> events;
@@ -128,7 +128,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     return code;
 }
 
-void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline)
+void context::eval_preprocessors(optional_ref<borrowed_object> &derived, ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating preprocessors");
 
@@ -148,7 +148,7 @@ void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::tim
     }
 }
 
-void context::eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline)
+void context::eval_postprocessors(optional_ref<borrowed_object> &derived, ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating postprocessors");
 

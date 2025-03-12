@@ -38,16 +38,14 @@ TEST(TestHttpEndpointFingerprint, Basic)
     auto [output, attr] =
         gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
             {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    std::string_view output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
 
     ddwaf_object_free(&query);
     ddwaf_object_free(&body);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestHttpEndpointFingerprint, EmptyQuery)
@@ -71,15 +69,14 @@ TEST(TestHttpEndpointFingerprint, EmptyQuery)
     auto [output, attr] =
         gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
             {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{output.stringValue, static_cast<std::size_t>(output.nbEntries)};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "http-get-0ede9e60--9798c0e4");
 
     ddwaf_object_free(&query);
     ddwaf_object_free(&body);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestHttpEndpointFingerprint, EmptyBody)
@@ -102,15 +99,14 @@ TEST(TestHttpEndpointFingerprint, EmptyBody)
     auto [output, attr] =
         gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
             {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{output.stringValue, static_cast<std::size_t>(output.nbEntries)};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-");
 
     ddwaf_object_free(&query);
     ddwaf_object_free(&body);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestHttpEndpointFingerprint, EmptyEverything)
@@ -127,15 +123,14 @@ TEST(TestHttpEndpointFingerprint, EmptyEverything)
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, ""}, {{}, {}, false, ""},
         {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{output.stringValue, static_cast<std::size_t>(output.nbEntries)};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "http----");
 
     ddwaf_object_free(&query);
     ddwaf_object_free(&body);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestHttpEndpointFingerprint, KeyConsistency)
@@ -162,15 +157,14 @@ TEST(TestHttpEndpointFingerprint, KeyConsistency)
     auto [output, attr] =
         gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
             {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{output.stringValue, static_cast<std::size_t>(output.nbEntries)};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "http-get-0ede9e60-ced401fa-ff07216e");
 
     ddwaf_object_free(&query);
     ddwaf_object_free(&body);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestHttpEndpointFingerprint, InvalidQueryType)
@@ -197,15 +191,14 @@ TEST(TestHttpEndpointFingerprint, InvalidQueryType)
     auto [output, attr] =
         gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
             {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{output.stringValue, static_cast<std::size_t>(output.nbEntries)};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "http-get-0ede9e60--9798c0e4");
 
     ddwaf_object_free(&query);
     ddwaf_object_free(&body);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestHttpEndpointFingerprint, InvalidBodyType)
@@ -232,15 +225,14 @@ TEST(TestHttpEndpointFingerprint, InvalidBodyType)
     auto [output, attr] =
         gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
             {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{output.stringValue, static_cast<std::size_t>(output.nbEntries)};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-");
 
     ddwaf_object_free(&query);
     ddwaf_object_free(&body);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestHttpEndpointFingerprint, InvalidQueryAndBodyType)
@@ -267,15 +259,14 @@ TEST(TestHttpEndpointFingerprint, InvalidQueryAndBodyType)
     auto [output, attr] =
         gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
             {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{output.stringValue, static_cast<std::size_t>(output.nbEntries)};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "http-get-0ede9e60--");
 
     ddwaf_object_free(&query);
     ddwaf_object_free(&body);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestHttpEndpointFingerprint, UriRawConsistency)
@@ -302,13 +293,11 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
         auto [output, attr] =
             gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
                 {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
-        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
-        std::string_view output_sv{output.stringValue,
-            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        auto output_sv = object_view{output}.as<std::string_view>();
         EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
-        ddwaf_object_free(&output);
     }
 
     {
@@ -317,13 +306,11 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
         auto [output, attr] =
             gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever#fragment"},
                 {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
-        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
-        std::string_view output_sv{output.stringValue,
-            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        auto output_sv = object_view{output}.as<std::string_view>();
         EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
-        ddwaf_object_free(&output);
     }
 
     {
@@ -332,13 +319,11 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
         auto [output, attr] = gen.eval_impl({{}, {}, false, "GET"},
             {{}, {}, false, "/path/to/whatever?param=hello#fragment"}, {{{}, {}, false, &query}},
             {{{}, {}, false, &body}}, cache, deadline);
-        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
-        std::string_view output_sv{output.stringValue,
-            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        auto output_sv = object_view{output}.as<std::string_view>();
         EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
-        ddwaf_object_free(&output);
     }
 
     {
@@ -347,13 +332,11 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
         auto [output, attr] =
             gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever"},
                 {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
-        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
-        std::string_view output_sv{output.stringValue,
-            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        auto output_sv = object_view{output}.as<std::string_view>();
         EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
-        ddwaf_object_free(&output);
     }
 
     {
@@ -362,13 +345,11 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
         auto [output, attr] =
             gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/PaTh/To/WhAtEVER"},
                 {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
-        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
-        std::string_view output_sv{output.stringValue,
-            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        auto output_sv = object_view{output}.as<std::string_view>();
         EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
-        ddwaf_object_free(&output);
     }
 
     ddwaf_object_free(&query);
@@ -393,14 +374,11 @@ TEST(TestHttpEndpointFingerprint, Regeneration)
         auto [output, attr] =
             gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
                 {{{}, {}, false, &query}}, std::nullopt, cache, deadline);
-        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
-        std::string_view output_sv{output.stringValue,
-            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        auto output_sv = object_view{output}.as<std::string_view>();
         EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-");
-
-        ddwaf_object_free(&output);
     }
 
     {
@@ -415,14 +393,12 @@ TEST(TestHttpEndpointFingerprint, Regeneration)
         auto [output, attr] =
             gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
                 {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
-        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
-        std::string_view output_sv{output.stringValue,
-            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        auto output_sv = object_view{output}.as<std::string_view>();
         EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
 
-        ddwaf_object_free(&output);
         ddwaf_object_free(&body);
     }
 
@@ -451,15 +427,13 @@ TEST(TestHttpHeaderFingerprint, AllKnownHeaders)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-1111111111--0-");
 
     ddwaf_object_free(&headers);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestHttpHeaderFingerprint, NoHeaders)
@@ -472,15 +446,13 @@ TEST(TestHttpHeaderFingerprint, NoHeaders)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-0000000000--0-");
 
     ddwaf_object_free(&headers);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestHttpHeaderFingerprint, SomeKnownHeaders)
@@ -501,15 +473,13 @@ TEST(TestHttpHeaderFingerprint, SomeKnownHeaders)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-1010101011--0-");
 
     ddwaf_object_free(&headers);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestHttpHeaderFingerprint, UserAgent)
@@ -535,15 +505,13 @@ TEST(TestHttpHeaderFingerprint, UserAgent)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-1111111111-a441b15f-0-");
 
     ddwaf_object_free(&headers);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestHttpHeaderFingerprint, ExcludedUnknownHeaders)
@@ -582,15 +550,13 @@ TEST(TestHttpHeaderFingerprint, ExcludedUnknownHeaders)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-1111111111-a441b15f-0-");
 
     ddwaf_object_free(&headers);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestHttpHeaderFingerprint, UnknownHeaders)
@@ -633,15 +599,13 @@ TEST(TestHttpHeaderFingerprint, UnknownHeaders)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-1111111111-a441b15f-4-47280082");
 
     ddwaf_object_free(&headers);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestHttpHeaderFingerprint, InvalidHeaderType)
@@ -654,7 +618,7 @@ TEST(TestHttpHeaderFingerprint, InvalidHeaderType)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_INVALID);
+    EXPECT_EQ(output.type(), object_type::invalid);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     ddwaf_object_free(&headers);
@@ -682,15 +646,13 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeaders)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "net-1-1111111111");
 
     ddwaf_object_free(&headers);
-    ddwaf_object_free(&output);
 }
 TEST(TestHttpNetworkFingerprint, NoHeaders)
 {
@@ -702,15 +664,13 @@ TEST(TestHttpNetworkFingerprint, NoHeaders)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "net-0-0000000000");
 
     ddwaf_object_free(&headers);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPs)
@@ -736,15 +696,13 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPs)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "net-3-1111111111");
 
     ddwaf_object_free(&headers);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestHttpNetworkFingerprint, AllXFFHeadersRandomChosenHeader)
@@ -770,15 +728,13 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersRandomChosenHeader)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "net-3-1111111111");
 
     ddwaf_object_free(&headers);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestHttpNetworkFingerprint, HeaderPrecedence)
@@ -810,15 +766,13 @@ TEST(TestHttpNetworkFingerprint, HeaderPrecedence)
         ddwaf::timer deadline{2s};
         processor_cache cache;
         auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
-        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
-        std::string_view output_sv{output.stringValue,
-            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        auto output_sv = object_view{output}.as<std::string_view>();
         EXPECT_STRV(output_sv, expected.c_str());
 
         ddwaf_object_free(&headers);
-        ddwaf_object_free(&output);
     };
 
     match_frag(get_headers(0), "net-1-1111111111");
@@ -843,7 +797,7 @@ TEST(TestNetworkHeaderFingerprint, InvalidHeaderType)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_INVALID);
+    EXPECT_EQ(output.type(), object_type::invalid);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     ddwaf_object_free(&headers);
@@ -861,15 +815,13 @@ TEST(TestSessionFingerprint, UserOnly)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, &cookies}}, {{{}, {}, false, {}}},
         {{{}, {}, false, "admin"}}, cache, deadline);
 
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5---");
 
     ddwaf_object_free(&cookies);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestSessionFingerprint, SessionOnly)
@@ -884,15 +836,13 @@ TEST(TestSessionFingerprint, SessionOnly)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, &cookies}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, {}}}, cache, deadline);
 
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn----269500d3");
 
     ddwaf_object_free(&cookies);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestSessionFingerprint, CookiesOnly)
@@ -916,15 +866,13 @@ TEST(TestSessionFingerprint, CookiesOnly)
     auto [output, attr] = gen.eval_impl(
         {{{}, {}, false, &cookies}}, {{{}, {}, false, {}}}, {{{}, {}, false, {}}}, cache, deadline);
 
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn--df6143bc-60ba1602-");
 
     ddwaf_object_free(&cookies);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestSessionFingerprint, UserCookieAndSession)
@@ -948,15 +896,13 @@ TEST(TestSessionFingerprint, UserCookieAndSession)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, &cookies}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-df6143bc-60ba1602-269500d3");
 
     ddwaf_object_free(&cookies);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestSessionFingerprint, CookieKeysNormalization)
@@ -980,15 +926,13 @@ TEST(TestSessionFingerprint, CookieKeysNormalization)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, &cookies}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-424e7e09-60ba1602-269500d3");
 
     ddwaf_object_free(&cookies);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestSessionFingerprint, CookieValuesNormalization)
@@ -1012,15 +956,13 @@ TEST(TestSessionFingerprint, CookieValuesNormalization)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, &cookies}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-df6143bc-64f82cf7-269500d3");
 
     ddwaf_object_free(&cookies);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestSessionFingerprint, CookieEmptyValues)
@@ -1044,15 +986,13 @@ TEST(TestSessionFingerprint, CookieEmptyValues)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, &cookies}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-df6143bc-d3648ef2-269500d3");
 
     ddwaf_object_free(&cookies);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestSessionFingerprint, CookieEmptyKeys)
@@ -1076,15 +1016,13 @@ TEST(TestSessionFingerprint, CookieEmptyKeys)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, &cookies}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-d3648ef2-f32e5c3e-269500d3");
 
     ddwaf_object_free(&cookies);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestSessionFingerprint, EmptyEverything)
@@ -1099,15 +1037,13 @@ TEST(TestSessionFingerprint, EmptyEverything)
     auto [output, attr] = gen.eval_impl(
         {{{}, {}, false, &cookies}}, {{{}, {}, false, {}}}, {{{}, {}, false, {}}}, cache, deadline);
 
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv{
-        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn----");
 
     ddwaf_object_free(&cookies);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestSessionFingerprint, Regeneration)
@@ -1119,13 +1055,11 @@ TEST(TestSessionFingerprint, Regeneration)
         ddwaf::timer deadline{2s};
         auto [output, attr] =
             gen.eval_impl(std::nullopt, std::nullopt, std::nullopt, cache, deadline);
-        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
-        std::string_view output_sv{output.stringValue,
-            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        auto output_sv = object_view{output}.as<std::string_view>();
         EXPECT_STRV(output_sv, "ssn----");
-        ddwaf_object_free(&output);
     }
 
     {
@@ -1146,13 +1080,11 @@ TEST(TestSessionFingerprint, Regeneration)
 
         auto [output, attr] =
             gen.eval_impl({{{}, {}, false, &cookies}}, std::nullopt, std::nullopt, cache, deadline);
-        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
-        std::string_view output_sv{output.stringValue,
-            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        auto output_sv = object_view{output}.as<std::string_view>();
         EXPECT_STRV(output_sv, "ssn--df6143bc-64f82cf7-");
-        ddwaf_object_free(&output);
 
         ddwaf_object_free(&cookies);
     }
@@ -1162,13 +1094,11 @@ TEST(TestSessionFingerprint, Regeneration)
 
         auto [output, attr] = gen.eval_impl(
             std::nullopt, {{{}, {}, false, "ansd0182u2n"}}, std::nullopt, cache, deadline);
-        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
-        std::string_view output_sv{output.stringValue,
-            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        auto output_sv = object_view{output}.as<std::string_view>();
         EXPECT_STRV(output_sv, "ssn--df6143bc-64f82cf7-269500d3");
-        ddwaf_object_free(&output);
     }
 
     {
@@ -1176,13 +1106,11 @@ TEST(TestSessionFingerprint, Regeneration)
 
         auto [output, attr] =
             gen.eval_impl(std::nullopt, std::nullopt, {{{}, {}, false, "user"}}, cache, deadline);
-        EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+        EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
-        std::string_view output_sv{output.stringValue,
-            static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+        auto output_sv = object_view{output}.as<std::string_view>();
         EXPECT_STRV(output_sv, "ssn-04f8996d-df6143bc-64f82cf7-269500d3");
-        ddwaf_object_free(&output);
     }
 }
 

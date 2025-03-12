@@ -52,7 +52,7 @@ struct processor_cache {
 
 template <typename Class, typename... Args>
 function_traits<Class::param_names.size(), Class, Args...> make_eval_traits(
-    std::pair<ddwaf_object, object_store::attribute> (Class::*)(Args...) const);
+    std::pair<owned_object, object_store::attribute> (Class::*)(Args...) const);
 
 template <typename... Ts> constexpr std::size_t count_optionals()
 {
@@ -79,7 +79,7 @@ public:
     base_processor &operator=(base_processor &&rhs) noexcept = default;
     virtual ~base_processor() = default;
 
-    virtual void eval(object_store &store, optional_ref<ddwaf_object> &derived,
+    virtual void eval(object_store &store, optional_ref<borrowed_object> &derived,
         processor_cache &cache, const object_limits &limits, ddwaf::timer &deadline) const = 0;
 
     virtual void get_addresses(std::unordered_map<target_index, std::string> &addresses) const = 0;
@@ -102,7 +102,7 @@ public:
     structured_processor &operator=(structured_processor &&rhs) noexcept = default;
     ~structured_processor() override = default;
 
-    void eval(object_store &store, optional_ref<ddwaf_object> &derived, processor_cache &cache,
+    void eval(object_store &store, optional_ref<borrowed_object> &derived, processor_cache &cache,
         const object_limits &limits, ddwaf::timer &deadline) const override
     {
         // No result structure, but this processor only produces derived objects
@@ -183,22 +183,23 @@ public:
                 }
             }
 
-            if (object.type == DDWAF_OBJ_INVALID) {
+            if (object.is_invalid()) {
                 continue;
             }
 
+            bool should_output = output_ && derived.has_value();
             if (evaluate_) {
-                store.insert(mapping.output.index, mapping.output.name, owned_object{object}, attr);
+                if (!should_output) {
+                    store.insert(
+                        mapping.output.index, mapping.output.name, std::move(object), attr);
+                } else {
+                    store.insert(mapping.output.index, mapping.output.name, clone(object), attr);
+                }
             }
 
-            if (output_ && derived.has_value()) {
-                ddwaf_object &output = derived.value();
-                if (evaluate_) {
-                    auto copy = ddwaf::object::clone(&object);
-                    ddwaf_object_map_add(&output, mapping.output.name.c_str(), &copy);
-                } else {
-                    ddwaf_object_map_add(&output, mapping.output.name.c_str(), &object);
-                }
+            if (should_output) {
+                borrowed_object &output = derived.value();
+                output.emplace(mapping.output.name, std::move(object));
             }
         }
     }

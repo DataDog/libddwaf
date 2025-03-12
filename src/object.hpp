@@ -56,6 +56,9 @@ public:
             throw std::invalid_argument("null borrowed object");
         }
     }
+    explicit borrowed_object(detail::object &obj) : obj_(&obj) {}
+
+    explicit borrowed_object(owned_object &obj);
 
     [[nodiscard]] detail::object &ref() { return *obj_; }
     [[nodiscard]] const detail::object &ref() const { return *obj_; }
@@ -209,6 +212,8 @@ protected:
     friend class base_object<owned_object>;
     friend class object_view;
 };
+
+inline borrowed_object::borrowed_object(owned_object &obj) : obj_(obj.ptr()) {}
 
 template <typename Derived> [[nodiscard]] borrowed_object base_object<Derived>::at(std::size_t idx)
 {

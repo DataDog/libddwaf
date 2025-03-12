@@ -19,8 +19,8 @@
 
 #include "argument_retriever.hpp"
 #include "clock.hpp"
-#include "ddwaf.h"
 #include "exception.hpp"
+#include "object.hpp"
 #include "object_store.hpp"
 #include "object_type.hpp"
 #include "object_view.hpp"
@@ -178,94 +178,72 @@ bool node_equal::operator()(const base_node &lhs, const base_node &rhs) const
 }
 
 struct node_serialize {
-    ddwaf_object operator()(const std::monostate & /*node*/) const;
-    ddwaf_object operator()(const node_scalar &node) const;
-    ddwaf_object operator()(const node_array_ptr &node) const;
-    ddwaf_object operator()(const node_record_ptr &node) const;
+    owned_object operator()(const std::monostate & /*node*/) const;
+    owned_object operator()(const node_scalar &node) const;
+    owned_object operator()(const node_array_ptr &node) const;
+    owned_object operator()(const node_record_ptr &node) const;
 };
 
-ddwaf_object node_serialize::operator()(const std::monostate & /*node*/) const
+owned_object node_serialize::operator()(const std::monostate & /*node*/) const
 {
     static constexpr unsigned unknown_type = 0;
 
-    ddwaf_object tmp;
-    ddwaf_object array;
-    ddwaf_object_array(&array);
-    ddwaf_object_array_add(&array, ddwaf_object_unsigned(&tmp, unknown_type));
+    auto array = owned_object::make_array();
+    array.emplace_back(owned_object::make_unsigned(unknown_type));
+
     return array;
 }
 
-ddwaf_object node_serialize::operator()(const node_scalar &node) const
+owned_object node_serialize::operator()(const node_scalar &node) const
 {
-    ddwaf_object tmp;
-    ddwaf_object array;
-    ddwaf_object_array(&array);
-
-    ddwaf_object_array_add(&array,
-        ddwaf_object_unsigned(&tmp, static_cast<std::underlying_type_t<scalar_type>>(node.type)));
+    auto array = owned_object::make_array();
+    array.emplace_back(
+        owned_object::make_unsigned(static_cast<std::underlying_type_t<scalar_type>>(node.type)));
 
     if (!node.tags.empty()) {
-        ddwaf_object meta;
-        ddwaf_object_map(&meta);
-
-        for (auto [key, value] : node.tags) {
-            ddwaf_object_map_addl(&meta, key.data(), key.size(),
-                ddwaf_object_stringl(&tmp, value.data(), value.size()));
+        auto meta = array.emplace_back(owned_object::make_map());
+        for (const auto &[key, value] : node.tags) {
+            meta.emplace(key, owned_object::make_string(value));
         }
-
-        ddwaf_object_array_add(&array, &meta);
     }
 
     return array;
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-ddwaf_object node_serialize::operator()(const node_array_ptr &node) const
+owned_object node_serialize::operator()(const node_array_ptr &node) const
 {
-    ddwaf_object tmp;
-    ddwaf_object array;
-    ddwaf_object_array(&array);
-
-    ddwaf_object types;
-    ddwaf_object_array(&types);
+    auto array = owned_object::make_array();
+    auto types = array.emplace_back(owned_object::make_array());
 
     for (const auto &child : node->children) {
         auto res = std::visit(node_serialize{}, child);
-        ddwaf_object_array_add(&types, &res);
+        types.emplace_back(std::move(res));
     }
-    ddwaf_object_array_add(&array, &types);
 
-    ddwaf_object meta;
-    ddwaf_object_map(&meta);
-    ddwaf_object_map_add(&meta, "len", ddwaf_object_unsigned(&tmp, node->length));
+    auto meta = array.emplace_back(owned_object::make_map());
+    meta.emplace("len", owned_object::make_unsigned(node->length));
     if (node->truncated) {
-        ddwaf_object_map_add(&meta, "truncated", ddwaf_object_bool(&tmp, true));
+        meta.emplace("truncated", owned_object::make_boolean(true));
     }
-    ddwaf_object_array_add(&array, &meta);
 
     return array;
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-ddwaf_object node_serialize::operator()(const node_record_ptr &node) const
+owned_object node_serialize::operator()(const node_record_ptr &node) const
 {
-    ddwaf_object tmp;
-    ddwaf_object array;
-    ddwaf_object_array(&array);
+    owned_object array = owned_object::make_array();
 
-    ddwaf_object map;
-    ddwaf_object_map(&map);
+    auto map = array.emplace_back(owned_object::make_map());
     for (const auto &[key, child] : node->children) {
         auto res = std::visit(node_serialize{}, child);
-        ddwaf_object_map_addl(&map, key.data(), key.size(), &res);
+        map.emplace(key, std::move(res));
     }
-    ddwaf_object_array_add(&array, &map);
 
     if (node->truncated) {
-        ddwaf_object meta;
-        ddwaf_object_map(&meta);
-        ddwaf_object_map_add(&meta, "truncated", ddwaf_object_bool(&tmp, true));
-        ddwaf_object_array_add(&array, &meta);
+        auto meta = array.emplace_back(owned_object::make_map());
+        meta.emplace("truncated", owned_object::make_boolean(true));
     }
 
     return array;
@@ -273,7 +251,7 @@ ddwaf_object node_serialize::operator()(const node_record_ptr &node) const
 
 namespace {
 // NOLINTNEXTLINE(misc-no-recursion)
-ddwaf_object serialize(const base_node &node) { return std::visit(node_serialize{}, node); }
+owned_object serialize(const base_node &node) { return std::visit(node_serialize{}, node); }
 
 // NOLINTNEXTLINE(misc-no-recursion)
 base_node generate_helper(object_view object, std::string_view key,
@@ -342,7 +320,7 @@ base_node generate_helper(object_view object, std::string_view key,
     return {};
 }
 
-ddwaf_object generate(
+owned_object generate(
     object_view object, const std::set<const scanner *> &scanners, ddwaf::timer &deadline)
 {
     return serialize(
@@ -353,7 +331,7 @@ ddwaf_object generate(
 
 } // namespace schema
 
-std::pair<ddwaf_object, object_store::attribute> extract_schema::eval_impl(
+std::pair<owned_object, object_store::attribute> extract_schema::eval_impl(
     const unary_argument<object_view> &input, processor_cache & /*cache*/,
     ddwaf::timer &deadline) const
 {

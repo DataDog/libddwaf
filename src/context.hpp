@@ -55,8 +55,8 @@ public:
     DDWAF_RET_CODE run(optional_ref<ddwaf_object>, optional_ref<ddwaf_object>,
         optional_ref<ddwaf_result>, uint64_t);
 
-    void eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline);
-    void eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline);
+    void eval_preprocessors(optional_ref<borrowed_object> &derived, ddwaf::timer &deadline);
+    void eval_postprocessors(optional_ref<borrowed_object> &derived, ddwaf::timer &deadline);
     // This function below returns a reference to an internal object,
     // however using them this way helps with testing
     exclusion::context_policy &eval_filters(ddwaf::timer &deadline);

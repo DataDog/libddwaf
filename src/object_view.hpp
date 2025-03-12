@@ -9,6 +9,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstring>
+#include <list>
 #include <string_view>
 #include <type_traits>
 
@@ -439,6 +440,63 @@ protected:
 };
 
 static_assert(sizeof(object_view) == sizeof(void *));
+
+inline owned_object clone(object_view input)
+{
+    auto clone_helper = [](object_view source) -> owned_object {
+        switch (source.type()) {
+        case object_type::boolean:
+            return owned_object::make_boolean(source.as<bool>());
+        case object_type::string:
+            return owned_object::make_string(source.as<std::string_view>());
+        case object_type::int64:
+            return owned_object::make_signed(source.as<int64_t>());
+        case object_type::uint64:
+            return owned_object::make_unsigned(source.as<uint64_t>());
+        case object_type::float64:
+            return owned_object::make_float(source.as<double>());
+        case object_type::null:
+            return owned_object::make_null();
+        case object_type::map:
+            return owned_object::make_map();
+        case object_type::array:
+            return owned_object::make_array();
+        case object_type::invalid:
+            break;
+        }
+        return {};
+    };
+
+    std::list<std::pair<object_view, borrowed_object>> queue;
+
+    auto copy = clone_helper(input);
+    if (input.is_container()) {
+        queue.emplace_front(input, copy);
+    }
+
+    while (!queue.empty()) {
+        auto &[source, destination] = queue.front();
+        for (uint64_t i = 0; i < source.size(); ++i) {
+            const auto &[key, value] = source.at(i);
+            if (source.type() == object_type::map) {
+                destination.emplace(key.as<std::string_view>(), clone_helper(value));
+            } else if (source.type() == object_type::array) {
+                destination.emplace_back(clone_helper(value));
+            }
+        }
+
+        for (uint64_t i = 0; i < source.size(); ++i) {
+            auto child = source.at_value(i);
+            if (child.is_container()) {
+                queue.emplace_back(child, destination.at(i));
+            }
+        }
+
+        queue.pop_front();
+    }
+
+    return copy;
+}
 
 } // namespace ddwaf
 
