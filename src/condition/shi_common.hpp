@@ -35,7 +35,7 @@ struct shi_result {
 struct shell_argument_array {
     static constexpr std::size_t npos = std::string_view::npos;
 
-    explicit shell_argument_array(const ddwaf_object &root);
+    explicit shell_argument_array(object_view root);
     std::size_t find(std::string_view str, std::size_t start = 0);
     [[nodiscard]] bool empty() const { return resource.empty(); }
 
@@ -43,13 +43,13 @@ struct shell_argument_array {
     std::string resource;
 };
 
-template <typename ResourceType, typename IteratorType = object::kv_iterator>
+template <typename ResourceType, typename IteratorType = kv_iterator>
 std::optional<shi_result> find_shi_from_params(const ResourceType &resource,
-    std::vector<shell_token> &resource_tokens, const ddwaf_object &params,
+    std::vector<shell_token> &resource_tokens, object_view params,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
-    match_iterator<2, IteratorType, ResourceType> it(resource, &params, objects_excluded, limits);
+    match_iterator<2, IteratorType, ResourceType> it(resource, params, objects_excluded, limits);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();

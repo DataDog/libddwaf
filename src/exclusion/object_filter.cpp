@@ -3,30 +3,29 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-#include <cstddef>
 #include <stack>
 #include <string_view>
 #include <tuple>
 #include <unordered_set>
 
 #include "clock.hpp"
-#include "ddwaf.h"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "exclusion/object_filter.hpp"
 #include "log.hpp"
 #include "object_store.hpp"
+#include "object_view.hpp"
 #include "utils.hpp"
 
 namespace ddwaf::exclusion {
 
 namespace {
 // Add requires
-void iterate_object(const path_trie::traverser &filter, const ddwaf_object *object,
-    std::unordered_set<const ddwaf_object *> &objects_to_exclude, const object_limits &limits)
+void iterate_object(const path_trie::traverser &filter, object_view object,
+    std::unordered_set<object_view> &objects_to_exclude, const object_limits &limits)
 {
     using state = path_trie::traverser::state;
-    if (object == nullptr) {
+    if (!object.has_value()) {
         return;
     }
 
@@ -41,36 +40,33 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
         }
     }
 
-    if (!object::is_container(object)) {
+    if (!object.is_container()) {
         return;
     }
 
-    std::stack<std::tuple<const ddwaf_object *, unsigned, path_trie::traverser>> path_stack;
+    std::stack<std::tuple<object_view, unsigned, path_trie::traverser>> path_stack;
     path_stack.emplace(object, 0, filter);
 
     while (!path_stack.empty()) {
         auto &[current_object, current_index, current_trie] = path_stack.top();
-        if (!object::is_container(current_object)) {
+        if (!object.is_container()) {
             DDWAF_DEBUG("This is a bug, the object in the stack is not a container");
             path_stack.pop();
             continue;
         }
 
         bool found_node{false};
-        auto size = current_object->nbEntries > limits.max_container_size
-                        ? limits.max_container_size
-                        : current_object->nbEntries;
+        auto size = current_object.size() > limits.max_container_size ? limits.max_container_size
+                                                                      : current_object.size();
         for (; current_index < size; ++current_index) {
-            ddwaf_object *child = &current_object->array[current_index];
+            auto [key, child] = current_object.at(current_index);
 
             path_trie::traverser child_traverser{nullptr};
             // Only consider children with keys
-            if (child->parameterName == nullptr || child->parameterNameLength == 0) {
+            if (key.empty()) {
                 child_traverser = current_trie.descend_wildcard();
             } else {
-                const std::string_view key{
-                    child->parameterName, static_cast<std::size_t>(child->parameterNameLength)};
-                child_traverser = current_trie.descend(key);
+                child_traverser = current_trie.descend(key.as<std::string_view>());
             }
             const auto filter_state = child_traverser.get_state();
 
@@ -82,7 +78,7 @@ void iterate_object(const path_trie::traverser &filter, const ddwaf_object *obje
                 continue;
             }
 
-            if (object::is_container(child) && path_stack.size() < limits.max_container_depth) {
+            if (child.is_container() && path_stack.size() < limits.max_container_depth) {
                 ++current_index;
                 found_node = true;
                 path_stack.emplace(child, 0, child_traverser);
@@ -111,7 +107,7 @@ object_set object_filter::match(const object_store &store, cache_type &cache, bo
         }
 
         auto [object, attr] = store.get_target(target);
-        if (object == nullptr || cache.contains(object)) {
+        if (!object.has_value() || cache.contains(object)) {
             continue;
         }
 

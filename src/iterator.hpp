@@ -14,10 +14,12 @@
 
 #include "context_allocator.hpp"
 #include "exclusion/common.hpp"
+#include "object_type.hpp"
+#include "object_view.hpp"
 #include "utils.hpp"
 
 // Eventually object will be a class rather than a namespace
-namespace ddwaf::object {
+namespace ddwaf {
 
 template <typename T> class iterator_base {
 public:
@@ -33,10 +35,9 @@ public:
 
     bool operator++();
 
-    [[nodiscard]] explicit operator bool() const { return current_ != nullptr; }
+    [[nodiscard]] explicit operator bool() const { return current_.second.has_value(); }
     [[nodiscard]] size_t depth() { return stack_.size() + path_.size(); }
     [[nodiscard]] std::vector<std::string> get_current_path() const;
-    [[nodiscard]] const ddwaf_object *get_underlying_object() { return current_; }
 
 protected:
     static constexpr std::size_t initial_stack_size = 32;
@@ -47,15 +48,16 @@ protected:
     // but only the beginning of the key path, we keep this here so that we
     // can later provide the accurate full key path.
     std::vector<std::string> path_;
-    std::vector<std::pair<const ddwaf_object *, std::size_t>> stack_;
-    const ddwaf_object *current_{nullptr};
+
+    std::vector<std::pair<object_view, std::size_t>> stack_;
+    std::pair<object_key, object_view> current_;
 
     const exclusion::object_set_ref &excluded_;
 };
 
 class value_iterator : public iterator_base<value_iterator> {
 public:
-    explicit value_iterator(const ddwaf_object *obj, const std::span<const std::string> &path,
+    explicit value_iterator(object_view obj, std::span<const std::string> path,
         const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
 
     ~value_iterator() = default;
@@ -66,17 +68,16 @@ public:
     value_iterator &operator=(const value_iterator &) = delete;
     value_iterator &operator=(value_iterator &&) = delete;
 
-    [[nodiscard]] const ddwaf_object *operator*() { return current_; }
+    [[nodiscard]] object_view operator*() { return current_.second; }
 
-    [[nodiscard]] DDWAF_OBJ_TYPE type() const
+    [[nodiscard]] object_type type() const
     {
-        return current_ != nullptr ? current_->type : DDWAF_OBJ_INVALID;
+        return current_.second.has_value() ? current_.second.type() : object_type::invalid;
     }
 
 protected:
-    void initialise_cursor(const ddwaf_object *obj, const std::span<const std::string> &path);
-    void initialise_cursor_with_path(
-        const ddwaf_object *obj, const std::span<const std::string> &path);
+    void initialise_cursor(object_view obj, std::span<const std::string> path);
+    void initialise_cursor_with_path(object_view obj, std::span<const std::string> path);
 
     void set_cursor_to_next_object();
 
@@ -85,7 +86,7 @@ protected:
 
 class key_iterator : public iterator_base<key_iterator> {
 public:
-    explicit key_iterator(const ddwaf_object *obj, const std::span<const std::string> &path,
+    explicit key_iterator(object_view obj, std::span<const std::string> path,
         const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
 
     ~key_iterator() = default;
@@ -96,25 +97,22 @@ public:
     key_iterator &operator=(const key_iterator &) = delete;
     key_iterator &operator=(key_iterator &&) = delete;
 
-    [[nodiscard]] DDWAF_OBJ_TYPE type() const
+    [[nodiscard]] object_type type() const
     {
-        if (current_ != nullptr && current_->parameterName != nullptr) {
-            return DDWAF_OBJ_STRING;
-        }
-        return DDWAF_OBJ_INVALID;
+        return !current_.first.empty() ? object_type::string : object_type::invalid;
     }
 
-    [[nodiscard]] const ddwaf_object *operator*()
+    [[nodiscard]] object_view operator*()
     {
-        return current_ == nullptr ? nullptr
-                                   : ddwaf_object_stringl_nc(&current_key_, current_->parameterName,
-                                         current_->parameterNameLength);
+        if (current_.first.empty()) {
+            return {};
+        }
+        return ddwaf_object_stringl_nc(&current_key_, current_.first.data(), current_.first.size());
     }
 
 protected:
-    void initialise_cursor(const ddwaf_object *obj, const std::span<const std::string> &path);
-    void initialise_cursor_with_path(
-        const ddwaf_object *obj, const std::span<const std::string> &path);
+    void initialise_cursor(object_view obj, std::span<const std::string> path);
+    void initialise_cursor_with_path(object_view obj, std::span<const std::string> path);
 
     void set_cursor_to_next_object();
 
@@ -125,7 +123,7 @@ protected:
 
 class kv_iterator : public iterator_base<kv_iterator> {
 public:
-    explicit kv_iterator(const ddwaf_object *obj, const std::span<const std::string> &path,
+    explicit kv_iterator(object_view obj, std::span<const std::string> path,
         const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
 
     ~kv_iterator() = default;
@@ -136,39 +134,38 @@ public:
     kv_iterator &operator=(const kv_iterator &) = delete;
     kv_iterator &operator=(kv_iterator &&) = delete;
 
-    [[nodiscard]] DDWAF_OBJ_TYPE type() const
+    [[nodiscard]] object_type type() const
     {
-        if (current_ != nullptr) {
+        if (current_.second.has_value()) {
             if (scalar_value_) {
-                return current_->type;
+                return current_.second.type();
             }
 
-            if (current_->parameterName != nullptr) {
-                return DDWAF_OBJ_STRING;
+            if (!current_.first.empty()) {
+                return object_type::string;
             }
         }
-        return DDWAF_OBJ_INVALID;
+        return object_type::invalid;
     }
 
-    [[nodiscard]] const ddwaf_object *operator*()
+    [[nodiscard]] object_view operator*()
     {
-        if (current_ != nullptr) {
+        if (current_.second.has_value()) {
             if (scalar_value_) {
-                return current_;
+                return current_.second;
             }
 
-            if (current_->parameterName != nullptr) {
+            if (!current_.first.empty()) {
                 return ddwaf_object_stringl_nc(
-                    &current_key_, current_->parameterName, current_->parameterNameLength);
+                    &current_key_, current_.first.data(), current_.first.size());
             }
         }
-        return nullptr;
+        return {};
     }
 
 protected:
-    void initialise_cursor(const ddwaf_object *obj, const std::span<const std::string> &path);
-    void initialise_cursor_with_path(
-        const ddwaf_object *obj, const std::span<const std::string> &path);
+    void initialise_cursor(object_view obj, std::span<const std::string> path);
+    void initialise_cursor_with_path(object_view obj, std::span<const std::string> path);
 
     void set_cursor_to_next_object();
 
@@ -178,4 +175,4 @@ protected:
     friend class iterator_base<kv_iterator>;
 };
 
-} // namespace ddwaf::object
+} // namespace ddwaf

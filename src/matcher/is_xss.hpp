@@ -26,9 +26,9 @@ public:
 
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
-    static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
+    static constexpr bool is_supported_type_impl(object_type type)
     {
-        return type == DDWAF_OBJ_STRING;
+        return type == object_type::string;
     }
 
     static std::pair<bool, std::string> match_impl(std::string_view pattern);

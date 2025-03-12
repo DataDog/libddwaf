@@ -3,7 +3,6 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-#include <cstddef>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -16,9 +15,10 @@
 #include "condition/shi_common.hpp"
 #include "condition/shi_detector.hpp"
 #include "condition/structured_condition.hpp"
-#include "ddwaf.h"
 #include "exclusion/common.hpp"
 #include "log.hpp"
+#include "object_type.hpp"
+#include "object_view.hpp"
 #include "tokenizer/shell.hpp"
 #include "utils.hpp"
 
@@ -26,23 +26,21 @@ using namespace std::literals;
 
 namespace ddwaf {
 
-eval_result shi_detector::eval_string(const unary_argument<const ddwaf_object *> &resource,
-    const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
+eval_result shi_detector::eval_string(const unary_argument<object_view> &resource,
+    const variadic_argument<object_view> &params, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
-    if (resource.value->nbEntries == 0 || resource.value->stringValue == nullptr) {
+    if (resource.value.empty()) {
         return {};
     }
 
-    std::string_view resource_sv;
-    resource_sv = {
-        resource.value->stringValue, static_cast<std::size_t>(resource.value->nbEntries)};
+    auto resource_sv = resource.value.as<std::string_view>();
 
     std::vector<shell_token> resource_tokens;
     for (const auto &param : params) {
         auto res = find_shi_from_params(
-            resource_sv, resource_tokens, *param.value, objects_excluded, limits, deadline);
+            resource_sv, resource_tokens, param.value, objects_excluded, limits, deadline);
         if (res.has_value()) {
             const std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
@@ -72,12 +70,12 @@ eval_result shi_detector::eval_string(const unary_argument<const ddwaf_object *>
     return {};
 }
 
-eval_result shi_detector::eval_array(const unary_argument<const ddwaf_object *> &resource,
-    const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
+eval_result shi_detector::eval_array(const unary_argument<object_view> &resource,
+    const variadic_argument<object_view> &params, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline)
 {
-    shell_argument_array arguments{*resource.value};
+    shell_argument_array arguments{resource.value};
     if (arguments.empty()) {
         return {};
     }
@@ -85,7 +83,7 @@ eval_result shi_detector::eval_array(const unary_argument<const ddwaf_object *> 
     std::vector<shell_token> resource_tokens;
     for (const auto &param : params) {
         auto res = find_shi_from_params(
-            arguments, resource_tokens, *param.value, objects_excluded, limits, deadline);
+            arguments, resource_tokens, param.value, objects_excluded, limits, deadline);
         if (res.has_value()) {
             const std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
@@ -120,16 +118,16 @@ shi_detector::shi_detector(std::vector<condition_parameter> args)
 {}
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-eval_result shi_detector::eval_impl(const unary_argument<const ddwaf_object *> &resource,
-    const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
+eval_result shi_detector::eval_impl(const unary_argument<object_view> &resource,
+    const variadic_argument<object_view> &params, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer &deadline) const
 {
-    if (resource.value->type == DDWAF_OBJ_STRING) {
+    if (resource.value.is<std::string_view>()) {
         return eval_string(resource, params, cache, objects_excluded, limits, deadline);
     }
 
-    if (resource.value->type == DDWAF_OBJ_ARRAY) {
+    if (resource.value.type() == object_type::array) {
         return eval_array(resource, params, cache, objects_excluded, limits, deadline);
     }
 

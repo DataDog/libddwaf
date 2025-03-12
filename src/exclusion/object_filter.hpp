@@ -237,7 +237,7 @@ inline std::ostream &operator<<(std::ostream &os, const path_trie::traverser::st
 
 class object_filter {
 public:
-    using cache_type = memory::unordered_set<ddwaf_object *>;
+    using cache_type = memory::unordered_set<object_view>;
 
     object_filter() = default;
 
