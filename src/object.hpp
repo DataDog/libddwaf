@@ -229,9 +229,10 @@ template <typename Derived> [[nodiscard]] borrowed_object base_object<Derived>::
     if (value == nullptr) {
         throw std::out_of_range("invalid at() access");
     }
-    return borrowed_object{value};
+    return borrowed_object{*value};
 }
 
+// NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 template <typename Derived> borrowed_object base_object<Derived>::emplace_back(owned_object &&value)
 {
     auto *container = static_cast<Derived *>(this)->ptr();
@@ -240,11 +241,14 @@ template <typename Derived> borrowed_object base_object<Derived>::emplace_back(o
         throw std::out_of_range("failed to emplace_back value to container");
     }
 
+    // The object has to be explicitly moved, otherwise the contents will be freed
+    // on return, causing the inserted object to be invalid
     value.move();
-    return borrowed_object{&container->array[container->nbEntries - 1]};
+    return borrowed_object{container->array[container->nbEntries - 1]};
 }
 
 template <typename Derived>
+// NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 borrowed_object base_object<Derived>::emplace(std::string_view key, owned_object &&value)
 {
     auto *container = static_cast<Derived *>(this)->ptr();
@@ -253,8 +257,10 @@ borrowed_object base_object<Derived>::emplace(std::string_view key, owned_object
         throw std::out_of_range("failed to emplace value to container");
     }
 
+    // The object has to be explicitly moved, otherwise the contents will be freed
+    // on return, causing the inserted object to be invalid
     value.move();
-    return borrowed_object{&container->array[container->nbEntries - 1]};
+    return borrowed_object{container->array[container->nbEntries - 1]};
 }
 
 } // namespace ddwaf
