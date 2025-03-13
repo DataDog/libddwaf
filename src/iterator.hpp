@@ -6,13 +6,10 @@
 
 #pragma once
 
-#include <functional>
 #include <span>
 #include <string>
-#include <unordered_set>
 #include <vector>
 
-#include "context_allocator.hpp"
 #include "exclusion/common.hpp"
 #include "object_type.hpp"
 #include "object_view.hpp"
@@ -23,12 +20,10 @@ namespace ddwaf {
 
 template <typename T> class iterator_base {
 public:
-    explicit iterator_base(
-        const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
     ~iterator_base() = default;
 
-    iterator_base(const iterator_base &) = default;
-    iterator_base(iterator_base &&) noexcept = default;
+    iterator_base(const iterator_base &) = delete;
+    iterator_base(iterator_base &&) noexcept = delete;
 
     iterator_base &operator=(const iterator_base &) = delete;
     iterator_base &operator=(iterator_base &&) noexcept = delete;
@@ -53,6 +48,12 @@ protected:
     std::pair<object_key, object_view> current_;
 
     const exclusion::object_set_ref &excluded_;
+
+private:
+    explicit iterator_base(
+        const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
+
+    friend T;
 };
 
 class value_iterator : public iterator_base<value_iterator> {
@@ -62,8 +63,8 @@ public:
 
     ~value_iterator() = default;
 
-    value_iterator(const value_iterator &) = default;
-    value_iterator(value_iterator &&) = default;
+    value_iterator(const value_iterator &) = delete;
+    value_iterator(value_iterator &&) = delete;
 
     value_iterator &operator=(const value_iterator &) = delete;
     value_iterator &operator=(value_iterator &&) = delete;
@@ -107,8 +108,7 @@ public:
         if (current_.first.empty()) {
             return {};
         }
-        current_key_ = owned_object::make_string_nocopy(current_.first, nullptr);
-        return current_key_;
+        return ddwaf_object_stringl_nc(&current_key_, current_.first.data(), current_.first.size());
     }
 
 protected:
@@ -117,7 +117,7 @@ protected:
 
     void set_cursor_to_next_object();
 
-    owned_object current_key_;
+    ddwaf_object current_key_{};
 
     friend class iterator_base<key_iterator>;
 };
@@ -157,8 +157,8 @@ public:
             }
 
             if (!current_.first.empty()) {
-                current_key_ = owned_object::make_string_nocopy(current_.first, nullptr);
-                return current_key_;
+                return ddwaf_object_stringl_nc(
+                    &current_key_, current_.first.data(), current_.first.size());
             }
         }
         return {};
@@ -171,7 +171,7 @@ protected:
     void set_cursor_to_next_object();
 
     bool scalar_value_{false};
-    owned_object current_key_;
+    ddwaf_object current_key_{};
 
     friend class iterator_base<kv_iterator>;
 };

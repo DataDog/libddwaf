@@ -20,8 +20,8 @@ using object = ddwaf_object;
 
 class owned_object;
 class borrowed_object;
-class object_key;
 class object_view;
+class object_key;
 
 template <typename Derived> class base_object {
 public:
@@ -163,12 +163,9 @@ public:
     static owned_object make_string_nocopy(
         const char *str, std::size_t len, ddwaf_object_free_fn free_fn = ddwaf_object_free)
     {
-        return owned_object{{.parameterName = nullptr,
-                                .parameterNameLength = 0,
-                                .stringValue = str,
-                                .nbEntries = static_cast<decltype(detail::object::nbEntries)>(len),
-                                .type = DDWAF_OBJ_STRING},
-            free_fn};
+        detail::object tmp;
+        ddwaf_object_stringl_nc(&tmp, str, len);
+        return owned_object{tmp, free_fn};
     }
 
     template <typename T>
