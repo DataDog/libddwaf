@@ -38,9 +38,11 @@ public:
 
     bool eval(std::string_view key, object_view value) const
     {
-        owned_object key_obj;
+        ddwaf_object key_obj;
         if (key.data() != nullptr && !key.empty()) {
-            key_obj = owned_object::make_string_nocopy(key, nullptr);
+            ddwaf_object_stringl_nc(&key_obj, key.data(), key.size());
+        } else {
+            ddwaf_object_invalid(&key_obj);
         }
         return eval(key_obj, value);
     }
