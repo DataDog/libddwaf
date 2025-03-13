@@ -20,6 +20,11 @@ namespace {
 // 20 bytes for UINT64_MAX or INT64_MIN + null byte
 constexpr size_t UINT64_CHARS = 21;
 
+inline bool is_container(const ddwaf_object *obj)
+{
+    return obj != nullptr && (obj->type & PWI_CONTAINER_TYPES) != 0 && obj->array != nullptr;
+}
+
 ddwaf_object *ddwaf_object_string_helper(ddwaf_object *object, const char *string, size_t length)
 {
     if (length == SIZE_MAX) {
@@ -372,7 +377,7 @@ DDWAF_OBJ_TYPE ddwaf_object_type(const ddwaf_object *object)
 
 size_t ddwaf_object_size(const ddwaf_object *object)
 {
-    if (object == nullptr || !ddwaf::object::is_container(object)) {
+    if (object == nullptr || !is_container(object)) {
         return 0;
     }
 
@@ -452,7 +457,7 @@ bool ddwaf_object_get_bool(const ddwaf_object *object)
 
 const ddwaf_object *ddwaf_object_get_index(const ddwaf_object *object, size_t index)
 {
-    if (object == nullptr || !ddwaf::object::is_container(object) || index >= object->nbEntries) {
+    if (object == nullptr || !is_container(object) || index >= object->nbEntries) {
         return nullptr;
     }
 

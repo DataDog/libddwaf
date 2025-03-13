@@ -20,6 +20,8 @@ using object = ddwaf_object;
 
 class owned_object;
 class borrowed_object;
+class object_key;
+class object_view;
 
 template <typename Derived> class base_object {
 public:
@@ -162,8 +164,9 @@ public:
         return owned_object{tmp, free_fn};
     }
 
-    static owned_object make_string_nocopy(
-        std::string_view str, ddwaf_object_free_fn free_fn = ddwaf_object_free)
+    template <typename T>
+    static owned_object make_string_nocopy(T str, ddwaf_object_free_fn free_fn = ddwaf_object_free)
+        requires std::is_same_v<T, std::string_view> || std::is_same_v<T, object_key>
     {
         return make_string_nocopy(str.data(), str.size(), free_fn);
     }

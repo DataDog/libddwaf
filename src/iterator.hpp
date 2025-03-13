@@ -91,7 +91,7 @@ public:
 
     ~key_iterator() = default;
 
-    key_iterator(const key_iterator &) = default;
+    key_iterator(const key_iterator &) = delete;
     key_iterator(key_iterator &&) = delete;
 
     key_iterator &operator=(const key_iterator &) = delete;
@@ -107,7 +107,8 @@ public:
         if (current_.first.empty()) {
             return {};
         }
-        return ddwaf_object_stringl_nc(&current_key_, current_.first.data(), current_.first.size());
+        current_key_ = owned_object::make_string_nocopy(current_.first, nullptr);
+        return current_key_;
     }
 
 protected:
@@ -116,7 +117,7 @@ protected:
 
     void set_cursor_to_next_object();
 
-    ddwaf_object current_key_{};
+    owned_object current_key_;
 
     friend class iterator_base<key_iterator>;
 };
@@ -128,7 +129,7 @@ public:
 
     ~kv_iterator() = default;
 
-    kv_iterator(const kv_iterator &) = default;
+    kv_iterator(const kv_iterator &) = delete;
     kv_iterator(kv_iterator &&) = delete;
 
     kv_iterator &operator=(const kv_iterator &) = delete;
@@ -156,8 +157,8 @@ public:
             }
 
             if (!current_.first.empty()) {
-                return ddwaf_object_stringl_nc(
-                    &current_key_, current_.first.data(), current_.first.size());
+                current_key_ = owned_object::make_string_nocopy(current_.first, nullptr);
+                return current_key_;
             }
         }
         return {};
@@ -170,7 +171,7 @@ protected:
     void set_cursor_to_next_object();
 
     bool scalar_value_{false};
-    ddwaf_object current_key_{};
+    owned_object current_key_;
 
     friend class iterator_base<kv_iterator>;
 };

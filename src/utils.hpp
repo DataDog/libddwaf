@@ -87,30 +87,6 @@ inline size_t find_string_cutoff(const char *str, size_t length, object_limits l
     return pos;
 }
 
-namespace object {
-
-inline bool is_container(const ddwaf_object *obj)
-{
-    return obj != nullptr && (obj->type & PWI_CONTAINER_TYPES) != 0 && obj->array != nullptr;
-}
-
-inline bool is_map(const ddwaf_object *obj)
-{
-    return obj != nullptr && obj->type == DDWAF_OBJ_MAP && obj->array != nullptr;
-}
-
-inline bool is_scalar(const ddwaf_object *obj)
-{
-    return obj != nullptr && (obj->type & PWI_DATA_TYPES) != 0;
-}
-
-inline bool is_invalid_or_null(const ddwaf_object *obj)
-{
-    return obj != nullptr && (obj->type == DDWAF_OBJ_INVALID || obj->type == DDWAF_OBJ_NULL);
-}
-
-} // namespace object
-
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 inline bool isalpha(char c) { return (static_cast<unsigned>(c) | 32) - 'a' < 26; }
 inline bool isdigit(char c) { return static_cast<unsigned>(c) - '0' < 10; }
@@ -119,11 +95,11 @@ inline bool isspace(char c)
 {
     return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v';
 }
-inline constexpr bool isupper(char c) { return static_cast<unsigned>(c) - 'A' < 26; }
+constexpr bool isupper(char c) { return static_cast<unsigned>(c) - 'A' < 26; }
 inline bool islower(char c) { return static_cast<unsigned>(c) - 'a' < 26; }
 inline bool isalnum(char c) { return isalpha(c) || isdigit(c); }
 inline bool isboundary(char c) { return !isalnum(c) && c != '_'; }
-inline constexpr char tolower(char c) { return isupper(c) ? static_cast<char>(c | 32) : c; }
+constexpr char tolower(char c) { return isupper(c) ? static_cast<char>(c | 32) : c; }
 inline uint8_t from_hex(char c)
 {
     auto uc = static_cast<uint8_t>(c);
