@@ -188,7 +188,7 @@ public:
     static owned_object make_string(std::string_view str)
     {
         if (str.empty()) {
-            return make_string_nocopy("", 0);
+            return make_string("", 0);
         }
         return make_string(str.data(), str.size());
     }
