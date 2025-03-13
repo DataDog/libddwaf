@@ -45,6 +45,10 @@ public:
 
     borrowed_object emplace_back(owned_object &&value);
     borrowed_object emplace(std::string_view key, owned_object &&value);
+
+private:
+    base_object() = default;
+    friend Derived;
 };
 
 class owned_object;
@@ -159,9 +163,12 @@ public:
     static owned_object make_string_nocopy(
         const char *str, std::size_t len, ddwaf_object_free_fn free_fn = ddwaf_object_free)
     {
-        detail::object tmp;
-        ddwaf_object_stringl_nc(&tmp, str, len);
-        return owned_object{tmp, free_fn};
+        return owned_object{{.parameterName = nullptr,
+                                .parameterNameLength = 0,
+                                .stringValue = str,
+                                .nbEntries = static_cast<decltype(detail::object::nbEntries)>(len),
+                                .type = DDWAF_OBJ_STRING},
+            free_fn};
     }
 
     template <typename T>
@@ -181,7 +188,7 @@ public:
     static owned_object make_string(std::string_view str)
     {
         if (str.empty()) {
-            return make_string("", 0);
+            return make_string_nocopy("", 0);
         }
         return make_string(str.data(), str.size());
     }

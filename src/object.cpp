@@ -22,7 +22,7 @@ constexpr size_t UINT64_CHARS = 21;
 
 inline bool is_container(const ddwaf_object *obj)
 {
-    return obj != nullptr && (obj->type & PWI_CONTAINER_TYPES) != 0 && obj->array != nullptr;
+    return (obj->type & PWI_CONTAINER_TYPES) != 0 && obj->array != nullptr;
 }
 
 ddwaf_object *ddwaf_object_string_helper(ddwaf_object *object, const char *string, size_t length)
