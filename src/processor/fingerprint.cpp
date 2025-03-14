@@ -442,6 +442,7 @@ owned_object generate_fragment(std::string_view header, Generators... generators
         buffer.append(field);
     }
 
+    // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
     return buffer.to_object();
 }
 
@@ -502,6 +503,7 @@ owned_object generate_fragment_cached(std::string_view header,
         }
     }
 
+    // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
     return buffer.to_object();
 }
 

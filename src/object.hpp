@@ -19,6 +19,8 @@ namespace detail {
 
 using object = ddwaf_object;
 
+char *copy_string(const char *str, std::size_t len);
+
 } // namespace detail
 
 class owned_object;
@@ -189,19 +191,10 @@ public:
 
     static owned_object make_string(const char *str, std::size_t len)
     {
-        // TODO new char[len];
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,hicpp-no-malloc)
-        char *copy = static_cast<char *>(malloc(sizeof(char) * (len + 1)));
-        if (copy == nullptr) {
-            [[unlikely]] throw std::bad_alloc();
-        }
-        memcpy(copy, str, len);
-        copy[len] = '\0';
-
         // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
         return owned_object{{.parameterName = nullptr,
             .parameterNameLength = 0,
-            .stringValue = copy,
+            .stringValue = detail::copy_string(str, len),
             .nbEntries = static_cast<uint64_t>(len),
             .type = DDWAF_OBJ_STRING}};
     }
