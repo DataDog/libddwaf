@@ -147,14 +147,6 @@ function(gen_objects target_name)
         target_compile_definitions(${target_name} PRIVATE NOMINMAX)
     endif()
 
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        target_compile_options(${target_name} PRIVATE -mbranches-within-32B-boundaries)
-    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        target_compile_options(${target_name} PRIVATE -Wa,-mbranches-within-32B-boundaries)
-    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        target_compile_options(${target_name} PRIVATE /QIntel-jcc-erratum)
-    endif()
-
     target_link_libraries(${target_name}
         PRIVATE ${LIBDDWAF_PRIVATE_LIBRARIES}
         INTERFACE ${LIBDDWAF_INTERFACE_LIBRARIES})

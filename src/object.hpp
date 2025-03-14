@@ -8,6 +8,9 @@
 
 #include "ddwaf.h"
 #include "object_type.hpp"
+
+#include <cassert>
+#include <cstring>
 #include <stdexcept>
 
 namespace ddwaf {
@@ -35,6 +38,12 @@ public:
     [[nodiscard]] object_type type() const noexcept
     {
         return static_cast<object_type>(static_cast<const Derived *>(this)->ref().type);
+    }
+
+    // The is_* methods can be used to check for collections of types
+    [[nodiscard]] bool is_container() const noexcept
+    {
+        return (type() & container_object_type) != 0;
     }
 
     [[nodiscard]] bool is_valid() const noexcept { return type() != object_type::invalid; }
@@ -163,9 +172,12 @@ public:
     static owned_object make_string_nocopy(
         const char *str, std::size_t len, ddwaf_object_free_fn free_fn = ddwaf_object_free)
     {
-        detail::object tmp;
-        ddwaf_object_stringl_nc(&tmp, str, len);
-        return owned_object{tmp, free_fn};
+        return owned_object{{.parameterName = nullptr,
+                                .parameterNameLength = 0,
+                                .stringValue = str,
+                                .nbEntries = static_cast<uint64_t>(len),
+                                .type = DDWAF_OBJ_STRING},
+            free_fn};
     }
 
     template <typename T>
@@ -177,9 +189,21 @@ public:
 
     static owned_object make_string(const char *str, std::size_t len)
     {
-        detail::object tmp;
-        ddwaf_object_stringl(&tmp, str, len);
-        return owned_object{tmp};
+        // TODO new char[len];
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,hicpp-no-malloc)
+        char *copy = static_cast<char *>(malloc(sizeof(char) * (len + 1)));
+        if (copy == nullptr) {
+            [[unlikely]] throw std::bad_alloc();
+        }
+        memcpy(copy, str, len);
+        copy[len] = '\0';
+
+        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
+        return owned_object{{.parameterName = nullptr,
+            .parameterNameLength = 0,
+            .stringValue = copy,
+            .nbEntries = static_cast<uint64_t>(len),
+            .type = DDWAF_OBJ_STRING}};
     }
 
     static owned_object make_string(std::string_view str)
@@ -192,16 +216,20 @@ public:
 
     static owned_object make_array()
     {
-        detail::object tmp;
-        ddwaf_object_array(&tmp);
-        return owned_object{tmp};
+        return owned_object{{.parameterName = nullptr,
+            .parameterNameLength = 0,
+            .array = nullptr,
+            .nbEntries = 0,
+            .type = DDWAF_OBJ_ARRAY}};
     }
 
     static owned_object make_map()
     {
-        detail::object tmp;
-        ddwaf_object_map(&tmp);
-        return owned_object{tmp};
+        return owned_object{{.parameterName = nullptr,
+            .parameterNameLength = 0,
+            .array = nullptr,
+            .nbEntries = 0,
+            .type = DDWAF_OBJ_MAP}};
     }
 
     detail::object move()
@@ -224,12 +252,9 @@ inline borrowed_object::borrowed_object(owned_object &obj) : obj_(obj.ptr()) {}
 
 template <typename Derived> [[nodiscard]] borrowed_object base_object<Derived>::at(std::size_t idx)
 {
-    auto *container = static_cast<const Derived *>(this)->ptr();
-    auto *value = const_cast<detail::object *>(ddwaf_object_get_index(container, idx));
-    if (value == nullptr) {
-        throw std::out_of_range("invalid at() access");
-    }
-    return borrowed_object{*value};
+    assert(is_container() && idx < size());
+    auto &container = static_cast<const Derived *>(this)->ref();
+    return borrowed_object{&container.array[idx]};
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
@@ -244,7 +269,7 @@ template <typename Derived> borrowed_object base_object<Derived>::emplace_back(o
     // The object has to be explicitly moved, otherwise the contents will be freed
     // on return, causing the inserted object to be invalid
     value.move();
-    return borrowed_object{container->array[container->nbEntries - 1]};
+    return borrowed_object{&container->array[container->nbEntries - 1]};
 }
 
 template <typename Derived>
@@ -260,7 +285,7 @@ borrowed_object base_object<Derived>::emplace(std::string_view key, owned_object
     // The object has to be explicitly moved, otherwise the contents will be freed
     // on return, causing the inserted object to be invalid
     value.move();
-    return borrowed_object{container->array[container->nbEntries - 1]};
+    return borrowed_object{&container->array[container->nbEntries - 1]};
 }
 
 } // namespace ddwaf
