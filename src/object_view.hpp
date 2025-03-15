@@ -2,26 +2,23 @@
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2021 Datadog, Inc.
+// Copyright 2025 Datadog, Inc.
 
 #pragma once
 
 #include <cassert>
 #include <cstddef>
 #include <cstring>
+#include <list>
 #include <string_view>
 #include <type_traits>
 
-#include "ddwaf.h"
+#include "object.hpp"
 #include "object_type.hpp"
 #include "traits.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
-
-namespace detail {
-using object = ddwaf_object;
-} // namespace detail
 
 template <typename T> struct object_converter;
 
@@ -89,6 +86,12 @@ public:
     object_view(const detail::object &underlying_object) : obj_(&underlying_object) {}
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     object_view(const detail::object *underlying_object) : obj_(underlying_object) {}
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    object_view(const owned_object &ow) : obj_(&ow.obj_) {}
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    object_view(const borrowed_object &ow) : obj_(ow.obj_) {}
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    object_view(const literal_object &ow) : obj_(&ow.obj_) {}
 
     ~object_view() = default;
     object_view(const object_view &) = default;
@@ -156,6 +159,12 @@ public:
     {
         assert(obj_ != nullptr);
         return obj_->nbEntries == 0;
+    }
+
+    [[nodiscard]] const char *data() const noexcept
+    {
+        assert(obj_ != nullptr);
+        return obj_->stringValue;
     }
 
     // The is_* methods can be used to check for collections of types
@@ -433,6 +442,63 @@ protected:
 };
 
 static_assert(sizeof(object_view) == sizeof(void *));
+
+inline owned_object clone(object_view input)
+{
+    auto clone_helper = [](object_view source) -> owned_object {
+        switch (source.type()) {
+        case object_type::boolean:
+            return owned_object::make_boolean(source.as<bool>());
+        case object_type::string:
+            return owned_object::make_string(source.as<std::string_view>());
+        case object_type::int64:
+            return owned_object::make_signed(source.as<int64_t>());
+        case object_type::uint64:
+            return owned_object::make_unsigned(source.as<uint64_t>());
+        case object_type::float64:
+            return owned_object::make_float(source.as<double>());
+        case object_type::null:
+            return owned_object::make_null();
+        case object_type::map:
+            return owned_object::make_map();
+        case object_type::array:
+            return owned_object::make_array();
+        case object_type::invalid:
+            break;
+        }
+        return {};
+    };
+
+    std::list<std::pair<object_view, borrowed_object>> queue;
+
+    auto copy = clone_helper(input);
+    if (input.is_container()) {
+        queue.emplace_front(input, copy);
+    }
+
+    while (!queue.empty()) {
+        auto &[source, destination] = queue.front();
+        for (uint64_t i = 0; i < source.size(); ++i) {
+            const auto &[key, value] = source.at(i);
+            if (source.type() == object_type::map) {
+                destination.emplace(key.as<std::string_view>(), clone_helper(value));
+            } else if (source.type() == object_type::array) {
+                destination.emplace_back(clone_helper(value));
+            }
+        }
+
+        for (uint64_t i = 0; i < source.size(); ++i) {
+            auto child = source.at_value(i);
+            if (child.is_container()) {
+                queue.emplace_back(child, destination.at(i));
+            }
+        }
+
+        queue.pop_front();
+    }
+
+    return copy;
+}
 
 } // namespace ddwaf
 

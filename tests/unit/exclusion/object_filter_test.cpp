@@ -26,7 +26,7 @@ TEST(TestObjectFilter, RootTarget)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "query", &child);
 
-    store.insert(root);
+    store.insert(owned_object{root});
 
     object_filter filter;
     filter.insert(query, "query", {});
@@ -58,7 +58,7 @@ TEST(TestObjectFilter, DuplicateTarget)
         ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", &child);
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
 
@@ -73,7 +73,7 @@ TEST(TestObjectFilter, DuplicateTarget)
         ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", &child);
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
 
@@ -102,7 +102,7 @@ TEST(TestObjectFilter, DuplicateCachedTarget)
     ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "query", &child);
-    store.insert(root);
+    store.insert(owned_object{root});
 
     {
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
@@ -129,7 +129,7 @@ TEST(TestObjectFilter, SingleTarget)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "query", &child);
 
-    store.insert(root);
+    store.insert(owned_object{root});
 
     object_filter filter;
     filter.insert(query, "query", {"params"});
@@ -162,7 +162,7 @@ TEST(TestObjectFilter, DuplicateSingleTarget)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", &child);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
@@ -177,7 +177,7 @@ TEST(TestObjectFilter, DuplicateSingleTarget)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", &child);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
@@ -213,7 +213,7 @@ TEST(TestObjectFilter, MultipleTargets)
     ddwaf_object_map_add(&root, "query", &child);
     ddwaf_object_map_add(&root, "path_params", &sibling);
 
-    store.insert(root);
+    store.insert(owned_object{root});
 
     object_filter filter;
     filter.insert(query, "query", {"uri"});
@@ -264,7 +264,7 @@ TEST(TestObjectFilter, DuplicateMultipleTargets)
         ddwaf_object_map_add(&root, "query", &child);
         ddwaf_object_map_add(&root, "path_params", &sibling);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
 
@@ -293,7 +293,7 @@ TEST(TestObjectFilter, DuplicateMultipleTargets)
         ddwaf_object_map_add(&root, "query", &child);
         ddwaf_object_map_add(&root, "path_params", &sibling);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
 
@@ -332,7 +332,7 @@ TEST(TestObjectFilter, MissingTarget)
     ddwaf_object_map_add(&root, "query", &child);
     ddwaf_object_map_add(&root, "path_params", &sibling);
 
-    store.insert(root);
+    store.insert(owned_object{root});
 
     object_filter filter;
     filter.insert(status, "status", {"value"});
@@ -356,7 +356,7 @@ TEST(TestObjectFilter, SingleTargetCache)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "query", &child);
 
-    store.insert(root);
+    store.insert(owned_object{root});
 
     object_filter filter;
     filter.insert(query, "query", {"params"});
@@ -399,7 +399,7 @@ TEST(TestObjectFilter, MultipleTargetsCache)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", &child);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
@@ -422,7 +422,7 @@ TEST(TestObjectFilter, MultipleTargetsCache)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "path_params", &child);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
@@ -456,7 +456,7 @@ TEST(TestObjectFilter, SingleGlobTarget)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", &child);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
@@ -480,7 +480,7 @@ TEST(TestObjectFilter, SingleGlobTarget)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", &child);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
@@ -496,7 +496,7 @@ TEST(TestObjectFilter, SingleGlobTarget)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", ddwaf_object_invalid(&tmp));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
@@ -525,7 +525,7 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", &child);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
@@ -549,7 +549,7 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", &child);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
@@ -565,7 +565,7 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", ddwaf_object_invalid(&tmp));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
@@ -601,7 +601,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", &child);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
@@ -627,7 +627,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", &child);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
@@ -654,7 +654,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", &child);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
@@ -672,7 +672,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", &child);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
@@ -717,7 +717,7 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", &child);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 4);
@@ -746,7 +746,7 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", &child);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
@@ -765,7 +765,7 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", &child);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
@@ -801,7 +801,7 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
             object_store store;
             object_filter::cache_type cache;
             ddwaf_object root = yaml_to_object(object);
-            store.insert(root);
+            store.insert(owned_object{root});
 
             ddwaf::timer deadline{2s};
             auto objects_filtered = filter.match(store, cache, false, {}, deadline);
@@ -828,7 +828,7 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
             object_store store;
             object_filter::cache_type cache;
             ddwaf_object root = yaml_to_object(object);
-            store.insert(root);
+            store.insert(owned_object{root});
 
             ddwaf::timer deadline{2s};
             auto objects_filtered = filter.match(store, cache, false, {}, deadline);
@@ -865,7 +865,7 @@ TEST(TestObjectFilter, ArrayWithGlobTargets)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "query", &a);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         auto objects_filtered = filter.match(store, cache, false, {}, deadline);
@@ -888,7 +888,7 @@ TEST(TestObjectFilter, Timeout)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "query", &child);
 
-    store.insert(root);
+    store.insert(owned_object{root});
 
     object_filter filter;
     filter.insert(query, "query", {});

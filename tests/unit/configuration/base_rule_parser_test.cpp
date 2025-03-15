@@ -30,8 +30,7 @@ TEST(TestBaseRuleParser, ParseRule)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -104,8 +103,7 @@ TEST(TestBaseRuleParser, ParseRuleWithoutType)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -169,8 +167,7 @@ TEST(TestBaseRuleParser, ParseRuleWithoutConditions)
 
     ddwaf_object_free(&rule_object);
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -238,8 +235,7 @@ TEST(TestBaseRuleParser, ParseRuleInvalidTransformer)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -307,8 +303,7 @@ TEST(TestBaseRuleParser, ParseRuleWithoutID)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -375,8 +370,7 @@ TEST(TestBaseRuleParser, ParseMultipleRules)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -446,8 +440,7 @@ TEST(TestBaseRuleParser, ParseMultipleRulesOneInvalid)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -525,8 +518,7 @@ TEST(TestBaseRuleParser, ParseMultipleRulesOneDuplicate)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -588,8 +580,7 @@ TEST(TestBaseRuleParser, KeyPathTooLong)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -656,8 +647,7 @@ TEST(TestBaseRuleParser, NegatedMatcherTooManyParameters)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -724,8 +714,7 @@ TEST(TestBaseRuleParser, SupportedVersionedOperator)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -769,8 +758,7 @@ TEST(TestBaseRuleParser, UnsupportedVersionedOperator)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -834,8 +822,7 @@ TEST(TestBaseRuleParser, IncompatibleMinVersion)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -899,8 +886,7 @@ TEST(TestBaseRuleParser, IncompatibleMaxVersion)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -964,8 +950,7 @@ TEST(TestBaseRuleParser, CompatibleVersion)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 

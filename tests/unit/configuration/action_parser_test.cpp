@@ -67,8 +67,7 @@ TEST(TestActionParser, SingleAction)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -146,8 +145,7 @@ TEST(TestActionParser, RedirectAction)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -225,8 +223,7 @@ TEST(TestActionParser, RedirectActionInvalidStatusCode)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -277,8 +274,7 @@ TEST(TestActionParser, RedirectActionInvalid300StatusCode)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -329,8 +325,7 @@ TEST(TestActionParser, RedirectActionMissingStatusCode)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -381,8 +376,7 @@ TEST(TestActionParser, RedirectActionMissingLocation)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -434,8 +428,7 @@ TEST(TestActionParser, RedirectActionNonHttpURL)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -487,8 +480,7 @@ TEST(TestActionParser, RedirectActionInvalidRelativePathURL)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -541,8 +533,7 @@ TEST(TestActionParser, OverrideDefaultBlockAction)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -593,8 +584,7 @@ TEST(TestActionParser, BlockActionMissingStatusCode)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -646,8 +636,7 @@ TEST(TestActionParser, UnknownActionType)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -687,8 +676,7 @@ TEST(TestActionParser, BlockActionMissingGrpcStatusCode)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -740,8 +728,7 @@ TEST(TestActionParser, BlockActionMissingType)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -792,8 +779,7 @@ TEST(TestActionParser, BlockActionMissingParameters)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -848,8 +834,7 @@ TEST(TestActionParser, MissingID)
     EXPECT_EQ(cfg.actions.size(), 0);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -891,8 +876,7 @@ TEST(TestActionParser, MissingType)
     EXPECT_EQ(cfg.actions.size(), 0);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -933,8 +917,7 @@ TEST(TestActionParser, MissingParameters)
     EXPECT_EQ(cfg.actions.size(), 0);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -973,8 +956,7 @@ TEST(TestActionParser, DuplicateAction)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 

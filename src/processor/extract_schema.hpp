@@ -29,7 +29,7 @@ public:
           scanners_(std::move(scanners))
     {}
 
-    std::pair<ddwaf_object, object_store::attribute> eval_impl(
+    std::pair<owned_object, object_store::attribute> eval_impl(
         const unary_argument<object_view> &input, processor_cache &cache,
         ddwaf::timer &deadline) const;
 

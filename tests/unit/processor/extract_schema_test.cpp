@@ -23,9 +23,7 @@ TEST(TestExtractSchema, UnknownScalarSchema)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([0])");
-
-    ddwaf_object_free(&output);
+    EXPECT_SCHEMA_EQ(output.ref(), R"([0])");
 }
 
 TEST(TestExtractSchema, NullScalarSchema)
@@ -38,9 +36,7 @@ TEST(TestExtractSchema, NullScalarSchema)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([1])");
-
-    ddwaf_object_free(&output);
+    EXPECT_SCHEMA_EQ(output.ref(), R"([1])");
 }
 
 TEST(TestExtractSchema, BoolScalarSchema)
@@ -53,9 +49,7 @@ TEST(TestExtractSchema, BoolScalarSchema)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([2])");
-
-    ddwaf_object_free(&output);
+    EXPECT_SCHEMA_EQ(output.ref(), R"([2])");
 }
 
 TEST(TestExtractSchema, IntScalarSchema)
@@ -69,9 +63,7 @@ TEST(TestExtractSchema, IntScalarSchema)
         ddwaf::timer deadline{2s};
         processor_cache cache;
         auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-        EXPECT_SCHEMA_EQ(output, R"([4])");
-
-        ddwaf_object_free(&output);
+        EXPECT_SCHEMA_EQ(output.ref(), R"([4])");
     }
     {
         ddwaf_object_signed(&input, -5);
@@ -81,9 +73,7 @@ TEST(TestExtractSchema, IntScalarSchema)
         ddwaf::timer deadline{2s};
         processor_cache cache;
         auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-        EXPECT_SCHEMA_EQ(output, R"([4])");
-
-        ddwaf_object_free(&output);
+        EXPECT_SCHEMA_EQ(output.ref(), R"([4])");
     }
 }
 
@@ -97,9 +87,8 @@ TEST(TestExtractSchema, StringScalarSchema)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([8])");
+    EXPECT_SCHEMA_EQ(output.ref(), R"([8])");
 
-    ddwaf_object_free(&output);
     ddwaf_object_free(&input);
 }
 
@@ -113,9 +102,7 @@ TEST(TestExtractSchema, FloatScalarSchema)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([16])");
-
-    ddwaf_object_free(&output);
+    EXPECT_SCHEMA_EQ(output.ref(), R"([16])");
 }
 
 TEST(TestExtractSchema, EmptyArraySchema)
@@ -128,9 +115,7 @@ TEST(TestExtractSchema, EmptyArraySchema)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([[],{"len":0}])");
-
-    ddwaf_object_free(&output);
+    EXPECT_SCHEMA_EQ(output.ref(), R"([[],{"len":0}])");
 }
 
 TEST(TestExtractSchema, ArraySchema)
@@ -148,9 +133,8 @@ TEST(TestExtractSchema, ArraySchema)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([[[1],[0],[8],[4]],{"len":4}])");
+    EXPECT_SCHEMA_EQ(output.ref(), R"([[[1],[0],[8],[4]],{"len":4}])");
 
-    ddwaf_object_free(&output);
     ddwaf_object_free(&input);
 }
 
@@ -169,9 +153,8 @@ TEST(TestExtractSchema, ArrayWithDuplicateScalarSchema)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([[[8]],{"len":4}])");
+    EXPECT_SCHEMA_EQ(output.ref(), R"([[[8]],{"len":4}])");
 
-    ddwaf_object_free(&output);
     ddwaf_object_free(&input);
 }
 
@@ -206,10 +189,9 @@ TEST(TestExtractSchema, ArrayWithDuplicateMapsSchema)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output,
+    EXPECT_SCHEMA_EQ(output.ref(),
         R"([[[{"unsigned":[4]}],[{"signed":[4]}],[{"string":[8],"unsigned":[4]}]],{"len":4}])");
 
-    ddwaf_object_free(&output);
     ddwaf_object_free(&input);
 }
 
@@ -244,9 +226,8 @@ TEST(TestExtractSchema, ArrayWithDuplicateArraysSchema)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([[[[[4]],{"len":1}],[[[8],[4]],{"len":2}]],{"len":4}])");
+    EXPECT_SCHEMA_EQ(output.ref(), R"([[[[[4]],{"len":1}],[[[8],[4]],{"len":2}]],{"len":4}])");
 
-    ddwaf_object_free(&output);
     ddwaf_object_free(&input);
 }
 
@@ -281,9 +262,9 @@ TEST(TestExtractSchema, ArrayWithDuplicateContainersSchema)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([[[[[4]],{"len":1}],[{"string":[8],"unsigned":[4]}]],{"len":4}])");
+    EXPECT_SCHEMA_EQ(
+        output.ref(), R"([[[[[4]],{"len":1}],[{"string":[8],"unsigned":[4]}]],{"len":4}])");
 
-    ddwaf_object_free(&output);
     ddwaf_object_free(&input);
 }
 
@@ -297,9 +278,7 @@ TEST(TestExtractSchema, EmptyMapSchema)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([{}])");
-
-    ddwaf_object_free(&output);
+    EXPECT_SCHEMA_EQ(output.ref(), R"([{}])");
 }
 
 TEST(TestExtractSchema, MapSchema)
@@ -327,9 +306,9 @@ TEST(TestExtractSchema, MapSchema)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output,
+    EXPECT_SCHEMA_EQ(output.ref(),
         R"([{"array":[[[4]],{"len":1}],"invalid":[0],"map":[{"unsigned":[4],"string":[8]}],"null":[1],"string":[8],"unsigned":[4]}])");
-    ddwaf_object_free(&output);
+
     ddwaf_object_free(&input);
 }
 
@@ -351,10 +330,9 @@ TEST(TestExtractSchema, DepthLimit)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output,
+    EXPECT_SCHEMA_EQ(output.ref(),
         R"([[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}])");
 
-    ddwaf_object_free(&output);
     ddwaf_object_free(&input);
 }
 
@@ -372,9 +350,8 @@ TEST(TestExtractSchema, ArrayNodesLimit)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([[[[],{"len":0}]],{"len":20,"truncated":true}])");
+    EXPECT_SCHEMA_EQ(output.ref(), R"([[[[],{"len":0}]],{"len":20,"truncated":true}])");
 
-    ddwaf_object_free(&output);
     ddwaf_object_free(&input);
 }
 
@@ -392,9 +369,8 @@ TEST(TestExtractSchema, RecordNodesLimit)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([{"child":[[],{"len":0}]},{"truncated":true}])");
+    EXPECT_SCHEMA_EQ(output.ref(), R"([{"child":[[],{"len":0}]},{"truncated":true}])");
 
-    ddwaf_object_free(&output);
     ddwaf_object_free(&input);
 }
 
@@ -411,9 +387,8 @@ TEST(TestExtractSchema, SchemaWithSingleScanner)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([8,{"type":"PII","category":"IP"}])");
+    EXPECT_SCHEMA_EQ(output.ref(), R"([8,{"type":"PII","category":"IP"}])");
 
-    ddwaf_object_free(&output);
     ddwaf_object_free(&input);
 }
 
@@ -434,9 +409,8 @@ TEST(TestExtractSchema, SchemaWithMultipleScanners)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([8,{"type":"PII","category":"second"}])");
+    EXPECT_SCHEMA_EQ(output.ref(), R"([8,{"type":"PII","category":"second"}])");
 
-    ddwaf_object_free(&output);
     ddwaf_object_free(&input);
 }
 
@@ -457,9 +431,8 @@ TEST(TestExtractSchema, SchemaWithScannerNoMatch)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([8])");
+    EXPECT_SCHEMA_EQ(output.ref(), R"([8])");
 
-    ddwaf_object_free(&output);
     ddwaf_object_free(&input);
 }
 
@@ -477,9 +450,8 @@ TEST(TestExtractSchema, SchemaWithScannerSingleValueNoKey)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([8])");
+    EXPECT_SCHEMA_EQ(output.ref(), R"([8])");
 
-    ddwaf_object_free(&output);
     ddwaf_object_free(&input);
 }
 
@@ -499,9 +471,8 @@ TEST(TestExtractSchema, SchemaWithScannerArrayNoKey)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([[[8]],{"len":1}])");
+    EXPECT_SCHEMA_EQ(output.ref(), R"([[[8]],{"len":1}])");
 
-    ddwaf_object_free(&output);
     ddwaf_object_free(&input);
 }
 
@@ -526,9 +497,9 @@ TEST(TestExtractSchema, SchemaWithScannerArrayWithKey)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(output, R"([{"string":[[[8,{"category":"IP","type":"PII"}]],{"len":1}]}])");
+    EXPECT_SCHEMA_EQ(
+        output.ref(), R"([{"string":[[[8,{"category":"IP","type":"PII"}]],{"len":1}]}])");
 
-    ddwaf_object_free(&output);
     ddwaf_object_free(&input);
 }
 
@@ -557,10 +528,9 @@ TEST(TestExtractSchema, SchemaWithScannerNestedArrayWithKey)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
-    EXPECT_SCHEMA_EQ(
-        output, R"([{"string":[[[[[8,{"category":"IP","type":"PII"}]],{"len":1}]],{"len":1}]}])");
+    EXPECT_SCHEMA_EQ(output.ref(),
+        R"([{"string":[[[[[8,{"category":"IP","type":"PII"}]],{"len":1}]],{"len":1}]}])");
 
-    ddwaf_object_free(&output);
     ddwaf_object_free(&input);
 }
 

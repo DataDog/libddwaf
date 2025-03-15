@@ -36,13 +36,12 @@ public:
         return eval_matcher(key_matcher_, key) && eval_matcher(value_matcher_, value);
     }
 
+    // TODO add string_view interface to supporting scanners...
     bool eval(std::string_view key, object_view value) const
     {
-        ddwaf_object key_obj;
+        literal_object key_obj;
         if (key.data() != nullptr && !key.empty()) {
-            ddwaf_object_stringl_nc(&key_obj, key.data(), key.size());
-        } else {
-            ddwaf_object_invalid(&key_obj);
+            key_obj = literal_object::make_string_nocopy(key);
         }
         return eval(key_obj, value);
     }

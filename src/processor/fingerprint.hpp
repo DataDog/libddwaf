@@ -23,7 +23,7 @@ public:
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
     {}
 
-    std::pair<ddwaf_object, object_store::attribute> eval_impl(
+    std::pair<owned_object, object_store::attribute> eval_impl(
         const unary_argument<std::string_view> &method,
         const unary_argument<std::string_view> &uri_raw,
         const optional_argument<object_view> &query, const optional_argument<object_view> &body,
@@ -40,7 +40,7 @@ public:
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
     {}
 
-    std::pair<ddwaf_object, object_store::attribute> eval_impl(
+    std::pair<owned_object, object_store::attribute> eval_impl(
         const unary_argument<object_view> &headers, processor_cache &cache,
         ddwaf::timer &deadline) const;
 };
@@ -55,7 +55,7 @@ public:
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
     {}
 
-    std::pair<ddwaf_object, object_store::attribute> eval_impl(
+    std::pair<owned_object, object_store::attribute> eval_impl(
         const unary_argument<object_view> &headers, processor_cache &cache,
         ddwaf::timer &deadline) const;
 };
@@ -71,7 +71,7 @@ public:
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
     {}
 
-    std::pair<ddwaf_object, object_store::attribute> eval_impl(
+    std::pair<owned_object, object_store::attribute> eval_impl(
         const optional_argument<object_view> &cookies,
         const optional_argument<std::string_view> &session_id,
         const optional_argument<std::string_view> &user_id, processor_cache &cache,
