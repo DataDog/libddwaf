@@ -19,7 +19,20 @@ namespace detail {
 
 using object = ddwaf_object;
 
-char *copy_string(const char *str, std::size_t len);
+inline char *copy_string(const char *str, std::size_t len)
+{
+    // TODO new char[len];
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,hicpp-no-malloc)
+    char *copy = static_cast<char *>(malloc(sizeof(char) * (len + 1)));
+    if (copy == nullptr) {
+        [[unlikely]] throw std::bad_alloc();
+    }
+
+    memcpy(copy, str, len);
+    copy[len] = '\0';
+
+    return copy;
+}
 
 inline void realloc_array(object &obj)
 {
