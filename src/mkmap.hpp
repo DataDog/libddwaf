@@ -14,8 +14,8 @@
 #include "traits.hpp"
 
 namespace ddwaf {
-template <typename Key, typename T, class Compare = std::less<Key>,
-    typename = std::enable_if_t<std::is_copy_constructible_v<std::decay_t<T>>>>
+template <typename Key, typename T, class Compare = std::less<Key>>
+    requires std::is_copy_constructible_v<std::decay_t<T>>
 class multi_key_map {
 public:
     template <typename U>

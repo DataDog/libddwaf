@@ -108,7 +108,7 @@ public:
         if (current_.first.empty()) {
             return {};
         }
-        return ddwaf_object_stringl_nc(&current_key_, current_.first.data(), current_.first.size());
+        return (current_key_ = owned_object::make_string_nocopy(current_.first, nullptr));
     }
 
 protected:
@@ -117,7 +117,7 @@ protected:
 
     void set_cursor_to_next_object();
 
-    ddwaf_object current_key_{};
+    owned_object current_key_;
 
     friend class iterator_base<key_iterator>;
 };
@@ -157,8 +157,7 @@ public:
             }
 
             if (!current_.first.empty()) {
-                return ddwaf_object_stringl_nc(
-                    &current_key_, current_.first.data(), current_.first.size());
+                return (current_key_ = owned_object::make_string_nocopy(current_.first, nullptr));
             }
         }
         return {};
@@ -171,7 +170,7 @@ protected:
     void set_cursor_to_next_object();
 
     bool scalar_value_{false};
-    ddwaf_object current_key_{};
+    owned_object current_key_;
 
     friend class iterator_base<kv_iterator>;
 };
