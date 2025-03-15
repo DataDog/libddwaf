@@ -1,5 +1,5 @@
 {
-  "scenario": "global-benchmark",
+  "scenario": "global-benchmark-no-processors",
   "max_cycles": 1,
   "ruleset": {
     "version": "2.2",
