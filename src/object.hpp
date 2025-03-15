@@ -21,6 +21,33 @@ using object = ddwaf_object;
 
 char *copy_string(const char *str, std::size_t len);
 
+inline void realloc_array(object &obj)
+{
+    const auto size = static_cast<std::size_t>(obj.nbEntries) + 8;
+    if (size > SIZE_MAX / sizeof(object)) {
+        throw std::bad_alloc();
+    }
+
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    auto *new_array = reinterpret_cast<object *>(
+        // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
+        realloc(reinterpret_cast<void *>(obj.array), size * sizeof(object)));
+    if (new_array == nullptr) {
+        throw std::bad_alloc();
+    }
+
+    obj.array = new_array;
+}
+
+inline void alloc_array(object &obj)
+{
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,hicpp-no-malloc)
+    obj.array = reinterpret_cast<object *>(malloc(8 * sizeof(object)));
+    if (obj.array == nullptr) {
+        throw std::bad_alloc();
+    }
+}
+
 } // namespace detail
 
 class owned_object;
@@ -253,32 +280,58 @@ template <typename Derived> [[nodiscard]] borrowed_object base_object<Derived>::
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 template <typename Derived> borrowed_object base_object<Derived>::emplace_back(owned_object &&value)
 {
-    auto *container = static_cast<Derived *>(this)->ptr();
+    assert(is_container());
 
-    if (!ddwaf_object_array_add(container, value.ptr())) {
-        throw std::out_of_range("failed to emplace_back value to container");
+    auto &container = static_cast<Derived *>(this)->ref();
+
+    // We preallocate 8 entries
+    if (container.nbEntries == 0) {
+        [[unlikely]] detail::alloc_array(container);
     }
+    // If we're exceeding our preallocation, add 8 more
+    else if ((container.nbEntries & 0x7) == 0) {
+        detail::realloc_array(container);
+    }
+
+    auto *slot = &container.array[container.nbEntries++];
+    memcpy(slot, value.ptr(), sizeof(detail::object));
 
     // The object has to be explicitly moved, otherwise the contents will be freed
     // on return, causing the inserted object to be invalid
     value.move();
-    return borrowed_object{&container->array[container->nbEntries - 1]};
+
+    return borrowed_object{slot};
 }
 
 template <typename Derived>
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 borrowed_object base_object<Derived>::emplace(std::string_view key, owned_object &&value)
 {
-    auto *container = static_cast<Derived *>(this)->ptr();
+    assert(is_container());
 
-    if (!ddwaf_object_map_addl(container, key.data(), key.size(), value.ptr())) {
-        throw std::out_of_range("failed to emplace value to container");
+    auto &container = static_cast<Derived *>(this)->ref();
+
+    // We preallocate 8 entries
+    if (container.nbEntries == 0) {
+        [[unlikely]] detail::alloc_array(container);
     }
+    // If we're exceeding our preallocation, add 8 more
+    else if ((container.nbEntries & 0x7) == 0) {
+        detail::realloc_array(container);
+    }
+
+    auto *value_ptr = value.ptr();
+    value_ptr->parameterName = detail::copy_string(key.data(), key.size());
+    value_ptr->parameterNameLength = key.size();
+
+    auto *slot = &container.array[container.nbEntries++];
+    memcpy(slot, value.ptr(), sizeof(detail::object));
 
     // The object has to be explicitly moved, otherwise the contents will be freed
     // on return, causing the inserted object to be invalid
     value.move();
-    return borrowed_object{&container->array[container->nbEntries - 1]};
+
+    return borrowed_object{slot};
 }
 
 } // namespace ddwaf

@@ -172,16 +172,16 @@ TEST(TestObject, MapObject)
     }
 }
 
-TEST(TestObject, EmplaceWrongObject)
-{
-    owned_object container;
-    EXPECT_THROW(container.emplace("key", owned_object::make_string("value")), std::out_of_range);
-}
+/*TEST(TestObject, EmplaceWrongObject)*/
+/*{*/
+/*owned_object container;*/
+/*EXPECT_THROW(container.emplace("key", owned_object::make_string("value")), std::out_of_range);*/
+/*}*/
 
-TEST(TestObject, EmplaceBackWrongObject)
-{
-    owned_object container;
-    EXPECT_THROW(container.emplace_back(owned_object::make_string("value")), std::out_of_range);
-}
+/*TEST(TestObject, EmplaceBackWrongObject)*/
+/*{*/
+/*owned_object container;*/
+/*EXPECT_THROW(container.emplace_back(owned_object::make_string("value")), std::out_of_range);*/
+/*}*/
 
 } // namespace
