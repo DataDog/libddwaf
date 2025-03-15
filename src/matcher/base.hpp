@@ -11,7 +11,6 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "ddwaf.h"
 #include "object_view.hpp"
 
 namespace ddwaf {
