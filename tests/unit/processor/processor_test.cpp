@@ -32,7 +32,7 @@ public:
     {}
 
     MOCK_METHOD((std::pair<ddwaf_object, object_store::attribute>), eval_impl,
-        (const unary_argument<const ddwaf_object *> &, processor_cache &, ddwaf::timer &), (const));
+        (const unary_argument<object_view> &, processor_cache &, ddwaf::timer &), (const));
 };
 
 } // namespace mock
@@ -333,16 +333,16 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
     optional_ref<ddwaf_object> derived{std::nullopt};
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address")).first;
+        auto obtained = store.get_target(get_target_index("output_address")).first;
         EXPECT_EQ(obtained, nullptr);
     }
 
     proc.eval(store, derived, cache, {}, deadline);
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address")).first;
+        auto obtained = store.get_target(get_target_index("output_address")).first;
         EXPECT_NE(obtained, nullptr);
-        EXPECT_STREQ(obtained->stringValue, "output_string");
+        EXPECT_STRV(obtained.as<std::string_view>(), "output_string");
     }
 }
 
@@ -390,9 +390,9 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
     proc.eval(store, derived, cache, {}, deadline);
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address")).first;
+        auto obtained = store.get_target(get_target_index("output_address")).first;
         EXPECT_NE(obtained, nullptr);
-        EXPECT_STREQ(obtained->stringValue, "output_string");
+        EXPECT_STRV(obtained.as<std::string_view>(), "output_string");
     }
 }
 
@@ -484,15 +484,15 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
     proc.eval(store, derived, cache, {}, deadline);
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address.first")).first;
+        auto obtained = store.get_target(get_target_index("output_address.first")).first;
         EXPECT_NE(obtained, nullptr);
-        EXPECT_STREQ(obtained->stringValue, "first_output_string");
+        EXPECT_STRV(obtained.as<std::string_view>(), "first_output_string");
     }
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address.second")).first;
+        auto obtained = store.get_target(get_target_index("output_address.second")).first;
         EXPECT_NE(obtained, nullptr);
-        EXPECT_STREQ(obtained->stringValue, "second_output_string");
+        EXPECT_STRV(obtained.as<std::string_view>(), "second_output_string");
     }
 }
 
@@ -531,7 +531,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     optional_ref<ddwaf_object> derived{output_map};
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address")).first;
+        auto obtained = store.get_target(get_target_index("output_address")).first;
         EXPECT_EQ(obtained, nullptr);
         EXPECT_EQ(ddwaf_object_size(&output_map), 0);
     }
@@ -539,9 +539,9 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     proc.eval(store, derived, cache, {}, deadline);
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address")).first;
+        auto obtained = store.get_target(get_target_index("output_address")).first;
         EXPECT_NE(obtained, nullptr);
-        EXPECT_STREQ(obtained->stringValue, "output_string");
+        EXPECT_STRV(obtained.as<std::string_view>(), "output_string");
     }
 
     {
@@ -712,16 +712,16 @@ TEST(TestProcessor, OutputEvalWithoutDerivedMap)
     optional_ref<ddwaf_object> derived{};
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address")).first;
+        auto obtained = store.get_target(get_target_index("output_address")).first;
         EXPECT_EQ(obtained, nullptr);
     }
 
     proc.eval(store, derived, cache, {}, deadline);
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address")).first;
+        auto obtained = store.get_target(get_target_index("output_address")).first;
         EXPECT_NE(obtained, nullptr);
-        EXPECT_STREQ(obtained->stringValue, "output_string");
+        EXPECT_STRV(obtained.as<std::string_view>(), "output_string");
     }
 }
 

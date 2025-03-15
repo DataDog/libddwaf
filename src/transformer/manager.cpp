@@ -3,10 +3,11 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-#include <cstddef>
 #include <span>
+#include <string_view>
 
 #include "ddwaf.h"
+#include "object_view.hpp"
 #include "transformer/base.hpp"
 #include "transformer/base64_decode.hpp"
 #include "transformer/base64_encode.hpp"
@@ -77,15 +78,15 @@ bool call_transformer(transformer_id id, cow_string &str)
 
 } // namespace
 
-bool manager::transform(const ddwaf_object &source, ddwaf_object &destination,
+bool manager::transform(object_view source, ddwaf_object &destination,
     const std::span<const transformer_id> &transformers)
 {
-    if (source.type != DDWAF_OBJ_STRING || source.stringValue == nullptr) {
+    if (!source.is<std::string_view>() || source.empty()) {
         return false;
     }
 
     bool transformed = false;
-    cow_string str({source.stringValue, static_cast<std::size_t>(source.nbEntries)});
+    cow_string str(source.as<std::string_view>());
     for (auto transformer : transformers) {
         auto res = call_transformer(transformer, str);
         transformed = transformed || res;

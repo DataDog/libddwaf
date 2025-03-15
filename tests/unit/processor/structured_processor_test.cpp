@@ -6,6 +6,7 @@
 
 #include "exception.hpp"
 #include "matcher/equals.hpp"
+#include "object_view.hpp"
 #include "processor/base.hpp"
 
 #include <gmock/gmock.h>
@@ -32,9 +33,9 @@ public:
     {}
 
     MOCK_METHOD((std::pair<ddwaf_object, object_store::attribute>), eval_impl,
-        (const unary_argument<const ddwaf_object *> &unary,
+        (const unary_argument<object_view> &unary,
             const optional_argument<std::string_view> &optional,
-            const variadic_argument<unsigned> &variadic, processor_cache &, ddwaf::timer &),
+            const variadic_argument<uint64_t> &variadic, processor_cache &, ddwaf::timer &),
         (const));
 };
 
