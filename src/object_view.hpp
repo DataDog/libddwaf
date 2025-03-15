@@ -90,8 +90,6 @@ public:
     object_view(const owned_object &ow) : obj_(&ow.obj_) {}
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     object_view(const borrowed_object &ow) : obj_(ow.obj_) {}
-    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-    object_view(const literal_object &ow) : obj_(&ow.obj_) {}
 
     ~object_view() = default;
     object_view(const object_view &) = default;
