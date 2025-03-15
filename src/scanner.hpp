@@ -36,11 +36,12 @@ public:
         return eval_matcher(key_matcher_, key) && eval_matcher(value_matcher_, value);
     }
 
+    // TODO add string_view interface to supporting scanners...
     bool eval(std::string_view key, object_view value) const
     {
-        owned_object key_obj;
+        literal_object key_obj;
         if (key.data() != nullptr && !key.empty()) {
-            key_obj = owned_object::make_string_nocopy(key, nullptr);
+            key_obj = literal_object::make_string_nocopy(key);
         }
         return eval(key_obj, value);
     }
