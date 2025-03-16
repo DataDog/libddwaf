@@ -36,13 +36,6 @@ public:
         return eval_matcher(key_matcher_, key) && eval_matcher(value_matcher_, value);
     }
 
-    // Used for testing
-    // TODO: update tests to remove this
-    bool eval(object_view key, object_view value) const
-    {
-        return eval(key.as<std::string_view>(), value);
-    }
-
     const std::unordered_map<std::string, std::string> &get_tags() const { return tags_; }
     std::string_view get_id() const { return id_; }
     const std::string &get_id_ref() const { return id_; }
@@ -55,7 +48,7 @@ protected:
             return true;
         }
         if constexpr (std::is_same_v<T, object_view>) {
-            if (!data.has_value() && data.type() == object_type::invalid) {
+            if (!data.has_value() || data.type() == object_type::invalid) {
                 return false;
             }
         } else if constexpr (std::is_same_v<T, std::string_view>) {
