@@ -603,7 +603,7 @@ std::pair<owned_object, object_store::attribute> http_header_fingerprint::eval_i
             known_header_bitset[index] = '1';
         } else if (type == header_type::unknown) {
             unknown_headers.emplace_back(normalized_header);
-        } else if (type == header_type::user_agent && child.is<std::string_view>()) {
+        } else if (type == header_type::user_agent && child.is_string()) {
             user_agent = child.as<std::string_view>();
         }
     }
@@ -652,7 +652,7 @@ std::pair<owned_object, object_store::attribute> http_network_fingerprint::eval_
             // Verify not only precedence but also type, as a header of an unexpected
             // type will be unlikely to be used unless the framework has somehow
             // broken down the header into constituent IPs
-            if (chosen_header > index && child.is<std::string_view>()) {
+            if (chosen_header > index && child.is_string()) {
                 chosen_header_value = child.as<std::string_view>();
                 chosen_header = index;
             }

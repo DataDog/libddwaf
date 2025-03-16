@@ -108,7 +108,7 @@ lfi_result lfi_impl(std::string_view path, object_view params,
         }
 
         const auto param = *it;
-        if (!param.is<std::string_view>()) {
+        if (!param.is_string()) {
             continue;
         }
 

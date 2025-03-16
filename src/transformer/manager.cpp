@@ -81,7 +81,7 @@ bool call_transformer(transformer_id id, cow_string &str)
 bool manager::transform(object_view source, owned_object &destination,
     const std::span<const transformer_id> &transformers)
 {
-    if (!source.is<std::string_view>() || source.empty()) {
+    if (!source.is_string() || source.empty()) {
         return false;
     }
 

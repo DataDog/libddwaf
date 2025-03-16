@@ -382,7 +382,7 @@ std::optional<shi_result> cmdi_impl(object_view exec_args,
         }
 
         const object_view param = *it;
-        if (!param.is<std::string_view>()) {
+        if (!param.is_string()) {
             continue;
         }
 

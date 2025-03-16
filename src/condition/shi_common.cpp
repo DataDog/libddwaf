@@ -27,7 +27,7 @@ shell_argument_array::shell_argument_array(object_view root)
     std::size_t resource_len = 0;
     for (std::size_t i = 0; i < argc; ++i) {
         const auto &child = root.at_value(i);
-        if (child.is<std::string_view>() && !child.empty()) {
+        if (child.is_string() && !child.empty()) {
             // if the string is valid or non-empty, increase the resource
             // length + 1 for the extra space when relevant
             resource_len += child.size() + static_cast<std::size_t>(i > 0);
@@ -40,7 +40,7 @@ shell_argument_array::shell_argument_array(object_view root)
     std::size_t index = 0;
     for (std::size_t i = 0; i < argc; ++i) {
         const auto &child = root.at_value(i);
-        if (!child.is<std::string_view>() || child.empty()) {
+        if (!child.is_string() || child.empty()) {
             continue;
         }
 

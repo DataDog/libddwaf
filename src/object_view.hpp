@@ -115,7 +115,7 @@ public:
         } else if constexpr (std::is_same_v<std::decay_t<T>, object_view>) {
             return ptr() == other.ptr();
         } else if constexpr (std::is_same_v<std::decay_t<T>, std::string_view>) {
-            return has_value() && is<std::string_view>() && as<std::string_view>() == other;
+            return has_value() && is_string() && as<std::string_view>() == other;
         } else {
             // Assume unknown types aren't equal
             return false;
@@ -132,7 +132,7 @@ public:
         } else if constexpr (std::is_same_v<std::decay_t<T>, object_view>) {
             return ptr() != other.ptr();
         } else if constexpr (std::is_same_v<std::decay_t<T>, std::string_view>) {
-            return has_value() && (!is<std::string_view>() || as<std::string_view>() != other);
+            return has_value() && (!is_string() || as<std::string_view>() != other);
         } else {
             // Assume unknown types aren't equal
             return true;
@@ -188,6 +188,12 @@ public:
     {
         assert(obj_ != nullptr);
         return type() == object_type::array;
+    }
+
+    [[nodiscard]] bool is_string() const noexcept
+    {
+        assert(obj_ != nullptr);
+        return type() == object_type::string;
     }
 
     // is<T> checks whether the underlying type is compatible with the required
