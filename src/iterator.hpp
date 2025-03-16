@@ -11,16 +11,13 @@
 #include <vector>
 
 #include "exclusion/common.hpp"
+#include "object.hpp"
 #include "object_type.hpp"
 #include "object_view.hpp"
 #include "utils.hpp"
 
 // Eventually object will be a class rather than a namespace
 namespace ddwaf {
-
-namespace detail {
-object_view get_temporary_object(object_key key);
-} // namespace detail
 
 template <typename T> class iterator_base {
 public:
@@ -109,10 +106,15 @@ public:
 
     [[nodiscard]] object_view operator*()
     {
+        static thread_local detail::object key;
         if (current_.first.empty()) {
             return {};
         }
-        return detail::get_temporary_object(current_.first);
+        return (key = {.parameterName = nullptr,
+                    .parameterNameLength = 0,
+                    .stringValue = current_.first.data(),
+                    .nbEntries = current_.first.size(),
+                    .type = DDWAF_OBJ_STRING});
     }
 
 protected:
@@ -153,13 +155,18 @@ public:
 
     [[nodiscard]] object_view operator*()
     {
+        static thread_local detail::object key;
         if (current_.second.has_value()) {
             if (scalar_value_) {
                 return current_.second;
             }
 
             if (!current_.first.empty()) {
-                return detail::get_temporary_object(current_.first);
+                return (key = {.parameterName = nullptr,
+                            .parameterNameLength = 0,
+                            .stringValue = current_.first.data(),
+                            .nbEntries = current_.first.size(),
+                            .type = DDWAF_OBJ_STRING});
             }
         }
         return {};

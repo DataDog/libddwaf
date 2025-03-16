@@ -20,14 +20,6 @@
 
 namespace ddwaf {
 
-namespace detail {
-object_view get_temporary_object(object_key key)
-{
-    static thread_local owned_object obj;
-    return (obj = owned_object::make_string_nocopy(key, nullptr));
-}
-} // namespace detail
-
 template <typename T>
 iterator_base<T>::iterator_base(
     const exclusion::object_set_ref &exclude, const object_limits &limits)
