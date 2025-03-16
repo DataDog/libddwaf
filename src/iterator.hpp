@@ -18,6 +18,8 @@
 // Eventually object will be a class rather than a namespace
 namespace ddwaf {
 
+extern thread_local owned_object temporary_key;
+
 template <typename T> class iterator_base {
 public:
     ~iterator_base() = default;
@@ -105,12 +107,10 @@ public:
 
     [[nodiscard]] object_view operator*()
     {
-        static thread_local owned_object current_key;
-
         if (current_.first.empty()) {
             return {};
         }
-        return (current_key = owned_object::make_string_nocopy(current_.first, nullptr));
+        return (temporary_key = owned_object::make_string_nocopy(current_.first, nullptr));
     }
 
 protected:
@@ -151,15 +151,13 @@ public:
 
     [[nodiscard]] object_view operator*()
     {
-        static thread_local owned_object current_key;
-
         if (current_.second.has_value()) {
             if (scalar_value_) {
                 return current_.second;
             }
 
             if (!current_.first.empty()) {
-                return (current_key = owned_object::make_string_nocopy(current_.first, nullptr));
+                return (temporary_key = owned_object::make_string_nocopy(current_.first, nullptr));
             }
         }
         return {};

@@ -19,6 +19,8 @@
 
 namespace ddwaf {
 
+thread_local owned_object temporary_key;
+
 template <typename T>
 iterator_base<T>::iterator_base(
     const exclusion::object_set_ref &exclude, const object_limits &limits)
