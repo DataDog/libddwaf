@@ -105,10 +105,12 @@ public:
 
     [[nodiscard]] object_view operator*()
     {
+        static thread_local owned_object current_key;
+
         if (current_.first.empty()) {
             return {};
         }
-        return (current_key_ = owned_object::make_string_nocopy(current_.first, nullptr));
+        return (current_key = owned_object::make_string_nocopy(current_.first, nullptr));
     }
 
 protected:
@@ -116,8 +118,6 @@ protected:
     void initialise_cursor_with_path(object_view obj, std::span<const std::string> path);
 
     void set_cursor_to_next_object();
-
-    owned_object current_key_;
 
     friend class iterator_base<key_iterator>;
 };
@@ -151,13 +151,15 @@ public:
 
     [[nodiscard]] object_view operator*()
     {
+        static thread_local owned_object current_key;
+
         if (current_.second.has_value()) {
             if (scalar_value_) {
                 return current_.second;
             }
 
             if (!current_.first.empty()) {
-                return (current_key_ = owned_object::make_string_nocopy(current_.first, nullptr));
+                return (current_key = owned_object::make_string_nocopy(current_.first, nullptr));
             }
         }
         return {};
@@ -170,7 +172,6 @@ protected:
     void set_cursor_to_next_object();
 
     bool scalar_value_{false};
-    owned_object current_key_;
 
     friend class iterator_base<kv_iterator>;
 };
