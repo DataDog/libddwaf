@@ -8,6 +8,7 @@
 
 #include "ddwaf.h"
 #include "object_type.hpp"
+#include "traits.hpp"
 
 #include <cassert>
 #include <cstring>
@@ -68,8 +69,12 @@ class borrowed_object;
 class object_view;
 class object_key;
 
-template <typename Derived> class base_object {
+template <typename Derived> class readable_object {
 public:
+    // The API assumes that the caller has already verified that the method preconditions are met:
+    //   - When using at, the accessed indexed is within bounds (using size*())
+    //   - When using as, the accessed field matches the underlying object type (using is*())
+
     [[nodiscard]] std::size_t size() const noexcept
     {
         return static_cast<std::size_t>(static_cast<const Derived *>(this)->ref().nbEntries);
@@ -82,33 +87,115 @@ public:
         return static_cast<object_type>(static_cast<const Derived *>(this)->ref().type);
     }
 
+    [[nodiscard]] const char *data() const noexcept
+    {
+        return static_cast<const Derived *>(this)->ref().stringValue;
+    }
     // The is_* methods can be used to check for collections of types
     [[nodiscard]] bool is_container() const noexcept
     {
         return (type() & container_object_type) != 0;
     }
+    [[nodiscard]] bool is_scalar() const noexcept { return (type() & scalar_object_type) != 0; }
 
     [[nodiscard]] bool is_map() const noexcept { return type() == object_type::map; }
-
     [[nodiscard]] bool is_array() const noexcept { return type() == object_type::array; }
+    [[nodiscard]] bool is_string() const noexcept { return type() == object_type::string; }
 
     [[nodiscard]] bool is_valid() const noexcept { return type() != object_type::invalid; }
-
     [[nodiscard]] bool is_invalid() const noexcept { return type() == object_type::invalid; }
 
+    // Access the underlying value based on the required type
+    template <typename T>
+    [[nodiscard]] T as() const noexcept
+        requires std::is_same_v<T, Derived>
+    {
+        return *this;
+    }
+
+    template <typename T>
+    [[nodiscard]] T as() const noexcept
+        requires std::is_same_v<T, bool>
+    {
+        const auto &obj = static_cast<const Derived *>(this)->ref();
+        return obj.boolean;
+    }
+
+    template <typename T>
+    [[nodiscard]] T as() const noexcept
+        requires std::is_integral_v<T> && std::is_signed_v<T>
+    {
+        const auto &obj = static_cast<const Derived *>(this)->ref();
+        return static_cast<T>(obj.intValue);
+    }
+
+    template <typename T>
+    [[nodiscard]] T as() const noexcept
+        requires std::is_integral_v<T> && std::is_unsigned_v<T> && (!std::is_same_v<T, bool>)
+    {
+        const auto &obj = static_cast<const Derived *>(this)->ref();
+        return static_cast<T>(obj.uintValue);
+    }
+
+    template <typename T>
+    [[nodiscard]] T as() const noexcept
+        requires std::is_same_v<T, double>
+    {
+        const auto &obj = static_cast<const Derived *>(this)->ref();
+        return static_cast<T>(obj.f64);
+    }
+
+    template <typename T>
+    [[nodiscard]] T as() const noexcept
+        requires std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>
+    {
+        const auto &obj = static_cast<const Derived *>(this)->ref();
+        return {obj.stringValue, size()};
+    }
+
+    template <typename T>
+    [[nodiscard]] T as() const noexcept
+        requires std::is_same_v<T, const char *>
+    {
+        const auto &obj = static_cast<const Derived *>(this)->ref();
+        return obj.stringValue;
+    }
+
+    // Access the underlying value based on the required type or return a default
+    // value otherwise.
+    template <typename T> [[nodiscard]] T as_or_default(T default_value) const noexcept
+    {
+        const auto &obj = static_cast<const Derived *>(this)->ref();
+        if (!is_compatible_type<T>(static_cast<object_type>(obj.type))) {
+            [[unlikely]] return default_value;
+        }
+        return as<T>();
+    }
+
+private:
+    readable_object() = default;
+
+    friend Derived;
+};
+
+// TODO move object view and object converter header
+
+template <typename Derived> class writable_object {
+public:
     [[nodiscard]] borrowed_object at(std::size_t idx);
 
     borrowed_object emplace_back(owned_object &&value);
     borrowed_object emplace(std::string_view key, owned_object &&value);
 
 private:
-    base_object() = default;
+    writable_object() = default;
+
     friend Derived;
 };
 
-class owned_object;
-
-class borrowed_object : public base_object<borrowed_object> {
+// NOLINTNEXTLINE(fuchsia-multiple-inheritance)
+class borrowed_object final : public readable_object<borrowed_object>,
+                              public writable_object<borrowed_object> {
 public:
     // borrowed_object() = default;
     explicit borrowed_object(detail::object *obj) : obj_(obj)
@@ -129,10 +216,13 @@ public:
 protected:
     detail::object *obj_;
 
+    friend class owned_object;
     friend class object_view;
 };
 
-class owned_object : public base_object<owned_object> {
+// NOLINTNEXTLINE(fuchsia-multiple-inheritance)
+class owned_object final : public readable_object<owned_object>,
+                           public writable_object<owned_object> {
 public:
     using size_type = decltype(detail::object::nbEntries);
     using length_type = decltype(detail::object::nbEntries);
@@ -280,26 +370,30 @@ protected:
     detail::object obj_{};
     ddwaf_object_free_fn free_fn_{ddwaf_object_free};
 
-    friend class base_object<borrowed_object>;
-    friend class base_object<owned_object>;
+    friend class borrowed_object;
     friend class object_view;
 };
 
 inline borrowed_object::borrowed_object(owned_object &obj) : obj_(obj.ptr()) {}
 
-template <typename Derived> [[nodiscard]] borrowed_object base_object<Derived>::at(std::size_t idx)
+template <typename Derived>
+[[nodiscard]] borrowed_object writable_object<Derived>::at(std::size_t idx)
 {
-    assert(is_container() && idx < size());
     auto &container = static_cast<const Derived *>(this)->ref();
+
+    assert((static_cast<object_type>(container.type) & container_object_type) != 0);
+    assert(idx < static_cast<std::size_t>(container.nbEntries));
+
     return borrowed_object{&container.array[idx]};
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
-template <typename Derived> borrowed_object base_object<Derived>::emplace_back(owned_object &&value)
+template <typename Derived>
+borrowed_object writable_object<Derived>::emplace_back(owned_object &&value)
 {
-    assert(is_array());
-
     auto &container = static_cast<Derived *>(this)->ref();
+
+    assert(static_cast<object_type>(container.type) == object_type::array);
 
     // We preallocate 8 entries
     if (container.nbEntries == 0) {
@@ -322,11 +416,10 @@ template <typename Derived> borrowed_object base_object<Derived>::emplace_back(o
 
 template <typename Derived>
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
-borrowed_object base_object<Derived>::emplace(std::string_view key, owned_object &&value)
+borrowed_object writable_object<Derived>::emplace(std::string_view key, owned_object &&value)
 {
-    assert(is_map());
-
     auto &container = static_cast<Derived *>(this)->ref();
+    assert(static_cast<object_type>(container.type) == object_type::map);
 
     // We preallocate 8 entries
     if (container.nbEntries == 0) {

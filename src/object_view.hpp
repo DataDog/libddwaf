@@ -20,9 +20,9 @@
 
 namespace ddwaf {
 
-template <typename T> struct object_converter;
-
 class object_view;
+
+template <typename T> struct object_converter;
 
 // Temporary abstraction, this will be removed once the keys and values are
 // split within ddwaf_object.
@@ -78,7 +78,7 @@ protected:
     const detail::object *obj_{nullptr};
 };
 
-class object_view {
+class object_view : public readable_object<object_view> {
 public:
     // The default constructor results in a view without value
     object_view() = default;
@@ -141,61 +141,6 @@ public:
 
     [[nodiscard]] bool has_value() const noexcept { return obj_ != nullptr; }
 
-    [[nodiscard]] object_type type() const noexcept
-    {
-        assert(obj_ != nullptr);
-        return static_cast<object_type>(obj_->type);
-    }
-
-    [[nodiscard]] std::size_t size() const noexcept
-    {
-        assert(obj_ != nullptr);
-        return static_cast<std::size_t>(obj_->nbEntries);
-    }
-
-    [[nodiscard]] bool empty() const noexcept
-    {
-        assert(obj_ != nullptr);
-        return obj_->nbEntries == 0;
-    }
-
-    [[nodiscard]] const char *data() const noexcept
-    {
-        assert(obj_ != nullptr);
-        return obj_->stringValue;
-    }
-
-    // The is_* methods can be used to check for collections of types
-    [[nodiscard]] bool is_container() const noexcept
-    {
-        assert(obj_ != nullptr);
-        return (type() & container_object_type) != 0;
-    }
-
-    [[nodiscard]] bool is_scalar() const noexcept
-    {
-        assert(obj_ != nullptr);
-        return (type() & scalar_object_type) != 0;
-    }
-
-    [[nodiscard]] bool is_map() const noexcept
-    {
-        assert(obj_ != nullptr);
-        return type() == object_type::map;
-    }
-
-    [[nodiscard]] bool is_array() const noexcept
-    {
-        assert(obj_ != nullptr);
-        return type() == object_type::array;
-    }
-
-    [[nodiscard]] bool is_string() const noexcept
-    {
-        assert(obj_ != nullptr);
-        return type() == object_type::string;
-    }
-
     // is<T> checks whether the underlying type is compatible with the required
     // type. When it comes to numeric types, the request type must match the
     // one used within ddwaf_object, i.e. the type will not be cast to one of
@@ -231,10 +176,6 @@ public:
                obj_->intValue <= limits::max();
     }
 
-    // The API assumes that the caller has already verified that the method preconditions are met:
-    //   - When using at, the accessed indexed is within bounds (using size*())
-    //   - When using as, the accessed field matches the underlying object type (using is*())
-
     // Access the key and value at index. If the container is an array, the key
     // will be an empty string.
     [[nodiscard]] std::pair<object_key, object_view> at(std::size_t index) const noexcept
@@ -263,74 +204,6 @@ public:
     {
         assert(obj_ != nullptr && index < size() && obj_->array != nullptr);
         return obj_->array[index];
-    }
-
-    // Access the underlying value based on the required type
-    template <typename T>
-    [[nodiscard]] T as() const noexcept
-        requires std::is_same_v<T, object_view>
-    {
-        assert(obj_ != nullptr);
-        return {obj_};
-    }
-
-    template <typename T>
-    [[nodiscard]] T as() const noexcept
-        requires std::is_same_v<T, bool>
-    {
-        assert(obj_ != nullptr);
-        return obj_->boolean;
-    }
-
-    template <typename T>
-    [[nodiscard]] T as() const noexcept
-        requires std::is_integral_v<T> && std::is_signed_v<T>
-    {
-        assert(obj_ != nullptr);
-        return static_cast<T>(obj_->intValue);
-    }
-
-    template <typename T>
-    [[nodiscard]] T as() const noexcept
-        requires std::is_integral_v<T> && std::is_unsigned_v<T> && (!std::is_same_v<T, bool>)
-    {
-        assert(obj_ != nullptr);
-        return static_cast<T>(obj_->uintValue);
-    }
-
-    template <typename T>
-    [[nodiscard]] T as() const noexcept
-        requires std::is_same_v<T, double>
-    {
-        assert(obj_ != nullptr);
-        return static_cast<T>(obj_->f64);
-    }
-
-    template <typename T>
-    [[nodiscard]] T as() const noexcept
-        requires std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>
-    {
-        assert(obj_ != nullptr);
-        return {obj_->stringValue, size()};
-    }
-
-    template <typename T>
-    [[nodiscard]] T as() const noexcept
-        requires std::is_same_v<T, const char *>
-    {
-        assert(obj_ != nullptr);
-        return obj_->stringValue;
-    }
-
-    // Access the underlying value based on the required type or return a default
-    // value otherwise.
-    template <typename T> [[nodiscard]] T as_or_default(T default_value) const noexcept
-    {
-        assert(obj_ != nullptr);
-        if (!is_compatible_type<T>(type())) {
-            [[unlikely]] return default_value;
-        }
-        return as<T>();
     }
 
     // Convert the underlying type to the requested type, converters are defined
