@@ -18,7 +18,9 @@
 // Eventually object will be a class rather than a namespace
 namespace ddwaf {
 
-extern thread_local owned_object temporary_key;
+namespace detail {
+object_view get_temporary_object(object_key key);
+} // namespace detail
 
 template <typename T> class iterator_base {
 public:
@@ -110,7 +112,7 @@ public:
         if (current_.first.empty()) {
             return {};
         }
-        return (temporary_key = owned_object::make_string_nocopy(current_.first, nullptr));
+        return detail::get_temporary_object(current_.first);
     }
 
 protected:
@@ -157,7 +159,7 @@ public:
             }
 
             if (!current_.first.empty()) {
-                return (temporary_key = owned_object::make_string_nocopy(current_.first, nullptr));
+                return detail::get_temporary_object(current_.first);
             }
         }
         return {};

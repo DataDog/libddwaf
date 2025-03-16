@@ -13,13 +13,20 @@
 
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
+#include "object.hpp"
 #include "object_type.hpp"
 #include "object_view.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
 
-thread_local owned_object temporary_key;
+namespace detail {
+object_view get_temporary_object(object_key key)
+{
+    static thread_local owned_object obj;
+    return (obj = owned_object::make_string_nocopy(key, nullptr));
+}
+} // namespace detail
 
 template <typename T>
 iterator_base<T>::iterator_base(
