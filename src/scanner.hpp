@@ -10,7 +10,6 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "ddwaf.h"
 #include "log.hpp"
 #include "matcher/base.hpp"
 
@@ -31,19 +30,17 @@ public:
 
     virtual ~scanner() = default;
 
-    bool eval(object_view key, object_view value) const
+    bool eval(std::string_view key, object_view value) const
     {
         DDWAF_DEBUG("Evaluating scanner '{}'", id_);
         return eval_matcher(key_matcher_, key) && eval_matcher(value_matcher_, value);
     }
 
-    bool eval(std::string_view key, object_view value) const
+    // Used for testing
+    // TODO: update tests to remove this
+    bool eval(object_view key, object_view value) const
     {
-        owned_object key_obj;
-        if (key.data() != nullptr && !key.empty()) {
-            key_obj = owned_object::make_string_nocopy(key, nullptr);
-        }
-        return eval(key_obj, value);
+        return eval(key.as<std::string_view>(), value);
     }
 
     const std::unordered_map<std::string, std::string> &get_tags() const { return tags_; }
@@ -51,15 +48,22 @@ public:
     const std::string &get_id_ref() const { return id_; }
 
 protected:
-    static bool eval_matcher(const std::shared_ptr<matcher::base> &matcher, object_view obj)
+    template <typename T>
+    static bool eval_matcher(const std::shared_ptr<matcher::base> &matcher, T data)
     {
         if (!matcher) {
             return true;
         }
-        if (!obj.has_value() && obj.type() == object_type::invalid) {
-            return false;
+        if constexpr (std::is_same_v<T, object_view>) {
+            if (!data.has_value() && data.type() == object_type::invalid) {
+                return false;
+            }
+        } else if constexpr (std::is_same_v<T, std::string_view>) {
+            if (data.empty()) {
+                return false;
+            }
         }
-        return matcher->match(obj).first;
+        return matcher->match(data).first;
     }
 
     std::string id_;

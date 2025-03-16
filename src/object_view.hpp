@@ -78,7 +78,7 @@ protected:
     const detail::object *obj_{nullptr};
 };
 
-class object_view : public readable_object<object_view> {
+class object_view final : public readable_object<object_view> {
 public:
     // The default constructor results in a view without value
     object_view() = default;
