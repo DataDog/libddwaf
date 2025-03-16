@@ -79,8 +79,8 @@ public:
     base_processor &operator=(base_processor &&rhs) noexcept = default;
     virtual ~base_processor() = default;
 
-    virtual void eval(object_store &store, optional_ref<borrowed_object> &derived,
-        processor_cache &cache, const object_limits &limits, ddwaf::timer &deadline) const = 0;
+    virtual void eval(object_store &store, owned_object &derived, processor_cache &cache,
+        const object_limits &limits, ddwaf::timer &deadline) const = 0;
 
     virtual void get_addresses(std::unordered_map<target_index, std::string> &addresses) const = 0;
 
@@ -102,12 +102,12 @@ public:
     structured_processor &operator=(structured_processor &&rhs) noexcept = default;
     ~structured_processor() override = default;
 
-    void eval(object_store &store, optional_ref<borrowed_object> &derived, processor_cache &cache,
+    void eval(object_store &store, owned_object &derived, processor_cache &cache,
         const object_limits &limits, ddwaf::timer &deadline) const override
     {
         // No result structure, but this processor only produces derived objects
         // so it makes no sense to evaluate.
-        if (!derived.has_value() && !evaluate_ && output_) {
+        if (!derived.is_map() && !evaluate_ && output_) {
             return;
         }
 
@@ -187,7 +187,7 @@ public:
                 continue;
             }
 
-            bool should_output = output_ && derived.has_value();
+            bool should_output = output_ && derived.is_map();
             if (evaluate_) {
                 if (!should_output) {
                     store.insert(
@@ -198,8 +198,7 @@ public:
             }
 
             if (should_output) {
-                borrowed_object &output = derived.value();
-                output.emplace(mapping.output.name, std::move(object));
+                derived.emplace(mapping.output.name, std::move(object));
             }
         }
     }

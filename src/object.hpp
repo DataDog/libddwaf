@@ -38,7 +38,7 @@ inline void realloc_array(object &obj)
 {
     const auto size = static_cast<std::size_t>(obj.nbEntries) + 8;
     if (size > SIZE_MAX / sizeof(object)) {
-        throw std::bad_alloc();
+        [[unlikely]] throw std::bad_alloc();
     }
 
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
@@ -46,7 +46,7 @@ inline void realloc_array(object &obj)
         // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
         realloc(reinterpret_cast<void *>(obj.array), size * sizeof(object)));
     if (new_array == nullptr) {
-        throw std::bad_alloc();
+        [[unlikely]] throw std::bad_alloc();
     }
 
     obj.array = new_array;
@@ -88,6 +88,10 @@ public:
         return (type() & container_object_type) != 0;
     }
 
+    [[nodiscard]] bool is_map() const noexcept { return type() == object_type::map; }
+
+    [[nodiscard]] bool is_array() const noexcept { return type() == object_type::array; }
+
     [[nodiscard]] bool is_valid() const noexcept { return type() != object_type::invalid; }
 
     [[nodiscard]] bool is_invalid() const noexcept { return type() == object_type::invalid; }
@@ -106,7 +110,7 @@ class owned_object;
 
 class borrowed_object : public base_object<borrowed_object> {
 public:
-    borrowed_object() = default;
+    // borrowed_object() = default;
     explicit borrowed_object(detail::object *obj) : obj_(obj)
     {
         if (obj_ == nullptr) {
@@ -123,7 +127,7 @@ public:
     [[nodiscard]] const detail::object *ptr() const { return obj_; }
 
 protected:
-    detail::object *obj_{nullptr};
+    detail::object *obj_;
 
     friend class object_view;
 };
@@ -293,7 +297,7 @@ template <typename Derived> [[nodiscard]] borrowed_object base_object<Derived>::
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 template <typename Derived> borrowed_object base_object<Derived>::emplace_back(owned_object &&value)
 {
-    assert(is_container());
+    assert(is_array());
 
     auto &container = static_cast<Derived *>(this)->ref();
 
@@ -320,7 +324,7 @@ template <typename Derived>
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 borrowed_object base_object<Derived>::emplace(std::string_view key, owned_object &&value)
 {
-    assert(is_container());
+    assert(is_map());
 
     auto &container = static_cast<Derived *>(this)->ref();
 

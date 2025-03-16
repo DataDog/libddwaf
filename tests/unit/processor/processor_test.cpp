@@ -64,23 +64,17 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    ddwaf_object output_map;
-    ddwaf_object_map(&output_map);
-    borrowed_object borrowed_map{output_map};
-
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<borrowed_object> derived{borrowed_map};
+    auto derived = owned_object::make_map();
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+    EXPECT_EQ(derived.size(), 0);
     proc.eval(store, derived, cache, {}, deadline);
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 1);
-    const auto *obtained = ddwaf_object_get_index(&output_map, 0);
+    EXPECT_EQ(derived.size(), 1);
+    const auto *obtained = derived.at(0).ptr();
     EXPECT_STREQ(obtained->parameterName, "output_address");
     EXPECT_STREQ(obtained->stringValue, "output_string");
-
-    ddwaf_object_free(&output_map);
 }
 
 TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
@@ -116,31 +110,25 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
         .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>(
             std::move(second_output), object_store::attribute::none))));
 
-    ddwaf_object output_map;
-    ddwaf_object_map(&output_map);
-    borrowed_object borrowed_map{output_map};
-
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<borrowed_object> derived{borrowed_map};
+    auto derived = owned_object::make_map();
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+    EXPECT_EQ(derived.size(), 0);
     proc.eval(store, derived, cache, {}, deadline);
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 2);
+    EXPECT_EQ(derived.size(), 2);
     {
-        const auto *obtained = ddwaf_object_get_index(&output_map, 0);
+        const auto *obtained = derived.at(0).ptr();
         EXPECT_STREQ(obtained->parameterName, "output_address.first");
         EXPECT_STREQ(obtained->stringValue, "first_output_string");
     }
 
     {
-        const auto *obtained = ddwaf_object_get_index(&output_map, 1);
+        const auto *obtained = derived.at(1).ptr();
         EXPECT_STREQ(obtained->parameterName, "output_address.second");
         EXPECT_STREQ(obtained->stringValue, "second_output_string");
     }
-
-    ddwaf_object_free(&output_map);
 }
 
 TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
@@ -176,23 +164,17 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
         .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
             std::move(output), object_store::attribute::none})));
 
-    ddwaf_object output_map;
-    ddwaf_object_map(&output_map);
-    borrowed_object borrowed_map{output_map};
-
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<borrowed_object> derived{borrowed_map};
+    auto derived = owned_object::make_map();
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+    EXPECT_EQ(derived.size(), 0);
     proc.eval(store, derived, cache, {}, deadline);
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 1);
-    const auto *obtained = ddwaf_object_get_index(&output_map, 0);
+    EXPECT_EQ(derived.size(), 1);
+    const auto *obtained = derived.at(0).ptr();
     EXPECT_STREQ(obtained->parameterName, "output_address");
     EXPECT_STREQ(obtained->stringValue, "output_string");
-
-    ddwaf_object_free(&output_map);
 }
 
 TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
@@ -224,17 +206,13 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
         .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
             std::move(output), object_store::attribute::none})));
 
-    ddwaf_object output_map;
-    ddwaf_object_map(&output_map);
-    borrowed_object borrowed_map{output_map};
-
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<borrowed_object> derived{borrowed_map};
+    auto derived = owned_object::make_map();
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+    EXPECT_EQ(derived.size(), 0);
     proc.eval(store, derived, cache, {}, deadline);
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+    EXPECT_EQ(derived.size(), 0);
 
     ddwaf_object input;
     ddwaf_object_string(&input, "input_string");
@@ -244,15 +222,13 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
 
     store.insert(owned_object{input_map});
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+    EXPECT_EQ(derived.size(), 0);
     proc.eval(store, derived, cache, {}, deadline);
-    EXPECT_EQ(ddwaf_object_size(&output_map), 1);
+    EXPECT_EQ(derived.size(), 1);
 
-    const auto *obtained = ddwaf_object_get_index(&output_map, 0);
+    const auto *obtained = derived.at(0).ptr();
     EXPECT_STREQ(obtained->parameterName, "output_address");
     EXPECT_STREQ(obtained->stringValue, "output_string");
-
-    ddwaf_object_free(&output_map);
 }
 
 TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
@@ -284,20 +260,14 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
     mock::processor proc{"id", builder.build(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    ddwaf_object output_map;
-    ddwaf_object_map(&output_map);
-    borrowed_object borrowed_map{output_map};
-
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<borrowed_object> derived{borrowed_map};
+    auto derived = owned_object::make_map();
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+    EXPECT_EQ(derived.size(), 0);
     proc.eval(store, derived, cache, {}, deadline);
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-
-    ddwaf_object_free(&output_map);
+    EXPECT_EQ(derived.size(), 0);
 }
 
 TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
@@ -328,7 +298,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
     processor_cache cache;
     timer deadline{2s};
 
-    optional_ref<borrowed_object> derived{std::nullopt};
+    owned_object derived;
 
     {
         auto obtained = store.get_target(get_target_index("output_address")).first;
@@ -380,7 +350,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
 
     timer deadline{2s};
 
-    optional_ref<borrowed_object> derived{std::nullopt};
+    owned_object derived;
 
     EXPECT_EQ(store.get_target(get_target_index("output_address")).first, nullptr);
 
@@ -425,7 +395,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
     processor_cache cache;
     timer deadline{2s};
 
-    optional_ref<borrowed_object> derived{std::nullopt};
+    owned_object derived;
 
     EXPECT_EQ(store.get_target(get_target_index("output_address")).first, nullptr);
     proc.eval(store, derived, cache, {}, deadline);
@@ -468,7 +438,7 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
 
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<borrowed_object> derived{std::nullopt};
+    owned_object derived;
 
     EXPECT_EQ(store.get_target(get_target_index("output_address.first")).first, nullptr);
     EXPECT_EQ(store.get_target(get_target_index("output_address.second")).first, nullptr);
@@ -517,19 +487,15 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
         .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
             std::move(output), object_store::attribute::none})));
 
-    ddwaf_object output_map;
-    ddwaf_object_map(&output_map);
-    borrowed_object borrowed_map{output_map};
-
     processor_cache cache;
     timer deadline{2s};
 
-    optional_ref<borrowed_object> derived{borrowed_map};
+    auto derived = owned_object::make_map();
 
     {
         auto obtained = store.get_target(get_target_index("output_address")).first;
         EXPECT_EQ(obtained, nullptr);
-        EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+        EXPECT_EQ(derived.size(), 0);
     }
 
     proc.eval(store, derived, cache, {}, deadline);
@@ -541,12 +507,11 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     }
 
     {
-        EXPECT_EQ(ddwaf_object_size(&output_map), 1);
-        const auto *obtained = ddwaf_object_get_index(&output_map, 0);
+        EXPECT_EQ(derived.size(), 1);
+        const auto *obtained = derived.at(0).ptr();
         EXPECT_STREQ(obtained->parameterName, "output_address");
         EXPECT_STREQ(obtained->stringValue, "output_string");
     }
-    ddwaf_object_free(&output_map);
 }
 
 TEST(TestProcessor, OutputAlreadyAvailableInStore)
@@ -571,18 +536,12 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
 
     EXPECT_CALL(proc, eval_impl(_, _, _)).Times(0);
 
-    ddwaf_object output_map;
-    ddwaf_object_map(&output_map);
-    borrowed_object borrowed_map{output_map};
-
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<borrowed_object> derived{borrowed_map};
+    auto derived = owned_object::make_map();
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+    EXPECT_EQ(derived.size(), 0);
     proc.eval(store, derived, cache, {}, deadline);
-
-    ddwaf_object_free(&output_map);
 }
 
 TEST(TestProcessor, OutputAlreadyGenerated)
@@ -606,19 +565,13 @@ TEST(TestProcessor, OutputAlreadyGenerated)
 
     EXPECT_CALL(proc, eval_impl(_, _, _)).Times(1);
 
-    ddwaf_object output_map;
-    ddwaf_object_map(&output_map);
-    borrowed_object borrowed_map{output_map};
-
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<borrowed_object> derived{borrowed_map};
+    auto derived = owned_object::make_map();
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+    EXPECT_EQ(derived.size(), 0);
     proc.eval(store, derived, cache, {}, deadline);
     proc.eval(store, derived, cache, {}, deadline);
-
-    ddwaf_object_free(&output_map);
 }
 
 TEST(TestProcessor, EvalAlreadyAvailableInStore)
@@ -645,7 +598,7 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
 
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<borrowed_object> derived{};
+    owned_object derived;
 
     proc.eval(store, derived, cache, {}, deadline);
 }
@@ -673,7 +626,7 @@ TEST(TestProcessor, OutputWithoutDerivedMap)
 
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<borrowed_object> derived{};
+    owned_object derived;
 
     proc.eval(store, derived, cache, {}, deadline);
 }
@@ -706,7 +659,7 @@ TEST(TestProcessor, OutputEvalWithoutDerivedMap)
     processor_cache cache;
     timer deadline{2s};
 
-    optional_ref<borrowed_object> derived{};
+    owned_object derived;
 
     {
         auto obtained = store.get_target(get_target_index("output_address")).first;
@@ -737,7 +690,7 @@ TEST(TestProcessor, Timeout)
 
     processor_cache cache;
     timer deadline{0s};
-    optional_ref<borrowed_object> derived{};
+    owned_object derived;
 
     EXPECT_THROW(proc.eval(store, derived, cache, {}, deadline), ddwaf::timeout_exception);
 }

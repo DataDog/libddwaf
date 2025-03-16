@@ -74,23 +74,17 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    ddwaf_object output_map;
-    ddwaf_object_map(&output_map);
-    borrowed_object borrowed_map{output_map};
-
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<borrowed_object> derived{borrowed_map};
+    auto derived = owned_object::make_map();
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+    EXPECT_EQ(derived.size(), 0);
     proc.eval(store, derived, cache, {}, deadline);
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 1);
-    const auto *obtained = ddwaf_object_get_index(&output_map, 0);
+    EXPECT_EQ(derived.size(), 1);
+    const auto *obtained = derived.at(0).ptr();
     EXPECT_STREQ(obtained->parameterName, "output_address");
     EXPECT_STREQ(obtained->stringValue, "output_string");
-
-    ddwaf_object_free(&output_map);
 }
 
 TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
@@ -123,23 +117,17 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    ddwaf_object output_map;
-    ddwaf_object_map(&output_map);
-    borrowed_object borrowed_map{output_map};
-
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<borrowed_object> derived{borrowed_map};
+    auto derived = owned_object::make_map();
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+    EXPECT_EQ(derived.size(), 0);
     proc.eval(store, derived, cache, {}, deadline);
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 1);
-    const auto *obtained = ddwaf_object_get_index(&output_map, 0);
+    EXPECT_EQ(derived.size(), 1);
+    const auto *obtained = derived.at(0).ptr();
     EXPECT_STREQ(obtained->parameterName, "output_address");
     EXPECT_STREQ(obtained->stringValue, "output_string");
-
-    ddwaf_object_free(&output_map);
 }
 
 TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
@@ -168,19 +156,13 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    ddwaf_object output_map;
-    ddwaf_object_map(&output_map);
-    borrowed_object borrowed_map{output_map};
-
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<borrowed_object> derived{borrowed_map};
+    auto derived = owned_object::make_map();
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+    EXPECT_EQ(derived.size(), 0);
     proc.eval(store, derived, cache, {}, deadline);
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-
-    ddwaf_object_free(&output_map);
+    EXPECT_EQ(derived.size(), 0);
 }
 
 TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
@@ -208,19 +190,13 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    ddwaf_object output_map;
-    ddwaf_object_map(&output_map);
-    borrowed_object borrowed_map{output_map};
-
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<borrowed_object> derived{borrowed_map};
+    auto derived = owned_object::make_map();
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+    EXPECT_EQ(derived.size(), 0);
     proc.eval(store, derived, cache, {}, deadline);
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-
-    ddwaf_object_free(&output_map);
+    EXPECT_EQ(derived.size(), 0);
 }
 
 } // namespace

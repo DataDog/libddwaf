@@ -84,11 +84,9 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
 
     const event_serializer serializer(event_obfuscator_, actions_);
 
-    optional_ref<borrowed_object> derived;
-    borrowed_object derivatives;
+    owned_object derived;
     if (res.has_value()) {
-        derivatives = borrowed_object{&res->get().derivatives};
-        derived = derivatives;
+        derived = owned_object::make_map();
     }
 
     std::vector<ddwaf::event> events;
@@ -121,6 +119,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     if (res.has_value()) {
         ddwaf_result &output = *res;
         serializer.serialize(events, output);
+        output.derivatives = derived.move();
         output.total_runtime = deadline.elapsed().count();
         output.timeout = deadline.expired_before();
     }
@@ -128,7 +127,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     return code;
 }
 
-void context::eval_preprocessors(optional_ref<borrowed_object> &derived, ddwaf::timer &deadline)
+void context::eval_preprocessors(owned_object &derived, ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating preprocessors");
 
@@ -148,7 +147,7 @@ void context::eval_preprocessors(optional_ref<borrowed_object> &derived, ddwaf::
     }
 }
 
-void context::eval_postprocessors(optional_ref<borrowed_object> &derived, ddwaf::timer &deadline)
+void context::eval_postprocessors(owned_object &derived, ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating postprocessors");
 
