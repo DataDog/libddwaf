@@ -169,8 +169,16 @@ else()
     add_library(libddwaf_static_objects ALIAS libddwaf_objects)
 endif()
 
-if(NOT MSVC AND LIBDDWAF_TESTING AND LIBDDWAF_TEST_COVERAGE)
+if (NOT MSVC AND LIBDDWAF_TESTING AND LIBDDWAF_TEST_COVERAGE)
     target_compile_options(libddwaf_objects PRIVATE --coverage)
+endif()
+
+if (NOT MSVC AND LIBDDWAF_TESTING)
+    if (LIBDDWAF_BENCHMARK_PGO_STAGE1)
+        target_compile_options(libddwaf_objects PRIVATE -fprofile-instr-generate)
+    elseif (LIBDDWAF_BENCHMARK_PGO_PROFILE)
+        target_compile_options(libddwaf_objects PRIVATE -fprofile-use=${LIBDDWAF_BENCHMARK_PGO_PROFILE})
+    endif()
 endif()
 
 

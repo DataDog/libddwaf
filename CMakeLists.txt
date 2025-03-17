@@ -37,6 +37,7 @@ option(LIBDDWAF_TESTING "Load test subdirectories and targets" ON)
 option(LIBDDWAF_TEST_COVERAGE "Do coverage if possible" OFF)
 option(LIBDDWAF_VECTORIZED_TRANSFORMERS "Enable vectorization for transformers" ON)
 option(LIBDDWAF_ENABLE_LTO "Enable link-time optimisation" OFF)
+option(LIBDDWAF_BENCHMARK_PGO_STAGE1 "Stage 1 build of PGO optimized benchmark" OFF)
 
 if(NOT MSVC)
     add_compile_options(-Wall -Wextra -Wno-narrowing)
