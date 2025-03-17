@@ -16,3 +16,4 @@ echo "Compiling Stage 2"
 mkdir build ; cd build
 cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLIBDDWAF_BENCHMARK_PGO_PROFILE=$(pwd)/../profile.profdata
 make -j $(nproc) waf_benchmark 
+cd ..
