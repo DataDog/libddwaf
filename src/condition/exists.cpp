@@ -26,9 +26,9 @@ namespace {
 
 enum class search_outcome : uint8_t { found, not_found, unknown };
 
-object_view find_key(object_view parent, std::string_view key, const object_limits &limits)
+object_view find_key(object_view parent, std::string_view key)
 {
-    for (auto it = parent.begin(limits); it != parent.end(); ++it) {
+    for (auto it = parent.begin(); it != parent.end(); ++it) {
         const auto &child_key = it.key();
 
         if (key == child_key) {
@@ -40,7 +40,7 @@ object_view find_key(object_view parent, std::string_view key, const object_limi
 }
 
 search_outcome exists(object_view root, std::span<const std::string> key_path,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits)
+    const exclusion::object_set_ref &objects_excluded)
 {
     if (key_path.empty()) {
         return search_outcome::found;
@@ -53,9 +53,7 @@ search_outcome exists(object_view root, std::span<const std::string> key_path,
 
     auto it = key_path.begin();
 
-    // The parser ensures that the key path is within the limits specified by
-    // the user, hence we don't need to check for depth
-    while ((root = find_key(root, *it, limits)).has_value()) {
+    while ((root = find_key(root, *it)).has_value()) {
         if (objects_excluded.contains(root)) {
             // We found the next root but it has been excluded, so we
             // can't know for sure if the required key path exists
@@ -79,15 +77,14 @@ search_outcome exists(object_view root, std::span<const std::string> key_path,
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[nodiscard]] eval_result exists_condition::eval_impl(const variadic_argument<object_view> &inputs,
     condition_cache &cache, const exclusion::object_set_ref &objects_excluded,
-    const object_limits &limits, ddwaf::timer &deadline) const
+    ddwaf::timer &deadline) const
 {
     for (const auto &input : inputs) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        if (exists(input.value, input.key_path, objects_excluded, limits) ==
-            search_outcome::found) {
+        if (exists(input.value, input.key_path, objects_excluded) == search_outcome::found) {
             std::vector<std::string> key_path{input.key_path.begin(), input.key_path.end()};
             cache.match = {{.args = {{.name = "input",
                                 .resolved = {},
@@ -106,14 +103,12 @@ search_outcome exists(object_view root, std::span<const std::string> key_path,
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[nodiscard]] eval_result exists_negated_condition::eval_impl(
     const unary_argument<object_view> &input, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer & /*deadline*/) const
+    const exclusion::object_set_ref &objects_excluded, ddwaf::timer & /*deadline*/) const
 {
     // We need to make sure the key path hasn't been found. If the result is
     // unknown, we can't guarantee that the key path isn't actually present in
     // the data set
-    if (exists(input.value, input.key_path, objects_excluded, limits) !=
-        search_outcome::not_found) {
+    if (exists(input.value, input.key_path, objects_excluded) != search_outcome::not_found) {
         return {.outcome = false, .ephemeral = false};
     }
 

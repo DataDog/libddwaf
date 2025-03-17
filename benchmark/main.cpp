@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
             auto name = spec["scenario"].as<std::string>();
             auto ruleset = spec["ruleset"].as<ddwaf_object>();
 
-            ddwaf_config cfg{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+            ddwaf_config config{{nullptr, nullptr}, nullptr};
             ddwaf_handle handle = ddwaf_init(&ruleset, &cfg, nullptr);
             ddwaf_object_free(&ruleset);
             if (handle == nullptr) {

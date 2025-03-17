@@ -79,7 +79,7 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
     auto derived = owned_object::make_map();
 
     EXPECT_EQ(derived.size(), 0);
-    proc.eval(store, derived, cache, {}, deadline);
+    proc.eval(store, derived, cache, deadline);
 
     EXPECT_EQ(derived.size(), 1);
     const auto *obtained = derived.at(0).ptr();
@@ -122,7 +122,7 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
     auto derived = owned_object::make_map();
 
     EXPECT_EQ(derived.size(), 0);
-    proc.eval(store, derived, cache, {}, deadline);
+    proc.eval(store, derived, cache, deadline);
 
     EXPECT_EQ(derived.size(), 1);
     const auto *obtained = derived.at(0).ptr();
@@ -161,7 +161,7 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
     auto derived = owned_object::make_map();
 
     EXPECT_EQ(derived.size(), 0);
-    proc.eval(store, derived, cache, {}, deadline);
+    proc.eval(store, derived, cache, deadline);
     EXPECT_EQ(derived.size(), 0);
 }
 
@@ -195,7 +195,7 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
     auto derived = owned_object::make_map();
 
     EXPECT_EQ(derived.size(), 0);
-    proc.eval(store, derived, cache, {}, deadline);
+    proc.eval(store, derived, cache, deadline);
     EXPECT_EQ(derived.size(), 0);
 }
 

@@ -475,7 +475,7 @@ TEST(TestDiagnosticsV2Integration, MultipleRules)
     auto rule = read_file("rules.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
@@ -519,7 +519,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
     auto rule = read_file("rules_min_version.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
@@ -561,7 +561,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
     auto rule = read_file("rules_max_version.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
@@ -603,7 +603,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
     auto rule = read_file("rules_min_max_version.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
@@ -646,7 +646,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
     auto rule = read_file("rules_with_errors.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
@@ -729,7 +729,7 @@ TEST(TestDiagnosticsV2Integration, CustomRules)
     auto rule = read_file("custom_rules.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
@@ -773,7 +773,7 @@ TEST(TestDiagnosticsV2Integration, InputFilter)
     auto rule = read_file("input_filter.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
@@ -811,7 +811,7 @@ TEST(TestDiagnosticsV2Integration, RuleData)
     auto rule = read_file("rule_data.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
@@ -850,7 +850,7 @@ TEST(TestDiagnosticsV2Integration, Processor)
     auto rule = read_json_file("processor.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);

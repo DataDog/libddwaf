@@ -7,7 +7,6 @@
 #pragma once
 
 #include "condition/structured_condition.hpp"
-#include "matcher/ip_match.hpp"
 
 namespace ddwaf {
 
@@ -21,18 +20,15 @@ public:
 protected:
     [[nodiscard]] eval_result eval_impl(const unary_argument<object_view> &resource,
         const variadic_argument<object_view> &params, condition_cache &cache,
-        const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-        ddwaf::timer &deadline) const;
+        const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const;
 
     [[nodiscard]] static eval_result eval_string(const unary_argument<object_view> &resource,
         const variadic_argument<object_view> &params, condition_cache &cache,
-        const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-        ddwaf::timer &deadline);
+        const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline);
 
     [[nodiscard]] static eval_result eval_array(const unary_argument<object_view> &resource,
         const variadic_argument<object_view> &params, condition_cache &cache,
-        const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-        ddwaf::timer &deadline);
+        const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline);
 
     friend class base_impl<shi_detector>;
 };

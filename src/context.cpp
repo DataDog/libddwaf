@@ -143,7 +143,7 @@ void context::eval_preprocessors(owned_object &derived, ddwaf::timer &deadline)
             it = new_it;
         }
 
-        preproc->eval(store_, derived, it->second, limits_, deadline);
+        preproc->eval(store_, derived, it->second, deadline);
     }
 }
 
@@ -163,7 +163,7 @@ void context::eval_postprocessors(owned_object &derived, ddwaf::timer &deadline)
             it = new_it;
         }
 
-        postproc->eval(store_, derived, it->second, limits_, deadline);
+        postproc->eval(store_, derived, it->second, deadline);
     }
 }
 
@@ -184,7 +184,7 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
         }
 
         rule_filter::cache_type &cache = it->second;
-        auto exclusion = filter.match(store_, cache, exclusion_matchers_, limits_, deadline);
+        auto exclusion = filter.match(store_, cache, exclusion_matchers_, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 exclusion_policy_.add_rule_exclusion(
@@ -208,7 +208,7 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
         }
 
         input_filter::cache_type &cache = it->second;
-        auto exclusion = filter.match(store_, cache, exclusion_matchers_, limits_, deadline);
+        auto exclusion = filter.match(store_, cache, exclusion_matchers_, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 exclusion_policy_.add_input_exclusion(rule, exclusion->objects);
@@ -228,7 +228,7 @@ std::vector<event> context::eval_rules(
         const auto &mod = ruleset_->rule_modules[i];
         auto &cache = rule_module_cache_[i];
 
-        auto verdict = mod.eval(events, store_, cache, policy, rule_matchers_, limits_, deadline);
+        auto verdict = mod.eval(events, store_, cache, policy, rule_matchers_, deadline);
         if (verdict == rule_module::verdict_type::block) {
             break;
         }

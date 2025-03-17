@@ -80,9 +80,10 @@ ddwaf_object file_to_object(std::string_view filename)
 
 ddwaf_handle init_waf()
 {
-    ddwaf_config config{{0, 0, 0},
-        {R"((p(ass)?w(or)?d|pass(_?phrase)?|secret|(api_?|private_?|public_?)key)|token|consumer_?(id|key|secret)|sign(ed|ature)|bearer|authorization)",
-            R"(^(?:\d[ -]*?){13,16}$)"},
+    ddwaf_config config{
+        {.key_regex =
+                R"((p(ass)?w(or)?d|pass(_?phrase)?|secret|(api_?|private_?|public_?)key)|token|consumer_?(id|key|secret)|sign(ed|ature)|bearer|authorization)",
+            .value_regex = R"(^(?:\d[ -]*?){13,16}$)"},
         ddwaf_object_free};
     ddwaf_object rule = file_to_object("sample_rules.yml");
     ddwaf_object ruleset_info;

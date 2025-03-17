@@ -33,7 +33,7 @@ TEST(TestShiDetectorString, InvalidType)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
 
@@ -53,7 +53,7 @@ TEST(TestShiDetectorString, EmptyResource)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
 
@@ -98,7 +98,7 @@ TEST(TestShiDetectorString, NoMatchAndFalsePositives)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << resource;
     }
 }
@@ -133,7 +133,7 @@ TEST(TestShiDetectorString, ExecutablesAndRedirections)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
         EXPECT_FALSE(res.ephemeral);
 
@@ -181,7 +181,7 @@ TEST(TestShiDetectorString, InjectionsWithinCommandSubstitution)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
         EXPECT_FALSE(res.ephemeral);
 
@@ -222,7 +222,7 @@ TEST(TestShiDetectorString, InjectionsWithinProcessSubstitution)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
         EXPECT_FALSE(res.ephemeral);
 
@@ -265,7 +265,7 @@ TEST(TestShiDetectorString, OffByOnePayloadsMatch)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
         EXPECT_FALSE(res.ephemeral);
 
@@ -331,7 +331,7 @@ TEST(TestShiDetectorString, MultipleArgumentsMatch)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
         EXPECT_FALSE(res.ephemeral);
 

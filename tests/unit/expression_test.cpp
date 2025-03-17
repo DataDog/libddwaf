@@ -33,7 +33,7 @@ TEST(TestExpression, SimpleMatch)
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+    auto res = expr->eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
     EXPECT_FALSE(res.ephemeral);
 
@@ -70,7 +70,7 @@ TEST(TestExpression, SimpleNegatedMatch)
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+    auto res = expr->eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
     EXPECT_FALSE(res.ephemeral);
 
@@ -107,7 +107,7 @@ TEST(TestExpression, EphemeralMatch)
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+    auto res = expr->eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
     EXPECT_TRUE(res.ephemeral);
 
@@ -149,7 +149,7 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
         EXPECT_FALSE(res.ephemeral);
     }
@@ -166,7 +166,7 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
         EXPECT_FALSE(res.ephemeral);
 
@@ -206,7 +206,7 @@ TEST(TestExpression, EphemeralMatchOnSecondEval)
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
         EXPECT_FALSE(res.ephemeral);
     }
@@ -223,7 +223,7 @@ TEST(TestExpression, EphemeralMatchOnSecondEval)
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
         EXPECT_TRUE(res.ephemeral);
 
@@ -274,7 +274,7 @@ TEST(TestExpression, EphemeralMatchTwoConditions)
 
     ddwaf::timer deadline{2s};
 
-    auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+    auto res = expr->eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
     EXPECT_TRUE(res.ephemeral);
 
@@ -326,7 +326,7 @@ TEST(TestExpression, EphemeralMatchOnFirstConditionFirstEval)
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
         EXPECT_FALSE(res.ephemeral);
     }
@@ -343,7 +343,7 @@ TEST(TestExpression, EphemeralMatchOnFirstConditionFirstEval)
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
         EXPECT_FALSE(res.ephemeral);
     }
@@ -379,7 +379,7 @@ TEST(TestExpression, EphemeralMatchOnFirstConditionSecondEval)
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
         EXPECT_FALSE(res.ephemeral);
     }
@@ -396,7 +396,7 @@ TEST(TestExpression, EphemeralMatchOnFirstConditionSecondEval)
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
         EXPECT_TRUE(res.ephemeral);
     }
@@ -427,7 +427,7 @@ TEST(TestExpression, DuplicateInput)
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
         EXPECT_FALSE(res.ephemeral);
     }
@@ -444,7 +444,7 @@ TEST(TestExpression, DuplicateInput)
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
         EXPECT_FALSE(res.ephemeral);
     }
@@ -475,7 +475,7 @@ TEST(TestExpression, DuplicateEphemeralInput)
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
         EXPECT_TRUE(res.ephemeral);
     }
@@ -492,7 +492,7 @@ TEST(TestExpression, DuplicateEphemeralInput)
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
         EXPECT_TRUE(res.ephemeral);
     }
@@ -522,7 +522,7 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
         ddwaf::timer deadline{2s};
 
         expression::cache_type cache;
-        EXPECT_FALSE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+        EXPECT_FALSE(expr->eval(cache, store, {}, {}, deadline).outcome);
     }
 
     {
@@ -538,7 +538,7 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
         ddwaf::timer deadline{2s};
 
         expression::cache_type cache;
-        EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+        EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
 
         auto matches = expr->get_matches(cache);
         EXPECT_EQ(matches.size(), 1);
@@ -583,7 +583,7 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
 
         ddwaf::timer deadline{2s};
 
-        EXPECT_FALSE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+        EXPECT_FALSE(expr->eval(cache, store, {}, {}, deadline).outcome);
     }
 
     {
@@ -598,7 +598,7 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
 
         ddwaf::timer deadline{2s};
 
-        EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+        EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
     }
 }
 
@@ -628,7 +628,7 @@ TEST(TestExpression, TwoConditionsSingleInputMatch)
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
 }
 
 TEST(TestExpression, TwoConditionsMultiInputSingleEvalMatch)
@@ -659,7 +659,7 @@ TEST(TestExpression, TwoConditionsMultiInputSingleEvalMatch)
 
     ddwaf::timer deadline{2s};
 
-    EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
 }
 
 TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
@@ -692,7 +692,7 @@ TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
 
         ddwaf::timer deadline{2s};
 
-        EXPECT_FALSE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+        EXPECT_FALSE(expr->eval(cache, store, {}, {}, deadline).outcome);
     }
 
     {
@@ -709,7 +709,7 @@ TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
 
         ddwaf::timer deadline{2s};
 
-        EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+        EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
     }
 }
 
@@ -736,7 +736,7 @@ TEST(TestExpression, MatchWithKeyPath)
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
     auto matches = expr->get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = ".*",
@@ -768,7 +768,7 @@ TEST(TestExpression, MatchWithTransformer)
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
     auto matches = expr->get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = "value",
@@ -800,7 +800,7 @@ TEST(TestExpression, MatchWithMultipleTransformers)
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
     auto matches = expr->get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = "^ value $",
@@ -834,7 +834,7 @@ TEST(TestExpression, MatchOnKeys)
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
     auto matches = expr->get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = "value",
@@ -869,7 +869,7 @@ TEST(TestExpression, MatchOnKeysWithTransformer)
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
     auto matches = expr->get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = "value",
@@ -902,7 +902,7 @@ TEST(TestExpression, ExcludeInput)
     std::unordered_set<object_view> excluded_objects{&root.array[0]};
 
     expression::cache_type cache;
-    EXPECT_FALSE(expr->eval(cache, store, {excluded_objects, {}}, {}, {}, deadline).outcome);
+    EXPECT_FALSE(expr->eval(cache, store, {excluded_objects, {}}, {}, deadline).outcome);
 }
 
 TEST(TestExpression, ExcludeKeyPath)
@@ -930,5 +930,5 @@ TEST(TestExpression, ExcludeKeyPath)
     std::unordered_set<object_view> excluded_objects{&root.array[0]};
 
     expression::cache_type cache;
-    EXPECT_FALSE(expr->eval(cache, store, {excluded_objects, {}}, {}, {}, deadline).outcome);
+    EXPECT_FALSE(expr->eval(cache, store, {excluded_objects, {}}, {}, deadline).outcome);
 }

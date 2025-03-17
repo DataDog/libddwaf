@@ -34,7 +34,6 @@
 #include "rule.hpp"
 #include "target_address.hpp"
 #include "transformer/base.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -147,7 +146,7 @@ void parse_legacy_rules(const raw_configuration::vector &rule_array, configurati
             std::vector<transformer_id> rule_transformers;
             auto transformers =
                 at<raw_configuration::vector>(node, "transformers", raw_configuration::vector());
-            if (transformers.size() > object_limits::max_transformers_per_address) {
+            if (transformers.size() > max_transformers_per_address) {
                 throw ddwaf::parsing_error("number of transformers beyond allowed limit");
             }
 
