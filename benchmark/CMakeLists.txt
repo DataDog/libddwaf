@@ -1,6 +1,7 @@
 file(GLOB_RECURSE LIBDDWAF_BENCHMARK_SOURCE *.cpp)
 
 add_executable(waf_benchmark ${LIBDDWAF_BENCHMARK_SOURCE})
+target_compile_options(waf_benchmark PRIVATE $<$<BOOL:${LIBDDWAF_ENABLE_LTO}>:-flto>)
 target_link_libraries(waf_benchmark PRIVATE libddwaf_objects lib_yamlcpp lib_rapidjson m)
 target_include_directories(waf_benchmark PRIVATE ${libddwaf_SOURCE_DIR}/src)
 
