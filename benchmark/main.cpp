@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
             auto ruleset = spec["ruleset"].as<ddwaf_object>();
 
             ddwaf_config config{{nullptr, nullptr}, nullptr};
-            ddwaf_handle handle = ddwaf_init(&ruleset, &cfg, nullptr);
+            ddwaf_handle handle = ddwaf_init(&ruleset, &config, nullptr);
             ddwaf_object_free(&ruleset);
             if (handle == nullptr) {
                 std::cerr << "Invalid ruleset file" << std::endl;
