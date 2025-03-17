@@ -41,20 +41,24 @@ public:
     const std::string &get_id_ref() const { return id_; }
 
 protected:
-    template <typename T>
-    static bool eval_matcher(const std::shared_ptr<matcher::base> &matcher, T data)
+    static bool eval_matcher(const std::shared_ptr<matcher::base> &matcher, object_view data)
     {
         if (!matcher) {
             return true;
         }
-        if constexpr (std::is_same_v<T, object_view>) {
-            if (!data.has_value() || data.type() == object_type::invalid) {
-                return false;
-            }
-        } else if constexpr (std::is_same_v<T, std::string_view>) {
-            if (data.empty()) {
-                return false;
-            }
+        if (!data.has_value() || data.type() == object_type::invalid) {
+            return false;
+        }
+        return matcher->match(data).first;
+    }
+
+    static bool eval_matcher(const std::shared_ptr<matcher::base> &matcher, std::string_view data)
+    {
+        if (!matcher) {
+            return true;
+        }
+        if (data.empty()) {
+            return false;
         }
         return matcher->match(data).first;
     }

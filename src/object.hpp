@@ -23,10 +23,14 @@ using object = ddwaf_object;
 inline char *copy_string(const char *str, std::size_t len)
 {
     // TODO new char[len];
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,hicpp-no-malloc)
-    char *copy = static_cast<char *>(malloc(sizeof(char) * (len + 1)));
-    if (copy == nullptr) {
-        [[unlikely]] throw std::bad_alloc();
+    if (len == SIZE_MAX) {
+        throw std::bad_alloc();
+    }
+
+    // NOLINTNEXTLINE(hicpp-no-malloc)
+    char *copy = static_cast<char *>(malloc(len + 1));
+    if (copy == nullptr) [[unlikely]] {
+        throw std::bad_alloc();
     }
 
     memcpy(copy, str, len);
@@ -37,17 +41,18 @@ inline char *copy_string(const char *str, std::size_t len)
 
 inline void realloc_array(object &obj)
 {
-    const auto size = static_cast<std::size_t>(obj.nbEntries) + 8;
-    if (size > SIZE_MAX / sizeof(object)) {
-        [[unlikely]] throw std::bad_alloc();
+    static constexpr std::size_t array_increment = 8;
+
+    const auto size = static_cast<std::size_t>(obj.nbEntries) + array_increment;
+    if (size > SIZE_MAX / sizeof(object)) [[unlikely]] {
+        throw std::bad_alloc();
     }
 
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    auto *new_array = reinterpret_cast<object *>(
-        // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
-        realloc(reinterpret_cast<void *>(obj.array), size * sizeof(object)));
-    if (new_array == nullptr) {
-        [[unlikely]] throw std::bad_alloc();
+    auto *new_array = static_cast<object *>(
+        // NOLINTNEXTLINE(hicpp-no-malloc)
+        realloc(static_cast<void *>(obj.array), size * sizeof(object)));
+    if (new_array == nullptr) [[unlikely]] {
+        throw std::bad_alloc();
     }
 
     obj.array = new_array;
@@ -55,9 +60,10 @@ inline void realloc_array(object &obj)
 
 inline void alloc_array(object &obj)
 {
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,hicpp-no-malloc)
-    obj.array = reinterpret_cast<object *>(malloc(8 * sizeof(object)));
-    if (obj.array == nullptr) {
+    static constexpr std::size_t array_start_size = 8;
+    // NOLINTNEXTLINE(hicpp-no-malloc)
+    obj.array = static_cast<object *>(malloc(array_start_size * sizeof(object)));
+    if (obj.array == nullptr) [[unlikely]] {
         throw std::bad_alloc();
     }
 }
