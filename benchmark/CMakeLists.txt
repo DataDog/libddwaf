@@ -16,6 +16,7 @@ else()
     if (LIBDDWAF_BENCHMARK_PGO_PROFILE)
         message(${LIBDDWAF_BENCHMARK_PGO_PROFILE})
         target_compile_options(waf_benchmark PRIVATE -fprofile-use=${LIBDDWAF_BENCHMARK_PGO_PROFILE})
+        target_link_options(waf_benchmark PRIVATE -Wl,-q)
     endif()
 
     set_target_properties(waf_benchmark PROPERTIES

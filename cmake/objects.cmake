@@ -178,6 +178,7 @@ if (NOT MSVC AND LIBDDWAF_TESTING)
         target_compile_options(libddwaf_objects PRIVATE -fprofile-instr-generate)
     elseif (LIBDDWAF_BENCHMARK_PGO_PROFILE)
         target_compile_options(libddwaf_objects PRIVATE -fprofile-use=${LIBDDWAF_BENCHMARK_PGO_PROFILE})
+        target_link_options(libddwaf_objects PRIVATE -Wl,-q)
     endif()
 endif()
 
