@@ -30,6 +30,28 @@ public:
 
     std::pair<const configuration_spec &, change_set> consolidate();
 
+    std::vector<std::string_view> get_config_paths() const
+    {
+        std::vector<std::string_view> paths;
+        paths.reserve(configs_.size());
+        for (const auto &[path, _] : configs_) { paths.emplace_back(path); }
+        return paths;
+    }
+
+    std::vector<std::string_view> get_filtered_config_paths(re2::RE2 &filter) const
+    {
+        std::vector<std::string_view> paths;
+        paths.reserve(configs_.size());
+        for (const auto &[path, _] : configs_) {
+            const re2::StringPiece ref(path.data(), path.size());
+            if (!filter.Match(ref, 0, path.size(), re2::RE2::UNANCHORED, nullptr, 0)) {
+                continue;
+            }
+            paths.emplace_back(path);
+        }
+        return paths;
+    }
+
 protected:
     void remove_config(const configuration_change_spec &cfg);
 
