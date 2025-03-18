@@ -13,7 +13,7 @@ rm -rf build-stage1
 
 printf "\n--------------------------\nCompiling Stage 2\n--------------------------\n"
 mkdir build ; cd build
-cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLIBDDWAF_BENCHMARK_PGO_PROFILE=$(pwd)/../profile.profdata -DLIBDDWAF_ENABLE_LTO=ON
+cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLIBDDWAF_BENCHMARK_PGO_STAGE2_PROFILE=$(pwd)/../profile.profdata -DLIBDDWAF_ENABLE_LTO=ON -DLIBDDWAF_BENCHMARK_BOLT_STAGE3=ON
 make -j $(nproc) waf_benchmark 
 
 printf "\n--------------------------\nBOLT Instrumenting Binary\n--------------------------\n"

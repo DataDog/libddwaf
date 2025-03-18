@@ -13,10 +13,12 @@ if (LIBDDWAF_BENCHMARK_PGO_STAGE1)
         COMPILE_FLAGS -fprofile-instr-generate
         LINK_FLAGS -fprofile-instr-generate)
 else()
-    if (LIBDDWAF_BENCHMARK_PGO_PROFILE)
-        message(${LIBDDWAF_BENCHMARK_PGO_PROFILE})
-        target_compile_options(waf_benchmark PRIVATE -fprofile-use=${LIBDDWAF_BENCHMARK_PGO_PROFILE})
-        target_link_options(waf_benchmark PRIVATE -Wl,-q)
+    if (LIBDDWAF_BENCHMARK_PGO_STAGE2_PROFILE)
+        target_compile_options(waf_benchmark PRIVATE -fprofile-use=${LIBDDWAF_BENCHMARK_PGO_STAGE2_PROFILE})
+        if (LIBDDWAF_BENCHMARK_BOLT_STAGE3)
+            # Relocations are only required for BOLT
+            target_link_options(waf_benchmark PRIVATE -Wl,-q)
+        endif()
     endif()
 
     set_target_properties(waf_benchmark PROPERTIES
