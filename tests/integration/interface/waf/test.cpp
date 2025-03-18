@@ -2637,6 +2637,17 @@ TEST(TestWafIntegration, KnownActionsNullHandle)
     EXPECT_EQ(actions, nullptr);
 }
 
+std::unordered_set<std::string_view> object_to_string_set(const ddwaf_object *array)
+{
+    std::unordered_set<std::string_view> set;
+    for (std::size_t i = 0; i < ddwaf_object_size(array); ++i) {
+        const ddwaf_object *child = ddwaf_object_get_index(array, i);
+        EXPECT_EQ(ddwaf_object_type(child), DDWAF_OBJ_STRING);
+        set.emplace(child->stringValue, static_cast<std::size_t>(child->nbEntries));
+    }
+    return set;
+}
+
 TEST(TestWafIntegration, GetConfigPathSingleConfig)
 {
     auto rule = read_file("interface.yaml", base_dir);
@@ -2654,11 +2665,8 @@ TEST(TestWafIntegration, GetConfigPathSingleConfig)
         EXPECT_EQ(ddwaf_object_size(&paths), 1);
         EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
 
-        const auto *first = ddwaf_object_get_index(&paths, 0);
-        EXPECT_EQ(ddwaf_object_type(first), DDWAF_OBJ_STRING);
-
-        std::string_view value{first->stringValue, static_cast<std::size_t>(first->nbEntries)};
-        EXPECT_STRV(value, "ASM_DD/default");
+        auto path_set = object_to_string_set(&paths);
+        EXPECT_TRUE(path_set.contains("ASM_DD/default"));
 
         ddwaf_object_free(&paths);
     }
@@ -2702,13 +2710,7 @@ TEST(TestWafIntegration, GetConfigPathMultipleConfigs)
         EXPECT_EQ(ddwaf_object_size(&paths), 3);
         EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
 
-        std::unordered_set<std::string_view> path_set;
-        for (std::size_t i = 0; i < ddwaf_object_size(&paths); ++i) {
-            const ddwaf_object *child = ddwaf_object_get_index(&paths, i);
-            EXPECT_EQ(ddwaf_object_type(child), DDWAF_OBJ_STRING);
-            path_set.emplace(child->stringValue, static_cast<std::size_t>(child->nbEntries));
-        }
-
+        auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
         EXPECT_TRUE(path_set.contains("ASM/overrides"));
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
@@ -2730,13 +2732,7 @@ TEST(TestWafIntegration, GetConfigPathMultipleConfigs)
         EXPECT_EQ(ddwaf_object_size(&paths), 2);
         EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
 
-        std::unordered_set<std::string_view> path_set;
-        for (std::size_t i = 0; i < ddwaf_object_size(&paths); ++i) {
-            const ddwaf_object *child = ddwaf_object_get_index(&paths, i);
-            EXPECT_EQ(ddwaf_object_type(child), DDWAF_OBJ_STRING);
-            path_set.emplace(child->stringValue, static_cast<std::size_t>(child->nbEntries));
-        }
-
+        auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
 
@@ -2757,11 +2753,8 @@ TEST(TestWafIntegration, GetConfigPathMultipleConfigs)
         EXPECT_EQ(ddwaf_object_size(&paths), 1);
         EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
 
-        const auto *first = ddwaf_object_get_index(&paths, 0);
-        EXPECT_EQ(ddwaf_object_type(first), DDWAF_OBJ_STRING);
-
-        std::string_view value{first->stringValue, static_cast<std::size_t>(first->nbEntries)};
-        EXPECT_STRV(value, "ASM_DD/default");
+        auto path_set = object_to_string_set(&paths);
+        EXPECT_TRUE(path_set.contains("ASM_DD/default"));
 
         ddwaf_object_free(&paths);
     }
@@ -2807,11 +2800,8 @@ TEST(TestWafIntegration, GetFilteredConfigPathSingleConfig)
         EXPECT_EQ(ddwaf_object_size(&paths), 1);
         EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
 
-        const auto *first = ddwaf_object_get_index(&paths, 0);
-        EXPECT_EQ(ddwaf_object_type(first), DDWAF_OBJ_STRING);
-
-        std::string_view value{first->stringValue, static_cast<std::size_t>(first->nbEntries)};
-        EXPECT_STRV(value, "ASM_DD/default");
+        auto path_set = object_to_string_set(&paths);
+        EXPECT_TRUE(path_set.contains("ASM_DD/default"));
 
         ddwaf_object_free(&paths);
     }
@@ -2887,13 +2877,7 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         EXPECT_EQ(ddwaf_object_size(&paths), 3);
         EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
 
-        std::unordered_set<std::string_view> path_set;
-        for (std::size_t i = 0; i < ddwaf_object_size(&paths); ++i) {
-            const ddwaf_object *child = ddwaf_object_get_index(&paths, i);
-            EXPECT_EQ(ddwaf_object_type(child), DDWAF_OBJ_STRING);
-            path_set.emplace(child->stringValue, static_cast<std::size_t>(child->nbEntries));
-        }
-
+        auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
         EXPECT_TRUE(path_set.contains("ASM/overrides"));
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
@@ -2914,13 +2898,7 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         EXPECT_EQ(ddwaf_object_size(&paths), 1);
         EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
 
-        std::unordered_set<std::string_view> path_set;
-        for (std::size_t i = 0; i < ddwaf_object_size(&paths); ++i) {
-            const ddwaf_object *child = ddwaf_object_get_index(&paths, i);
-            EXPECT_EQ(ddwaf_object_type(child), DDWAF_OBJ_STRING);
-            path_set.emplace(child->stringValue, static_cast<std::size_t>(child->nbEntries));
-        }
-
+        auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
 
         ddwaf_object_free(&paths);
@@ -2939,13 +2917,7 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         EXPECT_EQ(ddwaf_object_size(&paths), 2);
         EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
 
-        std::unordered_set<std::string_view> path_set;
-        for (std::size_t i = 0; i < ddwaf_object_size(&paths); ++i) {
-            const ddwaf_object *child = ddwaf_object_get_index(&paths, i);
-            EXPECT_EQ(ddwaf_object_type(child), DDWAF_OBJ_STRING);
-            path_set.emplace(child->stringValue, static_cast<std::size_t>(child->nbEntries));
-        }
-
+        auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
 
@@ -2965,13 +2937,7 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         EXPECT_EQ(ddwaf_object_size(&paths), 1);
         EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
 
-        std::unordered_set<std::string_view> path_set;
-        for (std::size_t i = 0; i < ddwaf_object_size(&paths); ++i) {
-            const ddwaf_object *child = ddwaf_object_get_index(&paths, i);
-            EXPECT_EQ(ddwaf_object_type(child), DDWAF_OBJ_STRING);
-            path_set.emplace(child->stringValue, static_cast<std::size_t>(child->nbEntries));
-        }
-
+        auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM/overrides"));
 
         ddwaf_object_free(&paths);
@@ -2992,13 +2958,7 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         EXPECT_EQ(ddwaf_object_size(&paths), 2);
         EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
 
-        std::unordered_set<std::string_view> path_set;
-        for (std::size_t i = 0; i < ddwaf_object_size(&paths); ++i) {
-            const ddwaf_object *child = ddwaf_object_get_index(&paths, i);
-            EXPECT_EQ(ddwaf_object_type(child), DDWAF_OBJ_STRING);
-            path_set.emplace(child->stringValue, static_cast<std::size_t>(child->nbEntries));
-        }
-
+        auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
 
@@ -3019,11 +2979,8 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         EXPECT_EQ(ddwaf_object_size(&paths), 1);
         EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
 
-        const auto *first = ddwaf_object_get_index(&paths, 0);
-        EXPECT_EQ(ddwaf_object_type(first), DDWAF_OBJ_STRING);
-
-        std::string_view value{first->stringValue, static_cast<std::size_t>(first->nbEntries)};
-        EXPECT_STRV(value, "ASM_DD/default");
+        auto path_set = object_to_string_set(&paths);
+        EXPECT_TRUE(path_set.contains("ASM_DD/default"));
 
         ddwaf_object_free(&paths);
     }
