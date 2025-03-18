@@ -45,10 +45,42 @@ benchmark-clang:
     - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/".insteadOf "https://github.com/DataDog/"
     - git clone --branch libddwaf https://github.com/DataDog/benchmarking-platform /platform && cd /platform
     - ./steps/capture-hardware-software-info.sh
-    - ./steps/run-benchmarks-pgo.sh
+    - ./steps/run-benchmarks.sh
     - ./steps/analyze-results.sh
     - "./steps/upload-results-to-s3.sh || :"
     - "./steps/post-pr-comment.sh || :"
+    - "./steps/upload-results-to-benchmarking-api.sh || :"
+  artifacts:
+    name: "reports"
+    paths:
+      - reports/
+    expire_in: 3 months
+  variables:
+    UPSTREAM_PROJECT_ID: $CI_PROJECT_ID
+    UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
+    UPSTREAM_BRANCH: $CI_COMMIT_REF_NAME
+    UPSTREAM_COMMIT_SHA: $CI_COMMIT_SHA
+    KUBERNETES_SERVICE_ACCOUNT_OVERWRITE: libddwaf
+    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
+    CC: /usr/bin/clang-19
+    CXX: /usr/bin/clang++-19
+
+benchmark-clang-pgo:
+  stage: benchmarks
+  when: on_success
+  tags: ["runner:apm-k8s-tweaked-metal"]
+  image: $BASE_CI_IMAGE
+  interruptible: true
+  timeout: 1h
+  script:
+    - export ARTIFACTS_DIR="$(pwd)/reports" && (mkdir "${ARTIFACTS_DIR}" || :)
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/".insteadOf "https://github.com/DataDog/"
+    - git clone --branch libddwaf https://github.com/DataDog/benchmarking-platform /platform && cd /platform
+    - ./steps/capture-hardware-software-info.sh
+    - ./steps/run-benchmarks-pgo.sh
+    - ./steps/analyze-results.sh
+    - "./steps/upload-results-to-s3.sh || :"
+    - "./steps/post-pr-comment.sh clang-pgo || :"
     - "./steps/upload-results-to-benchmarking-api.sh || :"
   artifacts:
     name: "reports"
