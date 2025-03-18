@@ -177,7 +177,7 @@ if (NOT MSVC AND LIBDDWAF_TESTING)
     if (LIBDDWAF_BENCHMARK_PGO_STAGE1)
         target_compile_options(libddwaf_objects PRIVATE -fprofile-instr-generate)
     elseif (LIBDDWAF_BENCHMARK_PGO_STAGE2_PROFILE)
-        target_compile_options(libddwaf_objects PRIVATE -fprofile-use=${LIBDDWAF_BENCHMARK_PGO_PROFILE})
+        target_compile_options(libddwaf_objects PRIVATE -fprofile-use=${LIBDDWAF_BENCHMARK_PGO_STAGE2_PROFILE})
         if (LIBDDWAF_BENCHMARK_BOLT_STAGE3)
             # Relocations are only required for BOLT
             target_link_options(libddwaf_objects PRIVATE -Wl,-q)
