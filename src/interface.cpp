@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cinttypes>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -16,6 +17,7 @@
 #include <memory>
 #include <optional>
 #include <string_view>
+#include <vector>
 
 #include "builder/waf_builder.hpp"
 #include "configuration/common/raw_configuration.hpp"
@@ -23,6 +25,7 @@
 #include "ddwaf.h"
 #include "log.hpp"
 #include "obfuscator.hpp"
+#include "re2.h"
 #include "ruleset_info.hpp"
 #include "utils.hpp"
 #include "version.hpp"
@@ -399,6 +402,44 @@ ddwaf_handle ddwaf_builder_build_instance(ddwaf::waf_builder *builder)
     }
 
     return nullptr;
+}
+
+uint32_t ddwaf_builder_get_config_paths(
+    ddwaf_builder builder, ddwaf_object *paths, const char *filter, uint32_t filter_len)
+{
+    if (builder == nullptr) {
+        return 0;
+    }
+
+    try {
+        std::vector<std::string_view> config_paths;
+        if (filter != nullptr) {
+            re2::RE2::Options options;
+            options.set_log_errors(false);
+            options.set_case_sensitive(true);
+
+            re2::RE2 regex_filter{{filter, static_cast<std::size_t>(filter_len)}, options};
+            config_paths = builder->get_filtered_config_paths(regex_filter);
+        } else {
+            config_paths = builder->get_config_paths();
+        }
+
+        if (paths != nullptr) {
+            ddwaf_object_array(paths);
+            for (const auto &value : config_paths) {
+                ddwaf_object tmp;
+                ddwaf_object_array_add(
+                    paths, ddwaf_object_stringl(&tmp, value.data(), value.size()));
+            }
+        }
+        return config_paths.size();
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+
+    return 0;
 }
 
 void ddwaf_builder_destroy(ddwaf_builder builder) { delete builder; }
