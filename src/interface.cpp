@@ -426,6 +426,7 @@ uint32_t ddwaf_builder_get_config_paths(
 
         if (paths != nullptr) {
             ddwaf_object_array(paths);
+            // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
             for (const auto &value : config_paths) {
                 ddwaf_object tmp;
                 ddwaf_object_array_add(
@@ -490,6 +491,7 @@ ddwaf_object *ddwaf_object_stringl(ddwaf_object *object, const char *string, siz
         return nullptr;
     }
 
+    // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
     return ddwaf_object_string_helper(object, string, length);
 }
 
