@@ -2637,4 +2637,72 @@ TEST(TestWafIntegration, KnownActionsNullHandle)
     EXPECT_EQ(actions, nullptr);
 }
 
+TEST(TestWafIntegration, GetConfigPath)
+{
+    auto rule = read_file("interface.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder_add_or_update_config(
+        builder, "ASM_DD/default", sizeof("ASM_DD/default") - 1, &rule, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_object paths;
+    auto count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
+
+    EXPECT_EQ(count, 1);
+    EXPECT_EQ(ddwaf_object_size(&paths), 1);
+    EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+    const auto *first = ddwaf_object_get_index(&paths, 0);
+    EXPECT_EQ(ddwaf_object_type(first), DDWAF_OBJ_STRING);
+
+    std::string_view value{first->stringValue, static_cast<std::size_t>(first->nbEntries)};
+    EXPECT_STRV(value, "ASM_DD/default");
+
+    ddwaf_object_free(&paths);
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestWafIntegration, GetFilteredConfigPath)
+{
+    auto rule = read_file("interface.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder_add_or_update_config(
+        builder, "ASM_DD/default", sizeof("ASM_DD/default") - 1, &rule, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf_object paths;
+        auto count =
+            ddwaf_builder_get_config_paths(builder, &paths, "^ASM_DD/.*", sizeof("^ASM_DD/.*") - 1);
+        EXPECT_EQ(count, 1);
+        EXPECT_EQ(ddwaf_object_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+        const auto *first = ddwaf_object_get_index(&paths, 0);
+        EXPECT_EQ(ddwaf_object_type(first), DDWAF_OBJ_STRING);
+
+        std::string_view value{first->stringValue, static_cast<std::size_t>(first->nbEntries)};
+        EXPECT_STRV(value, "ASM_DD/default");
+
+        ddwaf_object_free(&paths);
+    }
+
+    {
+        ddwaf_object paths;
+        auto count =
+            ddwaf_builder_get_config_paths(builder, &paths, "^ASM/.*", sizeof("^ASM/.*") - 1);
+
+        EXPECT_EQ(count, 0);
+        EXPECT_EQ(ddwaf_object_size(&paths), 0);
+        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+        ddwaf_object_free(&paths);
+    }
+
+    ddwaf_builder_destroy(builder);
+}
 } // namespace
