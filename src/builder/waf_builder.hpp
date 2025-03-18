@@ -42,6 +42,13 @@ public:
         return waf{std::move(ruleset)};
     }
 
+    std::vector<std::string_view> get_filtered_config_paths(re2::RE2 &filter) const
+    {
+        return cfg_mgr_.get_filtered_config_paths(filter);
+    }
+
+    std::vector<std::string_view> get_config_paths() const { return cfg_mgr_.get_config_paths(); }
+
 protected:
     configuration_manager cfg_mgr_;
     ruleset_builder rbuilder_;
