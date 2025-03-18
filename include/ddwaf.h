@@ -415,6 +415,27 @@ bool ddwaf_builder_remove_config(ddwaf_builder builder, const char *path, uint32
 ddwaf_handle ddwaf_builder_build_instance(ddwaf_builder builder);
 
 /**
+ * ddwaf_builder_get_config_paths
+ *
+ * Provides an array of the currently loaded paths, optionally matching the
+ * regex provided in filter. In addition, the count is provided as the return
+ * value, allowing paths to be nullptr.
+ *
+ * @param builder Builder to perform the operation on. (nonnull)
+ * @param paths The object in which paths will be returned, as an array of
+ *        strings. If NULL, only the count is provided. (nullable)
+ * @param filter An optional string type regex to filter the provided paths. (nullable).
+ * @oaran filter_len The length of the filter string (or 0 otherwise).
+ *
+ * @return The total number of configurations loaded or, if provided, the number
+ *         of those matching the filter.
+ *
+ * @note This function is not thread-safe and the memory of the paths object must
+ *       be freed by the caller.
+ **/
+uint32_t ddwaf_builder_get_config_paths(ddwaf_builder builder, ddwaf_object *paths, const char *filter, uint32_t filter_len);
+
+/**
  * ddwaf_builder_destroy
  *
  * Destroy an instance of the builder.
