@@ -1,8 +1,8 @@
 # Benchmarking with profile-guided optimisation
 
-Profile-guided optimisation can be used to *potentially* improve benchmarking reliability and eliminate code-alignment-related noise, albeit this hypothesis is currently unproven. This works by compiling the `waf_benchmark `binary with instrumentation, running the benchmark and using the generated profile to recompile the binary. 
+Profile-guided optimisation can be used to *potentially* improve benchmarking reliability and eliminate code-alignment-related noise, albeit this hypothesis is currently unproven. This works by compiling the `waf_benchmark` binary with instrumentation, running the benchmark and using the generated profile to recompile the binary. 
 
-Two scripts have been provided, one with PGO and LTO support and another one with PGO, LTO and BOLT, although this latter one hasn't been tweaked in order to provide better performance than simply using PGO + LTO, it also requires two profile-generation stages so the entire process requires more than double the time a typical benchmark would. 
+Two scripts have been provided, one with LTO and PGO support and another one with LTO, PGO and BOLT, although this latter one hasn't been tweaked in order to provide better performance than simply using PGO + LTO; it also requires two profile-generation stages so the entire process requires more than double the time a typical benchmark would. 
 
 Building with LTO and PGO can be done from the root directory, with the following command:
 
