@@ -424,7 +424,10 @@ ddwaf_handle ddwaf_builder_build_instance(ddwaf_builder builder);
  * @param builder Builder to perform the operation on. (nonnull)
  * @param paths The object in which paths will be returned, as an array of
  *        strings. If NULL, only the count is provided. (nullable)
- * @param filter An optional string type regex to filter the provided paths. (nullable).
+ * @param filter An optional string regex to filter the provided paths. The
+ *        provided regular expression is used unanchored so matches can be found
+ *        at any point within the path, any necessary anchors must be explicitly
+ *        added to the regex. (nullable).
  * @oaran filter_len The length of the filter string (or 0 otherwise).
  *
  * @return The total number of configurations loaded or, if provided, the number
