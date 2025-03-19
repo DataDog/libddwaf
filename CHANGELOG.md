@@ -1,8 +1,19 @@
 # libddwaf release
 
-## v1.23.0
+## v1.24.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
-### New features ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+### New features
+### Release changelog
+#### Changes
+- Add function to get list of loaded configuration paths ([#384](https://github.com/DataDog/libddwaf/pull/384))
+#### Fixes
+- Make builder config const and fix build ([#374](https://github.com/DataDog/libddwaf/pull/374))
+#### Miscellaneous
+- Add benchmarks using clang-19 ([#380](https://github.com/DataDog/libddwaf/pull/380))
+
+## v1.23.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+### New features
 
 This new version of `libddwaf` introduces the WAF builder, a new mechanism for generating WAF instances through complete or partial configurations. This new mechanism aims to standardise the WAF update process across all WAF users, eliminating the possibility for incomplete or inconsistent implementations. With the introduction of the WAF builder, the `ddwaf_update` function has been deprecated, as the semantics have been drastically changed. More information about the builder can be found ([here](https://github.com/DataDog/libddwaf/blob/master/UPGRADING.md#waf-builder)).
 
