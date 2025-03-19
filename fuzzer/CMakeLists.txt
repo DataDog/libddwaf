@@ -21,9 +21,6 @@ foreach(dir ${subdirs})
     add_executable(${FUZZER_NAME} ${FUZZER_SOURCE})
 
     set_target_properties(${FUZZER_NAME} PROPERTIES
-        CXX_STANDARD 20
-        CXX_STANDARD_REQUIRED YES
-        CXX_EXTENSIONS NO
         COMPILE_FLAGS ${LINK_COMPILE_FLAGS}
         LINK_FLAGS ${LINK_COMPILE_FLAGS})
 
