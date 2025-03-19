@@ -127,10 +127,7 @@ function(gen_objects target_name)
     add_library(${target_name} OBJECT ${LIBDDWAF_SOURCE} )
 
     # we need PIC even on the static lib,as it's expected to be linked in a shared lib
-    set_target_properties(${target_name} PROPERTIES
-        CXX_STANDARD_REQUIRED YES
-        CXX_EXTENSIONS NO
-        POSITION_INDEPENDENT_CODE 1)
+    set_target_properties(${target_name} PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
     if(NOT STDLIB_MAP_RECURSIVE)
         target_compile_definitions(${target_name} PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
