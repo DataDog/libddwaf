@@ -16,7 +16,7 @@ ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DD/default"), &default_
 ddwaf_object_free(&default_config);
 
 ddwaf_object paths;
-auto count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
+uint32_t count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
 
 // count: 1
 // paths: [ "ASM_DD/default" ]
@@ -31,7 +31,7 @@ ddwaf_object_free(&default_config);
 ddwaf_object_free(&custom_Rules);
 
 ddwaf_object paths;
-auto count = ddwaf_builder_get_config_paths(builder, &paths, "^ASM_DD/.*", sizeof("^ASM_DD/.*) - 1);
+uint32_t count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM_DD/.*"));
 
 // count: 1
 // paths: [ "ASM_DD/default" ]
