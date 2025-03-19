@@ -125,10 +125,7 @@ function(gen_objects target_name)
     add_library(${target_name} OBJECT ${LIBDDWAF_SOURCE} )
 
     # we need PIC even on the static lib,as it's expected to be linked in a shared lib
-    set_target_properties(${target_name} PROPERTIES
-        CXX_STANDARD_REQUIRED YES
-        CXX_EXTENSIONS NO
-        POSITION_INDEPENDENT_CODE 1)
+    set_target_properties(${target_name} PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
     if(NOT STDLIB_MAP_RECURSIVE)
         target_compile_definitions(${target_name} PRIVATE HAS_NONRECURSIVE_UNORDERED_MAP)
@@ -167,8 +164,20 @@ else()
     add_library(libddwaf_static_objects ALIAS libddwaf_objects)
 endif()
 
-if(NOT MSVC AND LIBDDWAF_TESTING AND LIBDDWAF_TEST_COVERAGE)
+if (NOT MSVC AND LIBDDWAF_TESTING AND LIBDDWAF_TEST_COVERAGE)
     target_compile_options(libddwaf_objects PRIVATE --coverage)
+endif()
+
+if (NOT MSVC AND LIBDDWAF_TESTING)
+    if (LIBDDWAF_BENCHMARK_PGO_STAGE1)
+        target_compile_options(libddwaf_objects PRIVATE -fprofile-instr-generate)
+    elseif (LIBDDWAF_BENCHMARK_PGO_STAGE2_PROFILE)
+        target_compile_options(libddwaf_objects PRIVATE -fprofile-use=${LIBDDWAF_BENCHMARK_PGO_STAGE2_PROFILE})
+        if (LIBDDWAF_BENCHMARK_BOLT_STAGE3)
+            # Relocations are only required for BOLT
+            target_link_options(libddwaf_objects PRIVATE -Wl,-q)
+        endif()
+    endif()
 endif()
 
 

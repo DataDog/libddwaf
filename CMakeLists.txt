@@ -24,6 +24,8 @@ configure_file(src/version.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/src/version.hpp)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -37,6 +39,8 @@ option(LIBDDWAF_TESTING "Load test subdirectories and targets" ON)
 option(LIBDDWAF_TEST_COVERAGE "Do coverage if possible" OFF)
 option(LIBDDWAF_VECTORIZED_TRANSFORMERS "Enable vectorization for transformers" ON)
 option(LIBDDWAF_ENABLE_LTO "Enable link-time optimisation" OFF)
+option(LIBDDWAF_BENCHMARK_PGO_STAGE1 "Stage 1 profile-optimized benchmark enables instrumentation" OFF)
+option(LIBDDWAF_BENCHMARK_BOLT_STAGE3 "Stage 3 profile-optimized benchmark enables relocations" OFF)
 
 if(NOT MSVC)
     add_compile_options(-Wall -Wextra -Wno-narrowing)
@@ -62,16 +66,13 @@ add_library(glibc_compat_math OBJECT ${libddwaf_SOURCE_DIR}/src/glibc-compat/mat
 set_target_properties(glibc_compat_math PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
 try_compile(STDLIB_MAP_RECURSIVE ${CMAKE_CURRENT_BINARY_DIR}
-    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_rec_map.cpp
-    CXX_STANDARD 20)
+    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_rec_map.cpp)
 
 try_compile(STDLIB_MEMORY_RESOURCE_FTM ${CMAKE_CURRENT_BINARY_DIR}
-    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_mem_resource_ftm.cpp
-    CXX_STANDARD 20)
+    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_mem_resource_ftm.cpp)
 
 try_compile(STDLIB_MONOTONIC_RESOURCE ${CMAKE_CURRENT_BINARY_DIR}
-    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_monotonic_resource.cpp
-    CXX_STANDARD 20)
+    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_monotonic_resource.cpp)
 
 message(STATUS "Has recursive unordered_map    : ${STDLIB_MAP_RECURSIVE}")
 message(STATUS "Has memory_resource test macro : ${STDLIB_MEMORY_RESOURCE_FTM}")
