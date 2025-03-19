@@ -36,7 +36,10 @@ uint32_t count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM_D
 // count: 1
 // paths: [ "ASM_DD/default" ]
 ```
-More information on how the function must be used can be found [here](https://github.com/DataDog/libddwaf/blob/2cf8025455a1fe8c1169e08abff7ac18a1e56455/include/ddwaf.h#L418).
+Note that `LSTRARG` is simply a non-standard macro for converting a literal string into: `<literal>, sizeof(<literal>) - 1`.
+
+More information on how this function must be used can be found [here](https://github.com/DataDog/libddwaf/blob/2cf8025455a1fe8c1169e08abff7ac18a1e56455/include/ddwaf.h#L418).
+
 ### Release changelog
 #### Changes
 - Add function to get list of loaded configuration paths ([#384](https://github.com/DataDog/libddwaf/pull/384))
