@@ -18,7 +18,7 @@
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
 #include "log.hpp"
-#include "object_view.hpp"
+#include "object.hpp"
 #include "platform.hpp"
 #include "utils.hpp"
 

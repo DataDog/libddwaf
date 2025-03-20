@@ -5,8 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "common/gtest_utils.hpp"
-#include "object_converter.hpp"
-#include "object_view.hpp"
+#include "object.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -705,5 +704,197 @@ TEST(TestObjectView, AsOrDefault)
     EXPECT_EQ(view.as_or_default<int64_t>(0), 0);
     EXPECT_EQ(view.as_or_default<bool>(false), false);
 }
+
+// TODO reinstate these tests
+/*TEST(TestObjectView, CloneInvalid)*/
+/*{*/
+/*ddwaf_object input;*/
+/*ddwaf_object_invalid(&input);*/
+
+/*auto output = clone(&input);*/
+/*EXPECT_EQ(output.ref().type, DDWAF_OBJ_INVALID);*/
+/*}*/
+
+/*TEST(TestObjectView, CloneNull)*/
+/*{*/
+/*ddwaf_object input;*/
+/*ddwaf_object_null(&input);*/
+
+/*auto output = clone(&input);*/
+/*EXPECT_EQ(output.ref().type, DDWAF_OBJ_NULL);*/
+/*}*/
+
+/*TEST(TestObjectView, CloneBool)*/
+/*{*/
+/*ddwaf_object input;*/
+/*ddwaf_object_bool(&input, true);*/
+
+/*auto output = clone(&input);*/
+/*EXPECT_EQ(output.ref().type, DDWAF_OBJ_BOOL);*/
+/*EXPECT_EQ(output.ref().boolean, true);*/
+/*}*/
+
+/*TEST(TestObjectView, CloneSigned)*/
+/*{*/
+/*ddwaf_object input;*/
+/*ddwaf_object_signed(&input, -5);*/
+
+/*auto output = clone(&input);*/
+/*EXPECT_EQ(output.ref().type, DDWAF_OBJ_SIGNED);*/
+/*EXPECT_EQ(output.ref().intValue, -5);*/
+/*}*/
+
+/*TEST(TestObjectView, CloneUnsigned)*/
+/*{*/
+/*ddwaf_object input;*/
+/*ddwaf_object_unsigned(&input, 5);*/
+
+/*auto output = clone(&input);*/
+/*EXPECT_EQ(output.ref().type, DDWAF_OBJ_UNSIGNED);*/
+/*EXPECT_EQ(output.ref().uintValue, 5);*/
+/*}*/
+
+/*TEST(TestObjectView, CloneFloat)*/
+/*{*/
+/*ddwaf_object input;*/
+/*ddwaf_object_float(&input, 5.1);*/
+
+/*auto output = clone(&input);*/
+/*EXPECT_EQ(output.ref().type, DDWAF_OBJ_FLOAT);*/
+/*EXPECT_TRUE(std::abs(output.ref().f64 - 5.1) < 0.1);*/
+/*}*/
+
+/*TEST(TestObjectView, CloneString)*/
+/*{*/
+/*ddwaf_object input;*/
+/*ddwaf_object_string(&input, "this is a string");*/
+
+/*auto output = clone(&input);*/
+/*EXPECT_EQ(output.ref().type, DDWAF_OBJ_STRING);*/
+/*EXPECT_STREQ(input.stringValue, output.ref().stringValue);*/
+/*EXPECT_EQ(input.nbEntries, output.ref().nbEntries);*/
+/*EXPECT_NE(input.stringValue, output.ref().stringValue);*/
+
+/*ddwaf_object_free(&input);*/
+/*}*/
+
+/*TEST(TestObjectView, CloneEmptyArray)*/
+/*{*/
+/*ddwaf_object input;*/
+/*ddwaf_object_array(&input);*/
+
+/*auto output = clone(&input);*/
+/*EXPECT_EQ(output.ref().type, DDWAF_OBJ_ARRAY);*/
+/*EXPECT_EQ(input.nbEntries, output.ref().nbEntries);*/
+
+/*ddwaf_object_free(&input);*/
+/*}*/
+
+/*TEST(TestObjectView, CloneEmptyMap)*/
+/*{*/
+/*ddwaf_object input;*/
+/*ddwaf_object_map(&input);*/
+
+/*auto output = clone(&input);*/
+/*EXPECT_EQ(output.ref().type, DDWAF_OBJ_MAP);*/
+/*EXPECT_EQ(input.nbEntries, output.ref().nbEntries);*/
+
+/*ddwaf_object_free(&input);*/
+/*}*/
+
+/*TEST(TestObjectView, CloneArray)*/
+/*{*/
+/*ddwaf_object tmp;*/
+/*ddwaf_object input;*/
+/*ddwaf_object_array(&input);*/
+/*ddwaf_object_array_add(&input, ddwaf_object_bool(&tmp, true));*/
+/*ddwaf_object_array_add(&input, ddwaf_object_string(&tmp, "string"));*/
+/*ddwaf_object_array_add(&input, ddwaf_object_signed(&tmp, 5));*/
+
+/*auto output = clone(&input);*/
+/*EXPECT_EQ(output.ref().type, DDWAF_OBJ_ARRAY);*/
+/*EXPECT_EQ(input.nbEntries, output.ref().nbEntries);*/
+
+/*{*/
+/*const auto *input_child = ddwaf_object_get_index(&input, 0);*/
+/*const auto *output_child = ddwaf_object_get_index(output.ptr(), 0);*/
+
+/*EXPECT_NE(output_child, input_child);*/
+/*EXPECT_EQ(output_child->type, input_child->type);*/
+/*EXPECT_EQ(output_child->boolean, input_child->boolean);*/
+/*}*/
+
+/*{*/
+/*const auto *input_child = ddwaf_object_get_index(&input, 1);*/
+/*const auto *output_child = ddwaf_object_get_index(output.ptr(), 1);*/
+
+/*EXPECT_NE(output_child, input_child);*/
+/*EXPECT_EQ(output_child->type, input_child->type);*/
+/*EXPECT_STREQ(output_child->stringValue, input_child->stringValue);*/
+/*EXPECT_NE(output_child->stringValue, input_child->stringValue);*/
+/*}*/
+
+/*{*/
+/*const auto *input_child = ddwaf_object_get_index(&input, 2);*/
+/*const auto *output_child = ddwaf_object_get_index(output.ptr(), 2);*/
+
+/*EXPECT_NE(output_child, input_child);*/
+/*EXPECT_EQ(output_child->type, input_child->type);*/
+/*EXPECT_EQ(output_child->intValue, input_child->intValue);*/
+/*}*/
+
+/*ddwaf_object_free(&input);*/
+/*}*/
+
+/*TEST(TestObjectView, CloneMap)*/
+/*{*/
+/*owned_object input = owned_object::make_map();*/
+/*input.emplace("bool", owned_object::make_boolean(true));*/
+/*input.emplace("string", owned_object::make_string("string"));*/
+/*input.emplace("signed", owned_object::make_signed(5));*/
+
+/*auto output = input.clone();*/
+/*EXPECT_EQ(output.ref().type, DDWAF_OBJ_MAP);*/
+/*EXPECT_EQ(input.nbEntries, output.ref().nbEntries);*/
+
+/*{*/
+/*const auto *input_child = ddwaf_object_get_index(&input, 0);*/
+/*const auto *output_child = ddwaf_object_get_index(output.ptr(), 0);*/
+
+/*EXPECT_NE(output_child, input_child);*/
+/*EXPECT_STREQ(output_child->parameterName, input_child->parameterName);*/
+/*EXPECT_NE(output_child->parameterName, input_child->parameterName);*/
+/*EXPECT_EQ(output_child->parameterNameLength, input_child->parameterNameLength);*/
+/*EXPECT_EQ(output_child->type, input_child->type);*/
+/*EXPECT_EQ(output_child->boolean, input_child->boolean);*/
+/*}*/
+
+/*{*/
+/*const auto *input_child = ddwaf_object_get_index(&input, 1);*/
+/*const auto *output_child = ddwaf_object_get_index(output.ptr(), 1);*/
+
+/*EXPECT_NE(output_child, input_child);*/
+/*EXPECT_STREQ(output_child->parameterName, input_child->parameterName);*/
+/*EXPECT_NE(output_child->parameterName, input_child->parameterName);*/
+/*EXPECT_EQ(output_child->parameterNameLength, input_child->parameterNameLength);*/
+/*EXPECT_EQ(output_child->type, input_child->type);*/
+/*EXPECT_STREQ(output_child->stringValue, input_child->stringValue);*/
+/*EXPECT_NE(output_child->stringValue, input_child->stringValue);*/
+/*}*/
+
+/*{*/
+/*const auto *input_child = ddwaf_object_get_index(&input, 2);*/
+/*const auto *output_child = ddwaf_object_get_index(output.ptr(), 2);*/
+
+/*EXPECT_NE(output_child, input_child);*/
+/*EXPECT_STREQ(output_child->parameterName, input_child->parameterName);*/
+/*EXPECT_NE(output_child->parameterName, input_child->parameterName);*/
+/*EXPECT_EQ(output_child->parameterNameLength, input_child->parameterNameLength);*/
+/*EXPECT_EQ(output_child->type, input_child->type);*/
+/*EXPECT_EQ(output_child->intValue, input_child->intValue);*/
+/*}*/
+
+/*ddwaf_object_free(&input);*/
+/*}*/
 
 } // namespace

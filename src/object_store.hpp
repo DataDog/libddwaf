@@ -13,7 +13,7 @@
 
 #include "context_allocator.hpp"
 #include "ddwaf.h"
-#include "object_view.hpp"
+#include "object.hpp"
 #include "target_address.hpp"
 #include "utils.hpp"
 

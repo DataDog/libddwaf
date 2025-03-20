@@ -6,7 +6,7 @@
 
 #include "exception.hpp"
 #include "matcher/equals.hpp"
-#include "object_view.hpp"
+#include "object.hpp"
 #include "processor/base.hpp"
 
 #include <gmock/gmock.h>

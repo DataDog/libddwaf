@@ -11,7 +11,7 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "object_view.hpp"
+#include "object.hpp"
 
 namespace ddwaf {
 namespace matcher {

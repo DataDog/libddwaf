@@ -18,10 +18,8 @@
 #include "log.hpp"
 #include "matcher/base.hpp"
 #include "object.hpp"
-#include "object_converter.hpp" // IWYU pragma: keep
 #include "object_store.hpp"
 #include "object_type.hpp"
-#include "object_view.hpp"
 #include "scalar_condition.hpp"
 #include "transformer/base.hpp"
 #include "transformer/manager.hpp"
