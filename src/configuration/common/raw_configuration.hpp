@@ -27,13 +27,21 @@ public:
 
     raw_configuration() = default;
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-    raw_configuration(const ddwaf_object &arg) : _ddwaf_object() { *((ddwaf_object *)this) = arg; }
-
+    raw_configuration(const ddwaf_object &arg) : _ddwaf_object(arg) {}
     raw_configuration(const raw_configuration &) = default;
     raw_configuration &operator=(const raw_configuration &) = default;
 
-    raw_configuration(raw_configuration &&) = delete;
-    raw_configuration operator=(raw_configuration &&) = delete;
+    raw_configuration(raw_configuration &&other) noexcept : _ddwaf_object(other)
+    {
+        static_cast<ddwaf_object &>(other) = {};
+    }
+
+    raw_configuration &operator=(raw_configuration &&other) noexcept
+    {
+        static_cast<ddwaf_object &>(*this) = dynamic_cast<ddwaf_object &>(other);
+        static_cast<ddwaf_object &>(other) = {};
+        return *this;
+    }
 
     void print();
 

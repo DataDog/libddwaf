@@ -25,14 +25,14 @@ TEST(TestPhraseMatch, TestBasic)
     ddwaf_object param;
     ddwaf_object_string(&param, "bbbb");
 
-    auto [res, highlight] = matcher.match(param);
+    auto [res, highlight] = matcher.match(ddwaf::object_view{ddwaf::object_view{param}});
     EXPECT_TRUE(res);
     EXPECT_STREQ(highlight.c_str(), "bbbb");
 
     ddwaf_object param2;
     ddwaf_object_string(&param2, "dddd");
 
-    EXPECT_FALSE(matcher.match(param2).first);
+    EXPECT_FALSE(matcher.match(ddwaf::object_view{param2}).first);
 
     ddwaf_object_free(&param2);
     ddwaf_object_free(&param);
@@ -49,7 +49,7 @@ TEST(TestPhraseMatch, TestEmptyArrays)
     ddwaf_object param;
     ddwaf_object_string(&param, "bbbb");
 
-    EXPECT_FALSE(matcher.match(param).first);
+    EXPECT_FALSE(matcher.match(ddwaf::object_view{param}).first);
 
     ddwaf_object_free(&param);
 }
@@ -74,11 +74,11 @@ TEST(TestPhraseMatch, TestComplex)
         ddwaf_object param;
         ddwaf_object_string(&param, str);
         if (expect != nullptr) {
-            auto [res, highlight] = matcher.match(param);
+            auto [res, highlight] = matcher.match(ddwaf::object_view{param});
             EXPECT_TRUE(res);
             EXPECT_STREQ(highlight.c_str(), expect);
         } else {
-            EXPECT_FALSE(matcher.match(param).first);
+            EXPECT_FALSE(matcher.match(ddwaf::object_view{param}).first);
         }
         ddwaf_object_free(&param);
     };
@@ -109,11 +109,11 @@ TEST(TestPhraseMatch, TestWordBoundary)
         ddwaf_object param;
         ddwaf_object_string(&param, str);
         if (expect != nullptr) {
-            auto [res, highlight] = matcher.match(param);
+            auto [res, highlight] = matcher.match(ddwaf::object_view{param});
             EXPECT_TRUE(res);
             EXPECT_STREQ(highlight.c_str(), expect);
         } else {
-            EXPECT_FALSE(matcher.match(param).first);
+            EXPECT_FALSE(matcher.match(ddwaf::object_view{param}).first);
         }
         ddwaf_object_free(&param);
     };

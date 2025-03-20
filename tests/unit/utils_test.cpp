@@ -157,8 +157,8 @@ TEST(TestUtils, CloneInvalid)
     ddwaf_object input;
     ddwaf_object_invalid(&input);
 
-    auto output = object::clone(&input);
-    EXPECT_EQ(output.type, DDWAF_OBJ_INVALID);
+    auto output = clone(&input);
+    EXPECT_EQ(output.ref().type, DDWAF_OBJ_INVALID);
 }
 
 TEST(TestUtils, CloneNull)
@@ -166,8 +166,8 @@ TEST(TestUtils, CloneNull)
     ddwaf_object input;
     ddwaf_object_null(&input);
 
-    auto output = object::clone(&input);
-    EXPECT_EQ(output.type, DDWAF_OBJ_NULL);
+    auto output = clone(&input);
+    EXPECT_EQ(output.ref().type, DDWAF_OBJ_NULL);
 }
 
 TEST(TestUtils, CloneBool)
@@ -175,9 +175,9 @@ TEST(TestUtils, CloneBool)
     ddwaf_object input;
     ddwaf_object_bool(&input, true);
 
-    auto output = object::clone(&input);
-    EXPECT_EQ(output.type, DDWAF_OBJ_BOOL);
-    EXPECT_EQ(output.boolean, true);
+    auto output = clone(&input);
+    EXPECT_EQ(output.ref().type, DDWAF_OBJ_BOOL);
+    EXPECT_EQ(output.ref().boolean, true);
 }
 
 TEST(TestUtils, CloneSigned)
@@ -185,9 +185,9 @@ TEST(TestUtils, CloneSigned)
     ddwaf_object input;
     ddwaf_object_signed(&input, -5);
 
-    auto output = object::clone(&input);
-    EXPECT_EQ(output.type, DDWAF_OBJ_SIGNED);
-    EXPECT_EQ(output.intValue, -5);
+    auto output = clone(&input);
+    EXPECT_EQ(output.ref().type, DDWAF_OBJ_SIGNED);
+    EXPECT_EQ(output.ref().intValue, -5);
 }
 
 TEST(TestUtils, CloneUnsigned)
@@ -195,9 +195,9 @@ TEST(TestUtils, CloneUnsigned)
     ddwaf_object input;
     ddwaf_object_unsigned(&input, 5);
 
-    auto output = object::clone(&input);
-    EXPECT_EQ(output.type, DDWAF_OBJ_UNSIGNED);
-    EXPECT_EQ(output.uintValue, 5);
+    auto output = clone(&input);
+    EXPECT_EQ(output.ref().type, DDWAF_OBJ_UNSIGNED);
+    EXPECT_EQ(output.ref().uintValue, 5);
 }
 
 TEST(TestUtils, CloneFloat)
@@ -205,9 +205,9 @@ TEST(TestUtils, CloneFloat)
     ddwaf_object input;
     ddwaf_object_float(&input, 5.1);
 
-    auto output = object::clone(&input);
-    EXPECT_EQ(output.type, DDWAF_OBJ_FLOAT);
-    EXPECT_TRUE(std::abs(output.f64 - 5.1) < 0.1);
+    auto output = clone(&input);
+    EXPECT_EQ(output.ref().type, DDWAF_OBJ_FLOAT);
+    EXPECT_TRUE(std::abs(output.ref().f64 - 5.1) < 0.1);
 }
 
 TEST(TestUtils, CloneString)
@@ -215,14 +215,13 @@ TEST(TestUtils, CloneString)
     ddwaf_object input;
     ddwaf_object_string(&input, "this is a string");
 
-    auto output = object::clone(&input);
-    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
-    EXPECT_STREQ(input.stringValue, output.stringValue);
-    EXPECT_EQ(input.nbEntries, output.nbEntries);
-    EXPECT_NE(input.stringValue, output.stringValue);
+    auto output = clone(&input);
+    EXPECT_EQ(output.ref().type, DDWAF_OBJ_STRING);
+    EXPECT_STREQ(input.stringValue, output.ref().stringValue);
+    EXPECT_EQ(input.nbEntries, output.ref().nbEntries);
+    EXPECT_NE(input.stringValue, output.ref().stringValue);
 
     ddwaf_object_free(&input);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestUtils, CloneEmptyArray)
@@ -230,12 +229,11 @@ TEST(TestUtils, CloneEmptyArray)
     ddwaf_object input;
     ddwaf_object_array(&input);
 
-    auto output = object::clone(&input);
-    EXPECT_EQ(output.type, DDWAF_OBJ_ARRAY);
-    EXPECT_EQ(input.nbEntries, output.nbEntries);
+    auto output = clone(&input);
+    EXPECT_EQ(output.ref().type, DDWAF_OBJ_ARRAY);
+    EXPECT_EQ(input.nbEntries, output.ref().nbEntries);
 
     ddwaf_object_free(&input);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestUtils, CloneEmptyMap)
@@ -243,12 +241,11 @@ TEST(TestUtils, CloneEmptyMap)
     ddwaf_object input;
     ddwaf_object_map(&input);
 
-    auto output = object::clone(&input);
-    EXPECT_EQ(output.type, DDWAF_OBJ_MAP);
-    EXPECT_EQ(input.nbEntries, output.nbEntries);
+    auto output = clone(&input);
+    EXPECT_EQ(output.ref().type, DDWAF_OBJ_MAP);
+    EXPECT_EQ(input.nbEntries, output.ref().nbEntries);
 
     ddwaf_object_free(&input);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestUtils, CloneArray)
@@ -260,13 +257,13 @@ TEST(TestUtils, CloneArray)
     ddwaf_object_array_add(&input, ddwaf_object_string(&tmp, "string"));
     ddwaf_object_array_add(&input, ddwaf_object_signed(&tmp, 5));
 
-    auto output = object::clone(&input);
-    EXPECT_EQ(output.type, DDWAF_OBJ_ARRAY);
-    EXPECT_EQ(input.nbEntries, output.nbEntries);
+    auto output = clone(&input);
+    EXPECT_EQ(output.ref().type, DDWAF_OBJ_ARRAY);
+    EXPECT_EQ(input.nbEntries, output.ref().nbEntries);
 
     {
         const auto *input_child = ddwaf_object_get_index(&input, 0);
-        const auto *output_child = ddwaf_object_get_index(&output, 0);
+        const auto *output_child = ddwaf_object_get_index(output.ptr(), 0);
 
         EXPECT_NE(output_child, input_child);
         EXPECT_EQ(output_child->type, input_child->type);
@@ -275,7 +272,7 @@ TEST(TestUtils, CloneArray)
 
     {
         const auto *input_child = ddwaf_object_get_index(&input, 1);
-        const auto *output_child = ddwaf_object_get_index(&output, 1);
+        const auto *output_child = ddwaf_object_get_index(output.ptr(), 1);
 
         EXPECT_NE(output_child, input_child);
         EXPECT_EQ(output_child->type, input_child->type);
@@ -285,7 +282,7 @@ TEST(TestUtils, CloneArray)
 
     {
         const auto *input_child = ddwaf_object_get_index(&input, 2);
-        const auto *output_child = ddwaf_object_get_index(&output, 2);
+        const auto *output_child = ddwaf_object_get_index(output.ptr(), 2);
 
         EXPECT_NE(output_child, input_child);
         EXPECT_EQ(output_child->type, input_child->type);
@@ -293,7 +290,6 @@ TEST(TestUtils, CloneArray)
     }
 
     ddwaf_object_free(&input);
-    ddwaf_object_free(&output);
 }
 
 TEST(TestUtils, CloneMap)
@@ -305,13 +301,13 @@ TEST(TestUtils, CloneMap)
     ddwaf_object_map_add(&input, "string", ddwaf_object_string(&tmp, "string"));
     ddwaf_object_map_add(&input, "signed", ddwaf_object_signed(&tmp, 5));
 
-    auto output = object::clone(&input);
-    EXPECT_EQ(output.type, DDWAF_OBJ_MAP);
-    EXPECT_EQ(input.nbEntries, output.nbEntries);
+    auto output = clone(&input);
+    EXPECT_EQ(output.ref().type, DDWAF_OBJ_MAP);
+    EXPECT_EQ(input.nbEntries, output.ref().nbEntries);
 
     {
         const auto *input_child = ddwaf_object_get_index(&input, 0);
-        const auto *output_child = ddwaf_object_get_index(&output, 0);
+        const auto *output_child = ddwaf_object_get_index(output.ptr(), 0);
 
         EXPECT_NE(output_child, input_child);
         EXPECT_STREQ(output_child->parameterName, input_child->parameterName);
@@ -323,7 +319,7 @@ TEST(TestUtils, CloneMap)
 
     {
         const auto *input_child = ddwaf_object_get_index(&input, 1);
-        const auto *output_child = ddwaf_object_get_index(&output, 1);
+        const auto *output_child = ddwaf_object_get_index(output.ptr(), 1);
 
         EXPECT_NE(output_child, input_child);
         EXPECT_STREQ(output_child->parameterName, input_child->parameterName);
@@ -336,7 +332,7 @@ TEST(TestUtils, CloneMap)
 
     {
         const auto *input_child = ddwaf_object_get_index(&input, 2);
-        const auto *output_child = ddwaf_object_get_index(&output, 2);
+        const auto *output_child = ddwaf_object_get_index(output.ptr(), 2);
 
         EXPECT_NE(output_child, input_child);
         EXPECT_STREQ(output_child->parameterName, input_child->parameterName);
@@ -347,7 +343,6 @@ TEST(TestUtils, CloneMap)
     }
 
     ddwaf_object_free(&input);
-    ddwaf_object_free(&output);
 }
 
 #define EXPECT_VEC(expected, ...)                                                                  \

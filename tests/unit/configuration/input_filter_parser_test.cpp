@@ -27,8 +27,7 @@ TEST(TestInputFilterParser, ParseEmpty)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -90,8 +89,7 @@ TEST(TestInputFilterParser, ParseFilterWithoutID)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -154,8 +152,7 @@ TEST(TestInputFilterParser, ParseDuplicateFilters)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -203,8 +200,7 @@ TEST(TestInputFilterParser, ParseUnconditionalNoTargets)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -246,8 +242,7 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetID)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -301,8 +296,7 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetTags)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -357,8 +351,7 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetPriority)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -412,8 +405,7 @@ TEST(TestInputFilterParser, ParseUnconditionalMultipleTargets)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -477,8 +469,7 @@ TEST(TestInputFilterParser, ParseMultipleUnconditional)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -551,8 +542,7 @@ TEST(TestInputFilterParser, ParseConditionalSingleCondition)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -605,8 +595,7 @@ TEST(TestInputFilterParser, ParseConditionalMultipleConditions)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -659,8 +648,7 @@ TEST(TestInputFilterParser, IncompatibleMinVersion)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -720,8 +708,7 @@ TEST(TestInputFilterParser, IncompatibleMaxVersion)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -781,8 +768,7 @@ TEST(TestInputFilterParser, CompatibleVersion)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 

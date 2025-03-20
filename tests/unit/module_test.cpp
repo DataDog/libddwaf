@@ -53,11 +53,11 @@ TEST(TestModuleUngrouped, SingleRuleMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(events.size(), 1);
     }
@@ -68,11 +68,11 @@ TEST(TestModuleUngrouped, SingleRuleMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        mod.eval(events, store, cache, {}, {}, {}, deadline);
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        mod.eval(events, store, cache, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::none);
         EXPECT_EQ(events.size(), 0);
     }
@@ -124,11 +124,11 @@ TEST(TestModuleUngrouped, MultipleMonitoringRuleMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(events.size(), 2);
         EXPECT_TRUE(contains(events, "id1"));
@@ -141,11 +141,11 @@ TEST(TestModuleUngrouped, MultipleMonitoringRuleMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        mod.eval(events, store, cache, {}, {}, {}, deadline);
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        mod.eval(events, store, cache, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::none);
         EXPECT_EQ(events.size(), 0);
     }
@@ -198,11 +198,11 @@ TEST(TestModuleUngrouped, BlockingRuleMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(contains(events, "id2"));
@@ -258,11 +258,11 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(contains(events, "id1"));
@@ -275,11 +275,11 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.2"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(events.size(), 1);
     }
@@ -335,11 +335,11 @@ TEST(TestModuleUngrouped, BlockingRuleMatchBasePrecedence)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(contains(events, "id2"));
@@ -398,11 +398,11 @@ TEST(TestModuleUngrouped, BlockingRuleMatchUserPrecedence)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(contains(events, "id1"));
@@ -440,11 +440,11 @@ TEST(TestModuleUngrouped, NonExpiringModule)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline{0s};
-        mod.eval(events, store, cache, {}, {}, {}, deadline);
+        mod.eval(events, store, cache, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(contains(events, "id"));
@@ -480,12 +480,11 @@ TEST(TestModuleUngrouped, ExpiringModule)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline{0s};
-        EXPECT_THROW(
-            mod.eval(events, store, cache, {}, {}, {}, deadline), ddwaf::timeout_exception);
+        EXPECT_THROW(mod.eval(events, store, cache, {}, {}, deadline), ddwaf::timeout_exception);
     }
 }
 
@@ -521,11 +520,11 @@ TEST(TestModuleUngrouped, DisabledRules)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::none);
     }
 }
@@ -576,11 +575,11 @@ TEST(TestModuleGrouped, MultipleGroupsMonitoringRuleMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(events.size(), 2);
         EXPECT_TRUE(contains(events, "id1"));
@@ -635,11 +634,11 @@ TEST(TestModuleGrouped, MultipleGroupsBlockingRuleMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(contains(events, "id2"));
@@ -693,11 +692,11 @@ TEST(TestModuleGrouped, SingleGroupBlockingRuleMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(contains(events, "id2"));
@@ -750,11 +749,11 @@ TEST(TestModuleGrouped, SingleGroupMonitoringRuleMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(contains(events, "id1"));
@@ -807,11 +806,11 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupMonitoringUserMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(contains(events, "id2"));
@@ -864,11 +863,11 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupMonitoringBaseMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(contains(events, "id1"));
@@ -922,11 +921,11 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingBaseMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(contains(events, "id1"));
@@ -981,11 +980,11 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingUserMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(contains(events, "id2"));
@@ -1039,11 +1038,11 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingBaseMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(contains(events, "id1"));
@@ -1098,11 +1097,11 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingUserMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(contains(events, "id2"));
@@ -1155,11 +1154,11 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsMonitoringMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(events.size(), 2);
         EXPECT_TRUE(contains(events, "id1"));
@@ -1214,11 +1213,11 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsBlockingMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(contains(events, "id2"));
@@ -1271,11 +1270,11 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsMonitoringMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(events.size(), 2);
         EXPECT_TRUE(contains(events, "id1"));
@@ -1330,11 +1329,11 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsBlockingMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(contains(events, "id1"));
@@ -1476,11 +1475,11 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.2"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(events.size(), 4);
         EXPECT_TRUE(contains(events, "id2"));
@@ -1579,11 +1578,11 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(events.size(), 3);
 
@@ -1683,11 +1682,11 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(contains(events, "id3"));
@@ -1726,11 +1725,11 @@ TEST(TestModuleGrouped, DisabledRules)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(events, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::none);
     }
 }
@@ -1764,11 +1763,11 @@ TEST(TestModuleGrouped, NonExpiringModule)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline{0s};
-        mod.eval(events, store, cache, {}, {}, {}, deadline);
+        mod.eval(events, store, cache, {}, {}, deadline);
 
         EXPECT_EQ(events.size(), 1);
         EXPECT_TRUE(contains(events, "id"));
@@ -1804,12 +1803,11 @@ TEST(TestModuleGrouped, ExpiringModule)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::vector<event> events;
         ddwaf::timer deadline{0s};
-        EXPECT_THROW(
-            mod.eval(events, store, cache, {}, {}, {}, deadline), ddwaf::timeout_exception);
+        EXPECT_THROW(mod.eval(events, store, cache, {}, {}, deadline), ddwaf::timeout_exception);
     }
 }
 

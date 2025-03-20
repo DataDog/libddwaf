@@ -31,7 +31,7 @@ TEST(TestWafIntegration, GetWafVersion)
 
 TEST(TestWafIntegration, HandleBad)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, ddwaf_object_free};
+    ddwaf_config config{{nullptr, nullptr}, ddwaf_object_free};
 
     ddwaf_object tmp;
     ddwaf_object object = DDWAF_OBJECT_INVALID;
@@ -74,7 +74,7 @@ TEST(TestWafIntegration, RootAddresses)
     auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -97,7 +97,7 @@ TEST(TestWafIntegration, HandleLifetime)
     auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -132,7 +132,7 @@ TEST(TestWafIntegration, HandleLifetimeMultipleContexts)
     auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -174,7 +174,7 @@ TEST(TestWafIntegration, InvalidVersion)
     auto rule = yaml_to_object("{version: 3.0, rules: []}");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
     ASSERT_EQ(handle1, nullptr);
@@ -186,7 +186,7 @@ TEST(TestWafIntegration, InvalidVersionNoRules)
     auto rule = yaml_to_object("{version: 3.0}");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
     ASSERT_EQ(handle1, nullptr);
@@ -291,7 +291,7 @@ TEST(TestWafIntegration, UpdateRules)
     auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_builder builder = ddwaf_builder_init(&config);
     ddwaf_builder_add_or_update_config(builder, "default", sizeof("default") - 1, &rule, nullptr);
@@ -343,7 +343,7 @@ TEST(TestWafIntegration, UpdateRules)
 
 TEST(TestWafIntegration, UpdateDisableEnableRuleByID)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
     ASSERT_NE(builder, nullptr);
 
@@ -420,7 +420,7 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByID)
 
 TEST(TestWafIntegration, UpdateDisableEnableRuleByTags)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -509,7 +509,7 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByTags)
 
 TEST(TestWafIntegration, UpdateActionsByID)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
     ASSERT_NE(builder, nullptr);
 
@@ -663,7 +663,7 @@ TEST(TestWafIntegration, UpdateActionsByID)
 
 TEST(TestWafIntegration, UpdateActionsByTags)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -767,7 +767,7 @@ TEST(TestWafIntegration, UpdateActionsByTags)
 
 TEST(TestWafIntegration, UpdateTagsByID)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -896,7 +896,7 @@ TEST(TestWafIntegration, UpdateTagsByID)
 
 TEST(TestWafIntegration, UpdateTagsByTags)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -1118,7 +1118,7 @@ TEST(TestWafIntegration, UpdateTagsByTags)
 
 TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -1300,7 +1300,7 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
 
 TEST(TestWafIntegration, UpdateInvalidOverrides)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     auto rule = read_file("interface.yaml", base_dir);
@@ -1326,7 +1326,7 @@ TEST(TestWafIntegration, UpdateInvalidOverrides)
 
 TEST(TestWafIntegration, UpdateRuleData)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -1405,7 +1405,7 @@ TEST(TestWafIntegration, UpdateRuleData)
 
 TEST(TestWafIntegration, UpdateAndRevertRuleData)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -1482,7 +1482,7 @@ TEST(TestWafIntegration, UpdateAndRevertRuleData)
 
 TEST(TestWafIntegration, UpdateRuleExclusions)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -1579,7 +1579,7 @@ TEST(TestWafIntegration, UpdateRuleExclusions)
 
 TEST(TestWafIntegration, UpdateInputExclusions)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -1695,7 +1695,7 @@ TEST(TestWafIntegration, UpdateInputExclusions)
 
 TEST(TestWafIntegration, UpdateEverything)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -2307,7 +2307,7 @@ TEST(TestWafIntegration, UpdateEverything)
 
 TEST(TestWafIntegration, KnownAddressesDisabledRule)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -2374,7 +2374,7 @@ TEST(TestWafIntegration, KnownAddressesDisabledRule)
 
 TEST(TestWafIntegration, KnownActions)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {

@@ -27,8 +27,7 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutSideEffects)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -91,8 +90,7 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutTargets)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -156,8 +154,7 @@ TEST(TestRuleOverrideParser, ParseRuleOverride)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -208,8 +205,7 @@ TEST(TestRuleOverrideParser, ParseMultipleRuleOverrides)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -276,8 +272,7 @@ TEST(TestRuleOverrideParser, ParseInconsistentRuleOverride)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -341,8 +336,7 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideForTags)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -396,8 +390,7 @@ TEST(TestRuleOverrideParser, ParseInvalidTagsField)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
