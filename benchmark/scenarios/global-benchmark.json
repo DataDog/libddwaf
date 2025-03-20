@@ -8443,24 +8443,7 @@
       {
         "id": "http-endpoint-fingerprint",
         "generator": "http_endpoint_fingerprint",
-        "conditions": [
-          {
-            "operator": "exists",
-            "parameters": {
-              "inputs": [
-                {
-                  "address": "waf.context.event"
-                },
-                {
-                  "address": "server.business_logic.users.login.failure"
-                },
-                {
-                  "address": "server.business_logic.users.login.success"
-                }
-              ]
-            }
-          }
-        ],
+        "conditions": [],
         "parameters": {
           "mappings": [
             {
@@ -8644,24 +8627,7 @@
       {
         "id": "http-header-fingerprint",
         "generator": "http_header_fingerprint",
-        "conditions": [
-          {
-            "operator": "exists",
-            "parameters": {
-              "inputs": [
-                {
-                  "address": "waf.context.event"
-                },
-                {
-                  "address": "server.business_logic.users.login.failure"
-                },
-                {
-                  "address": "server.business_logic.users.login.success"
-                }
-              ]
-            }
-          }
-        ],
+        "conditions": [],
         "parameters": {
           "mappings": [
             {
@@ -8680,24 +8646,7 @@
       {
         "id": "http-network-fingerprint",
         "generator": "http_network_fingerprint",
-        "conditions": [
-          {
-            "operator": "exists",
-            "parameters": {
-              "inputs": [
-                {
-                  "address": "waf.context.event"
-                },
-                {
-                  "address": "server.business_logic.users.login.failure"
-                },
-                {
-                  "address": "server.business_logic.users.login.success"
-                }
-              ]
-            }
-          }
-        ],
+        "conditions": [],
         "parameters": {
           "mappings": [
             {
@@ -8716,24 +8665,7 @@
       {
         "id": "session-fingerprint",
         "generator": "session_fingerprint",
-        "conditions": [
-          {
-            "operator": "exists",
-            "parameters": {
-              "inputs": [
-                {
-                  "address": "waf.context.event"
-                },
-                {
-                  "address": "server.business_logic.users.login.failure"
-                },
-                {
-                  "address": "server.business_logic.users.login.success"
-                }
-              ]
-            }
-          }
-        ],
+        "conditions": [],
         "parameters": {
           "mappings": [
             {
