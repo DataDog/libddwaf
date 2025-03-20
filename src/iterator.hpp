@@ -38,7 +38,6 @@ public:
 protected:
     static constexpr std::size_t initial_stack_size = 32;
 
-    object_limits limits_;
     // This is only used when the iterator is initialised with a key path,
     // since the iterator doesn't keep track of the root object provided,
     // but only the beginning of the key path, we keep this here so that we
@@ -51,8 +50,7 @@ protected:
     const exclusion::object_set_ref &excluded_;
 
 private:
-    explicit iterator_base(
-        const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
+    explicit iterator_base(const exclusion::object_set_ref &exclude);
 
     friend T;
 };
@@ -60,7 +58,7 @@ private:
 class value_iterator : public iterator_base<value_iterator> {
 public:
     explicit value_iterator(object_view obj, std::span<const std::string> path,
-        const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
+        const exclusion::object_set_ref &exclude);
 
     ~value_iterator() = default;
 
@@ -89,7 +87,7 @@ protected:
 class key_iterator : public iterator_base<key_iterator> {
 public:
     explicit key_iterator(object_view obj, std::span<const std::string> path,
-        const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
+        const exclusion::object_set_ref &exclude);
 
     ~key_iterator() = default;
 
@@ -129,7 +127,7 @@ protected:
 class kv_iterator : public iterator_base<kv_iterator> {
 public:
     explicit kv_iterator(object_view obj, std::span<const std::string> path,
-        const exclusion::object_set_ref &exclude, const object_limits &limits = object_limits());
+        const exclusion::object_set_ref &exclude);
 
     ~kv_iterator() = default;
 

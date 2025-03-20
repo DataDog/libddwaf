@@ -93,15 +93,14 @@ bool lfi_impl_unix(std::string_view path, std::string_view param)
 }
 
 lfi_result lfi_impl(std::string_view path, object_view params,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline)
+    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline)
 {
     auto *lfi_fn = &lfi_impl_unix;
     if (system_platform::current() == platform::windows) {
         lfi_fn = &lfi_impl_windows;
     }
 
-    kv_iterator it(params, {}, objects_excluded, limits);
+    kv_iterator it(params, {}, objects_excluded);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
@@ -125,11 +124,10 @@ lfi_result lfi_impl(std::string_view path, object_view params,
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path,
     const variadic_argument<object_view> &params, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline) const
+    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     for (const auto &param : params) {
-        auto res = lfi_impl(path.value, param.value, objects_excluded, limits, deadline);
+        auto res = lfi_impl(path.value, param.value, objects_excluded, deadline);
         if (res.has_value()) {
             const std::vector<std::string> path_kp{path.key_path.begin(), path.key_path.end()};
             const bool ephemeral = path.ephemeral || param.ephemeral;

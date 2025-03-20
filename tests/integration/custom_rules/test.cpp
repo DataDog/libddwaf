@@ -18,7 +18,7 @@ TEST(TestCustomRulesIntegration, InitWithoutBaseRules)
     auto rule = read_file("custom_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -58,7 +58,7 @@ TEST(TestCustomRulesIntegration, InitWithBaseRules)
     auto rule = read_file("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -98,7 +98,7 @@ TEST(TestCustomRulesIntegration, RegularCustomRulesPrecedence)
     auto rule = read_file("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -138,7 +138,7 @@ TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
     auto rule = read_file("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -183,7 +183,7 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
     auto rule = read_file("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -224,7 +224,7 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
 // Custom rules can be updated when base rules exist
 TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -311,7 +311,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
 // Custom rules can be updated when custom rules already exist
 TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -396,7 +396,7 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
 // Remove all custom rules when no other rules are available
 TEST(TestCustomRulesIntegration, UpdateWithEmptyRules)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     auto rule = read_file("custom_rules.yaml", base_dir);
@@ -420,7 +420,7 @@ TEST(TestCustomRulesIntegration, UpdateWithEmptyRules)
 // Remove all custom rules when base rules are available
 TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -507,7 +507,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
 // Ensure that existing custom rules are unaffected by overrides
 TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -595,7 +595,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
 // Ensure that custom rules are unaffected by overrides after an update
 TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -707,7 +707,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
 // Ensure that existing custom rules are unaffected by overrides
 TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -795,7 +795,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
 // Ensure that custom rules are affected by overrides after an update
 TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {

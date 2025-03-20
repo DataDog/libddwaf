@@ -16,7 +16,6 @@
 #include "object.hpp"
 #include "object_type.hpp"
 #include "traits.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -272,11 +271,9 @@ public:
     protected:
         iterator() = default;
 
-        explicit iterator(
-            const detail::object *obj, const object_limits &limits = {}, uint16_t idx = 0)
-            : obj_(obj->array), size_(std::min(static_cast<uint16_t>(limits.max_container_size),
-                                    static_cast<uint16_t>(obj->nbEntries))),
-              index_(idx), type_(static_cast<object_type>(obj->type))
+        explicit iterator(const detail::object *obj, uint16_t idx = 0)
+            : obj_(obj->array), size_(static_cast<uint16_t>(obj->nbEntries)), index_(idx),
+              type_(static_cast<object_type>(obj->type))
         {}
 
         iterator(
@@ -293,14 +290,14 @@ public:
         friend class object_view;
     };
 
-    [[nodiscard]] iterator begin(const object_limits &limits = {}) const
+    [[nodiscard]] iterator begin() const
     {
         assert(obj_ != nullptr);
         // This check guarantees that the object is a container and not null
         if (!is_container()) {
             [[unlikely]] return {};
         }
-        return iterator{obj_, limits};
+        return iterator{obj_};
     }
 
     [[nodiscard]] iterator end() const
@@ -310,7 +307,7 @@ public:
         if (!is_container()) {
             [[unlikely]] return {};
         }
-        return iterator{obj_, {}, static_cast<uint16_t>(obj_->nbEntries)};
+        return iterator{obj_, static_cast<uint16_t>(obj_->nbEntries)};
     }
 
 protected:

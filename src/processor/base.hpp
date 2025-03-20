@@ -80,7 +80,7 @@ public:
     virtual ~base_processor() = default;
 
     virtual void eval(object_store &store, owned_object &derived, processor_cache &cache,
-        const object_limits &limits, ddwaf::timer &deadline) const = 0;
+        ddwaf::timer &deadline) const = 0;
 
     virtual void get_addresses(std::unordered_map<target_index, std::string> &addresses) const = 0;
 
@@ -103,7 +103,7 @@ public:
     ~structured_processor() override = default;
 
     void eval(object_store &store, owned_object &derived, processor_cache &cache,
-        const object_limits &limits, ddwaf::timer &deadline) const override
+        ddwaf::timer &deadline) const override
     {
         // No result structure, but this processor only produces derived objects
         // so it makes no sense to evaluate.
@@ -113,7 +113,7 @@ public:
 
         DDWAF_DEBUG("Evaluating processor '{}'", id_);
 
-        if (!expr_->eval(cache.expr_cache, store, {}, {}, limits, deadline).outcome) {
+        if (!expr_->eval(cache.expr_cache, store, {}, {}, deadline).outcome) {
             return;
         }
 

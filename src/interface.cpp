@@ -71,27 +71,6 @@ std::shared_ptr<ddwaf::obfuscator> obfuscator_from_config(const ddwaf_config *co
     return std::make_shared<ddwaf::obfuscator>(key_regex, value_regex);
 }
 
-ddwaf::object_limits limits_from_config(const ddwaf_config *config)
-{
-    ddwaf::object_limits limits;
-
-    if (config != nullptr) {
-        if (config->limits.max_container_size != 0) {
-            limits.max_container_size = config->limits.max_container_size;
-        }
-
-        if (config->limits.max_container_depth != 0) {
-            limits.max_container_depth = config->limits.max_container_depth;
-        }
-
-        if (config->limits.max_string_length != 0) {
-            limits.max_string_length = config->limits.max_string_length;
-        }
-    }
-
-    return limits;
-}
-
 // Maximum number of characters required to represent a 64 bit integer as a string
 // 20 bytes for UINT64_MAX or INT64_MIN + null byte
 constexpr size_t UINT64_CHARS = 21;
@@ -184,8 +163,7 @@ ddwaf::waf *ddwaf_init(
     try {
         if (ruleset != nullptr) {
             auto free_fn = config != nullptr ? config->free_fn : ddwaf_object_free;
-            ddwaf::waf_builder builder(
-                limits_from_config(config), free_fn, obfuscator_from_config(config));
+            ddwaf::waf_builder builder(free_fn, obfuscator_from_config(config));
 
             ddwaf::raw_configuration input = *ruleset;
             if (diagnostics == nullptr) {
@@ -355,8 +333,7 @@ ddwaf_builder ddwaf_builder_init(const ddwaf_config *config)
 {
     try {
         auto free_fn = config != nullptr ? config->free_fn : ddwaf_object_free;
-        return new ddwaf::waf_builder(
-            limits_from_config(config), free_fn, obfuscator_from_config(config));
+        return new ddwaf::waf_builder(free_fn, obfuscator_from_config(config));
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());
     } catch (...) {

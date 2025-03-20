@@ -45,28 +45,8 @@ struct eval_result {
     bool ephemeral;
 };
 
-struct object_limits {
-    static constexpr uint32_t default_max_container_depth{DDWAF_MAX_CONTAINER_DEPTH};
-    static constexpr uint32_t default_max_container_size{DDWAF_MAX_CONTAINER_SIZE};
-    static constexpr uint32_t default_max_string_length{DDWAF_MAX_STRING_LENGTH};
-
-    // Non-overridable limits
-    static constexpr uint32_t max_transformers_per_address{10};
-    static constexpr uint32_t max_key_path_depth{DDWAF_MAX_CONTAINER_DEPTH};
-
-    // User provided limits
-    uint32_t max_container_depth{DDWAF_MAX_CONTAINER_DEPTH};
-    uint32_t max_container_size{DDWAF_MAX_CONTAINER_SIZE};
-    uint32_t max_string_length{DDWAF_MAX_STRING_LENGTH};
-};
-
-inline size_t find_string_cutoff(const char *str, size_t length, object_limits limits = {})
+inline size_t find_string_cutoff(const char *str, size_t length)
 {
-    // If the string is shorter than our cap, then fine
-    if (length <= limits.max_string_length) {
-        return length;
-    }
-
     // If it's longer, we need to truncate it. However, we don't want to cut a UTF-8 byte sequence
     // in the middle of it! Valid UTF8 has a specific binary format. 	If it's a single byte UTF8
     // character, then it is always of form '0xxxxxxx', where 'x' is any binary digit. 	If it's a
@@ -80,7 +60,7 @@ inline size_t find_string_cutoff(const char *str, size_t length, object_limits l
     //  - 10: Middle of multi byte sequence, we need to step back
     //  We therefore loop as long as we see the '10' sequence
 
-    size_t pos = limits.max_string_length;
+    size_t pos = length - 1;
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
     while (pos != 0 && (str[pos] & 0xC0) == 0x80) { pos -= 1; }
 

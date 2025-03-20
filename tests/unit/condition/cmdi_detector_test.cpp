@@ -49,7 +49,7 @@ TEST(TestCmdiDetector, InvalidType)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
 
@@ -69,7 +69,7 @@ TEST(TestCmdiDetector, EmptyResource)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
 
@@ -126,7 +126,7 @@ TEST(TestCmdiDetector, NoInjection)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << param;
         EXPECT_FALSE(res.ephemeral);
     }
@@ -174,7 +174,7 @@ TEST(TestCmdiDetector, NoExecutableInjection)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << param;
         EXPECT_FALSE(res.ephemeral);
     }
@@ -239,7 +239,7 @@ TEST(TestCmdiDetector, NoShellInjection)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << resource_str;
         EXPECT_FALSE(res.ephemeral);
     }
@@ -283,7 +283,7 @@ TEST(TestCmdiDetector, ExecutableInjectionLinux)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << param;
         EXPECT_FALSE(res.ephemeral);
 
@@ -341,7 +341,7 @@ TEST(TestCmdiDetector, ExecutableInjectionWindows)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << param;
         EXPECT_FALSE(res.ephemeral);
 
@@ -394,7 +394,7 @@ TEST(TestCmdiDetector, ExecutableWithSpacesInjection)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << param;
         EXPECT_FALSE(res.ephemeral);
 
@@ -630,7 +630,7 @@ TEST(TestCmdiDetector, LinuxShellInjection)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource_str;
         EXPECT_FALSE(res.ephemeral);
 
@@ -727,7 +727,7 @@ TEST(TestCmdiDetector, WindowsShellInjection)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource_str;
         EXPECT_FALSE(res.ephemeral);
 
@@ -775,7 +775,7 @@ TEST(TestCmdiDetector, ExecutableInjectionMultipleArguments)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome) << resource[0];
     EXPECT_FALSE(res.ephemeral);
 
@@ -822,7 +822,7 @@ TEST(TestCmdiDetector, EmptyExecutable)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome) << resource[0];
     EXPECT_FALSE(res.ephemeral);
 }
@@ -858,7 +858,7 @@ TEST(TestCmdiDetector, ShellInjectionMultipleArguments)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome) << resource[0];
     EXPECT_FALSE(res.ephemeral);
 
