@@ -43,7 +43,7 @@ namespace {
 class scalar_iterator {
 public:
     explicit scalar_iterator(object_view obj, const std::span<const std::string> & /*path*/,
-        const exclusion::object_set_ref & /*exclude*/, const object_limits & /*limits*/)
+        const exclusion::object_set_ref & /*exclude*/)
         : current_(obj)
     {}
 
@@ -353,8 +353,7 @@ std::string_view find_shell_command(std::string_view executable, object_view exe
 
 std::optional<shi_result> cmdi_impl(object_view exec_args,
     std::vector<shell_token> &resource_tokens, object_view params,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline)
+    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline)
 {
     const std::string_view executable =
         trim_whitespaces(exec_args.at_value(0).as_or_default<std::string_view>({}));
@@ -375,14 +374,14 @@ std::optional<shi_result> cmdi_impl(object_view exec_args,
         return std::nullopt;
     }
 
-    kv_iterator it(params, {}, objects_excluded, limits);
+    kv_iterator it(params, {}, objects_excluded);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
         const object_view param = *it;
-        if (!param.is<std::string_view>()) {
+        if (!param.is_string()) {
             continue;
         }
 
@@ -400,7 +399,7 @@ std::optional<shi_result> cmdi_impl(object_view exec_args,
 
         if (!shell_command.empty()) {
             auto res = find_shi_from_params<std::string_view, scalar_iterator>(
-                shell_command, resource_tokens, param, objects_excluded, limits, deadline);
+                shell_command, resource_tokens, param, objects_excluded, deadline);
             if (res.has_value()) {
                 res->key_path = it.get_current_path();
                 return res;
@@ -436,8 +435,7 @@ cmdi_detector::cmdi_detector(std::vector<condition_parameter> args)
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 eval_result cmdi_detector::eval_impl(const unary_argument<object_view> &resource,
     const variadic_argument<object_view> &params, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline) const
+    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     if (resource.value.type() != object_type::array || resource.value.empty()) {
         return {};
@@ -445,8 +443,8 @@ eval_result cmdi_detector::eval_impl(const unary_argument<object_view> &resource
 
     std::vector<shell_token> resource_tokens;
     for (const auto &param : params) {
-        auto res = cmdi_impl(
-            resource.value, resource_tokens, param.value, objects_excluded, limits, deadline);
+        auto res =
+            cmdi_impl(resource.value, resource_tokens, param.value, objects_excluded, deadline);
         if (res.has_value()) {
             const std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};

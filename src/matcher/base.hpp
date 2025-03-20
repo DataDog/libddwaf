@@ -11,7 +11,6 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "ddwaf.h"
 #include "object_view.hpp"
 
 namespace ddwaf {
@@ -40,6 +39,7 @@ public:
     // Scalar matcher methods
     [[nodiscard]] virtual bool is_supported_type(object_type type) const = 0;
 
+    [[nodiscard]] virtual std::pair<bool, std::string> match(std::string_view str) const = 0;
     [[nodiscard]] virtual std::pair<bool, std::string> match(object_view obj) const = 0;
 };
 
@@ -71,11 +71,20 @@ public:
         return static_cast<const T *>(this)->match_impl(data);
     }
 
+    [[nodiscard]] std::pair<bool, std::string> match(std::string_view str) const override
+    {
+        const auto *ptr = static_cast<const T *>(this);
+        if constexpr (T::is_supported_type_impl(object_type::string)) {
+            return ptr->match_impl(str);
+        }
+        return {false, {}};
+    }
+
     [[nodiscard]] std::pair<bool, std::string> match(object_view obj) const override
     {
         const auto *ptr = static_cast<const T *>(this);
         if constexpr (T::is_supported_type_impl(object_type::string)) {
-            if (obj.is<std::string_view>()) {
+            if (obj.is_string()) {
                 return ptr->match_impl(obj.as<std::string_view>());
             }
         }

@@ -46,11 +46,11 @@ TEST(TestScalarCondition, NoMatch)
     ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_invalid(&tmp));
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 }
@@ -66,11 +66,11 @@ TEST(TestScalarCondition, Timeout)
     ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_invalid(&tmp));
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
-    EXPECT_THROW(cond.eval(cache, store, {}, {}, {}, deadline), ddwaf::timeout_exception);
+    EXPECT_THROW(cond.eval(cache, store, {}, {}, deadline), ddwaf::timeout_exception);
 }
 
 TEST(TestScalarCondition, SimpleMatch)
@@ -84,11 +84,11 @@ TEST(TestScalarCondition, SimpleMatch)
     ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_string(&tmp, "hello"));
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 }
@@ -108,18 +108,18 @@ TEST(TestScalarCondition, CachedMatch)
 
     {
         object_store store;
-        store.insert(root, object_store::attribute::none, nullptr);
+        store.insert(owned_object{root, nullptr}, object_store::attribute::none);
 
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         ASSERT_FALSE(res.ephemeral);
     }
 
     {
         object_store store;
-        store.insert(root, object_store::attribute::none, nullptr);
+        store.insert(owned_object{root, nullptr}, object_store::attribute::none);
 
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome);
         ASSERT_FALSE(res.ephemeral);
     }
@@ -144,11 +144,11 @@ TEST(TestScalarCondition, SimpleMatchOnKeys)
     ddwaf_object_map_add(&root, "server.request.uri.raw", &map);
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 }
@@ -167,11 +167,11 @@ TEST(TestScalarCondition, SimpleEphemeralMatch)
     {
         auto scope = store.get_eval_scope();
 
-        store.insert(root, object_store::attribute::ephemeral, nullptr);
+        store.insert(owned_object{root, nullptr}, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         ASSERT_TRUE(res.ephemeral);
     }
@@ -179,11 +179,11 @@ TEST(TestScalarCondition, SimpleEphemeralMatch)
     {
         auto scope = store.get_eval_scope();
 
-        store.insert(root, object_store::attribute::ephemeral, nullptr);
+        store.insert(owned_object{root, nullptr}, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         ASSERT_TRUE(res.ephemeral);
     }

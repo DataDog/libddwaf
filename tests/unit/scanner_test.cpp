@@ -26,19 +26,9 @@ TEST(TestScanner, SimpleMatch)
     EXPECT_STRV(scnr.get_id(), "something");
     EXPECT_EQ(scnr.get_tags(), tags);
 
-    ddwaf_object key;
-    ddwaf_object value;
-
-    ddwaf_object_string(&key, "hello");
-    ddwaf_object_string(&value, "192.168.0.1");
-
+    std::string_view key{"hello"};
+    auto value = owned_object::make_string("192.168.0.1");
     EXPECT_TRUE(scnr.eval(key, value));
-
-    std::string_view key_sv{key.stringValue, static_cast<std::size_t>(key.nbEntries)};
-    EXPECT_TRUE(scnr.eval(key_sv, value));
-
-    ddwaf_object_free(&key);
-    ddwaf_object_free(&value);
 }
 
 TEST(TestScanner, SimpleMatchNoKeyMatcher)
@@ -51,19 +41,10 @@ TEST(TestScanner, SimpleMatchNoKeyMatcher)
     EXPECT_STRV(scnr.get_id(), "something");
     EXPECT_EQ(scnr.get_tags(), tags);
 
-    ddwaf_object key;
-    ddwaf_object value;
-
-    ddwaf_object_string(&key, "hello");
-    ddwaf_object_string(&value, "192.168.0.1");
+    std::string_view key{"hello"};
+    auto value = owned_object::make_string("192.168.0.1");
 
     EXPECT_TRUE(scnr.eval(key, value));
-
-    std::string_view key_sv{key.stringValue, static_cast<std::size_t>(key.nbEntries)};
-    EXPECT_TRUE(scnr.eval(key_sv, value));
-
-    ddwaf_object_free(&key);
-    ddwaf_object_free(&value);
 }
 
 TEST(TestScanner, SimpleMatchNoValueMatcher)
@@ -76,19 +57,10 @@ TEST(TestScanner, SimpleMatchNoValueMatcher)
     EXPECT_STRV(scnr.get_id(), "something");
     EXPECT_EQ(scnr.get_tags(), tags);
 
-    ddwaf_object key;
-    ddwaf_object value;
-
-    ddwaf_object_string(&key, "hello");
-    ddwaf_object_string(&value, "192.168.0.1");
+    std::string_view key{"hello"};
+    auto value = owned_object::make_string("192.168.0.1");
 
     EXPECT_TRUE(scnr.eval(key, value));
-
-    std::string_view key_sv{key.stringValue, static_cast<std::size_t>(key.nbEntries)};
-    EXPECT_TRUE(scnr.eval(key_sv, value));
-
-    ddwaf_object_free(&key);
-    ddwaf_object_free(&value);
 }
 
 TEST(TestScanner, NoMatchOnKey)
@@ -105,19 +77,10 @@ TEST(TestScanner, NoMatchOnKey)
     EXPECT_STRV(scnr.get_id(), "0");
     EXPECT_EQ(scnr.get_tags(), tags);
 
-    ddwaf_object key;
-    ddwaf_object value;
-
-    ddwaf_object_string(&key, "helloo");
-    ddwaf_object_string(&value, "192.168.0.1");
+    std::string_view key{"helloo"};
+    auto value = owned_object::make_string("192.168.0.1");
 
     EXPECT_FALSE(scnr.eval(key, value));
-
-    std::string_view key_sv{key.stringValue, static_cast<std::size_t>(key.nbEntries)};
-    EXPECT_FALSE(scnr.eval(key_sv, value));
-
-    ddwaf_object_free(&key);
-    ddwaf_object_free(&value);
 }
 
 TEST(TestScanner, NoMatchOnValue)
@@ -133,19 +96,9 @@ TEST(TestScanner, NoMatchOnValue)
     EXPECT_STRV(scnr.get_id(), "null");
     EXPECT_EQ(scnr.get_tags(), tags);
 
-    ddwaf_object key;
-    ddwaf_object value;
-
-    ddwaf_object_string(&key, "hello");
-    ddwaf_object_string(&value, "192.168.0.2");
-
+    std::string_view key{"hello"};
+    auto value = owned_object::make_string("192.168.0.2");
     EXPECT_FALSE(scnr.eval(key, value));
-
-    std::string_view key_sv{key.stringValue, static_cast<std::size_t>(key.nbEntries)};
-    EXPECT_FALSE(scnr.eval(key_sv, value));
-
-    ddwaf_object_free(&key);
-    ddwaf_object_free(&value);
 }
 
 TEST(TestScanner, InvalidKey)
@@ -162,19 +115,8 @@ TEST(TestScanner, InvalidKey)
     EXPECT_STRV(scnr.get_id(), "0");
     EXPECT_EQ(scnr.get_tags(), tags);
 
-    ddwaf_object key;
-    ddwaf_object value;
-
-    ddwaf_object_invalid(&key);
-    ddwaf_object_string(&value, "192.168.0.1");
-
-    EXPECT_FALSE(scnr.eval(key, value));
-
-    std::string_view key_sv{};
-    EXPECT_FALSE(scnr.eval(key_sv, value));
-
-    ddwaf_object_free(&key);
-    ddwaf_object_free(&value);
+    auto value = owned_object::make_string("192.168.0.1");
+    EXPECT_FALSE(scnr.eval({}, value));
 }
 
 TEST(TestScanner, InvalidValue)
@@ -190,19 +132,8 @@ TEST(TestScanner, InvalidValue)
     EXPECT_STRV(scnr.get_id(), "null");
     EXPECT_EQ(scnr.get_tags(), tags);
 
-    ddwaf_object key;
-    ddwaf_object value;
-
-    ddwaf_object_string(&key, "hello");
-    ddwaf_object_invalid(&value);
-
-    EXPECT_FALSE(scnr.eval(key, value));
-
-    std::string_view key_sv{key.stringValue, static_cast<std::size_t>(key.nbEntries)};
-    EXPECT_FALSE(scnr.eval(key_sv, value));
-
-    ddwaf_object_free(&key);
-    ddwaf_object_free(&value);
+    std::string_view key{"hello"};
+    EXPECT_FALSE(scnr.eval(key, {}));
 }
 
 } // namespace

@@ -39,11 +39,11 @@ void match_path_and_input(
         ddwaf_object_map_add(&root, "server.request.query", &input);
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         if (match) {
             ASSERT_TRUE(res.outcome) << path;
             EXPECT_FALSE(res.ephemeral);

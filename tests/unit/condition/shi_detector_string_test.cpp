@@ -29,11 +29,11 @@ TEST(TestShiDetectorString, InvalidType)
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "whatever"));
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
 
@@ -49,11 +49,11 @@ TEST(TestShiDetectorString, EmptyResource)
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "whatever"));
 
     object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
 
@@ -94,11 +94,11 @@ TEST(TestShiDetectorString, NoMatchAndFalsePositives)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << resource;
     }
 }
@@ -129,11 +129,11 @@ TEST(TestShiDetectorString, ExecutablesAndRedirections)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
         EXPECT_FALSE(res.ephemeral);
 
@@ -177,11 +177,11 @@ TEST(TestShiDetectorString, InjectionsWithinCommandSubstitution)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
         EXPECT_FALSE(res.ephemeral);
 
@@ -218,11 +218,11 @@ TEST(TestShiDetectorString, InjectionsWithinProcessSubstitution)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
         EXPECT_FALSE(res.ephemeral);
 
@@ -261,11 +261,11 @@ TEST(TestShiDetectorString, OffByOnePayloadsMatch)
             &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
         EXPECT_FALSE(res.ephemeral);
 
@@ -327,11 +327,11 @@ TEST(TestShiDetectorString, MultipleArgumentsMatch)
         ddwaf_object_map_add(&root, "server.request.query", &params_obj);
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
         EXPECT_FALSE(res.ephemeral);
 

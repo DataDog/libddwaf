@@ -165,37 +165,6 @@ TEST(TestValueIterator, TestArrayMultipleNullAndInvalid)
     ddwaf_object_free(&object);
 }
 
-TEST(TestValueIterator, TestArrayPastSizeLimit)
-{
-    ddwaf::object_limits limits;
-    ddwaf_object object, tmp;
-    ddwaf_object_array(&object);
-
-    for (unsigned i = 0; i < limits.max_container_size + 50; i++) {
-        ddwaf_object_array_add(&object, ddwaf_object_string(&tmp, std::to_string(i).c_str()));
-    }
-
-    std::unordered_set<object_view> persistent;
-    exclusion::object_set_ref exclude{persistent, {}};
-    ddwaf::value_iterator it(object, {}, exclude);
-
-    for (unsigned i = 0; i < limits.max_container_size; i++) {
-        auto index_str = std::to_string(i);
-        EXPECT_TRUE(it);
-        EXPECT_STREQ((*it).as<const char *>(), index_str.c_str());
-
-        auto path = it.get_current_path();
-        EXPECT_EQ(path.size(), 1);
-        EXPECT_STREQ(path[0].c_str(), index_str.c_str());
-
-        ++it;
-    }
-
-    EXPECT_FALSE(it);
-
-    ddwaf_object_free(&object);
-}
-
 TEST(TestValueIterator, TestDeepArray)
 {
     ddwaf_object *array;
@@ -219,46 +188,6 @@ TEST(TestValueIterator, TestDeepArray)
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
     for (unsigned i = 0; i < 10; i++) {
-        auto index = std::to_string(i);
-
-        EXPECT_STREQ((*it).as<const char *>(), ("val" + index).c_str());
-
-        auto path = it.get_current_path();
-        EXPECT_EQ(path.size(), i + 1);
-
-        for (unsigned j = 0; j < i; j++) { EXPECT_STREQ(path[j].c_str(), "1"); }
-        ++it;
-    }
-
-    EXPECT_FALSE(it);
-
-    ddwaf_object_free(&object);
-}
-
-TEST(TestValueIterator, TestDeepArrayPastLimit)
-{
-    ddwaf::object_limits limits;
-    ddwaf_object *array;
-    ddwaf_object object;
-
-    ddwaf_object_array(&object);
-    array = &object;
-
-    for (unsigned i = 0; i < limits.max_container_depth + 10; i++) {
-        ddwaf_object intermediate, tmp;
-        auto index = std::to_string(i);
-
-        ddwaf_object_array(&intermediate);
-        ddwaf_object_array_add(array, ddwaf_object_string(&tmp, ("val" + index).c_str()));
-        ddwaf_object_array_add(array, &intermediate);
-
-        array = &array->array[1];
-    }
-
-    std::unordered_set<object_view> persistent;
-    exclusion::object_set_ref exclude{persistent, {}};
-    ddwaf::value_iterator it(object, {}, exclude);
-    for (unsigned i = 0; i < limits.max_container_depth; i++) {
         auto index = std::to_string(i);
 
         EXPECT_STREQ((*it).as<const char *>(), ("val" + index).c_str());
@@ -401,43 +330,6 @@ TEST(TestValueIterator, TestMapMultipleMultipleNullAndInvalid)
     ddwaf_object_free(&object);
 }
 
-TEST(TestValueIterator, TestMapPastSizeLimit)
-{
-    ddwaf::object_limits limits;
-    ddwaf_object object, tmp;
-    ddwaf_object_map(&object);
-
-    for (unsigned i = 0; i < limits.max_container_size + 50; i++) {
-        auto index = std::to_string(i);
-        std::string key = "key" + index;
-        std::string value = "value" + index;
-        ddwaf_object_map_add(&object, key.c_str(), ddwaf_object_string(&tmp, value.c_str()));
-    }
-
-    std::unordered_set<object_view> persistent;
-    exclusion::object_set_ref exclude{persistent, {}};
-    ddwaf::value_iterator it(object, {}, exclude);
-
-    for (unsigned i = 0; i < limits.max_container_size; i++) {
-        auto index = std::to_string(i);
-        std::string key = "key" + index;
-        std::string value = "value" + index;
-
-        EXPECT_TRUE(it);
-        EXPECT_STREQ((*it).as<const char *>(), value.c_str());
-        EXPECT_STREQ((*it).ptr()->parameterName, key.c_str());
-
-        auto path = it.get_current_path();
-        EXPECT_EQ(path.size(), 1);
-        EXPECT_STREQ(path[0].c_str(), key.c_str());
-        ++it;
-    }
-
-    EXPECT_FALSE(it);
-
-    ddwaf_object_free(&object);
-}
-
 TEST(TestValueIterator, TestDeepMap)
 {
     ddwaf_object *map;
@@ -462,51 +354,6 @@ TEST(TestValueIterator, TestDeepMap)
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
     for (unsigned i = 0; i < 10; i++) {
-        auto index = std::to_string(i);
-
-        EXPECT_STREQ((*it).ptr()->parameterName, ("str" + index).c_str());
-        EXPECT_STREQ((*it).as<const char *>(), ("val" + index).c_str());
-
-        auto path = it.get_current_path();
-        EXPECT_EQ(path.size(), i + 1);
-
-        for (unsigned j = 0; j < i; j++) {
-            EXPECT_STREQ(path[j].c_str(), ("map" + std::to_string(j)).c_str());
-        }
-        EXPECT_STREQ(path.back().c_str(), ("str" + index).c_str());
-        ++it;
-    }
-
-    EXPECT_FALSE(it);
-
-    ddwaf_object_free(&object);
-}
-
-TEST(TestValueIterator, TestMapPastDepthLimit)
-{
-    ddwaf::object_limits limits;
-    ddwaf_object *map;
-    ddwaf_object object;
-
-    ddwaf_object_map(&object);
-    map = &object;
-
-    for (unsigned i = 0; i < limits.max_container_depth + 10; i++) {
-        ddwaf_object intermediate, tmp;
-        auto index = std::to_string(i);
-
-        ddwaf_object_map(&intermediate);
-        ddwaf_object_map_add(
-            map, ("str" + index).c_str(), ddwaf_object_string(&tmp, ("val" + index).c_str()));
-        ddwaf_object_map_add(map, ("map" + index).c_str(), &intermediate);
-
-        map = &map->array[1];
-    }
-
-    std::unordered_set<object_view> persistent;
-    exclusion::object_set_ref exclude{persistent, {}};
-    ddwaf::value_iterator it(object, {}, exclude);
-    for (unsigned i = 0; i < limits.max_container_depth; i++) {
         auto index = std::to_string(i);
 
         EXPECT_STREQ((*it).ptr()->parameterName, ("str" + index).c_str());
@@ -891,47 +738,6 @@ TEST(TestValueIterator, TestContainerMixInvalidPath)
     ddwaf_object_free(&object);
 }
 
-TEST(TestValueIterator, TestMapDepthLimitPath)
-{
-    ddwaf::object_limits limits;
-
-    ddwaf_object object = yaml_to_object(R"(
-        {
-            root: {
-                child: {
-                    grandchild: {
-                        key: value
-                    }
-                }
-            }
-        }
-    )");
-
-    std::unordered_set<object_view> persistent;
-    exclusion::object_set_ref exclude{persistent, {}};
-    {
-        limits.max_container_depth = 3;
-        std::vector<std::string> key_path{"root", "child", "grandchild"};
-        ddwaf::value_iterator it(object, key_path, exclude, limits);
-
-        EXPECT_FALSE(it);
-    }
-
-    {
-        limits.max_container_depth = 4;
-        std::vector<std::string> key_path{"root", "child", "grandchild"};
-        ddwaf::value_iterator it(object, key_path, exclude, limits);
-
-        auto it_path = it.get_current_path();
-        std::vector<std::string> path = {"root", "child", "grandchild", "key"};
-        EXPECT_EQ(it_path, path);
-
-        EXPECT_TRUE(it);
-    }
-
-    ddwaf_object_free(&object);
-}
-
 /*TEST(TestValueIterator, TestInvalidMap)*/
 /*{*/
 /*ddwaf_object tmp, root = DDWAF_OBJECT_MAP;*/
@@ -1018,21 +824,6 @@ TEST(TestValueIterator, TestMapDepthLimitPath)
 
 /*ddwaf_object_free(&root);*/
 /*}*/
-
-TEST(TestValueIterator, TestRecursiveMap)
-{
-    ddwaf_object root;
-    root.nbEntries = 1;
-    root.parameterName = "Sqreen";
-    root.parameterNameLength = sizeof("Sqreen") - 1;
-    root.type = DDWAF_OBJ_MAP;
-    root.array = &root;
-
-    std::unordered_set<object_view> persistent;
-    exclusion::object_set_ref exclude{persistent, {}};
-    ddwaf::value_iterator it(root, {}, exclude);
-    EXPECT_FALSE(it);
-}
 
 TEST(TestValueIterator, TestExcludeSingleObject)
 {

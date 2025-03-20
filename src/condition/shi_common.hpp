@@ -3,7 +3,6 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-#include <algorithm>
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -11,19 +10,12 @@
 #include <utility>
 #include <vector>
 
-#include "argument_retriever.hpp"
 #include "clock.hpp"
-#include "condition/base.hpp"
 #include "condition/match_iterator.hpp"
-#include "condition/shi_detector.hpp"
-#include "condition/structured_condition.hpp"
-#include "ddwaf.h"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
-#include "log.hpp"
 #include "tokenizer/shell.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -46,10 +38,9 @@ struct shell_argument_array {
 template <typename ResourceType, typename IteratorType = kv_iterator>
 std::optional<shi_result> find_shi_from_params(const ResourceType &resource,
     std::vector<shell_token> &resource_tokens, object_view params,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline)
+    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline)
 {
-    match_iterator<2, IteratorType, ResourceType> it(resource, params, objects_excluded, limits);
+    match_iterator<2, IteratorType, ResourceType> it(resource, params, objects_excluded);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();

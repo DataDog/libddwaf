@@ -462,11 +462,11 @@ std::vector<sql_token> tokenize(std::string_view statement, sql_dialect dialect)
 
 sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resource_tokens,
     object_view params, sql_dialect dialect, const exclusion::object_set_ref &objects_excluded,
-    const object_limits &limits, ddwaf::timer &deadline)
+    ddwaf::timer &deadline)
 {
     static constexpr std::size_t min_str_len = 3;
 
-    match_iterator<min_str_len> it(resource, params, objects_excluded, limits);
+    match_iterator<min_str_len> it(resource, params, objects_excluded);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
@@ -510,7 +510,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
 [[nodiscard]] eval_result sqli_detector::eval_impl(const unary_argument<std::string_view> &sql,
     const variadic_argument<object_view> &params, const unary_argument<std::string_view> &db_type,
     condition_cache &cache, const exclusion::object_set_ref &objects_excluded,
-    const object_limits &limits, ddwaf::timer &deadline) const
+    ddwaf::timer &deadline) const
 {
     auto dialect = sql_dialect_from_type(db_type.value);
 
@@ -518,7 +518,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
 
     for (const auto &param : params) {
         auto res = internal::sqli_impl(
-            sql.value, resource_tokens, param.value, dialect, objects_excluded, limits, deadline);
+            sql.value, resource_tokens, param.value, dialect, objects_excluded, deadline);
         if (std::holds_alternative<internal::matched_param>(res)) {
             const std::vector<std::string> sql_kp{sql.key_path.begin(), sql.key_path.end()};
             const bool ephemeral = sql.ephemeral || param.ephemeral;

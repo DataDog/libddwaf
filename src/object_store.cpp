@@ -3,82 +3,74 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-#include <cstddef>
-#include <string>
 #include <string_view>
+#include <utility>
 
-#include "ddwaf.h"
 #include "log.hpp"
+#include "object.hpp"
 #include "object_store.hpp"
+#include "object_type.hpp"
+#include "object_view.hpp"
 #include "target_address.hpp"
 
 namespace ddwaf {
 
-bool object_store::insert(ddwaf_object &input, attribute attr, ddwaf_object_free_fn free_fn)
+bool object_store::insert(owned_object &&input, attribute attr)
 {
+    object_view view;
     if (attr == attribute::ephemeral) {
-        ephemeral_objects_.emplace_back(input, free_fn);
+        view = ephemeral_objects_.emplace_back(std::move(input));
     } else {
-        input_objects_.emplace_back(input, free_fn);
+        view = input_objects_.emplace_back(std::move(input));
     }
 
-    if (input.type != DDWAF_OBJ_MAP) {
+    if (view.type() != object_type::map) {
         return false;
     }
 
-    auto entries = static_cast<std::size_t>(input.nbEntries);
-    if (entries == 0) {
+    const auto size = view.size();
+    if (size == 0) {
         // Objects with no addresses are considered valid as they are harmless
         return true;
     }
 
-    ddwaf_object *array = input.array;
-    if (array == nullptr) {
-        // Since we have established that the size of the map is not 0, a null
-        // array constitutes a malformed map.
-        return false;
-    }
+    objects_.reserve(objects_.size() + size);
 
-    objects_.reserve(objects_.size() + entries);
-
-    latest_batch_.reserve(latest_batch_.size() + entries);
+    latest_batch_.reserve(latest_batch_.size() + size);
 
     if (attr == attribute::ephemeral) {
-        ephemeral_targets_.reserve(entries);
+        ephemeral_targets_.reserve(size);
     }
 
-    for (std::size_t i = 0; i < entries; ++i) {
-        auto length = static_cast<std::size_t>(array[i].parameterNameLength);
-        if (array[i].parameterName == nullptr || length == 0) {
+    for (auto it = view.begin(); it != view.end(); ++it) {
+        auto key_obj = it.key();
+        if (key_obj.empty()) {
             continue;
         }
 
-        const std::string key(array[i].parameterName, length);
+        auto key = key_obj.as<std::string_view>();
         auto target = get_target_index(key);
-
-        insert_target_helper(target, key, &array[i], attr);
+        insert_target_helper(target, key, it.value(), attr);
     }
 
     return true;
 }
 
-bool object_store::insert(target_index target, std::string_view key, ddwaf_object &input,
-    attribute attr, ddwaf_object_free_fn free_fn)
+bool object_store::insert(
+    target_index target, std::string_view key, owned_object &&input, attribute attr)
 {
-    ddwaf_object *object = nullptr;
+    object_view view;
     if (attr == attribute::ephemeral) {
-        ephemeral_objects_.emplace_back(input, free_fn);
-        object = &ephemeral_objects_.back().first;
+        view = ephemeral_objects_.emplace_back(std::move(input));
     } else {
-        input_objects_.emplace_back(input, free_fn);
-        object = &input_objects_.back().first;
+        view = input_objects_.emplace_back(std::move(input));
     }
 
-    return insert_target_helper(target, key, object, attr);
+    return insert_target_helper(target, key, view, attr);
 }
 
 bool object_store::insert_target_helper(
-    target_index target, std::string_view key, ddwaf_object *object, attribute attr)
+    target_index target, std::string_view key, object_view view, attribute attr)
 {
     if (objects_.contains(target)) {
         if (attr == attribute::ephemeral && !ephemeral_targets_.contains(target)) {
@@ -102,7 +94,7 @@ bool object_store::insert_target_helper(
         ephemeral_targets_.emplace(target);
     }
 
-    objects_[target] = {object, attr};
+    objects_[target] = {view, attr};
     latest_batch_.emplace(target);
 
     return true;
@@ -123,11 +115,6 @@ void object_store::clear_last_batch()
     ephemeral_targets_.clear();
 
     // Free ephemeral objects and targets
-    for (auto &[obj, free_fn] : ephemeral_objects_) {
-        if (free_fn != nullptr) {
-            free_fn(&obj);
-        }
-    }
     ephemeral_objects_.clear();
 }
 

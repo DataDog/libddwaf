@@ -45,11 +45,11 @@ TEST_P(DialectTestFixture, InvalidSql)
             &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << statement;
     }
 }
@@ -77,11 +77,11 @@ TEST_P(DialectTestFixture, InjectionWithoutTokens)
             &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << statement;
     }
 }
@@ -120,11 +120,11 @@ TEST_P(DialectTestFixture, BenignInjections)
             &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << statement;
     }
 }
@@ -177,11 +177,11 @@ TEST_P(DialectTestFixture, MaliciousInjections)
             &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_FALSE(res.ephemeral);
 
@@ -255,11 +255,11 @@ TEST_P(DialectTestFixture, Tautologies)
             &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_FALSE(res.ephemeral);
 
@@ -310,11 +310,11 @@ TEST_P(DialectTestFixture, Comments)
             &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_FALSE(res.ephemeral);
 
@@ -362,11 +362,11 @@ TEST(TestSQLiDetectorMySql, Comments)
             &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_FALSE(res.ephemeral);
 
@@ -414,11 +414,11 @@ TEST(TestSQLiDetectorMySql, Tautologies)
             &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_FALSE(res.ephemeral);
 
@@ -469,11 +469,11 @@ TEST(TestSQLiDetectorPgSql, Tautologies)
             &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
 
         object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_FALSE(res.ephemeral);
 

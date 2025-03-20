@@ -22,7 +22,7 @@ TEST(TestInputFilter, InputExclusionNoConditions)
     ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "query", ddwaf_object_string(&tmp, "value"));
-    store.insert(root);
+    store.insert(owned_object{root});
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {});
@@ -33,7 +33,7 @@ TEST(TestInputFilter, InputExclusionNoConditions)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -50,7 +50,7 @@ TEST(TestInputFilter, EphemeralInputExclusionNoConditions)
     ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "query", ddwaf_object_string(&tmp, "value"));
-    store.insert(root, object_store::attribute::ephemeral);
+    store.insert(owned_object{root}, object_store::attribute::ephemeral);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {});
@@ -61,7 +61,7 @@ TEST(TestInputFilter, EphemeralInputExclusionNoConditions)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -83,7 +83,7 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "query", &child);
 
-    store.insert(root);
+    store.insert(owned_object{root});
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
@@ -94,7 +94,7 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -116,7 +116,7 @@ TEST(TestInputFilter, EphemeralObjectExclusionNoConditions)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "query", &child);
 
-    store.insert(root, object_store::attribute::ephemeral);
+    store.insert(owned_object{root}, object_store::attribute::ephemeral);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
@@ -127,7 +127,7 @@ TEST(TestInputFilter, EphemeralObjectExclusionNoConditions)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -150,7 +150,7 @@ TEST(TestInputFilter, PersistentInputExclusionWithPersistentCondition)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf::object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -160,7 +160,7 @@ TEST(TestInputFilter, PersistentInputExclusionWithPersistentCondition)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -183,7 +183,7 @@ TEST(TestInputFilter, EphemeralInputExclusionWithEphemeralCondition)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf::object_store store;
-    store.insert(root, object_store::attribute::ephemeral);
+    store.insert(owned_object{root}, object_store::attribute::ephemeral);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -193,7 +193,7 @@ TEST(TestInputFilter, EphemeralInputExclusionWithEphemeralCondition)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -216,11 +216,11 @@ TEST(TestInputFilter, PersistentInputExclusionWithEphemeralCondition)
     ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-    store.insert(root, object_store::attribute::ephemeral);
+    store.insert(owned_object{root}, object_store::attribute::ephemeral);
 
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-    store.insert(root);
+    store.insert(owned_object{root});
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -230,7 +230,7 @@ TEST(TestInputFilter, PersistentInputExclusionWithEphemeralCondition)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -253,11 +253,11 @@ TEST(TestInputFilter, EphemeralInputExclusionWithPersistentCondition)
     ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-    store.insert(root, object_store::attribute::ephemeral);
+    store.insert(owned_object{root}, object_store::attribute::ephemeral);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -267,7 +267,7 @@ TEST(TestInputFilter, EphemeralInputExclusionWithPersistentCondition)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -290,7 +290,7 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
     ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "ADMIN"));
 
     ddwaf::object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("usr.id"), "usr.id", {});
@@ -300,7 +300,7 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -322,7 +322,7 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.2"));
 
     ddwaf::object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -332,7 +332,7 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_FALSE(opt_spec.has_value());
 }
 
@@ -355,7 +355,7 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
     ddwaf_object_map_add(&root, "query", &child);
 
     ddwaf::object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
@@ -366,7 +366,7 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -393,7 +393,7 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
     ddwaf_object_map_add(&root, "query", &child);
 
     ddwaf::object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
@@ -404,7 +404,7 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+    auto opt_spec = filter.match(store, cache, {}, deadline);
     ASSERT_FALSE(opt_spec.has_value());
 }
 
@@ -437,10 +437,10 @@ TEST(TestInputFilter, InputValidateCachedMatch)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf::object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline).has_value());
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 
     {
@@ -450,10 +450,10 @@ TEST(TestInputFilter, InputValidateCachedMatch)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf::object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
-        auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+        auto opt_spec = filter.match(store, cache, {}, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -487,14 +487,14 @@ TEST(TestInputFilter, InputValidateCachedEphemeralMatch)
         ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        store.insert(root, object_store::attribute::ephemeral);
+        store.insert(owned_object{root}, object_store::attribute::ephemeral);
 
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
-        auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+        auto opt_spec = filter.match(store, cache, {}, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -512,10 +512,10 @@ TEST(TestInputFilter, InputValidateCachedEphemeralMatch)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf::object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
-        ASSERT_FALSE(filter.match(store, cache, {}, {}, deadline));
+        ASSERT_FALSE(filter.match(store, cache, {}, deadline));
     }
 
     {
@@ -525,10 +525,10 @@ TEST(TestInputFilter, InputValidateCachedEphemeralMatch)
         ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        store.insert(root, object_store::attribute::ephemeral);
+        store.insert(owned_object{root}, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
-        auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+        auto opt_spec = filter.match(store, cache, {}, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -564,11 +564,11 @@ TEST(TestInputFilter, InputMatchWithoutCache)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf::object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
-        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline).has_value());
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 
     {
@@ -578,11 +578,11 @@ TEST(TestInputFilter, InputMatchWithoutCache)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf::object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
-        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline).has_value());
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 }
 
@@ -615,11 +615,11 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
-        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline).has_value());
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 
     {
@@ -628,13 +628,13 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         auto client_ip_ptr = store.get_target(get_target_index("http.client_ip")).first;
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
-        auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+        auto opt_spec = filter.match(store, cache, {}, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -676,10 +676,10 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
-        auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+        auto opt_spec = filter.match(store, cache, {}, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -695,10 +695,10 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "random", ddwaf_object_string(&tmp, "random"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
-        ASSERT_FALSE(filter.match(store, cache, {}, {}, deadline).has_value());
+        ASSERT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 }
 
@@ -736,10 +736,10 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
         ddwaf_object_map_add(&root, "query", &object);
 
         ddwaf::object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline).has_value());
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 
     {
@@ -754,10 +754,10 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
         ddwaf_object_map_add(&root, "query", &object);
 
         ddwaf::object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
-        auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+        auto opt_spec = filter.match(store, cache, {}, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -797,11 +797,11 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
         ddwaf_object_map_add(&root, "query", &object);
 
         ddwaf::object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
-        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline).has_value());
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 
     {
@@ -816,11 +816,11 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
         ddwaf_object_map_add(&root, "query", &object);
 
         ddwaf::object_store store;
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
-        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline).has_value());
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 }
 
@@ -858,11 +858,11 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "query", &object);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
-        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline).has_value());
+        EXPECT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 
     {
@@ -871,11 +871,11 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
-        auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+        auto opt_spec = filter.match(store, cache, {}, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -921,10 +921,10 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ddwaf_object_map_add(&root, "query", &object);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
-        auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+        auto opt_spec = filter.match(store, cache, {}, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -939,10 +939,10 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "random", ddwaf_object_string(&tmp, "random"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
-        ASSERT_FALSE(filter.match(store, cache, {}, {}, deadline).has_value());
+        ASSERT_FALSE(filter.match(store, cache, {}, deadline).has_value());
     }
 }
 
@@ -979,10 +979,10 @@ TEST(TestInputFilter, MatchWithDynamicMatcher)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ddwaf_object_map_add(&root, "query", &object);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
-        auto opt_spec = filter.match(store, cache, {}, {}, deadline);
+        auto opt_spec = filter.match(store, cache, {}, deadline);
         ASSERT_FALSE(opt_spec.has_value());
     }
 
@@ -1001,14 +1001,14 @@ TEST(TestInputFilter, MatchWithDynamicMatcher)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ddwaf_object_map_add(&root, "query", &object);
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         std::unordered_map<std::string, std::unique_ptr<matcher::base>> matchers;
         matchers["ip_data"] =
             std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         ddwaf::timer deadline{2s};
-        auto opt_spec = filter.match(store, cache, matchers, {}, deadline);
+        auto opt_spec = filter.match(store, cache, matchers, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);

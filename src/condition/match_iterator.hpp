@@ -17,13 +17,13 @@ class match_iterator {
 public:
     static constexpr std::size_t npos = std::string_view::npos;
 
-    explicit match_iterator(ResourceType resource, object_view obj,
-        const exclusion::object_set_ref &exclude, const object_limits &limits = {})
-        : resource_(resource), it_(obj, {}, exclude, limits)
+    explicit match_iterator(
+        ResourceType resource, object_view obj, const exclusion::object_set_ref &exclude)
+        : resource_(resource), it_(obj, {}, exclude)
     {
         for (; it_; ++it_) {
             const auto current_obj = *it_;
-            if (current_obj.template is<std::string_view>() && current_obj.size() >= MinLength) {
+            if (current_obj.is_string() && current_obj.size() >= MinLength) {
                 current_param_ = current_obj.template as<std::string_view>();
                 current_index_ = resource_.find(current_param_, 0);
                 if (current_index_ != npos) {
@@ -57,7 +57,7 @@ public:
 
         while (++it_) {
             const auto current_obj = *it_;
-            if (current_obj.template is<std::string_view>() && current_obj.size() >= MinLength) {
+            if (current_obj.is_string() && current_obj.size() >= MinLength) {
                 current_param_ = current_obj.template as<std::string_view>();
                 current_index_ = resource_.find(current_param_, 0);
                 if (current_index_ != npos) {

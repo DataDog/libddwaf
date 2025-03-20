@@ -32,9 +32,8 @@ namespace {
 
 std::optional<std::string> transform(std::string_view input, const std::vector<transformer_id> &ids)
 {
-    ddwaf_object src;
-    ddwaf_object dst;
-    ddwaf_object_stringl_nc(&src, input.data(), input.size());
+    auto src = owned_object::make_string_nocopy(input, nullptr);
+    owned_object dst;
 
     auto res = transformer::manager::transform(src, dst, ids);
 
@@ -42,18 +41,15 @@ std::optional<std::string> transform(std::string_view input, const std::vector<t
         return std::nullopt;
     }
 
-    std::string output{dst.stringValue, static_cast<std::size_t>(dst.nbEntries)};
-    ddwaf_object_free(&dst);
-
-    return {output};
+    return {object_view{dst}.as<std::string>()};
 }
 
 TEST(TestTransformerManager, InvalidTypes)
 {
     ddwaf_object src;
-    ddwaf_object dst;
     ddwaf_object_unsigned(&src, 29);
 
+    owned_object dst;
     {
         std::vector<transformer_id> ids{transformer_id::compress_whitespace};
         EXPECT_FALSE(transformer::manager::transform(src, dst, ids));

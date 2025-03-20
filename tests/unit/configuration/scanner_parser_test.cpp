@@ -28,8 +28,7 @@ TEST(TestScannerParser, ParseKeyOnlyScanner)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        ddwaf::raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -82,8 +81,7 @@ TEST(TestScannerParser, ParseValueOnlyScanner)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        ddwaf::raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -136,8 +134,7 @@ TEST(TestScannerParser, ParseKeyValueScanner)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        ddwaf::raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -190,8 +187,7 @@ TEST(TestScannerParser, ParseNoID)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        ddwaf::raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -254,8 +250,7 @@ TEST(TestScannerParser, ParseNoTags)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        ddwaf::raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -318,8 +313,7 @@ TEST(TestScannerParser, ParseNoKeyValue)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        ddwaf::raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -382,8 +376,7 @@ TEST(TestScannerParser, ParseDuplicate)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        ddwaf::raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -429,8 +422,7 @@ TEST(TestScannerParser, ParseKeyNoOperator)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        ddwaf::raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -493,8 +485,7 @@ TEST(TestScannerParser, ParseKeyNoParameters)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        ddwaf::raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -557,8 +548,7 @@ TEST(TestScannerParser, ParseValueNoOperator)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        ddwaf::raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -621,8 +611,7 @@ TEST(TestScannerParser, ParseValueNoParameters)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        ddwaf::raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -686,8 +675,7 @@ TEST(TestScannerParser, ParseUnknownMatcher)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        ddwaf::raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -754,8 +742,7 @@ TEST(TestScannerParser, ParseRuleDataID)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        ddwaf::raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -819,8 +806,7 @@ TEST(TestScannerParser, IncompatibleMinVersion)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        ddwaf::raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -881,8 +867,7 @@ TEST(TestScannerParser, IncompatibleMaxVersion)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        ddwaf::raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -942,8 +927,7 @@ TEST(TestScannerParser, CompatibleVersion)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        ddwaf::raw_configuration root = section.to_object().move();
 
         auto root_map = static_cast<raw_configuration::map>(root);
 

@@ -30,21 +30,10 @@ public:
 
     virtual ~scanner() = default;
 
-    bool eval(object_view key, object_view value) const
+    bool eval(std::string_view key, object_view value) const
     {
         DDWAF_DEBUG("Evaluating scanner '{}'", id_);
         return eval_matcher(key_matcher_, key) && eval_matcher(value_matcher_, value);
-    }
-
-    bool eval(std::string_view key, object_view value) const
-    {
-        ddwaf_object key_obj;
-        if (key.data() != nullptr && !key.empty()) {
-            ddwaf_object_stringl_nc(&key_obj, key.data(), key.size());
-        } else {
-            ddwaf_object_invalid(&key_obj);
-        }
-        return eval(key_obj, value);
     }
 
     const std::unordered_map<std::string, std::string> &get_tags() const { return tags_; }
@@ -52,15 +41,26 @@ public:
     const std::string &get_id_ref() const { return id_; }
 
 protected:
-    static bool eval_matcher(const std::shared_ptr<matcher::base> &matcher, object_view obj)
+    static bool eval_matcher(const std::shared_ptr<matcher::base> &matcher, object_view data)
     {
         if (!matcher) {
             return true;
         }
-        if (!obj.has_value() && obj.type() == object_type::invalid) {
+        if (!data.has_value() || data.type() == object_type::invalid) {
             return false;
         }
-        return matcher->match(obj).first;
+        return matcher->match(data).first;
+    }
+
+    static bool eval_matcher(const std::shared_ptr<matcher::base> &matcher, std::string_view data)
+    {
+        if (!matcher) {
+            return true;
+        }
+        if (data.empty()) {
+            return false;
+        }
+        return matcher->match(data).first;
     }
 
     std::string id_;

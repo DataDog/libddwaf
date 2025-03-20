@@ -17,6 +17,7 @@
 #include "exclusion/common.hpp"
 #include "log.hpp"
 #include "module.hpp"
+#include "object.hpp"
 #include "object_store.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
@@ -43,9 +44,7 @@ void set_context_event_address(object_store &store)
         return;
     }
 
-    ddwaf_object true_obj;
-    ddwaf_object_bool(&true_obj, true);
-    store.insert(event_addr_idx, event_addr, true_obj, attribute::none);
+    store.insert(event_addr_idx, event_addr, owned_object::make_boolean(true), attribute::none);
 }
 
 } // namespace
@@ -65,12 +64,14 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     }
 
     auto *free_fn = ruleset_->free_fn;
-    if (persistent.has_value() && !store_.insert(*persistent, attribute::none, free_fn)) {
+    if (persistent.has_value() &&
+        !store_.insert(owned_object{*persistent, free_fn}, attribute::none)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
         return DDWAF_ERR_INVALID_OBJECT;
     }
 
-    if (ephemeral.has_value() && !store_.insert(*ephemeral, attribute::ephemeral, free_fn)) {
+    if (ephemeral.has_value() &&
+        !store_.insert(owned_object{*ephemeral, free_fn}, attribute::ephemeral)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
         return DDWAF_ERR_INVALID_OBJECT;
     }
@@ -83,11 +84,9 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
 
     const event_serializer serializer(event_obfuscator_, actions_);
 
-    optional_ref<ddwaf_object> derived;
+    owned_object derived;
     if (res.has_value()) {
-        ddwaf_result &output = *res;
-        ddwaf_object_map(&output.derivatives);
-        derived.emplace(output.derivatives);
+        derived = owned_object::make_map();
     }
 
     std::vector<ddwaf::event> events;
@@ -120,6 +119,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     if (res.has_value()) {
         ddwaf_result &output = *res;
         serializer.serialize(events, output);
+        output.derivatives = derived.move();
         output.total_runtime = deadline.elapsed().count();
         output.timeout = deadline.expired_before();
     }
@@ -127,7 +127,7 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
     return code;
 }
 
-void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline)
+void context::eval_preprocessors(owned_object &derived, ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating preprocessors");
 
@@ -143,11 +143,11 @@ void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::tim
             it = new_it;
         }
 
-        preproc->eval(store_, derived, it->second, limits_, deadline);
+        preproc->eval(store_, derived, it->second, deadline);
     }
 }
 
-void context::eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline)
+void context::eval_postprocessors(owned_object &derived, ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating postprocessors");
 
@@ -163,7 +163,7 @@ void context::eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::ti
             it = new_it;
         }
 
-        postproc->eval(store_, derived, it->second, limits_, deadline);
+        postproc->eval(store_, derived, it->second, deadline);
     }
 }
 
@@ -184,7 +184,7 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
         }
 
         rule_filter::cache_type &cache = it->second;
-        auto exclusion = filter.match(store_, cache, exclusion_matchers_, limits_, deadline);
+        auto exclusion = filter.match(store_, cache, exclusion_matchers_, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 exclusion_policy_.add_rule_exclusion(
@@ -208,7 +208,7 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
         }
 
         input_filter::cache_type &cache = it->second;
-        auto exclusion = filter.match(store_, cache, exclusion_matchers_, limits_, deadline);
+        auto exclusion = filter.match(store_, cache, exclusion_matchers_, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 exclusion_policy_.add_input_exclusion(rule, exclusion->objects);
@@ -228,7 +228,7 @@ std::vector<event> context::eval_rules(
         const auto &mod = ruleset_->rule_modules[i];
         auto &cache = rule_module_cache_[i];
 
-        auto verdict = mod.eval(events, store_, cache, policy, rule_matchers_, limits_, deadline);
+        auto verdict = mod.eval(events, store_, cache, policy, rule_matchers_, deadline);
         if (verdict == rule_module::verdict_type::block) {
             break;
         }

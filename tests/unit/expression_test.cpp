@@ -28,12 +28,12 @@ TEST(TestExpression, SimpleMatch)
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
 
     ddwaf::object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+    auto res = expr->eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
     EXPECT_FALSE(res.ephemeral);
 
@@ -65,12 +65,12 @@ TEST(TestExpression, SimpleNegatedMatch)
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "val"));
 
     ddwaf::object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+    auto res = expr->eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
     EXPECT_FALSE(res.ephemeral);
 
@@ -102,12 +102,12 @@ TEST(TestExpression, EphemeralMatch)
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
 
     ddwaf::object_store store;
-    store.insert(root, object_store::attribute::ephemeral);
+    store.insert(owned_object{root}, object_store::attribute::ephemeral);
 
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+    auto res = expr->eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
     EXPECT_TRUE(res.ephemeral);
 
@@ -145,11 +145,11 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "bad"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
         EXPECT_FALSE(res.ephemeral);
     }
@@ -162,11 +162,11 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.body", ddwaf_object_string(&tmp, "value"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
         EXPECT_FALSE(res.ephemeral);
 
@@ -202,11 +202,11 @@ TEST(TestExpression, EphemeralMatchOnSecondEval)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.body", ddwaf_object_string(&tmp, "bad"));
 
-        store.insert(root, object_store::attribute::ephemeral);
+        store.insert(owned_object{root}, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
         EXPECT_FALSE(res.ephemeral);
     }
@@ -219,11 +219,11 @@ TEST(TestExpression, EphemeralMatchOnSecondEval)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.body", ddwaf_object_string(&tmp, "value"));
 
-        store.insert(root, object_store::attribute::ephemeral);
+        store.insert(owned_object{root}, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
         EXPECT_TRUE(res.ephemeral);
 
@@ -262,19 +262,19 @@ TEST(TestExpression, EphemeralMatchTwoConditions)
         ddwaf_object root;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
-        store.insert(root, object_store::attribute::ephemeral);
+        store.insert(owned_object{root}, object_store::attribute::ephemeral);
     }
 
     {
         ddwaf_object root;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.body", ddwaf_object_string(&tmp, "value"));
-        store.insert(root);
+        store.insert(owned_object{root});
     }
 
     ddwaf::timer deadline{2s};
 
-    auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+    auto res = expr->eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
     EXPECT_TRUE(res.ephemeral);
 
@@ -322,11 +322,11 @@ TEST(TestExpression, EphemeralMatchOnFirstConditionFirstEval)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
 
-        store.insert(root, object_store::attribute::ephemeral);
+        store.insert(owned_object{root}, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
         EXPECT_FALSE(res.ephemeral);
     }
@@ -339,11 +339,11 @@ TEST(TestExpression, EphemeralMatchOnFirstConditionFirstEval)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.body", ddwaf_object_string(&tmp, "value"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
         EXPECT_FALSE(res.ephemeral);
     }
@@ -375,11 +375,11 @@ TEST(TestExpression, EphemeralMatchOnFirstConditionSecondEval)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.body", ddwaf_object_string(&tmp, "value"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
         EXPECT_FALSE(res.ephemeral);
     }
@@ -392,11 +392,11 @@ TEST(TestExpression, EphemeralMatchOnFirstConditionSecondEval)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
 
-        store.insert(root, object_store::attribute::ephemeral);
+        store.insert(owned_object{root}, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
         EXPECT_TRUE(res.ephemeral);
     }
@@ -423,11 +423,11 @@ TEST(TestExpression, DuplicateInput)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "bad"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
         EXPECT_FALSE(res.ephemeral);
     }
@@ -440,11 +440,11 @@ TEST(TestExpression, DuplicateInput)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
         EXPECT_FALSE(res.ephemeral);
     }
@@ -471,11 +471,11 @@ TEST(TestExpression, DuplicateEphemeralInput)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
 
-        store.insert(root, object_store::attribute::ephemeral);
+        store.insert(owned_object{root}, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
         EXPECT_TRUE(res.ephemeral);
     }
@@ -488,11 +488,11 @@ TEST(TestExpression, DuplicateEphemeralInput)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
 
-        store.insert(root, object_store::attribute::ephemeral);
+        store.insert(owned_object{root}, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
         EXPECT_TRUE(res.ephemeral);
     }
@@ -517,12 +517,12 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "bad"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
 
         expression::cache_type cache;
-        EXPECT_FALSE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+        EXPECT_FALSE(expr->eval(cache, store, {}, {}, deadline).outcome);
     }
 
     {
@@ -533,12 +533,12 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
 
         expression::cache_type cache;
-        EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+        EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
 
         auto matches = expr->get_matches(cache);
         EXPECT_EQ(matches.size(), 1);
@@ -579,11 +579,11 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "bad_value"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
 
-        EXPECT_FALSE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+        EXPECT_FALSE(expr->eval(cache, store, {}, {}, deadline).outcome);
     }
 
     {
@@ -594,11 +594,11 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
 
-        EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+        EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
     }
 }
 
@@ -623,12 +623,12 @@ TEST(TestExpression, TwoConditionsSingleInputMatch)
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
 
     ddwaf::object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
 }
 
 TEST(TestExpression, TwoConditionsMultiInputSingleEvalMatch)
@@ -655,11 +655,11 @@ TEST(TestExpression, TwoConditionsMultiInputSingleEvalMatch)
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "query"));
     ddwaf_object_map_add(&root, "server.request.body", ddwaf_object_string(&tmp, "body"));
 
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
 
-    EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
 }
 
 TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
@@ -688,11 +688,11 @@ TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "query"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
 
-        EXPECT_FALSE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+        EXPECT_FALSE(expr->eval(cache, store, {}, {}, deadline).outcome);
     }
 
     {
@@ -705,11 +705,11 @@ TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
         ddwaf_object_map_add(
             &root, "server.request.query", ddwaf_object_string(&tmp, "red-herring"));
 
-        store.insert(root);
+        store.insert(owned_object{root});
 
         ddwaf::timer deadline{2s};
 
-        EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+        EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
     }
 }
 
@@ -731,12 +731,12 @@ TEST(TestExpression, MatchWithKeyPath)
     ddwaf_object_map_add(&root, "server.request.query", &submap);
 
     ddwaf::object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
     auto matches = expr->get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = ".*",
@@ -763,12 +763,12 @@ TEST(TestExpression, MatchWithTransformer)
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "VALUE"));
 
     ddwaf::object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
     auto matches = expr->get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = "value",
@@ -795,12 +795,12 @@ TEST(TestExpression, MatchWithMultipleTransformers)
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "    VALUE    "));
 
     ddwaf::object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
     auto matches = expr->get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = "^ value $",
@@ -829,12 +829,12 @@ TEST(TestExpression, MatchOnKeys)
     ddwaf_object_map_add(&root, "server.request.query", &value);
 
     ddwaf::object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
     auto matches = expr->get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = "value",
@@ -864,12 +864,12 @@ TEST(TestExpression, MatchOnKeysWithTransformer)
     ddwaf_object_map_add(&root, "server.request.query", &value);
 
     ddwaf::object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
-    EXPECT_TRUE(expr->eval(cache, store, {}, {}, {}, deadline).outcome);
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
     auto matches = expr->get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = "value",
@@ -896,13 +896,13 @@ TEST(TestExpression, ExcludeInput)
     ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "value"));
 
     ddwaf::object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     std::unordered_set<object_view> excluded_objects{&root.array[0]};
 
     expression::cache_type cache;
-    EXPECT_FALSE(expr->eval(cache, store, {excluded_objects, {}}, {}, {}, deadline).outcome);
+    EXPECT_FALSE(expr->eval(cache, store, {excluded_objects, {}}, {}, deadline).outcome);
 }
 
 TEST(TestExpression, ExcludeKeyPath)
@@ -924,11 +924,11 @@ TEST(TestExpression, ExcludeKeyPath)
     ddwaf_object_map_add(&root, "server.request.query", &map);
 
     ddwaf::object_store store;
-    store.insert(root);
+    store.insert(owned_object{root});
 
     ddwaf::timer deadline{2s};
     std::unordered_set<object_view> excluded_objects{&root.array[0]};
 
     expression::cache_type cache;
-    EXPECT_FALSE(expr->eval(cache, store, {excluded_objects, {}}, {}, {}, deadline).outcome);
+    EXPECT_FALSE(expr->eval(cache, store, {excluded_objects, {}}, {}, deadline).outcome);
 }

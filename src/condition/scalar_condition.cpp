@@ -12,14 +12,15 @@
 
 #include "clock.hpp"
 #include "condition/base.hpp"
-#include "ddwaf.h"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
 #include "log.hpp"
 #include "matcher/base.hpp"
+#include "object.hpp"
 #include "object_converter.hpp" // IWYU pragma: keep
 #include "object_store.hpp"
+#include "object_type.hpp"
 #include "object_view.hpp"
 #include "scalar_condition.hpp"
 #include "transformer/base.hpp"
@@ -34,26 +35,18 @@ namespace {
 
 template <typename ResultType, typename Iterator>
 ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
-    const matcher::base &matcher, const std::span<const transformer_id> &transformers,
-    const object_limits &limits)
+    const matcher::base &matcher, const std::span<const transformer_id> &transformers)
     requires(std::is_same_v<ResultType, bool> ||
              std::is_same_v<ResultType, std::optional<condition_match>>)
 {
     // The iterator is guaranteed to be valid at this point, which means the
     // object pointer should not be nullptr
-    detail::object src = (*it).ref();
-    if (src.type == DDWAF_OBJ_STRING) {
-        if (src.stringValue == nullptr) {
-            return {};
-        }
-
-        src.nbEntries = find_string_cutoff(src.stringValue, src.nbEntries, limits);
+    const object_view src = *it;
+    if (src.type() == object_type::string) {
         if (!transformers.empty()) {
-            detail::object dst;
-            ddwaf_object_invalid(&dst);
+            owned_object dst{};
 
             auto transformed = transformer::manager::transform(src, dst, transformers);
-            const scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
             if (transformed) {
                 auto [res, highlight] = matcher.match(dst);
                 if (!res) {
@@ -65,7 +58,8 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
                 if constexpr (std::is_same_v<ResultType, bool>) {
                     return true;
                 } else {
-                    return {{{{"input"sv, object_to_string(dst), address, it.get_current_path()}},
+                    return {{{{"input"sv, object_view{dst}.convert<std::string>(), address,
+                                 it.get_current_path()}},
                         {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
                 }
             }
@@ -82,15 +76,16 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
     if constexpr (std::is_same_v<ResultType, bool>) {
         return true;
     } else {
-        return {{{{"input"sv, object_to_string(src), address, it.get_current_path()}},
-            {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
+        return {
+            {{{"input"sv, object_view{src}.convert<std::string>(), address, it.get_current_path()}},
+                {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
     }
 }
 
 template <typename ResultType, typename Iterator>
 ResultType eval_target(Iterator &it, std::string_view address, bool ephemeral,
     const matcher::base &matcher, const std::span<const transformer_id> &transformers,
-    const object_limits &limits, ddwaf::timer &deadline)
+    ddwaf::timer &deadline)
     requires(std::is_same_v<ResultType, bool> ||
              std::is_same_v<ResultType, std::optional<condition_match>>)
 {
@@ -103,7 +98,7 @@ ResultType eval_target(Iterator &it, std::string_view address, bool ephemeral,
             continue;
         }
 
-        auto match = eval_object<ResultType>(it, address, ephemeral, matcher, transformers, limits);
+        auto match = eval_object<ResultType>(it, address, ephemeral, matcher, transformers);
         if (match) {
             // If this target matched, we can stop processing
             return match;
@@ -132,7 +127,7 @@ const matcher::base *get_matcher(const std::unique_ptr<matcher::base> &matcher,
 
 eval_result scalar_condition::eval(condition_cache &cache, const object_store &store,
     const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
-    const object_limits &limits, ddwaf::timer &deadline) const
+    ddwaf::timer &deadline) const
 {
     const auto *matcher = get_matcher(matcher_, data_id_, dynamic_matchers);
     if (matcher == nullptr) {
@@ -162,13 +157,13 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
         std::optional<condition_match> match;
         // TODO: iterators could be cached to avoid reinitialisation
         if (target.source == data_source::keys) {
-            key_iterator it(object, target.key_path, objects_excluded, limits);
+            key_iterator it(object, target.key_path, objects_excluded);
             match = eval_target<std::optional<condition_match>>(
-                it, target.name, ephemeral, *matcher, target.transformers, limits, deadline);
+                it, target.name, ephemeral, *matcher, target.transformers, deadline);
         } else {
-            value_iterator it(object, target.key_path, objects_excluded, limits);
+            value_iterator it(object, target.key_path, objects_excluded);
             match = eval_target<std::optional<condition_match>>(
-                it, target.name, ephemeral, *matcher, target.transformers, limits, deadline);
+                it, target.name, ephemeral, *matcher, target.transformers, deadline);
         }
 
         if (match.has_value()) {
@@ -182,7 +177,7 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
 
 eval_result scalar_negated_condition::eval(condition_cache &cache, const object_store &store,
     const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
-    const object_limits &limits, ddwaf::timer &deadline) const
+    ddwaf::timer &deadline) const
 {
     if (deadline.expired()) {
         throw ddwaf::timeout_exception();
@@ -209,13 +204,13 @@ eval_result scalar_negated_condition::eval(condition_cache &cache, const object_
 
     bool match = false;
     if (target_.source == data_source::keys) {
-        key_iterator it(object, target_.key_path, objects_excluded, limits);
+        key_iterator it(object, target_.key_path, objects_excluded);
         match = eval_target<bool>(
-            it, target_.name, ephemeral, *matcher, target_.transformers, limits, deadline);
+            it, target_.name, ephemeral, *matcher, target_.transformers, deadline);
     } else {
-        value_iterator it(object, target_.key_path, objects_excluded, limits);
+        value_iterator it(object, target_.key_path, objects_excluded);
         match = eval_target<bool>(
-            it, target_.name, ephemeral, *matcher, target_.transformers, limits, deadline);
+            it, target_.name, ephemeral, *matcher, target_.transformers, deadline);
     }
 
     if (!match) {

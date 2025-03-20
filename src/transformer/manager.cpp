@@ -6,7 +6,7 @@
 #include <span>
 #include <string_view>
 
-#include "ddwaf.h"
+#include "object.hpp"
 #include "object_view.hpp"
 #include "transformer/base.hpp"
 #include "transformer/base64_decode.hpp"
@@ -78,10 +78,10 @@ bool call_transformer(transformer_id id, cow_string &str)
 
 } // namespace
 
-bool manager::transform(object_view source, ddwaf_object &destination,
+bool manager::transform(object_view source, owned_object &destination,
     const std::span<const transformer_id> &transformers)
 {
-    if (!source.is<std::string_view>() || source.empty()) {
+    if (!source.is_string() || source.empty()) {
         return false;
     }
 
@@ -99,12 +99,12 @@ bool manager::transform(object_view source, ddwaf_object &destination,
     // Note that this object might contain a string which is greater in
     // capacity than the length specified
     auto [buffer, length] = str.move();
-    ddwaf_object_stringl_nc(&destination, buffer, length);
 
     // The memory returned by str.move() is now owned by destination, however
     // clang-tidy believes it has been leaked as it can't track the fact that
     // it has changed ownership.
     // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
+    destination = owned_object::make_string_nocopy(buffer, length);
     return true;
 }
 

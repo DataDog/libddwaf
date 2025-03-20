@@ -15,14 +15,13 @@
 #include "log.hpp"
 #include "object_store.hpp"
 #include "object_view.hpp"
-#include "utils.hpp"
 
 namespace ddwaf::exclusion {
 
 namespace {
 // Add requires
 void iterate_object(const path_trie::traverser &filter, object_view object,
-    std::unordered_set<object_view> &objects_to_exclude, const object_limits &limits)
+    std::unordered_set<object_view> &objects_to_exclude)
 {
     using state = path_trie::traverser::state;
     if (!object.has_value()) {
@@ -56,9 +55,7 @@ void iterate_object(const path_trie::traverser &filter, object_view object,
         }
 
         bool found_node{false};
-        auto size = current_object.size() > limits.max_container_size ? limits.max_container_size
-                                                                      : current_object.size();
-        for (; current_index < size; ++current_index) {
+        for (; current_index < current_object.size(); ++current_index) {
             auto [key, child] = current_object.at(current_index);
 
             path_trie::traverser child_traverser{nullptr};
@@ -78,7 +75,7 @@ void iterate_object(const path_trie::traverser &filter, object_view object,
                 continue;
             }
 
-            if (child.is_container() && path_stack.size() < limits.max_container_depth) {
+            if (child.is_container()) {
                 ++current_index;
                 found_node = true;
                 path_stack.emplace(child, 0, child_traverser);
@@ -97,8 +94,8 @@ void iterate_object(const path_trie::traverser &filter, object_view object,
 
 } // namespace
 
-object_set object_filter::match(const object_store &store, cache_type &cache, bool ephemeral,
-    const object_limits &limits, ddwaf::timer &deadline) const
+object_set object_filter::match(
+    const object_store &store, cache_type &cache, bool ephemeral, ddwaf::timer &deadline) const
 {
     object_set objects_to_exclude;
     for (const auto &[target, filter] : target_paths_) {
@@ -113,9 +110,9 @@ object_set object_filter::match(const object_store &store, cache_type &cache, bo
 
         if (!ephemeral && attr != object_store::attribute::ephemeral) {
             cache.emplace(object);
-            iterate_object(filter.get_traverser(), object, objects_to_exclude.persistent, limits);
+            iterate_object(filter.get_traverser(), object, objects_to_exclude.persistent);
         } else {
-            iterate_object(filter.get_traverser(), object, objects_to_exclude.ephemeral, limits);
+            iterate_object(filter.get_traverser(), object, objects_to_exclude.ephemeral);
         }
     }
 

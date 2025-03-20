@@ -18,7 +18,7 @@ namespace ddwaf {
 
 eval_result expression::eval(cache_type &cache, const object_store &store,
     const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
-    const object_limits &limits, ddwaf::timer &deadline) const
+    ddwaf::timer &deadline) const
 {
     if (cache.result || conditions_.empty()) {
         return {.outcome = true, .ephemeral = false};
@@ -38,7 +38,7 @@ eval_result expression::eval(cache_type &cache, const object_store &store,
         }
 
         auto [res, ephemeral] =
-            cond->eval(cond_cache, store, objects_excluded, dynamic_matchers, limits, deadline);
+            cond->eval(cond_cache, store, objects_excluded, dynamic_matchers, deadline);
         if (!res) {
             return {.outcome = false, .ephemeral = false};
         }

@@ -37,33 +37,17 @@ public:
     };
 
     object_store() = default;
-    ~object_store()
-    {
-        for (auto [obj, free_fn] : input_objects_) {
-            if (free_fn != nullptr) {
-                free_fn(&obj);
-            }
-        }
-
-        // Free ephemeral objects and targets, in practice all ephemeral
-        // objects should be freed, through the scope but just in case...
-        for (auto &[obj, free_fn] : ephemeral_objects_) {
-            if (free_fn != nullptr) {
-                free_fn(&obj);
-            }
-        }
-    }
+    ~object_store() = default;
     object_store(const object_store &) = default;
     object_store(object_store &&) = default;
     object_store &operator=(const object_store &) = delete;
     object_store &operator=(object_store &&) = delete;
 
-    bool insert(ddwaf_object &input, attribute attr = attribute::none,
-        ddwaf_object_free_fn free_fn = ddwaf_object_free);
+    bool insert(owned_object &&input, attribute attr = attribute::none);
 
     // This function doesn't clear the latest batch
-    bool insert(target_index target, std::string_view key, ddwaf_object &input,
-        attribute attr = attribute::none, ddwaf_object_free_fn free_fn = ddwaf_object_free);
+    bool insert(target_index target, std::string_view key, owned_object &&input,
+        attribute attr = attribute::none);
 
     std::pair<object_view, attribute> get_target(target_index target) const
     {
@@ -90,16 +74,16 @@ public:
     void clear_last_batch();
 
 protected:
-    bool insert_target_helper(target_index target, std::string_view key, ddwaf_object *object,
+    bool insert_target_helper(target_index target, std::string_view key, object_view view,
         attribute attr = attribute::none);
 
-    memory::list<std::pair<ddwaf_object, ddwaf_object_free_fn>> input_objects_;
-    memory::list<std::pair<ddwaf_object, ddwaf_object_free_fn>> ephemeral_objects_;
+    memory::list<owned_object> input_objects_;
+    memory::list<owned_object> ephemeral_objects_;
 
     memory::unordered_set<target_index> ephemeral_targets_;
 
     memory::unordered_set<target_index> latest_batch_;
-    memory::unordered_map<target_index, std::pair<ddwaf_object *, attribute>> objects_;
+    memory::unordered_map<target_index, std::pair<object_view, attribute>> objects_;
 
     friend class scoped_object_store;
 };
