@@ -50,7 +50,7 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
 
         src.nbEntries = find_string_cutoff(src.stringValue, src.nbEntries, limits);
         if (!transformers.empty()) {
-            owned_object dst;
+            owned_object dst{};
 
             auto transformed = transformer::manager::transform(src, dst, transformers);
             if (transformed) {
