@@ -79,6 +79,12 @@ class object_key;
 
 template <typename T> struct object_converter;
 
+namespace object_initializers {
+struct key_value;
+class map;
+class array;
+} // namespace object_initializers
+
 template <typename Derived> class readable_object {
 public:
     // The API assumes that the caller has already verified that the method preconditions are met:
@@ -531,80 +537,8 @@ public:
     using size_type = decltype(detail::object::nbEntries);
     using length_type = decltype(detail::object::nbEntries);
 
-    class array {
-    public:
-        template <typename... T>
-        array(): obj_({.parameterName = nullptr,
-            .parameterNameLength = 0,
-            // NOLINTNEXTLINE(hicpp-no-malloc)
-            .array = nullptr,
-            .nbEntries = 0,
-            .type = DDWAF_OBJ_ARRAY}) {}
-
-        // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-        template <typename... T>
-        explicit array(T... list): obj_({.parameterName = nullptr,
-            .parameterNameLength = 0,
-            // NOLINTNEXTLINE(hicpp-no-malloc)
-            .array = static_cast<ddwaf_object *>(malloc(sizeof(ddwaf_object) * sizeof...(list))),
-            .nbEntries = sizeof...(list),
-            .type = DDWAF_OBJ_ARRAY})
-        {
-            fill_array(obj_.array, list...);
-        }
-    protected:
-        template <typename T, typename... Rest>
-        void fill_array(detail::object *array, T value, Rest... other) {
-            *array = owned_object{value}.move();
-            if constexpr (sizeof...(other) > 0) {
-                fill_array(++array, other...);
-            }
-        }
-
-        detail::object obj_{};
-
-        friend class owned_object;
-    };
-
-    class map {
-    public:
-        template <typename... T>
-        map(): obj_({.parameterName = nullptr,
-            .parameterNameLength = 0,
-            // NOLINTNEXTLINE(hicpp-no-malloc)
-            .array = nullptr,
-            .nbEntries = 0,
-            .type = DDWAF_OBJ_MAP}) {}
-
-        // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-        template <typename... T>
-        explicit map(T... list): obj_({.parameterName = nullptr,
-            .parameterNameLength = 0,
-            // NOLINTNEXTLINE(hicpp-no-malloc)
-            .array = static_cast<ddwaf_object *>(malloc(sizeof(ddwaf_object) * sizeof...(list))),
-            .nbEntries = sizeof...(list),
-            .type = DDWAF_OBJ_MAP})
-        {
-            fill_map(obj_.array, list...);
-        }
-
-    protected:
-        template <typename T, typename... Rest>
-        void fill_map(detail::object *array, std::pair<std::string_view, T> kv, Rest... other) {
-            *array = owned_object{kv.second}.move();
-            array->parameterName = detail::copy_string(kv.first.data(), kv.first.size());
-            array->parameterNameLength = kv.first.size();
-            if constexpr (sizeof...(other) > 0) {
-                fill_array(++array, other...);
-            }
-        }
-
-        detail::object obj_{};
-
-        friend class owned_object;
-    };
-
     owned_object() = default;
+
     explicit owned_object(detail::object obj, ddwaf_object_free_fn free_fn = ddwaf_object_free)
         : obj_(obj), free_fn_(free_fn)
     {}
@@ -632,32 +566,7 @@ public:
         return *this;
     }
 
-    template <typename T>
-    explicit owned_object(T value)
-    {
-        if constexpr (std::is_same_v<T, std::nullptr_t>) {
-            obj_.type = DDWAF_OBJ_NULL;
-        } else if constexpr (std::is_same_v<T, bool>) {
-            obj_.type = DDWAF_OBJ_BOOL;
-            obj_.boolean = value;
-        } else if constexpr (std::is_same_v<T, int64_t>) {
-            obj_.type = DDWAF_OBJ_SIGNED;
-            obj_.intValue = value;
-        } else if constexpr (std::is_same_v<T, uint64_t>) {
-            obj_.type = DDWAF_OBJ_UNSIGNED;
-            obj_.uintValue = value;
-        } else if constexpr (std::is_same_v<T, double>) {
-            obj_.type = DDWAF_OBJ_FLOAT;
-            obj_.f64= value;
-        } else if constexpr (is_type_in_set_v<T, std::string_view, std::string, const char *>) {
-            std::string_view sv{value};
-            obj_.stringValue = detail::copy_string(sv.data(), sv.size());
-            obj_.nbEntries = static_cast<uint64_t>(sv.size());
-            obj_.type = DDWAF_OBJ_STRING;
-        } else if constexpr (is_type_in_set_v<T, array, map>) {
-            obj_ = value.obj_;
-        }
-    }
+    template <typename T> explicit owned_object(T value);
 
     [[nodiscard]] detail::object &ref() { return obj_; }
     [[nodiscard]] const detail::object &ref() const { return obj_; }
@@ -778,6 +687,75 @@ protected:
     friend class object_view;
 };
 
+namespace object_initializers {
+
+class array {
+public:
+    array() = default;
+
+    template <typename... Ts>
+    explicit array(Ts &&...list)
+        : obj_({.parameterName = nullptr,
+              .parameterNameLength = 0,
+              // NOLINTNEXTLINE(hicpp-no-malloc)
+              .array = static_cast<ddwaf_object *>(malloc(sizeof(ddwaf_object) * sizeof...(list))),
+              .nbEntries = sizeof...(list),
+              .type = DDWAF_OBJ_ARRAY})
+    {
+        auto *ptr = obj_.array;
+        ((*(ptr++) = owned_object{list}.move()), ...);
+    }
+
+protected:
+    detail::object obj_{.parameterName = nullptr,
+        .parameterNameLength = 0,
+        .array = nullptr,
+        .nbEntries = 0,
+        .type = DDWAF_OBJ_ARRAY};
+
+    friend class ddwaf::owned_object;
+};
+
+struct key_value {
+    template <typename T>
+    key_value(std::string_view a, T &&b) : first(a), second(std::forward<T>(b))
+    {}
+    std::string_view first;
+    owned_object second;
+};
+
+class map {
+public:
+    map() = default;
+
+    template <typename... Ts>
+    explicit map(Ts &&...list)
+        : obj_({.parameterName = nullptr,
+              .parameterNameLength = 0,
+              // NOLINTNEXTLINE(hicpp-no-malloc)
+              .array = static_cast<ddwaf_object *>(malloc(sizeof(ddwaf_object) * sizeof...(list))),
+              .nbEntries = sizeof...(list),
+              .type = DDWAF_OBJ_MAP})
+    {
+        auto *ptr = obj_.array;
+        ((*(ptr) = list.second.move(),
+             ptr->parameterName = detail::copy_string(list.first.data(), list.first.size()),
+             ptr->parameterNameLength = list.first.size(), ++ptr),
+            ...);
+    }
+
+protected:
+    detail::object obj_{.parameterName = nullptr,
+        .parameterNameLength = 0,
+        .array = nullptr,
+        .nbEntries = 0,
+        .type = DDWAF_OBJ_MAP};
+
+    friend class ddwaf::owned_object;
+};
+
+} // namespace object_initializers
+
 inline object_view::object_view(const owned_object &ow) : obj_(&ow.obj_) {}
 inline object_view::object_view(const borrowed_object &ow) : obj_(ow.obj_) {}
 inline borrowed_object::borrowed_object(owned_object &obj) : obj_(obj.ptr()) {}
@@ -869,6 +847,33 @@ template <> struct object_converter<std::string> {
     }
     object_view view;
 };
+
+template <typename T> owned_object::owned_object(T value)
+{
+    if constexpr (std::is_same_v<T, std::nullptr_t>) {
+        obj_.type = DDWAF_OBJ_NULL;
+    } else if constexpr (std::is_same_v<T, bool>) {
+        obj_.type = DDWAF_OBJ_BOOL;
+        obj_.boolean = value;
+    } else if constexpr (std::is_same_v<T, int64_t>) {
+        obj_.type = DDWAF_OBJ_SIGNED;
+        obj_.intValue = value;
+    } else if constexpr (std::is_same_v<T, uint64_t>) {
+        obj_.type = DDWAF_OBJ_UNSIGNED;
+        obj_.uintValue = value;
+    } else if constexpr (std::is_same_v<T, double>) {
+        obj_.type = DDWAF_OBJ_FLOAT;
+        obj_.f64 = value;
+    } else if constexpr (is_type_in_set_v<T, std::string_view, std::string, const char *>) {
+        std::string_view sv{value};
+        obj_.stringValue = detail::copy_string(sv.data(), sv.size());
+        obj_.nbEntries = static_cast<uint64_t>(sv.size());
+        obj_.type = DDWAF_OBJ_STRING;
+    } else if constexpr (is_type_in_set_v<T, object_initializers::array,
+                             object_initializers::map>) {
+        obj_ = value.obj_;
+    }
+}
 
 template <typename Derived>
 [[nodiscard]] borrowed_object writable_object<Derived>::at(std::size_t idx)

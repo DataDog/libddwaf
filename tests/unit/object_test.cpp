@@ -125,9 +125,13 @@ TEST(TestObject, StringObject)
     }
 }
 
+using object_initializers::array;
+using object_initializers::map;
+using kv = object_initializers::key_value;
+
 TEST(TestObject, ArrayObjectInitializer)
 {
-    owned_object root{owned_object::array{"hello", "this", "is", "an", "array"}};
+    owned_object root{array{"hello", "this", "is", "an", "array"}};
     EXPECT_EQ(root.type(), object_type::array);
     EXPECT_TRUE(root.is_valid());
     EXPECT_EQ(root.size(), 5);
@@ -135,11 +139,13 @@ TEST(TestObject, ArrayObjectInitializer)
 
 TEST(TestObject, MapObjectInitializer)
 {
-    owned_object root{owned_object::map{{"hello"sv, 20L}, {"this"sv, "is"sv}, {"an"sv, "array"sv}}};
+    owned_object root{
+        map{kv{"hello"sv, array{"array", "value"}}, kv{"this"sv, "is"sv}, kv{"an"sv, "array"sv}}};
     EXPECT_EQ(root.type(), object_type::map);
     EXPECT_TRUE(root.is_valid());
     EXPECT_EQ(root.size(), 3);
 }
+
 TEST(TestObject, ArrayObject)
 {
     auto root = owned_object::make_array();
