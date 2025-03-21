@@ -13,7 +13,6 @@
 
 #include <cassert>
 #include <cstring>
-#include <deque>
 #include <stdexcept>
 
 namespace ddwaf {
@@ -22,53 +21,9 @@ namespace detail {
 
 using object = ddwaf_object;
 
-inline char *copy_string(const char *str, std::size_t len)
-{
-    // TODO new char[len];
-    if (len == SIZE_MAX) {
-        throw std::bad_alloc();
-    }
-
-    // NOLINTNEXTLINE(hicpp-no-malloc)
-    char *copy = static_cast<char *>(malloc(len + 1));
-    if (copy == nullptr) [[unlikely]] {
-        throw std::bad_alloc();
-    }
-
-    memcpy(copy, str, len);
-    copy[len] = '\0';
-
-    return copy;
-}
-
-inline void realloc_array(object &obj)
-{
-    static constexpr std::size_t array_increment = 8;
-
-    const auto size = static_cast<std::size_t>(obj.nbEntries) + array_increment;
-    if (size > SIZE_MAX / sizeof(object)) [[unlikely]] {
-        throw std::bad_alloc();
-    }
-
-    auto *new_array = static_cast<object *>(
-        // NOLINTNEXTLINE(hicpp-no-malloc)
-        realloc(static_cast<void *>(obj.array), size * sizeof(object)));
-    if (new_array == nullptr) [[unlikely]] {
-        throw std::bad_alloc();
-    }
-
-    obj.array = new_array;
-}
-
-inline void alloc_array(object &obj)
-{
-    static constexpr std::size_t array_start_size = 8;
-    // NOLINTNEXTLINE(hicpp-no-malloc)
-    obj.array = static_cast<object *>(malloc(array_start_size * sizeof(object)));
-    if (obj.array == nullptr) [[unlikely]] {
-        throw std::bad_alloc();
-    }
-}
+char *copy_string(const char *str, std::size_t len);
+void realloc_array(object &obj);
+void alloc_array(object &obj);
 
 } // namespace detail
 
@@ -76,6 +31,7 @@ class owned_object;
 class borrowed_object;
 class object_view;
 class object_key;
+
 template <typename T> struct object_converter;
 
 template <typename Derived> class readable_object {
@@ -677,69 +633,15 @@ protected:
     friend class object_view;
 };
 
+inline object_view::object_view(const owned_object &ow) : obj_(&ow.obj_) {}
+inline object_view::object_view(const borrowed_object &ow) : obj_(ow.obj_) {}
+inline borrowed_object::borrowed_object(owned_object &obj) : obj_(obj.ptr()) {}
+
 // Convert the underlying type to the requested type, converters are defined
 // in the object_converter header
 template <typename Derived> template <typename T> T readable_object<Derived>::convert() const
 {
     return object_converter<T>{static_cast<const Derived *>(this)->ref()}();
-}
-
-template <typename Derived> [[nodiscard]] owned_object readable_object<Derived>::clone() const
-{
-    auto clone_helper = [](object_view source) -> owned_object {
-        switch (source.type()) {
-        case object_type::boolean:
-            return owned_object::make_boolean(source.as<bool>());
-        case object_type::string:
-            return owned_object::make_string(source.as<std::string_view>());
-        case object_type::int64:
-            return owned_object::make_signed(source.as<int64_t>());
-        case object_type::uint64:
-            return owned_object::make_unsigned(source.as<uint64_t>());
-        case object_type::float64:
-            return owned_object::make_float(source.as<double>());
-        case object_type::null:
-            return owned_object::make_null();
-        case object_type::map:
-            return owned_object::make_map();
-        case object_type::array:
-            return owned_object::make_array();
-        case object_type::invalid:
-            break;
-        }
-        return {};
-    };
-
-    std::deque<std::pair<object_view, borrowed_object>> queue;
-
-    object_view input = static_cast<const Derived *>(this)->ref();
-    auto copy = clone_helper(input);
-    if (copy.is_container()) {
-        queue.emplace_front(input, copy);
-    }
-
-    while (!queue.empty()) {
-        auto &[source, destination] = queue.front();
-        for (uint64_t i = 0; i < source.size(); ++i) {
-            const auto &[key, value] = source.at(i);
-            if (source.type() == object_type::map) {
-                destination.emplace(key.as<std::string_view>(), clone_helper(value));
-            } else if (source.type() == object_type::array) {
-                destination.emplace_back(clone_helper(value));
-            }
-        }
-
-        for (uint64_t i = 0; i < source.size(); ++i) {
-            auto child = source.at_value(i);
-            if (child.is_container()) {
-                queue.emplace_back(child, destination.at(i));
-            }
-        }
-
-        queue.pop_front();
-    }
-
-    return copy;
 }
 
 template <> struct object_converter<std::string> {
@@ -764,79 +666,6 @@ template <> struct object_converter<std::string> {
     }
     object_view view;
 };
-
-inline object_view::object_view(const owned_object &ow) : obj_(&ow.obj_) {}
-inline object_view::object_view(const borrowed_object &ow) : obj_(ow.obj_) {}
-
-inline borrowed_object::borrowed_object(owned_object &obj) : obj_(obj.ptr()) {}
-
-template <typename Derived>
-[[nodiscard]] borrowed_object writable_object<Derived>::at(std::size_t idx)
-{
-    auto &container = static_cast<const Derived *>(this)->ref();
-
-    assert((static_cast<object_type>(container.type) & container_object_type) != 0);
-    assert(idx < static_cast<std::size_t>(container.nbEntries));
-
-    return borrowed_object{&container.array[idx]};
-}
-
-// NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
-template <typename Derived>
-borrowed_object writable_object<Derived>::emplace_back(owned_object &&value)
-{
-    auto &container = static_cast<Derived *>(this)->ref();
-
-    assert(static_cast<object_type>(container.type) == object_type::array);
-
-    // We preallocate 8 entries
-    if (container.nbEntries == 0) {
-        [[unlikely]] detail::alloc_array(container);
-    }
-    // If we're exceeding our preallocation, add 8 more
-    else if ((container.nbEntries & 0x7) == 0) {
-        detail::realloc_array(container);
-    }
-
-    auto *slot = &container.array[container.nbEntries++];
-    memcpy(slot, value.ptr(), sizeof(detail::object));
-
-    // The object has to be explicitly moved, otherwise the contents will be freed
-    // on return, causing the inserted object to be invalid
-    value.move();
-
-    return borrowed_object{slot};
-}
-
-template <typename Derived>
-// NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
-borrowed_object writable_object<Derived>::emplace(std::string_view key, owned_object &&value)
-{
-    auto &container = static_cast<Derived *>(this)->ref();
-    assert(static_cast<object_type>(container.type) == object_type::map);
-
-    // We preallocate 8 entries
-    if (container.nbEntries == 0) {
-        [[unlikely]] detail::alloc_array(container);
-    }
-    // If we're exceeding our preallocation, add 8 more
-    else if ((container.nbEntries & 0x7) == 0) {
-        detail::realloc_array(container);
-    }
-
-    auto *value_ptr = value.ptr();
-    value_ptr->parameterName = detail::copy_string(key.data(), key.size());
-    value_ptr->parameterNameLength = key.size();
-
-    auto *slot = &container.array[container.nbEntries++];
-    memcpy(slot, value.ptr(), sizeof(detail::object));
-
-    // The object has to be explicitly moved, otherwise the contents will be freed
-    // on return, causing the inserted object to be invalid
-    value.move();
-
-    return borrowed_object{slot};
-}
 
 } // namespace ddwaf
 
