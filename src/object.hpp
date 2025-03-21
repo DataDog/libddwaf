@@ -22,7 +22,7 @@ namespace detail {
 
 using object = ddwaf_object;
 
-char *copy_string(const char *str, std::size_t len)
+inline char *copy_string(const char *str, std::size_t len)
 {
     // TODO new char[len];
     if (len == SIZE_MAX) {
@@ -41,7 +41,7 @@ char *copy_string(const char *str, std::size_t len)
     return copy;
 }
 
-void realloc_array(object &obj)
+inline void realloc_array(object &obj)
 {
     static constexpr std::size_t array_increment = 8;
 
@@ -60,7 +60,7 @@ void realloc_array(object &obj)
     obj.array = new_array;
 }
 
-void alloc_array(object &obj)
+inline void alloc_array(object &obj)
 {
     static constexpr std::size_t array_start_size = 8;
     // NOLINTNEXTLINE(hicpp-no-malloc)
