@@ -74,13 +74,6 @@ void alloc_array(object &obj)
 
 } // namespace detail
 
-template class readable_object<owned_object>;
-template class readable_object<borrowed_object>;
-template class readable_object<object_view>;
-
-template class writable_object<owned_object>;
-template class writable_object<borrowed_object>;
-
 template <typename Derived> [[nodiscard]] owned_object readable_object<Derived>::clone() const
 {
     auto clone_helper = [](object_view source) -> owned_object {
@@ -206,5 +199,12 @@ borrowed_object writable_object<Derived>::emplace(std::string_view key, owned_ob
 
     return borrowed_object{slot};
 }
+
+template class readable_object<owned_object>;
+template class readable_object<borrowed_object>;
+template class readable_object<object_view>;
+
+template class writable_object<owned_object>;
+template class writable_object<borrowed_object>;
 
 } // namespace ddwaf
