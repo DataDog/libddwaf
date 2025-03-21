@@ -171,14 +171,14 @@ TEST(TestObject, MapObject)
     }
 }
 
-TEST(TestObjectView, CloneInvalid)
+TEST(TestObject, CloneInvalid)
 {
     owned_object input;
     auto output = input.clone();
     EXPECT_TRUE(output.is_invalid());
 }
 
-TEST(TestObjectView, CloneNull)
+TEST(TestObject, CloneNull)
 {
     auto input = owned_object::make_null();
 
@@ -186,7 +186,7 @@ TEST(TestObjectView, CloneNull)
     EXPECT_EQ(output.type(), object_type::null);
 }
 
-TEST(TestObjectView, CloneBool)
+TEST(TestObject, CloneBool)
 {
     auto input = owned_object::make_boolean(true);
 
@@ -195,7 +195,7 @@ TEST(TestObjectView, CloneBool)
     EXPECT_EQ(output.as<bool>(), true);
 }
 
-TEST(TestObjectView, CloneSigned)
+TEST(TestObject, CloneSigned)
 {
     auto input = owned_object::make_signed(-5);
     auto output = input.clone();
@@ -203,7 +203,7 @@ TEST(TestObjectView, CloneSigned)
     EXPECT_EQ(output.as<int64_t>(), -5);
 }
 
-TEST(TestObjectView, CloneUnsigned)
+TEST(TestObject, CloneUnsigned)
 {
     auto input = owned_object::make_unsigned(5);
     auto output = input.clone();
@@ -211,7 +211,7 @@ TEST(TestObjectView, CloneUnsigned)
     EXPECT_EQ(output.as<uint64_t>(), 5);
 }
 
-TEST(TestObjectView, CloneFloat)
+TEST(TestObject, CloneFloat)
 {
     auto input = owned_object::make_float(5.1);
     auto output = input.clone();
@@ -219,7 +219,7 @@ TEST(TestObjectView, CloneFloat)
     EXPECT_EQ(output.as<double>(), 5.1);
 }
 
-TEST(TestObjectView, CloneString)
+TEST(TestObject, CloneString)
 {
     auto input = owned_object::make_string("this is a string");
     auto output = input.clone();
@@ -228,7 +228,7 @@ TEST(TestObjectView, CloneString)
     EXPECT_EQ(input.size(), output.size());
 }
 
-TEST(TestObjectView, CloneEmptyArray)
+TEST(TestObject, CloneEmptyArray)
 {
     auto input = owned_object::make_array();
     auto output = input.clone();
@@ -236,7 +236,7 @@ TEST(TestObjectView, CloneEmptyArray)
     EXPECT_EQ(input.size(), output.size());
 }
 
-TEST(TestObjectView, CloneEmptyMap)
+TEST(TestObject, CloneEmptyMap)
 {
     auto input = owned_object::make_map();
     auto output = input.clone();
@@ -244,99 +244,84 @@ TEST(TestObjectView, CloneEmptyMap)
     EXPECT_EQ(input.size(), output.size());
 }
 
-/*TEST(TestObjectView, CloneArray)*/
-/*{*/
-/*ddwaf_object tmp;*/
-/*ddwaf_object input;*/
-/*ddwaf_object_array(&input);*/
-/*ddwaf_object_array_add(&input, ddwaf_object_bool(&tmp, true));*/
-/*ddwaf_object_array_add(&input, ddwaf_object_string(&tmp, "string"));*/
-/*ddwaf_object_array_add(&input, ddwaf_object_signed(&tmp, 5));*/
+TEST(TestObject, CloneArray)
+{
+    auto input = owned_object::make_array();
+    input.emplace_back(owned_object::make_boolean(true));
+    input.emplace_back(owned_object::make_string("string"));
+    input.emplace_back(owned_object::make_signed(5));
 
-/*auto output = input.clone();*/
-/*EXPECT_EQ(output.type(), DDWAF_OBJ_ARRAY);*/
-/*EXPECT_EQ(input.nbEntries, output.ref().nbEntries);*/
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::array);
+    EXPECT_EQ(input.size(), output.size());
 
-/*{*/
-/*const auto *input_child = ddwaf_object_get_index(&input, 0);*/
-/*const auto *output_child = ddwaf_object_get_index(output.ptr(), 0);*/
+    {
+        auto input_child = input.at(0);
+        auto output_child = output.at(0);
 
-/*EXPECT_NE(output_child, input_child);*/
-/*EXPECT_EQ(output_child->type, input_child->type);*/
-/*EXPECT_EQ(output_child->boolean, input_child->boolean);*/
-/*}*/
+        EXPECT_EQ(output_child.type(), input_child.type());
+        EXPECT_EQ(output_child.as<bool>(), input_child.as<bool>());
+    }
 
-/*{*/
-/*const auto *input_child = ddwaf_object_get_index(&input, 1);*/
-/*const auto *output_child = ddwaf_object_get_index(output.ptr(), 1);*/
+    {
+        auto input_child = input.at(1);
+        auto output_child = output.at(1);
 
-/*EXPECT_NE(output_child, input_child);*/
-/*EXPECT_EQ(output_child->type, input_child->type);*/
-/*EXPECT_STREQ(output_child->stringValue, input_child->stringValue);*/
-/*EXPECT_NE(output_child->stringValue, input_child->stringValue);*/
-/*}*/
+        EXPECT_EQ(output_child.type(), input_child.type());
 
-/*{*/
-/*const auto *input_child = ddwaf_object_get_index(&input, 2);*/
-/*const auto *output_child = ddwaf_object_get_index(output.ptr(), 2);*/
+        auto output_str = output_child.as<std::string_view>();
+        auto input_str = input_child.as<std::string_view>();
+        EXPECT_EQ(output_str, input_str);
+        EXPECT_NE(output_str.data(), input_str.data());
+    }
 
-/*EXPECT_NE(output_child, input_child);*/
-/*EXPECT_EQ(output_child->type, input_child->type);*/
-/*EXPECT_EQ(output_child->intValue, input_child->intValue);*/
-/*}*/
+    {
+        auto input_child = input.at(2);
+        auto output_child = output.at(2);
 
-/*ddwaf_object_free(&input);*/
-/*}*/
+        EXPECT_EQ(output_child.type(), input_child.type());
+        EXPECT_EQ(output_child.as<int64_t>(), input_child.as<int64_t>());
+    }
+}
 
-/*TEST(TestObjectView, CloneMap)*/
-/*{*/
-/*owned_object input = owned_object::make_map();*/
-/*input.emplace("bool", owned_object::make_boolean(true));*/
-/*input.emplace("string", owned_object::make_string("string"));*/
-/*input.emplace("signed", owned_object::make_signed(5));*/
+TEST(TestObject, CloneMap)
+{
+    owned_object input = owned_object::make_map();
+    input.emplace("bool", owned_object::make_boolean(true));
+    input.emplace("string", owned_object::make_string("string"));
+    input.emplace("signed", owned_object::make_signed(5));
 
-/*auto output = input.clone();*/
-/*EXPECT_EQ(output.type(), DDWAF_OBJ_MAP);*/
-/*EXPECT_EQ(input.nbEntries, output.ref().nbEntries);*/
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::map);
+    EXPECT_EQ(input.size(), output.size());
 
-/*{*/
-/*const auto *input_child = ddwaf_object_get_index(&input, 0);*/
-/*const auto *output_child = ddwaf_object_get_index(output.ptr(), 0);*/
+    {
+        auto input_child = input.at(0);
+        auto output_child = output.at(0);
 
-/*EXPECT_NE(output_child, input_child);*/
-/*EXPECT_STREQ(output_child->parameterName, input_child->parameterName);*/
-/*EXPECT_NE(output_child->parameterName, input_child->parameterName);*/
-/*EXPECT_EQ(output_child->parameterNameLength, input_child->parameterNameLength);*/
-/*EXPECT_EQ(output_child->type, input_child->type);*/
-/*EXPECT_EQ(output_child->boolean, input_child->boolean);*/
-/*}*/
+        EXPECT_EQ(output_child.type(), input_child.type());
+        EXPECT_EQ(output_child.as<bool>(), input_child.as<bool>());
+    }
 
-/*{*/
-/*const auto *input_child = ddwaf_object_get_index(&input, 1);*/
-/*const auto *output_child = ddwaf_object_get_index(output.ptr(), 1);*/
+    {
+        auto input_child = input.at(1);
+        auto output_child = output.at(1);
 
-/*EXPECT_NE(output_child, input_child);*/
-/*EXPECT_STREQ(output_child->parameterName, input_child->parameterName);*/
-/*EXPECT_NE(output_child->parameterName, input_child->parameterName);*/
-/*EXPECT_EQ(output_child->parameterNameLength, input_child->parameterNameLength);*/
-/*EXPECT_EQ(output_child->type, input_child->type);*/
-/*EXPECT_STREQ(output_child->stringValue, input_child->stringValue);*/
-/*EXPECT_NE(output_child->stringValue, input_child->stringValue);*/
-/*}*/
+        EXPECT_EQ(output_child.type(), input_child.type());
 
-/*{*/
-/*const auto *input_child = ddwaf_object_get_index(&input, 2);*/
-/*const auto *output_child = ddwaf_object_get_index(output.ptr(), 2);*/
+        auto output_str = output_child.as<std::string_view>();
+        auto input_str = input_child.as<std::string_view>();
+        EXPECT_EQ(output_str, input_str);
+        EXPECT_NE(output_str.data(), input_str.data());
+    }
 
-/*EXPECT_NE(output_child, input_child);*/
-/*EXPECT_STREQ(output_child->parameterName, input_child->parameterName);*/
-/*EXPECT_NE(output_child->parameterName, input_child->parameterName);*/
-/*EXPECT_EQ(output_child->parameterNameLength, input_child->parameterNameLength);*/
-/*EXPECT_EQ(output_child->type, input_child->type);*/
-/*EXPECT_EQ(output_child->intValue, input_child->intValue);*/
-/*}*/
+    {
+        auto input_child = input.at(2);
+        auto output_child = output.at(2);
 
-/*ddwaf_object_free(&input);*/
-/*}*/
+        EXPECT_EQ(output_child.type(), input_child.type());
+        EXPECT_EQ(output_child.as<int64_t>(), input_child.as<int64_t>());
+    }
+}
 
 } // namespace
