@@ -851,13 +851,14 @@ template <typename T> owned_object::owned_object(T value)
     } else if constexpr (std::is_same_v<T, bool>) {
         obj_.type = DDWAF_OBJ_BOOL;
         obj_.boolean = value;
-    } else if constexpr (std::is_same_v<T, int64_t>) {
+    } else if constexpr (std::is_integral_v<T> && std::is_signed_v<T>) {
         obj_.type = DDWAF_OBJ_SIGNED;
         obj_.intValue = value;
-    } else if constexpr (std::is_same_v<T, uint64_t>) {
+    } else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> &&
+                         !std::is_same_v<T, bool>) {
         obj_.type = DDWAF_OBJ_UNSIGNED;
         obj_.uintValue = value;
-    } else if constexpr (std::is_same_v<T, double>) {
+    } else if constexpr (std::is_same_v<T, double> || std::is_same_v<T, float>) {
         obj_.type = DDWAF_OBJ_FLOAT;
         obj_.f64 = value;
     } else if constexpr (is_type_in_set_v<T, std::string_view, std::string, const char *>) {
