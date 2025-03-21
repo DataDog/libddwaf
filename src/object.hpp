@@ -531,6 +531,79 @@ public:
     using size_type = decltype(detail::object::nbEntries);
     using length_type = decltype(detail::object::nbEntries);
 
+    class array {
+    public:
+        template <typename... T>
+        array(): obj_({.parameterName = nullptr,
+            .parameterNameLength = 0,
+            // NOLINTNEXTLINE(hicpp-no-malloc)
+            .array = nullptr,
+            .nbEntries = 0,
+            .type = DDWAF_OBJ_ARRAY}) {}
+
+        // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
+        template <typename... T>
+        explicit array(T... list): obj_({.parameterName = nullptr,
+            .parameterNameLength = 0,
+            // NOLINTNEXTLINE(hicpp-no-malloc)
+            .array = static_cast<ddwaf_object *>(malloc(sizeof(ddwaf_object) * sizeof...(list))),
+            .nbEntries = sizeof...(list),
+            .type = DDWAF_OBJ_ARRAY})
+        {
+            fill_array(obj_.array, list...);
+        }
+    protected:
+        template <typename T, typename... Rest>
+        void fill_array(detail::object *array, T value, Rest... other) {
+            *array = owned_object{value}.move();
+            if constexpr (sizeof...(other) > 0) {
+                fill_array(++array, other...);
+            }
+        }
+
+        detail::object obj_{};
+
+        friend class owned_object;
+    };
+
+    class map {
+    public:
+        template <typename... T>
+        map(): obj_({.parameterName = nullptr,
+            .parameterNameLength = 0,
+            // NOLINTNEXTLINE(hicpp-no-malloc)
+            .array = nullptr,
+            .nbEntries = 0,
+            .type = DDWAF_OBJ_MAP}) {}
+
+        // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
+        template <typename... T>
+        explicit map(T... list): obj_({.parameterName = nullptr,
+            .parameterNameLength = 0,
+            // NOLINTNEXTLINE(hicpp-no-malloc)
+            .array = static_cast<ddwaf_object *>(malloc(sizeof(ddwaf_object) * sizeof...(list))),
+            .nbEntries = sizeof...(list),
+            .type = DDWAF_OBJ_MAP})
+        {
+            fill_map(obj_.array, list...);
+        }
+
+    protected:
+        template <typename T, typename... Rest>
+        void fill_map(detail::object *array, std::pair<std::string_view, T> kv, Rest... other) {
+            *array = owned_object{kv.second}.move();
+            array->parameterName = detail::copy_string(kv.first.data(), kv.first.size());
+            array->parameterNameLength = kv.first.size();
+            if constexpr (sizeof...(other) > 0) {
+                fill_array(++array, other...);
+            }
+        }
+
+        detail::object obj_{};
+
+        friend class owned_object;
+    };
+
     owned_object() = default;
     explicit owned_object(detail::object obj, ddwaf_object_free_fn free_fn = ddwaf_object_free)
         : obj_(obj), free_fn_(free_fn)
@@ -557,6 +630,33 @@ public:
         free_fn_ = other.free_fn_;
         other.obj_ = detail::object{};
         return *this;
+    }
+
+    template <typename T>
+    explicit owned_object(T value)
+    {
+        if constexpr (std::is_same_v<T, std::nullptr_t>) {
+            obj_.type = DDWAF_OBJ_NULL;
+        } else if constexpr (std::is_same_v<T, bool>) {
+            obj_.type = DDWAF_OBJ_BOOL;
+            obj_.boolean = value;
+        } else if constexpr (std::is_same_v<T, int64_t>) {
+            obj_.type = DDWAF_OBJ_SIGNED;
+            obj_.intValue = value;
+        } else if constexpr (std::is_same_v<T, uint64_t>) {
+            obj_.type = DDWAF_OBJ_UNSIGNED;
+            obj_.uintValue = value;
+        } else if constexpr (std::is_same_v<T, double>) {
+            obj_.type = DDWAF_OBJ_FLOAT;
+            obj_.f64= value;
+        } else if constexpr (is_type_in_set_v<T, std::string_view, std::string, const char *>) {
+            std::string_view sv{value};
+            obj_.stringValue = detail::copy_string(sv.data(), sv.size());
+            obj_.nbEntries = static_cast<uint64_t>(sv.size());
+            obj_.type = DDWAF_OBJ_STRING;
+        } else if constexpr (is_type_in_set_v<T, array, map>) {
+            obj_ = value.obj_;
+        }
     }
 
     [[nodiscard]] detail::object &ref() { return obj_; }

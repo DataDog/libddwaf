@@ -29,65 +29,117 @@ TEST(TestObject, InvalidObject)
 
 TEST(TestObject, NullObject)
 {
-    auto ow = owned_object::make_null();
-    EXPECT_EQ(ow.type(), object_type::null);
+    {
+        auto ow = owned_object::make_null();
+        EXPECT_EQ(ow.type(), object_type::null);
+    }
+
+    {
+        owned_object ow{nullptr};
+        EXPECT_EQ(ow.type(), object_type::null);
+    }
 }
 
 TEST(TestObject, BooleanObject)
 {
-    auto ow = owned_object::make_boolean(true);
-    EXPECT_EQ(ow.type(), object_type::boolean);
-    EXPECT_TRUE(ow.is_valid());
+    {
+        auto ow = owned_object::make_boolean(true);
+        EXPECT_EQ(ow.type(), object_type::boolean);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_TRUE(ow.as<bool>());
+    }
 
-    object_view ov{ow};
-    EXPECT_EQ(ov.type(), object_type::boolean);
-    EXPECT_TRUE(ov.as<bool>());
+    {
+        owned_object ow{true};
+        EXPECT_EQ(ow.type(), object_type::boolean);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_TRUE(ow.as<bool>());
+    }
 }
 
 TEST(TestObject, SignedObject)
 {
-    auto ow = owned_object::make_signed(-20);
-    EXPECT_EQ(ow.type(), object_type::int64);
-    EXPECT_TRUE(ow.is_valid());
+    {
+        auto ow = owned_object::make_signed(-20);
+        EXPECT_EQ(ow.type(), object_type::int64);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_EQ(ow.as<int64_t>(), -20);
+    }
 
-    object_view ov{ow};
-    EXPECT_EQ(ov.type(), object_type::int64);
-    EXPECT_EQ(ov.as<int64_t>(), -20);
+    {
+        owned_object ow{-20L};
+        EXPECT_EQ(ow.type(), object_type::int64);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_EQ(ow.as<int64_t>(), -20);
+    }
 }
 
 TEST(TestObject, UnsignedObject)
 {
-    auto ow = owned_object::make_unsigned(20);
-    EXPECT_EQ(ow.type(), object_type::uint64);
-    EXPECT_TRUE(ow.is_valid());
+    {
+        auto ow = owned_object::make_unsigned(20);
+        EXPECT_EQ(ow.type(), object_type::uint64);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_EQ(ow.as<uint64_t>(), 20);
+    }
 
-    object_view ov{ow};
-    EXPECT_EQ(ov.type(), object_type::uint64);
-    EXPECT_EQ(ov.as<uint64_t>(), 20);
+    {
+        owned_object ow(20UL);
+        EXPECT_EQ(ow.type(), object_type::uint64);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_EQ(ow.as<uint64_t>(), 20);
+    }
 }
 
 TEST(TestObject, FloatObject)
 {
-    auto ow = owned_object::make_float(20.5);
-    EXPECT_EQ(ow.type(), object_type::float64);
-    EXPECT_TRUE(ow.is_valid());
+    {
+        auto ow = owned_object::make_float(20.5);
+        EXPECT_EQ(ow.type(), object_type::float64);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_EQ(ow.as<double>(), 20.5);
+    }
 
-    object_view ov{ow};
-    EXPECT_EQ(ov.type(), object_type::float64);
-    EXPECT_EQ(ov.as<double>(), 20.5);
+    {
+        owned_object ow{20.5};
+        EXPECT_EQ(ow.type(), object_type::float64);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_EQ(ow.as<double>(), 20.5);
+    }
 }
 
 TEST(TestObject, StringObject)
 {
-    auto ow = owned_object::make_string("this is a string");
-    EXPECT_EQ(ow.type(), object_type::string);
-    EXPECT_TRUE(ow.is_valid());
+    {
+        auto ow = owned_object::make_string("this is a string");
+        EXPECT_EQ(ow.type(), object_type::string);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_EQ(ow.as<std::string_view>(), "this is a string");
+    }
 
-    object_view ov{ow};
-    EXPECT_EQ(ov.type(), object_type::string);
-    EXPECT_EQ(ov.as<std::string_view>(), "this is a string");
+    {
+        owned_object ow{"this is a string"sv};
+        EXPECT_EQ(ow.type(), object_type::string);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_EQ(ow.as<std::string_view>(), "this is a string");
+    }
 }
 
+TEST(TestObject, ArrayObjectInitializer)
+{
+    owned_object root{owned_object::array{"hello", "this", "is", "an", "array"}};
+    EXPECT_EQ(root.type(), object_type::array);
+    EXPECT_TRUE(root.is_valid());
+    EXPECT_EQ(root.size(), 5);
+}
+
+TEST(TestObject, MapObjectInitializer)
+{
+    owned_object root{owned_object::map{{"hello"sv, 20L}, {"this"sv, "is"sv}, {"an"sv, "array"sv}}};
+    EXPECT_EQ(root.type(), object_type::map);
+    EXPECT_TRUE(root.is_valid());
+    EXPECT_EQ(root.size(), 3);
+}
 TEST(TestObject, ArrayObject)
 {
     auto root = owned_object::make_array();
