@@ -4,16 +4,12 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#include <charconv>
 #include <cstdlib>
 #include <filesystem>
-#include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <map>
 #include <regex>
 #include <string_view>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -24,12 +20,13 @@
 #include "object_generator.hpp"
 #include "output_formatter.hpp"
 #include "random.hpp"
-#include "rule_parser.hpp"
 #include "run_fixture.hpp"
 #include "runner.hpp"
 #include "settings.hpp"
 #include "utils.hpp"
 #include "yaml_helpers.hpp"
+
+namespace {
 
 namespace benchmark = ddwaf::benchmark;
 namespace fs = std::filesystem;
@@ -134,6 +131,7 @@ benchmark::settings generate_settings(const std::vector<std::string> &args)
     return s;
 }
 
+} // namespace
 int main(int argc, char *argv[])
 {
     std::vector<std::string> args(argv, argv + argc);
@@ -149,11 +147,11 @@ int main(int argc, char *argv[])
             auto name = spec["scenario"].as<std::string>();
             auto ruleset = spec["ruleset"].as<ddwaf_object>();
 
-            ddwaf_config config{{nullptr, nullptr}, nullptr};
+            ddwaf_config config{{}, nullptr};
             ddwaf_handle handle = ddwaf_init(&ruleset, &config, nullptr);
             ddwaf_object_free(&ruleset);
             if (handle == nullptr) {
-                std::cerr << "Invalid ruleset file" << std::endl;
+                std::cerr << "Invalid ruleset file\n";
                 utils::exit_failure();
             }
 

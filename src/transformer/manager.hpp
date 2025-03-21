@@ -9,7 +9,6 @@
 #include <span>
 
 #include "object.hpp"
-#include "object_view.hpp"
 #include "transformer/base.hpp"
 
 namespace ddwaf::transformer {

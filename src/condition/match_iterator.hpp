@@ -7,7 +7,7 @@
 #pragma once
 
 #include "iterator.hpp"
-#include "object_view.hpp"
+#include "object.hpp"
 
 namespace ddwaf {
 

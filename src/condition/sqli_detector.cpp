@@ -23,7 +23,7 @@
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "log.hpp"
-#include "object_view.hpp"
+#include "object.hpp"
 #include "tokenizer/generic_sql.hpp"
 #include "tokenizer/mysql.hpp"
 #include "tokenizer/pgsql.hpp"

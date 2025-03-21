@@ -23,7 +23,7 @@
 #include "exclusion/common.hpp"
 #include "log.hpp"
 #include "matcher/ip_match.hpp"
-#include "object_view.hpp"
+#include "object.hpp"
 #include "uri_utils.hpp"
 #include "utils.hpp"
 

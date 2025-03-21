@@ -13,7 +13,6 @@
 #include "exclusion/common.hpp"
 #include "object.hpp"
 #include "object_type.hpp"
-#include "object_view.hpp"
 #include "utils.hpp"
 
 // Eventually object will be a class rather than a namespace

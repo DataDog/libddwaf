@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "shi_common.hpp"
-#include "object_view.hpp"
+#include "object.hpp"
 #include <algorithm>
 #include <cstddef>
 #include <string_view>

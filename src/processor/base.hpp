@@ -193,7 +193,7 @@ public:
                     store.insert(
                         mapping.output.index, mapping.output.name, std::move(object), attr);
                 } else {
-                    store.insert(mapping.output.index, mapping.output.name, clone(object), attr);
+                    store.insert(mapping.output.index, mapping.output.name, object.clone(), attr);
                 }
             }
 

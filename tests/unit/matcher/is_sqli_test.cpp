@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "matcher/is_sqli.hpp"
-#include "object_view.hpp"
+#include "object.hpp"
 
 #include "common/gtest_utils.hpp"
 

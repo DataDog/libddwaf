@@ -26,7 +26,6 @@
 #include "object.hpp"
 #include "object_store.hpp"
 #include "object_type.hpp"
-#include "object_view.hpp"
 #include "processor/base.hpp"
 #include "processor/fingerprint.hpp"
 #include "sha256.hpp"
