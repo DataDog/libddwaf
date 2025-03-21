@@ -693,15 +693,13 @@ class array {
 public:
     array() = default;
 
-    template <typename... Ts>
-    explicit array(Ts &&...list)
-        : obj_({.parameterName = nullptr,
-              .parameterNameLength = 0,
-              // NOLINTNEXTLINE(hicpp-no-malloc)
-              .array = static_cast<ddwaf_object *>(malloc(sizeof(ddwaf_object) * sizeof...(list))),
-              .nbEntries = sizeof...(list),
-              .type = DDWAF_OBJ_ARRAY})
+    template <typename... Ts> explicit array(Ts &&...list)
     {
+        // NOLINTNEXTLINE(hicpp-no-malloc)
+        obj_.array = static_cast<ddwaf_object *>(malloc(sizeof(ddwaf_object) * sizeof...(list)));
+        obj_.nbEntries = sizeof...(list);
+        obj_.type = DDWAF_OBJ_ARRAY;
+
         auto *ptr = obj_.array;
         ((*(ptr++) = owned_object{list}.move()), ...);
     }
@@ -728,15 +726,13 @@ class map {
 public:
     map() = default;
 
-    template <typename... Ts>
-    explicit map(Ts &&...list)
-        : obj_({.parameterName = nullptr,
-              .parameterNameLength = 0,
-              // NOLINTNEXTLINE(hicpp-no-malloc)
-              .array = static_cast<ddwaf_object *>(malloc(sizeof(ddwaf_object) * sizeof...(list))),
-              .nbEntries = sizeof...(list),
-              .type = DDWAF_OBJ_MAP})
+    template <typename... Ts> explicit map(Ts &&...list)
     {
+        // NOLINTNEXTLINE(hicpp-no-malloc)
+        obj_.array = static_cast<ddwaf_object *>(malloc(sizeof(ddwaf_object) * sizeof...(list)));
+        obj_.nbEntries = sizeof...(list);
+        obj_.type = DDWAF_OBJ_MAP;
+
         auto *ptr = obj_.array;
         ((*(ptr) = list.second.move(),
              ptr->parameterName = detail::copy_string(list.first.data(), list.first.size()),
