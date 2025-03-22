@@ -68,6 +68,7 @@ inline void alloc_array(object &obj)
     if (obj.array == nullptr) [[unlikely]] {
         throw std::bad_alloc();
     }
+    // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
 }
 
 } // namespace detail
