@@ -15,6 +15,7 @@
 #include <cstring>
 #include <deque>
 #include <stdexcept>
+#include <type_traits>
 
 namespace ddwaf {
 
@@ -537,40 +538,38 @@ public:
         : obj_(obj), free_fn_(free_fn)
     {}
 
-    template <typename T> explicit owned_object(T value)
+    explicit owned_object(std::nullptr_t) { *this = make_null(); }
+    explicit owned_object(bool value) { *this = make_boolean(value); }
+
+    template <typename T>
+    explicit owned_object(T value)
+        requires std::is_integral_v<T> && std::is_signed_v<T>
     {
-        if constexpr (std::is_same_v<T, std::nullptr_t>) {
-            obj_.type = DDWAF_OBJ_NULL;
-        } else if constexpr (std::is_same_v<T, bool>) {
-            obj_.type = DDWAF_OBJ_BOOL;
-            obj_.boolean = value;
-        } else if constexpr (std::is_integral_v<T> && std::is_signed_v<T>) {
-            obj_.type = DDWAF_OBJ_SIGNED;
-            obj_.intValue = value;
-        } else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> &&
-                             !std::is_same_v<T, bool>) {
-            obj_.type = DDWAF_OBJ_UNSIGNED;
-            obj_.uintValue = value;
-        } else if constexpr (std::is_same_v<T, double> || std::is_same_v<T, float>) {
-            obj_.type = DDWAF_OBJ_FLOAT;
-            obj_.f64 = value;
-        } else if constexpr (is_type_in_set_v<T, std::string_view, std::string, const char *>) {
-            std::string_view sv{value};
-            obj_.stringValue = detail::copy_string(sv.data(), sv.size());
-            obj_.nbEntries = static_cast<uint64_t>(sv.size());
-            obj_.type = DDWAF_OBJ_STRING;
-            free_fn_ = ddwaf_object_free;
-        } else {
-            static_assert(!std::is_same_v<T, T>, "unsupported object initializer type");
-        }
+        *this = make_signed(value);
     }
 
-    explicit owned_object(const char *data, std::size_t size)
+    template <typename T>
+    explicit owned_object(T value)
+        requires(!std::is_same_v<T, bool>) && std::is_unsigned_v<T>
     {
-        obj_.stringValue = detail::copy_string(data, size);
-        obj_.nbEntries = static_cast<uint64_t>(size);
-        obj_.type = DDWAF_OBJ_STRING;
+        *this = make_unsigned(value);
     }
+
+    template <typename T>
+    explicit owned_object(T value)
+        requires std::is_floating_point_v<T>
+    {
+        *this = make_float(value);
+    }
+
+    template <typename T>
+    explicit owned_object(T value)
+        requires is_type_in_set_v<T, std::string, std::string_view, const char *>
+    {
+        *this = make_string(std::string_view{value});
+    }
+
+    explicit owned_object(const char *data, std::size_t size) { *this = make_string(data, size); }
 
     ~owned_object()
     {
@@ -592,6 +591,7 @@ public:
         obj_ = other.obj_;
         free_fn_ = other.free_fn_;
         other.obj_ = detail::object{};
+        other.free_fn_ = nullptr;
         return *this;
     }
 
