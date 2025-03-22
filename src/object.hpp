@@ -490,6 +490,7 @@ public:
 
     borrowed_object emplace_back(owned_object &&value);
     borrowed_object emplace(std::string_view key, owned_object &&value);
+    borrowed_object emplace(owned_object &&key, owned_object &&value);
 
 private:
     writable_object() = default;
@@ -536,6 +537,41 @@ public:
         : obj_(obj), free_fn_(free_fn)
     {}
 
+    template <typename T> explicit owned_object(T value)
+    {
+        if constexpr (std::is_same_v<T, std::nullptr_t>) {
+            obj_.type = DDWAF_OBJ_NULL;
+        } else if constexpr (std::is_same_v<T, bool>) {
+            obj_.type = DDWAF_OBJ_BOOL;
+            obj_.boolean = value;
+        } else if constexpr (std::is_integral_v<T> && std::is_signed_v<T>) {
+            obj_.type = DDWAF_OBJ_SIGNED;
+            obj_.intValue = value;
+        } else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> &&
+                             !std::is_same_v<T, bool>) {
+            obj_.type = DDWAF_OBJ_UNSIGNED;
+            obj_.uintValue = value;
+        } else if constexpr (std::is_same_v<T, double> || std::is_same_v<T, float>) {
+            obj_.type = DDWAF_OBJ_FLOAT;
+            obj_.f64 = value;
+        } else if constexpr (is_type_in_set_v<T, std::string_view, std::string, const char *>) {
+            std::string_view sv{value};
+            obj_.stringValue = detail::copy_string(sv.data(), sv.size());
+            obj_.nbEntries = static_cast<uint64_t>(sv.size());
+            obj_.type = DDWAF_OBJ_STRING;
+            free_fn_ = ddwaf_object_free;
+        } else {
+            static_assert(!std::is_same_v<T, T>, "unsupported object initializer type");
+        }
+    }
+
+    explicit owned_object(const char *data, std::size_t size)
+    {
+        obj_.stringValue = detail::copy_string(data, size);
+        obj_.nbEntries = static_cast<uint64_t>(size);
+        obj_.type = DDWAF_OBJ_STRING;
+    }
+
     ~owned_object()
     {
         if (free_fn_ != nullptr) {
@@ -567,46 +603,51 @@ public:
     static owned_object make_null()
     {
         return owned_object{{.parameterName = nullptr,
-            .parameterNameLength = 0,
-            .stringValue = nullptr,
-            .nbEntries = 0,
-            .type = DDWAF_OBJ_NULL}};
+                                .parameterNameLength = 0,
+                                .stringValue = nullptr,
+                                .nbEntries = 0,
+                                .type = DDWAF_OBJ_NULL},
+            nullptr};
     }
 
     static owned_object make_boolean(bool value)
     {
         return owned_object{{.parameterName = nullptr,
-            .parameterNameLength = 0,
-            .boolean = value,
-            .nbEntries = 0,
-            .type = DDWAF_OBJ_BOOL}};
+                                .parameterNameLength = 0,
+                                .boolean = value,
+                                .nbEntries = 0,
+                                .type = DDWAF_OBJ_BOOL},
+            nullptr};
     }
 
     static owned_object make_signed(int64_t value)
     {
         return owned_object{{.parameterName = nullptr,
-            .parameterNameLength = 0,
-            .intValue = value,
-            .nbEntries = 0,
-            .type = DDWAF_OBJ_SIGNED}};
+                                .parameterNameLength = 0,
+                                .intValue = value,
+                                .nbEntries = 0,
+                                .type = DDWAF_OBJ_SIGNED},
+            nullptr};
     }
 
     static owned_object make_unsigned(uint64_t value)
     {
         return owned_object{{.parameterName = nullptr,
-            .parameterNameLength = 0,
-            .uintValue = value,
-            .nbEntries = 0,
-            .type = DDWAF_OBJ_UNSIGNED}};
+                                .parameterNameLength = 0,
+                                .uintValue = value,
+                                .nbEntries = 0,
+                                .type = DDWAF_OBJ_UNSIGNED},
+            nullptr};
     }
 
     static owned_object make_float(double value)
     {
         return owned_object{{.parameterName = nullptr,
-            .parameterNameLength = 0,
-            .f64 = value,
-            .nbEntries = 0,
-            .type = DDWAF_OBJ_FLOAT}};
+                                .parameterNameLength = 0,
+                                .f64 = value,
+                                .nbEntries = 0,
+                                .type = DDWAF_OBJ_FLOAT},
+            nullptr};
     }
 
     static owned_object make_string_nocopy(
@@ -667,12 +708,13 @@ public:
     {
         detail::object copy = obj_;
         obj_ = detail::object{};
+        free_fn_ = nullptr;
         return copy;
     }
 
 protected:
     detail::object obj_{};
-    ddwaf_object_free_fn free_fn_{ddwaf_object_free};
+    ddwaf_object_free_fn free_fn_{nullptr};
 
     friend class borrowed_object;
     friend class object_view;
@@ -812,6 +854,13 @@ template <typename Derived>
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 borrowed_object writable_object<Derived>::emplace(std::string_view key, owned_object &&value)
 {
+    return emplace(owned_object{key}, std::move(value));
+}
+
+template <typename Derived>
+// NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved,bugprone-easily-swappable-parameters)
+borrowed_object writable_object<Derived>::emplace(owned_object &&key, owned_object &&value)
+{
     auto &container = static_cast<Derived *>(this)->ref();
     assert(static_cast<object_type>(container.type) == object_type::map);
 
@@ -824,9 +873,11 @@ borrowed_object writable_object<Derived>::emplace(std::string_view key, owned_ob
         detail::realloc_array(container);
     }
 
+    auto key_obj = key.move();
+
     auto *value_ptr = value.ptr();
-    value_ptr->parameterName = detail::copy_string(key.data(), key.size());
-    value_ptr->parameterNameLength = key.size();
+    value_ptr->parameterName = key_obj.stringValue;
+    value_ptr->parameterNameLength = key_obj.nbEntries;
 
     auto *slot = &container.array[container.nbEntries++];
     memcpy(slot, value.ptr(), sizeof(detail::object));
