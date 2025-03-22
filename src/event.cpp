@@ -52,7 +52,7 @@ owned_object serialize_match(const condition_match &match, auto &obfuscator)
 
     const bool redact = redact_match(obfuscator, match);
 
-    match_map.emplace("operator", owned_object::make_string(match.operator_name));
+    match_map.emplace("operator", owned_object{match.operator_name});
     match_map.emplace("operator_value", owned_object::make_string(match.operator_value));
 
     auto parameters = match_map.emplace("parameters", owned_object::make_array());

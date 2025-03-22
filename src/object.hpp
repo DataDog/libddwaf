@@ -80,7 +80,7 @@ class object_key;
 template <typename T> struct object_converter;
 
 namespace object_initializers {
-struct key_value;
+class literal;
 class map;
 class array;
 } // namespace object_initializers
@@ -392,9 +392,6 @@ public:
 
         [[nodiscard]] object_type container_type() const noexcept { return type_; }
 
-        // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-        operator bool() const noexcept { return index_ < size_; }
-
         bool operator!=(const iterator &rhs) const noexcept
         {
             return obj_ != rhs.obj_ || index_ != rhs.index_;
@@ -497,6 +494,14 @@ public:
     borrowed_object emplace_back(owned_object &&value);
     borrowed_object emplace(std::string_view key, owned_object &&value);
 
+    template <typename T>
+    borrowed_object emplace_back(const T &value)
+        requires(!std::is_same_v<T, owned_object>);
+
+    template <typename T>
+    borrowed_object emplace(std::string_view key, const T &value)
+        requires(!std::is_same_v<T, owned_object>);
+
 private:
     writable_object() = default;
 
@@ -565,8 +570,8 @@ public:
         other.obj_ = detail::object{};
         return *this;
     }
-
-    template <typename T> explicit owned_object(T value);
+    explicit owned_object(object_initializers::literal value);
+    // template <typename T> explicit owned_object(T value);
 
     [[nodiscard]] detail::object &ref() { return obj_; }
     [[nodiscard]] const detail::object &ref() const { return obj_; }
@@ -689,19 +694,60 @@ protected:
 
 namespace object_initializers {
 
+class literal {
+public:
+    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
+    template <typename T> literal(T value)
+    {
+        if constexpr (std::is_same_v<T, std::nullptr_t>) {
+            obj_.type = DDWAF_OBJ_NULL;
+        } else if constexpr (std::is_same_v<T, bool>) {
+            obj_.type = DDWAF_OBJ_BOOL;
+            obj_.boolean = value;
+        } else if constexpr (std::is_integral_v<T> && std::is_signed_v<T>) {
+            obj_.type = DDWAF_OBJ_SIGNED;
+            obj_.intValue = value;
+        } else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> &&
+                             !std::is_same_v<T, bool>) {
+            obj_.type = DDWAF_OBJ_UNSIGNED;
+            obj_.uintValue = value;
+        } else if constexpr (std::is_same_v<T, double> || std::is_same_v<T, float>) {
+            obj_.type = DDWAF_OBJ_FLOAT;
+            obj_.f64 = value;
+        } else if constexpr (is_type_in_set_v<T, std::string_view, std::string, const char *>) {
+            std::string_view sv{value};
+            obj_.stringValue = detail::copy_string(sv.data(), sv.size());
+            obj_.nbEntries = static_cast<uint64_t>(sv.size());
+            obj_.type = DDWAF_OBJ_STRING;
+        } else if constexpr (is_type_in_set_v<T, array, map>) {
+            obj_ = value.obj_;
+        } else {
+            static_assert(!std::is_same_v<T, T>, "unsupported object initializer type");
+        }
+    }
+
+protected:
+    detail::object obj_{};
+
+    friend class ddwaf::owned_object;
+    friend class array;
+    friend class map;
+};
+
 class array {
 public:
     array() = default;
 
-    template <typename... Ts> explicit array(Ts &&...list)
+    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
+    explicit array(std::initializer_list<literal> list)
     {
         // NOLINTNEXTLINE(hicpp-no-malloc)
-        obj_.array = static_cast<ddwaf_object *>(malloc(sizeof(ddwaf_object) * sizeof...(list)));
-        obj_.nbEntries = sizeof...(list);
+        obj_.array = static_cast<ddwaf_object *>(malloc(sizeof(ddwaf_object) * list.size()));
+        obj_.nbEntries = list.size();
         obj_.type = DDWAF_OBJ_ARRAY;
 
         auto *ptr = obj_.array;
-        ((*(ptr++) = owned_object{list}.move()), ...);
+        for (const auto &value : list) { *(ptr++) = value.obj_; }
     }
 
 protected:
@@ -711,33 +757,28 @@ protected:
         .nbEntries = 0,
         .type = DDWAF_OBJ_ARRAY};
 
-    friend class ddwaf::owned_object;
-};
-
-struct key_value {
-    template <typename T>
-    key_value(std::string_view a, T &&b) : first(a), second(std::forward<T>(b))
-    {}
-    std::string_view first;
-    owned_object second;
+    friend class literal;
 };
 
 class map {
 public:
     map() = default;
 
-    template <typename... Ts> explicit map(Ts &&...list)
+    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
+    explicit map(std::initializer_list<std::pair<std::string_view, literal>> list)
     {
         // NOLINTNEXTLINE(hicpp-no-malloc)
-        obj_.array = static_cast<ddwaf_object *>(malloc(sizeof(ddwaf_object) * sizeof...(list)));
-        obj_.nbEntries = sizeof...(list);
+        obj_.array = static_cast<ddwaf_object *>(malloc(sizeof(ddwaf_object) * list.size()));
+        obj_.nbEntries = list.size();
         obj_.type = DDWAF_OBJ_MAP;
 
         auto *ptr = obj_.array;
-        ((*(ptr) = list.second.move(),
-             ptr->parameterName = detail::copy_string(list.first.data(), list.first.size()),
-             ptr->parameterNameLength = list.first.size(), ++ptr),
-            ...);
+        for (const auto &[key, value] : list) {
+            *ptr = value.obj_;
+            ptr->parameterName = detail::copy_string(key.data(), key.size());
+            ptr->parameterNameLength = key.size();
+            ++ptr;
+        }
     }
 
 protected:
@@ -747,7 +788,7 @@ protected:
         .nbEntries = 0,
         .type = DDWAF_OBJ_MAP};
 
-    friend class ddwaf::owned_object;
+    friend class literal;
 };
 
 } // namespace object_initializers
@@ -755,9 +796,8 @@ protected:
 inline object_view::object_view(const owned_object &ow) : obj_(&ow.obj_) {}
 inline object_view::object_view(const borrowed_object &ow) : obj_(ow.obj_) {}
 inline borrowed_object::borrowed_object(owned_object &obj) : obj_(obj.ptr()) {}
+inline owned_object::owned_object(object_initializers::literal value) : obj_(value.obj_) {}
 
-// Convert the underlying type to the requested type, converters are defined
-// in the object_converter header
 template <typename Derived> template <typename T> T readable_object<Derived>::convert() const
 {
     return object_converter<T>{static_cast<const Derived *>(this)->ref()}();
@@ -844,34 +884,6 @@ template <> struct object_converter<std::string> {
     object_view view;
 };
 
-template <typename T> owned_object::owned_object(T value)
-{
-    if constexpr (std::is_same_v<T, std::nullptr_t>) {
-        obj_.type = DDWAF_OBJ_NULL;
-    } else if constexpr (std::is_same_v<T, bool>) {
-        obj_.type = DDWAF_OBJ_BOOL;
-        obj_.boolean = value;
-    } else if constexpr (std::is_integral_v<T> && std::is_signed_v<T>) {
-        obj_.type = DDWAF_OBJ_SIGNED;
-        obj_.intValue = value;
-    } else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> &&
-                         !std::is_same_v<T, bool>) {
-        obj_.type = DDWAF_OBJ_UNSIGNED;
-        obj_.uintValue = value;
-    } else if constexpr (std::is_same_v<T, double> || std::is_same_v<T, float>) {
-        obj_.type = DDWAF_OBJ_FLOAT;
-        obj_.f64 = value;
-    } else if constexpr (is_type_in_set_v<T, std::string_view, std::string, const char *>) {
-        std::string_view sv{value};
-        obj_.stringValue = detail::copy_string(sv.data(), sv.size());
-        obj_.nbEntries = static_cast<uint64_t>(sv.size());
-        obj_.type = DDWAF_OBJ_STRING;
-    } else if constexpr (is_type_in_set_v<T, object_initializers::array,
-                             object_initializers::map>) {
-        obj_ = value.obj_;
-    }
-}
-
 template <typename Derived>
 [[nodiscard]] borrowed_object writable_object<Derived>::at(std::size_t idx)
 {
@@ -938,6 +950,22 @@ borrowed_object writable_object<Derived>::emplace(std::string_view key, owned_ob
     value.move();
 
     return borrowed_object{slot};
+}
+
+template <typename Derived>
+template <typename T>
+borrowed_object writable_object<Derived>::emplace_back(const T &value)
+    requires(!std::is_same_v<T, owned_object>)
+{
+    return emplace_back(owned_object{value});
+}
+
+template <typename Derived>
+template <typename T>
+borrowed_object writable_object<Derived>::emplace(std::string_view key, const T &value)
+    requires(!std::is_same_v<T, owned_object>)
+{
+    return emplace(key, owned_object{value});
 }
 
 } // namespace ddwaf
