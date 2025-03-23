@@ -12,10 +12,7 @@
 
 namespace ddwaf {
 
-void ruleset_info::section_info::add_loaded(std::string_view id)
-{
-    loaded_.emplace_back(owned_object::make_string(id));
-}
+void ruleset_info::section_info::add_loaded(std::string_view id) { loaded_.emplace_back(id); }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void ruleset_info::section_info::add_failed(
@@ -32,12 +29,12 @@ void ruleset_info::section_info::add_failed(
             const std::string_view key(array.ref().parameterName, array.ref().parameterNameLength);
             cache[key] = index;
 
-            array.emplace_back(owned_object::make_string(id));
+            array.emplace_back(id);
         } else {
-            diagnostics_array.at(it->second).emplace_back(owned_object::make_string(id));
+            diagnostics_array.at(it->second).emplace_back(id);
         }
 
-        failed_array.emplace_back(owned_object::make_string(id));
+        failed_array.emplace_back(id);
     };
 
     if (sev == parser_error_severity::error) {
@@ -47,9 +44,6 @@ void ruleset_info::section_info::add_failed(
     }
 }
 
-void ruleset_info::section_info::add_skipped(std::string_view id)
-{
-    skipped_.emplace_back(owned_object::make_string(id));
-}
+void ruleset_info::section_info::add_skipped(std::string_view id) { skipped_.emplace_back(id); }
 
 } // namespace ddwaf
