@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "common/gtest_utils.hpp"
-#include "context_allocator.hpp"
 #include "iterator.hpp"
 
 using namespace ddwaf;
@@ -292,15 +291,11 @@ TEST(TestKeyIterator, TestDeepMap)
 // addesses (e.g. server.request.query).
 TEST(TestKeyIterator, TestNoRootKey)
 {
-    ddwaf_object root, object, tmp;
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "key", ddwaf_object_string(&tmp, "value"));
-
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "root", &object);
+    auto object = owned_object::make_map();
+    object.emplace("root", owned_object::make_map({{"key", "value"}}));
 
     exclusion::object_set_ref exclude;
-    ddwaf::key_iterator it(root.array[0], {}, exclude);
+    ddwaf::key_iterator it(object.at(0), {}, exclude);
     EXPECT_TRUE((bool)it);
     EXPECT_EQ((*it).ptr()->parameterName, nullptr);
     EXPECT_STREQ((*it).as<const char *>(), "key");
@@ -310,13 +305,11 @@ TEST(TestKeyIterator, TestNoRootKey)
     EXPECT_STREQ(path[0].c_str(), "key");
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestKeyIterator, TestContainerMix)
 {
-    ddwaf_object object = yaml_to_object(R"(
+    owned_object object{yaml_to_object(R"(
         {
             root: {
                 key0: [value0_0, value0_1, {
@@ -330,7 +323,7 @@ TEST(TestKeyIterator, TestContainerMix)
                 }
             }
         }
-    )");
+    )")};
 
     {
         exclusion::object_set_ref exclude;
@@ -357,17 +350,12 @@ TEST(TestKeyIterator, TestContainerMix)
 
         EXPECT_FALSE((bool)it);
     }
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestKeyIterator, TestMapNoScalars)
 {
-    ddwaf_object object, tmp;
-    ddwaf_object_map(&object);
-    for (unsigned i = 0; i < 50; i++) {
-        ddwaf_object_map_add(&object, "key", ddwaf_object_map(&tmp));
-    }
+    auto object = owned_object::make_map();
+    for (unsigned i = 0; i < 50; i++) { object.emplace("key", owned_object::make_map()); }
 
     exclusion::object_set_ref exclude;
     ddwaf::key_iterator it(object, {}, exclude);
@@ -383,14 +371,11 @@ TEST(TestKeyIterator, TestMapNoScalars)
     }
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestKeyIterator, TestInvalidObjectPath)
 {
-    ddwaf_object object;
-    ddwaf_object_invalid(&object);
+    owned_object object;
 
     exclusion::object_set_ref exclude;
     std::vector<std::string> key_path{"key", "0", "value"};
@@ -405,9 +390,7 @@ TEST(TestKeyIterator, TestInvalidObjectPath)
 
 TEST(TestKeyIterator, TestSimplePath)
 {
-    auto object = owned_object::make_map({{"key", "value"}, {"key1", "value"}, {"key2", "value"}
-
-    });
+    auto object = owned_object::make_map({{"key", "value"}, {"key1", "value"}, {"key2", "value"}});
 
     {
         std::vector<std::string> key_path{"key"};
@@ -499,7 +482,7 @@ TEST(TestKeyIterator, TestMultiPath)
 
 TEST(TestKeyIterator, TestContainerMixPath)
 {
-    ddwaf_object object = yaml_to_object(R"(
+    owned_object object{yaml_to_object(R"(
         {
             root: {
                 key0: [value0_0, value0_1, {
@@ -513,7 +496,7 @@ TEST(TestKeyIterator, TestContainerMixPath)
                 }
             }
         }
-    )");
+    )")};
 
     exclusion::object_set_ref exclude;
     {
@@ -557,13 +540,11 @@ TEST(TestKeyIterator, TestContainerMixPath)
 
         EXPECT_FALSE((bool)it);
     }
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestKeyIterator, TestContainerMixInvalidPath)
 {
-    ddwaf_object object = yaml_to_object(R"(
+    owned_object object{yaml_to_object(R"(
         {
             root: {
                 key0: [value0_0, value0_1, {
@@ -577,7 +558,7 @@ TEST(TestKeyIterator, TestContainerMixInvalidPath)
                 }
             }
         }
-    )");
+    )")};
 
     exclusion::object_set_ref exclude;
     {
@@ -597,8 +578,6 @@ TEST(TestKeyIterator, TestContainerMixInvalidPath)
         ddwaf::key_iterator it(object, key_path, exclude);
         EXPECT_FALSE((bool)it);
     }
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestKeyIterator, TestExcludeSingleObject)
