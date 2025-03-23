@@ -27,10 +27,8 @@ TEST(TestRule, Match)
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
     core_rule rule("id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+    auto root = owned_object::make_map();
+    root.emplace("http.client_ip", "192.168.0.1");
 
     ddwaf::object_store store;
 
@@ -39,7 +37,7 @@ TEST(TestRule, Match)
     core_rule::cache_type cache;
     {
         auto scope = store.get_eval_scope();
-        store.insert(owned_object{root, nullptr}, object_store::attribute::none);
+        store.insert(root.clone(), object_store::attribute::none);
 
         auto event = rule.match(store, cache, {}, {}, deadline);
         EXPECT_TRUE(event.has_value());
@@ -65,15 +63,13 @@ TEST(TestRule, Match)
 
     {
         auto scope = store.get_eval_scope();
-        store.insert(owned_object{root, nullptr}, object_store::attribute::none);
+        store.insert(std::move(root), object_store::attribute::none);
 
         auto event = rule.match(store, cache, {}, {}, deadline);
         EXPECT_FALSE(event.has_value());
     }
 
     EXPECT_TRUE(cache.result);
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestRule, EphemeralMatch)

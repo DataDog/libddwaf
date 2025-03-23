@@ -125,6 +125,23 @@ TEST(TestObject, StringObject)
     }
 }
 
+TEST(TestObject, ArrayObjectInitializer)
+{
+    auto root = owned_object::make_array({"hello", "this", "is", "an", "array"});
+    EXPECT_EQ(root.type(), object_type::array);
+    EXPECT_TRUE(root.is_valid());
+    EXPECT_EQ(root.size(), 5);
+}
+
+TEST(TestObject, MapObjectInitializer)
+{
+    auto root = owned_object::make_map({{"hello"sv, owned_object::make_array({"array", "value"})},
+        {"this"sv, "is"sv}, {"an"sv, "array"sv}});
+    EXPECT_EQ(root.type(), object_type::map);
+    EXPECT_TRUE(root.is_valid());
+    EXPECT_EQ(root.size(), 3);
+}
+
 TEST(TestObject, ArrayObject)
 {
     auto root = owned_object::make_array();
@@ -319,10 +336,7 @@ TEST(TestObject, CloneArray)
 
 TEST(TestObject, CloneMap)
 {
-    auto input = owned_object::make_map();
-    input.emplace("bool", true);
-    input.emplace("string", "string");
-    input.emplace("signed", 5);
+    auto input = owned_object::make_map({{"bool", true}, {"string", "string"}, {"signed", 5}});
 
     auto output = input.clone();
     EXPECT_EQ(output.type(), object_type::map);

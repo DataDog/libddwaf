@@ -14,6 +14,7 @@
 #include <cassert>
 #include <cstring>
 #include <deque>
+#include <initializer_list>
 #include <stdexcept>
 #include <type_traits>
 
@@ -70,6 +71,13 @@ inline void alloc_array(object &obj)
         throw std::bad_alloc();
     }
 }
+
+namespace initializer {
+
+struct movable_object;
+using key_value = std::pair<std::string_view, movable_object>;
+
+} // namespace initializer
 
 } // namespace detail
 
@@ -712,6 +720,9 @@ public:
             .type = DDWAF_OBJ_MAP}};
     }
 
+    static owned_object make_array(std::initializer_list<detail::initializer::movable_object> list);
+    static owned_object make_map(std::initializer_list<detail::initializer::key_value> list);
+
     detail::object move()
     {
         detail::object copy = obj_;
@@ -728,9 +739,18 @@ protected:
     friend class object_view;
 };
 
+namespace detail::initializer {
+
+struct movable_object {
+    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
+    template <typename T> movable_object(T value) : object{std::forward<T>(value)} {}
+    mutable owned_object object;
+};
+
+} // namespace detail::initializer
+
 inline object_view::object_view(const owned_object &ow) : obj_(&ow.obj_) {}
 inline object_view::object_view(const borrowed_object &ow) : obj_(ow.obj_) {}
-inline borrowed_object::borrowed_object(owned_object &obj) : obj_(obj.ptr()) {}
 
 // Convert the underlying type to the requested type, converters are defined
 // in the object_converter header
@@ -911,6 +931,24 @@ borrowed_object writable_object<Derived>::emplace(std::string_view key, const T 
     requires(!std::is_same_v<T, owned_object>)
 {
     return emplace(key, owned_object{value});
+}
+
+inline borrowed_object::borrowed_object(owned_object &obj) : obj_(obj.ptr()) {}
+
+inline owned_object owned_object::make_array(
+    std::initializer_list<detail::initializer::movable_object> list)
+{
+    auto container = make_array();
+    for (const auto &value : list) { container.emplace_back(std::move(value.object)); }
+    return container;
+}
+
+inline owned_object owned_object::make_map(
+    std::initializer_list<detail::initializer::key_value> list)
+{
+    auto container = make_map();
+    for (const auto &[key, value] : list) { container.emplace(key, std::move(value.object)); }
+    return container;
 }
 
 } // namespace ddwaf
