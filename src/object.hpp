@@ -493,6 +493,14 @@ public:
     borrowed_object emplace(std::string_view key, owned_object &&value);
     borrowed_object emplace(owned_object &&key, owned_object &&value);
 
+    template <typename T>
+    borrowed_object emplace_back(const T &value)
+        requires(!std::is_same_v<T, owned_object>);
+
+    template <typename T>
+    borrowed_object emplace(std::string_view key, const T &value)
+        requires(!std::is_same_v<T, owned_object>);
+
 private:
     writable_object() = default;
 
@@ -887,6 +895,22 @@ borrowed_object writable_object<Derived>::emplace(owned_object &&key, owned_obje
     value.move();
 
     return borrowed_object{slot};
+}
+
+template <typename Derived>
+template <typename T>
+borrowed_object writable_object<Derived>::emplace_back(const T &value)
+    requires(!std::is_same_v<T, owned_object>)
+{
+    return emplace_back(owned_object{value});
+}
+
+template <typename Derived>
+template <typename T>
+borrowed_object writable_object<Derived>::emplace(std::string_view key, const T &value)
+    requires(!std::is_same_v<T, owned_object>)
+{
+    return emplace(key, owned_object{value});
 }
 
 } // namespace ddwaf
