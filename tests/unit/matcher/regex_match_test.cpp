@@ -8,62 +8,50 @@
 
 #include "common/gtest_utils.hpp"
 
+using namespace ddwaf;
 using namespace ddwaf::matcher;
 
 namespace {
 TEST(TestRegexMatch, TestBasicCaseInsensitive)
 {
     regex_match matcher("^rEgEx$", 0, false);
-    EXPECT_STREQ(matcher.to_string().data(), "^rEgEx$");
-    EXPECT_STREQ(matcher.name().data(), "match_regex");
+    EXPECT_STRV(matcher.to_string(), "^rEgEx$");
+    EXPECT_STRV(matcher.name(), "match_regex");
 
-    ddwaf_object param;
-    ddwaf_object_string(&param, "regex");
+    owned_object param{"regex"};
 
-    auto [res, highlight] = matcher.match(ddwaf::object_view{param});
+    auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
     EXPECT_STREQ(highlight.c_str(), "regex");
-
-    ddwaf_object_free(&param);
 }
 
 TEST(TestRegexMatch, TestBasicCaseSensitive)
 {
     regex_match matcher("^rEgEx$", 0, true);
 
-    ddwaf_object param;
-    ddwaf_object_string(&param, "regex");
+    owned_object param{"regex"};
 
-    EXPECT_FALSE(matcher.match(ddwaf::object_view{param}).first);
+    EXPECT_FALSE(matcher.match(param).first);
 
-    ddwaf_object param2;
-    ddwaf_object_string(&param2, "rEgEx");
+    owned_object param2{"rEgEx"};
 
-    auto [res, highlight] = matcher.match(ddwaf::object_view{param2});
+    auto [res, highlight] = matcher.match(param2);
     EXPECT_TRUE(res);
     EXPECT_STREQ(highlight.c_str(), "rEgEx");
-
-    ddwaf_object_free(&param);
-    ddwaf_object_free(&param2);
 }
 
 TEST(TestRegexMatch, TestMinLength)
 {
     regex_match matcher("^rEgEx.*$", 6, true);
 
-    ddwaf_object param;
-    ddwaf_object param2;
-    ddwaf_object_string(&param, "rEgEx");
-    ddwaf_object_string(&param2, "rEgExe");
+    owned_object param{"rEgEx"};
+    owned_object param2{"rEgExe"};
 
-    EXPECT_FALSE(matcher.match(ddwaf::object_view{param}).first);
+    EXPECT_FALSE(matcher.match(param).first);
 
-    auto [res, highlight] = matcher.match(ddwaf::object_view{param2});
+    auto [res, highlight] = matcher.match(param2);
     EXPECT_TRUE(res);
     EXPECT_STREQ(highlight.c_str(), "rEgExe");
-
-    ddwaf_object_free(&param);
-    ddwaf_object_free(&param2);
 }
 
 TEST(TestRegexMatch, TestInvalidInput)

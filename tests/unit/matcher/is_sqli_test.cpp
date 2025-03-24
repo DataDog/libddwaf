@@ -34,10 +34,8 @@ TEST(TestIsSQLi, TestMatch)
     auto match = {"1, -sin(1)) UNION SELECT 1"};
 
     for (const auto *pattern : match) {
-        ddwaf_object param;
-        ddwaf_object_string(&param, pattern);
-        EXPECT_TRUE(matcher.match(ddwaf::object_view{param}).first);
-        ddwaf_object_free(&param);
+        owned_object param{pattern};
+        EXPECT_TRUE(matcher.match(param).first);
     }
 }
 
