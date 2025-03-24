@@ -109,21 +109,13 @@ TEST(TestShiDetectorArray, NoMatchAndFalsePositives)
     };
 
     for (const auto &[resource, param] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-        ddwaf_object_map(&root);
-
-        ddwaf_object array;
-        ddwaf_object_array(&array);
-        for (const auto &arg : resource) {
-            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
-        }
-        ddwaf_object_map_add(&root, "server.sys.shell.cmd", &array);
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
+        auto root = owned_object::make_map();
+        root.emplace("server.request.query", param);
+        auto array = root.emplace("server.sys.shell.cmd", owned_object::make_array());
+        for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -154,27 +146,20 @@ TEST(TestShiDetectorArray, ExecutablesAndRedirections)
     };
 
     for (const auto &[resource, param] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-        ddwaf_object_map(&root);
-
+        auto root = owned_object::make_map();
+        root.emplace("server.request.query", param);
+        auto array = root.emplace("server.sys.shell.cmd", owned_object::make_array());
         std::string resource_str;
-        ddwaf_object array;
-        ddwaf_object_array(&array);
         for (const auto &arg : resource) {
-            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
+            array.emplace_back(arg);
             if (!resource_str.empty()) {
                 resource_str.append(" ");
             }
             resource_str.append(arg);
         }
-        ddwaf_object_map_add(&root, "server.sys.shell.cmd", &array);
-
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -215,27 +200,21 @@ TEST(TestShiDetectorArray, OverlappingInjections)
     };
 
     for (const auto &[resource, param] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-        ddwaf_object_map(&root);
+        auto root = owned_object::make_map();
+        root.emplace("server.request.query", param);
+        auto array = root.emplace("server.sys.shell.cmd", owned_object::make_array());
 
         std::string resource_str;
-        ddwaf_object array;
-        ddwaf_object_array(&array);
         for (const auto &arg : resource) {
-            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
+            array.emplace_back(arg);
             if (!resource_str.empty()) {
                 resource_str.append(" ");
             }
             resource_str.append(arg);
         }
-        ddwaf_object_map_add(&root, "server.sys.shell.cmd", &array);
-
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -261,27 +240,21 @@ TEST(TestShiDetectorArray, InjectionsWithinCommandSubstitution)
     };
 
     for (const auto &[resource, param] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-        ddwaf_object_map(&root);
+        auto root = owned_object::make_map();
+        root.emplace("server.request.query", param);
+        auto array = root.emplace("server.sys.shell.cmd", owned_object::make_array());
 
         std::string resource_str;
-        ddwaf_object array;
-        ddwaf_object_array(&array);
         for (const auto &arg : resource) {
-            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
+            array.emplace_back(arg);
             if (!resource_str.empty()) {
                 resource_str.append(" ");
             }
             resource_str.append(arg);
         }
-        ddwaf_object_map_add(&root, "server.sys.shell.cmd", &array);
-
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -312,27 +285,21 @@ TEST(TestShiDetectorArray, InjectionsWithinProcessSubstitution)
     };
 
     for (const auto &[resource, param] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-        ddwaf_object_map(&root);
+        auto root = owned_object::make_map();
+        root.emplace("server.request.query", param);
+        auto array = root.emplace("server.sys.shell.cmd", owned_object::make_array());
 
         std::string resource_str;
-        ddwaf_object array;
-        ddwaf_object_array(&array);
         for (const auto &arg : resource) {
-            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
+            array.emplace_back(arg);
             if (!resource_str.empty()) {
                 resource_str.append(" ");
             }
             resource_str.append(arg);
         }
-        ddwaf_object_map_add(&root, "server.sys.shell.cmd", &array);
-
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -369,27 +336,21 @@ TEST(TestShiDetectorArray, OffByOnePayloadsMatch)
         {{"l", "-l", "-a", ";", "l -l"}, "l -l"}};
 
     for (const auto &[resource, param] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-        ddwaf_object_map(&root);
+        auto root = owned_object::make_map();
+        root.emplace("server.request.query", param);
+        auto array = root.emplace("server.sys.shell.cmd", owned_object::make_array());
 
         std::string resource_str;
-        ddwaf_object array;
-        ddwaf_object_array(&array);
         for (const auto &arg : resource) {
-            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
+            array.emplace_back(arg);
             if (!resource_str.empty()) {
                 resource_str.append(" ");
             }
             resource_str.append(arg);
         }
-        ddwaf_object_map_add(&root, "server.sys.shell.cmd", &array);
-
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
 
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;

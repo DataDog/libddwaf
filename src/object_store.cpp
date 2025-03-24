@@ -14,20 +14,13 @@
 
 namespace ddwaf {
 
-bool object_store::insert(owned_object &&input, attribute attr)
+bool object_store::insert_object_helper(object_view input, attribute attr)
 {
-    object_view view;
-    if (attr == attribute::ephemeral) {
-        view = ephemeral_objects_.emplace_back(std::move(input));
-    } else {
-        view = input_objects_.emplace_back(std::move(input));
-    }
-
-    if (view.type() != object_type::map) {
+    if (input.type() != object_type::map) {
         return false;
     }
 
-    const auto size = view.size();
+    const auto size = input.size();
     if (size == 0) {
         // Objects with no addresses are considered valid as they are harmless
         return true;
@@ -41,7 +34,7 @@ bool object_store::insert(owned_object &&input, attribute attr)
         ephemeral_targets_.reserve(size);
     }
 
-    for (auto it = view.begin(); it != view.end(); ++it) {
+    for (auto it = input.begin(); it != input.end(); ++it) {
         auto key_obj = it.key();
         if (key_obj.empty()) {
             continue;
@@ -53,6 +46,23 @@ bool object_store::insert(owned_object &&input, attribute attr)
     }
 
     return true;
+}
+
+bool object_store::insert(owned_object &&input, attribute attr)
+{
+    object_view view;
+    if (attr == attribute::ephemeral) {
+        view = ephemeral_objects_.emplace_back(std::move(input));
+    } else {
+        view = input_objects_.emplace_back(std::move(input));
+    }
+
+    return insert_object_helper(view, attr);
+}
+
+bool object_store::insert(borrowed_object input, attribute attr)
+{
+    return insert_object_helper(input, attr);
 }
 
 bool object_store::insert(
