@@ -8,35 +8,27 @@
 
 #include "common/gtest_utils.hpp"
 
+using namespace ddwaf;
 using namespace ddwaf::matcher;
 
 namespace {
 TEST(TestIsXSS, TestBasic)
 {
     is_xss matcher;
-    EXPECT_STREQ(matcher.to_string().data(), "");
-    EXPECT_STREQ(matcher.name().data(), "is_xss");
+    EXPECT_STRV(matcher.to_string(), "");
+    EXPECT_STRV(matcher.name(), "is_xss");
 
-    ddwaf_object param;
-    ddwaf_object_string(&param, "<script>alert(1);</script>");
-
-    auto [res, highlight] = matcher.match(ddwaf::object_view{param});
+    owned_object param{"<script>alert(1);</script>"};
+    auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
     EXPECT_STREQ(highlight.c_str(), "");
-
-    ddwaf_object_free(&param);
 }
 
 TEST(TestIsXSS, TestNoMatch)
 {
     is_xss matcher;
-
-    ddwaf_object param;
-    ddwaf_object_string(&param, "non-xss");
-
-    EXPECT_FALSE(matcher.match(ddwaf::object_view{param}).first);
-
-    ddwaf_object_free(&param);
+    owned_object param{"non-xss"};
+    EXPECT_FALSE(matcher.match(param).first);
 }
 
 TEST(TestIsXSS, TestInvalidInput)

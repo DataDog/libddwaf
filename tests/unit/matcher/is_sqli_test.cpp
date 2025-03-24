@@ -9,6 +9,7 @@
 
 #include "common/gtest_utils.hpp"
 
+using namespace ddwaf;
 using namespace ddwaf::matcher;
 
 namespace {
@@ -16,17 +17,14 @@ namespace {
 TEST(TestIsSQLi, TestBasic)
 {
     is_sqli matcher;
-    EXPECT_STREQ(matcher.to_string().data(), "");
-    EXPECT_STREQ(matcher.name().data(), "is_sqli");
+    EXPECT_STRV(matcher.to_string(), "");
+    EXPECT_STRV(matcher.name(), "is_sqli");
 
-    ddwaf_object param;
-    ddwaf_object_string(&param, "'OR 1=1/*");
+    owned_object param{"'OR 1=1/*"};
 
-    auto [res, highlight] = matcher.match(ddwaf::object_view{param});
+    auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
     EXPECT_STREQ(highlight.c_str(), "s&1c");
-
-    ddwaf_object_free(&param);
 }
 
 TEST(TestIsSQLi, TestMatch)
@@ -50,10 +48,8 @@ TEST(TestIsSQLi, TestNoMatch)
     auto no_match = {"*", "00119007249934829312950000808000953OR-240128165430155"};
 
     for (const auto *pattern : no_match) {
-        ddwaf_object param;
-        ddwaf_object_string(&param, pattern);
-        EXPECT_FALSE(matcher.match(ddwaf::object_view{param}).first);
-        ddwaf_object_free(&param);
+        owned_object param{pattern};
+        EXPECT_FALSE(matcher.match(param).first);
     }
 }
 

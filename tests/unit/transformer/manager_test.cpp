@@ -46,10 +46,9 @@ std::optional<std::string> transform(std::string_view input, const std::vector<t
 
 TEST(TestTransformerManager, InvalidTypes)
 {
-    ddwaf_object src;
-    ddwaf_object_unsigned(&src, 29);
-
+    owned_object src(29U);
     owned_object dst;
+
     {
         std::vector<transformer_id> ids{transformer_id::compress_whitespace};
         EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
