@@ -46,18 +46,11 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object tmp;
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "unary_address", ddwaf_object_string(&tmp, "unary_string"));
-    ddwaf_object_map_add(
-        &input_map, "optional_address", ddwaf_object_string(&tmp, "optional_string"));
-    ddwaf_object_map_add(&input_map, "variadic_address_1", ddwaf_object_unsigned(&tmp, 1));
-    ddwaf_object_map_add(&input_map, "variadic_address_2", ddwaf_object_unsigned(&tmp, 1));
-
+    auto input_map = owned_object::make_map(
+        {{"unary_address", "unary_string"}, {"optional_address", "optional_string"},
+            {"variadic_address_1", 1UL}, {"variadic_address_2", 1UL}});
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
         {{{{{get_target_index("unary_address"), "unary_address", {}}}},
@@ -91,16 +84,11 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object tmp;
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "unary_address", ddwaf_object_string(&tmp, "unary_string"));
-    ddwaf_object_map_add(&input_map, "variadic_address_1", ddwaf_object_unsigned(&tmp, 1));
-    ddwaf_object_map_add(&input_map, "variadic_address_2", ddwaf_object_unsigned(&tmp, 1));
+    auto input_map = owned_object::make_map({{"unary_address", "unary_string"},
+        {"variadic_address_1", 1UL}, {"variadic_address_2", 1UL}});
 
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
         {{{{{get_target_index("unary_address"), "unary_address", {}}}},
@@ -132,16 +120,11 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
 
 TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
 {
-    ddwaf_object tmp;
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(
-        &input_map, "optional_address", ddwaf_object_string(&tmp, "optional_string"));
-    ddwaf_object_map_add(&input_map, "variadic_address_1", ddwaf_object_unsigned(&tmp, 1));
-    ddwaf_object_map_add(&input_map, "variadic_address_2", ddwaf_object_unsigned(&tmp, 1));
+    auto input_map = owned_object::make_map({{"optional_address", "optional_string"},
+        {"variadic_address_1", 1UL}, {"variadic_address_2", 1UL}});
 
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
         {{{{{get_target_index("unary_address"), "unary_address", {}}}},
@@ -167,15 +150,13 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
 
 TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
 {
-    ddwaf_object tmp;
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "unary_address", ddwaf_object_string(&tmp, "unary_string"));
-    ddwaf_object_map_add(
-        &input_map, "optional_address", ddwaf_object_string(&tmp, "optional_string"));
+    auto input_map = owned_object::make_map({
+        {"unary_address", "unary_string"},
+        {"optional_address", "optional_string"},
+    });
 
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
         {{{{{get_target_index("unary_address"), "unary_address", {}}}},
