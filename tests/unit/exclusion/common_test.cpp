@@ -21,49 +21,33 @@ TEST(ExclusionObjectSet, Empty)
 
 TEST(ExclusionObjectSet, PersistentOnly)
 {
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "value", ddwaf_object_string(&tmp, "node"));
+    auto root = owned_object::make_map({{"value", "node"}});
 
-    exclusion::object_set excluded{{&root.array[0]}, {}};
+    exclusion::object_set excluded{{root.at(0)}, {}};
     EXPECT_FALSE(excluded.empty());
     EXPECT_EQ(excluded.size(), 1);
-    EXPECT_TRUE(excluded.contains(&root.array[0]));
-
-    ddwaf_object_free(&root);
+    EXPECT_TRUE(excluded.contains(root.at(0)));
 }
 
 TEST(ExclusionObjectSet, EphemeralOnly)
 {
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "value", ddwaf_object_string(&tmp, "node"));
+    auto root = owned_object::make_map({{"value", "node"}});
 
-    exclusion::object_set excluded{{}, {&root.array[0]}};
+    exclusion::object_set excluded{{}, {root.at(0)}};
     EXPECT_FALSE(excluded.empty());
     EXPECT_EQ(excluded.size(), 1);
-    EXPECT_TRUE(excluded.contains(&root.array[0]));
-
-    ddwaf_object_free(&root);
+    EXPECT_TRUE(excluded.contains(root.at(0)));
 }
 
 TEST(ExclusionObjectSet, EphemeralAndPersistent)
 {
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "first", ddwaf_object_string(&tmp, "node"));
-    ddwaf_object_map_add(&root, "second", ddwaf_object_string(&tmp, "node"));
+    auto root = owned_object::make_map({{"first", "node"}, {"second", "node"}});
 
-    exclusion::object_set excluded{{&root.array[1]}, {&root.array[0]}};
+    exclusion::object_set excluded{{root.at(1)}, {root.at(0)}};
     EXPECT_FALSE(excluded.empty());
     EXPECT_EQ(excluded.size(), 2);
-    EXPECT_TRUE(excluded.contains(&root.array[0]));
-    EXPECT_TRUE(excluded.contains(&root.array[1]));
-
-    ddwaf_object_free(&root);
+    EXPECT_TRUE(excluded.contains(root.at(0)));
+    EXPECT_TRUE(excluded.contains(root.at(1)));
 }
 
 TEST(ExclusionObjectSetRef, Empty)
@@ -95,53 +79,37 @@ TEST(ExclusionObjectSetRef, Empty)
 
 TEST(ExclusionObjectSetRef, PersistentOnly)
 {
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "value", ddwaf_object_string(&tmp, "node"));
+    auto root = owned_object::make_map({{"value", "node"}});
 
-    std::unordered_set<object_view> persistent{&root.array[0]};
+    std::unordered_set<object_view> persistent{root.at(0)};
     exclusion::object_set_ref excluded{persistent, {}};
     EXPECT_FALSE(excluded.empty());
     EXPECT_EQ(excluded.size(), 1);
-    EXPECT_TRUE(excluded.contains(&root.array[0]));
-
-    ddwaf_object_free(&root);
+    EXPECT_TRUE(excluded.contains(root.at(0)));
 }
 
 TEST(ExclusionObjectSetRef, EphemeralOnly)
 {
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "value", ddwaf_object_string(&tmp, "node"));
+    auto root = owned_object::make_map({{"value", "node"}});
 
-    std::unordered_set<object_view> ephemeral{&root.array[0]};
+    std::unordered_set<object_view> ephemeral{root.at(0)};
     exclusion::object_set_ref excluded{{}, ephemeral};
     EXPECT_FALSE(excluded.empty());
     EXPECT_EQ(excluded.size(), 1);
-    EXPECT_TRUE(excluded.contains(&root.array[0]));
-
-    ddwaf_object_free(&root);
+    EXPECT_TRUE(excluded.contains(root.at(0)));
 }
 
 TEST(ExclusionObjectSetRef, EphemeralAndPersistent)
 {
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "first", ddwaf_object_string(&tmp, "node"));
-    ddwaf_object_map_add(&root, "second", ddwaf_object_string(&tmp, "node"));
+    auto root = owned_object::make_map({{"first", "node"}, {"second", "node"}});
 
-    std::unordered_set<object_view> persistent{&root.array[1]};
-    std::unordered_set<object_view> ephemeral{&root.array[0]};
+    std::unordered_set<object_view> persistent{root.at(1)};
+    std::unordered_set<object_view> ephemeral{root.at(0)};
     exclusion::object_set_ref excluded{persistent, ephemeral};
     EXPECT_FALSE(excluded.empty());
     EXPECT_EQ(excluded.size(), 2);
-    EXPECT_TRUE(excluded.contains(&root.array[0]));
-    EXPECT_TRUE(excluded.contains(&root.array[1]));
-
-    ddwaf_object_free(&root);
+    EXPECT_TRUE(excluded.contains(root.at(0)));
+    EXPECT_TRUE(excluded.contains(root.at(1)));
 }
 
 } // namespace

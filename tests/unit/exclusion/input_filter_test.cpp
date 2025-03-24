@@ -18,11 +18,8 @@ TEST(TestInputFilter, InputExclusionNoConditions)
 {
     object_store store;
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "query", ddwaf_object_string(&tmp, "value"));
-    store.insert(owned_object{root});
+    auto root = owned_object::make_map({{"query", "value"}});
+    store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {});
@@ -39,18 +36,15 @@ TEST(TestInputFilter, InputExclusionNoConditions)
     EXPECT_EQ(opt_spec->objects.size(), 1);
     EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
     EXPECT_EQ(opt_spec->objects.ephemeral.size(), 0);
-    EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
+    EXPECT_TRUE(opt_spec->objects.contains(root.at(0)));
 }
 
 TEST(TestInputFilter, EphemeralInputExclusionNoConditions)
 {
     object_store store;
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "query", ddwaf_object_string(&tmp, "value"));
-    store.insert(owned_object{root}, object_store::attribute::ephemeral);
+    auto root = owned_object::make_map({{"query", "value"}});
+    store.insert(root, object_store::attribute::ephemeral);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {});
@@ -67,23 +61,18 @@ TEST(TestInputFilter, EphemeralInputExclusionNoConditions)
     EXPECT_EQ(opt_spec->objects.size(), 1);
     EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
     EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
-    EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
+    EXPECT_TRUE(opt_spec->objects.contains(root.at(0)));
 }
 
 TEST(TestInputFilter, ObjectExclusionNoConditions)
 {
     object_store store;
 
-    ddwaf_object root;
-    ddwaf_object child;
-    ddwaf_object tmp;
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "param"));
+    auto root = owned_object::make_map();
+    auto child = root.emplace("query", owned_object::make_map());
+    child.emplace("params", "param");
 
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "query", &child);
-
-    store.insert(owned_object{root});
+    store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
@@ -100,23 +89,18 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
     EXPECT_EQ(opt_spec->objects.size(), 1);
     EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
     EXPECT_EQ(opt_spec->objects.ephemeral.size(), 0);
-    EXPECT_TRUE(opt_spec->objects.contains(&child.array[0]));
+    EXPECT_TRUE(opt_spec->objects.contains(child.at(0)));
 }
 
 TEST(TestInputFilter, EphemeralObjectExclusionNoConditions)
 {
     object_store store;
 
-    ddwaf_object root;
-    ddwaf_object child;
-    ddwaf_object tmp;
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "param"));
+    auto root = owned_object::make_map();
+    auto child = root.emplace("query", owned_object::make_map());
+    child.emplace("params", "param");
 
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "query", &child);
-
-    store.insert(owned_object{root}, object_store::attribute::ephemeral);
+    store.insert(root, object_store::attribute::ephemeral);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
@@ -133,7 +117,7 @@ TEST(TestInputFilter, EphemeralObjectExclusionNoConditions)
     EXPECT_EQ(opt_spec->objects.size(), 1);
     EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
     EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
-    EXPECT_TRUE(opt_spec->objects.contains(&child.array[0]));
+    EXPECT_TRUE(opt_spec->objects.contains(child.at(0)));
 }
 
 TEST(TestInputFilter, PersistentInputExclusionWithPersistentCondition)
@@ -144,13 +128,9 @@ TEST(TestInputFilter, PersistentInputExclusionWithPersistentCondition)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-
+    auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
     ddwaf::object_store store;
-    store.insert(owned_object{root});
+    store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -166,7 +146,7 @@ TEST(TestInputFilter, PersistentInputExclusionWithPersistentCondition)
     EXPECT_EQ(opt_spec->objects.size(), 1);
     EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
     EXPECT_EQ(opt_spec->objects.ephemeral.size(), 0);
-    EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
+    EXPECT_TRUE(opt_spec->objects.contains(root.at(0)));
 }
 
 TEST(TestInputFilter, EphemeralInputExclusionWithEphemeralCondition)
@@ -177,13 +157,10 @@ TEST(TestInputFilter, EphemeralInputExclusionWithEphemeralCondition)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+    auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
     ddwaf::object_store store;
-    store.insert(owned_object{root}, object_store::attribute::ephemeral);
+    store.insert(root, object_store::attribute::ephemeral);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -199,7 +176,7 @@ TEST(TestInputFilter, EphemeralInputExclusionWithEphemeralCondition)
     EXPECT_EQ(opt_spec->objects.size(), 1);
     EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
     EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
-    EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
+    EXPECT_TRUE(opt_spec->objects.contains(root.at(0)));
 }
 
 TEST(TestInputFilter, PersistentInputExclusionWithEphemeralCondition)
@@ -212,15 +189,11 @@ TEST(TestInputFilter, PersistentInputExclusionWithEphemeralCondition)
 
     ddwaf::object_store store;
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-    store.insert(owned_object{root}, object_store::attribute::ephemeral);
+    auto root = owned_object::make_map({{"usr.id", "admin"}});
+    store.insert(std::move(root), object_store::attribute::ephemeral);
 
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-    store.insert(owned_object{root});
+    root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+    store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -236,7 +209,7 @@ TEST(TestInputFilter, PersistentInputExclusionWithEphemeralCondition)
     EXPECT_EQ(opt_spec->objects.size(), 1);
     EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
     EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
-    EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
+    EXPECT_TRUE(opt_spec->objects.contains(root.at(0)));
 }
 
 TEST(TestInputFilter, EphemeralInputExclusionWithPersistentCondition)
@@ -249,15 +222,11 @@ TEST(TestInputFilter, EphemeralInputExclusionWithPersistentCondition)
 
     ddwaf::object_store store;
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-    store.insert(owned_object{root});
+    auto root = owned_object::make_map({{"usr.id", "admin"}});
+    store.insert(std::move(root));
 
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-    store.insert(owned_object{root}, object_store::attribute::ephemeral);
+    root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+    store.insert(root, object_store::attribute::ephemeral);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -273,7 +242,7 @@ TEST(TestInputFilter, EphemeralInputExclusionWithPersistentCondition)
     EXPECT_EQ(opt_spec->objects.size(), 1);
     EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
     EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
-    EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
+    EXPECT_TRUE(opt_spec->objects.contains(root.at(0)));
 }
 
 TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
@@ -284,13 +253,10 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
     builder.add_target("usr.id", {}, {transformer_id::lowercase});
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "ADMIN"));
+    auto root = owned_object::make_map({{"usr.id", "ADMIN"}});
 
     ddwaf::object_store store;
-    store.insert(owned_object{root});
+    store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("usr.id"), "usr.id", {});
@@ -305,7 +271,7 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
     EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
-    EXPECT_TRUE(opt_spec->objects.contains(&root.array[0]));
+    EXPECT_TRUE(opt_spec->objects.contains(root.at(0)));
 }
 
 TEST(TestInputFilter, InputExclusionFailedCondition)
@@ -316,13 +282,10 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.2"));
+    auto root = owned_object::make_map({{"http.client_ip", "192.168.0.2"}});
 
     ddwaf::object_store store;
-    store.insert(owned_object{root});
+    store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
