@@ -16,7 +16,7 @@ class TestSchemaIntegration : public ::testing::Test {
 public:
     TestSchemaIntegration()
     {
-        auto rule = read_file("schema.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("schema.yaml", base_dir);
         if (rule.type == DDWAF_OBJ_INVALID) {
             throw std::runtime_error("failed to load schema.yaml");
         }

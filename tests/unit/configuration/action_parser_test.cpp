@@ -18,7 +18,7 @@ namespace {
 
 TEST(TestActionParser, EmptyActions)
 {
-    auto object = yaml_to_object(R"([])");
+    auto object = yaml_to_object<ddwaf_object>(R"([])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -56,7 +56,8 @@ TEST(TestActionParser, EmptyActions)
 
 TEST(TestActionParser, SingleAction)
 {
-    auto object = yaml_to_object(R"([{id: block_1, type: block_request, parameters: {}}])");
+    auto object =
+        yaml_to_object<ddwaf_object>(R"([{id: block_1, type: block_request, parameters: {}}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -134,7 +135,7 @@ TEST(TestActionParser, RedirectAction)
             name, url, status_code);
     }
     yaml.append("]");
-    auto object = yaml_to_object(yaml);
+    auto object = yaml_to_object<ddwaf_object>(yaml);
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -211,7 +212,7 @@ TEST(TestActionParser, RedirectAction)
 
 TEST(TestActionParser, RedirectActionInvalidStatusCode)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: 404}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -262,7 +263,7 @@ TEST(TestActionParser, RedirectActionInvalidStatusCode)
 
 TEST(TestActionParser, RedirectActionInvalid300StatusCode)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: 304}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -313,7 +314,7 @@ TEST(TestActionParser, RedirectActionInvalid300StatusCode)
 
 TEST(TestActionParser, RedirectActionMissingStatusCode)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: redirect, parameters: {location: "http://www.google.com"}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -364,7 +365,7 @@ TEST(TestActionParser, RedirectActionMissingStatusCode)
 
 TEST(TestActionParser, RedirectActionMissingLocation)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: redirect, parameters: {status_code: 303}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -416,7 +417,7 @@ TEST(TestActionParser, RedirectActionMissingLocation)
 
 TEST(TestActionParser, RedirectActionNonHttpURL)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: redirect, parameters: {status_code: 303, location: ftp://myftp.mydomain.com}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -468,7 +469,7 @@ TEST(TestActionParser, RedirectActionNonHttpURL)
 
 TEST(TestActionParser, RedirectActionInvalidRelativePathURL)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: redirect, parameters: {status_code: 303, location: ../../../etc/passwd}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -520,7 +521,7 @@ TEST(TestActionParser, RedirectActionInvalidRelativePathURL)
 
 TEST(TestActionParser, OverrideDefaultBlockAction)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: block, parameters: {location: "http://www.google.com", status_code: 302}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -572,7 +573,7 @@ TEST(TestActionParser, OverrideDefaultBlockAction)
 
 TEST(TestActionParser, BlockActionMissingStatusCode)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: block, parameters: {type: "auto", grpc_status_code: 302}, type: block_request}])");
 
     configuration_spec cfg;
@@ -624,7 +625,7 @@ TEST(TestActionParser, BlockActionMissingStatusCode)
 
 TEST(TestActionParser, UnknownActionType)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: sanitize, parameters: {location: "http://www.google.com", status_code: 302}, type: new_action_type}])");
 
     configuration_spec cfg;
@@ -664,7 +665,7 @@ TEST(TestActionParser, UnknownActionType)
 
 TEST(TestActionParser, BlockActionMissingGrpcStatusCode)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: block, parameters: {type: "auto", status_code: 302}, type: block_request}])");
 
     configuration_spec cfg;
@@ -716,7 +717,7 @@ TEST(TestActionParser, BlockActionMissingGrpcStatusCode)
 
 TEST(TestActionParser, BlockActionMissingType)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: block, parameters: {grpc_status_code: 11, status_code: 302}, type: block_request}])");
 
     configuration_spec cfg;
@@ -768,7 +769,8 @@ TEST(TestActionParser, BlockActionMissingType)
 
 TEST(TestActionParser, BlockActionMissingParameters)
 {
-    auto object = yaml_to_object(R"([{id: block, parameters: {}, type: block_request}])");
+    auto object =
+        yaml_to_object<ddwaf_object>(R"([{id: block, parameters: {}, type: block_request}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -819,7 +821,7 @@ TEST(TestActionParser, BlockActionMissingParameters)
 
 TEST(TestActionParser, MissingID)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{parameters: {location: "http://www.google.com", status_code: 302}, type: new_action_type}])");
 
     configuration_spec cfg;
@@ -861,7 +863,7 @@ TEST(TestActionParser, MissingID)
 
 TEST(TestActionParser, MissingType)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: sanitize, parameters: {location: "http://www.google.com", status_code: 302}}])");
 
     configuration_spec cfg;
@@ -903,7 +905,7 @@ TEST(TestActionParser, MissingType)
 
 TEST(TestActionParser, MissingParameters)
 {
-    auto object = yaml_to_object(R"([{id: sanitize, type: sanitize_request}])");
+    auto object = yaml_to_object<ddwaf_object>(R"([{id: sanitize, type: sanitize_request}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -944,7 +946,7 @@ TEST(TestActionParser, MissingParameters)
 
 TEST(TestActionParser, DuplicateAction)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: block_1, type: block_request, parameters: {}},{id: block_1, type: block_request, parameters: {}}])");
 
     configuration_spec cfg;

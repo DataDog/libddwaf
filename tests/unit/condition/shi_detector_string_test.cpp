@@ -317,17 +317,11 @@ TEST(TestShiDetectorString, MultipleArgumentsMatch)
     };
 
     for (const auto &resource : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(
-            &root, "server.sys.shell.cmd", ddwaf_object_string(&tmp, resource.c_str()));
-        auto params_obj = yaml_to_object(params);
-        ddwaf_object_map_add(&root, "server.request.query", &params_obj);
+        auto root = owned_object::make_map({{"server.sys.shell.cmd", resource},
+            {"server.request.query", yaml_to_object<owned_object>(params)}});
 
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;

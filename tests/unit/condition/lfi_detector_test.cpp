@@ -137,12 +137,12 @@ TEST(TestLFIDetector, MatchWithKeyPath)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
-    auto root = yaml_to_object(
+    auto root = yaml_to_object<owned_object>(
         R"({server.io.fs.file: documents/../etc/passwd,
         server.request.query: {array: [ {map: ../etc/passwd}]}})");
 
     object_store store;
-    store.insert(owned_object{root});
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;

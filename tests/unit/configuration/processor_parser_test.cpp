@@ -16,7 +16,7 @@ namespace {
 
 TEST(TestProcessorParser, ParseNoGenerator)
 {
-    auto object = yaml_to_object(R"([{id: 1}])");
+    auto object = yaml_to_object<ddwaf_object>(R"([{id: 1}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -80,7 +80,7 @@ TEST(TestProcessorParser, ParseNoGenerator)
 
 TEST(TestProcessorParser, ParseNoID)
 {
-    auto object = yaml_to_object(R"([{}])");
+    auto object = yaml_to_object<ddwaf_object>(R"([{}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -144,7 +144,7 @@ TEST(TestProcessorParser, ParseNoID)
 
 TEST(TestProcessorParser, ParseNoParameters)
 {
-    auto object = yaml_to_object(R"([{id: 1, generator: extract_schema}])");
+    auto object = yaml_to_object<ddwaf_object>(R"([{id: 1, generator: extract_schema}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -208,7 +208,8 @@ TEST(TestProcessorParser, ParseNoParameters)
 
 TEST(TestProcessorParser, ParseNoMappings)
 {
-    auto object = yaml_to_object(R"([{id: 1, generator: extract_schema, parameters: {}}])");
+    auto object =
+        yaml_to_object<ddwaf_object>(R"([{id: 1, generator: extract_schema, parameters: {}}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -272,8 +273,8 @@ TEST(TestProcessorParser, ParseNoMappings)
 
 TEST(TestProcessorParser, ParseEmptyMappings)
 {
-    auto object =
-        yaml_to_object(R"([{id: 1, generator: extract_schema, parameters: {mappings: []}}])");
+    auto object = yaml_to_object<ddwaf_object>(
+        R"([{id: 1, generator: extract_schema, parameters: {mappings: []}}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -337,8 +338,8 @@ TEST(TestProcessorParser, ParseEmptyMappings)
 
 TEST(TestProcessorParser, ParseNoInput)
 {
-    auto object =
-        yaml_to_object(R"([{id: 1, generator: extract_schema, parameters: {mappings: [{}]}}])");
+    auto object = yaml_to_object<ddwaf_object>(
+        R"([{id: 1, generator: extract_schema, parameters: {mappings: [{}]}}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -402,7 +403,7 @@ TEST(TestProcessorParser, ParseNoInput)
 
 TEST(TestProcessorParser, ParseEmptyInput)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [], output: out}]}}])");
 
     configuration_spec cfg;
@@ -467,7 +468,7 @@ TEST(TestProcessorParser, ParseEmptyInput)
 
 TEST(TestProcessorParser, ParseNoOutput)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}]}]}}])");
 
     configuration_spec cfg;
@@ -532,7 +533,7 @@ TEST(TestProcessorParser, ParseNoOutput)
 
 TEST(TestProcessorParser, ParseUnknownGenerator)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, generator: unknown, parameters: {mappings: [{inputs: [{address: in}], output: out}]}}])");
 
     configuration_spec cfg;
@@ -575,7 +576,7 @@ TEST(TestProcessorParser, ParseUnknownGenerator)
 
 TEST(TestProcessorParser, ParseUseless)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: false, output: false}])");
 
     configuration_spec cfg;
@@ -640,7 +641,7 @@ TEST(TestProcessorParser, ParseUseless)
 
 TEST(TestProcessorParser, ParsePreprocessor)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: true, output: false}])");
 
     configuration_spec cfg;
@@ -660,7 +661,7 @@ TEST(TestProcessorParser, ParsePreprocessor)
 
 TEST(TestProcessorParser, ParsePreprocessorWithOutput)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: true, output: true}])");
 
     configuration_spec cfg;
@@ -680,7 +681,7 @@ TEST(TestProcessorParser, ParsePreprocessorWithOutput)
 
 TEST(TestProcessorParser, ParsePostprocessor)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: false, output: true}])");
 
     configuration_spec cfg;
@@ -700,7 +701,7 @@ TEST(TestProcessorParser, ParsePostprocessor)
 
 TEST(TestProcessorParser, ParseDuplicate)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: false, output: true},{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: true, output: false}])");
 
     configuration_spec cfg;
@@ -745,7 +746,7 @@ TEST(TestProcessorParser, ParseDuplicate)
 
 TEST(TestProcessorParser, IncompatibleMinVersion)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, min_version: 99.0.0, evaluate: false, output: true}])");
 
     configuration_spec cfg;
@@ -805,7 +806,7 @@ TEST(TestProcessorParser, IncompatibleMinVersion)
 
 TEST(TestProcessorParser, IncompatibleMaxVersion)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, max_version: 0.0.99, evaluate: false, output: true}])");
 
     configuration_spec cfg;
@@ -865,7 +866,7 @@ TEST(TestProcessorParser, IncompatibleMaxVersion)
 
 TEST(TestProcessorParser, CompatibleVersion)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, min_version: 0.0.99, max_version: 2.0.0, evaluate: false, output: true}])");
 
     configuration_spec cfg;

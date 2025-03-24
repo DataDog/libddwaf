@@ -13,7 +13,7 @@ constexpr std::string_view base_dir = "integration/matchers/phrase_match/";
 
 TEST(TestPhraseMatchMatcherIntegration, Match)
 {
-    auto rule = read_file("phrase_match.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("phrase_match.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -47,7 +47,7 @@ TEST(TestPhraseMatchMatcherIntegration, Match)
 
 TEST(TestPhraseMatchMatcherIntegration, MatchWordBound)
 {
-    auto rule = read_file("phrase_match.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("phrase_match.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);

@@ -411,7 +411,7 @@ TEST(TestKVIterator, TestNoRootKey)
 
 TEST(TestKVIterator, TestContainerMix)
 {
-    owned_object object{yaml_to_object(R"(
+    auto object = yaml_to_object<owned_object>(R"(
         {
             root: {
                 key0: [value0_0, value0_1, {
@@ -425,7 +425,7 @@ TEST(TestKVIterator, TestContainerMix)
                 }
             }
         }
-    )")};
+    )");
 
     {
         exclusion::object_set_ref exclude;
@@ -611,7 +611,7 @@ TEST(TestKVIterator, TestMultiPath)
 
 TEST(TestKVIterator, TestContainerMixPath)
 {
-    owned_object object{yaml_to_object(R"(
+    auto object = yaml_to_object<owned_object>(R"(
         {
             root: {
                 key0: [value0_0, value0_1, {
@@ -625,7 +625,7 @@ TEST(TestKVIterator, TestContainerMixPath)
                 }
             }
         }
-    )")};
+    )");
 
     exclusion::object_set_ref exclude;
     {
@@ -692,7 +692,7 @@ TEST(TestKVIterator, TestContainerMixPath)
 
 TEST(TestKVIterator, TestContainerMixInvalidPath)
 {
-    owned_object object{yaml_to_object(R"(
+    auto object = yaml_to_object<owned_object>(R"(
         {
             root: {
                 key0: [value0_0, value0_1, {
@@ -706,7 +706,7 @@ TEST(TestKVIterator, TestContainerMixInvalidPath)
                 }
             }
         }
-    )")};
+    )");
 
     exclusion::object_set_ref exclude;
     {

@@ -16,7 +16,7 @@ namespace {
 
 TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutSideEffects)
 {
-    auto object = yaml_to_object(R"([{rules_target: [{tags: {confidence: 1}}]}])");
+    auto object = yaml_to_object<ddwaf_object>(R"([{rules_target: [{tags: {confidence: 1}}]}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -79,7 +79,7 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutSideEffects)
 
 TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutTargets)
 {
-    auto object = yaml_to_object(R"([{rules_target: [{}], enabled: false}])");
+    auto object = yaml_to_object<ddwaf_object>(R"([{rules_target: [{}], enabled: false}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -142,8 +142,8 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutTargets)
 
 TEST(TestRuleOverrideParser, ParseRuleOverride)
 {
-    auto object =
-        yaml_to_object(R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block]}])");
+    auto object = yaml_to_object<ddwaf_object>(
+        R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block]}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -193,7 +193,7 @@ TEST(TestRuleOverrideParser, ParseRuleOverride)
 
 TEST(TestRuleOverrideParser, ParseMultipleRuleOverrides)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block]},{rules_target: [{rule_id: 1}], enabled: false}])");
 
     configuration_spec cfg;
@@ -260,7 +260,7 @@ TEST(TestRuleOverrideParser, ParseMultipleRuleOverrides)
 
 TEST(TestRuleOverrideParser, ParseInconsistentRuleOverride)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{rules_target: [{tags: {confidence: 1}}, {rule_id: 1}], on_match: [block], enabled: false}])");
 
     configuration_spec cfg;
@@ -324,7 +324,7 @@ TEST(TestRuleOverrideParser, ParseInconsistentRuleOverride)
 
 TEST(TestRuleOverrideParser, ParseRuleOverrideForTags)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block], tags: {category: new_category, threshold: 25}}])");
 
     configuration_spec cfg;
@@ -378,7 +378,7 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideForTags)
 
 TEST(TestRuleOverrideParser, ParseInvalidTagsField)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block], tags: [{category: new_category}, {threshold: 25}]}])");
 
     configuration_spec cfg;

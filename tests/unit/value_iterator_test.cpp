@@ -327,7 +327,7 @@ TEST(TestValueIterator, TestMapNoScalars)
 
 TEST(TestValueIterator, TestContainerMix)
 {
-    owned_object object{yaml_to_object(R"(
+    auto object = yaml_to_object<owned_object>(R"(
         {
             root: {
                 key0: [value0_0, value0_1, {
@@ -341,7 +341,7 @@ TEST(TestValueIterator, TestContainerMix)
                 }
             }
         }
-    )")};
+    )");
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -537,7 +537,7 @@ TEST(TestValueIterator, TestMultiPath)
 
 TEST(TestValueIterator, TestContainerMixPath)
 {
-    owned_object object{yaml_to_object(R"(
+    auto object = yaml_to_object<owned_object>(R"(
         {
             root: {
                 key0: [value0_0, value0_1, {
@@ -551,7 +551,7 @@ TEST(TestValueIterator, TestContainerMixPath)
                 }
             }
         }
-    )")};
+    )");
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -611,7 +611,7 @@ TEST(TestValueIterator, TestContainerMixPath)
 
 TEST(TestValueIterator, TestContainerMixInvalidPath)
 {
-    owned_object object{yaml_to_object(R"(
+    auto object = yaml_to_object<owned_object>(R"(
         {
             root: {
                 key0: [value0_0, value0_1, {
@@ -625,10 +625,10 @@ TEST(TestValueIterator, TestContainerMixInvalidPath)
                 }
             }
         }
-    )")};
+    )");
 
     std::unordered_set<object_view> persistent;
-    exclusion::object_set_ref exclude{persistent, {}};
+    exclusion::object_set_ref exclude{.persistent = persistent, .ephemeral = {}};
     {
         std::vector<std::string> key_path{"rat"};
         ddwaf::value_iterator it(object, key_path, exclude);

@@ -14,7 +14,7 @@ constexpr std::string_view base_dir = "integration/conditions/transformers/";
 
 TEST(TestConditionTransformersIntegration, GlobalTransformer)
 {
-    auto rule = read_file("global_transformer.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("global_transformer.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, nullptr}, ddwaf_object_free};
@@ -77,7 +77,7 @@ TEST(TestConditionTransformersIntegration, GlobalTransformer)
 
 TEST(TestConditionTransformersIntegration, GlobalTransformerKeysOnly)
 {
-    auto rule = read_file("global_transformer.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("global_transformer.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, nullptr}, ddwaf_object_free};
@@ -148,7 +148,7 @@ TEST(TestConditionTransformersIntegration, GlobalTransformerKeysOnly)
 
 TEST(TestConditionTransformersIntegration, InputTransformer)
 {
-    auto rule = read_file("input_transformer.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("input_transformer.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, nullptr}, ddwaf_object_free};
@@ -211,7 +211,7 @@ TEST(TestConditionTransformersIntegration, InputTransformer)
 
 TEST(TestConditionTransformersIntegration, InputTransformerKeysOnly)
 {
-    auto rule = read_file("input_transformer.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("input_transformer.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, nullptr}, ddwaf_object_free};
@@ -282,7 +282,7 @@ TEST(TestConditionTransformersIntegration, InputTransformerKeysOnly)
 
 TEST(TestConditionTransformersIntegration, OverlappingTransformer)
 {
-    auto rule = read_file("overlapping_transformers.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("overlapping_transformers.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, nullptr}, ddwaf_object_free};
@@ -381,7 +381,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
 
 TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
 {
-    auto rule = read_file("overlapping_transformers.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("overlapping_transformers.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, nullptr}, ddwaf_object_free};

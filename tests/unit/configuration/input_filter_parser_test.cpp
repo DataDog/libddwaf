@@ -16,7 +16,7 @@ namespace {
 
 TEST(TestInputFilterParser, ParseEmpty)
 {
-    auto object = yaml_to_object(R"([{id: 1, inputs: []}])");
+    auto object = yaml_to_object<ddwaf_object>(R"([{id: 1, inputs: []}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -78,7 +78,7 @@ TEST(TestInputFilterParser, ParseEmpty)
 
 TEST(TestInputFilterParser, ParseFilterWithoutID)
 {
-    auto object = yaml_to_object(R"([{inputs: [{address: http.client_ip}]}])");
+    auto object = yaml_to_object<ddwaf_object>(R"([{inputs: [{address: http.client_ip}]}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -140,7 +140,7 @@ TEST(TestInputFilterParser, ParseFilterWithoutID)
 
 TEST(TestInputFilterParser, ParseDuplicateFilters)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, inputs: [{address: http.client_ip}]}, {id: 1, inputs: [{address: usr.id}]}])");
 
     configuration_spec cfg;
@@ -189,7 +189,7 @@ TEST(TestInputFilterParser, ParseDuplicateFilters)
 
 TEST(TestInputFilterParser, ParseUnconditionalNoTargets)
 {
-    auto object = yaml_to_object(R"([{id: 1, inputs: [{address: http.client_ip}]}])");
+    auto object = yaml_to_object<ddwaf_object>(R"([{id: 1, inputs: [{address: http.client_ip}]}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -230,7 +230,7 @@ TEST(TestInputFilterParser, ParseUnconditionalNoTargets)
 
 TEST(TestInputFilterParser, ParseUnconditionalTargetID)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}]}])");
 
     configuration_spec cfg;
@@ -284,7 +284,7 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetID)
 
 TEST(TestInputFilterParser, ParseUnconditionalTargetTags)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     configuration_spec cfg;
@@ -339,7 +339,7 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetTags)
 
 TEST(TestInputFilterParser, ParseUnconditionalTargetPriority)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939, tags: {type: rule, category: unknown}}]}])");
 
     configuration_spec cfg;
@@ -393,7 +393,7 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetPriority)
 TEST(TestInputFilterParser, ParseUnconditionalMultipleTargets)
 {
 
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}, {tags: {type: rule, category: unknown}}]}])");
 
     configuration_spec cfg;
@@ -457,7 +457,7 @@ TEST(TestInputFilterParser, ParseUnconditionalMultipleTargets)
 
 TEST(TestInputFilterParser, ParseMultipleUnconditional)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}]}, {id: 2, inputs: [{address: usr.id}], rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     configuration_spec cfg;
@@ -530,7 +530,7 @@ TEST(TestInputFilterParser, ParseMultipleUnconditional)
 
 TEST(TestInputFilterParser, ParseConditionalSingleCondition)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
     configuration_spec cfg;
@@ -583,7 +583,7 @@ TEST(TestInputFilterParser, ParseConditionalSingleCondition)
 
 TEST(TestInputFilterParser, ParseConditionalMultipleConditions)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     configuration_spec cfg;
@@ -636,8 +636,8 @@ TEST(TestInputFilterParser, ParseConditionalMultipleConditions)
 
 TEST(TestInputFilterParser, IncompatibleMinVersion)
 {
-    auto object =
-        yaml_to_object(R"([{id: 1, inputs: [{address: http.client_ip}], min_version: 99.0.0}])");
+    auto object = yaml_to_object<ddwaf_object>(
+        R"([{id: 1, inputs: [{address: http.client_ip}], min_version: 99.0.0}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -696,8 +696,8 @@ TEST(TestInputFilterParser, IncompatibleMinVersion)
 
 TEST(TestInputFilterParser, IncompatibleMaxVersion)
 {
-    auto object =
-        yaml_to_object(R"([{id: 1, inputs: [{address: http.client_ip}], max_version: 0.0.99}])");
+    auto object = yaml_to_object<ddwaf_object>(
+        R"([{id: 1, inputs: [{address: http.client_ip}], max_version: 0.0.99}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -756,7 +756,7 @@ TEST(TestInputFilterParser, IncompatibleMaxVersion)
 
 TEST(TestInputFilterParser, CompatibleVersion)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, inputs: [{address: http.client_ip}], min_version: 0.0.99, max_version: 2.0.0}])");
 
     configuration_spec cfg;

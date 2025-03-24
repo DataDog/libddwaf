@@ -16,7 +16,7 @@ constexpr std::string_view base_dir = "unit";
 
 ddwaf::waf build_instance(std::string_view rule_file)
 {
-    auto object = read_file(rule_file, base_dir);
+    auto object = read_file<ddwaf_object>(rule_file, base_dir);
     if (object.type == DDWAF_OBJ_INVALID) {
         throw std::runtime_error("Invalid ruleset object");
     }

@@ -17,7 +17,7 @@ constexpr std::string_view base_dir = "integration/diagnostics/v2/";
 
 TEST(TestDiagnosticsV2Integration, InvalidConfigType)
 {
-    auto rule = yaml_to_object(
+    auto rule = yaml_to_object<ddwaf_object>(
         R"([version, '2.1', [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]])");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -40,7 +40,7 @@ TEST(TestDiagnosticsV2Integration, InvalidConfigType)
 
 TEST(TestDiagnosticsV2Integration, UnsupportedSchema)
 {
-    auto rule = yaml_to_object(
+    auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '3.0', metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -63,7 +63,7 @@ TEST(TestDiagnosticsV2Integration, UnsupportedSchema)
 
 TEST(TestDiagnosticsV2Integration, NoSchema)
 {
-    auto rule = yaml_to_object(
+    auto rule = yaml_to_object<ddwaf_object>(
         R"({ metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -98,7 +98,7 @@ TEST(TestDiagnosticsV2Integration, NoSchema)
 
 TEST(TestDiagnosticsV2Integration, BasicRule)
 {
-    auto rule = yaml_to_object(
+    auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -135,7 +135,7 @@ TEST(TestDiagnosticsV2Integration, BasicRuleWithUpdate)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule = yaml_to_object(
+    auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -204,7 +204,7 @@ TEST(TestDiagnosticsV2Integration, NullRuleset)
 
 TEST(TestDiagnosticsV2Integration, InvalidRule)
 {
-    auto rule = read_file("invalid_single.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("invalid_single.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -240,7 +240,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRule)
 
 TEST(TestDiagnosticsV2Integration, MultipleSameInvalidRules)
 {
-    auto rule = read_file("invalid_multiple_same.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("invalid_multiple_same.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -278,7 +278,7 @@ TEST(TestDiagnosticsV2Integration, MultipleSameInvalidRules)
 
 TEST(TestDiagnosticsV2Integration, MultipleDiffInvalidRules)
 {
-    auto rule = read_file("invalid_multiple_diff.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("invalid_multiple_diff.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -328,7 +328,7 @@ TEST(TestDiagnosticsV2Integration, MultipleDiffInvalidRules)
 
 TEST(TestDiagnosticsV2Integration, MultipleMixInvalidRules)
 {
-    auto rule = read_file("invalid_multiple_mix.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("invalid_multiple_mix.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -392,7 +392,7 @@ TEST(TestDiagnosticsV2Integration, MultipleMixInvalidRules)
 
 TEST(TestDiagnosticsV2Integration, InvalidDuplicate)
 {
-    auto rule = read_file("invalid_duplicate.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("invalid_duplicate.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -431,7 +431,7 @@ TEST(TestDiagnosticsV2Integration, InvalidDuplicate)
 
 TEST(TestDiagnosticsV2Integration, InvalidRuleset)
 {
-    auto rule = read_file("invalid_ruleset.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("invalid_ruleset.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -472,7 +472,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleset)
 
 TEST(TestDiagnosticsV2Integration, MultipleRules)
 {
-    auto rule = read_file("rules.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, nullptr}, nullptr};
@@ -516,7 +516,7 @@ TEST(TestDiagnosticsV2Integration, MultipleRules)
 
 TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
 {
-    auto rule = read_file("rules_min_version.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("rules_min_version.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, nullptr}, nullptr};
@@ -558,7 +558,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
 
 TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
 {
-    auto rule = read_file("rules_max_version.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("rules_max_version.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, nullptr}, nullptr};
@@ -600,7 +600,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
 
 TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
 {
-    auto rule = read_file("rules_min_max_version.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("rules_min_max_version.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, nullptr}, nullptr};
@@ -643,7 +643,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
 
 TEST(TestDiagnosticsV2Integration, RulesWithErrors)
 {
-    auto rule = read_file("rules_with_errors.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("rules_with_errors.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, nullptr}, nullptr};
@@ -726,7 +726,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
 
 TEST(TestDiagnosticsV2Integration, CustomRules)
 {
-    auto rule = read_file("custom_rules.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("custom_rules.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, nullptr}, nullptr};
@@ -770,7 +770,7 @@ TEST(TestDiagnosticsV2Integration, CustomRules)
 
 TEST(TestDiagnosticsV2Integration, InputFilter)
 {
-    auto rule = read_file("input_filter.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("input_filter.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, nullptr}, nullptr};
@@ -808,7 +808,7 @@ TEST(TestDiagnosticsV2Integration, InputFilter)
 
 TEST(TestDiagnosticsV2Integration, RuleData)
 {
-    auto rule = read_file("rule_data.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("rule_data.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, nullptr}, nullptr};
@@ -887,8 +887,8 @@ TEST(TestDiagnosticsV2Integration, InvalidRulesContainer)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule =
-        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules: {}})");
+    auto rule = yaml_to_object<ddwaf_object>(
+        R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -917,8 +917,8 @@ TEST(TestDiagnosticsV2Integration, InvalidCustomRulesContainer)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule =
-        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, custom_rules: {}})");
+    auto rule = yaml_to_object<ddwaf_object>(
+        R"({version: '2.1', metadata: {rules_version: '1.2.7'}, custom_rules: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -947,8 +947,8 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionsContainer)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule =
-        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, exclusions: {}})");
+    auto rule = yaml_to_object<ddwaf_object>(
+        R"({version: '2.1', metadata: {rules_version: '1.2.7'}, exclusions: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -977,7 +977,7 @@ TEST(TestDiagnosticsV2Integration, InvalidOverridesContainer)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule = yaml_to_object(
+    auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules_override: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -1007,8 +1007,8 @@ TEST(TestDiagnosticsV2Integration, InvalidScannersContainer)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule =
-        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, scanners: {}})");
+    auto rule = yaml_to_object<ddwaf_object>(
+        R"({version: '2.1', metadata: {rules_version: '1.2.7'}, scanners: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -1037,8 +1037,8 @@ TEST(TestDiagnosticsV2Integration, InvalidProcessorsContainer)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule =
-        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, processors: {}})");
+    auto rule = yaml_to_object<ddwaf_object>(
+        R"({version: '2.1', metadata: {rules_version: '1.2.7'}, processors: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -1067,8 +1067,8 @@ TEST(TestDiagnosticsV2Integration, InvalidActionsContainer)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule =
-        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, actions: {}})");
+    auto rule = yaml_to_object<ddwaf_object>(
+        R"({version: '2.1', metadata: {rules_version: '1.2.7'}, actions: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -1097,8 +1097,8 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleDataContainer)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule =
-        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules_data: {}})");
+    auto rule = yaml_to_object<ddwaf_object>(
+        R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules_data: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -1127,7 +1127,7 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionDataContainer)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule = yaml_to_object(
+    auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, exclusion_data: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
