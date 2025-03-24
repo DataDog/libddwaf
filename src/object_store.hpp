@@ -61,6 +61,12 @@ public:
         return {nullptr, attribute::none};
     }
 
+    // Used for testing
+    std::pair<object_view, attribute> get_target(std::string_view name) const
+    {
+        return get_target(get_target_index(name));
+    }
+
     bool has_target(target_index target) const { return objects_.find(target) != objects_.end(); }
 
     bool is_new_target(const target_index target) const
