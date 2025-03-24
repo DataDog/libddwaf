@@ -471,8 +471,6 @@ TEST(TestObjectView, Equality)
         owned_object other;
         object_view view2(other);
 
-        EXPECT_FALSE(view == other);
-
         EXPECT_FALSE(view == view2);
         EXPECT_FALSE(view2 == view);
     }

@@ -225,8 +225,7 @@ public:
                obj.intValue <= limits::max();
     }
 
-    // Convert the underlying type to the requested type, converters are defined
-    // in the object_converter header
+    // Convert the underlying type to the requested type
     template <typename T> T convert() const;
 
     [[nodiscard]] owned_object clone() const;
@@ -304,6 +303,8 @@ public:
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     object_view(const borrowed_object &ow);
 
+    object_view(owned_object &&ow) = delete;
+
     ~object_view() = default;
     object_view(const object_view &) = default;
     object_view(object_view &&) = default;
@@ -330,8 +331,7 @@ public:
         } else if constexpr (std::is_same_v<std::decay_t<T>, std::string_view>) {
             return has_value() && is_string() && as<std::string_view>() == other;
         } else {
-            // Assume unknown types aren't equal
-            return false;
+            static_assert(!std::is_same_v<T, T>, "unsupported type for object_view::operator==");
         }
     }
     template <typename T> bool operator!=(const T &other) const
@@ -347,8 +347,7 @@ public:
         } else if constexpr (std::is_same_v<std::decay_t<T>, std::string_view>) {
             return has_value() && (!is_string() || as<std::string_view>() != other);
         } else {
-            // Assume unknown types aren't equal
-            return true;
+            static_assert(!std::is_same_v<T, T>, "unsupported type for object_view::operator!=");
         }
     }
 
@@ -497,17 +496,15 @@ template <typename Derived> class writable_object {
 public:
     [[nodiscard]] borrowed_object at(std::size_t idx);
 
+    // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
     borrowed_object emplace_back(owned_object &&value);
     borrowed_object emplace(std::string_view key, owned_object &&value);
+    // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
     borrowed_object emplace(owned_object &&key, owned_object &&value);
 
-    template <typename T>
-    borrowed_object emplace_back(const T &value)
-        requires(!std::is_same_v<T, owned_object>);
+    template <typename T> borrowed_object emplace_back(T &&value);
 
-    template <typename T>
-    borrowed_object emplace(std::string_view key, const T &value)
-        requires(!std::is_same_v<T, owned_object>);
+    template <typename T> borrowed_object emplace(std::string_view key, T &&value);
 
 private:
     writable_object() = default;
@@ -743,7 +740,12 @@ namespace detail::initializer {
 
 struct movable_object {
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-    template <typename T> movable_object(T value) : object{std::forward<T>(value)} {}
+    template <typename T> movable_object(T &&value) : object{std::forward<T>(value)} {}
+    movable_object(const movable_object &) = delete;
+    movable_object(movable_object &&) = delete;
+    movable_object operator=(const movable_object &) = delete;
+    movable_object operator=(movable_object &&) = delete;
+    ~movable_object() = default;
     mutable owned_object object;
 };
 
@@ -919,18 +921,16 @@ borrowed_object writable_object<Derived>::emplace(owned_object &&key, owned_obje
 
 template <typename Derived>
 template <typename T>
-borrowed_object writable_object<Derived>::emplace_back(const T &value)
-    requires(!std::is_same_v<T, owned_object>)
+borrowed_object writable_object<Derived>::emplace_back(T &&value)
 {
-    return emplace_back(owned_object{value});
+    return emplace_back(owned_object{std::forward<T>(value)});
 }
 
 template <typename Derived>
 template <typename T>
-borrowed_object writable_object<Derived>::emplace(std::string_view key, const T &value)
-    requires(!std::is_same_v<T, owned_object>)
+borrowed_object writable_object<Derived>::emplace(std::string_view key, T &&value)
 {
-    return emplace(key, owned_object{value});
+    return emplace(key, owned_object{std::forward<T>(value)});
 }
 
 inline borrowed_object::borrowed_object(owned_object &obj) : obj_(obj.ptr()) {}
