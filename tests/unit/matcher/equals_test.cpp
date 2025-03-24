@@ -15,7 +15,6 @@ namespace {
 
 TEST(TestEqualsBool, Basic)
 {
-    ddwaf_object tmp;
     {
         matcher::equals<bool> matcher(false);
 
@@ -32,8 +31,8 @@ TEST(TestEqualsBool, Basic)
         EXPECT_FALSE(matcher.is_supported_type(object_type::null));
         EXPECT_FALSE(matcher.is_supported_type(object_type::invalid));
 
-        EXPECT_TRUE(matcher.match(object_view{*ddwaf_object_bool(&tmp, false)}).first);
-        EXPECT_FALSE(matcher.match(object_view{*ddwaf_object_bool(&tmp, true)}).first);
+        EXPECT_TRUE(matcher.match(owned_object{false}).first);
+        EXPECT_FALSE(matcher.match(owned_object{true}).first);
     }
 
     {
@@ -52,8 +51,8 @@ TEST(TestEqualsBool, Basic)
         EXPECT_FALSE(matcher.is_supported_type(object_type::null));
         EXPECT_FALSE(matcher.is_supported_type(object_type::invalid));
 
-        EXPECT_TRUE(matcher.match(object_view{*ddwaf_object_bool(&tmp, true)}).first);
-        EXPECT_FALSE(matcher.match(object_view{*ddwaf_object_bool(&tmp, false)}).first);
+        EXPECT_TRUE(matcher.match(owned_object{true}).first);
+        EXPECT_FALSE(matcher.match(owned_object{false}).first);
     }
 }
 
@@ -75,12 +74,11 @@ TEST(TestEqualsInt, Basic)
     EXPECT_FALSE(matcher.is_supported_type(object_type::invalid));
     EXPECT_FALSE(matcher.is_supported_type(object_type::boolean));
 
-    ddwaf_object tmp;
-    EXPECT_TRUE(matcher.match(object_view{*ddwaf_object_signed(&tmp, 5)}).first);
-    EXPECT_TRUE(matcher.match(object_view{*ddwaf_object_unsigned(&tmp, 5)}).first);
+    EXPECT_TRUE(matcher.match(owned_object{5L}).first);
+    EXPECT_TRUE(matcher.match(owned_object{5L}).first);
 
-    EXPECT_FALSE(matcher.match(object_view{*ddwaf_object_signed(&tmp, 6)}).first);
-    EXPECT_FALSE(matcher.match(object_view{*ddwaf_object_unsigned(&tmp, 6)}).first);
+    EXPECT_FALSE(matcher.match(owned_object{6L}).first);
+    EXPECT_FALSE(matcher.match(owned_object{6L}).first);
 }
 
 TEST(TestEqualsUint, Basic)
@@ -100,12 +98,11 @@ TEST(TestEqualsUint, Basic)
     EXPECT_FALSE(matcher.is_supported_type(object_type::invalid));
     EXPECT_FALSE(matcher.is_supported_type(object_type::boolean));
 
-    ddwaf_object tmp;
-    EXPECT_TRUE(matcher.match(object_view{*ddwaf_object_signed(&tmp, 2132132)}).first);
-    EXPECT_TRUE(matcher.match(object_view{*ddwaf_object_unsigned(&tmp, 2132132)}).first);
+    EXPECT_TRUE(matcher.match(owned_object{2132132U}).first);
+    EXPECT_TRUE(matcher.match(owned_object{2132132U}).first);
 
-    EXPECT_FALSE(matcher.match(object_view{*ddwaf_object_signed(&tmp, 6)}).first);
-    EXPECT_FALSE(matcher.match(object_view{*ddwaf_object_unsigned(&tmp, 6)}).first);
+    EXPECT_FALSE(matcher.match(owned_object{6}).first);
+    EXPECT_FALSE(matcher.match(owned_object{6}).first);
 }
 
 TEST(TestEqualsDouble, Basic)
@@ -126,9 +123,8 @@ TEST(TestEqualsDouble, Basic)
     EXPECT_FALSE(matcher.is_supported_type(object_type::invalid));
     EXPECT_FALSE(matcher.is_supported_type(object_type::boolean));
 
-    ddwaf_object tmp;
-    EXPECT_TRUE(matcher.match(object_view{*ddwaf_object_float(&tmp, 5.01)}).first);
-    EXPECT_FALSE(matcher.match(object_view{*ddwaf_object_float(&tmp, 5.5)}).first);
+    EXPECT_TRUE(matcher.match(owned_object{5.01}).first);
+    EXPECT_FALSE(matcher.match(owned_object{5.5}).first);
 }
 
 TEST(TestEqualsString, Basic)

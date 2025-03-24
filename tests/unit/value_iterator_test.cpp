@@ -14,8 +14,7 @@ namespace {
 
 TEST(TestValueIterator, TestInvalidIterator)
 {
-    ddwaf_object object;
-    ddwaf_object_invalid(&object);
+    owned_object object;
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -30,33 +29,29 @@ TEST(TestValueIterator, TestInvalidIterator)
 
 TEST(TestValueIterator, TestStringScalar)
 {
-    ddwaf_object object;
-    ddwaf_object_string(&object, "value");
+    owned_object object{"value"};
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
     EXPECT_TRUE(it);
-    EXPECT_EQ(*it, &object);
+    EXPECT_EQ(*it, object_view{object});
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 0);
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestValueIterator, TestUnsignedScalar)
 {
-    ddwaf_object object;
-    ddwaf_object_unsigned(&object, 22);
+    owned_object object{22U};
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
     EXPECT_TRUE(it);
-    EXPECT_EQ(*it, &object);
+    EXPECT_EQ(*it, object_view{object});
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 0);
@@ -66,14 +61,13 @@ TEST(TestValueIterator, TestUnsignedScalar)
 
 TEST(TestValueIterator, TestSignedScalar)
 {
-    ddwaf_object object;
-    ddwaf_object_signed(&object, 22);
+    owned_object object{22L};
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
     EXPECT_TRUE(it);
-    EXPECT_EQ(*it, &object);
+    EXPECT_EQ(*it, object_view{object});
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 0);
@@ -83,9 +77,7 @@ TEST(TestValueIterator, TestSignedScalar)
 
 TEST(TestValueIterator, TestArraySingleItem)
 {
-    ddwaf_object object, tmp;
-    ddwaf_object_array(&object);
-    ddwaf_object_array_add(&object, ddwaf_object_string(&tmp, "string"));
+    auto object = owned_object::make_array({"string"});
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -98,17 +90,12 @@ TEST(TestValueIterator, TestArraySingleItem)
     EXPECT_STREQ(path[0].c_str(), "0");
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestValueIterator, TestArrayMultipleItems)
 {
-    ddwaf_object object, tmp;
-    ddwaf_object_array(&object);
-    for (unsigned i = 0; i < 50; i++) {
-        ddwaf_object_array_add(&object, ddwaf_object_string(&tmp, std::to_string(i).c_str()));
-    }
+    auto object = owned_object::make_array();
+    for (unsigned i = 0; i < 50; i++) { object.emplace_back(std::to_string(i)); }
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -127,22 +114,18 @@ TEST(TestValueIterator, TestArrayMultipleItems)
     } while (++it);
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestValueIterator, TestArrayMultipleNullAndInvalid)
 {
-    ddwaf_object object;
-    ddwaf_object tmp;
-    ddwaf_object_array(&object);
+    auto object = owned_object::make_array();
     for (unsigned i = 0; i < 25; i++) {
-        ddwaf_object_array_add(&object, ddwaf_object_string(&tmp, std::to_string(i).c_str()));
-        ddwaf_object_array_add(&object, ddwaf_object_invalid(&tmp));
-        ddwaf_object_array_add(&object, ddwaf_object_null(&tmp));
+        object.emplace_back(std::to_string(i));
+        object.emplace_back(owned_object{});
+        object.emplace_back(nullptr);
     }
 
-    EXPECT_EQ(ddwaf_object_size(&object), 75);
+    EXPECT_EQ(object.size(), 75);
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -161,27 +144,15 @@ TEST(TestValueIterator, TestArrayMultipleNullAndInvalid)
     } while (++it);
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestValueIterator, TestDeepArray)
 {
-    ddwaf_object *array;
-    ddwaf_object object;
-
-    ddwaf_object_array(&object);
-    array = &object;
-
+    auto object = owned_object::make_array();
+    borrowed_object array{object};
     for (unsigned i = 0; i < 10; i++) {
-        ddwaf_object intermediate, tmp;
-        auto index = std::to_string(i);
-
-        ddwaf_object_array(&intermediate);
-        ddwaf_object_array_add(array, ddwaf_object_string(&tmp, ("val" + index).c_str()));
-        ddwaf_object_array_add(array, &intermediate);
-
-        array = &array->array[1];
+        array.emplace_back("val" + std::to_string(i));
+        array = array.emplace_back(owned_object::make_array());
     }
 
     std::unordered_set<object_view> persistent;
@@ -200,15 +171,12 @@ TEST(TestValueIterator, TestDeepArray)
     }
 
     EXPECT_FALSE(it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestValueIterator, TestArrayNoScalars)
 {
-    ddwaf_object object, tmp;
-    ddwaf_object_array(&object);
-    for (unsigned i = 0; i < 50; i++) { ddwaf_object_array_add(&object, ddwaf_object_array(&tmp)); }
+    auto object = owned_object::make_array();
+    for (unsigned i = 0; i < 50; i++) { object.emplace_back(owned_object::make_array()); }
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -216,15 +184,11 @@ TEST(TestValueIterator, TestArrayNoScalars)
 
     EXPECT_FALSE(it);
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestValueIterator, TestMapSingleItem)
 {
-    ddwaf_object object, tmp;
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "key", ddwaf_object_string(&tmp, "value"));
+    auto object = owned_object::make_map({{"key", "value"}});
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -239,20 +203,15 @@ TEST(TestValueIterator, TestMapSingleItem)
     EXPECT_STREQ(path[0].c_str(), "key");
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestValueIterator, TestMapMultipleItems)
 {
-    ddwaf_object object, tmp;
-    ddwaf_object_map(&object);
+    auto object = owned_object::make_map();
 
     for (unsigned i = 0; i < 50; i++) {
         auto index = std::to_string(i);
-        std::string key = "key" + index;
-        std::string value = "value" + index;
-        ddwaf_object_map_add(&object, key.c_str(), ddwaf_object_string(&tmp, value.c_str()));
+        object.emplace("key" + index, "value" + index);
     }
 
     std::unordered_set<object_view> persistent{};
@@ -275,34 +234,26 @@ TEST(TestValueIterator, TestMapMultipleItems)
     }
 
     EXPECT_FALSE(it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestValueIterator, TestMapMultipleMultipleNullAndInvalid)
 {
-    ddwaf_object object;
-    ddwaf_object tmp;
-    ddwaf_object_map(&object);
+    auto object = owned_object::make_map();
 
     for (unsigned i = 0; i < 25; i++) {
         {
             auto index = std::to_string(i * 3);
-            std::string key = "key" + index;
-            std::string value = "value" + index;
-            ddwaf_object_map_add(&object, key.c_str(), ddwaf_object_string(&tmp, value.c_str()));
+            object.emplace("key" + index, "value" + index);
         }
 
         {
             auto index = std::to_string(i * 3 + 1);
-            std::string key = "key" + index;
-            ddwaf_object_map_add(&object, key.c_str(), ddwaf_object_invalid(&tmp));
+            object.emplace("key" + index, nullptr);
         }
 
         {
             auto index = std::to_string(i * 3 + 2);
-            std::string key = "key" + index;
-            ddwaf_object_map_add(&object, key.c_str(), ddwaf_object_null(&tmp));
+            object.emplace("key" + index, owned_object{});
         }
     }
 
@@ -326,28 +277,17 @@ TEST(TestValueIterator, TestMapMultipleMultipleNullAndInvalid)
     }
 
     EXPECT_FALSE(it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestValueIterator, TestDeepMap)
 {
-    ddwaf_object *map;
-    ddwaf_object object;
-
-    ddwaf_object_map(&object);
-    map = &object;
+    auto object = owned_object::make_map();
+    borrowed_object map{object};
 
     for (unsigned i = 0; i < 10; i++) {
-        ddwaf_object intermediate, tmp;
         auto index = std::to_string(i);
-
-        ddwaf_object_map(&intermediate);
-        ddwaf_object_map_add(
-            map, ("str" + index).c_str(), ddwaf_object_string(&tmp, ("val" + index).c_str()));
-        ddwaf_object_map_add(map, ("map" + index).c_str(), &intermediate);
-
-        map = &map->array[1];
+        map.emplace("str" + index, "val" + index);
+        map = map.emplace("map" + index, owned_object::make_map());
     }
 
     std::unordered_set<object_view> persistent;
@@ -370,17 +310,12 @@ TEST(TestValueIterator, TestDeepMap)
     }
 
     EXPECT_FALSE(it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestValueIterator, TestMapNoScalars)
 {
-    ddwaf_object object, tmp;
-    ddwaf_object_map(&object);
-    for (unsigned i = 0; i < 50; i++) {
-        ddwaf_object_map_add(&object, "key", ddwaf_object_map(&tmp));
-    }
+    auto object = owned_object::make_map();
+    for (unsigned i = 0; i < 50; i++) { object.emplace("key", owned_object::make_map()); }
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -388,13 +323,11 @@ TEST(TestValueIterator, TestMapNoScalars)
 
     EXPECT_FALSE(it);
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestValueIterator, TestContainerMix)
 {
-    ddwaf_object object = yaml_to_object(R"(
+    owned_object object{yaml_to_object(R"(
         {
             root: {
                 key0: [value0_0, value0_1, {
@@ -408,7 +341,7 @@ TEST(TestValueIterator, TestContainerMix)
                 }
             }
         }
-    )");
+    )")};
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -432,14 +365,11 @@ TEST(TestValueIterator, TestContainerMix)
 
         EXPECT_FALSE(it);
     }
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestValueIterator, TestInvalidObjectPath)
 {
-    ddwaf_object object;
-    ddwaf_object_invalid(&object);
+    owned_object object;
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -479,12 +409,7 @@ TEST(TestValueIterator, TestInvalidObjectPath)
 
 TEST(TestValueIterator, TestSimplePath)
 {
-    ddwaf_object object, tmp;
-    ddwaf_object_map(&object);
-
-    ddwaf_object_map_add(&object, "key", ddwaf_object_string(&tmp, "value"));
-    ddwaf_object_map_add(&object, "key1", ddwaf_object_string(&tmp, "value"));
-    ddwaf_object_map_add(&object, "key2", ddwaf_object_string(&tmp, "value"));
+    auto object = owned_object::make_map({{"key", "value"}, {"key1", "value"}, {"key2", "value"}});
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -522,24 +447,15 @@ TEST(TestValueIterator, TestSimplePath)
 
         EXPECT_FALSE(++it);
     }
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestValueIterator, TestMultiPath)
 {
-    ddwaf_object object, *map, tmp;
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "first", ddwaf_object_map(&tmp));
-    ddwaf_object_map_add(&object, "value", ddwaf_object_string(&tmp, "value_first"));
-
-    map = &object.array[0];
-    ddwaf_object_map_add(map, "second", ddwaf_object_map(&tmp));
-    ddwaf_object_map_add(map, "value", ddwaf_object_string(&tmp, "value_second"));
-
-    map = &map->array[0];
-    ddwaf_object_map_add(map, "third", ddwaf_object_string(&tmp, "final"));
-    ddwaf_object_map_add(map, "value", ddwaf_object_string(&tmp, "value_third"));
+    auto object = owned_object::make_map(
+        {{"first", owned_object::make_map({{"second", owned_object::make_map({{"third", "final"},
+                                                          {"value", "value_third"}})},
+                       {"value", "value_second"}})},
+            {"value", "value_first"}});
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -617,13 +533,11 @@ TEST(TestValueIterator, TestMultiPath)
 
         EXPECT_FALSE(++it);
     }
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestValueIterator, TestContainerMixPath)
 {
-    ddwaf_object object = yaml_to_object(R"(
+    owned_object object{yaml_to_object(R"(
         {
             root: {
                 key0: [value0_0, value0_1, {
@@ -637,7 +551,7 @@ TEST(TestValueIterator, TestContainerMixPath)
                 }
             }
         }
-    )");
+    )")};
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -693,13 +607,11 @@ TEST(TestValueIterator, TestContainerMixPath)
 
         EXPECT_FALSE(it);
     }
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestValueIterator, TestContainerMixInvalidPath)
 {
-    ddwaf_object object = yaml_to_object(R"(
+    owned_object object{yaml_to_object(R"(
         {
             root: {
                 key0: [value0_0, value0_1, {
@@ -713,7 +625,7 @@ TEST(TestValueIterator, TestContainerMixInvalidPath)
                 }
             }
         }
-    )");
+    )")};
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -734,124 +646,26 @@ TEST(TestValueIterator, TestContainerMixInvalidPath)
         ddwaf::value_iterator it(object, key_path, exclude);
         EXPECT_FALSE(it);
     }
-
-    ddwaf_object_free(&object);
 }
-
-/*TEST(TestValueIterator, TestInvalidMap)*/
-/*{*/
-/*ddwaf_object tmp, root = DDWAF_OBJECT_MAP;*/
-
-/*std::unordered_set<object_view> persistent;*/
-/*exclusion::object_set_ref exclude{persistent, {}};*/
-/*root.nbEntries = 30;*/
-/*{*/
-/*ddwaf::value_iterator it(root, {}, exclude);*/
-/*EXPECT_FALSE(it);*/
-/*}*/
-
-/*root.nbEntries = 0;*/
-/*ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));*/
-/*root.nbEntries = 0;*/
-
-/*{*/
-/*ddwaf::value_iterator it(root, {}, exclude);*/
-/*EXPECT_FALSE(it);*/
-/*}*/
-/*root.nbEntries = 1;*/
-
-/*ddwaf_object_map_add(&root, "other", ddwaf_object_map(&tmp));*/
-/*root.array[1].nbEntries = 30;*/
-/*{*/
-/*ddwaf::value_iterator it(root, {}, exclude);*/
-/*EXPECT_TRUE(it);*/
-/*EXPECT_FALSE(++it);*/
-/*}*/
-
-/*ddwaf_object_free(&root);*/
-/*}*/
-
-/*TEST(TestValueIterator, TestInvalidMapKey)*/
-/*{*/
-/*ddwaf_object tmp, root = DDWAF_OBJECT_MAP;*/
-/*ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));*/
-
-/*free((void *)root.array[0].parameterName);*/
-/*root.array[0].parameterName = nullptr;*/
-
-/*std::unordered_set<object_view> persistent;*/
-/*exclusion::object_set_ref exclude{persistent, {}};*/
-/*{*/
-/*// The invalid key should have no impact*/
-/*ddwaf::value_iterator it(root, {}, exclude);*/
-/*EXPECT_TRUE(it);*/
-/*}*/
-
-/*ddwaf_object_map_add(&root, "other", ddwaf_object_string(&tmp, "value"));*/
-/*{*/
-/*// The invalid key should have no impact*/
-/*ddwaf::value_iterator it(root, {}, exclude);*/
-/*EXPECT_TRUE(it);*/
-/*}*/
-
-/*ddwaf_object_free(&root);*/
-/*}*/
-
-/*TEST(TestValueIterator, TestInvalidMapKeyWithPath)*/
-/*{*/
-/*ddwaf_object tmp, root = DDWAF_OBJECT_MAP;*/
-/*ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));*/
-
-/*free((void *)root.array[0].parameterName);*/
-/*root.array[0].parameterName = nullptr;*/
-
-/*std::unordered_set<object_view> persistent;*/
-/*exclusion::object_set_ref exclude{persistent, {}};*/
-/*{*/
-/*// The invalid key should have no impact*/
-/*std::vector<std::string> key_path{"key"};*/
-/*ddwaf::value_iterator it(root, key_path, exclude);*/
-/*EXPECT_FALSE(it);*/
-/*}*/
-
-/*ddwaf_object_map_add(&root, "other", ddwaf_object_string(&tmp, "value"));*/
-/*{*/
-/*// The invalid key should have no impact*/
-/*std::vector<std::string> key_path{"other"};*/
-/*ddwaf::value_iterator it(root, key_path, exclude);*/
-/*EXPECT_TRUE(it);*/
-/*}*/
-
-/*ddwaf_object_free(&root);*/
-/*}*/
 
 TEST(TestValueIterator, TestExcludeSingleObject)
 {
-    ddwaf_object object, tmp;
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "key", ddwaf_object_string(&tmp, "value"));
+    auto object = owned_object::make_map({{"key", "value"}});
 
-    std::unordered_set<object_view> persistent = {&object.array[0]};
+    std::unordered_set<object_view> persistent{object.at(0)};
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
 
     EXPECT_FALSE(it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestValueIterator, TestExcludeMultipleObjects)
 {
-    ddwaf_object root, array, tmp;
-    ddwaf_object_array(&array);
-    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "hello"));
-    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "bye"));
+    auto root = owned_object::make_map({{"key", "value"}});
 
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
-    ddwaf_object_map_add(&root, "other", &array);
+    auto map = root.emplace("other", owned_object::make_array({"hello", "bye"}));
 
-    std::unordered_set<object_view> persistent = {&root.array[0], &array.array[1]};
+    std::unordered_set<object_view> persistent{root.at(0), map.at(1)};
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(root, {}, exclude);
 
@@ -864,45 +678,32 @@ TEST(TestValueIterator, TestExcludeMultipleObjects)
     EXPECT_STREQ(path[1].c_str(), "0");
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestValueIterator, TestExcludeObjectInKeyPath)
 {
-    ddwaf_object root, child, tmp;
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "child", ddwaf_object_string(&tmp, "value"));
+    auto root = owned_object::make_map();
+    auto child = root.emplace("parent", owned_object::make_map());
+    child.emplace("child", "value");
 
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "parent", &child);
-
-    std::unordered_set<object_view> persistent = {&child.array[0]};
+    std::unordered_set<object_view> persistent{child.at(0)};
     exclusion::object_set_ref exclude{persistent, {}};
     std::vector<std::string> key_path{"parent", "child"};
     ddwaf::value_iterator it(root, key_path, exclude);
 
     EXPECT_FALSE(it);
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestValueIterator, TestExcludeRootOfKeyPath)
 {
-    ddwaf_object root, child, tmp;
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "child", ddwaf_object_string(&tmp, "value"));
+    auto root = owned_object::make_map({{"parent", owned_object::make_map({{"child", "value"}})}});
 
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "parent", &child);
+    std::unordered_set<object_view> persistent{root.at(0)};
 
-    std::unordered_set<object_view> persistent = {&root.array[0]};
     exclusion::object_set_ref exclude{persistent, {}};
     std::vector<std::string> key_path{"parent", "child"};
     ddwaf::value_iterator it(root, key_path, exclude);
 
     EXPECT_FALSE(it);
-
-    ddwaf_object_free(&root);
 }
 } // namespace

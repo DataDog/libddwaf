@@ -13,8 +13,8 @@
 #include "exclusion/common.hpp"
 #include "exclusion/object_filter.hpp"
 #include "log.hpp"
+#include "object.hpp"
 #include "object_store.hpp"
-#include "object_view.hpp"
 
 namespace ddwaf::exclusion {
 

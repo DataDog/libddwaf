@@ -10,7 +10,6 @@
 #include "object.hpp"
 #include "object_store.hpp"
 #include "object_type.hpp"
-#include "object_view.hpp"
 #include "target_address.hpp"
 
 namespace ddwaf {

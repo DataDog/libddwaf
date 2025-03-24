@@ -6,7 +6,6 @@
 
 #include "common/gtest_utils.hpp"
 #include "object.hpp"
-#include "object_view.hpp"
 #include <stdexcept>
 
 using namespace ddwaf;
@@ -30,63 +29,117 @@ TEST(TestObject, InvalidObject)
 
 TEST(TestObject, NullObject)
 {
-    auto ow = owned_object::make_null();
-    EXPECT_EQ(ow.type(), object_type::null);
+    {
+        auto ow = owned_object::make_null();
+        EXPECT_EQ(ow.type(), object_type::null);
+    }
+
+    {
+        owned_object ow{nullptr};
+        EXPECT_EQ(ow.type(), object_type::null);
+    }
 }
 
 TEST(TestObject, BooleanObject)
 {
-    auto ow = owned_object::make_boolean(true);
-    EXPECT_EQ(ow.type(), object_type::boolean);
-    EXPECT_TRUE(ow.is_valid());
+    {
+        auto ow = owned_object::make_boolean(true);
+        EXPECT_EQ(ow.type(), object_type::boolean);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_TRUE(ow.as<bool>());
+    }
 
-    object_view ov{ow};
-    EXPECT_EQ(ov.type(), object_type::boolean);
-    EXPECT_TRUE(ov.as<bool>());
+    {
+        owned_object ow{true};
+        EXPECT_EQ(ow.type(), object_type::boolean);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_TRUE(ow.as<bool>());
+    }
 }
 
 TEST(TestObject, SignedObject)
 {
-    auto ow = owned_object::make_signed(-20);
-    EXPECT_EQ(ow.type(), object_type::int64);
-    EXPECT_TRUE(ow.is_valid());
+    {
+        auto ow = owned_object::make_signed(-20);
+        EXPECT_EQ(ow.type(), object_type::int64);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_EQ(ow.as<int64_t>(), -20);
+    }
 
-    object_view ov{ow};
-    EXPECT_EQ(ov.type(), object_type::int64);
-    EXPECT_EQ(ov.as<int64_t>(), -20);
+    {
+        owned_object ow{-20L};
+        EXPECT_EQ(ow.type(), object_type::int64);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_EQ(ow.as<int64_t>(), -20);
+    }
 }
 
 TEST(TestObject, UnsignedObject)
 {
-    auto ow = owned_object::make_unsigned(20);
-    EXPECT_EQ(ow.type(), object_type::uint64);
-    EXPECT_TRUE(ow.is_valid());
+    {
+        auto ow = owned_object::make_unsigned(20);
+        EXPECT_EQ(ow.type(), object_type::uint64);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_EQ(ow.as<uint64_t>(), 20);
+    }
 
-    object_view ov{ow};
-    EXPECT_EQ(ov.type(), object_type::uint64);
-    EXPECT_EQ(ov.as<uint64_t>(), 20);
+    {
+        owned_object ow(20UL);
+        EXPECT_EQ(ow.type(), object_type::uint64);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_EQ(ow.as<uint64_t>(), 20);
+    }
 }
 
 TEST(TestObject, FloatObject)
 {
-    auto ow = owned_object::make_float(20.5);
-    EXPECT_EQ(ow.type(), object_type::float64);
-    EXPECT_TRUE(ow.is_valid());
+    {
+        auto ow = owned_object::make_float(20.5);
+        EXPECT_EQ(ow.type(), object_type::float64);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_EQ(ow.as<double>(), 20.5);
+    }
 
-    object_view ov{ow};
-    EXPECT_EQ(ov.type(), object_type::float64);
-    EXPECT_EQ(ov.as<double>(), 20.5);
+    {
+        owned_object ow{20.5};
+        EXPECT_EQ(ow.type(), object_type::float64);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_EQ(ow.as<double>(), 20.5);
+    }
 }
 
 TEST(TestObject, StringObject)
 {
-    auto ow = owned_object::make_string("this is a string");
-    EXPECT_EQ(ow.type(), object_type::string);
-    EXPECT_TRUE(ow.is_valid());
+    {
+        auto ow = owned_object::make_string("this is a string");
+        EXPECT_EQ(ow.type(), object_type::string);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_EQ(ow.as<std::string_view>(), "this is a string");
+    }
 
-    object_view ov{ow};
-    EXPECT_EQ(ov.type(), object_type::string);
-    EXPECT_EQ(ov.as<std::string_view>(), "this is a string");
+    {
+        owned_object ow{"this is a string"};
+        EXPECT_EQ(ow.type(), object_type::string);
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_EQ(ow.as<std::string_view>(), "this is a string");
+    }
+}
+
+TEST(TestObject, ArrayObjectInitializer)
+{
+    auto root = owned_object::make_array({"hello", "this", "is", "an", "array"});
+    EXPECT_EQ(root.type(), object_type::array);
+    EXPECT_TRUE(root.is_valid());
+    EXPECT_EQ(root.size(), 5);
+}
+
+TEST(TestObject, MapObjectInitializer)
+{
+    auto root = owned_object::make_map({{"hello"sv, owned_object::make_array({"array", "value"})},
+        {"this"sv, "is"sv}, {"an"sv, "array"sv}});
+    EXPECT_EQ(root.type(), object_type::map);
+    EXPECT_TRUE(root.is_valid());
+    EXPECT_EQ(root.size(), 3);
 }
 
 TEST(TestObject, ArrayObject)
@@ -95,9 +148,7 @@ TEST(TestObject, ArrayObject)
     EXPECT_EQ(root.type(), object_type::array);
     EXPECT_TRUE(root.is_valid());
 
-    for (unsigned i = 0; i < 20; i++) {
-        root.emplace_back(owned_object::make_string(std::to_string(i + 100)));
-    }
+    for (unsigned i = 0; i < 20; i++) { root.emplace_back(std::to_string(i + 100)); }
 
     object_view view(root);
     ASSERT_TRUE(view.has_value());
@@ -136,9 +187,7 @@ TEST(TestObject, MapObject)
     EXPECT_EQ(root.type(), object_type::map);
     EXPECT_TRUE(root.is_valid());
 
-    for (unsigned i = 0; i < 20; i++) {
-        root.emplace(std::to_string(i), owned_object::make_string(std::to_string(i + 100)));
-    }
+    for (unsigned i = 0; i < 20; i++) { root.emplace(std::to_string(i), std::to_string(i + 100)); }
 
     object_view view(root);
     ASSERT_TRUE(view.has_value());
@@ -172,16 +221,154 @@ TEST(TestObject, MapObject)
     }
 }
 
-/*TEST(TestObject, EmplaceWrongObject)*/
-/*{*/
-/*owned_object container;*/
-/*EXPECT_THROW(container.emplace("key", owned_object::make_string("value")), std::out_of_range);*/
-/*}*/
+TEST(TestObject, CloneInvalid)
+{
+    owned_object input;
+    auto output = input.clone();
+    EXPECT_TRUE(output.is_invalid());
+}
 
-/*TEST(TestObject, EmplaceBackWrongObject)*/
-/*{*/
-/*owned_object container;*/
-/*EXPECT_THROW(container.emplace_back(owned_object::make_string("value")), std::out_of_range);*/
-/*}*/
+TEST(TestObject, CloneNull)
+{
+    auto input = owned_object::make_null();
+
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::null);
+}
+
+TEST(TestObject, CloneBool)
+{
+    auto input = owned_object::make_boolean(true);
+
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::boolean);
+    EXPECT_EQ(output.as<bool>(), true);
+}
+
+TEST(TestObject, CloneSigned)
+{
+    auto input = owned_object::make_signed(-5);
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::int64);
+    EXPECT_EQ(output.as<int64_t>(), -5);
+}
+
+TEST(TestObject, CloneUnsigned)
+{
+    auto input = owned_object::make_unsigned(5);
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::uint64);
+    EXPECT_EQ(output.as<uint64_t>(), 5);
+}
+
+TEST(TestObject, CloneFloat)
+{
+    auto input = owned_object::make_float(5.1);
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::float64);
+    EXPECT_EQ(output.as<double>(), 5.1);
+}
+
+TEST(TestObject, CloneString)
+{
+    auto input = owned_object::make_string("this is a string");
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_EQ(input.as<std::string_view>(), output.as<std::string_view>());
+    EXPECT_EQ(input.size(), output.size());
+}
+
+TEST(TestObject, CloneEmptyArray)
+{
+    auto input = owned_object::make_array();
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::array);
+    EXPECT_EQ(input.size(), output.size());
+}
+
+TEST(TestObject, CloneEmptyMap)
+{
+    auto input = owned_object::make_map();
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::map);
+    EXPECT_EQ(input.size(), output.size());
+}
+
+TEST(TestObject, CloneArray)
+{
+    auto input = owned_object::make_array();
+    input.emplace_back(true);
+    input.emplace_back("string");
+    input.emplace_back(5L);
+
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::array);
+    EXPECT_EQ(input.size(), output.size());
+
+    {
+        auto input_child = input.at(0);
+        auto output_child = output.at(0);
+
+        EXPECT_EQ(output_child.type(), input_child.type());
+        EXPECT_EQ(output_child.as<bool>(), input_child.as<bool>());
+    }
+
+    {
+        auto input_child = input.at(1);
+        auto output_child = output.at(1);
+
+        EXPECT_EQ(output_child.type(), input_child.type());
+
+        auto output_str = output_child.as<std::string_view>();
+        auto input_str = input_child.as<std::string_view>();
+        EXPECT_EQ(output_str, input_str);
+        EXPECT_NE(output_str.data(), input_str.data());
+    }
+
+    {
+        auto input_child = input.at(2);
+        auto output_child = output.at(2);
+
+        EXPECT_EQ(output_child.type(), input_child.type());
+        EXPECT_EQ(output_child.as<int64_t>(), input_child.as<int64_t>());
+    }
+}
+
+TEST(TestObject, CloneMap)
+{
+    auto input = owned_object::make_map({{"bool", true}, {"string", "string"}, {"signed", 5}});
+
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::map);
+    EXPECT_EQ(input.size(), output.size());
+
+    {
+        auto input_child = input.at(0);
+        auto output_child = output.at(0);
+
+        EXPECT_EQ(output_child.type(), input_child.type());
+        EXPECT_EQ(output_child.as<bool>(), input_child.as<bool>());
+    }
+
+    {
+        auto input_child = input.at(1);
+        auto output_child = output.at(1);
+
+        EXPECT_EQ(output_child.type(), input_child.type());
+
+        auto output_str = output_child.as<std::string_view>();
+        auto input_str = input_child.as<std::string_view>();
+        EXPECT_EQ(output_str, input_str);
+        EXPECT_NE(output_str.data(), input_str.data());
+    }
+
+    {
+        auto input_child = input.at(2);
+        auto output_child = output.at(2);
+
+        EXPECT_EQ(output_child.type(), input_child.type());
+        EXPECT_EQ(output_child.as<int64_t>(), input_child.as<int64_t>());
+    }
+}
 
 } // namespace

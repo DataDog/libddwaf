@@ -29,17 +29,12 @@ void match_path_and_input(
     ssrf_detector cond{{gen_param_def("server.io.net.url", "server.request.query")}};
 
     for (const auto &[path, sample] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "server.io.net.url", ddwaf_object_string(&tmp, path.c_str()));
-
         auto input = yaml_to_object(sample.yaml);
-        ddwaf_object_map_add(&root, "server.request.query", &input);
+        auto root =
+            owned_object::make_map({{"server.io.net.url", path}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;

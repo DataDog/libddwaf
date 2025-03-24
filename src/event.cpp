@@ -52,8 +52,8 @@ owned_object serialize_match(const condition_match &match, auto &obfuscator)
 
     const bool redact = redact_match(obfuscator, match);
 
-    match_map.emplace("operator", owned_object::make_string(match.operator_name));
-    match_map.emplace("operator_value", owned_object::make_string(match.operator_value));
+    match_map.emplace("operator", match.operator_name);
+    match_map.emplace("operator_value", match.operator_value);
 
     auto parameters = match_map.emplace("parameters", owned_object::make_array());
     auto param = parameters.emplace_back(owned_object::make_map());
@@ -61,9 +61,9 @@ owned_object serialize_match(const condition_match &match, auto &obfuscator)
     auto highlight_arr = param.emplace("highlight", owned_object::make_array());
     for (const auto &highlight : match.highlights) {
         if (redact) {
-            highlight_arr.emplace_back(owned_object::make_string(ddwaf::obfuscator::redaction_msg));
+            highlight_arr.emplace_back(ddwaf::obfuscator::redaction_msg);
         } else {
-            highlight_arr.emplace_back(owned_object::make_string(highlight));
+            highlight_arr.emplace_back(highlight);
         }
     }
 
@@ -71,35 +71,30 @@ owned_object serialize_match(const condition_match &match, auto &obfuscator)
     if (match.args.size() == 1 && match.args[0].name == "input") {
         const auto &arg = match.args[0];
 
-        param.emplace("address", owned_object::make_string(arg.address));
+        param.emplace("address", arg.address);
 
         if (redact) {
-            param.emplace("value", owned_object::make_string(ddwaf::obfuscator::redaction_msg));
+            param.emplace("value", ddwaf::obfuscator::redaction_msg);
         } else {
-            param.emplace("value", owned_object::make_string(arg.resolved));
+            param.emplace("value", arg.resolved);
         }
 
         auto key_path = param.emplace("key_path", owned_object::make_array());
-        for (const auto &key : arg.key_path) {
-            key_path.emplace_back(owned_object::make_string(key));
-        }
+        for (const auto &key : arg.key_path) { key_path.emplace_back(key); }
     } else {
         for (const auto &arg : match.args) {
             auto argument = param.emplace(arg.name, owned_object::make_map());
 
-            argument.emplace("address", owned_object::make_string(arg.address));
+            argument.emplace("address", arg.address);
 
             if (redact) {
-                argument.emplace(
-                    "value", owned_object::make_string(ddwaf::obfuscator::redaction_msg));
+                argument.emplace("value", ddwaf::obfuscator::redaction_msg);
             } else {
-                argument.emplace("value", owned_object::make_string(arg.resolved));
+                argument.emplace("value", arg.resolved);
             }
 
             auto key_path = argument.emplace("key_path", owned_object::make_array());
-            for (const auto &key : arg.key_path) {
-                key_path.emplace_back(owned_object::make_string(key));
-            }
+            for (const auto &key : arg.key_path) { key_path.emplace_back(key); }
         }
     }
 
@@ -146,25 +141,23 @@ void add_action_to_tracker(action_tracker &actions, std::string_view id, action_
 owned_object serialize_rule(const core_rule &rule)
 {
     auto rule_map = owned_object::make_map();
-    rule_map.emplace("id", owned_object::make_string(rule.get_id()));
-    rule_map.emplace("name", owned_object::make_string(rule.get_name()));
+    rule_map.emplace("id", rule.get_id());
+    rule_map.emplace("name", rule.get_name());
 
     auto tags_map = rule_map.emplace("tags", owned_object::make_map());
-    for (const auto &[key, value] : rule.get_tags()) {
-        tags_map.emplace(key, owned_object::make_string(value));
-    }
+    for (const auto &[key, value] : rule.get_tags()) { tags_map.emplace(key, value); }
     return rule_map;
 }
 
 owned_object serialize_empty_rule()
 {
     auto rule_map = owned_object::make_map();
-    rule_map.emplace("id", owned_object::make_string(""));
-    rule_map.emplace("name", owned_object::make_string(""));
+    rule_map.emplace("id", "");
+    rule_map.emplace("name", "");
 
     auto tags_map = rule_map.emplace("tags", owned_object::make_map());
-    tags_map.emplace("type", owned_object::make_string(""));
-    tags_map.emplace("category", owned_object::make_string(""));
+    tags_map.emplace("type", "");
+    tags_map.emplace("category", "");
 
     return rule_map;
 }
@@ -198,7 +191,7 @@ void serialize_and_consolidate_rule_actions(const core_rule &rule, owned_object 
 
         // Tha override might have been clear if no definition was found
         if (!action_override.empty()) {
-            actions_array.emplace_back(owned_object::make_string(action_override));
+            actions_array.emplace_back(action_override);
         }
     }
 
@@ -216,11 +209,11 @@ void serialize_and_consolidate_rule_actions(const core_rule &rule, owned_object 
 
             // The stack ID will be generated when adding the action to the tracker
             if (type == action_type::generate_stack && stack_id.is_invalid()) {
-                stack_id = owned_object::make_string(actions.stack_id);
+                stack_id = owned_object{actions.stack_id};
             }
         }
         // If an action is unspecified, add it and move on
-        actions_array.emplace_back(owned_object::make_string(action_id));
+        actions_array.emplace_back(action_id);
     }
 }
 
@@ -239,11 +232,9 @@ void serialize_action(std::string_view id, owned_object &action_map, const actio
 
     auto param_map = action_map.emplace(type_str, owned_object::make_map());
     if (type != action_type::generate_stack) {
-        for (const auto &[k, v] : parameters) {
-            param_map.emplace(k, owned_object::make_string(v));
-        }
+        for (const auto &[k, v] : parameters) { param_map.emplace(k, v); }
     } else {
-        param_map.emplace("stack_id", owned_object::make_string(actions.stack_id));
+        param_map.emplace("stack_id", actions.stack_id);
     }
 }
 

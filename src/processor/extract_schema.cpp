@@ -23,7 +23,6 @@
 #include "object.hpp"
 #include "object_store.hpp"
 #include "object_type.hpp"
-#include "object_view.hpp"
 #include "processor/base.hpp"
 #include "processor/extract_schema.hpp"
 #include "scanner.hpp"
@@ -189,7 +188,7 @@ owned_object node_serialize::operator()(const std::monostate & /*node*/) const
     static constexpr unsigned unknown_type = 0;
 
     auto array = owned_object::make_array();
-    array.emplace_back(owned_object::make_unsigned(unknown_type));
+    array.emplace_back(unknown_type);
 
     return array;
 }
@@ -197,14 +196,11 @@ owned_object node_serialize::operator()(const std::monostate & /*node*/) const
 owned_object node_serialize::operator()(const node_scalar &node) const
 {
     auto array = owned_object::make_array();
-    array.emplace_back(
-        owned_object::make_unsigned(static_cast<std::underlying_type_t<scalar_type>>(node.type)));
+    array.emplace_back(static_cast<std::underlying_type_t<scalar_type>>(node.type));
 
     if (!node.tags.empty()) {
         auto meta = array.emplace_back(owned_object::make_map());
-        for (const auto &[key, value] : node.tags) {
-            meta.emplace(key, owned_object::make_string(value));
-        }
+        for (const auto &[key, value] : node.tags) { meta.emplace(key, value); }
     }
 
     return array;
@@ -222,9 +218,9 @@ owned_object node_serialize::operator()(const node_array_ptr &node) const
     }
 
     auto meta = array.emplace_back(owned_object::make_map());
-    meta.emplace("len", owned_object::make_unsigned(node->length));
+    meta.emplace("len", node->length);
     if (node->truncated) {
-        meta.emplace("truncated", owned_object::make_boolean(true));
+        meta.emplace("truncated", true);
     }
 
     return array;
@@ -243,7 +239,7 @@ owned_object node_serialize::operator()(const node_record_ptr &node) const
 
     if (node->truncated) {
         auto meta = array.emplace_back(owned_object::make_map());
-        meta.emplace("truncated", owned_object::make_boolean(true));
+        meta.emplace("truncated", true);
     }
 
     return array;

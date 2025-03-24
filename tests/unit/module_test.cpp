@@ -48,12 +48,9 @@ TEST(TestModuleUngrouped, SingleRuleMatch)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -63,12 +60,9 @@ TEST(TestModuleUngrouped, SingleRuleMatch)
     }
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
         mod.eval(events, store, cache, {}, {}, deadline);
@@ -119,12 +113,9 @@ TEST(TestModuleUngrouped, MultipleMonitoringRuleMatch)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -136,12 +127,9 @@ TEST(TestModuleUngrouped, MultipleMonitoringRuleMatch)
     }
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
         mod.eval(events, store, cache, {}, {}, deadline);
@@ -193,12 +181,9 @@ TEST(TestModuleUngrouped, BlockingRuleMatch)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -253,12 +238,9 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -270,12 +252,8 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
 
     // Check that we can still match the blocking rule
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.2"));
-
-        store.insert(owned_object{root});
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.2"}});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -330,12 +308,9 @@ TEST(TestModuleUngrouped, BlockingRuleMatchBasePrecedence)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -393,12 +368,9 @@ TEST(TestModuleUngrouped, BlockingRuleMatchUserPrecedence)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -435,12 +407,9 @@ TEST(TestModuleUngrouped, NonExpiringModule)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline{0s};
@@ -475,12 +444,9 @@ TEST(TestModuleUngrouped, ExpiringModule)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline{0s};
@@ -515,12 +481,9 @@ TEST(TestModuleUngrouped, DisabledRules)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -570,12 +533,9 @@ TEST(TestModuleGrouped, MultipleGroupsMonitoringRuleMatch)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -629,12 +589,9 @@ TEST(TestModuleGrouped, MultipleGroupsBlockingRuleMatch)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -687,12 +644,9 @@ TEST(TestModuleGrouped, SingleGroupBlockingRuleMatch)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -744,12 +698,9 @@ TEST(TestModuleGrouped, SingleGroupMonitoringRuleMatch)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -801,12 +752,9 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupMonitoringUserMatch)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -858,12 +806,9 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupMonitoringBaseMatch)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -916,12 +861,9 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingBaseMatch)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -975,12 +917,9 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingUserMatch)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -1033,12 +972,9 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingBaseMatch)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -1092,12 +1028,9 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingUserMatch)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -1149,12 +1082,9 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsMonitoringMatch)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -1208,12 +1138,9 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsBlockingMatch)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -1265,12 +1192,9 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsMonitoringMatch)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -1324,12 +1248,9 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsBlockingMatch)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -1470,12 +1391,8 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
 
         ddwaf::object_store store;
 
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.2"));
-
-        store.insert(owned_object{root});
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.2"}});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -1573,12 +1490,9 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
 
         ddwaf::object_store store;
 
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -1677,12 +1591,9 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
 
         ddwaf::object_store store;
 
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -1720,12 +1631,9 @@ TEST(TestModuleGrouped, DisabledRules)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline = endless_timer();
@@ -1758,12 +1666,9 @@ TEST(TestModuleGrouped, NonExpiringModule)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline{0s};
@@ -1798,12 +1703,9 @@ TEST(TestModuleGrouped, ExpiringModule)
 
     ddwaf::object_store store;
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         std::vector<event> events;
         ddwaf::timer deadline{0s};

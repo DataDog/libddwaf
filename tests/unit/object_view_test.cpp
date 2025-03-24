@@ -5,8 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "common/gtest_utils.hpp"
-#include "object_converter.hpp"
-#include "object_view.hpp"
+#include "object.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -21,15 +20,13 @@ TEST(TestObjectView, DefaultObject)
 
 TEST(TestObjectView, InvalidObject)
 {
-    detail::object original;
-    ddwaf_object_invalid(&original);
-
+    owned_object original;
     object_view view(original);
 
     ASSERT_TRUE(view.has_value());
     EXPECT_EQ(view.type(), object_type::invalid);
 
-    EXPECT_EQ(view.ptr(), &original);
+    EXPECT_EQ(view.ptr(), original.ptr());
 
     EXPECT_EQ(view.size(), 0);
     EXPECT_TRUE(view.empty());
@@ -50,15 +47,12 @@ TEST(TestObjectView, InvalidObject)
 
 TEST(TestObjectView, NullObject)
 {
-    detail::object original;
-    ddwaf_object_invalid(&original);
+    owned_object original{nullptr};
 
     object_view view(original);
 
     ASSERT_TRUE(view.has_value());
-    EXPECT_EQ(view.type(), object_type::invalid);
-
-    EXPECT_EQ(view.ptr(), &original);
+    EXPECT_EQ(view.type(), object_type::null);
 
     EXPECT_EQ(view.size(), 0);
     EXPECT_TRUE(view.empty());
@@ -79,15 +73,12 @@ TEST(TestObjectView, NullObject)
 
 TEST(TestObjectView, BooleanObject)
 {
-    detail::object original;
-    ddwaf_object_bool(&original, true);
+    owned_object original{true};
 
     object_view view(original);
 
     ASSERT_TRUE(view.has_value());
     EXPECT_EQ(view.type(), object_type::boolean);
-
-    EXPECT_EQ(view.ptr(), &original);
 
     EXPECT_EQ(view.size(), 0);
     EXPECT_TRUE(view.empty());
@@ -110,15 +101,12 @@ TEST(TestObjectView, BooleanObject)
 
 TEST(TestObjectView, SignedObject)
 {
-    detail::object original;
-    ddwaf_object_signed(&original, -20);
+    owned_object original{-20};
 
     object_view view(original);
 
     ASSERT_TRUE(view.has_value());
     EXPECT_EQ(view.type(), object_type::int64);
-
-    EXPECT_EQ(view.ptr(), &original);
 
     EXPECT_EQ(view.size(), 0);
     EXPECT_TRUE(view.empty());
@@ -142,8 +130,7 @@ TEST(TestObjectView, SignedObject)
 TEST(TestObjectView, SignedObjectCompatibility)
 {
     {
-        detail::object original;
-        ddwaf_object_signed(&original, -1);
+        owned_object original{-1};
         object_view view(original);
 
         EXPECT_TRUE(view.is<int8_t>());
@@ -153,8 +140,7 @@ TEST(TestObjectView, SignedObjectCompatibility)
     }
 
     {
-        detail::object original;
-        ddwaf_object_signed(&original, std::numeric_limits<int8_t>::min() - 1);
+        owned_object original{std::numeric_limits<int8_t>::min() - 1};
         object_view view(original);
 
         EXPECT_FALSE(view.is<int8_t>());
@@ -164,8 +150,7 @@ TEST(TestObjectView, SignedObjectCompatibility)
     }
 
     {
-        detail::object original;
-        ddwaf_object_signed(&original, std::numeric_limits<int8_t>::max() + 1);
+        owned_object original{std::numeric_limits<int8_t>::max() + 1};
         object_view view(original);
 
         EXPECT_FALSE(view.is<int8_t>());
@@ -175,8 +160,7 @@ TEST(TestObjectView, SignedObjectCompatibility)
     }
 
     {
-        detail::object original;
-        ddwaf_object_signed(&original, std::numeric_limits<int16_t>::min() - 1);
+        owned_object original{std::numeric_limits<int16_t>::min() - 1};
         object_view view(original);
 
         EXPECT_FALSE(view.is<int8_t>());
@@ -186,8 +170,7 @@ TEST(TestObjectView, SignedObjectCompatibility)
     }
 
     {
-        detail::object original;
-        ddwaf_object_signed(&original, std::numeric_limits<int16_t>::max() + 1);
+        owned_object original{std::numeric_limits<int16_t>::max() + 1};
         object_view view(original);
 
         EXPECT_FALSE(view.is<int8_t>());
@@ -197,9 +180,7 @@ TEST(TestObjectView, SignedObjectCompatibility)
     }
 
     {
-        detail::object original;
-        ddwaf_object_signed(
-            &original, static_cast<int64_t>(std::numeric_limits<int32_t>::min()) - 1);
+        owned_object original{static_cast<int64_t>(std::numeric_limits<int32_t>::min()) - 1};
         object_view view(original);
 
         EXPECT_FALSE(view.is<int8_t>());
@@ -209,9 +190,7 @@ TEST(TestObjectView, SignedObjectCompatibility)
     }
 
     {
-        detail::object original;
-        ddwaf_object_signed(
-            &original, static_cast<int64_t>(std::numeric_limits<int32_t>::max()) + 1);
+        owned_object original{static_cast<int64_t>(std::numeric_limits<int32_t>::max()) + 1};
         object_view view(original);
 
         EXPECT_FALSE(view.is<int8_t>());
@@ -223,15 +202,11 @@ TEST(TestObjectView, SignedObjectCompatibility)
 
 TEST(TestObjectView, UnsignedObject)
 {
-    detail::object original;
-    ddwaf_object_unsigned(&original, 20);
-
+    owned_object original{20UL};
     object_view view(original);
 
     ASSERT_TRUE(view.has_value());
     EXPECT_EQ(view.type(), object_type::uint64);
-
-    EXPECT_EQ(view.ptr(), &original);
 
     EXPECT_EQ(view.size(), 0);
     EXPECT_TRUE(view.empty());
@@ -255,8 +230,7 @@ TEST(TestObjectView, UnsignedObject)
 TEST(TestObjectView, UnsignedObjectCompatibility)
 {
     {
-        detail::object original;
-        ddwaf_object_unsigned(&original, 1);
+        owned_object original{1UL};
         object_view view(original);
 
         EXPECT_TRUE(view.is<uint8_t>());
@@ -266,8 +240,7 @@ TEST(TestObjectView, UnsignedObjectCompatibility)
     }
 
     {
-        detail::object original;
-        ddwaf_object_unsigned(&original, std::numeric_limits<uint8_t>::max() + 1);
+        owned_object original{static_cast<uint64_t>(std::numeric_limits<uint8_t>::max() + 1)};
         object_view view(original);
 
         EXPECT_FALSE(view.is<uint8_t>());
@@ -277,8 +250,7 @@ TEST(TestObjectView, UnsignedObjectCompatibility)
     }
 
     {
-        detail::object original;
-        ddwaf_object_unsigned(&original, std::numeric_limits<uint16_t>::max() + 1);
+        owned_object original{static_cast<uint64_t>(std::numeric_limits<uint16_t>::max() + 1)};
         object_view view(original);
 
         EXPECT_FALSE(view.is<uint8_t>());
@@ -288,9 +260,7 @@ TEST(TestObjectView, UnsignedObjectCompatibility)
     }
 
     {
-        detail::object original;
-        ddwaf_object_unsigned(
-            &original, static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) + 1);
+        owned_object original{static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) + 1};
         object_view view(original);
 
         EXPECT_FALSE(view.is<uint8_t>());
@@ -301,15 +271,11 @@ TEST(TestObjectView, UnsignedObjectCompatibility)
 }
 TEST(TestObjectView, FloatObject)
 {
-    detail::object original;
-    ddwaf_object_float(&original, 20.1);
-
+    owned_object original{20.1};
     object_view view(original);
 
     ASSERT_TRUE(view.has_value());
     EXPECT_EQ(view.type(), object_type::float64);
-
-    EXPECT_EQ(view.ptr(), &original);
 
     EXPECT_EQ(view.size(), 0);
     EXPECT_TRUE(view.empty());
@@ -332,15 +298,12 @@ TEST(TestObjectView, FloatObject)
 
 TEST(TestObjectView, StringObject)
 {
-    detail::object original;
-    ddwaf_object_string(&original, "string_value");
+    owned_object original{"string_value"};
 
     object_view view(original);
 
     ASSERT_TRUE(view.has_value());
     EXPECT_EQ(view.type(), object_type::string);
-
-    EXPECT_EQ(view.ptr(), &original);
 
     EXPECT_EQ(view.size(), sizeof("string_value") - 1);
     EXPECT_FALSE(view.empty());
@@ -357,19 +320,12 @@ TEST(TestObjectView, StringObject)
     EXPECT_TRUE(view.is<std::string>());
     EXPECT_TRUE(view.is<std::string_view>());
     EXPECT_TRUE(view.is<const char *>());
-
-    ddwaf_object_free(&original);
 }
 
 TEST(TestObjectView, ArrayObject)
 {
-    detail::object root;
-    detail::object tmp;
-    ddwaf_object_array(&root);
-
-    for (unsigned i = 0; i < 20; i++) {
-        ddwaf_object_array_add(&root, ddwaf_object_string(&tmp, std::to_string(i + 100).c_str()));
-    }
+    auto root = owned_object::make_array();
+    for (unsigned i = 0; i < 20; i++) { root.emplace_back(std::to_string(i + 100)); }
 
     object_view view(root);
     ASSERT_TRUE(view.has_value());
@@ -379,8 +335,6 @@ TEST(TestObjectView, ArrayObject)
     EXPECT_FALSE(view.is_scalar());
     EXPECT_FALSE(view.is_map());
     EXPECT_TRUE(view.is_array());
-
-    EXPECT_EQ(view.ptr(), &root);
 
     for (unsigned i = 0; i < 20; i++) {
         auto expected_value = std::to_string(100 + i);
@@ -400,20 +354,12 @@ TEST(TestObjectView, ArrayObject)
             EXPECT_TRUE(key.empty());
         }
     }
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestObjectView, MapObject)
 {
-    detail::object root;
-    detail::object tmp;
-    ddwaf_object_map(&root);
-
-    for (unsigned i = 0; i < 20; i++) {
-        ddwaf_object_map_add(&root, std::to_string(i).c_str(),
-            ddwaf_object_string(&tmp, std::to_string(i + 100).c_str()));
-    }
+    auto root = owned_object::make_map();
+    for (unsigned i = 0; i < 20; i++) { root.emplace(std::to_string(i), std::to_string(i + 100)); }
 
     object_view view(root);
     ASSERT_TRUE(view.has_value());
@@ -423,8 +369,6 @@ TEST(TestObjectView, MapObject)
     EXPECT_FALSE(view.is_scalar());
     EXPECT_TRUE(view.is_map());
     EXPECT_FALSE(view.is_array());
-
-    EXPECT_EQ(view.ptr(), &root);
 
     for (unsigned i = 0; i < 20; i++) {
         auto expected_key = std::to_string(i);
@@ -445,19 +389,12 @@ TEST(TestObjectView, MapObject)
             EXPECT_EQ(key.as<std::string_view>(), expected_key);
         }
     }
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestObjectView, IterateArrayObject)
 {
-    detail::object root;
-    detail::object tmp;
-    ddwaf_object_array(&root);
-
-    for (unsigned i = 0; i < 20; i++) {
-        ddwaf_object_array_add(&root, ddwaf_object_string(&tmp, std::to_string(i + 100).c_str()));
-    }
+    auto root = owned_object::make_array();
+    for (unsigned i = 0; i < 20; i++) { root.emplace_back(std::to_string(i + 100)); }
 
     object_view view(root);
     ASSERT_TRUE(view.has_value());
@@ -465,8 +402,6 @@ TEST(TestObjectView, IterateArrayObject)
     EXPECT_EQ(view.type(), object_type::array);
     EXPECT_TRUE(view.is_container());
     EXPECT_FALSE(view.is_scalar());
-
-    EXPECT_EQ(view.ptr(), &root);
 
     for (auto it = view.begin(); it != view.end(); ++it) {
         auto expected_value = std::to_string(100 + it.index());
@@ -486,20 +421,12 @@ TEST(TestObjectView, IterateArrayObject)
             EXPECT_TRUE(key.empty());
         }
     }
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestObjectView, IterateMapObject)
 {
-    detail::object root;
-    detail::object tmp;
-    ddwaf_object_map(&root);
-
-    for (unsigned i = 0; i < 20; i++) {
-        ddwaf_object_map_add(&root, std::to_string(i).c_str(),
-            ddwaf_object_string(&tmp, std::to_string(i + 100).c_str()));
-    }
+    auto root = owned_object::make_map();
+    for (unsigned i = 0; i < 20; i++) { root.emplace(std::to_string(i), std::to_string(i + 100)); }
 
     object_view view(root);
     ASSERT_TRUE(view.has_value());
@@ -507,8 +434,6 @@ TEST(TestObjectView, IterateMapObject)
     EXPECT_EQ(view.type(), object_type::map);
     EXPECT_TRUE(view.is_container());
     EXPECT_FALSE(view.is_scalar());
-
-    EXPECT_EQ(view.ptr(), &root);
 
     for (auto it = view.begin(); it != view.end(); ++it) {
         auto expected_key = std::to_string(it.index());
@@ -529,18 +454,12 @@ TEST(TestObjectView, IterateMapObject)
             EXPECT_EQ(key.as<std::string_view>(), expected_key);
         }
     }
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestObjectView, Equality)
 {
-    detail::object root;
-    ddwaf_object_invalid(&root);
-
+    owned_object root;
     object_view view(root);
-
-    EXPECT_TRUE(view == root);
 
     {
         object_view view2(root);
@@ -549,12 +468,8 @@ TEST(TestObjectView, Equality)
     }
 
     {
-        detail::object other;
-        ddwaf_object_invalid(&other);
+        owned_object other;
         object_view view2(other);
-
-        EXPECT_FALSE(view == other);
-        EXPECT_TRUE(view2 == other);
 
         EXPECT_FALSE(view == view2);
         EXPECT_FALSE(view2 == view);
@@ -574,12 +489,8 @@ TEST(TestObjectView, Equality)
 
 TEST(TestObjectView, Inequality)
 {
-    detail::object root;
-    ddwaf_object_invalid(&root);
-
+    owned_object root;
     object_view view(root);
-
-    EXPECT_FALSE(view != root);
 
     {
         object_view view2(root);
@@ -588,12 +499,8 @@ TEST(TestObjectView, Inequality)
     }
 
     {
-        detail::object other;
-        ddwaf_object_invalid(&other);
+        owned_object other;
         object_view view2(other);
-
-        EXPECT_TRUE(view != other);
-        EXPECT_FALSE(view2 != other);
 
         EXPECT_TRUE(view != view2);
         EXPECT_TRUE(view2 != view);
@@ -613,42 +520,35 @@ TEST(TestObjectView, Inequality)
 
 TEST(TestObjectView, StringEquality)
 {
-    detail::object root;
-    ddwaf_object_string(&root, "something");
+    owned_object root{"something"};
 
     object_view view(root);
 
     EXPECT_TRUE(view == "something"sv);
     EXPECT_FALSE(view == "something else"sv);
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestObjectView, StringInequality)
 {
-    detail::object root;
-    ddwaf_object_string(&root, "something");
+    owned_object root{"something"};
 
     object_view view(root);
 
     EXPECT_TRUE(view != "something else"sv);
     EXPECT_FALSE(view != "something"sv);
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestObjectView, BooleanObjectStringConversion)
 {
-    detail::object original;
     {
-        ddwaf_object_bool(&original, true);
+        owned_object original{true};
         object_view view(original);
         auto converted = view.convert<std::string>();
         EXPECT_STR(converted, "true");
     }
 
     {
-        ddwaf_object_bool(&original, false);
+        owned_object original{false};
         object_view view(original);
         auto converted = view.convert<std::string>();
         EXPECT_STR(converted, "false");
@@ -657,8 +557,7 @@ TEST(TestObjectView, BooleanObjectStringConversion)
 
 TEST(TestObjectView, SignedObjectStringConversion)
 {
-    detail::object original;
-    ddwaf_object_signed(&original, -123456);
+    owned_object original{-123456};
     object_view view(original);
     auto converted = view.convert<std::string>();
     EXPECT_STR(converted, "-123456");
@@ -666,8 +565,7 @@ TEST(TestObjectView, SignedObjectStringConversion)
 
 TEST(TestObjectView, UnsignedObjectStringConversion)
 {
-    detail::object original;
-    ddwaf_object_unsigned(&original, 123456);
+    owned_object original{123456UL};
     object_view view(original);
     auto converted = view.convert<std::string>();
     EXPECT_STR(converted, "123456");
@@ -675,8 +573,7 @@ TEST(TestObjectView, UnsignedObjectStringConversion)
 
 TEST(TestObjectView, FloatObjectStringConversion)
 {
-    detail::object original;
-    ddwaf_object_float(&original, 20.1);
+    owned_object original{20.1};
     object_view view(original);
     auto converted = view.convert<std::string>();
     EXPECT_STR(converted, "20.1");
@@ -684,19 +581,15 @@ TEST(TestObjectView, FloatObjectStringConversion)
 
 TEST(TestObjectView, StringtObjectStringConversion)
 {
-    detail::object original;
-    ddwaf_object_string(&original, "this is a string");
+    owned_object original{"this is a string"};
     object_view view(original);
     auto converted = view.convert<std::string>();
     EXPECT_STR(converted, "this is a string");
-    ddwaf_object_free(&original);
 }
 
 TEST(TestObjectView, AsOrDefault)
 {
-    detail::object original;
-    ddwaf_object_invalid(&original);
-
+    owned_object original;
     object_view view(original);
 
     EXPECT_EQ(view.as_or_default<std::string_view>({}), std::string_view{});
@@ -704,6 +597,191 @@ TEST(TestObjectView, AsOrDefault)
     EXPECT_EQ(view.as_or_default<uint64_t>(0), 0);
     EXPECT_EQ(view.as_or_default<int64_t>(0), 0);
     EXPECT_EQ(view.as_or_default<bool>(false), false);
+}
+
+TEST(TestObjectView, CloneInvalid)
+{
+    owned_object input_data;
+    object_view input{input_data};
+    auto output = input.clone();
+    EXPECT_TRUE(output.is_invalid());
+}
+
+TEST(TestObjectView, CloneNull)
+{
+    auto input_data = owned_object::make_null();
+    object_view input{input_data};
+
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::null);
+}
+
+TEST(TestObjectView, CloneBool)
+{
+    auto input_data = owned_object::make_boolean(true);
+    object_view input{input_data};
+
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::boolean);
+    EXPECT_EQ(output.as<bool>(), true);
+}
+
+TEST(TestObjectView, CloneSigned)
+{
+    auto input_data = owned_object::make_signed(-5);
+    object_view input{input_data};
+
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::int64);
+    EXPECT_EQ(output.as<int64_t>(), -5);
+}
+
+TEST(TestObjectView, CloneUnsigned)
+{
+    auto input_data = owned_object::make_unsigned(5);
+    object_view input{input_data};
+
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::uint64);
+    EXPECT_EQ(output.as<uint64_t>(), 5);
+}
+
+TEST(TestObjectView, CloneFloat)
+{
+    auto input_data = owned_object::make_float(5.1);
+    object_view input{input_data};
+
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::float64);
+    EXPECT_EQ(output.as<double>(), 5.1);
+}
+
+TEST(TestObjectView, CloneString)
+{
+    auto input_data = owned_object::make_string("this is a string");
+    object_view input{input_data};
+
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_EQ(input.as<std::string_view>(), output.as<std::string_view>());
+    EXPECT_EQ(input.size(), output.size());
+}
+
+TEST(TestObjectView, CloneEmptyArray)
+{
+    auto input_data = owned_object::make_array();
+    object_view input{input_data};
+
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::array);
+    EXPECT_EQ(input.size(), output.size());
+}
+
+TEST(TestObjectView, CloneEmptyMap)
+{
+    auto input_data = owned_object::make_map();
+    object_view input{input_data};
+
+    auto output = input.clone();
+    EXPECT_EQ(output.type(), object_type::map);
+    EXPECT_EQ(input.size(), output.size());
+}
+
+TEST(TestObjectView, CloneArray)
+{
+    auto input_data = owned_object::make_array();
+    input_data.emplace_back(owned_object::make_boolean(true));
+    input_data.emplace_back(owned_object::make_string("string"));
+    input_data.emplace_back(owned_object::make_signed(5));
+    object_view input{input_data};
+
+    auto output_data = input.clone();
+    object_view output{output_data};
+
+    EXPECT_EQ(output.type(), object_type::array);
+    EXPECT_EQ(input.size(), output.size());
+
+    {
+        auto [input_key, input_child] = input.at(0);
+        auto [output_key, output_child] = output.at(0);
+
+        EXPECT_TRUE(output_key.empty());
+        EXPECT_EQ(output_child.type(), input_child.type());
+        EXPECT_EQ(output_child.as<bool>(), input_child.as<bool>());
+    }
+
+    {
+        auto [input_key, input_child] = input.at(1);
+        auto [output_key, output_child] = output.at(1);
+
+        EXPECT_TRUE(output_key.empty());
+        EXPECT_EQ(output_child.type(), input_child.type());
+
+        auto output_str = output_child.as<std::string_view>();
+        auto input_str = input_child.as<std::string_view>();
+        EXPECT_EQ(output_str, input_str);
+        EXPECT_NE(output_str.data(), input_str.data());
+    }
+
+    {
+        auto [input_key, input_child] = input.at(2);
+        auto [output_key, output_child] = output.at(2);
+
+        EXPECT_TRUE(output_key.empty());
+        EXPECT_EQ(output_child.type(), input_child.type());
+        EXPECT_EQ(output_child.as<int64_t>(), input_child.as<int64_t>());
+    }
+}
+
+TEST(TestObjectView, CloneMap)
+{
+    owned_object input_data = owned_object::make_map();
+    input_data.emplace("bool", owned_object::make_boolean(true));
+    input_data.emplace("string", owned_object::make_string("string"));
+    input_data.emplace("signed", owned_object::make_signed(5));
+    object_view input{input_data};
+
+    auto output_data = input.clone();
+    object_view output{output_data};
+
+    EXPECT_EQ(output.type(), object_type::map);
+    EXPECT_EQ(input.size(), output.size());
+
+    {
+        auto [input_key, input_child] = input.at(0);
+        auto [output_key, output_child] = output.at(0);
+
+        EXPECT_EQ(input_key.as<std::string_view>(), output_key.as<std::string_view>());
+        EXPECT_NE(input_key.data(), output_key.data());
+        EXPECT_EQ(output_child.type(), input_child.type());
+        EXPECT_EQ(output_child.as<bool>(), input_child.as<bool>());
+    }
+
+    {
+        auto [input_key, input_child] = input.at(1);
+        auto [output_key, output_child] = output.at(1);
+
+        EXPECT_EQ(input_key.as<std::string_view>(), output_key.as<std::string_view>());
+        EXPECT_NE(input_key.data(), output_key.data());
+
+        EXPECT_EQ(output_child.type(), input_child.type());
+
+        auto output_str = output_child.as<std::string_view>();
+        auto input_str = input_child.as<std::string_view>();
+        EXPECT_EQ(output_str, input_str);
+        EXPECT_NE(output_str.data(), input_str.data());
+    }
+
+    {
+        auto [input_key, input_child] = input.at(2);
+        auto [output_key, output_child] = output.at(2);
+
+        EXPECT_EQ(input_key.as<std::string_view>(), output_key.as<std::string_view>());
+        EXPECT_NE(input_key.data(), output_key.data());
+
+        EXPECT_EQ(output_child.type(), input_child.type());
+        EXPECT_EQ(output_child.as<int64_t>(), input_child.as<int64_t>());
+    }
 }
 
 } // namespace

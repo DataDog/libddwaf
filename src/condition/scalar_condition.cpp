@@ -18,10 +18,8 @@
 #include "log.hpp"
 #include "matcher/base.hpp"
 #include "object.hpp"
-#include "object_converter.hpp" // IWYU pragma: keep
 #include "object_store.hpp"
 #include "object_type.hpp"
-#include "object_view.hpp"
 #include "scalar_condition.hpp"
 #include "transformer/base.hpp"
 #include "transformer/manager.hpp"
@@ -58,9 +56,10 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
                 if constexpr (std::is_same_v<ResultType, bool>) {
                     return true;
                 } else {
-                    return {{{{"input"sv, object_view{dst}.convert<std::string>(), address,
-                                 it.get_current_path()}},
-                        {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
+                    return {
+                        {{{"input"sv, dst.convert<std::string>(), address, it.get_current_path()}},
+                            {std::move(highlight)}, matcher.name(), matcher.to_string(),
+                            ephemeral}};
                 }
             }
         }
@@ -76,9 +75,8 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
     if constexpr (std::is_same_v<ResultType, bool>) {
         return true;
     } else {
-        return {
-            {{{"input"sv, object_view{src}.convert<std::string>(), address, it.get_current_path()}},
-                {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
+        return {{{{"input"sv, src.convert<std::string>(), address, it.get_current_path()}},
+            {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
     }
 }
 

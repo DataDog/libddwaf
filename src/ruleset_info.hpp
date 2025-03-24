@@ -144,7 +144,7 @@ public:
         {
             auto output = owned_object::make_map();
             if (!error_.empty()) {
-                output.emplace("error", owned_object::make_string(error_));
+                output.emplace("error", error_);
                 error_.clear();
             } else {
                 output.emplace("loaded", std::move(loaded_));
@@ -198,14 +198,14 @@ public:
     {
         auto output = owned_object::make_map();
         if (!error_.empty()) {
-            output.emplace("error", owned_object::make_string(error_));
+            output.emplace("error", error_);
             error_.clear();
         } else {
             for (auto &[name, section] : sections_) { output.emplace(name, section.to_object()); }
             sections_.clear();
 
             if (!ruleset_version_.empty()) {
-                output.emplace("ruleset_version", owned_object::make_string(ruleset_version_));
+                output.emplace("ruleset_version", ruleset_version_);
                 ruleset_version_.clear();
             }
         }

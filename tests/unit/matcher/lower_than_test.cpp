@@ -32,14 +32,13 @@ TEST(TestlowerThanInt, Basic)
     EXPECT_FALSE(matcher.is_supported_type(object_type::invalid));
     EXPECT_FALSE(matcher.is_supported_type(object_type::boolean));
 
-    ddwaf_object tmp;
-    EXPECT_TRUE(matcher.match(object_view{*ddwaf_object_signed(&tmp, 4)}).first);
-    EXPECT_TRUE(matcher.match(object_view{*ddwaf_object_unsigned(&tmp, 4)}).first);
-    EXPECT_TRUE(matcher.match(object_view{*ddwaf_object_float(&tmp, 4.0)}).first);
+    EXPECT_TRUE(matcher.match(owned_object{4L}).first);
+    EXPECT_TRUE(matcher.match(owned_object{4UL}).first);
+    EXPECT_TRUE(matcher.match(owned_object{4.0}).first);
 
-    EXPECT_FALSE(matcher.match(object_view{*ddwaf_object_signed(&tmp, 5)}).first);
-    EXPECT_FALSE(matcher.match(object_view{*ddwaf_object_unsigned(&tmp, 5)}).first);
-    EXPECT_FALSE(matcher.match(object_view{*ddwaf_object_float(&tmp, 5.0)}).first);
+    EXPECT_FALSE(matcher.match(owned_object{5L}).first);
+    EXPECT_FALSE(matcher.match(owned_object{5UL}).first);
+    EXPECT_FALSE(matcher.match(owned_object{5.0}).first);
 }
 
 TEST(TestlowerThanUint, Basic)
@@ -60,14 +59,13 @@ TEST(TestlowerThanUint, Basic)
     EXPECT_FALSE(matcher.is_supported_type(object_type::invalid));
     EXPECT_FALSE(matcher.is_supported_type(object_type::boolean));
 
-    ddwaf_object tmp;
-    EXPECT_TRUE(matcher.match(object_view{*ddwaf_object_signed(&tmp, 2132131)}).first);
-    EXPECT_TRUE(matcher.match(object_view{*ddwaf_object_unsigned(&tmp, 2132131)}).first);
-    EXPECT_TRUE(matcher.match(object_view{*ddwaf_object_float(&tmp, 2132131.9)}).first);
+    EXPECT_TRUE(matcher.match(owned_object{2132131L}).first);
+    EXPECT_TRUE(matcher.match(owned_object{2132131UL}).first);
+    EXPECT_TRUE(matcher.match(owned_object{2132131.9}).first);
 
-    EXPECT_FALSE(matcher.match(object_view{*ddwaf_object_signed(&tmp, 2132133)}).first);
-    EXPECT_FALSE(matcher.match(object_view{*ddwaf_object_unsigned(&tmp, 2132133)}).first);
-    EXPECT_FALSE(matcher.match(object_view{*ddwaf_object_float(&tmp, 2132132.1)}).first);
+    EXPECT_FALSE(matcher.match(owned_object{2132133L}).first);
+    EXPECT_FALSE(matcher.match(owned_object{2132133UL}).first);
+    EXPECT_FALSE(matcher.match(owned_object{2132132.1}).first);
 }
 
 TEST(TestlowerThanDouble, Basic)
@@ -89,14 +87,13 @@ TEST(TestlowerThanDouble, Basic)
     EXPECT_FALSE(matcher.is_supported_type(object_type::invalid));
     EXPECT_FALSE(matcher.is_supported_type(object_type::boolean));
 
-    ddwaf_object tmp;
-    EXPECT_TRUE(matcher.match(object_view{*ddwaf_object_signed(&tmp, 5)}).first);
-    EXPECT_TRUE(matcher.match(object_view{*ddwaf_object_unsigned(&tmp, 5)}).first);
-    EXPECT_TRUE(matcher.match(object_view{*ddwaf_object_float(&tmp, 5.09)}).first);
+    EXPECT_TRUE(matcher.match(owned_object{5L}).first);
+    EXPECT_TRUE(matcher.match(owned_object{5UL}).first);
+    EXPECT_TRUE(matcher.match(owned_object{5.09}).first);
 
-    EXPECT_FALSE(matcher.match(object_view{*ddwaf_object_signed(&tmp, 6)}).first);
-    EXPECT_FALSE(matcher.match(object_view{*ddwaf_object_unsigned(&tmp, 6)}).first);
-    EXPECT_FALSE(matcher.match(object_view{*ddwaf_object_float(&tmp, 6.0)}).first);
+    EXPECT_FALSE(matcher.match(owned_object{6L}).first);
+    EXPECT_FALSE(matcher.match(owned_object{6UL}).first);
+    EXPECT_FALSE(matcher.match(owned_object{6.0}).first);
 }
 
 } // namespace

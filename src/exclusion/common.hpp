@@ -11,7 +11,7 @@
 #include "context_allocator.hpp"
 #include "ddwaf.h"
 #include "log.hpp"
-#include "object_view.hpp"
+#include "object.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {

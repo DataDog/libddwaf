@@ -11,7 +11,7 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "object_view.hpp"
+#include "object.hpp"
 
 namespace ddwaf {
 namespace matcher {
@@ -68,7 +68,11 @@ public:
     // Helper used for testing purposes
     template <typename U> [[nodiscard]] std::pair<bool, std::string> match(const U &data) const
     {
-        return static_cast<const T *>(this)->match_impl(data);
+        if constexpr (is_type_in_set_v<U, owned_object, borrowed_object>) {
+            return match(object_view{data});
+        } else {
+            return static_cast<const T *>(this)->match_impl(data);
+        }
     }
 
     [[nodiscard]] std::pair<bool, std::string> match(std::string_view str) const override
