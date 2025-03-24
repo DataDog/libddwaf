@@ -21,15 +21,11 @@ TEST(TestShiDetectorString, InvalidType)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.sys.shell.cmd", ddwaf_object_map(&tmp));
-    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "whatever"));
+    auto root = owned_object::make_map(
+        {{"server.sys.shell.cmd", owned_object{}}, {"server.request.query", "whatever"}});
 
     object_store store;
-    store.insert(owned_object{root});
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -41,15 +37,11 @@ TEST(TestShiDetectorString, EmptyResource)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.sys.shell.cmd", ddwaf_object_string(&tmp, ""));
-    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "whatever"));
+    auto root = owned_object::make_map(
+        {{"server.sys.shell.cmd", ""}, {"server.request.query", "whatever"}});
 
     object_store store;
-    store.insert(owned_object{root});
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -84,17 +76,13 @@ TEST(TestShiDetectorString, NoMatchAndFalsePositives)
     };
 
     for (const auto &[resource, param] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(
-            &root, "server.sys.shell.cmd", ddwaf_object_string(&tmp, resource.c_str()));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
+        auto root = owned_object::make_map({
+            {"server.sys.shell.cmd", resource},
+            {"server.request.query", param},
+        });
 
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -119,17 +107,13 @@ TEST(TestShiDetectorString, ExecutablesAndRedirections)
     };
 
     for (const auto &[resource, param] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(
-            &root, "server.sys.shell.cmd", ddwaf_object_string(&tmp, resource.c_str()));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
+        auto root = owned_object::make_map({
+            {"server.sys.shell.cmd", resource},
+            {"server.request.query", param},
+        });
 
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -167,17 +151,13 @@ TEST(TestShiDetectorString, InjectionsWithinCommandSubstitution)
     };
 
     for (const auto &[resource, param] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(
-            &root, "server.sys.shell.cmd", ddwaf_object_string(&tmp, resource.c_str()));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
+        auto root = owned_object::make_map({
+            {"server.sys.shell.cmd", resource},
+            {"server.request.query", param},
+        });
 
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -208,17 +188,13 @@ TEST(TestShiDetectorString, InjectionsWithinProcessSubstitution)
     };
 
     for (const auto &[resource, param] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(
-            &root, "server.sys.shell.cmd", ddwaf_object_string(&tmp, resource.c_str()));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
+        auto root = owned_object::make_map({
+            {"server.sys.shell.cmd", resource},
+            {"server.request.query", param},
+        });
 
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -251,17 +227,13 @@ TEST(TestShiDetectorString, OffByOnePayloadsMatch)
     };
 
     for (const auto &[resource, param] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(
-            &root, "server.sys.shell.cmd", ddwaf_object_string(&tmp, resource.c_str()));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
+        auto root = owned_object::make_map({
+            {"server.sys.shell.cmd", resource},
+            {"server.request.query", param},
+        });
 
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;

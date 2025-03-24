@@ -34,16 +34,11 @@ TEST(TestLFIDetector, MatchBasicUnix)
     };
 
     for (const auto &[path, input] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "server.io.fs.file", ddwaf_object_string(&tmp, path.c_str()));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+        auto root =
+            owned_object::make_map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -103,16 +98,11 @@ TEST(TestLFIDetector, MatchBasicWindows)
     };
 
     for (const auto &[path, input] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "server.io.fs.file", ddwaf_object_string(&tmp, path.c_str()));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+        auto root =
+            owned_object::make_map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -168,21 +158,15 @@ TEST(TestLFIDetector, PartiallyEphemeralMatch)
 
     object_store store;
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-
     {
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "server.io.fs.file",
-            ddwaf_object_string(&tmp, "/var/www/html/../../../etc/passwd"));
-        store.insert(owned_object{root});
+        auto root =
+            owned_object::make_map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"}});
+        store.insert(std::move(root));
     }
 
     {
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, "../../../etc/passwd"));
-        store.insert(owned_object{root}, object_store::attribute::ephemeral);
+        auto root = owned_object::make_map({{"server.request.query", "../../../etc/passwd"}});
+        store.insert(std::move(root), object_store::attribute::ephemeral);
     }
 
     ddwaf::timer deadline{2s};
@@ -209,15 +193,10 @@ TEST(TestLFIDetector, EphemeralMatch)
 
     object_store store;
 
-    ddwaf_object tmp;
-    ddwaf_object root;
+    auto root = owned_object::make_map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
+        {"server.request.query", "../../../etc/passwd"}});
 
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(
-        &root, "server.io.fs.file", ddwaf_object_string(&tmp, "/var/www/html/../../../etc/passwd"));
-    ddwaf_object_map_add(
-        &root, "server.request.query", ddwaf_object_string(&tmp, "../../../etc/passwd"));
-    store.insert(owned_object{root}, object_store::attribute::ephemeral);
+    store.insert(std::move(root), object_store::attribute::ephemeral);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -252,16 +231,11 @@ TEST(TestLFIDetector, NoMatchUnix)
     };
 
     for (const auto &[path, input] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "server.io.fs.file", ddwaf_object_string(&tmp, path.c_str()));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+        auto root =
+            owned_object::make_map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -296,16 +270,11 @@ TEST(TestLFIDetector, NoMatchWindows)
     };
 
     for (const auto &[path, input] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "server.io.fs.file", ddwaf_object_string(&tmp, path.c_str()));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+        auto root =
+            owned_object::make_map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -320,23 +289,17 @@ TEST(TestLFIDetector, NoMatchExcludedPath)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object params_map;
+    auto root = owned_object::make_map({
+        {"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
+    });
+    auto params_map = root.emplace(
+        "server.request.query", owned_object::make_map({{"endpoint", "../../../etc/passwd"}}));
 
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(
-        &root, "server.io.fs.file", ddwaf_object_string(&tmp, "/var/www/html/../../../etc/passwd"));
-
-    ddwaf_object_map(&params_map);
-    ddwaf_object_map_add(&params_map, "endpoint", ddwaf_object_string(&tmp, "../../../etc/passwd"));
-    ddwaf_object_map_add(&root, "server.request.query", &params_map);
-
-    std::unordered_set<object_view> persistent{&params_map.array[0]};
+    std::unordered_set<object_view> persistent{params_map.at(0)};
     exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
 
     object_store store;
-    store.insert(owned_object{root});
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -350,23 +313,14 @@ TEST(TestLFIDetector, NoMatchExcludedAddress)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object params_map;
+    auto root = owned_object::make_map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
+        {"server.request.query", owned_object::make_map({{"endpoint", "../../../etc/passwd"}})}});
 
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(
-        &root, "server.io.fs.file", ddwaf_object_string(&tmp, "/var/www/html/../../../etc/passwd"));
-
-    ddwaf_object_map(&params_map);
-    ddwaf_object_map_add(&params_map, "endpoint", ddwaf_object_string(&tmp, "../../../etc/passwd"));
-    ddwaf_object_map_add(&root, "server.request.query", &params_map);
-
-    std::unordered_set<object_view> persistent{&root.array[1]};
+    std::unordered_set<object_view> persistent{root.at(1)};
     exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
 
     object_store store;
-    store.insert(owned_object{root});
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -380,23 +334,14 @@ TEST(TestLFIDetector, Timeout)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object params_map;
+    auto root = owned_object::make_map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
+        {"server.request.query", owned_object::make_map({{"endpoint", "../../../etc/passwd"}})}});
 
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(
-        &root, "server.io.fs.file", ddwaf_object_string(&tmp, "/var/www/html/../../../etc/passwd"));
-
-    ddwaf_object_map(&params_map);
-    ddwaf_object_map_add(&params_map, "endpoint", ddwaf_object_string(&tmp, "../../../etc/passwd"));
-    ddwaf_object_map_add(&root, "server.request.query", &params_map);
-
-    std::unordered_set<object_view> persistent{&root.array[1]};
+    std::unordered_set<object_view> persistent{root.at(1)};
     exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
 
     object_store store;
-    store.insert(owned_object{root});
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
@@ -410,18 +355,14 @@ TEST(TestLFIDetector, NoParams)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
+    auto root = owned_object::make_map({
+        {"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
+    });
 
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(
-        &root, "server.io.fs.file", ddwaf_object_string(&tmp, "/var/www/html/../../../etc/passwd"));
-
-    std::unordered_set<object_view> persistent{&root.array[1]};
-    exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
+    exclusion::object_set_ref exclusion{.persistent = {}, .ephemeral = {}};
 
     object_store store;
-    store.insert(owned_object{root});
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
