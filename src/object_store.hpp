@@ -50,7 +50,7 @@ public:
         attribute attr = attribute::none);
 
     // Used for testing
-    bool insert(borrowed_object input, attribute attr = attribute::none);
+    bool insert(object_view input, attribute attr = attribute::none);
 
     std::pair<object_view, attribute> get_target(target_index target) const
     {
@@ -83,7 +83,6 @@ public:
     void clear_last_batch();
 
 protected:
-    bool insert_object_helper(object_view input, attribute attr);
     bool insert_target_helper(target_index target, std::string_view key, object_view view,
         attribute attr = attribute::none);
 

@@ -96,7 +96,7 @@ TEST(TestScalarCondition, CachedMatch)
 
     {
         object_store store;
-        store.insert(borrowed_object{root}, object_store::attribute::none);
+        store.insert(root, object_store::attribute::none);
 
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
@@ -105,7 +105,7 @@ TEST(TestScalarCondition, CachedMatch)
 
     {
         object_store store;
-        store.insert(borrowed_object{root}, object_store::attribute::none);
+        store.insert(root, object_store::attribute::none);
 
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome);
