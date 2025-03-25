@@ -13,7 +13,7 @@ constexpr std::string_view base_dir = "integration/conditions/exists";
 
 TEST(TestConditionExistsIntegration, AddressAvailable)
 {
-    auto rule = read_file("exists.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -45,7 +45,7 @@ TEST(TestConditionExistsIntegration, AddressAvailable)
 
 TEST(TestConditionExistsIntegration, AddressNotAvailable)
 {
-    auto rule = read_file("exists.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -67,7 +67,7 @@ TEST(TestConditionExistsIntegration, AddressNotAvailable)
 
 TEST(TestConditionExistsIntegration, KeyPathAvailable)
 {
-    auto rule = read_file("exists.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -99,7 +99,7 @@ TEST(TestConditionExistsIntegration, KeyPathAvailable)
 
 TEST(TestConditionExistsIntegration, KeyPathNotAvailable)
 {
-    auto rule = read_file("exists.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -124,7 +124,7 @@ TEST(TestConditionExistsIntegration, KeyPathNotAvailable)
 
 TEST(TestConditionExistsIntegration, AddressAvailableVariadicRule)
 {
-    auto rule = read_file("exists.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -156,7 +156,7 @@ TEST(TestConditionExistsIntegration, AddressAvailableVariadicRule)
 
 TEST(TestConditionExistsIntegration, KeyPathAvailableVariadicRule)
 {
-    auto rule = read_file("exists.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -188,7 +188,7 @@ TEST(TestConditionExistsIntegration, KeyPathAvailableVariadicRule)
 
 TEST(TestConditionExistsIntegration, AddressAvailableKeyPathNotAvailableVariadicRule)
 {
-    auto rule = read_file("exists.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -223,7 +223,7 @@ TEST(TestConditionExistsIntegration, AddressAvailableKeyPathNotAvailableVariadic
 
 TEST(TestConditionExistsNegatedIntegration, AddressAvailable)
 {
-    auto rule = read_file("exists_negated.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists_negated.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -246,7 +246,7 @@ TEST(TestConditionExistsNegatedIntegration, AddressAvailable)
 
 TEST(TestConditionExistsNegatedIntegration, AddressNotAvailable)
 {
-    auto rule = read_file("exists_negated.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists_negated.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -272,7 +272,7 @@ TEST(TestConditionExistsNegatedIntegration, AddressNotAvailable)
 
 TEST(TestConditionExistsNegatedIntegration, KeyPathNotAvailable)
 {
-    auto rule = read_file("exists_negated.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists_negated.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -304,7 +304,7 @@ TEST(TestConditionExistsNegatedIntegration, KeyPathNotAvailable)
 
 TEST(TestConditionExistsNegatedIntegration, KeyPathAvailable)
 {
-    auto rule = read_file("exists_negated.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists_negated.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);

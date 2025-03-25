@@ -16,7 +16,7 @@ namespace {
 
 TEST(TestExclusionDataParser, ParseIPData)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -55,7 +55,7 @@ TEST(TestExclusionDataParser, ParseIPData)
 
 TEST(TestExclusionDataParser, ParseStringData)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -94,7 +94,7 @@ TEST(TestExclusionDataParser, ParseStringData)
 
 TEST(TestExclusionDataParser, ParseMultipleData)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -135,7 +135,7 @@ TEST(TestExclusionDataParser, ParseMultipleData)
 
 TEST(TestExclusionDataParser, ParseUnknownDataID)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -176,7 +176,7 @@ TEST(TestExclusionDataParser, ParseUnknownDataID)
 
 TEST(TestExclusionDataParser, ParseUnsupportedTypes)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: usr_data, type: blob_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: whatever, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -251,7 +251,7 @@ TEST(TestExclusionDataParser, ParseUnsupportedTypes)
 
 TEST(TestExclusionDataParser, ParseUnknownDataIDWithUnsupportedType)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: usr_data, type: blob_with_expiration, data: [{value: user, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -314,8 +314,8 @@ TEST(TestExclusionDataParser, ParseUnknownDataIDWithUnsupportedType)
 
 TEST(TestExclusionDataParser, ParseMissingType)
 {
-    auto object =
-        yaml_to_object(R"([{id: ip_data, data: [{value: 192.168.1.1, expiration: 500}]}])");
+    auto object = yaml_to_object<ddwaf_object>(
+        R"([{id: ip_data, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
     configuration_spec cfg;
@@ -377,7 +377,7 @@ TEST(TestExclusionDataParser, ParseMissingType)
 
 TEST(TestExclusionDataParser, ParseMissingID)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -440,7 +440,7 @@ TEST(TestExclusionDataParser, ParseMissingID)
 
 TEST(TestExclusionDataParser, ParseMissingData)
 {
-    auto object = yaml_to_object(R"([{id: ip_data, type: ip_with_expiration}])");
+    auto object = yaml_to_object<ddwaf_object>(R"([{id: ip_data, type: ip_with_expiration}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
     configuration_spec cfg;

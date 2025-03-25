@@ -800,7 +800,7 @@ TEST(TestExpression, ExcludeInput)
 
     ddwaf::timer deadline{2s};
     std::unordered_set<object_view> excluded_objects{
-        store.get_target(get_target_index("server.request.query")).first};
+        store.get_target("server.request.query").first};
 
     expression::cache_type cache;
     EXPECT_FALSE(expr->eval(cache, store, {excluded_objects, {}}, {}, deadline).outcome);
@@ -823,7 +823,7 @@ TEST(TestExpression, ExcludeKeyPath)
 
     ddwaf::timer deadline{2s};
     std::unordered_set<object_view> excluded_objects{
-        store.get_target(get_target_index("server.request.query")).first};
+        store.get_target("server.request.query").first};
 
     expression::cache_type cache;
     EXPECT_FALSE(expr->eval(cache, store, {excluded_objects, {}}, {}, deadline).outcome);

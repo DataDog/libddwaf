@@ -23,11 +23,16 @@ bool object_store::insert(owned_object &&input, attribute attr)
         view = input_objects_.emplace_back(std::move(input));
     }
 
-    if (view.type() != object_type::map) {
+    return insert(view, attr);
+}
+
+bool object_store::insert(object_view input, attribute attr)
+{
+    if (input.type() != object_type::map) {
         return false;
     }
 
-    const auto size = view.size();
+    const auto size = input.size();
     if (size == 0) {
         // Objects with no addresses are considered valid as they are harmless
         return true;
@@ -41,7 +46,7 @@ bool object_store::insert(owned_object &&input, attribute attr)
         ephemeral_targets_.reserve(size);
     }
 
-    for (auto it = view.begin(); it != view.end(); ++it) {
+    for (auto it = input.begin(); it != input.end(); ++it) {
         auto key_obj = it.key();
         if (key_obj.empty()) {
             continue;

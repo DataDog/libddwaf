@@ -16,7 +16,7 @@ constexpr std::string_view base_dir = "integration/events/obfuscator/";
 
 TEST(TestObfuscatorIntegration, TestConfigKeyValue)
 {
-    auto rule = read_file("obfuscator.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{"password", "rule1_obf"}, ddwaf_object_free};
@@ -126,7 +126,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
 
 TEST(TestObfuscatorIntegration, TestConfigKey)
 {
-    auto rule = read_file("obfuscator.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{"password", nullptr}, ddwaf_object_free};
@@ -211,7 +211,7 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
 
 TEST(TestObfuscatorIntegration, TestConfigValue)
 {
-    auto rule = read_file("obfuscator.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, "rule1_obf"}, ddwaf_object_free};
@@ -296,7 +296,7 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
 
 TEST(TestObfuscatorIntegration, TestConfigHighlight)
 {
-    auto rule = read_file("obfuscator.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, "^badvalue$"}, ddwaf_object_free};
@@ -354,7 +354,7 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
 
 TEST(TestObfuscatorIntegration, TestConfigEmpty)
 {
-    auto rule = read_file("obfuscator.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, ""}, ddwaf_object_free};
@@ -439,7 +439,7 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
 
 TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
 {
-    auto rule = read_file("obfuscator.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{"[", nullptr}, ddwaf_object_free};
@@ -524,7 +524,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
 
 TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
 {
-    auto rule = read_file("obfuscator.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, "]"}, ddwaf_object_free};

@@ -16,7 +16,7 @@ namespace {
 
 TEST(TestRuleFilterParser, ParseEmptyFilter)
 {
-    auto object = yaml_to_object(R"([{id: 1}])");
+    auto object = yaml_to_object<ddwaf_object>(R"([{id: 1}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -78,7 +78,7 @@ TEST(TestRuleFilterParser, ParseEmptyFilter)
 
 TEST(TestRuleFilterParser, ParseFilterWithoutID)
 {
-    auto object = yaml_to_object(R"([{rules_target: [{rule_id: 2939}]}])");
+    auto object = yaml_to_object<ddwaf_object>(R"([{rules_target: [{rule_id: 2939}]}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -140,7 +140,7 @@ TEST(TestRuleFilterParser, ParseFilterWithoutID)
 
 TEST(TestRuleFilterParser, ParseDuplicateUnconditional)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, rules_target: [{rule_id: 2939}]},{id: 1, rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     configuration_spec cfg;
@@ -189,7 +189,7 @@ TEST(TestRuleFilterParser, ParseDuplicateUnconditional)
 
 TEST(TestRuleFilterParser, ParseUnconditionalTargetID)
 {
-    auto object = yaml_to_object(R"([{id: 1, rules_target: [{rule_id: 2939}]}])");
+    auto object = yaml_to_object<ddwaf_object>(R"([{id: 1, rules_target: [{rule_id: 2939}]}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -239,8 +239,8 @@ TEST(TestRuleFilterParser, ParseUnconditionalTargetID)
 
 TEST(TestRuleFilterParser, ParseUnconditionalTargetTags)
 {
-    auto object =
-        yaml_to_object(R"([{id: 1, rules_target: [{tags: {type: rule, category: unknown}}]}])");
+    auto object = yaml_to_object<ddwaf_object>(
+        R"([{id: 1, rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -292,7 +292,7 @@ TEST(TestRuleFilterParser, ParseUnconditionalTargetTags)
 
 TEST(TestRuleFilterParser, ParseUnconditionalTargetPriority)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, rules_target: [{rule_id: 2939, tags: {type: rule, category: unknown}}]}])");
 
     configuration_spec cfg;
@@ -343,7 +343,7 @@ TEST(TestRuleFilterParser, ParseUnconditionalTargetPriority)
 
 TEST(TestRuleFilterParser, ParseUnconditionalMultipleTargets)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, rules_target: [{rule_id: 2939},{tags: {type: rule, category: unknown}}]}])");
 
     configuration_spec cfg;
@@ -405,7 +405,7 @@ TEST(TestRuleFilterParser, ParseUnconditionalMultipleTargets)
 
 TEST(TestRuleFilterParser, ParseMultipleUnconditional)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, rules_target: [{rule_id: 2939}]},{id: 2, rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     configuration_spec cfg;
@@ -476,7 +476,7 @@ TEST(TestRuleFilterParser, ParseMultipleUnconditional)
 
 TEST(TestRuleFilterParser, ParseDuplicateConditional)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]},{id: 1, rules_target: [{tags: {type: rule, category: unknown}}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
     configuration_spec cfg;
@@ -499,7 +499,7 @@ TEST(TestRuleFilterParser, ParseDuplicateConditional)
 
 TEST(TestRuleFilterParser, ParseConditionalSingleCondition)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
     configuration_spec cfg;
@@ -550,7 +550,7 @@ TEST(TestRuleFilterParser, ParseConditionalSingleCondition)
 
 TEST(TestRuleFilterParser, ParseConditionalGlobal)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
     configuration_spec cfg;
@@ -597,7 +597,7 @@ TEST(TestRuleFilterParser, ParseConditionalGlobal)
 
 TEST(TestRuleFilterParser, ParseConditionalMultipleConditions)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     configuration_spec cfg;
@@ -649,8 +649,8 @@ TEST(TestRuleFilterParser, ParseConditionalMultipleConditions)
 
 TEST(TestRuleFilterParser, ParseOnMatchMonitor)
 {
-    auto object =
-        yaml_to_object(R"([{id: 1, rules_target: [{rule_id: 2939}], on_match: monitor}])");
+    auto object = yaml_to_object<ddwaf_object>(
+        R"([{id: 1, rules_target: [{rule_id: 2939}], on_match: monitor}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -694,7 +694,8 @@ TEST(TestRuleFilterParser, ParseOnMatchMonitor)
 
 TEST(TestRuleFilterParser, ParseOnMatchBypass)
 {
-    auto object = yaml_to_object(R"([{id: 1, rules_target: [{rule_id: 2939}], on_match: bypass}])");
+    auto object = yaml_to_object<ddwaf_object>(
+        R"([{id: 1, rules_target: [{rule_id: 2939}], on_match: bypass}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -738,8 +739,8 @@ TEST(TestRuleFilterParser, ParseOnMatchBypass)
 
 TEST(TestRuleFilterParser, ParseCustomOnMatch)
 {
-    auto object =
-        yaml_to_object(R"([{id: 1, rules_target: [{rule_id: 2939}], on_match: obliterate}])");
+    auto object = yaml_to_object<ddwaf_object>(
+        R"([{id: 1, rules_target: [{rule_id: 2939}], on_match: obliterate}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -784,7 +785,8 @@ TEST(TestRuleFilterParser, ParseCustomOnMatch)
 
 TEST(TestRuleFilterParser, ParseInvalidOnMatch)
 {
-    auto object = yaml_to_object(R"([{id: 1, rules_target: [{rule_id: 2939}], on_match: ""}])");
+    auto object =
+        yaml_to_object<ddwaf_object>(R"([{id: 1, rules_target: [{rule_id: 2939}], on_match: ""}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -846,7 +848,7 @@ TEST(TestRuleFilterParser, ParseInvalidOnMatch)
 
 TEST(TestRuleFilterParser, IncompatibleMinVersion)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, rules_target: [{rule_id: 2939}], min_version: 99.0.0, on_match: monitor}])");
 
     configuration_spec cfg;
@@ -906,7 +908,7 @@ TEST(TestRuleFilterParser, IncompatibleMinVersion)
 
 TEST(TestRuleFilterParser, IncompatibleMaxVersion)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, rules_target: [{rule_id: 2939}], max_version: 0.0.99, on_match: monitor}])");
 
     configuration_spec cfg;
@@ -966,7 +968,7 @@ TEST(TestRuleFilterParser, IncompatibleMaxVersion)
 
 TEST(TestRuleFilterParser, CompatibleVersion)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<ddwaf_object>(
         R"([{id: 1, rules_target: [{rule_id: 2939}], min_version: 0.0.99, max_version: 2.0.0, on_match: monitor}])");
 
     configuration_spec cfg;

@@ -16,7 +16,7 @@ constexpr std::string_view base_dir = "integration/interface/builder/";
 
 TEST(TestEngineBuilderFunctional, EmptyConfig)
 {
-    auto config = yaml_to_object("{}");
+    auto config = yaml_to_object<ddwaf_object>("{}");
     ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
 
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
@@ -38,7 +38,7 @@ TEST(TestEngineBuilderFunctional, BaseRules)
 
     // Add the first config
     {
-        auto config = read_file("base_rules_1.yaml", base_dir);
+        auto config = read_file<ddwaf_object>("base_rules_1.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr);
         ddwaf_object_free(&config);
@@ -64,7 +64,7 @@ TEST(TestEngineBuilderFunctional, BaseRules)
     // Update the config
     {
         ddwaf_destroy(handle);
-        auto config = read_file("base_rules_2.yaml", base_dir);
+        auto config = read_file<ddwaf_object>("base_rules_2.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr);
         ddwaf_object_free(&config);
@@ -107,7 +107,7 @@ TEST(TestEngineBuilderFunctional, CustomRules)
 
     // Add the first config
     {
-        auto config = read_file("custom_rules_1.yaml", base_dir);
+        auto config = read_file<ddwaf_object>("custom_rules_1.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr);
         ddwaf_object_free(&config);
@@ -133,7 +133,7 @@ TEST(TestEngineBuilderFunctional, CustomRules)
     // Update the config
     {
         ddwaf_destroy(handle);
-        auto config = read_file("custom_rules_2.yaml", base_dir);
+        auto config = read_file<ddwaf_object>("custom_rules_2.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr);
         ddwaf_object_free(&config);

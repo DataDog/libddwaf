@@ -23,13 +23,10 @@ TEST(TestExistsCondition, AddressAvailable)
 {
     exists_condition cond{{gen_variadic_param("server.request.uri_raw")}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri_raw", ddwaf_object_invalid(&tmp));
+    auto root = owned_object::make_map({{"server.request.uri_raw", owned_object{}}});
 
     object_store store;
-    store.insert(owned_object{root});
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -42,26 +39,13 @@ TEST(TestExistsCondition, KeyPathAvailable)
     exists_condition cond{{{{{{"server.request.uri_raw", get_target_index("server.request.uri_raw"),
         {"path", "to", "object"}}}}}}};
 
-    ddwaf_object tmp;
-    ddwaf_object path;
-    ddwaf_object to;
-    ddwaf_object object;
-
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "object", ddwaf_object_invalid(&tmp));
-
-    ddwaf_object_map(&to);
-    ddwaf_object_map_add(&to, "to", &object);
-
-    ddwaf_object_map(&path);
-    ddwaf_object_map_add(&path, "path", &to);
-
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri_raw", &path);
+    auto root = owned_object::make_map({{"server.request.uri_raw",
+        owned_object::make_map(
+            {{"path", owned_object::make_map(
+                          {{"to", owned_object::make_map({{"object", owned_object{}}})}})}})}});
 
     object_store store;
-    store.insert(owned_object{root});
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -73,13 +57,10 @@ TEST(TestExistsCondition, AddressNotAvaialble)
 {
     exists_condition cond{{gen_variadic_param("server.request.uri_raw")}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_invalid(&tmp));
+    auto root = owned_object::make_map({{"server.request.query", owned_object{}}});
 
     object_store store;
-    store.insert(owned_object{root});
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -92,22 +73,11 @@ TEST(TestExistsCondition, KeyPathNotAvailable)
     exists_condition cond{{{{{{"server.request.uri_raw", get_target_index("server.request.uri_raw"),
         {"path", "to", "object"}}}}}}};
 
-    ddwaf_object tmp;
-    ddwaf_object path;
-    ddwaf_object to;
-
-    ddwaf_object_map(&to);
-    ddwaf_object_map_add(&to, "to", ddwaf_object_invalid(&tmp));
-
-    ddwaf_object_map(&path);
-    ddwaf_object_map_add(&path, "path", &to);
-
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri_raw", &path);
+    auto root = owned_object::make_map({{"server.request.uri_raw",
+        owned_object::make_map({{"path", owned_object::make_map({{"to", owned_object{}}})}})}});
 
     object_store store;
-    store.insert(owned_object{root});
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -120,31 +90,17 @@ TEST(TestExistsCondition, KeyPathAvailableButExcluded)
     exists_condition cond{{{{{{"server.request.uri_raw", get_target_index("server.request.uri_raw"),
         {"path", "to", "object"}}}}}}};
 
-    ddwaf_object tmp;
-    ddwaf_object path;
-    ddwaf_object to;
-    ddwaf_object object;
+    auto root = owned_object::make_map({{"server.request.uri_raw",
+        owned_object::make_map(
+            {{"path", owned_object::make_map(
+                          {{"to", owned_object::make_map({{"object", owned_object{}}})}})}})}});
 
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "object", ddwaf_object_invalid(&tmp));
-
-    ddwaf_object_map(&to);
-    ddwaf_object_map_add(&to, "to", &object);
-
-    ddwaf_object_map(&path);
-    ddwaf_object_map_add(&path, "path", &to);
-
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri_raw", &path);
-
+    std::unordered_set<object_view> excluded = {root.at(0)};
     object_store store;
-    store.insert(owned_object{root});
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-
-    std::unordered_set<object_view> excluded = {&root.array[0]};
 
     exclusion::object_set_ref excluded_ref;
     excluded_ref.persistent = excluded;
@@ -162,13 +118,10 @@ TEST(TestExistsCondition, MultipleAddresses)
         {gen_variadic_param("server.request.uri_raw", "server.request.body", "usr.id")}};
 
     auto validate_address = [&](const std::string &address, bool expected = true) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, address.c_str(), ddwaf_object_invalid(&tmp));
+        auto root = owned_object::make_map({{address, owned_object{}}});
 
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -192,24 +145,15 @@ TEST(TestExistsCondition, MultipleAddressesAndKeyPaths)
 
     auto validate_address = [&](const std::string &address, const std::vector<std::string> &kp,
                                 bool expected = true) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-        ddwaf_object_map(&root);
-        ddwaf_object_invalid(&tmp);
-
+        auto root = owned_object::make_map();
+        auto map = root.emplace(address, owned_object::make_map());
         // NOLINTNEXTLINE(modernize-loop-convert)
-        for (auto it = kp.rbegin(); it != kp.rend(); ++it) {
-            ddwaf_object path;
-            ddwaf_object_map(&path);
-            ddwaf_object_map_add(&path, it->c_str(), &tmp);
-
-            tmp = path;
+        for (auto it = kp.begin(); it != kp.end(); ++it) {
+            map = map.emplace(*it, owned_object::make_map());
         }
 
-        ddwaf_object_map_add(&root, address.c_str(), &tmp);
-
         object_store store;
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -234,26 +178,13 @@ TEST(TestExistsNegatedCondition, KeyPathAvailable)
     exists_negated_condition cond{{{{{{"server.request.uri_raw",
         get_target_index("server.request.uri_raw"), {"path", "to", "object"}}}}}}};
 
-    ddwaf_object tmp;
-    ddwaf_object path;
-    ddwaf_object to;
-    ddwaf_object object;
-
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "object", ddwaf_object_invalid(&tmp));
-
-    ddwaf_object_map(&to);
-    ddwaf_object_map_add(&to, "to", &object);
-
-    ddwaf_object_map(&path);
-    ddwaf_object_map_add(&path, "path", &to);
-
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri_raw", &path);
+    auto root = owned_object::make_map({{"server.request.uri_raw",
+        owned_object::make_map(
+            {{"path", owned_object::make_map(
+                          {{"to", owned_object::make_map({{"object", owned_object{}}})}})}})}});
 
     object_store store;
-    store.insert(owned_object{root});
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -266,22 +197,10 @@ TEST(TestExistsNegatedCondition, KeyPathNotAvailable)
     exists_negated_condition cond{{{{{{"server.request.uri_raw",
         get_target_index("server.request.uri_raw"), {"path", "to", "object"}}}}}}};
 
-    ddwaf_object tmp;
-    ddwaf_object path;
-    ddwaf_object to;
-
-    ddwaf_object_map(&to);
-    ddwaf_object_map_add(&to, "to", ddwaf_object_invalid(&tmp));
-
-    ddwaf_object_map(&path);
-    ddwaf_object_map_add(&path, "path", &to);
-
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri_raw", &path);
-
+    auto root = owned_object::make_map({{"server.request.uri_raw",
+        owned_object::make_map({{"path", owned_object::make_map({{"to", owned_object{}}})}})}});
     object_store store;
-    store.insert(owned_object{root});
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -294,27 +213,18 @@ TEST(TestExistsNegatedCondition, KeyPathAvailableButExcluded)
     exists_negated_condition cond{{{{{{"server.request.uri_raw",
         get_target_index("server.request.uri_raw"), {"path", "to", "object"}}}}}}};
 
-    ddwaf_object tmp;
-    ddwaf_object path;
-    ddwaf_object to;
+    auto root = owned_object::make_map({{"server.request.uri_raw",
+        owned_object::make_map(
+            {{"path", owned_object::make_map(
+                          {{"to", owned_object::make_map({{"object", owned_object{}}})}})}})}});
 
-    ddwaf_object_map(&to);
-    ddwaf_object_map_add(&to, "to", ddwaf_object_invalid(&tmp));
-
-    ddwaf_object_map(&path);
-    ddwaf_object_map_add(&path, "path", &to);
-
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri_raw", &path);
+    std::unordered_set<object_view> excluded = {root.at(0)};
 
     object_store store;
-    store.insert(owned_object{root});
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-
-    std::unordered_set<object_view> excluded = {&root.array[0]};
 
     exclusion::object_set_ref excluded_ref;
     excluded_ref.persistent = excluded;

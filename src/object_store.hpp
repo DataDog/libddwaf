@@ -49,6 +49,9 @@ public:
     bool insert(target_index target, std::string_view key, owned_object &&input,
         attribute attr = attribute::none);
 
+    // Used for testing
+    bool insert(object_view input, attribute attr = attribute::none);
+
     std::pair<object_view, attribute> get_target(target_index target) const
     {
         auto it = objects_.find(target);
@@ -56,6 +59,12 @@ public:
             return {it->second.first, it->second.second};
         }
         return {nullptr, attribute::none};
+    }
+
+    // Used for testing
+    std::pair<object_view, attribute> get_target(std::string_view name) const
+    {
+        return get_target(get_target_index(name));
     }
 
     bool has_target(target_index target) const { return objects_.find(target) != objects_.end(); }

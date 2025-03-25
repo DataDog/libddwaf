@@ -13,7 +13,7 @@ constexpr std::string_view base_dir = "integration/matchers/equals/";
 
 TEST(TestEqualsMatcherIntegration, StringEquals)
 {
-    auto rule = read_file("equals.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -47,7 +47,7 @@ TEST(TestEqualsMatcherIntegration, StringEquals)
 
 TEST(TestEqualsMatcherIntegration, BoolEquals)
 {
-    auto rule = read_file("equals.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -83,7 +83,7 @@ TEST(TestEqualsMatcherIntegration, BoolEquals)
 
 TEST(TestEqualsMatcherIntegration, SignedEquals)
 {
-    auto rule = read_file("equals.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -117,7 +117,7 @@ TEST(TestEqualsMatcherIntegration, SignedEquals)
 
 TEST(TestEqualsMatcherIntegration, UnsignedEquals)
 {
-    auto rule = read_file("equals.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -153,7 +153,7 @@ TEST(TestEqualsMatcherIntegration, UnsignedEquals)
 
 TEST(TestEqualsMatcherIntegration, FloatEquals)
 {
-    auto rule = read_file("equals.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);

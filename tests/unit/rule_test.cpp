@@ -371,8 +371,7 @@ TEST(TestRule, ExcludeObject)
     ddwaf::object_store store;
     store.insert(std::move(root));
 
-    std::unordered_set<object_view> excluded_set{
-        store.get_target(get_target_index("http.client_ip")).first};
+    std::unordered_set<object_view> excluded_set{store.get_target("http.client_ip").first};
 
     ddwaf::timer deadline{2s};
 
