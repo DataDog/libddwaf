@@ -42,15 +42,9 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
-
+    auto input_map = owned_object::make_map({{"input_address", "input_string"}});
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
         {{{{{get_target_index("input_address"), "input_address", {}}}}},
@@ -82,18 +76,11 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
     owned_object first_output = owned_object::make_string("first_output_string");
     owned_object second_output = owned_object::make_string("second_output_string");
 
-    ddwaf_object first_input;
-    ddwaf_object second_input;
-    ddwaf_object_string(&first_input, "first_input_string");
-    ddwaf_object_string(&second_input, "second_input_string");
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address.first", &first_input);
-    ddwaf_object_map_add(&input_map, "input_address.second", &second_input);
+    auto input_map = owned_object::make_map({{"input_address.first", "first_input_string"},
+        {"input_address.second", "second_input_string"}});
 
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
         {{{{{get_target_index("input_address.first"), "input_address.first", {}}}}},
@@ -135,17 +122,11 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object tmp;
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
-    ddwaf_object_map_add(&input_map, "enabled?", ddwaf_object_bool(&tmp, true));
+    auto input_map =
+        owned_object::make_map({{"input_address", "input_string"}, {"enabled?", true}});
 
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
         {{{{{get_target_index("input_address"), "input_address", {}}}}},
@@ -181,13 +162,10 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object tmp;
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "enabled?", ddwaf_object_bool(&tmp, true));
+    auto input_map = owned_object::make_map({{"enabled?", true}});
 
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
         {{{{{get_target_index("input_address"), "input_address", {}}}}},
@@ -214,13 +192,11 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     proc.eval(store, derived, cache, deadline);
     EXPECT_EQ(derived.size(), 0);
 
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
+    input_map = owned_object::make_map({
+        {"input_address", "input_string"},
+    });
 
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
-
-    store.insert(owned_object{input_map});
+    store.insert(std::move(input_map));
 
     EXPECT_EQ(derived.size(), 0);
     proc.eval(store, derived, cache, deadline);
@@ -235,17 +211,11 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object tmp;
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
-    ddwaf_object_map_add(&input_map, "enabled?", ddwaf_object_bool(&tmp, false));
+    auto input_map =
+        owned_object::make_map({{"input_address", "input_string"}, {"enabled?", false}});
 
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
         {{{{{get_target_index("input_address"), "input_address", {}}}}},
@@ -274,15 +244,12 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
+    auto input_map = owned_object::make_map({
+        {"input_address", "input_string"},
+    });
 
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
         {{{{{get_target_index("input_address"), "input_address", {}}}}},
@@ -318,17 +285,11 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object tmp;
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
-    ddwaf_object_map_add(&input_map, "enabled?", ddwaf_object_bool(&tmp, true));
+    auto input_map =
+        owned_object::make_map({{"input_address", "input_string"}, {"enabled?", true}});
 
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
         {{{{{get_target_index("input_address"), "input_address", {}}}}},
@@ -367,17 +328,11 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object tmp;
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
-    ddwaf_object_map_add(&input_map, "enabled?", ddwaf_object_bool(&tmp, false));
+    auto input_map =
+        owned_object::make_map({{"input_address", "input_string"}, {"enabled?", false}});
 
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
         {{{{{get_target_index("input_address"), "input_address", {}}}}},
@@ -408,18 +363,11 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
     owned_object first_output = owned_object::make_string("first_output_string");
     owned_object second_output = owned_object::make_string("second_output_string");
 
-    ddwaf_object first_input;
-    ddwaf_object second_input;
-    ddwaf_object_string(&first_input, "first_input_string");
-    ddwaf_object_string(&second_input, "second_input_string");
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address.first", &first_input);
-    ddwaf_object_map_add(&input_map, "input_address.second", &second_input);
+    auto input_map = owned_object::make_map({{"input_address.first", "first_input_string"},
+        {"input_address.second", "second_input_string"}});
 
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
         {{{{{get_target_index("input_address.first"), "input_address.first", {}}}}},
@@ -462,15 +410,12 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
+    auto input_map = owned_object::make_map({
+        {"input_address", "input_string"},
+    });
 
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -516,16 +461,11 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
 
 TEST(TestProcessor, OutputAlreadyAvailableInStore)
 {
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
-    ddwaf_object_map_add(&input_map, "output_address", ddwaf_object_null(&input));
+    auto input_map =
+        owned_object::make_map({{"input_address", "input_string"}, {"output_address", nullptr}});
 
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
         {{{{{get_target_index("input_address"), "input_address", {}}}}},
@@ -546,15 +486,12 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
 
 TEST(TestProcessor, OutputAlreadyGenerated)
 {
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
+    auto input_map = owned_object::make_map({
+        {"input_address", "input_string"},
+    });
 
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
         {{{{{get_target_index("input_address"), "input_address", {}}}}},
@@ -576,16 +513,11 @@ TEST(TestProcessor, OutputAlreadyGenerated)
 
 TEST(TestProcessor, EvalAlreadyAvailableInStore)
 {
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
-    ddwaf_object_map_add(&input_map, "output_address", ddwaf_object_null(&input));
+    auto input_map =
+        owned_object::make_map({{"input_address", "input_string"}, {"output_address", nullptr}});
 
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
         {{{{{get_target_index("input_address"), "input_address", {}}}}},
@@ -605,15 +537,12 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
 
 TEST(TestProcessor, OutputWithoutDerivedMap)
 {
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
+    auto input_map = owned_object::make_map({
+        {"input_address", "input_string"},
+    });
 
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
         {{{{{get_target_index("input_address"), "input_address", {}}}}},
@@ -635,15 +564,12 @@ TEST(TestProcessor, OutputEvalWithoutDerivedMap)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
+    auto input_map = owned_object::make_map({
+        {"input_address", "input_string"},
+    });
 
     object_store store;
-    store.insert(owned_object{input_map});
+    store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
         {{{{{get_target_index("input_address"), "input_address", {}}}}},
