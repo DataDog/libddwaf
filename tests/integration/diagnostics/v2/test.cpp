@@ -483,7 +483,7 @@ TEST(TestDiagnosticsV2Integration, MultipleRules)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::raw_configuration root = diagnostics;
+        ddwaf::raw_configuration root{diagnostics};
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -527,7 +527,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::raw_configuration root = diagnostics;
+        ddwaf::raw_configuration root{diagnostics};
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -569,7 +569,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::raw_configuration root = diagnostics;
+        ddwaf::raw_configuration root{diagnostics};
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -611,7 +611,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::raw_configuration root = diagnostics;
+        ddwaf::raw_configuration root{diagnostics};
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -654,7 +654,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::raw_configuration root = diagnostics;
+        ddwaf::raw_configuration root{diagnostics};
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -737,7 +737,7 @@ TEST(TestDiagnosticsV2Integration, CustomRules)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::raw_configuration root = diagnostics;
+        ddwaf::raw_configuration root{diagnostics};
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -781,7 +781,7 @@ TEST(TestDiagnosticsV2Integration, InputFilter)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::raw_configuration root = diagnostics;
+        ddwaf::raw_configuration root{diagnostics};
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto exclusions = ddwaf::at<raw_configuration::map>(root_map, "exclusions");
@@ -819,7 +819,7 @@ TEST(TestDiagnosticsV2Integration, RuleData)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::raw_configuration root = diagnostics;
+        ddwaf::raw_configuration root{diagnostics};
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto rule_data = ddwaf::at<raw_configuration::map>(root_map, "rules_data");
@@ -858,7 +858,7 @@ TEST(TestDiagnosticsV2Integration, Processor)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf::raw_configuration root = diagnostics;
+        ddwaf::raw_configuration root{diagnostics};
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto processor = ddwaf::at<raw_configuration::map>(root_map, "processors");

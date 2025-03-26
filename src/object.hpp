@@ -601,6 +601,10 @@ public:
 
     owned_object &operator=(owned_object &&other) noexcept
     {
+        if (free_fn_ != nullptr) {
+            free_fn_(&obj_);
+        }
+
         obj_ = other.obj_;
         free_fn_ = other.free_fn_;
         other.obj_ = detail::object{};

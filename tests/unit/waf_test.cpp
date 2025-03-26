@@ -16,16 +16,15 @@ constexpr std::string_view base_dir = "unit";
 
 ddwaf::waf build_instance(std::string_view rule_file)
 {
-    auto object = read_file<ddwaf_object>(rule_file, base_dir);
-    if (object.type == DDWAF_OBJ_INVALID) {
+    auto object = read_file<owned_object>(rule_file, base_dir);
+    if (object.is_invalid()) {
         throw std::runtime_error("Invalid ruleset object");
     }
 
-    raw_configuration ruleset = object;
+    raw_configuration ruleset{object};
     waf_builder builder{ddwaf_object_free, std::make_shared<obfuscator>()};
     ddwaf::null_ruleset_info info;
     auto res = builder.add_or_update("default", ruleset, info);
-    ddwaf_object_free(&object);
 
     if (!res) {
         throw std::runtime_error("Failed to load ruleset");
@@ -48,13 +47,9 @@ TEST(TestWaf, BasicContextRun)
 {
     auto instance = build_instance("interface.yaml");
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
-
+    auto root = owned_object::make_map({{"value1", "rule1"}});
     auto *ctx = instance.create_context();
-    EXPECT_EQ(ctx->run(root, std::nullopt, std::nullopt, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ctx->run(std::move(root), {}, std::nullopt, LONG_TIME), DDWAF_MATCH);
     delete ctx;
 }
 

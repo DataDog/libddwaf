@@ -16,7 +16,7 @@ namespace {
 
 TEST(TestRuleDataParser, ParseIPData)
 {
-    auto object = yaml_to_object<ddwaf_object>(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -25,7 +25,6 @@ TEST(TestRuleDataParser, ParseIPData)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_rule_data(input, collector, section);
-    ddwaf_object_free(&object);
 
     {
         auto diagnostics = section.to_object();
@@ -54,7 +53,7 @@ TEST(TestRuleDataParser, ParseIPData)
 
 TEST(TestRuleDataParser, ParseStringData)
 {
-    auto object = yaml_to_object<ddwaf_object>(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -63,7 +62,6 @@ TEST(TestRuleDataParser, ParseStringData)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_rule_data(input, collector, section);
-    ddwaf_object_free(&object);
 
     {
         auto diagnostics = section.to_object();
@@ -92,7 +90,7 @@ TEST(TestRuleDataParser, ParseStringData)
 
 TEST(TestRuleDataParser, ParseMultipleData)
 {
-    auto object = yaml_to_object<ddwaf_object>(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -101,7 +99,6 @@ TEST(TestRuleDataParser, ParseMultipleData)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_rule_data(input, collector, section);
-    ddwaf_object_free(&object);
 
     {
         auto diagnostics = section.to_object();
@@ -132,7 +129,7 @@ TEST(TestRuleDataParser, ParseMultipleData)
 
 TEST(TestRuleDataParser, ParseUnknownDataID)
 {
-    auto object = yaml_to_object<ddwaf_object>(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -141,7 +138,6 @@ TEST(TestRuleDataParser, ParseUnknownDataID)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_rule_data(input, collector, section);
-    ddwaf_object_free(&object);
 
     {
         auto diagnostics = section.to_object();
@@ -172,7 +168,7 @@ TEST(TestRuleDataParser, ParseUnknownDataID)
 
 TEST(TestRuleDataParser, ParseUnsupportedTypes)
 {
-    auto object = yaml_to_object<ddwaf_object>(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: usr_data, type: blob_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: whatever, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -181,7 +177,6 @@ TEST(TestRuleDataParser, ParseUnsupportedTypes)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_rule_data(input, collector, section);
-    ddwaf_object_free(&object);
 
     {
         auto diagnostics = section.to_object();
@@ -246,7 +241,7 @@ TEST(TestRuleDataParser, ParseUnsupportedTypes)
 
 TEST(TestRuleDataParser, ParseUnknownDataIDWithUnsupportedType)
 {
-    auto object = yaml_to_object<ddwaf_object>(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: usr_data, type: blob_with_expiration, data: [{value: user, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -255,7 +250,6 @@ TEST(TestRuleDataParser, ParseUnknownDataIDWithUnsupportedType)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_rule_data(input, collector, section);
-    ddwaf_object_free(&object);
 
     {
         auto diagnostics = section.to_object();
@@ -308,7 +302,7 @@ TEST(TestRuleDataParser, ParseUnknownDataIDWithUnsupportedType)
 
 TEST(TestRuleDataParser, ParseMissingType)
 {
-    auto object = yaml_to_object<ddwaf_object>(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: ip_data, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -317,7 +311,6 @@ TEST(TestRuleDataParser, ParseMissingType)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_rule_data(input, collector, section);
-    ddwaf_object_free(&object);
 
     {
         auto diagnostics = section.to_object();
@@ -370,7 +363,7 @@ TEST(TestRuleDataParser, ParseMissingType)
 
 TEST(TestRuleDataParser, ParseMissingID)
 {
-    auto object = yaml_to_object<ddwaf_object>(
+    auto object = yaml_to_object<owned_object>(
         R"([{type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -379,7 +372,6 @@ TEST(TestRuleDataParser, ParseMissingID)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_rule_data(input, collector, section);
-    ddwaf_object_free(&object);
 
     {
         auto diagnostics = section.to_object();
@@ -432,7 +424,7 @@ TEST(TestRuleDataParser, ParseMissingID)
 
 TEST(TestRuleDataParser, ParseMissingData)
 {
-    auto object = yaml_to_object<ddwaf_object>(R"([{id: ip_data, type: ip_with_expiration}])");
+    auto object = yaml_to_object<owned_object>(R"([{id: ip_data, type: ip_with_expiration}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
     configuration_spec cfg;
@@ -440,7 +432,6 @@ TEST(TestRuleDataParser, ParseMissingData)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_rule_data(input, collector, section);
-    ddwaf_object_free(&object);
 
     {
         auto diagnostics = section.to_object();
