@@ -33,8 +33,8 @@ public:
     raw_configuration(const raw_configuration &) = default;
     raw_configuration &operator=(const raw_configuration &) = default;
 
-    raw_configuration(raw_configuration &&other) noexcept = delete;
-    raw_configuration &operator=(raw_configuration &&other) noexcept = delete;
+    raw_configuration(raw_configuration &&other) noexcept = default;
+    raw_configuration &operator=(raw_configuration &&other) noexcept = default;
 
     explicit operator map() const;
     explicit operator vector() const;
