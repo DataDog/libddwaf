@@ -35,6 +35,11 @@ public:
     {
         return store_.insert(object, attr);
     }
+
+    bool insert(owned_object object, attribute attr = attribute::none)
+    {
+        return store_.insert(std::move(object), attr);
+    }
 };
 
 } // namespace ddwaf::test
@@ -58,7 +63,7 @@ TEST(TestContext, MatchTimeout)
     ddwaf::test::context ctx(rbuilder.build());
 
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-    ctx.insert(root);
+    ctx.insert(object_view{root});
 
     EXPECT_THROW(ctx.eval_rules({}, deadline), ddwaf::timeout_exception);
 }
@@ -80,7 +85,7 @@ TEST(TestContext, NoMatch)
     ddwaf::test::context ctx(rbuilder.build());
 
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.2"}});
-    ctx.insert(root);
+    ctx.insert(object_view{root});
 
     auto events = ctx.eval_rules({}, deadline);
     EXPECT_EQ(events.size(), 0);
@@ -103,7 +108,7 @@ TEST(TestContext, Match)
     ddwaf::test::context ctx(rbuilder.build());
 
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-    ctx.insert(root);
+    ctx.insert(object_view{root});
 
     auto events = ctx.eval_rules({}, deadline);
     EXPECT_EQ(events.size(), 1);
@@ -142,7 +147,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     ddwaf::test::context ctx(rbuilder.build());
 
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
-    ctx.insert(root);
+    ctx.insert(object_view{root});
 
     auto events = ctx.eval_rules({}, deadline);
     EXPECT_EQ(events.size(), 1);
@@ -203,7 +208,7 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
 
         auto root =
             owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         ddwaf::timer deadline{2s};
         auto events = ctx.eval_rules({}, deadline);
@@ -220,7 +225,7 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
 
         auto root =
             owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         ddwaf::timer deadline{2s};
         auto events = ctx.eval_rules({}, deadline);
@@ -268,7 +273,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
 
     {
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
@@ -293,7 +298,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
 
     {
         auto root = owned_object::make_map({{"usr.id", "admin"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 0);
@@ -336,7 +341,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
 
     {
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
@@ -363,7 +368,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         // An existing match in a collection will not inhibit a match in a
         // priority collection.
         auto root = owned_object::make_map({{"usr.id", "admin"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
@@ -425,7 +430,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
 
     {
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
@@ -452,7 +457,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         // An existing match in a collection will not inhibit a match in a
         // priority collection.
         auto root = owned_object::make_map({{"usr.id", "admin"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 0);
@@ -493,7 +498,7 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
     ddwaf::test::context ctx(rbuilder.build());
 
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
-    ctx.insert(root);
+    ctx.insert(object_view{root});
 
     auto events = ctx.eval_rules({}, deadline);
     EXPECT_EQ(events.size(), 2);
@@ -536,7 +541,7 @@ TEST(TestContext, MatchPriorityCollectionsSingleRun)
     ddwaf::test::context ctx(rbuilder.build());
 
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
-    ctx.insert(root);
+    ctx.insert(object_view{root});
 
     auto events = ctx.eval_rules({}, deadline);
     EXPECT_EQ(events.size(), 1);
@@ -577,7 +582,7 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
 
     {
         auto root = owned_object::make_map({{"usr.id", "admin"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
@@ -585,7 +590,7 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
 
     {
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
@@ -630,7 +635,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
 
     {
         auto root = owned_object::make_map({{"usr.id", "admin"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
@@ -638,7 +643,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
 
     {
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto events = ctx.eval_rules({}, deadline);
         EXPECT_EQ(events.size(), 1);
@@ -680,7 +685,7 @@ TEST(TestContext, RuleFilterWithCondition)
     ddwaf::test::context ctx(rbuilder.build());
 
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
-    ctx.insert(root);
+    ctx.insert(object_view{root});
 
     auto rules_to_exclude = ctx.eval_filters(deadline);
     EXPECT_EQ(rules_to_exclude.size(), 1);
@@ -895,7 +900,7 @@ TEST(TestContext, RuleFilterTimeout)
     ddwaf::test::context ctx(rbuilder.build());
 
     auto root = owned_object::make_map({{"usr.id", "admin"}, {"http.client_ip", "192.168.0.1"}});
-    ctx.insert(root);
+    ctx.insert(object_view{root});
 
     EXPECT_THROW(ctx.eval_filters(deadline), ddwaf::timeout_exception);
 }
@@ -935,7 +940,7 @@ TEST(TestContext, NoRuleFilterWithCondition)
     ddwaf::test::context ctx(rbuilder.build());
 
     auto root = owned_object::make_map({{"usr.id", "admin"}, {"http.client_ip", "192.168.0.2"}});
-    ctx.insert(root);
+    ctx.insert(object_view{root});
 
     auto rules_to_exclude = ctx.eval_filters(deadline);
     EXPECT_TRUE(rules_to_exclude.empty());
@@ -1166,7 +1171,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
 
     {
         auto root = owned_object::make_map({{"usr.id", "admin"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto rules_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 5);
@@ -1179,7 +1184,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
 
     {
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto rules_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 10);
@@ -1243,7 +1248,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
 
     {
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto rules_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 7);
@@ -1258,7 +1263,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
 
     {
         auto root = owned_object::make_map({{"usr.id", "admin"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto rules_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 10);
@@ -1299,7 +1304,7 @@ TEST(TestContext, InputFilterExclude)
     ddwaf::test::context ctx(rbuilder.build());
 
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-    ctx.insert(root);
+    ctx.insert(object_view{root});
 
     auto objects_to_exclude = ctx.eval_filters(deadline);
     EXPECT_EQ(objects_to_exclude.size(), 1);
@@ -1409,7 +1414,7 @@ TEST(TestContext, InputFilterExcludeRule)
     ddwaf::test::context ctx(rbuilder.build());
 
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-    ctx.insert(root);
+    ctx.insert(object_view{root});
 
     // The rule is added to the filter stage so that it's excluded from the
     // final result, since we're not actually excluding the rule from the match
@@ -1450,7 +1455,7 @@ TEST(TestContext, InputFilterExcludeRuleEphemeral)
     ddwaf::test::context ctx(rbuilder.build());
 
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-    ctx.insert(root, attribute::ephemeral);
+    ctx.insert(object_view{root}, attribute::ephemeral);
 
     auto objects_to_exclude = ctx.eval_filters(deadline);
     EXPECT_EQ(objects_to_exclude.size(), 1);
@@ -1486,7 +1491,7 @@ TEST(TestContext, InputFilterMonitorRuleEphemeral)
     ddwaf::test::context ctx(rbuilder.build());
 
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-    ctx.insert(root, attribute::ephemeral);
+    ctx.insert(std::move(root), attribute::ephemeral);
 
     auto objects_to_exclude = ctx.eval_filters(deadline);
     EXPECT_EQ(objects_to_exclude.size(), 2);
@@ -1529,12 +1534,12 @@ TEST(TestContext, InputFilterExcluderRuleEphemeralAndPersistent)
 
     {
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        ctx.insert(root, attribute::ephemeral);
+        ctx.insert(std::move(root), attribute::ephemeral);
     }
 
     {
         auto root = owned_object::make_map({{"usr.id", "admin"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
     }
 
     auto objects_to_exclude = ctx.eval_filters(deadline);
@@ -1573,12 +1578,12 @@ TEST(TestContext, InputFilterMonitorRuleEphemeralAndPersistent)
 
     {
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        ctx.insert(root, attribute::ephemeral);
+        ctx.insert(std::move(root), attribute::ephemeral);
     }
 
     {
         auto root = owned_object::make_map({{"usr.id", "admin"}});
-        ctx.insert(root);
+        ctx.insert(std::move(root));
     }
 
     auto objects_to_exclude = ctx.eval_filters(deadline);
@@ -1634,7 +1639,7 @@ TEST(TestContext, InputFilterWithCondition)
         ddwaf::test::context ctx(rbuilder.build());
 
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 0);
@@ -1649,7 +1654,7 @@ TEST(TestContext, InputFilterWithCondition)
 
         auto root =
             owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admino"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 0);
@@ -1664,7 +1669,7 @@ TEST(TestContext, InputFilterWithCondition)
 
         auto root =
             owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 1);
@@ -1767,7 +1772,7 @@ TEST(TestContext, InputFilterMultipleRules)
         ddwaf::test::context ctx(rbuilder.build());
 
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
@@ -1786,7 +1791,7 @@ TEST(TestContext, InputFilterMultipleRules)
 
         auto root =
             owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admino"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
@@ -1805,7 +1810,7 @@ TEST(TestContext, InputFilterMultipleRules)
 
         auto root =
             owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
@@ -1872,7 +1877,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         ddwaf::test::context ctx(rbuilder.build());
 
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 1);
@@ -1892,7 +1897,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
 
         auto root =
             owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admino"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
@@ -1912,7 +1917,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
 
         auto root =
             owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
@@ -2008,7 +2013,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         ddwaf::test::context ctx(rbuilder.build());
 
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
@@ -2027,7 +2032,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         ddwaf::test::context ctx(rbuilder.build());
 
         auto root = owned_object::make_map({{"usr.id", "admin"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
@@ -2047,7 +2052,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
         auto root = owned_object::make_map(
             {{"server.request.headers", owned_object::make_map({{"cookie", "mycookie"}})}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
@@ -2067,7 +2072,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
         auto root =
             owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
@@ -2088,7 +2093,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         auto root = owned_object::make_map(
             {{"server.request.headers", owned_object::make_map({{"cookie", "mycookie"}})},
                 {"usr.id", "admin"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
@@ -2109,7 +2114,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         auto root = owned_object::make_map(
             {{"server.request.headers", owned_object::make_map({{"cookie", "mycookie"}})},
                 {"usr.id", "admin"}, {"http.client_ip", "192.168.0.1"}});
-        ctx.insert(root);
+        ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
