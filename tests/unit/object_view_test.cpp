@@ -477,13 +477,8 @@ TEST(TestObjectView, Equality)
 
     {
         object_view view2;
-        EXPECT_TRUE(view2 == nullptr);
         EXPECT_FALSE(view == view2);
         EXPECT_FALSE(view2 == view);
-    }
-
-    {
-        EXPECT_FALSE(view == nullptr);
     }
 }
 
@@ -508,13 +503,8 @@ TEST(TestObjectView, Inequality)
 
     {
         object_view view2;
-        EXPECT_FALSE(view2 != nullptr);
         EXPECT_TRUE(view != view2);
         EXPECT_TRUE(view2 != view);
-    }
-
-    {
-        EXPECT_TRUE(view != nullptr);
     }
 }
 

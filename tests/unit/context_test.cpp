@@ -800,7 +800,8 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
 
         ddwaf_result result = DDWAF_RESULT_INITIALISER;
         EXPECT_EQ(ctx.run(std::move(root), {}, result, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_object_size(&result.actions), 0);
+        auto actions = object_view{result.actions};
+        EXPECT_TRUE(actions.empty());
         ddwaf_result_free(&result);
     }
 }
