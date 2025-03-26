@@ -142,7 +142,7 @@ TEST(TestObjectFilter, DuplicateSingleTarget)
         auto child = root.emplace(
             "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-        store.insert(root);
+        store.insert(std::move(root));
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
@@ -154,7 +154,7 @@ TEST(TestObjectFilter, DuplicateSingleTarget)
         auto child = root.emplace(
             "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-        store.insert(root);
+        store.insert(std::move(root));
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
@@ -222,7 +222,7 @@ TEST(TestObjectFilter, DuplicateMultipleTargets)
         auto object = sibling.emplace("token",
             owned_object::make_map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
-        store.insert(root);
+        store.insert(std::move(root));
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
 
@@ -243,7 +243,7 @@ TEST(TestObjectFilter, DuplicateMultipleTargets)
         auto object = sibling.emplace("token",
             owned_object::make_map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
-        store.insert(root);
+        store.insert(std::move(root));
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
 
@@ -325,7 +325,7 @@ TEST(TestObjectFilter, MultipleTargetsCache)
         auto child = root.emplace(
             "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-        store.insert(root);
+        store.insert(std::move(root));
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
@@ -340,7 +340,7 @@ TEST(TestObjectFilter, MultipleTargetsCache)
         auto object = sibling.emplace("token",
             owned_object::make_map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
-        store.insert(root);
+        store.insert(std::move(root));
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
