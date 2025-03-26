@@ -16,296 +16,224 @@ namespace {
 
 TEST(TestHttpEndpointFingerprint, Basic)
 {
-    ddwaf_object tmp;
+    auto query = owned_object::make_map(
+        {{"Key1", owned_object{}}, {"KEY2", owned_object{}}, {"key,3", owned_object{}}});
 
-    ddwaf_object query;
-    ddwaf_object_map(&query);
-    ddwaf_object_map_add(&query, "Key1", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&query, "KEY2", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&query, "key,3", ddwaf_object_invalid(&tmp));
-
-    ddwaf_object body;
-    ddwaf_object_map(&body);
-    ddwaf_object_map_add(&body, "KEY1", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&body, "KEY2", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&body, "KEY", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&body, "3", ddwaf_object_invalid(&tmp));
+    auto body = owned_object::make_map({
+        {"KEY1", owned_object{}},
+        {"KEY2", owned_object{}},
+        {"KEY", owned_object{}},
+        {"3", owned_object{}},
+    });
 
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] =
-        gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
-            {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
+        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = "GET"},
+            {.address = {},
+                .key_path = {},
+                .ephemeral = false,
+                .value = "/path/to/whatever?param=hello"},
+            {{.address = {}, .key_path = {}, .ephemeral = false, .value = object_view{query}}},
+            {{.address = {}, .key_path = {}, .ephemeral = false, .value = object_view{body}}},
+            cache, deadline);
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
-    std::string_view output_sv = object_view{output}.as<std::string_view>();
+    auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
-
-    ddwaf_object_free(&query);
-    ddwaf_object_free(&body);
 }
 
 TEST(TestHttpEndpointFingerprint, EmptyQuery)
 {
-    ddwaf_object tmp;
+    auto query = owned_object::make_map();
 
-    ddwaf_object query;
-    ddwaf_object_map(&query);
-
-    ddwaf_object body;
-    ddwaf_object_map(&body);
-    ddwaf_object_map_add(&body, "KEY1", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&body, "KEY2", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&body, "KEY", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&body, "3", ddwaf_object_invalid(&tmp));
+    auto body = owned_object::make_map({
+        {"KEY1", owned_object{}},
+        {"KEY2", owned_object{}},
+        {"KEY", owned_object{}},
+        {"3", owned_object{}},
+    });
 
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
-            {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, "GET"},
+        {{}, {}, false, "/path/to/whatever?param=hello"}, {{{}, {}, false, object_view{query}}},
+        {{{}, {}, false, object_view{body}}}, cache, deadline);
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "http-get-0ede9e60--9798c0e4");
-
-    ddwaf_object_free(&query);
-    ddwaf_object_free(&body);
 }
 
 TEST(TestHttpEndpointFingerprint, EmptyBody)
 {
-    ddwaf_object tmp;
 
-    ddwaf_object query;
-    ddwaf_object_map(&query);
-    ddwaf_object_map_add(&query, "Key1", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&query, "KEY2", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&query, "key,3", ddwaf_object_invalid(&tmp));
+    auto query = owned_object::make_map({
+        {"Key1", owned_object{}},
+        {"KEY2", owned_object{}},
+        {"key,3", owned_object{}},
+    });
 
-    ddwaf_object body;
-    ddwaf_object_map(&body);
-
+    auto body = owned_object::make_map();
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
-            {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, "GET"},
+        {{}, {}, false, "/path/to/whatever?param=hello"}, {{{}, {}, false, object_view{query}}},
+        {{{}, {}, false, object_view{body}}}, cache, deadline);
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-");
-
-    ddwaf_object_free(&query);
-    ddwaf_object_free(&body);
 }
 
 TEST(TestHttpEndpointFingerprint, EmptyEverything)
 {
-    ddwaf_object query;
-    ddwaf_object_map(&query);
-
-    ddwaf_object body;
-    ddwaf_object_map(&body);
-
+    auto query = owned_object::make_map();
+    auto body = owned_object::make_map();
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, ""}, {{}, {}, false, ""},
-        {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
+        {{{}, {}, false, object_view{query}}}, {{{}, {}, false, object_view{body}}}, cache,
+        deadline);
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "http----");
-
-    ddwaf_object_free(&query);
-    ddwaf_object_free(&body);
 }
 
 TEST(TestHttpEndpointFingerprint, KeyConsistency)
 {
-    ddwaf_object tmp;
+    auto query = owned_object::make_map({
+        {"Key1", owned_object{}},
+        {"KEY2", owned_object{}},
+        {"key3,Key4", owned_object{}},
+    });
 
-    ddwaf_object query;
-    ddwaf_object_map(&query);
-    ddwaf_object_map_add(&query, "Key1", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&query, "KEY2", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&query, "key3,Key4", ddwaf_object_invalid(&tmp));
-
-    ddwaf_object body;
-    ddwaf_object_map(&body);
-    ddwaf_object_map_add(&body, "KeY1", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&body, "kEY2", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&body, "KEY3", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&body, "KeY4", ddwaf_object_invalid(&tmp));
+    auto body = owned_object::make_map({
+        {"KeY1", owned_object{}},
+        {"kEY2", owned_object{}},
+        {"KEY3", owned_object{}},
+        {"KeY4", owned_object{}},
+    });
 
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
-            {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, "GET"},
+        {{}, {}, false, "/path/to/whatever?param=hello"}, {{{}, {}, false, object_view{query}}},
+        {{{}, {}, false, object_view{body}}}, cache, deadline);
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "http-get-0ede9e60-ced401fa-ff07216e");
-
-    ddwaf_object_free(&query);
-    ddwaf_object_free(&body);
 }
 
 TEST(TestHttpEndpointFingerprint, InvalidQueryType)
 {
-    ddwaf_object tmp;
-
-    ddwaf_object query;
-    ddwaf_object_array(&query);
-    ddwaf_object_array_add(&query, ddwaf_object_string(&tmp, "Key1"));
-    ddwaf_object_array_add(&query, ddwaf_object_string(&tmp, "KEY2"));
-    ddwaf_object_array_add(&query, ddwaf_object_string(&tmp, "key,3"));
-
-    ddwaf_object body;
-    ddwaf_object_map(&body);
-    ddwaf_object_map_add(&body, "KEY1", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&body, "KEY2", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&body, "KEY", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&body, "3", ddwaf_object_invalid(&tmp));
+    auto query = owned_object::make_array({
+        "Key1",
+        "KEY2",
+        "key,3",
+    });
+    auto body = owned_object::make_map({
+        {"KEY1", owned_object{}},
+        {"KEY2", owned_object{}},
+        {"KEY", owned_object{}},
+        {"3", owned_object{}},
+    });
 
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
-            {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, "GET"},
+        {{}, {}, false, "/path/to/whatever?param=hello"}, {{{}, {}, false, object_view{query}}},
+        {{{}, {}, false, object_view{body}}}, cache, deadline);
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "http-get-0ede9e60--9798c0e4");
-
-    ddwaf_object_free(&query);
-    ddwaf_object_free(&body);
 }
 
 TEST(TestHttpEndpointFingerprint, InvalidBodyType)
 {
-    ddwaf_object tmp;
+    auto query = owned_object::make_map({
+        {"Key1", owned_object{}},
+        {"KEY2", owned_object{}},
+        {"key,3", owned_object{}},
+    });
 
-    ddwaf_object query;
-    ddwaf_object_map(&query);
-    ddwaf_object_map_add(&query, "Key1", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&query, "KEY2", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&query, "key,3", ddwaf_object_invalid(&tmp));
-
-    ddwaf_object body;
-    ddwaf_object_array(&body);
-    ddwaf_object_array_add(&body, ddwaf_object_string(&tmp, "KEY1"));
-    ddwaf_object_array_add(&body, ddwaf_object_string(&tmp, "KEY2"));
-    ddwaf_object_array_add(&body, ddwaf_object_string(&tmp, "KEY"));
-    ddwaf_object_array_add(&body, ddwaf_object_string(&tmp, "3"));
-
+    auto body = owned_object::make_array({"KEY1", "KEY2", "KEY", "3"});
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
-            {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, "GET"},
+        {{}, {}, false, "/path/to/whatever?param=hello"}, {{{}, {}, false, object_view{query}}},
+        {{{}, {}, false, object_view{body}}}, cache, deadline);
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-");
-
-    ddwaf_object_free(&query);
-    ddwaf_object_free(&body);
 }
 
 TEST(TestHttpEndpointFingerprint, InvalidQueryAndBodyType)
 {
-    ddwaf_object tmp;
 
-    ddwaf_object query;
-    ddwaf_object_array(&query);
-    ddwaf_object_array_add(&query, ddwaf_object_string(&tmp, "Key1"));
-    ddwaf_object_array_add(&query, ddwaf_object_string(&tmp, "KEY2"));
-    ddwaf_object_array_add(&query, ddwaf_object_string(&tmp, "key,3"));
-
-    ddwaf_object body;
-    ddwaf_object_array(&body);
-    ddwaf_object_array_add(&body, ddwaf_object_string(&tmp, "KEY1"));
-    ddwaf_object_array_add(&body, ddwaf_object_string(&tmp, "KEY2"));
-    ddwaf_object_array_add(&body, ddwaf_object_string(&tmp, "KEY"));
-    ddwaf_object_array_add(&body, ddwaf_object_string(&tmp, "3"));
-
+    auto query = owned_object::make_array({"Key1", "KEY2", "key,3"});
+    auto body = owned_object::make_array({"KEY1", "KEY2", "KEY", "3"});
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
-            {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, "GET"},
+        {{}, {}, false, "/path/to/whatever?param=hello"}, {{{}, {}, false, object_view{query}}},
+        {{{}, {}, false, object_view{body}}}, cache, deadline);
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "http-get-0ede9e60--");
-
-    ddwaf_object_free(&query);
-    ddwaf_object_free(&body);
 }
 
 TEST(TestHttpEndpointFingerprint, UriRawConsistency)
 {
-    ddwaf_object tmp;
+    auto query = owned_object::make_map({
+        {"Key1", owned_object{}},
+        {"KEY2", owned_object{}},
+        {"key,3", owned_object{}},
+    });
 
-    ddwaf_object query;
-    ddwaf_object_map(&query);
-    ddwaf_object_map_add(&query, "Key1", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&query, "KEY2", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&query, "key,3", ddwaf_object_invalid(&tmp));
-
-    ddwaf_object body;
-    ddwaf_object_map(&body);
-    ddwaf_object_map_add(&body, "KEY1", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&body, "KEY2", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&body, "KEY", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&body, "3", ddwaf_object_invalid(&tmp));
+    auto body = owned_object::make_map({
+        {"KEY1", owned_object{}},
+        {"KEY2", owned_object{}},
+        {"KEY", owned_object{}},
+        {"3", owned_object{}},
+    });
 
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
     {
         ddwaf::timer deadline{2s};
         processor_cache cache;
-        auto [output, attr] =
-            gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
-                {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
-        EXPECT_EQ(output.type(), object_type::string);
-        EXPECT_EQ(attr, object_store::attribute::none);
-
-        auto output_sv = object_view{output}.as<std::string_view>();
-        EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
-    }
-
-    {
-        ddwaf::timer deadline{2s};
-        processor_cache cache;
-        auto [output, attr] =
-            gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever#fragment"},
-                {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
+        auto [output, attr] = gen.eval_impl({{}, {}, false, "GET"},
+            {{}, {}, false, "/path/to/whatever?param=hello"}, {{{}, {}, false, object_view{query}}},
+            {{{}, {}, false, object_view{body}}}, cache, deadline);
         EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -317,8 +245,8 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
         ddwaf::timer deadline{2s};
         processor_cache cache;
         auto [output, attr] = gen.eval_impl({{}, {}, false, "GET"},
-            {{}, {}, false, "/path/to/whatever?param=hello#fragment"}, {{{}, {}, false, &query}},
-            {{{}, {}, false, &body}}, cache, deadline);
+            {{}, {}, false, "/path/to/whatever#fragment"}, {{{}, {}, false, object_view{query}}},
+            {{{}, {}, false, object_view{body}}}, cache, deadline);
         EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -329,9 +257,10 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
     {
         ddwaf::timer deadline{2s};
         processor_cache cache;
-        auto [output, attr] =
-            gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever"},
-                {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
+        auto [output, attr] = gen.eval_impl({{}, {}, false, "GET"},
+            {{}, {}, false, "/path/to/whatever?param=hello#fragment"},
+            {{{}, {}, false, object_view{query}}}, {{{}, {}, false, object_view{body}}}, cache,
+            deadline);
         EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -342,9 +271,9 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
     {
         ddwaf::timer deadline{2s};
         processor_cache cache;
-        auto [output, attr] =
-            gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/PaTh/To/WhAtEVER"},
-                {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
+        auto [output, attr] = gen.eval_impl({{}, {}, false, "GET"},
+            {{}, {}, false, "/path/to/whatever"}, {{{}, {}, false, object_view{query}}},
+            {{{}, {}, false, object_view{body}}}, cache, deadline);
         EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -352,19 +281,27 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
         EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
     }
 
-    ddwaf_object_free(&query);
-    ddwaf_object_free(&body);
+    {
+        ddwaf::timer deadline{2s};
+        processor_cache cache;
+        auto [output, attr] = gen.eval_impl({{}, {}, false, "GET"},
+            {{}, {}, false, "/PaTh/To/WhAtEVER"}, {{{}, {}, false, object_view{query}}},
+            {{{}, {}, false, object_view{body}}}, cache, deadline);
+        EXPECT_EQ(output.type(), object_type::string);
+        EXPECT_EQ(attr, object_store::attribute::none);
+
+        auto output_sv = object_view{output}.as<std::string_view>();
+        EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
+    }
 }
 
 TEST(TestHttpEndpointFingerprint, Regeneration)
 {
-    ddwaf_object tmp;
-
-    ddwaf_object query;
-    ddwaf_object_map(&query);
-    ddwaf_object_map_add(&query, "Key1", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&query, "KEY2", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&query, "key,3", ddwaf_object_invalid(&tmp));
+    auto query = owned_object::make_map({
+        {"Key1", owned_object{}},
+        {"KEY2", owned_object{}},
+        {"key,3", owned_object{}},
+    });
 
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
     processor_cache cache;
@@ -373,7 +310,7 @@ TEST(TestHttpEndpointFingerprint, Regeneration)
         ddwaf::timer deadline{2s};
         auto [output, attr] =
             gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
-                {{{}, {}, false, &query}}, std::nullopt, cache, deadline);
+                {{{}, {}, false, object_view{query}}}, std::nullopt, cache, deadline);
         EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -382,359 +319,309 @@ TEST(TestHttpEndpointFingerprint, Regeneration)
     }
 
     {
-        ddwaf_object body;
-        ddwaf_object_map(&body);
-        ddwaf_object_map_add(&body, "KEY1", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&body, "KEY2", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&body, "KEY", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&body, "3", ddwaf_object_invalid(&tmp));
+        auto body = owned_object::make_map({
+            {"KEY1", owned_object{}},
+            {"KEY2", owned_object{}},
+            {"KEY", owned_object{}},
+            {"3", owned_object{}},
+        });
 
         ddwaf::timer deadline{2s};
-        auto [output, attr] =
-            gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
-                {{{}, {}, false, &query}}, {{{}, {}, false, &body}}, cache, deadline);
+        auto [output, attr] = gen.eval_impl({{}, {}, false, "GET"},
+            {{}, {}, false, "/path/to/whatever?param=hello"}, {{{}, {}, false, object_view{query}}},
+            {{{}, {}, false, object_view{body}}}, cache, deadline);
         EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
         auto output_sv = object_view{output}.as<std::string_view>();
         EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
-
-        ddwaf_object_free(&body);
     }
-
-    ddwaf_object_free(&query);
 }
 
 TEST(TestHttpHeaderFingerprint, AllKnownHeaders)
 {
-    ddwaf_object tmp;
-
-    ddwaf_object headers;
-    ddwaf_object_map(&headers);
-    ddwaf_object_map_add(&headers, "referer", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "CONNECTION", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "Accept_Encoding", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "CONTENT-encoding", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cache-CONTROL", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "tE", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "ACCEPT_CHARSET", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "content-type", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accepT", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept_language", ddwaf_object_invalid(&tmp));
+    auto headers = owned_object::make_map({
+        {"referer", owned_object{}},
+        {"CONNECTION", owned_object{}},
+        {"Accept_Encoding", owned_object{}},
+        {"CONTENT-encoding", owned_object{}},
+        {"cache-CONTROL", owned_object{}},
+        {"tE", owned_object{}},
+        {"ACCEPT_CHARSET", owned_object{}},
+        {"content-type", owned_object{}},
+        {"accepT", owned_object{}},
+        {"accept_language", owned_object{}},
+    });
 
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{headers}}, cache, deadline);
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-1111111111--0-");
-
-    ddwaf_object_free(&headers);
 }
 
 TEST(TestHttpHeaderFingerprint, NoHeaders)
 {
-    ddwaf_object headers;
-    ddwaf_object_map(&headers);
-
+    auto headers = owned_object::make_map();
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{headers}}, cache, deadline);
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-0000000000--0-");
-
-    ddwaf_object_free(&headers);
 }
 
 TEST(TestHttpHeaderFingerprint, SomeKnownHeaders)
 {
-    ddwaf_object tmp;
-
-    ddwaf_object headers;
-    ddwaf_object_map(&headers);
-    ddwaf_object_map_add(&headers, "referer", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_invalid(&tmp));
+    auto headers = owned_object::make_map({
+        {"referer", owned_object{}},
+        {"accept-encoding", owned_object{}},
+        {"cache-control", owned_object{}},
+        {"accept-charset", owned_object{}},
+        {"accept", owned_object{}},
+        {"accept-language", owned_object{}},
+    });
 
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{headers}}, cache, deadline);
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-1010101011--0-");
-
-    ddwaf_object_free(&headers);
 }
 
 TEST(TestHttpHeaderFingerprint, UserAgent)
 {
-    ddwaf_object tmp;
-
-    ddwaf_object headers;
-    ddwaf_object_map(&headers);
-    ddwaf_object_map_add(&headers, "referer", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "connection", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "content-encoding", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "te", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "content-type", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "user-agent", ddwaf_object_string(&tmp, "Random"));
+    auto headers = owned_object::make_map({
+        {"referer", owned_object{}},
+        {"connection", owned_object{}},
+        {"accept-encoding", owned_object{}},
+        {"content-encoding", owned_object{}},
+        {"cache-control", owned_object{}},
+        {"te", owned_object{}},
+        {"accept-charset", owned_object{}},
+        {"content-type", owned_object{}},
+        {"accept", owned_object{}},
+        {"accept-language", owned_object{}},
+        {"user-agent", "Random"},
+    });
 
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{headers}}, cache, deadline);
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-1111111111-a441b15f-0-");
-
-    ddwaf_object_free(&headers);
 }
 
 TEST(TestHttpHeaderFingerprint, ExcludedUnknownHeaders)
 {
-    ddwaf_object tmp;
+    auto headers = owned_object::make_map({
+        {"referer", owned_object{}},
+        {"connection", owned_object{}},
+        {"accept-encoding", owned_object{}},
+        {"content-encoding", owned_object{}},
+        {"cache-control", owned_object{}},
+        {"te", owned_object{}},
+        {"accept-charset", owned_object{}},
+        {"content-type", owned_object{}},
+        {"accept", owned_object{}},
+        {"accept-language", owned_object{}},
+        {"user-agent", "Random"},
 
-    ddwaf_object headers;
-    ddwaf_object_map(&headers);
-    ddwaf_object_map_add(&headers, "referer", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "connection", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "content-encoding", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "te", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "content-type", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "user-agent", ddwaf_object_string(&tmp, "Random"));
-
-    // Should be excluded
-    ddwaf_object_map_add(&headers, "x-datadog-trace-id", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-forwarded-for", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_invalid(&tmp));
+        // Should be excluded
+        {"x-datadog-trace-id", owned_object{}},
+        {"x-forwarded-for", owned_object{}},
+        {"x-real-ip", owned_object{}},
+        {"true-client-ip", owned_object{}},
+        {"x-client-ip", owned_object{}},
+        {"x-forwarded", owned_object{}},
+        {"forwarded-for", owned_object{}},
+        {"x-cluster-client-ip", owned_object{}},
+        {"fastly-client-ip", owned_object{}},
+        {"cf-connecting-ip", owned_object{}},
+        {"cf-connecting-ipv6", owned_object{}},
+    });
 
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{headers}}, cache, deadline);
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-1111111111-a441b15f-0-");
-
-    ddwaf_object_free(&headers);
 }
 
 TEST(TestHttpHeaderFingerprint, UnknownHeaders)
 {
-    ddwaf_object tmp;
+    auto headers = owned_object::make_map({
+        {"referer", owned_object{}},
+        {"connection", owned_object{}},
+        {"accept-encoding", owned_object{}},
+        {"content-encoding", owned_object{}},
+        {"cache-control", owned_object{}},
+        {"te", owned_object{}},
+        {"accept-charset", owned_object{}},
+        {"content-type", owned_object{}},
+        {"accept", owned_object{}},
+        {"accept-language", owned_object{}},
+        {"user-agent", "Random"},
+        {"unknown_header", owned_object{}},
+        {"Authorization", owned_object{}},
+        {"WWW-Authenticate", owned_object{}},
+        {"Allow", owned_object{}},
 
-    ddwaf_object headers;
-    ddwaf_object_map(&headers);
-    ddwaf_object_map_add(&headers, "referer", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "connection", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "content-encoding", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "te", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "content-type", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "user-agent", ddwaf_object_string(&tmp, "Random"));
-    ddwaf_object_map_add(&headers, "unknown_header", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "Authorization", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "WWW-Authenticate", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "Allow", ddwaf_object_invalid(&tmp));
-
-    // Should be excluded
-    ddwaf_object_map_add(&headers, "x-datadog-trace-id", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-forwarded-for", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_invalid(&tmp));
+        // Should be excluded
+        {"x-datadog-trace-id", owned_object{}},
+        {"x-forwarded-for", owned_object{}},
+        {"x-real-ip", owned_object{}},
+        {"true-client-ip", owned_object{}},
+        {"x-client-ip", owned_object{}},
+        {"x-forwarded", owned_object{}},
+        {"forwarded-for", owned_object{}},
+        {"x-cluster-client-ip", owned_object{}},
+        {"fastly-client-ip", owned_object{}},
+        {"cf-connecting-ip", owned_object{}},
+        {"cf-connecting-ipv6", owned_object{}},
+    });
 
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{headers}}, cache, deadline);
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-1111111111-a441b15f-4-47280082");
-
-    ddwaf_object_free(&headers);
 }
 
 TEST(TestHttpHeaderFingerprint, InvalidHeaderType)
 {
-    ddwaf_object headers;
-    ddwaf_object_string(&headers, "value");
-
+    owned_object headers{"value"};
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{headers}}, cache, deadline);
     EXPECT_EQ(output.type(), object_type::invalid);
     EXPECT_EQ(attr, object_store::attribute::none);
-
-    ddwaf_object_free(&headers);
 }
 
 TEST(TestHttpNetworkFingerprint, AllXFFHeaders)
 {
-    ddwaf_object tmp;
-
-    ddwaf_object headers;
-    ddwaf_object_map(&headers);
-    ddwaf_object_map_add(&headers, "x-forwarded-for", ddwaf_object_string(&tmp, "192.168.1.1"));
-    ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_invalid(&tmp));
+    auto headers = owned_object::make_map({
+        {"x-forwarded-for", "192.168.1.1"},
+        {"x-real-ip", owned_object{}},
+        {"true-client-ip", owned_object{}},
+        {"x-client-ip", owned_object{}},
+        {"x-forwarded", owned_object{}},
+        {"forwarded-for", owned_object{}},
+        {"x-cluster-client-ip", owned_object{}},
+        {"fastly-client-ip", owned_object{}},
+        {"cf-connecting-ip", owned_object{}},
+        {"cf-connecting-ipv6", owned_object{}},
+    });
 
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{headers}}, cache, deadline);
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "net-1-1111111111");
-
-    ddwaf_object_free(&headers);
 }
 TEST(TestHttpNetworkFingerprint, NoHeaders)
 {
-    ddwaf_object headers;
-    ddwaf_object_map(&headers);
-
+    auto headers = owned_object::make_map();
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{headers}}, cache, deadline);
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "net-0-0000000000");
-
-    ddwaf_object_free(&headers);
 }
 
 TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPs)
 {
-    ddwaf_object tmp;
-
-    ddwaf_object headers;
-    ddwaf_object_map(&headers);
-    ddwaf_object_map_add(
-        &headers, "x-forwarded-for", ddwaf_object_string(&tmp, "192.168.1.1,::1,8.7.6.5"));
-    ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_invalid(&tmp));
+    auto headers = owned_object::make_map({
+        {"x-forwarded-for", "192.168.1.1,::1,8.7.6.5"},
+        {"x-real-ip", owned_object{}},
+        {"true-client-ip", owned_object{}},
+        {"x-client-ip", owned_object{}},
+        {"x-forwarded", owned_object{}},
+        {"forwarded-for", owned_object{}},
+        {"x-cluster-client-ip", owned_object{}},
+        {"fastly-client-ip", owned_object{}},
+        {"cf-connecting-ip", owned_object{}},
+        {"cf-connecting-ipv6", owned_object{}},
+    });
 
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{headers}}, cache, deadline);
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "net-3-1111111111");
-
-    ddwaf_object_free(&headers);
 }
 
 TEST(TestHttpNetworkFingerprint, AllXFFHeadersRandomChosenHeader)
 {
-    ddwaf_object tmp;
-
-    ddwaf_object headers;
-    ddwaf_object_map(&headers);
-    ddwaf_object_map_add(&headers, "x-forwarded-for", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(
-        &headers, "fastly-client-ip", ddwaf_object_string(&tmp, "192.168.1.1,::1,8.7.6.5"));
-    ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_invalid(&tmp));
+    auto headers = owned_object::make_map({
+        {"x-forwarded-for", owned_object{}},
+        {"x-real-ip", owned_object{}},
+        {"true-client-ip", owned_object{}},
+        {"x-client-ip", owned_object{}},
+        {"x-forwarded", owned_object{}},
+        {"forwarded-for", owned_object{}},
+        {"x-cluster-client-ip", owned_object{}},
+        {"fastly-client-ip", "192.168.1.1,::1,8.7.6.5"},
+        {"cf-connecting-ip", owned_object{}},
+        {"cf-connecting-ipv6", owned_object{}},
+    });
 
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{headers}}, cache, deadline);
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "net-3-1111111111");
-
-    ddwaf_object_free(&headers);
 }
 
 TEST(TestHttpNetworkFingerprint, HeaderPrecedence)
@@ -742,10 +629,7 @@ TEST(TestHttpNetworkFingerprint, HeaderPrecedence)
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     auto get_headers = [](std::size_t begin) {
-        ddwaf_object tmp;
-        ddwaf_object headers;
-        ddwaf_object_map(&headers);
-
+        auto headers = owned_object::make_map();
         std::array<std::string, 10> names{"x-forwarded-for", "x-real-ip", "true-client-ip",
             "x-client-ip", "x-forwarded", "forwarded-for", "x-cluster-client-ip",
             "fastly-client-ip", "cf-connecting-ip", "cf-connecting-ipv6"};
@@ -754,25 +638,22 @@ TEST(TestHttpNetworkFingerprint, HeaderPrecedence)
         for (std::size_t i = 0; i < begin; ++i) { value += ",::1"; }
 
         for (std::size_t i = begin; i < names.size(); ++i) {
-            ddwaf_object_map_add(
-                &headers, names[i].c_str(), ddwaf_object_string(&tmp, value.c_str()));
+            headers.emplace(names[i], value);
             value += ",::1";
         }
 
         return headers;
     };
 
-    auto match_frag = [&](ddwaf_object headers, const std::string &expected) {
+    auto match_frag = [&](owned_object headers, const std::string &expected) {
         ddwaf::timer deadline{2s};
         processor_cache cache;
-        auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+        auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{headers}}, cache, deadline);
         EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
         auto output_sv = object_view{output}.as<std::string_view>();
         EXPECT_STRV(output_sv, expected.c_str());
-
-        ddwaf_object_free(&headers);
     };
 
     match_frag(get_headers(0), "net-1-1111111111");
@@ -789,51 +670,42 @@ TEST(TestHttpNetworkFingerprint, HeaderPrecedence)
 
 TEST(TestNetworkHeaderFingerprint, InvalidHeaderType)
 {
-    ddwaf_object headers;
-    ddwaf_object_string(&headers, "value");
+    owned_object headers{"value"};
 
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{headers}}, cache, deadline);
     EXPECT_EQ(output.type(), object_type::invalid);
     EXPECT_EQ(attr, object_store::attribute::none);
-
-    ddwaf_object_free(&headers);
 }
 
 TEST(TestSessionFingerprint, UserOnly)
 {
-    ddwaf_object cookies;
-    ddwaf_object_map(&cookies);
-
+    auto cookies = owned_object::make_map();
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{{}, {}, false, &cookies}}, {{{}, {}, false, {}}},
-        {{{}, {}, false, "admin"}}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{{}, {}, false, object_view{cookies}}},
+        {{{}, {}, false, {}}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5---");
-
-    ddwaf_object_free(&cookies);
 }
 
 TEST(TestSessionFingerprint, SessionOnly)
 {
-    ddwaf_object cookies;
-    ddwaf_object_map(&cookies);
-
+    auto cookies = owned_object::make_map();
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{{}, {}, false, &cookies}},
+    auto [output, attr] = gen.eval_impl({{{}, {}, false, object_view{cookies}}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, {}}}, cache, deadline);
 
     EXPECT_EQ(output.type(), object_type::string);
@@ -841,59 +713,51 @@ TEST(TestSessionFingerprint, SessionOnly)
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn----269500d3");
-
-    ddwaf_object_free(&cookies);
 }
 
 TEST(TestSessionFingerprint, CookiesOnly)
 {
-    ddwaf_object tmp;
-
-    ddwaf_object cookies;
-    ddwaf_object_map(&cookies);
-    ddwaf_object_map_add(&cookies, "name", ddwaf_object_string(&tmp, "albert"));
-    ddwaf_object_map_add(&cookies, "theme", ddwaf_object_string(&tmp, "dark"));
-    ddwaf_object_map_add(&cookies, "language", ddwaf_object_string(&tmp, "en-GB"));
-    ddwaf_object_map_add(&cookies, "tracking_id", ddwaf_object_string(&tmp, "xyzabc"));
-    ddwaf_object_map_add(&cookies, "gdpr_consent", ddwaf_object_string(&tmp, "yes"));
-    ddwaf_object_map_add(&cookies, "session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
-    ddwaf_object_map_add(&cookies, "last_visit", ddwaf_object_string(&tmp, "2024-07-16T12:00:00Z"));
+    auto cookies = owned_object::make_map({
+        {"name", "albert"},
+        {"theme", "dark"},
+        {"language", "en-GB"},
+        {"tracking_id", "xyzabc"},
+        {"gdpr_consent", "yes"},
+        {"session_id", "ansd0182u2n"},
+        {"last_visit", "2024-07-16T12:00:00Z"},
+    });
 
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl(
-        {{{}, {}, false, &cookies}}, {{{}, {}, false, {}}}, {{{}, {}, false, {}}}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{{}, {}, false, object_view{cookies}}},
+        {{{}, {}, false, {}}}, {{{}, {}, false, {}}}, cache, deadline);
 
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn--df6143bc-60ba1602-");
-
-    ddwaf_object_free(&cookies);
 }
 
 TEST(TestSessionFingerprint, UserCookieAndSession)
 {
-    ddwaf_object tmp;
-
-    ddwaf_object cookies;
-    ddwaf_object_map(&cookies);
-    ddwaf_object_map_add(&cookies, "name", ddwaf_object_string(&tmp, "albert"));
-    ddwaf_object_map_add(&cookies, "theme", ddwaf_object_string(&tmp, "dark"));
-    ddwaf_object_map_add(&cookies, "language", ddwaf_object_string(&tmp, "en-GB"));
-    ddwaf_object_map_add(&cookies, "tracking_id", ddwaf_object_string(&tmp, "xyzabc"));
-    ddwaf_object_map_add(&cookies, "gdpr_consent", ddwaf_object_string(&tmp, "yes"));
-    ddwaf_object_map_add(&cookies, "session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
-    ddwaf_object_map_add(&cookies, "last_visit", ddwaf_object_string(&tmp, "2024-07-16T12:00:00Z"));
+    auto cookies = owned_object::make_map({
+        {"name", "albert"},
+        {"theme", "dark"},
+        {"language", "en-GB"},
+        {"tracking_id", "xyzabc"},
+        {"gdpr_consent", "yes"},
+        {"session_id", "ansd0182u2n"},
+        {"last_visit", "2024-07-16T12:00:00Z"},
+    });
 
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{{}, {}, false, &cookies}},
+    auto [output, attr] = gen.eval_impl({{{}, {}, false, object_view{cookies}}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
     EXPECT_EQ(output.type(), object_type::string);
@@ -901,29 +765,25 @@ TEST(TestSessionFingerprint, UserCookieAndSession)
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-df6143bc-60ba1602-269500d3");
-
-    ddwaf_object_free(&cookies);
 }
 
 TEST(TestSessionFingerprint, CookieKeysNormalization)
 {
-    ddwaf_object tmp;
-
-    ddwaf_object cookies;
-    ddwaf_object_map(&cookies);
-    ddwaf_object_map_add(&cookies, "nAmE", ddwaf_object_string(&tmp, "albert"));
-    ddwaf_object_map_add(&cookies, "THEME", ddwaf_object_string(&tmp, "dark"));
-    ddwaf_object_map_add(&cookies, "language,ID", ddwaf_object_string(&tmp, "en-GB"));
-    ddwaf_object_map_add(&cookies, "tra,cKing,ID", ddwaf_object_string(&tmp, "xyzabc"));
-    ddwaf_object_map_add(&cookies, "Gdpr_consent", ddwaf_object_string(&tmp, "yes"));
-    ddwaf_object_map_add(&cookies, "SESSION_ID", ddwaf_object_string(&tmp, "ansd0182u2n"));
-    ddwaf_object_map_add(&cookies, "last_visiT", ddwaf_object_string(&tmp, "2024-07-16T12:00:00Z"));
+    auto cookies = owned_object::make_map({
+        {"nAmE", "albert"},
+        {"THEME", "dark"},
+        {"language,ID", "en-GB"},
+        {"tra,cKing,ID", "xyzabc"},
+        {"Gdpr_consent", "yes"},
+        {"SESSION_ID", "ansd0182u2n"},
+        {"last_visiT", "2024-07-16T12:00:00Z"},
+    });
 
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{{}, {}, false, &cookies}},
+    auto [output, attr] = gen.eval_impl({{{}, {}, false, object_view{cookies}}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
     EXPECT_EQ(output.type(), object_type::string);
@@ -931,29 +791,25 @@ TEST(TestSessionFingerprint, CookieKeysNormalization)
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-424e7e09-60ba1602-269500d3");
-
-    ddwaf_object_free(&cookies);
 }
 
 TEST(TestSessionFingerprint, CookieValuesNormalization)
 {
-    ddwaf_object tmp;
-
-    ddwaf_object cookies;
-    ddwaf_object_map(&cookies);
-    ddwaf_object_map_add(&cookies, "name", ddwaf_object_string(&tmp, "albert,martinez"));
-    ddwaf_object_map_add(&cookies, "theme", ddwaf_object_string(&tmp, "dark"));
-    ddwaf_object_map_add(&cookies, "language", ddwaf_object_string(&tmp, "en-GB,en-US"));
-    ddwaf_object_map_add(&cookies, "tracking_id", ddwaf_object_string(&tmp, "xyzabc"));
-    ddwaf_object_map_add(&cookies, "gdpr_consent", ddwaf_object_string(&tmp, ",yes"));
-    ddwaf_object_map_add(&cookies, "session_id", ddwaf_object_string(&tmp, "ansd0182u2n,"));
-    ddwaf_object_map_add(&cookies, "last_visit", ddwaf_object_string(&tmp, "2024-07-16T12:00:00Z"));
+    auto cookies = owned_object::make_map({
+        {"name", "albert,martinez"},
+        {"theme", "dark"},
+        {"language", "en-GB,en-US"},
+        {"tracking_id", "xyzabc"},
+        {"gdpr_consent", ",yes"},
+        {"session_id", "ansd0182u2n,"},
+        {"last_visit", "2024-07-16T12:00:00Z"},
+    });
 
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{{}, {}, false, &cookies}},
+    auto [output, attr] = gen.eval_impl({{{}, {}, false, object_view{cookies}}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
     EXPECT_EQ(output.type(), object_type::string);
@@ -961,29 +817,25 @@ TEST(TestSessionFingerprint, CookieValuesNormalization)
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-df6143bc-64f82cf7-269500d3");
-
-    ddwaf_object_free(&cookies);
 }
 
 TEST(TestSessionFingerprint, CookieEmptyValues)
 {
-    ddwaf_object tmp;
-
-    ddwaf_object cookies;
-    ddwaf_object_map(&cookies);
-    ddwaf_object_map_add(&cookies, "name", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&cookies, "theme", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&cookies, "language", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&cookies, "tracking_id", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&cookies, "gdpr_consent", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&cookies, "session_id", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&cookies, "last_visit", ddwaf_object_invalid(&tmp));
+    auto cookies = owned_object::make_map({
+        {"name", owned_object{}},
+        {"theme", owned_object{}},
+        {"language", owned_object{}},
+        {"tracking_id", owned_object{}},
+        {"gdpr_consent", owned_object{}},
+        {"session_id", owned_object{}},
+        {"last_visit", owned_object{}},
+    });
 
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{{}, {}, false, &cookies}},
+    auto [output, attr] = gen.eval_impl({{{}, {}, false, object_view{cookies}}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
     EXPECT_EQ(output.type(), object_type::string);
@@ -991,29 +843,25 @@ TEST(TestSessionFingerprint, CookieEmptyValues)
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-df6143bc-d3648ef2-269500d3");
-
-    ddwaf_object_free(&cookies);
 }
 
 TEST(TestSessionFingerprint, CookieEmptyKeys)
 {
-    ddwaf_object tmp;
-
-    ddwaf_object cookies;
-    ddwaf_object_map(&cookies);
-    ddwaf_object_map_add(&cookies, "", ddwaf_object_string(&tmp, "albert,martinez"));
-    ddwaf_object_map_add(&cookies, "", ddwaf_object_string(&tmp, "dark"));
-    ddwaf_object_map_add(&cookies, "", ddwaf_object_string(&tmp, "en-GB,en-US"));
-    ddwaf_object_map_add(&cookies, "", ddwaf_object_string(&tmp, "xyzabc"));
-    ddwaf_object_map_add(&cookies, "", ddwaf_object_string(&tmp, ",yes"));
-    ddwaf_object_map_add(&cookies, "", ddwaf_object_string(&tmp, "ansd0182u2n,"));
-    ddwaf_object_map_add(&cookies, "", ddwaf_object_string(&tmp, "2024-07-16T12:00:00Z"));
+    auto cookies = owned_object::make_map({
+        {"", "albert,martinez"},
+        {"", "dark"},
+        {"", "en-GB,en-US"},
+        {"", "xyzabc"},
+        {"", ",yes"},
+        {"", "ansd0182u2n,"},
+        {"", "2024-07-16T12:00:00Z"},
+    });
 
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{{}, {}, false, &cookies}},
+    auto [output, attr] = gen.eval_impl({{{}, {}, false, object_view{cookies}}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
     EXPECT_EQ(output.type(), object_type::string);
@@ -1021,29 +869,23 @@ TEST(TestSessionFingerprint, CookieEmptyKeys)
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-d3648ef2-f32e5c3e-269500d3");
-
-    ddwaf_object_free(&cookies);
 }
 
 TEST(TestSessionFingerprint, EmptyEverything)
 {
-    ddwaf_object cookies;
-    ddwaf_object_map(&cookies);
-
+    auto cookies = owned_object::make_map();
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl(
-        {{{}, {}, false, &cookies}}, {{{}, {}, false, {}}}, {{{}, {}, false, {}}}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{{}, {}, false, object_view{cookies}}},
+        {{{}, {}, false, {}}}, {{{}, {}, false, {}}}, cache, deadline);
 
     EXPECT_EQ(output.type(), object_type::string);
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn----");
-
-    ddwaf_object_free(&cookies);
 }
 
 TEST(TestSessionFingerprint, Regeneration)
@@ -1063,30 +905,25 @@ TEST(TestSessionFingerprint, Regeneration)
     }
 
     {
-        ddwaf_object tmp;
-
-        ddwaf_object cookies;
-        ddwaf_object_map(&cookies);
-        ddwaf_object_map_add(&cookies, "name", ddwaf_object_string(&tmp, "albert,martinez"));
-        ddwaf_object_map_add(&cookies, "theme", ddwaf_object_string(&tmp, "dark"));
-        ddwaf_object_map_add(&cookies, "language", ddwaf_object_string(&tmp, "en-GB,en-US"));
-        ddwaf_object_map_add(&cookies, "tracking_id", ddwaf_object_string(&tmp, "xyzabc"));
-        ddwaf_object_map_add(&cookies, "gdpr_consent", ddwaf_object_string(&tmp, ",yes"));
-        ddwaf_object_map_add(&cookies, "session_id", ddwaf_object_string(&tmp, "ansd0182u2n,"));
-        ddwaf_object_map_add(
-            &cookies, "last_visit", ddwaf_object_string(&tmp, "2024-07-16T12:00:00Z"));
+        auto cookies = owned_object::make_map({
+            {"name", "albert,martinez"},
+            {"theme", "dark"},
+            {"language", "en-GB,en-US"},
+            {"tracking_id", "xyzabc"},
+            {"gdpr_consent", ",yes"},
+            {"session_id", "ansd0182u2n,"},
+            {"last_visit", "2024-07-16T12:00:00Z"},
+        });
 
         ddwaf::timer deadline{2s};
 
-        auto [output, attr] =
-            gen.eval_impl({{{}, {}, false, &cookies}}, std::nullopt, std::nullopt, cache, deadline);
+        auto [output, attr] = gen.eval_impl(
+            {{{}, {}, false, object_view{cookies}}}, std::nullopt, std::nullopt, cache, deadline);
         EXPECT_EQ(output.type(), object_type::string);
         EXPECT_EQ(attr, object_store::attribute::none);
 
         auto output_sv = object_view{output}.as<std::string_view>();
         EXPECT_STRV(output_sv, "ssn--df6143bc-64f82cf7-");
-
-        ddwaf_object_free(&cookies);
     }
 
     {

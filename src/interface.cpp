@@ -17,6 +17,7 @@
 #include <memory>
 #include <optional>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "builder/waf_builder.hpp"
@@ -97,7 +98,7 @@ ddwaf::waf *ddwaf_init(
             auto free_fn = config != nullptr ? config->free_fn : ddwaf_object_free;
             ddwaf::waf_builder builder(free_fn, obfuscator_from_config(config));
 
-            ddwaf::raw_configuration input = *ruleset;
+            ddwaf::raw_configuration input{ruleset};
             if (diagnostics == nullptr) {
                 ddwaf::null_ruleset_info ri;
 
@@ -200,14 +201,16 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
             res = *result;
         }
 
-        optional_ref<ddwaf_object> persistent{std::nullopt};
+        auto free_fn = context->get_free_fn();
+
+        owned_object persistent;
         if (persistent_data != nullptr) {
-            persistent = *persistent_data;
+            persistent = owned_object{*persistent_data, free_fn};
         }
 
-        optional_ref<ddwaf_object> ephemeral{std::nullopt};
+        owned_object ephemeral;
         if (ephemeral_data != nullptr) {
-            ephemeral = *ephemeral_data;
+            ephemeral = owned_object{*ephemeral_data, free_fn};
         }
 
         // The timers will actually count nanoseconds, std::chrono doesn't
@@ -215,7 +218,7 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
         constexpr uint64_t max_timeout_ms = std::chrono::nanoseconds::max().count() / 1000;
         timeout = std::min(timeout, max_timeout_ms);
 
-        return context->run(persistent, ephemeral, res, timeout);
+        return context->run(std::move(persistent), std::move(ephemeral), res, timeout);
     } catch (const std::exception &e) {
         // catch-all to avoid std::terminate
         DDWAF_ERROR("{}", e.what());

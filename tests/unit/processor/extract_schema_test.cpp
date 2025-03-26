@@ -15,369 +15,246 @@ namespace {
 
 TEST(TestExtractSchema, UnknownScalarSchema)
 {
-    ddwaf_object input;
-    ddwaf_object_invalid(&input);
+    owned_object input;
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([0])");
 }
 
 TEST(TestExtractSchema, NullScalarSchema)
 {
-    ddwaf_object input;
-    ddwaf_object_null(&input);
+    owned_object input{nullptr};
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([1])");
 }
 
 TEST(TestExtractSchema, BoolScalarSchema)
 {
-    ddwaf_object input;
-    ddwaf_object_bool(&input, true);
+    owned_object input{true};
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([2])");
 }
 
 TEST(TestExtractSchema, IntScalarSchema)
 {
-    ddwaf_object input;
     {
-        ddwaf_object_unsigned(&input, 5);
+        owned_object input{5};
 
         extract_schema gen{"id", {}, {}, {}, false, true};
 
         ddwaf::timer deadline{2s};
         processor_cache cache;
-        auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+        auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
         EXPECT_SCHEMA_EQ(output.ref(), R"([4])");
     }
     {
-        ddwaf_object_signed(&input, -5);
+        owned_object input{-5};
 
         extract_schema gen{"id", {}, {}, {}, false, true};
 
         ddwaf::timer deadline{2s};
         processor_cache cache;
-        auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+        auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
         EXPECT_SCHEMA_EQ(output.ref(), R"([4])");
     }
 }
 
 TEST(TestExtractSchema, StringScalarSchema)
 {
-    ddwaf_object input;
-    ddwaf_object_string(&input, "string");
+    owned_object input{"string"};
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([8])");
-
-    ddwaf_object_free(&input);
 }
 
 TEST(TestExtractSchema, FloatScalarSchema)
 {
-    ddwaf_object input;
-    ddwaf_object_float(&input, 1.5);
+    owned_object input{1.5};
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([16])");
 }
 
 TEST(TestExtractSchema, EmptyArraySchema)
 {
-    ddwaf_object input;
-    ddwaf_object_array(&input);
+    auto input = owned_object::make_array();
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([[],{"len":0}])");
 }
 
 TEST(TestExtractSchema, ArraySchema)
 {
-    ddwaf_object tmp;
-    ddwaf_object input;
-    ddwaf_object_array(&input);
-    ddwaf_object_array_add(&input, ddwaf_object_unsigned(&tmp, 22));
-    ddwaf_object_array_add(&input, ddwaf_object_string(&tmp, "string"));
-    ddwaf_object_array_add(&input, ddwaf_object_invalid(&tmp));
-    ddwaf_object_array_add(&input, ddwaf_object_null(&tmp));
+    auto input = owned_object::make_array({22, "string", owned_object{}, nullptr});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([[[1],[0],[8],[4]],{"len":4}])");
-
-    ddwaf_object_free(&input);
 }
 
 TEST(TestExtractSchema, ArrayWithDuplicateScalarSchema)
 {
-    ddwaf_object tmp;
-    ddwaf_object input;
-    ddwaf_object_array(&input);
-    ddwaf_object_array_add(&input, ddwaf_object_string(&tmp, "string"));
-    ddwaf_object_array_add(&input, ddwaf_object_string(&tmp, "string"));
-    ddwaf_object_array_add(&input, ddwaf_object_string(&tmp, "string"));
-    ddwaf_object_array_add(&input, ddwaf_object_string(&tmp, "string"));
+    auto input = owned_object::make_array({"string", "string", "string", "string"});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([[[8]],{"len":4}])");
-
-    ddwaf_object_free(&input);
 }
 
 TEST(TestExtractSchema, ArrayWithDuplicateMapsSchema)
 {
-    ddwaf_object tmp;
-
-    ddwaf_object input;
-    ddwaf_object_array(&input);
-
-    ddwaf_object child;
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "unsigned", ddwaf_object_unsigned(&tmp, 5));
-    ddwaf_object_map_add(&child, "string", ddwaf_object_string(&tmp, "str"));
-    ddwaf_object_array_add(&input, &child);
-
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "signed", ddwaf_object_signed(&tmp, -5));
-    ddwaf_object_array_add(&input, &child);
-
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "unsigned", ddwaf_object_unsigned(&tmp, 5));
-    ddwaf_object_array_add(&input, &child);
-
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "unsigned", ddwaf_object_unsigned(&tmp, 109));
-    ddwaf_object_map_add(&child, "string", ddwaf_object_string(&tmp, "wahtever"));
-    ddwaf_object_array_add(&input, &child);
+    auto input =
+        owned_object::make_array({owned_object::make_map({{"unsigned", 5}, {"string", "str"}}),
+            owned_object::make_map({{"signed", -5}}), owned_object::make_map({{"unsigned", 5}}),
+            owned_object::make_map({{"unsigned", 109}, {"string", "wahtever"}})});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(),
         R"([[[{"unsigned":[4]}],[{"signed":[4]}],[{"string":[8],"unsigned":[4]}]],{"len":4}])");
-
-    ddwaf_object_free(&input);
 }
 
 TEST(TestExtractSchema, ArrayWithDuplicateArraysSchema)
 {
-    ddwaf_object tmp;
-
-    ddwaf_object input;
-    ddwaf_object_array(&input);
-
-    ddwaf_object child;
-    ddwaf_object_array(&child);
-    ddwaf_object_array_add(&child, ddwaf_object_unsigned(&tmp, 5));
-    ddwaf_object_array_add(&child, ddwaf_object_string(&tmp, "str"));
-    ddwaf_object_array_add(&input, &child);
-
-    ddwaf_object_array(&child);
-    ddwaf_object_array_add(&child, ddwaf_object_signed(&tmp, -5));
-    ddwaf_object_array_add(&input, &child);
-
-    ddwaf_object_array(&child);
-    ddwaf_object_array_add(&child, ddwaf_object_unsigned(&tmp, 5));
-    ddwaf_object_array_add(&input, &child);
-
-    ddwaf_object_array(&child);
-    ddwaf_object_array_add(&child, ddwaf_object_unsigned(&tmp, 109));
-    ddwaf_object_array_add(&child, ddwaf_object_string(&tmp, "wahtever"));
-    ddwaf_object_array_add(&input, &child);
+    auto input = owned_object::make_array(
+        {owned_object::make_array({5, "str"}), owned_object::make_array({-5}),
+            owned_object::make_array({5}), owned_object::make_array({109, "wahtever"})});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([[[[[4]],{"len":1}],[[[8],[4]],{"len":2}]],{"len":4}])");
-
-    ddwaf_object_free(&input);
 }
 
 TEST(TestExtractSchema, ArrayWithDuplicateContainersSchema)
 {
-    ddwaf_object tmp;
-
-    ddwaf_object input;
-    ddwaf_object_array(&input);
-
-    ddwaf_object child;
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "unsigned", ddwaf_object_unsigned(&tmp, 5));
-    ddwaf_object_map_add(&child, "string", ddwaf_object_string(&tmp, "str"));
-    ddwaf_object_array_add(&input, &child);
-
-    ddwaf_object_array(&child);
-    ddwaf_object_array_add(&child, ddwaf_object_signed(&tmp, -5));
-    ddwaf_object_array_add(&input, &child);
-
-    ddwaf_object_array(&child);
-    ddwaf_object_array_add(&child, ddwaf_object_unsigned(&tmp, 5));
-    ddwaf_object_array_add(&input, &child);
-
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "string", ddwaf_object_string(&tmp, "wahtever"));
-    ddwaf_object_map_add(&child, "unsigned", ddwaf_object_unsigned(&tmp, 109));
-    ddwaf_object_array_add(&input, &child);
+    auto input =
+        owned_object::make_array({owned_object::make_map({{"unsigned", 5}, {"string", "str"}}),
+            owned_object::make_array({-5}), owned_object::make_array({5}),
+            owned_object::make_map({{"string", "wahtever"}, {"unsigned", 109}})});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(
         output.ref(), R"([[[[[4]],{"len":1}],[{"string":[8],"unsigned":[4]}]],{"len":4}])");
-
-    ddwaf_object_free(&input);
 }
 
 TEST(TestExtractSchema, EmptyMapSchema)
 {
-    ddwaf_object input;
-    ddwaf_object_map(&input);
+    auto input = owned_object::make_map();
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([{}])");
 }
 
 TEST(TestExtractSchema, MapSchema)
 {
-    ddwaf_object tmp;
-    ddwaf_object input;
-    ddwaf_object_map(&input);
-    ddwaf_object_map_add(&input, "unsigned", ddwaf_object_unsigned(&tmp, 22));
-    ddwaf_object_map_add(&input, "string", ddwaf_object_string(&tmp, "string"));
-    ddwaf_object_map_add(&input, "invalid", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&input, "null", ddwaf_object_null(&tmp));
-
-    ddwaf_object child;
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "unsigned", ddwaf_object_unsigned(&tmp, 5));
-    ddwaf_object_map_add(&child, "string", ddwaf_object_string(&tmp, "str"));
-    ddwaf_object_map_add(&input, "map", &child);
-
-    ddwaf_object_array(&child);
-    ddwaf_object_array_add(&child, ddwaf_object_signed(&tmp, -5));
-    ddwaf_object_map_add(&input, "array", &child);
+    auto input = owned_object::make_map(
+        {{"unsigned", 22}, {"string", "string"}, {"invalid", owned_object{}}, {"null", nullptr},
+            {"map", owned_object::make_map({{"unsigned", 5}, {"string", "str"}})},
+            {"array", owned_object::make_array({-5})}});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(),
         R"([{"array":[[[4]],{"len":1}],"invalid":[0],"map":[{"unsigned":[4],"string":[8]}],"null":[1],"string":[8],"unsigned":[4]}])");
-
-    ddwaf_object_free(&input);
 }
 
 TEST(TestExtractSchema, DepthLimit)
 {
-    ddwaf_object input;
-    ddwaf_object_array(&input);
-
-    ddwaf_object *parent = &input;
+    auto input = owned_object::make_array();
+    borrowed_object parent{input};
     for (unsigned i = 0; i < extract_schema::max_container_depth + 10; ++i) {
-        ddwaf_object child;
-        ddwaf_object_array(&child);
-        ddwaf_object_array_add(parent, &child);
-        parent = &parent->array[0];
+        parent = parent.emplace_back(owned_object::make_array());
     }
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(),
         R"([[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}]],{"len":1}])");
-
-    ddwaf_object_free(&input);
 }
 
 TEST(TestExtractSchema, ArrayNodesLimit)
 {
-    ddwaf_object input;
-    ddwaf_object_array(&input);
+    auto input = owned_object::make_array();
     for (unsigned i = 0; i < extract_schema::max_array_nodes + 10; ++i) {
-        ddwaf_object child;
-        ddwaf_object_array(&child);
-        ddwaf_object_array_add(&input, &child);
+        input.emplace_back(owned_object::make_array());
     }
 
     extract_schema gen{"id", {}, {}, {}, false, true};
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([[[[],{"len":0}]],{"len":20,"truncated":true}])");
-
-    ddwaf_object_free(&input);
 }
 
 TEST(TestExtractSchema, RecordNodesLimit)
 {
-    ddwaf_object input;
-    ddwaf_object_map(&input);
+    auto input = owned_object::make_map();
     for (unsigned i = 0; i < extract_schema::max_record_nodes + 10; ++i) {
-        ddwaf_object child;
-        ddwaf_object_array(&child);
-        ddwaf_object_map_add(&input, "child", &child);
+        input.emplace("child", owned_object::make_array());
     }
 
     extract_schema gen{"id", {}, {}, {}, false, true};
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([{"child":[[],{"len":0}]},{"truncated":true}])");
-
-    ddwaf_object_free(&input);
 }
 
 TEST(TestExtractSchema, SchemaWithSingleScanner)
 {
-    ddwaf_object input;
-    ddwaf_object_string(&input, "string");
+    owned_object input{"string"};
 
     scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}}, nullptr,
         std::make_unique<matcher::regex_match>("string", 6, true)};
@@ -386,16 +263,13 @@ TEST(TestExtractSchema, SchemaWithSingleScanner)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([8,{"type":"PII","category":"IP"}])");
-
-    ddwaf_object_free(&input);
 }
 
 TEST(TestExtractSchema, SchemaWithMultipleScanners)
 {
-    ddwaf_object input;
-    ddwaf_object_string(&input, "string");
+    owned_object input{"string"};
 
     scanner scnr0{"0", {{"type", "PII"}, {"category", "first"}}, nullptr,
         std::make_unique<matcher::regex_match>("strong", 6, true)};
@@ -408,16 +282,13 @@ TEST(TestExtractSchema, SchemaWithMultipleScanners)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([8,{"type":"PII","category":"second"}])");
-
-    ddwaf_object_free(&input);
 }
 
 TEST(TestExtractSchema, SchemaWithScannerNoMatch)
 {
-    ddwaf_object input;
-    ddwaf_object_string(&input, "string");
+    owned_object input{"string"};
 
     scanner scnr0{"0", {{"type", "PII"}, {"category", "first"}}, nullptr,
         std::make_unique<matcher::regex_match>("strong", 6, true)};
@@ -430,16 +301,13 @@ TEST(TestExtractSchema, SchemaWithScannerNoMatch)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([8])");
-
-    ddwaf_object_free(&input);
 }
 
 TEST(TestExtractSchema, SchemaWithScannerSingleValueNoKey)
 {
-    ddwaf_object input;
-    ddwaf_object_string(&input, "string");
+    owned_object input{"string"};
 
     scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}},
         std::make_unique<matcher::regex_match>("string", 6, true),
@@ -449,18 +317,13 @@ TEST(TestExtractSchema, SchemaWithScannerSingleValueNoKey)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([8])");
-
-    ddwaf_object_free(&input);
 }
 
 TEST(TestExtractSchema, SchemaWithScannerArrayNoKey)
 {
-    ddwaf_object input;
-    ddwaf_object tmp;
-    ddwaf_object_array(&input);
-    ddwaf_object_array_add(&input, ddwaf_object_string(&tmp, "string"));
+    auto input = owned_object::make_array({"string"});
 
     scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}},
         std::make_unique<matcher::regex_match>("string", 6, true),
@@ -470,23 +333,13 @@ TEST(TestExtractSchema, SchemaWithScannerArrayNoKey)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([[[8]],{"len":1}])");
-
-    ddwaf_object_free(&input);
 }
 
 TEST(TestExtractSchema, SchemaWithScannerArrayWithKey)
 {
-    ddwaf_object input;
-    ddwaf_object array;
-    ddwaf_object tmp;
-    ddwaf_object_map(&input);
-
-    ddwaf_object_array(&array);
-    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "string"));
-
-    ddwaf_object_map_add(&input, "string", &array);
+    auto input = owned_object::make_map({{"string", owned_object::make_array({"string"})}});
 
     scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}},
         std::make_unique<matcher::regex_match>("string", 6, true),
@@ -496,28 +349,15 @@ TEST(TestExtractSchema, SchemaWithScannerArrayWithKey)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(
         output.ref(), R"([{"string":[[[8,{"category":"IP","type":"PII"}]],{"len":1}]}])");
-
-    ddwaf_object_free(&input);
 }
 
 TEST(TestExtractSchema, SchemaWithScannerNestedArrayWithKey)
 {
-    ddwaf_object input;
-    ddwaf_object array0;
-    ddwaf_object array1;
-    ddwaf_object tmp;
-
-    ddwaf_object_map(&input);
-    ddwaf_object_array(&array0);
-    ddwaf_object_array(&array1);
-
-    ddwaf_object_array_add(&array1, ddwaf_object_string(&tmp, "string"));
-    ddwaf_object_array_add(&array0, &array1);
-
-    ddwaf_object_map_add(&input, "string", &array0);
+    auto input = owned_object::make_map(
+        {{"string", owned_object::make_array({owned_object::make_array({"string"})})}});
 
     scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}},
         std::make_unique<matcher::regex_match>("string", 6, true),
@@ -527,11 +367,9 @@ TEST(TestExtractSchema, SchemaWithScannerNestedArrayWithKey)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, &input}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({{}, {}, false, object_view{input}}, cache, deadline);
     EXPECT_SCHEMA_EQ(output.ref(),
         R"([{"string":[[[[[8,{"category":"IP","type":"PII"}]],{"len":1}]],{"len":1}]}])");
-
-    ddwaf_object_free(&input);
 }
 
 } // namespace

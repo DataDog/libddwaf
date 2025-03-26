@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "clock.hpp"
@@ -50,8 +51,8 @@ void set_context_event_address(object_store &store)
 } // namespace
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
-    optional_ref<ddwaf_object> ephemeral, optional_ref<ddwaf_result> res, uint64_t timeout)
+DDWAF_RET_CODE context::run(owned_object persistent, owned_object ephemeral,
+    optional_ref<ddwaf_result> res, uint64_t timeout)
 {
     // This scope ensures that all ephemeral and cached objects are removed
     // from the store at the end of the evaluation
@@ -63,15 +64,12 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
         output = DDWAF_RESULT_INITIALISER;
     }
 
-    auto *free_fn = ruleset_->free_fn;
-    if (persistent.has_value() &&
-        !store_.insert(owned_object{*persistent, free_fn}, attribute::none)) {
+    if (persistent.is_valid() && !store_.insert(std::move(persistent), attribute::none)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
         return DDWAF_ERR_INVALID_OBJECT;
     }
 
-    if (ephemeral.has_value() &&
-        !store_.insert(owned_object{*ephemeral, free_fn}, attribute::ephemeral)) {
+    if (ephemeral.is_valid() && !store_.insert(std::move(ephemeral), attribute::ephemeral)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
         return DDWAF_ERR_INVALID_OBJECT;
     }

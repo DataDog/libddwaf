@@ -16,7 +16,7 @@ namespace {
 
 TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutSideEffects)
 {
-    auto object = yaml_to_object<ddwaf_object>(R"([{rules_target: [{tags: {confidence: 1}}]}])");
+    auto object = yaml_to_object<owned_object>(R"([{rules_target: [{tags: {confidence: 1}}]}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -24,7 +24,6 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutSideEffects)
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_overrides(override_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
         auto diagnostics = section.to_object();
@@ -78,7 +77,7 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutSideEffects)
 
 TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutTargets)
 {
-    auto object = yaml_to_object<ddwaf_object>(R"([{rules_target: [{}], enabled: false}])");
+    auto object = yaml_to_object<owned_object>(R"([{rules_target: [{}], enabled: false}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -86,7 +85,6 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutTargets)
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_overrides(override_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
         auto diagnostics = section.to_object();
@@ -140,7 +138,7 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutTargets)
 
 TEST(TestRuleOverrideParser, ParseRuleOverride)
 {
-    auto object = yaml_to_object<ddwaf_object>(
+    auto object = yaml_to_object<owned_object>(
         R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block]}])");
 
     configuration_spec cfg;
@@ -149,7 +147,6 @@ TEST(TestRuleOverrideParser, ParseRuleOverride)
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_overrides(override_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
         auto diagnostics = section.to_object();
@@ -190,7 +187,7 @@ TEST(TestRuleOverrideParser, ParseRuleOverride)
 
 TEST(TestRuleOverrideParser, ParseMultipleRuleOverrides)
 {
-    auto object = yaml_to_object<ddwaf_object>(
+    auto object = yaml_to_object<owned_object>(
         R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block]},{rules_target: [{rule_id: 1}], enabled: false}])");
 
     configuration_spec cfg;
@@ -199,7 +196,6 @@ TEST(TestRuleOverrideParser, ParseMultipleRuleOverrides)
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_overrides(override_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
         auto diagnostics = section.to_object();
@@ -256,7 +252,7 @@ TEST(TestRuleOverrideParser, ParseMultipleRuleOverrides)
 
 TEST(TestRuleOverrideParser, ParseInconsistentRuleOverride)
 {
-    auto object = yaml_to_object<ddwaf_object>(
+    auto object = yaml_to_object<owned_object>(
         R"([{rules_target: [{tags: {confidence: 1}}, {rule_id: 1}], on_match: [block], enabled: false}])");
 
     configuration_spec cfg;
@@ -265,7 +261,6 @@ TEST(TestRuleOverrideParser, ParseInconsistentRuleOverride)
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_overrides(override_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
         auto diagnostics = section.to_object();
@@ -319,7 +314,7 @@ TEST(TestRuleOverrideParser, ParseInconsistentRuleOverride)
 
 TEST(TestRuleOverrideParser, ParseRuleOverrideForTags)
 {
-    auto object = yaml_to_object<ddwaf_object>(
+    auto object = yaml_to_object<owned_object>(
         R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block], tags: {category: new_category, threshold: 25}}])");
 
     configuration_spec cfg;
@@ -328,7 +323,6 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideForTags)
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_overrides(override_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
         auto diagnostics = section.to_object();
@@ -372,7 +366,7 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideForTags)
 
 TEST(TestRuleOverrideParser, ParseInvalidTagsField)
 {
-    auto object = yaml_to_object<ddwaf_object>(
+    auto object = yaml_to_object<owned_object>(
         R"([{rules_target: [{tags: {confidence: 1}}], on_match: [block], tags: [{category: new_category}, {threshold: 25}]}])");
 
     configuration_spec cfg;
@@ -381,7 +375,6 @@ TEST(TestRuleOverrideParser, ParseInvalidTagsField)
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_overrides(override_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
         auto diagnostics = section.to_object();

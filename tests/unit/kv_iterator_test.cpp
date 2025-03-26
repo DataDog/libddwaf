@@ -19,7 +19,7 @@ TEST(TestKVIterator, TestInvalidIterator)
     exclusion::object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
     EXPECT_FALSE((bool)it);
-    EXPECT_EQ(*it, nullptr);
+    EXPECT_FALSE((*it).has_value());
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 0);
@@ -40,7 +40,7 @@ TEST(TestKVIterator, TestStringScalar)
     EXPECT_EQ(path.size(), 0);
 
     EXPECT_FALSE(++it);
-    EXPECT_EQ(*it, nullptr);
+    EXPECT_FALSE((*it).has_value());
 }
 
 TEST(TestKVIterator, TestUnsignedScalar)
@@ -178,7 +178,7 @@ TEST(TestKVIterator, TestArrayNoScalars)
     exclusion::object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
 
-    EXPECT_EQ(*it, nullptr);
+    EXPECT_FALSE((*it).has_value());
     EXPECT_FALSE((bool)it);
     EXPECT_FALSE(++it);
 }

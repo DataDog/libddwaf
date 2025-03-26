@@ -269,14 +269,14 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
 
     {
         auto obtained = store.get_target("output_address").first;
-        EXPECT_EQ(obtained, nullptr);
+        EXPECT_FALSE(obtained.has_value());
     }
 
     proc.eval(store, derived, cache, deadline);
 
     {
         auto obtained = store.get_target("output_address").first;
-        EXPECT_NE(obtained, nullptr);
+        EXPECT_TRUE(obtained.has_value());
         EXPECT_STRV(obtained.as<std::string_view>(), "output_string");
     }
 }
@@ -313,13 +313,13 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
 
     owned_object derived;
 
-    EXPECT_EQ(store.get_target("output_address").first, nullptr);
+    EXPECT_FALSE(store.get_target("output_address").first.has_value());
 
     proc.eval(store, derived, cache, deadline);
 
     {
         auto obtained = store.get_target("output_address").first;
-        EXPECT_NE(obtained, nullptr);
+        EXPECT_TRUE(obtained.has_value());
         EXPECT_STRV(obtained.as<std::string_view>(), "output_string");
     }
 }
@@ -352,10 +352,10 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
 
     owned_object derived;
 
-    EXPECT_EQ(store.get_target("output_address").first, nullptr);
+    EXPECT_FALSE(store.get_target("output_address").first.has_value());
     proc.eval(store, derived, cache, deadline);
 
-    EXPECT_EQ(store.get_target("output_address").first, nullptr);
+    EXPECT_FALSE(store.get_target("output_address").first.has_value());
 }
 
 TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
@@ -388,20 +388,20 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
     timer deadline{2s};
     owned_object derived;
 
-    EXPECT_EQ(store.get_target("output_address.first").first, nullptr);
-    EXPECT_EQ(store.get_target("output_address.second").first, nullptr);
+    EXPECT_FALSE(store.get_target("output_address.first").first.has_value());
+    EXPECT_FALSE(store.get_target("output_address.second").first.has_value());
 
     proc.eval(store, derived, cache, deadline);
 
     {
         auto obtained = store.get_target("output_address.first").first;
-        EXPECT_NE(obtained, nullptr);
+        EXPECT_TRUE(obtained.has_value());
         EXPECT_STRV(obtained.as<std::string_view>(), "first_output_string");
     }
 
     {
         auto obtained = store.get_target("output_address.second").first;
-        EXPECT_NE(obtained, nullptr);
+        EXPECT_TRUE(obtained.has_value());
         EXPECT_STRV(obtained.as<std::string_view>(), "second_output_string");
     }
 }
@@ -439,7 +439,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
 
     {
         auto obtained = store.get_target("output_address").first;
-        EXPECT_EQ(obtained, nullptr);
+        EXPECT_FALSE(obtained.has_value());
         EXPECT_EQ(derived.size(), 0);
     }
 
@@ -447,7 +447,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
 
     {
         auto obtained = store.get_target("output_address").first;
-        EXPECT_NE(obtained, nullptr);
+        EXPECT_TRUE(obtained.has_value());
         EXPECT_STRV(obtained.as<std::string_view>(), "output_string");
     }
 
@@ -589,14 +589,14 @@ TEST(TestProcessor, OutputEvalWithoutDerivedMap)
 
     {
         auto obtained = store.get_target("output_address").first;
-        EXPECT_EQ(obtained, nullptr);
+        EXPECT_FALSE(obtained.has_value());
     }
 
     proc.eval(store, derived, cache, deadline);
 
     {
         auto obtained = store.get_target("output_address").first;
-        EXPECT_NE(obtained, nullptr);
+        EXPECT_TRUE(obtained.has_value());
         EXPECT_STRV(obtained.as<std::string_view>(), "output_string");
     }
 }

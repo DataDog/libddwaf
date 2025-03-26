@@ -320,13 +320,7 @@ public:
 
     template <typename T> bool operator==(const T &other) const
     {
-        if constexpr (std::is_same_v<T, std::nullptr_t>) {
-            return ptr() == nullptr;
-        } else if constexpr (std::is_same_v<std::decay_t<T>, ddwaf_object *>) {
-            return ptr() == other;
-        } else if constexpr (std::is_same_v<std::decay_t<T>, ddwaf_object>) {
-            return ptr() == &other;
-        } else if constexpr (std::is_same_v<std::decay_t<T>, object_view>) {
+        if constexpr (std::is_same_v<std::decay_t<T>, object_view>) {
             return ptr() == other.ptr();
         } else if constexpr (std::is_same_v<std::decay_t<T>, std::string_view>) {
             return has_value() && is_string() && as<std::string_view>() == other;
@@ -336,13 +330,7 @@ public:
     }
     template <typename T> bool operator!=(const T &other) const
     {
-        if constexpr (std::is_same_v<T, std::nullptr_t>) {
-            return ptr() != nullptr;
-        } else if constexpr (std::is_same_v<std::decay_t<T>, ddwaf_object *>) {
-            return ptr() != other;
-        } else if constexpr (std::is_same_v<std::decay_t<T>, ddwaf_object>) {
-            return ptr() != &other;
-        } else if constexpr (std::is_same_v<std::decay_t<T>, object_view>) {
+        if constexpr (std::is_same_v<std::decay_t<T>, object_view>) {
             return ptr() != other.ptr();
         } else if constexpr (std::is_same_v<std::decay_t<T>, std::string_view>) {
             return has_value() && (!is_string() || as<std::string_view>() != other);
@@ -601,6 +589,10 @@ public:
 
     owned_object &operator=(owned_object &&other) noexcept
     {
+        if (free_fn_ != nullptr) {
+            free_fn_(&obj_);
+        }
+
         obj_ = other.obj_;
         free_fn_ = other.free_fn_;
         other.obj_ = detail::object{};

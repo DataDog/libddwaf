@@ -19,14 +19,10 @@ TEST(TestObjectFilter, RootTarget)
 
     object_store store;
 
-    ddwaf_object root, child, tmp;
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "query", &child);
-
-    store.insert(owned_object{root});
+    auto root = owned_object::make_map({
+        {"query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
+    });
+    store.insert(root);
 
     object_filter filter;
     filter.insert(query, "query", {});
@@ -36,7 +32,7 @@ TEST(TestObjectFilter, RootTarget)
     auto objects_filtered = filter.match(store, cache, false, deadline);
 
     ASSERT_EQ(objects_filtered.size(), 1);
-    EXPECT_TRUE(objects_filtered.contains(&root.array[0]));
+    EXPECT_TRUE(objects_filtered.contains(root.at(0)));
 }
 
 TEST(TestObjectFilter, DuplicateTarget)
@@ -51,34 +47,29 @@ TEST(TestObjectFilter, DuplicateTarget)
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
 
+    std::vector<owned_object> objects;
+    objects.emplace_back(owned_object::make_map({
+        {"query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
+    }));
+    objects.emplace_back(owned_object::make_map({
+        {"query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
+    }));
     {
-        ddwaf_object root, child, tmp;
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &child);
-        store.insert(owned_object{root});
+        store.insert(objects[0]);
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
 
         ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_TRUE(objects_filtered.contains(&root.array[0]));
+        EXPECT_TRUE(objects_filtered.contains(objects[0].at(0)));
     }
 
     {
-        ddwaf_object root, child, tmp;
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &child);
-        store.insert(owned_object{root});
+        store.insert(objects[1]);
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
 
         ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_TRUE(objects_filtered.contains(&root.array[0]));
+        EXPECT_TRUE(objects_filtered.contains(objects[1].at(0)));
     }
 }
 
@@ -94,20 +85,15 @@ TEST(TestObjectFilter, DuplicateCachedTarget)
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
 
-    ddwaf_object root;
-    ddwaf_object child;
-    ddwaf_object tmp;
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "query", &child);
-    store.insert(owned_object{root});
+    auto root = owned_object::make_map({
+        {"query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
+    });
+    store.insert(root);
 
     {
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_TRUE(objects_filtered.contains(&root.array[0]));
+        EXPECT_TRUE(objects_filtered.contains(root.at(0)));
     }
 
     {
@@ -122,14 +108,11 @@ TEST(TestObjectFilter, SingleTarget)
 
     object_store store;
 
-    ddwaf_object root, child, tmp;
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "query", &child);
+    auto root = owned_object::make_map();
+    auto child = root.emplace(
+        "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-    store.insert(owned_object{root});
+    store.insert(root);
 
     object_filter filter;
     filter.insert(query, "query", {"params"});
@@ -139,7 +122,7 @@ TEST(TestObjectFilter, SingleTarget)
     auto objects_filtered = filter.match(store, cache, false, deadline);
 
     ASSERT_EQ(objects_filtered.size(), 1);
-    EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
+    EXPECT_TRUE(objects_filtered.contains(child.at(0)));
 }
 
 TEST(TestObjectFilter, DuplicateSingleTarget)
@@ -155,33 +138,27 @@ TEST(TestObjectFilter, DuplicateSingleTarget)
     object_filter::cache_type cache;
 
     {
-        ddwaf_object root, child, tmp;
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &child);
+        auto root = owned_object::make_map();
+        auto child = root.emplace(
+            "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
+        EXPECT_TRUE(objects_filtered.contains(child.at(0)));
     }
 
     {
-        ddwaf_object root, child, tmp;
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &child);
+        auto root = owned_object::make_map();
+        auto child = root.emplace(
+            "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
+        EXPECT_TRUE(objects_filtered.contains(child.at(0)));
     }
 }
 
@@ -192,28 +169,19 @@ TEST(TestObjectFilter, MultipleTargets)
 
     object_store store;
 
-    ddwaf_object root, child, sibling, object, tmp;
+    auto root = owned_object::make_map();
 
     // Query
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+    auto child = root.emplace(
+        "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
     // Path Params
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "value", ddwaf_object_string(&tmp, "naskjdnakjsd"));
-    ddwaf_object_map_add(&object, "expiration", ddwaf_object_string(&tmp, "yesterday"));
+    auto sibling = root.emplace("path_params", owned_object::make_map({{"username", "Paco"}}));
 
-    ddwaf_object_map(&sibling);
-    ddwaf_object_map_add(&sibling, "token", &object);
-    ddwaf_object_map_add(&sibling, "username", ddwaf_object_string(&tmp, "Paco"));
+    auto object = sibling.emplace(
+        "token", owned_object::make_map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
-    // Root object
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "query", &child);
-    ddwaf_object_map_add(&root, "path_params", &sibling);
-
-    store.insert(owned_object{root});
+    store.insert(root);
 
     object_filter filter;
     filter.insert(query, "query", {"uri"});
@@ -224,8 +192,8 @@ TEST(TestObjectFilter, MultipleTargets)
     auto objects_filtered = filter.match(store, cache, false, deadline);
 
     ASSERT_EQ(objects_filtered.size(), 2);
-    EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
-    EXPECT_TRUE(objects_filtered.contains(&object.array[0]));
+    EXPECT_TRUE(objects_filtered.contains(child.at(1)));
+    EXPECT_TRUE(objects_filtered.contains(object.at(0)));
 }
 
 TEST(TestObjectFilter, DuplicateMultipleTargets)
@@ -235,8 +203,6 @@ TEST(TestObjectFilter, DuplicateMultipleTargets)
 
     object_store store;
 
-    ddwaf_object root, child, sibling, object, tmp;
-
     object_filter filter;
     filter.insert(query, "query", {"uri"});
     filter.insert(path_params, "path_params", {"token", "value"});
@@ -245,61 +211,45 @@ TEST(TestObjectFilter, DuplicateMultipleTargets)
     object_filter::cache_type cache;
 
     {
+        auto root = owned_object::make_map();
         // Query
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+        auto child = root.emplace(
+            "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
         // Path Params
-        ddwaf_object_map(&object);
-        ddwaf_object_map_add(&object, "value", ddwaf_object_string(&tmp, "naskjdnakjsd"));
-        ddwaf_object_map_add(&object, "expiration", ddwaf_object_string(&tmp, "yesterday"));
+        auto sibling = root.emplace("path_params", owned_object::make_map({{"username", "Paco"}}));
 
-        ddwaf_object_map(&sibling);
-        ddwaf_object_map_add(&sibling, "token", &object);
-        ddwaf_object_map_add(&sibling, "username", ddwaf_object_string(&tmp, "Paco"));
+        auto object = sibling.emplace("token",
+            owned_object::make_map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
-        // Root object
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &child);
-        ddwaf_object_map_add(&root, "path_params", &sibling);
-
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
 
         ASSERT_EQ(objects_filtered.size(), 2);
-        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
-        EXPECT_TRUE(objects_filtered.contains(&object.array[0]));
+        EXPECT_TRUE(objects_filtered.contains(child.at(1)));
+        EXPECT_TRUE(objects_filtered.contains(object.at(0)));
     }
 
     {
+        auto root = owned_object::make_map();
         // Query
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+        auto child = root.emplace(
+            "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
         // Path Params
-        ddwaf_object_map(&object);
-        ddwaf_object_map_add(&object, "value", ddwaf_object_string(&tmp, "naskjdnakjsd"));
-        ddwaf_object_map_add(&object, "expiration", ddwaf_object_string(&tmp, "yesterday"));
+        auto sibling = root.emplace("path_params", owned_object::make_map({{"username", "Paco"}}));
 
-        ddwaf_object_map(&sibling);
-        ddwaf_object_map_add(&sibling, "token", &object);
-        ddwaf_object_map_add(&sibling, "username", ddwaf_object_string(&tmp, "Paco"));
+        auto object = sibling.emplace("token",
+            owned_object::make_map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
-        // Root object
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &child);
-        ddwaf_object_map_add(&root, "path_params", &sibling);
-
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
 
         ASSERT_EQ(objects_filtered.size(), 2);
-        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
-        EXPECT_TRUE(objects_filtered.contains(&object.array[0]));
+        EXPECT_TRUE(objects_filtered.contains(child.at(1)));
+        EXPECT_TRUE(objects_filtered.contains(object.at(0)));
     }
 }
 
@@ -311,28 +261,13 @@ TEST(TestObjectFilter, MissingTarget)
 
     object_store store;
 
-    ddwaf_object root, child, sibling, object, tmp;
-
-    // Query
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
-
-    // Path Params
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "value", ddwaf_object_string(&tmp, "naskjdnakjsd"));
-    ddwaf_object_map_add(&object, "expiration", ddwaf_object_string(&tmp, "yesterday"));
-
-    ddwaf_object_map(&sibling);
-    ddwaf_object_map_add(&sibling, "token", &object);
-    ddwaf_object_map_add(&sibling, "username", ddwaf_object_string(&tmp, "Paco"));
-
-    // Root object
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "query", &child);
-    ddwaf_object_map_add(&root, "path_params", &sibling);
-
-    store.insert(owned_object{root});
+    auto root = owned_object::make_map({
+        {"query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
+        {"path_params", owned_object::make_map({{"username", "Paco"},
+                            {"token", owned_object::make_map({{"value", "naskjdnakjsd"},
+                                          {"expiration", "yesterday"}})}})},
+    });
+    store.insert(root);
 
     object_filter filter;
     filter.insert(status, "status", {"value"});
@@ -349,14 +284,11 @@ TEST(TestObjectFilter, SingleTargetCache)
 
     object_store store;
 
-    ddwaf_object root, child, tmp;
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "query", &child);
+    auto root = owned_object::make_map();
+    auto child = root.emplace(
+        "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-    store.insert(owned_object{root});
+    store.insert(root);
 
     object_filter filter;
     filter.insert(query, "query", {"params"});
@@ -366,7 +298,7 @@ TEST(TestObjectFilter, SingleTargetCache)
     {
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
+        EXPECT_TRUE(objects_filtered.contains(child.at(0)));
     }
 
     {
@@ -389,44 +321,30 @@ TEST(TestObjectFilter, MultipleTargetsCache)
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
     {
-        ddwaf_object root, child, tmp;
-        // Query
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+        auto root = owned_object::make_map();
+        auto child = root.emplace(
+            "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-        // Root object
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &child);
-
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
+        EXPECT_TRUE(objects_filtered.contains(child.at(1)));
     }
 
     {
-        ddwaf_object root, child, object, tmp;
-
+        auto root = owned_object::make_map();
         // Path Params
-        ddwaf_object_map(&object);
-        ddwaf_object_map_add(&object, "value", ddwaf_object_string(&tmp, "naskjdnakjsd"));
-        ddwaf_object_map_add(&object, "expiration", ddwaf_object_string(&tmp, "yesterday"));
+        auto sibling = root.emplace("path_params", owned_object::make_map({{"username", "Paco"}}));
 
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "token", &object);
-        ddwaf_object_map_add(&child, "username", ddwaf_object_string(&tmp, "Paco"));
+        auto object = sibling.emplace("token",
+            owned_object::make_map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
-        // Root object
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "path_params", &child);
-
-        store.insert(owned_object{root});
+        store.insert(std::move(root));
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_TRUE(objects_filtered.contains(&object.array[0]));
+        EXPECT_TRUE(objects_filtered.contains(object.at(0)));
     }
 
     {
@@ -446,57 +364,41 @@ TEST(TestObjectFilter, SingleGlobTarget)
     {
         object_store store;
         object_filter::cache_type cache;
-        ddwaf_object root, child, tmp;
-        // Query
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+        auto root = owned_object::make_map();
+        auto child = root.emplace(
+            "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-        // Root object
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &child);
-
-        store.insert(owned_object{root});
+        store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
-        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
-        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
+        EXPECT_TRUE(objects_filtered.contains(child.at(0)));
+        EXPECT_TRUE(objects_filtered.contains(child.at(1)));
     }
 
     {
         object_store store;
         object_filter::cache_type cache;
-        ddwaf_object root, child, grandchild, tmp;
-        // Query
-        ddwaf_object_map(&grandchild);
-        ddwaf_object_map_add(&grandchild, "value", ddwaf_object_string(&tmp, "paramsvalue"));
 
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "params", &grandchild);
-        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+        auto root = owned_object::make_map();
+        auto child = root.emplace("query",
+            owned_object::make_map({{"params", owned_object::make_map({{"value", "paramsvalue"}})},
+                {"uri", "uri_value"}}));
 
-        // Root object
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &child);
-
-        store.insert(owned_object{root});
+        store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
-        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
-        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
+        EXPECT_TRUE(objects_filtered.contains(child.at(0)));
+        EXPECT_TRUE(objects_filtered.contains(child.at(1)));
     }
 
     {
         object_store store;
         object_filter::cache_type cache;
-        ddwaf_object root, tmp;
-        // Root object
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", ddwaf_object_invalid(&tmp));
 
-        store.insert(owned_object{root});
+        auto root = owned_object::make_map({{"query", owned_object{}}});
+        store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
@@ -515,57 +417,42 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
     {
         object_store store;
         object_filter::cache_type cache;
-        ddwaf_object root, child, tmp;
-        // Query
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
 
-        // Root object
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &child);
+        auto root = owned_object::make_map();
+        auto child = root.emplace(
+            "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-        store.insert(owned_object{root});
+        store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
-        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
-        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
+        EXPECT_TRUE(objects_filtered.contains(child.at(0)));
+        EXPECT_TRUE(objects_filtered.contains(child.at(1)));
     }
 
     {
         object_store store;
         object_filter::cache_type cache;
-        ddwaf_object root, child, grandchild, tmp;
-        // Query
-        ddwaf_object_map(&grandchild);
-        ddwaf_object_map_add(&grandchild, "value", ddwaf_object_string(&tmp, "paramsvalue"));
 
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "params", &grandchild);
-        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
+        auto root = owned_object::make_map();
+        auto child = root.emplace("query",
+            owned_object::make_map({{"params", owned_object::make_map({{"value", "paramsvalue"}})},
+                {"uri", "uri_value"}}));
 
-        // Root object
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &child);
-
-        store.insert(owned_object{root});
+        store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
-        EXPECT_TRUE(objects_filtered.contains(&child.array[0]));
-        EXPECT_TRUE(objects_filtered.contains(&child.array[1]));
+        EXPECT_TRUE(objects_filtered.contains(child.at(0)));
+        EXPECT_TRUE(objects_filtered.contains(child.at(1)));
     }
 
     {
         object_store store;
         object_filter::cache_type cache;
-        ddwaf_object root, tmp;
-        // Root object
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", ddwaf_object_invalid(&tmp));
 
-        store.insert(owned_object{root});
+        auto root = owned_object::make_map({{"query", owned_object{}}});
+        store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
@@ -585,76 +472,47 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
     {
         object_store store;
         object_filter::cache_type cache;
-        ddwaf_object root, child, grandchild, grandnephew, tmp;
-        // Query
-        ddwaf_object_map(&grandchild);
-        ddwaf_object_map_add(&grandchild, "other", ddwaf_object_string(&tmp, "paramsvalue"));
 
-        ddwaf_object_map(&grandnephew);
-        ddwaf_object_map_add(&grandnephew, "other", ddwaf_object_string(&tmp, "paramsvalue"));
+        owned_object root = owned_object::make_map();
+        auto child = root.emplace(
+            "query", owned_object::make_map(
+                         {{"params", owned_object::make_map({{"other", "paramsvalue"}})}}));
+        auto grandnephew = child.emplace("uri", owned_object::make_map({{"other", "paramsvalue"}}));
 
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "params", &grandchild);
-        ddwaf_object_map_add(&child, "uri", &grandnephew);
-
-        // Root object
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &child);
-
-        store.insert(owned_object{root});
+        store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_TRUE(objects_filtered.contains(&grandnephew.array[0]));
+        EXPECT_TRUE(objects_filtered.contains(grandnephew.at(0)));
     }
 
     {
         object_store store;
         object_filter::cache_type cache;
-        ddwaf_object root, child, grandchild, grandnephew, tmp;
-        // Query
-        ddwaf_object_map(&grandchild);
-        ddwaf_object_map_add(&grandchild, "value", ddwaf_object_string(&tmp, "paramsvalue"));
 
-        ddwaf_object_map(&grandnephew);
-        ddwaf_object_map_add(&grandnephew, "value", ddwaf_object_string(&tmp, "paramsvalue"));
+        owned_object root = owned_object::make_map();
+        auto child = root.emplace("query", owned_object::make_map());
+        auto grandchild =
+            child.emplace("params", owned_object::make_map({{"value", "paramsvalue"}}));
+        auto grandnephew = child.emplace("uri", owned_object::make_map({{"value", "paramsvalue"}}));
 
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "params", &grandchild);
-        ddwaf_object_map_add(&child, "uri", &grandnephew);
-
-        // Root object
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &child);
-
-        store.insert(owned_object{root});
+        store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
-        EXPECT_TRUE(objects_filtered.contains(&grandnephew.array[0]));
-        EXPECT_TRUE(objects_filtered.contains(&grandchild.array[0]));
+        EXPECT_TRUE(objects_filtered.contains(grandnephew.at(0)));
+        EXPECT_TRUE(objects_filtered.contains(grandchild.at(0)));
     }
 
     {
         object_store store;
         object_filter::cache_type cache;
-        ddwaf_object root, child, grandchild, grandnephew, tmp;
-        // Query
-        ddwaf_object_map(&grandchild);
-        ddwaf_object_map_add(&grandchild, "whatever", ddwaf_object_string(&tmp, "paramsvalue"));
+        owned_object root = owned_object::make_map(
+            {{"query", owned_object::make_map(
+                           {{"value", owned_object::make_map({{"whatever", "paramsvalue"}})},
+                               {"other", owned_object::make_map({{"random", "paramsvalue"}})}})}});
 
-        ddwaf_object_map(&grandnephew);
-        ddwaf_object_map_add(&grandnephew, "random", ddwaf_object_string(&tmp, "paramsvalue"));
-
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "value", &grandchild);
-        ddwaf_object_map_add(&child, "other", &grandnephew);
-
-        // Root object
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &child);
-
-        store.insert(owned_object{root});
+        store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
@@ -663,16 +521,11 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
     {
         object_store store;
         object_filter::cache_type cache;
-        ddwaf_object root, child, tmp;
 
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "value", ddwaf_object_string(&tmp, "value"));
+        owned_object root =
+            owned_object::make_map({{"query", owned_object::make_map({{"value", "value"}})}});
 
-        // Root object
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &child);
-
-        store.insert(owned_object{root});
+        store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
@@ -691,62 +544,35 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
     {
         object_store store;
         object_filter::cache_type cache;
-        ddwaf_object root, child, grandchild, grandnephew, greatgrandchild, greatgrandnephew, tmp;
 
-        ddwaf_object_map(&greatgrandchild);
-        ddwaf_object_map_add(&greatgrandchild, "other", ddwaf_object_string(&tmp, "paramsvalue"));
-        ddwaf_object_map_add(
-            &greatgrandchild, "somethingelse", ddwaf_object_string(&tmp, "paramsvalue"));
+        owned_object root = owned_object::make_map();
+        auto child = root.emplace("query", owned_object::make_map());
+        auto grandchild = child.emplace("params", owned_object::make_map());
+        auto greatgrandchild = grandchild.emplace("something",
+            owned_object::make_map({{"other", "paramsvalue"}, {"somethingelse", "paramsvalue"}}));
+        auto grandnephew = child.emplace("uri", owned_object::make_map());
+        auto greatgrandnephew = grandnephew.emplace("random",
+            owned_object::make_map({{"other", "paramsvalue"}, {"somethingelse", "paramsvalue"}}));
 
-        ddwaf_object_map(&grandchild);
-        ddwaf_object_map_add(&grandchild, "something", &greatgrandchild);
-
-        ddwaf_object_map(&greatgrandnephew);
-        ddwaf_object_map_add(&greatgrandnephew, "other", ddwaf_object_string(&tmp, "paramsvalue"));
-        ddwaf_object_map_add(
-            &greatgrandnephew, "somethingelse", ddwaf_object_string(&tmp, "paramsvalue"));
-
-        ddwaf_object_map(&grandnephew);
-        ddwaf_object_map_add(&grandnephew, "random", &greatgrandnephew);
-
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "params", &grandchild);
-        ddwaf_object_map_add(&child, "uri", &grandnephew);
-
-        // Root object
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &child);
-
-        store.insert(owned_object{root});
+        store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 4);
-        EXPECT_TRUE(objects_filtered.contains(&greatgrandchild.array[0]));
-        EXPECT_TRUE(objects_filtered.contains(&greatgrandchild.array[1]));
-        EXPECT_TRUE(objects_filtered.contains(&greatgrandnephew.array[0]));
-        EXPECT_TRUE(objects_filtered.contains(&greatgrandnephew.array[1]));
+        EXPECT_TRUE(objects_filtered.contains(greatgrandchild.at(0)));
+        EXPECT_TRUE(objects_filtered.contains(greatgrandchild.at(1)));
+        EXPECT_TRUE(objects_filtered.contains(greatgrandnephew.at(0)));
+        EXPECT_TRUE(objects_filtered.contains(greatgrandnephew.at(1)));
     }
 
     {
         object_store store;
         object_filter::cache_type cache;
-        ddwaf_object root, child, grandchild, grandnephew, tmp;
 
-        ddwaf_object_map(&grandchild);
-        ddwaf_object_map_add(&grandchild, "something", ddwaf_object_string(&tmp, "value"));
+        auto root = owned_object::make_map({{"query",
+            owned_object::make_map({{"params", owned_object::make_map({{"something", "value"}})},
+                {"uri", owned_object::make_map({{"random", "value"}})}})}});
 
-        ddwaf_object_map(&grandnephew);
-        ddwaf_object_map_add(&grandnephew, "random", ddwaf_object_string(&tmp, "value"));
-
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "params", &grandchild);
-        ddwaf_object_map_add(&child, "uri", &grandnephew);
-
-        // Root object
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &child);
-
-        store.insert(owned_object{root});
+        store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
@@ -755,17 +581,11 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
     {
         object_store store;
         object_filter::cache_type cache;
-        ddwaf_object root, child, tmp;
 
-        ddwaf_object_map(&child);
-        ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "value"));
-        ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "value"));
+        auto root = owned_object::make_map(
+            {{"query", owned_object::make_map({{"params", "value"}, {"uri", "value"}})}});
 
-        // Root object
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &child);
-
-        store.insert(owned_object{root});
+        store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
@@ -800,8 +620,8 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
         for (auto &[object, result] : tests) {
             object_store store;
             object_filter::cache_type cache;
-            ddwaf_object root = yaml_to_object<ddwaf_object>(object);
-            store.insert(owned_object{root});
+            auto root = yaml_to_object<owned_object>(object);
+            store.insert(root);
 
             ddwaf::timer deadline{2s};
             auto objects_filtered = filter.match(store, cache, false, deadline);
@@ -827,8 +647,8 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
         for (auto &object : tests) {
             object_store store;
             object_filter::cache_type cache;
-            ddwaf_object root = yaml_to_object<ddwaf_object>(object);
-            store.insert(owned_object{root});
+            auto root = yaml_to_object<owned_object>(object);
+            store.insert(root);
 
             ddwaf::timer deadline{2s};
             auto objects_filtered = filter.match(store, cache, false, deadline);
@@ -847,25 +667,11 @@ TEST(TestObjectFilter, ArrayWithGlobTargets)
     {
         object_store store;
         object_filter::cache_type cache;
-        ddwaf_object root, a, b, c, d, tmp;
+        auto root = owned_object::make_map({{"query",
+            owned_object::make_map({{"a", owned_object::make_array({owned_object::make_map({{"c",
+                                              owned_object::make_map({{"d", "value"}})}})})}})}});
 
-        ddwaf_object_map(&d);
-        ddwaf_object_map_add(&d, "d", ddwaf_object_string(&tmp, "value"));
-
-        ddwaf_object_map(&c);
-        ddwaf_object_map_add(&c, "c", &d);
-
-        ddwaf_object_array(&b);
-        ddwaf_object_array_add(&b, &c);
-
-        ddwaf_object_map(&a);
-        ddwaf_object_map_add(&a, "a", &b);
-
-        // Root object
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "query", &a);
-
-        store.insert(owned_object{root});
+        store.insert(root);
 
         ddwaf::timer deadline{2s};
         auto objects_filtered = filter.match(store, cache, false, deadline);
@@ -879,16 +685,9 @@ TEST(TestObjectFilter, Timeout)
 
     object_store store;
 
-    ddwaf_object root;
-    ddwaf_object child;
-    ddwaf_object tmp;
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "params", ddwaf_object_string(&tmp, "paramsvalue"));
-    ddwaf_object_map_add(&child, "uri", ddwaf_object_string(&tmp, "uri_value"));
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "query", &child);
-
-    store.insert(owned_object{root});
+    auto root = owned_object::make_map(
+        {{"query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}})}});
+    store.insert(root);
 
     object_filter filter;
     filter.insert(query, "query", {});

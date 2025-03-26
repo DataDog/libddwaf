@@ -7,7 +7,6 @@
 #pragma once
 
 #include <memory>
-#include <optional>
 #include <utility>
 
 #include "context_allocator.hpp"
@@ -17,7 +16,6 @@
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
 #include "obfuscator.hpp"
-#include "rule.hpp"
 #include "ruleset.hpp"
 #include "utils.hpp"
 
@@ -50,8 +48,10 @@ public:
     context &operator=(context &&) = delete;
     ~context() = default;
 
-    DDWAF_RET_CODE run(optional_ref<ddwaf_object>, optional_ref<ddwaf_object>,
-        optional_ref<ddwaf_result>, uint64_t);
+    DDWAF_RET_CODE run(
+        owned_object persistent, owned_object ephemeral, optional_ref<ddwaf_result>, uint64_t);
+
+    [[nodiscard]] ddwaf_object_free_fn get_free_fn() const noexcept { return ruleset_->free_fn; }
 
     void eval_preprocessors(owned_object &derived, ddwaf::timer &deadline);
     void eval_postprocessors(owned_object &derived, ddwaf::timer &deadline);
@@ -136,12 +136,14 @@ public:
     context_wrapper &operator=(context_wrapper &&) noexcept = delete;
     context_wrapper &operator=(const context_wrapper &) = delete;
 
-    DDWAF_RET_CODE run(optional_ref<ddwaf_object> persistent, optional_ref<ddwaf_object> ephemeral,
+    DDWAF_RET_CODE run(owned_object persistent, owned_object ephemeral,
         optional_ref<ddwaf_result> res, uint64_t timeout)
     {
         memory::memory_resource_guard guard(&mr_);
-        return ctx_->run(persistent, ephemeral, res, timeout);
+        return ctx_->run(std::move(persistent), std::move(ephemeral), res, timeout);
     }
+
+    [[nodiscard]] ddwaf_object_free_fn get_free_fn() const noexcept { return ctx_->get_free_fn(); }
 
 protected:
     context *ctx_;
