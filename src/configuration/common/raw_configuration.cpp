@@ -15,30 +15,30 @@
 
 #include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
-#include "ddwaf.h"
 #include "semver.hpp"
 #include "utils.hpp"
 
+namespace ddwaf {
 namespace {
 
-std::string strtype(int type)
+std::string strtype(object_type type)
 {
     switch (type) {
-    case DDWAF_OBJ_MAP:
+    case object_type::map:
         return "map";
-    case DDWAF_OBJ_ARRAY:
+    case object_type::array:
         return "array";
-    case DDWAF_OBJ_STRING:
+    case object_type::string:
         return "string";
-    case DDWAF_OBJ_BOOL:
+    case object_type::boolean:
         return "bool";
-    case DDWAF_OBJ_UNSIGNED:
+    case object_type::uint64:
         return "unsigned";
-    case DDWAF_OBJ_SIGNED:
+    case object_type::int64:
         return "signed";
-    case DDWAF_OBJ_FLOAT:
+    case object_type::float64:
         return "float";
-    case DDWAF_OBJ_NULL:
+    case object_type::null:
         return "null";
     default:
         break;
@@ -48,182 +48,177 @@ std::string strtype(int type)
 
 } // namespace
 
-namespace ddwaf {
-
 raw_configuration::operator raw_configuration::map() const
 {
-    if (type != DDWAF_OBJ_MAP) {
-        throw bad_cast("map", strtype(type));
+    if (view_.is_map()) {
+        throw bad_cast("map", strtype(view_.type()));
     }
 
-    if (array == nullptr || nbEntries == 0) {
+    if (view_.empty()) {
         return {};
     }
 
     std::unordered_map<std::string_view, raw_configuration> map;
-    map.reserve(nbEntries);
-    for (unsigned i = 0; i < nbEntries; i++) {
-        const raw_configuration &kv = array[i];
-        if (kv.parameterName == nullptr) {
+    map.reserve(view_.size());
+    for (auto [key, value] : view_) {
+        if (key.empty()) {
             throw malformed_object("invalid key on map entry");
         }
-
-        map.emplace(std::string_view(kv.parameterName, kv.parameterNameLength), kv);
+        map.emplace(key.as<std::string_view>(), value);
     }
-
     return map;
 }
 
 raw_configuration::operator raw_configuration::vector() const
 {
-    if (type != DDWAF_OBJ_ARRAY) {
-        throw bad_cast("array", strtype(type));
+    if (view_.is_array()) {
+        throw bad_cast("array", strtype(view_.type()));
     }
 
-    if (array == nullptr || nbEntries == 0) {
+    if (view_.empty()) {
         return {};
     }
-    return {array, array + nbEntries};
+    raw_configuration::vector vec;
+    vec.reserve(view_.size());
+
+    for (auto [_, value] : view_) {
+        vec.emplace_back(value);
+    }
+    return vec;
 }
 
 raw_configuration::operator raw_configuration::string_set() const
 {
-    if (type != DDWAF_OBJ_ARRAY) {
-        throw bad_cast("array", strtype(type));
+    if (view_.is_array()) {
+        throw bad_cast("array", strtype(view_.type()));
     }
 
-    if (array == nullptr || nbEntries == 0) {
+    if (view_.empty()) {
         return {};
     }
 
     raw_configuration::string_set set;
-    set.reserve(nbEntries);
-    for (unsigned i = 0; i < nbEntries; i++) {
-        if (array[i].type != DDWAF_OBJ_STRING) {
+    set.reserve(view_.size());
+
+    for (auto [_, value] : view_) {
+        if (!value.is_string()) {
             throw malformed_object("item in array not a string, can't cast to string set");
         }
-
-        set.emplace(array[i].stringValue, array[i].nbEntries);
+        set.emplace(value.as<std::string_view>());
     }
-
     return set;
 }
 
 raw_configuration::operator std::string_view() const
 {
-    if (type != DDWAF_OBJ_STRING || stringValue == nullptr) {
-        throw bad_cast("string_view", strtype(type));
+    if (!view_.is_string()) {
+        throw bad_cast("string_view", strtype(view_.type()));
     }
 
-    return {stringValue, static_cast<size_t>(nbEntries)};
+    return view_.as<std::string_view>();
 }
 
 raw_configuration::operator std::string() const
 {
-    switch (type) {
-    case DDWAF_OBJ_SIGNED:
-        return ddwaf::to_string<std::string>(intValue);
-    case DDWAF_OBJ_UNSIGNED:
-        return ddwaf::to_string<std::string>(uintValue);
-    case DDWAF_OBJ_BOOL:
-        return ddwaf::to_string<std::string>(boolean);
-    case DDWAF_OBJ_FLOAT:
-        return ddwaf::to_string<std::string>(f64);
-    case DDWAF_OBJ_STRING:
-        if (stringValue == nullptr) {
-            break;
-        }
-        return {stringValue, static_cast<size_t>(nbEntries)};
-    default:
-        break;
+    if (!view_.is_scalar()) {
+        throw bad_cast("string", strtype(view_.type()));
     }
 
-    throw bad_cast("string", strtype(type));
+    if (view_.is_string() && view_.empty()) {
+        return {};
+    }
+
+    return view_.convert<std::string>();
 }
 
+// TODO move some of this conversions to object_converter
 raw_configuration::operator uint64_t() const
 {
-    if (type == DDWAF_OBJ_UNSIGNED) {
-        return uintValue;
+    if (view_.is<uint64_t>()) {
+        return view_.as<uint64_t>();
     }
 
-    if (type == DDWAF_OBJ_SIGNED && intValue >= 0) {
-        return intValue;
+    if (view_.is<int64_t>() && view_.as<int64_t>() >= 0) {
+        return view_.as<int64_t>();
     }
 
     // NOLINTBEGIN(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
     // Closest 64-bit floating-point value to UINT64_MAX
     static constexpr double uint64_max = 0xFFFFFFFFFFFFF800ULL;
-    if (type == DDWAF_OBJ_FLOAT && (f64 >= 0.0) && (f64 <= uint64_max) &&
-        static_cast<uint64_t>(f64) == f64) {
-        return static_cast<uint64_t>(f64);
+    if (view_.is<double>()) {
+        auto f64 = view_.as<double>();
+        if ((f64 >= 0.0) && (f64 <= uint64_max) && static_cast<uint64_t>(f64) == f64) {
+            return static_cast<uint64_t>(f64);
+        }
     }
     // NOLINTEND(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
 
-    if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
-        auto [res, result] = from_string<uint64_t>({stringValue, static_cast<size_t>(nbEntries)});
+    if (view_.is_string() && !view_.empty()) {
+        auto [res, result] = from_string<uint64_t>(view_.as<std::string_view>());
         if (res) {
             return result;
         }
     }
 
-    throw bad_cast("unsigned", strtype(type));
+    throw bad_cast("unsigned", strtype(view_.type()));
 }
 
 raw_configuration::operator int64_t() const
 {
-    if (type == DDWAF_OBJ_SIGNED) {
-        return intValue;
+    if (view_.is<int64_t>()) {
+        return view_.as<int64_t>();
     }
 
-    if (type == DDWAF_OBJ_UNSIGNED && uintValue <= std::numeric_limits<int64_t>::max()) {
-        return static_cast<int64_t>(uintValue);
+    if (view_.is<uint64_t>() && view_.as<uint64_t>() <= std::numeric_limits<int64_t>::max()) {
+        return static_cast<int64_t>(view_.as<uint64_t>());
     }
 
     // NOLINTBEGIN(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
     // Closest 64-bit floating-point value to INT64_MAX
     static constexpr double int64_max = 0x7FFFFFFFFFFFFC00LL;
     static constexpr double int64_min = std::numeric_limits<int64_t>::min();
-    if (type == DDWAF_OBJ_FLOAT && f64 >= int64_min && f64 <= int64_max &&
-        static_cast<int64_t>(f64) == f64) {
-        return static_cast<int64_t>(f64);
+    if (view_.is<double>()) {
+        auto f64 = view_.as<double>();
+        if ((f64 >= int64_min) && (f64 <= int64_max) && static_cast<int64_t>(f64) == f64) {
+            return static_cast<int64_t>(f64);
+        }
     }
     // NOLINTEND(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
 
-    if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
-        auto [res, result] = from_string<int64_t>({stringValue, static_cast<size_t>(nbEntries)});
+    if (view_.is_string() && !view_.empty()) {
+        auto [res, result] = from_string<int64_t>(view_.as<std::string_view>());
         if (res) {
             return result;
         }
     }
 
-    throw bad_cast("signed", strtype(type));
+    throw bad_cast("signed", strtype(view_.type()));
 }
 
 raw_configuration::operator double() const
 {
-    if (type == DDWAF_OBJ_FLOAT) {
-        return f64;
+    if (view_.is<double>()) {
+        return view_.as<double>();
     }
 
-    if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
-        auto [res, result] = from_string<double>({stringValue, static_cast<size_t>(nbEntries)});
+    if (view_.is_string() && !view_.empty()) {
+        auto [res, result] = from_string<double>(view_.as<std::string_view>());
         if (res) {
             return result;
         }
     }
 
-    throw bad_cast("double", strtype(type));
+    throw bad_cast("double", strtype(view_.type()));
 }
 
 raw_configuration::operator bool() const
 {
-    if (type == DDWAF_OBJ_BOOL) {
-        return boolean;
+    if (view_.is<bool>()) {
+        return view_.as<bool>();
     }
 
-    if (type == DDWAF_OBJ_STRING && stringValue != nullptr) {
-        const std::string_view str_bool{stringValue, static_cast<size_t>(nbEntries)};
+    if (view_.is_string() && !view_.empty()) {
+        const auto str_bool = view_.as<std::string_view>();
         if (str_bool.size() == (sizeof("true") - 1) && (str_bool[0] == 'T' || str_bool[0] == 't') &&
             (str_bool[1] == 'R' || str_bool[1] == 'r') &&
             (str_bool[2] == 'U' || str_bool[2] == 'u') &&
@@ -241,79 +236,81 @@ raw_configuration::operator bool() const
         }
     }
 
-    throw bad_cast("bool", strtype(type));
+    throw bad_cast("bool", strtype(view_.type()));
 }
 
 raw_configuration::operator std::vector<std::string>() const
 {
-    if (type != DDWAF_OBJ_ARRAY) {
-        throw bad_cast("array", strtype(type));
+    if (view_.is_array()) {
+        throw bad_cast("array", strtype(view_.type()));
     }
 
-    if (array == nullptr || nbEntries == 0) {
+    if (view_.empty()) {
         return {};
     }
 
-    std::vector<std::string> data;
-    data.reserve(nbEntries);
-    for (unsigned i = 0; i < nbEntries; i++) {
-        data.emplace_back(static_cast<std::string>(raw_configuration(array[i])));
-    }
+    std::vector<std::string> vec;
+    vec.reserve(view_.size());
 
-    return data;
+    for (auto [_, value] : view_) {
+        raw_configuration item{value};
+        vec.emplace_back(static_cast<std::string>(item));
+    }
+    return vec;
 }
 
 raw_configuration::operator std::vector<std::string_view>() const
 {
-    if (type != DDWAF_OBJ_ARRAY) {
-        throw bad_cast("array", strtype(type));
+    if (view_.is_array()) {
+        throw bad_cast("array", strtype(view_.type()));
     }
 
-    if (array == nullptr || nbEntries == 0) {
+    if (view_.empty()) {
         return {};
     }
 
-    std::vector<std::string_view> data;
-    data.reserve(nbEntries);
-    for (unsigned i = 0; i < nbEntries; i++) {
-        if (array[i].type != DDWAF_OBJ_STRING) {
+    std::vector<std::string_view> vec;
+    vec.reserve(view_.size());
+
+    for (auto [_, value] : view_) {
+        if (!value.is_string()) {
             throw malformed_object("item in array not a string, can't cast to string_view vector");
         }
-
-        data.emplace_back(array[i].stringValue, array[i].nbEntries);
+        vec.emplace_back(value.as<std::string_view>());
     }
-
-    return data;
+    return vec;
 }
 
 raw_configuration::operator std::unordered_map<std::string, std::string>() const
 {
-    if (type != DDWAF_OBJ_MAP) {
-        throw bad_cast("map", strtype(type));
+    if (view_.is_map()) {
+        throw bad_cast("map", strtype(view_.type()));
     }
 
-    if (array == nullptr || nbEntries == 0) {
+    if (view_.empty()) {
         return {};
     }
 
-    std::unordered_map<std::string, std::string> data;
-    data.reserve(nbEntries);
-    for (unsigned i = 0; i < nbEntries; i++) {
-        std::string key{
-            array[i].parameterName, static_cast<std::size_t>(array[i].parameterNameLength)};
-        data.emplace(std::move(key), static_cast<std::string>(raw_configuration(array[i])));
+    std::unordered_map<std::string, std::string> map;
+    map.reserve(view_.size());
+    for (auto [key, value] : view_) {
+        if (key.empty()) {
+            throw malformed_object("invalid key on map entry");
+        }
+        raw_configuration item{value};
+        map.emplace(key.as<std::string_view>(), static_cast<std::string>(item));
     }
-
-    return data;
+    return map;
 }
 
+// TODO test with empty string
 raw_configuration::operator semantic_version() const
 {
-    if (type != DDWAF_OBJ_STRING || stringValue == nullptr) {
-        throw bad_cast("string", strtype(type));
+    if (view_.is_string()) {
+        throw bad_cast("string", strtype(view_.type()));
     }
 
-    return semantic_version{{stringValue, static_cast<size_t>(nbEntries)}};
+    return semantic_version{view_.as<std::string_view>()};
 }
 
 } // namespace ddwaf
