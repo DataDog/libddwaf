@@ -28,6 +28,7 @@ public:
     ~raw_configuration() = default;
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
     raw_configuration(object_view view) : view_(view) {}
+    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
     raw_configuration(const ddwaf_object &obj) : view_(&obj) {}
     raw_configuration(const raw_configuration &) = default;
     raw_configuration &operator=(const raw_configuration &) = default;
@@ -49,6 +50,9 @@ public:
     explicit operator std::unordered_map<std::string, std::string>() const;
     explicit operator semantic_version() const;
 
+    const object_view *operator->() const { return &view_; }
+
+protected:
     object_view view_;
 };
 

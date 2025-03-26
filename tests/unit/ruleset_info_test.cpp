@@ -15,101 +15,95 @@ namespace {
 
 TEST(TestRulesetInfo, EmptyRulesetInfo)
 {
-    ddwaf::raw_configuration root;
     ruleset_info info;
-    root = info.to_object().move();
+    auto diagnostics = info.to_object();
+    raw_configuration root{diagnostics};
 
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
     EXPECT_EQ(root_map.size(), 0);
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestRulesetInfo, ValidRulesetInfo)
 {
-    ddwaf::raw_configuration root;
+    ruleset_info info;
+    info.set_ruleset_version("2.3.4");
+
     {
-        ruleset_info info;
-        info.set_ruleset_version("2.3.4");
-
-        {
-            auto &section = info.add_section("rules");
-            section.add_loaded("first");
-        }
-
-        {
-            auto &section = info.add_section("exclusions");
-            section.add_loaded("second");
-        }
-
-        {
-            auto &section = info.add_section("rules_override");
-            section.add_loaded(10);
-        }
-
-        root = info.to_object().move();
+        auto &section = info.add_section("rules");
+        section.add_loaded("first");
     }
+
+    {
+        auto &section = info.add_section("exclusions");
+        section.add_loaded("second");
+    }
+
+    {
+        auto &section = info.add_section("rules_override");
+        section.add_loaded(10);
+    }
+
+    auto diagnostics = info.to_object();
+    raw_configuration root{diagnostics};
 
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
     EXPECT_EQ(root_map.size(), 4);
 
-    auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
+    auto version = at<std::string>(root_map, "ruleset_version");
     EXPECT_STREQ(version.c_str(), "2.3.4");
 
     std::unordered_map<std::string, std::string> kv{
         {"rules", "first"}, {"exclusions", "second"}, {"rules_override", "index:10"}};
     for (auto &[key, value] : kv) {
-        auto section = ddwaf::at<raw_configuration::map>(root_map, key);
+        auto section = at<raw_configuration::map>(root_map, key);
         EXPECT_EQ(section.size(), 5);
 
-        auto loaded = ddwaf::at<raw_configuration::vector>(section, "loaded");
+        auto loaded = at<raw_configuration::vector>(section, "loaded");
         EXPECT_EQ(loaded.size(), 1);
 
         EXPECT_STREQ(static_cast<std::string>(loaded[0]).c_str(), value.c_str());
 
-        auto failed = ddwaf::at<raw_configuration::vector>(section, "failed");
+        auto failed = at<raw_configuration::vector>(section, "failed");
         EXPECT_EQ(failed.size(), 0);
 
-        auto skipped = ddwaf::at<raw_configuration::vector>(section, "skipped");
+        auto skipped = at<raw_configuration::vector>(section, "skipped");
         EXPECT_EQ(skipped.size(), 0);
 
-        auto errors = ddwaf::at<raw_configuration::map>(section, "errors");
+        auto errors = at<raw_configuration::map>(section, "errors");
         EXPECT_EQ(errors.size(), 0);
     }
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestRulesetInfo, FailedWithErrorsRulesetInfo)
 {
-    ddwaf::raw_configuration root;
-    {
-        ruleset_info info;
-        info.set_ruleset_version("2.3.4");
+    ruleset_info info;
+    info.set_ruleset_version("2.3.4");
 
+    {
         auto &section = info.add_section("rules");
         section.add_failed("first", parser_error_severity::error, "error1");
         section.add_failed("second", parser_error_severity::error, "error1");
         section.add_failed("third", parser_error_severity::error, "error2");
         section.add_failed("fourth", parser_error_severity::error, "error2");
         section.add_failed("fifth", parser_error_severity::error, "error3");
-
-        root = info.to_object().move();
     }
+
+    auto diagnostics = info.to_object();
+    raw_configuration root{diagnostics};
 
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
     EXPECT_EQ(root_map.size(), 2);
 
-    auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
+    auto version = at<std::string>(root_map, "ruleset_version");
     EXPECT_STREQ(version.c_str(), "2.3.4");
 
-    auto section = ddwaf::at<raw_configuration::map>(root_map, "rules");
+    auto section = at<raw_configuration::map>(root_map, "rules");
     EXPECT_EQ(section.size(), 5);
 
-    auto loaded = ddwaf::at<raw_configuration::vector>(section, "loaded");
+    auto loaded = at<raw_configuration::vector>(section, "loaded");
     EXPECT_EQ(loaded.size(), 0);
 
-    auto failed = ddwaf::at<raw_configuration::string_set>(section, "failed");
+    auto failed = at<raw_configuration::string_set>(section, "failed");
     EXPECT_EQ(failed.size(), 5);
     EXPECT_NE(failed.find("first"), failed.end());
     EXPECT_NE(failed.find("second"), failed.end());
@@ -117,10 +111,10 @@ TEST(TestRulesetInfo, FailedWithErrorsRulesetInfo)
     EXPECT_NE(failed.find("fourth"), failed.end());
     EXPECT_NE(failed.find("fifth"), failed.end());
 
-    auto skipped = ddwaf::at<raw_configuration::vector>(section, "skipped");
+    auto skipped = at<raw_configuration::vector>(section, "skipped");
     EXPECT_EQ(skipped.size(), 0);
 
-    auto errors = ddwaf::at<raw_configuration::map>(section, "errors");
+    auto errors = at<raw_configuration::map>(section, "errors");
     EXPECT_EQ(errors.size(), 3);
     {
         auto it = errors.find("error1");
@@ -150,17 +144,14 @@ TEST(TestRulesetInfo, FailedWithErrorsRulesetInfo)
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("fifth"), error_rules.end());
     }
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestRulesetInfo, SkippedRulesetInfo)
 {
-    ddwaf::raw_configuration root;
-    {
-        ruleset_info info;
-        info.set_ruleset_version("2.3.4");
+    ruleset_info info;
+    info.set_ruleset_version("2.3.4");
 
+    {
         auto &section = info.add_section("rules");
         section.add_skipped("first");
         section.add_skipped("second");
@@ -168,67 +159,64 @@ TEST(TestRulesetInfo, SkippedRulesetInfo)
         section.add_skipped("fourth");
         section.add_skipped("fifth");
         section.add_skipped(5);
-
-        root = info.to_object().move();
     }
+
+    auto diagnostics = info.to_object();
+    raw_configuration root{diagnostics};
 
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
     EXPECT_EQ(root_map.size(), 2);
 
-    auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
+    auto version = at<std::string>(root_map, "ruleset_version");
     EXPECT_STREQ(version.c_str(), "2.3.4");
 
-    auto section = ddwaf::at<raw_configuration::map>(root_map, "rules");
+    auto section = at<raw_configuration::map>(root_map, "rules");
     EXPECT_EQ(section.size(), 5);
 
-    auto loaded = ddwaf::at<raw_configuration::vector>(section, "loaded");
+    auto loaded = at<raw_configuration::vector>(section, "loaded");
     EXPECT_EQ(loaded.size(), 0);
 
-    auto failed = ddwaf::at<raw_configuration::string_set>(section, "failed");
+    auto failed = at<raw_configuration::string_set>(section, "failed");
     EXPECT_EQ(failed.size(), 0);
 
-    auto skipped = ddwaf::at<raw_configuration::vector>(section, "skipped");
+    auto skipped = at<raw_configuration::vector>(section, "skipped");
     EXPECT_EQ(skipped.size(), 6);
 
-    auto errors = ddwaf::at<raw_configuration::map>(section, "errors");
+    auto errors = at<raw_configuration::map>(section, "errors");
     EXPECT_EQ(errors.size(), 0);
 
-    auto warnings = ddwaf::at<raw_configuration::map>(section, "warnings");
+    auto warnings = at<raw_configuration::map>(section, "warnings");
     EXPECT_EQ(warnings.size(), 0);
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestRulesetInfo, SectionErrorRulesetInfo)
 {
-    ddwaf::raw_configuration root;
-    {
-        ruleset_info info;
-        info.set_ruleset_version("2.3.4");
+    ruleset_info info;
+    info.set_ruleset_version("2.3.4");
 
+    {
         auto &section = info.add_section("rules_data");
         section.set_error("expected 'array' found 'map'");
         section.add_loaded("fourth");
         section.add_failed("fifth", parser_error_severity::error, "error");
-
-        root = info.to_object().move();
     }
+
+    auto diagnostics = info.to_object();
+    raw_configuration root{diagnostics};
 
     {
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
         EXPECT_EQ(root_map.size(), 2);
 
-        auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
+        auto version = at<std::string>(root_map, "ruleset_version");
         EXPECT_STREQ(version.c_str(), "2.3.4");
 
-        auto section = ddwaf::at<raw_configuration::map>(root_map, "rules_data");
+        auto section = at<raw_configuration::map>(root_map, "rules_data");
         EXPECT_EQ(section.size(), 1);
 
-        auto error = ddwaf::at<std::string>(section, "error");
+        auto error = at<std::string>(section, "error");
         EXPECT_STR(error, "expected 'array' found 'map'");
     }
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestRulesetInfo, NullRulesetInfo)

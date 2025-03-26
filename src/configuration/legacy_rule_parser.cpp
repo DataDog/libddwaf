@@ -23,7 +23,6 @@
 #include "configuration/common/raw_configuration.hpp"
 #include "configuration/common/transformer_parser.hpp"
 #include "configuration/legacy_rule_parser.hpp"
-#include "ddwaf.h"
 #include "expression.hpp"
 #include "log.hpp"
 #include "matcher/base.hpp"
@@ -62,12 +61,12 @@ std::shared_ptr<expression> parse_expression(
             lengths.reserve(list.size());
 
             for (auto &pattern : list) {
-                if (pattern.type != DDWAF_OBJ_STRING) {
-                    throw ddwaf::parsing_error("phrase_match list item not a string");
+                if (!pattern->is_string() || pattern->empty()) {
+                    throw ddwaf::parsing_error("phrase_match list item not a string or empty");
                 }
 
-                patterns.push_back(pattern.stringValue);
-                lengths.push_back((uint32_t)pattern.nbEntries);
+                patterns.push_back(pattern->data());
+                lengths.push_back(static_cast<uint32_t>(pattern->size()));
             }
 
             matcher = std::make_unique<matcher::phrase_match>(patterns, lengths);

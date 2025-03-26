@@ -508,7 +508,7 @@ TEST(TestDiagnosticsV2Integration, MultipleRules)
         auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&root);
+        ddwaf_object_free(&diagnostics);
     }
 
     ddwaf_destroy(handle);
@@ -550,7 +550,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
         auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&root);
+        ddwaf_object_free(&diagnostics);
     }
 
     ddwaf_destroy(handle);
@@ -592,7 +592,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
         auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&root);
+        ddwaf_object_free(&diagnostics);
     }
 
     ddwaf_destroy(handle);
@@ -635,7 +635,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
         auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&root);
+        ddwaf_object_free(&diagnostics);
     }
 
     ddwaf_destroy(handle);
@@ -718,7 +718,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
             EXPECT_TRUE(error_rules.contains("rule6"));
         }
 
-        ddwaf_object_free(&root);
+        ddwaf_object_free(&diagnostics);
     }
 
     ddwaf_destroy(handle);
@@ -762,7 +762,7 @@ TEST(TestDiagnosticsV2Integration, CustomRules)
         auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&root);
+        ddwaf_object_free(&diagnostics);
     }
 
     ddwaf_destroy(handle);
@@ -800,7 +800,7 @@ TEST(TestDiagnosticsV2Integration, InputFilter)
         auto errors = ddwaf::at<raw_configuration::map>(exclusions, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&root);
+        ddwaf_object_free(&diagnostics);
     }
 
     ddwaf_destroy(handle);
@@ -839,7 +839,7 @@ TEST(TestDiagnosticsV2Integration, RuleData)
         auto errors = ddwaf::at<raw_configuration::map>(rule_data, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&root);
+        ddwaf_object_free(&diagnostics);
     }
 
     ddwaf_destroy(handle);
@@ -877,7 +877,7 @@ TEST(TestDiagnosticsV2Integration, Processor)
         auto errors = ddwaf::at<raw_configuration::map>(processor, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&root);
+        ddwaf_object_free(&diagnostics);
     }
 
     ddwaf_destroy(handle);

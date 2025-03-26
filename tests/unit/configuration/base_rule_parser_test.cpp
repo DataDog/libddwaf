@@ -30,7 +30,8 @@ TEST(TestBaseRuleParser, ParseRule)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -43,8 +44,6 @@ TEST(TestBaseRuleParser, ParseRule)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -103,7 +102,8 @@ TEST(TestBaseRuleParser, ParseRuleWithoutType)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -122,8 +122,6 @@ TEST(TestBaseRuleParser, ParseRuleWithoutType)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -167,7 +165,8 @@ TEST(TestBaseRuleParser, ParseRuleWithoutConditions)
 
     ddwaf_object_free(&rule_object);
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -189,8 +188,6 @@ TEST(TestBaseRuleParser, ParseRuleWithoutConditions)
 
         auto warnings = at<raw_configuration::map>(root_map, "warnings");
         EXPECT_EQ(warnings.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -235,7 +232,8 @@ TEST(TestBaseRuleParser, ParseRuleInvalidTransformer)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -257,8 +255,6 @@ TEST(TestBaseRuleParser, ParseRuleInvalidTransformer)
         auto warning_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(warning_rules.size(), 1);
         EXPECT_NE(warning_rules.find("1"), warning_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -303,7 +299,8 @@ TEST(TestBaseRuleParser, ParseRuleWithoutID)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -322,8 +319,6 @@ TEST(TestBaseRuleParser, ParseRuleWithoutID)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -370,7 +365,8 @@ TEST(TestBaseRuleParser, ParseMultipleRules)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -384,8 +380,6 @@ TEST(TestBaseRuleParser, ParseMultipleRules)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -440,7 +434,8 @@ TEST(TestBaseRuleParser, ParseMultipleRulesOneInvalid)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -461,8 +456,6 @@ TEST(TestBaseRuleParser, ParseMultipleRulesOneInvalid)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("error"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -518,7 +511,8 @@ TEST(TestBaseRuleParser, ParseMultipleRulesOneDuplicate)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -538,8 +532,6 @@ TEST(TestBaseRuleParser, ParseMultipleRulesOneDuplicate)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -580,7 +572,8 @@ TEST(TestBaseRuleParser, NegatedMatcherTooManyParameters)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -599,8 +592,6 @@ TEST(TestBaseRuleParser, NegatedMatcherTooManyParameters)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -647,7 +638,8 @@ TEST(TestBaseRuleParser, SupportedVersionedOperator)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -663,8 +655,6 @@ TEST(TestBaseRuleParser, SupportedVersionedOperator)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -691,7 +681,8 @@ TEST(TestBaseRuleParser, UnsupportedVersionedOperator)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -707,8 +698,6 @@ TEST(TestBaseRuleParser, UnsupportedVersionedOperator)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -755,7 +744,8 @@ TEST(TestBaseRuleParser, IncompatibleMinVersion)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -771,8 +761,6 @@ TEST(TestBaseRuleParser, IncompatibleMinVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -819,7 +807,8 @@ TEST(TestBaseRuleParser, IncompatibleMaxVersion)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -835,8 +824,6 @@ TEST(TestBaseRuleParser, IncompatibleMaxVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -883,7 +870,8 @@ TEST(TestBaseRuleParser, CompatibleVersion)
     ddwaf_object_free(&rule_object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -899,8 +887,6 @@ TEST(TestBaseRuleParser, CompatibleVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());

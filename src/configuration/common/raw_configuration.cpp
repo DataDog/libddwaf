@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <string>
@@ -15,6 +14,7 @@
 
 #include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
+#include "object_type.hpp"
 #include "semver.hpp"
 #include "utils.hpp"
 
@@ -50,7 +50,7 @@ std::string strtype(object_type type)
 
 raw_configuration::operator raw_configuration::map() const
 {
-    if (view_.is_map()) {
+    if (!view_.is_map()) {
         throw bad_cast("map", strtype(view_.type()));
     }
 
@@ -71,7 +71,7 @@ raw_configuration::operator raw_configuration::map() const
 
 raw_configuration::operator raw_configuration::vector() const
 {
-    if (view_.is_array()) {
+    if (!view_.is_array()) {
         throw bad_cast("array", strtype(view_.type()));
     }
 
@@ -81,15 +81,13 @@ raw_configuration::operator raw_configuration::vector() const
     raw_configuration::vector vec;
     vec.reserve(view_.size());
 
-    for (auto [_, value] : view_) {
-        vec.emplace_back(value);
-    }
+    for (auto [_, value] : view_) { vec.emplace_back(value); }
     return vec;
 }
 
 raw_configuration::operator raw_configuration::string_set() const
 {
-    if (view_.is_array()) {
+    if (!view_.is_array()) {
         throw bad_cast("array", strtype(view_.type()));
     }
 
@@ -241,7 +239,7 @@ raw_configuration::operator bool() const
 
 raw_configuration::operator std::vector<std::string>() const
 {
-    if (view_.is_array()) {
+    if (!view_.is_array()) {
         throw bad_cast("array", strtype(view_.type()));
     }
 
@@ -253,7 +251,7 @@ raw_configuration::operator std::vector<std::string>() const
     vec.reserve(view_.size());
 
     for (auto [_, value] : view_) {
-        raw_configuration item{value};
+        const raw_configuration item{value};
         vec.emplace_back(static_cast<std::string>(item));
     }
     return vec;
@@ -261,7 +259,7 @@ raw_configuration::operator std::vector<std::string>() const
 
 raw_configuration::operator std::vector<std::string_view>() const
 {
-    if (view_.is_array()) {
+    if (!view_.is_array()) {
         throw bad_cast("array", strtype(view_.type()));
     }
 
@@ -283,7 +281,7 @@ raw_configuration::operator std::vector<std::string_view>() const
 
 raw_configuration::operator std::unordered_map<std::string, std::string>() const
 {
-    if (view_.is_map()) {
+    if (!view_.is_map()) {
         throw bad_cast("map", strtype(view_.type()));
     }
 
@@ -297,7 +295,7 @@ raw_configuration::operator std::unordered_map<std::string, std::string>() const
         if (key.empty()) {
             throw malformed_object("invalid key on map entry");
         }
-        raw_configuration item{value};
+        const raw_configuration item{value};
         map.emplace(key.as<std::string_view>(), static_cast<std::string>(item));
     }
     return map;
@@ -306,7 +304,7 @@ raw_configuration::operator std::unordered_map<std::string, std::string>() const
 // TODO test with empty string
 raw_configuration::operator semantic_version() const
 {
-    if (view_.is_string()) {
+    if (!view_.is_string()) {
         throw bad_cast("string", strtype(view_.type()));
     }
 

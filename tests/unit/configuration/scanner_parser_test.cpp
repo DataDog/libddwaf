@@ -28,7 +28,8 @@ TEST(TestScannerParser, ParseKeyOnlyScanner)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -41,8 +42,6 @@ TEST(TestScannerParser, ParseKeyOnlyScanner)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(change.content, change_set::scanners);
@@ -81,7 +80,8 @@ TEST(TestScannerParser, ParseValueOnlyScanner)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -94,8 +94,6 @@ TEST(TestScannerParser, ParseValueOnlyScanner)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(change.content, change_set::scanners);
@@ -134,7 +132,8 @@ TEST(TestScannerParser, ParseKeyValueScanner)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -147,8 +146,6 @@ TEST(TestScannerParser, ParseKeyValueScanner)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(change.content, change_set::scanners);
@@ -187,7 +184,8 @@ TEST(TestScannerParser, ParseNoID)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -206,8 +204,6 @@ TEST(TestScannerParser, ParseNoID)
         auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -250,7 +246,8 @@ TEST(TestScannerParser, ParseNoTags)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -269,8 +266,6 @@ TEST(TestScannerParser, ParseNoTags)
         auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("error"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -313,7 +308,8 @@ TEST(TestScannerParser, ParseNoKeyValue)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -332,8 +328,6 @@ TEST(TestScannerParser, ParseNoKeyValue)
         auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("error"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -376,7 +370,8 @@ TEST(TestScannerParser, ParseDuplicate)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -396,8 +391,6 @@ TEST(TestScannerParser, ParseDuplicate)
         auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(change.content, change_set::scanners);
@@ -422,7 +415,8 @@ TEST(TestScannerParser, ParseKeyNoOperator)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -441,8 +435,6 @@ TEST(TestScannerParser, ParseKeyNoOperator)
         auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -485,7 +477,8 @@ TEST(TestScannerParser, ParseKeyNoParameters)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -504,8 +497,6 @@ TEST(TestScannerParser, ParseKeyNoParameters)
         auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -548,7 +539,8 @@ TEST(TestScannerParser, ParseValueNoOperator)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -567,8 +559,6 @@ TEST(TestScannerParser, ParseValueNoOperator)
         auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -611,7 +601,8 @@ TEST(TestScannerParser, ParseValueNoParameters)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -630,8 +621,6 @@ TEST(TestScannerParser, ParseValueNoParameters)
         auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -675,7 +664,8 @@ TEST(TestScannerParser, ParseUnknownMatcher)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -697,8 +687,6 @@ TEST(TestScannerParser, ParseUnknownMatcher)
         auto warning_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(warning_rules.size(), 1);
         EXPECT_NE(warning_rules.find("ecd"), warning_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -742,7 +730,8 @@ TEST(TestScannerParser, ParseRuleDataID)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -761,8 +750,6 @@ TEST(TestScannerParser, ParseRuleDataID)
         auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -806,7 +793,8 @@ TEST(TestScannerParser, IncompatibleMinVersion)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -822,8 +810,6 @@ TEST(TestScannerParser, IncompatibleMinVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -867,7 +853,8 @@ TEST(TestScannerParser, IncompatibleMaxVersion)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -883,8 +870,6 @@ TEST(TestScannerParser, IncompatibleMaxVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -927,7 +912,8 @@ TEST(TestScannerParser, CompatibleVersion)
     ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -943,8 +929,6 @@ TEST(TestScannerParser, CompatibleVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(change.content, change_set::scanners);

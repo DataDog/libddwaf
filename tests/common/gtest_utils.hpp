@@ -19,7 +19,7 @@
 #include "common/json_utils.hpp"
 #include "common/yaml_utils.hpp"
 
-#define EXPECT_STR(a, b) EXPECT_STREQ(a.c_str(), b)
+#define EXPECT_STR(a, b) EXPECT_STREQ(a.c_str(), std::string{b}.c_str())
 #define EXPECT_STRV(a, b) EXPECT_STR(std::string{a}, b)
 
 namespace ddwaf::test {
