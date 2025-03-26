@@ -68,7 +68,8 @@ TEST(TestActionParser, SingleAction)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -81,8 +82,6 @@ TEST(TestActionParser, SingleAction)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(cfg.actions.size(), 1);
@@ -146,7 +145,8 @@ TEST(TestActionParser, RedirectAction)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -164,8 +164,6 @@ TEST(TestActionParser, RedirectAction)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -224,7 +222,8 @@ TEST(TestActionParser, RedirectActionInvalidStatusCode)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -237,8 +236,6 @@ TEST(TestActionParser, RedirectActionInvalidStatusCode)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -275,7 +272,8 @@ TEST(TestActionParser, RedirectActionInvalid300StatusCode)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -288,8 +286,6 @@ TEST(TestActionParser, RedirectActionInvalid300StatusCode)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -326,7 +322,8 @@ TEST(TestActionParser, RedirectActionMissingStatusCode)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -339,8 +336,6 @@ TEST(TestActionParser, RedirectActionMissingStatusCode)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -377,7 +372,8 @@ TEST(TestActionParser, RedirectActionMissingLocation)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -390,8 +386,6 @@ TEST(TestActionParser, RedirectActionMissingLocation)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -429,7 +423,8 @@ TEST(TestActionParser, RedirectActionNonHttpURL)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -442,8 +437,6 @@ TEST(TestActionParser, RedirectActionNonHttpURL)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -481,7 +474,8 @@ TEST(TestActionParser, RedirectActionInvalidRelativePathURL)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -494,8 +488,6 @@ TEST(TestActionParser, RedirectActionInvalidRelativePathURL)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -534,7 +526,8 @@ TEST(TestActionParser, OverrideDefaultBlockAction)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -547,8 +540,6 @@ TEST(TestActionParser, OverrideDefaultBlockAction)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -585,7 +576,8 @@ TEST(TestActionParser, BlockActionMissingStatusCode)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -598,8 +590,6 @@ TEST(TestActionParser, BlockActionMissingStatusCode)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -637,7 +627,8 @@ TEST(TestActionParser, UnknownActionType)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -650,8 +641,6 @@ TEST(TestActionParser, UnknownActionType)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -677,7 +666,8 @@ TEST(TestActionParser, BlockActionMissingGrpcStatusCode)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -690,8 +680,6 @@ TEST(TestActionParser, BlockActionMissingGrpcStatusCode)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -729,7 +717,8 @@ TEST(TestActionParser, BlockActionMissingType)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -742,8 +731,6 @@ TEST(TestActionParser, BlockActionMissingType)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -781,7 +768,8 @@ TEST(TestActionParser, BlockActionMissingParameters)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -794,8 +782,6 @@ TEST(TestActionParser, BlockActionMissingParameters)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -836,7 +822,8 @@ TEST(TestActionParser, MissingID)
     EXPECT_EQ(cfg.actions.size(), 0);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -856,8 +843,6 @@ TEST(TestActionParser, MissingID)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 }
 
@@ -878,7 +863,8 @@ TEST(TestActionParser, MissingType)
     EXPECT_EQ(cfg.actions.size(), 0);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -898,8 +884,6 @@ TEST(TestActionParser, MissingType)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("sanitize"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 }
 
@@ -919,7 +903,8 @@ TEST(TestActionParser, MissingParameters)
     EXPECT_EQ(cfg.actions.size(), 0);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -939,8 +924,6 @@ TEST(TestActionParser, MissingParameters)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("sanitize"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 }
 
@@ -958,7 +941,8 @@ TEST(TestActionParser, DuplicateAction)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -978,8 +962,6 @@ TEST(TestActionParser, DuplicateAction)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("block_1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());

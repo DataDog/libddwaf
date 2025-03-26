@@ -28,7 +28,8 @@ TEST(TestExclusionDataParser, ParseIPData)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -41,8 +42,6 @@ TEST(TestExclusionDataParser, ParseIPData)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -67,7 +66,8 @@ TEST(TestExclusionDataParser, ParseStringData)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -80,8 +80,6 @@ TEST(TestExclusionDataParser, ParseStringData)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -106,7 +104,8 @@ TEST(TestExclusionDataParser, ParseMultipleData)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -120,8 +119,6 @@ TEST(TestExclusionDataParser, ParseMultipleData)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -147,7 +144,8 @@ TEST(TestExclusionDataParser, ParseUnknownDataID)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -161,8 +159,6 @@ TEST(TestExclusionDataParser, ParseUnknownDataID)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -188,7 +184,8 @@ TEST(TestExclusionDataParser, ParseUnsupportedTypes)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -219,8 +216,6 @@ TEST(TestExclusionDataParser, ParseUnsupportedTypes)
             EXPECT_EQ(error_rules.size(), 1);
             EXPECT_NE(error_rules.find("ip_data"), error_rules.end());
         }
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -263,7 +258,8 @@ TEST(TestExclusionDataParser, ParseUnknownDataIDWithUnsupportedType)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -282,8 +278,6 @@ TEST(TestExclusionDataParser, ParseUnknownDataIDWithUnsupportedType)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("usr_data"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -326,7 +320,8 @@ TEST(TestExclusionDataParser, ParseMissingType)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -345,8 +340,6 @@ TEST(TestExclusionDataParser, ParseMissingType)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ip_data"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -389,7 +382,8 @@ TEST(TestExclusionDataParser, ParseMissingID)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -408,8 +402,6 @@ TEST(TestExclusionDataParser, ParseMissingID)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -451,7 +443,8 @@ TEST(TestExclusionDataParser, ParseMissingData)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -470,8 +463,6 @@ TEST(TestExclusionDataParser, ParseMissingData)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ip_data"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());

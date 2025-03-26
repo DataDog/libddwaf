@@ -27,7 +27,8 @@ TEST(TestInputFilterParser, ParseEmpty)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -46,8 +47,6 @@ TEST(TestInputFilterParser, ParseEmpty)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -89,7 +88,8 @@ TEST(TestInputFilterParser, ParseFilterWithoutID)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -108,8 +108,6 @@ TEST(TestInputFilterParser, ParseFilterWithoutID)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -152,7 +150,8 @@ TEST(TestInputFilterParser, ParseDuplicateFilters)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -172,8 +171,6 @@ TEST(TestInputFilterParser, ParseDuplicateFilters)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -200,7 +197,8 @@ TEST(TestInputFilterParser, ParseUnconditionalNoTargets)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -213,8 +211,6 @@ TEST(TestInputFilterParser, ParseUnconditionalNoTargets)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(cfg.rule_filters.size(), 0);
@@ -242,7 +238,8 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetID)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -255,8 +252,6 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetID)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -296,7 +291,8 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetTags)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -309,8 +305,6 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetTags)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -351,7 +345,8 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetPriority)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -364,8 +359,6 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetPriority)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -405,7 +398,8 @@ TEST(TestInputFilterParser, ParseUnconditionalMultipleTargets)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -418,8 +412,6 @@ TEST(TestInputFilterParser, ParseUnconditionalMultipleTargets)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -469,7 +461,8 @@ TEST(TestInputFilterParser, ParseMultipleUnconditional)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -483,8 +476,6 @@ TEST(TestInputFilterParser, ParseMultipleUnconditional)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -542,7 +533,8 @@ TEST(TestInputFilterParser, ParseConditionalSingleCondition)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -555,8 +547,6 @@ TEST(TestInputFilterParser, ParseConditionalSingleCondition)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -595,7 +585,8 @@ TEST(TestInputFilterParser, ParseConditionalMultipleConditions)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -608,8 +599,6 @@ TEST(TestInputFilterParser, ParseConditionalMultipleConditions)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -648,7 +637,8 @@ TEST(TestInputFilterParser, IncompatibleMinVersion)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -664,8 +654,6 @@ TEST(TestInputFilterParser, IncompatibleMinVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -708,7 +696,8 @@ TEST(TestInputFilterParser, IncompatibleMaxVersion)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -724,8 +713,6 @@ TEST(TestInputFilterParser, IncompatibleMaxVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -768,7 +755,8 @@ TEST(TestInputFilterParser, CompatibleVersion)
     ddwaf_object_free(&object);
 
     {
-        raw_configuration root = section.to_object().move();
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -781,8 +769,6 @@ TEST(TestInputFilterParser, CompatibleVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());

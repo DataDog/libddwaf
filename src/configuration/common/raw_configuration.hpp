@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <compare>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -14,36 +13,28 @@
 #include <vector>
 
 #include "configuration/common/parser_exception.hpp"
-#include "ddwaf.h"
+#include "object.hpp"
 #include "semver.hpp"
 
 namespace ddwaf {
 
-class raw_configuration : public ddwaf_object {
+class raw_configuration {
 public:
     using map = std::unordered_map<std::string_view, raw_configuration>;
     using vector = std::vector<raw_configuration>;
     using string_set = std::unordered_set<std::string_view>;
 
     raw_configuration() = default;
+    ~raw_configuration() = default;
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-    raw_configuration(const ddwaf_object &arg) : _ddwaf_object(arg) {}
+    raw_configuration(object_view view) : view_(view) {}
+    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
+    raw_configuration(const ddwaf_object &obj) : view_(&obj) {}
     raw_configuration(const raw_configuration &) = default;
     raw_configuration &operator=(const raw_configuration &) = default;
 
-    raw_configuration(raw_configuration &&other) noexcept : _ddwaf_object(other)
-    {
-        static_cast<ddwaf_object &>(other) = {};
-    }
-
-    raw_configuration &operator=(raw_configuration &&other) noexcept
-    {
-        static_cast<ddwaf_object &>(*this) = dynamic_cast<ddwaf_object &>(other);
-        static_cast<ddwaf_object &>(other) = {};
-        return *this;
-    }
-
-    void print();
+    raw_configuration(raw_configuration &&other) noexcept = default;
+    raw_configuration &operator=(raw_configuration &&other) noexcept = default;
 
     explicit operator map() const;
     explicit operator vector() const;
@@ -59,7 +50,10 @@ public:
     explicit operator std::unordered_map<std::string, std::string>() const;
     explicit operator semantic_version() const;
 
-    ~raw_configuration() = default;
+    const object_view *operator->() const { return &view_; }
+
+protected:
+    object_view view_;
 };
 
 template <typename T> struct raw_configuration_traits {
