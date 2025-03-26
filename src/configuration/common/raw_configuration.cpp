@@ -129,7 +129,6 @@ raw_configuration::operator std::string() const
     return view_.convert<std::string>();
 }
 
-// TODO move some of this conversions to object_converter
 raw_configuration::operator uint64_t() const
 {
     if (view_.is<uint64_t>()) {
@@ -301,7 +300,6 @@ raw_configuration::operator std::unordered_map<std::string, std::string>() const
     return map;
 }
 
-// TODO test with empty string
 raw_configuration::operator semantic_version() const
 {
     if (!view_.is_string()) {

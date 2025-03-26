@@ -16,7 +16,6 @@ TEST(TestParameter, ToBool)
 {
     {
         owned_object root{true};
-        ;
 
         bool value = static_cast<bool>(raw_configuration(root));
         EXPECT_TRUE(value);
@@ -24,7 +23,6 @@ TEST(TestParameter, ToBool)
 
     {
         owned_object root{false};
-        ;
 
         bool value = static_cast<bool>(raw_configuration(root));
         EXPECT_FALSE(value);
@@ -32,7 +30,6 @@ TEST(TestParameter, ToBool)
 
     {
         owned_object root{"true"};
-        ;
 
         bool value = static_cast<bool>(raw_configuration(root));
         EXPECT_TRUE(value);
@@ -40,7 +37,6 @@ TEST(TestParameter, ToBool)
 
     {
         owned_object root{"TrUe"};
-        ;
 
         bool value = static_cast<bool>(raw_configuration(root));
         EXPECT_TRUE(value);
@@ -48,7 +44,6 @@ TEST(TestParameter, ToBool)
 
     {
         owned_object root{"false"};
-        ;
 
         bool value = static_cast<bool>(raw_configuration(root));
         EXPECT_FALSE(value);
@@ -56,7 +51,6 @@ TEST(TestParameter, ToBool)
 
     {
         owned_object root{"FaLsE"};
-        ;
 
         bool value = static_cast<bool>(raw_configuration(root));
         EXPECT_FALSE(value);
@@ -72,7 +66,6 @@ TEST(TestParameter, ToUint64)
 {
     {
         owned_object root{2123};
-        ;
 
         uint64_t value = static_cast<uint64_t>(raw_configuration(root));
         EXPECT_EQ(value, 2123);
@@ -80,7 +73,6 @@ TEST(TestParameter, ToUint64)
 
     {
         owned_object root{2123};
-        ;
 
         uint64_t value = static_cast<uint64_t>(raw_configuration(root));
         EXPECT_EQ(value, 2123);
@@ -88,7 +80,6 @@ TEST(TestParameter, ToUint64)
 
     {
         owned_object root{21.0};
-        ;
 
         uint64_t value = static_cast<uint64_t>(raw_configuration(root));
         EXPECT_EQ(value, 21);
@@ -103,7 +94,6 @@ TEST(TestParameter, ToUint64)
 
     {
         owned_object root{"2123"};
-        ;
 
         uint64_t value = static_cast<uint64_t>(raw_configuration(root));
         EXPECT_EQ(value, 2123);
@@ -117,14 +107,12 @@ TEST(TestParameter, ToUint64)
 
     {
         owned_object root{-2123};
-        ;
 
         EXPECT_THROW((void)static_cast<uint64_t>(raw_configuration(root)), bad_cast);
     }
 
     {
         owned_object root{-21.0};
-        ;
 
         EXPECT_THROW((void)static_cast<uint64_t>(raw_configuration(root)), bad_cast);
     }
@@ -140,7 +128,6 @@ TEST(TestParameter, ToInt64)
 {
     {
         owned_object root{-2123};
-        ;
 
         int64_t value = static_cast<int64_t>(raw_configuration(root));
         EXPECT_EQ(value, -2123);
@@ -148,7 +135,6 @@ TEST(TestParameter, ToInt64)
 
     {
         owned_object root{2123};
-        ;
 
         int64_t value = static_cast<int64_t>(raw_configuration(root));
         EXPECT_EQ(value, 2123);
@@ -156,7 +142,6 @@ TEST(TestParameter, ToInt64)
 
     {
         owned_object root{-21.0};
-        ;
 
         int64_t value = static_cast<int64_t>(raw_configuration(root));
         EXPECT_EQ(value, -21);
@@ -171,7 +156,6 @@ TEST(TestParameter, ToInt64)
 
     {
         owned_object root{"-2123"};
-        ;
 
         int64_t value = static_cast<int64_t>(raw_configuration(root));
         EXPECT_EQ(value, -2123);
@@ -200,7 +184,6 @@ TEST(TestParameter, ToFloat)
 {
     {
         owned_object root{21.23};
-        ;
 
         double value = static_cast<double>(raw_configuration(root));
         EXPECT_EQ(value, 21.23);
@@ -208,7 +191,6 @@ TEST(TestParameter, ToFloat)
 
     {
         owned_object root{"21.23"};
-        ;
 
         double value = static_cast<double>(raw_configuration(root));
         EXPECT_EQ(value, 21.23);
@@ -225,7 +207,6 @@ TEST(TestParameter, ToString)
 {
     {
         owned_object root{"hello world, this is a string"};
-        ;
 
         auto value = static_cast<std::string>(raw_configuration(root));
         EXPECT_STREQ(value.c_str(), "hello world, this is a string");
@@ -242,10 +223,9 @@ TEST(TestParameter, ToStringView)
 {
     {
         owned_object root{"hello world, this is a string"};
-        ;
 
         auto value = static_cast<std::string_view>(raw_configuration(root));
-        EXPECT_STREQ(value.data(), "hello world, this is a string");
+        EXPECT_STRV(value, "hello world, this is a string");
     }
 
     {
@@ -293,7 +273,8 @@ TEST(TestParameter, ToMap)
         EXPECT_EQ(map_param.size(), 20);
 
         for (unsigned i = 0; i < 20; i++) {
-            raw_configuration &param = map_param[std::to_string(i)];
+            auto key = std::to_string(i);
+            raw_configuration &param = map_param[key];
             EXPECT_TRUE(static_cast<std::string>(param) == std::to_string(100 + i));
         }
     }
@@ -396,7 +377,6 @@ TEST(TestParameter, ToSemanticVersion)
 {
     {
         owned_object root{"1.2.3"};
-        ;
 
         auto value = static_cast<semantic_version>(raw_configuration(root));
         EXPECT_EQ(value.number(), 1002003);
@@ -404,10 +384,16 @@ TEST(TestParameter, ToSemanticVersion)
 
     {
         owned_object root{3};
-        ;
 
         raw_configuration param{root};
         EXPECT_THROW(param.operator semantic_version(), bad_cast);
+    }
+
+    {
+        auto root = owned_object::make_string_nocopy(nullptr, 0);
+
+        raw_configuration param{root};
+        EXPECT_THROW(param.operator semantic_version(), std::invalid_argument);
     }
 }
 
