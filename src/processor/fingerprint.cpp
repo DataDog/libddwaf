@@ -166,6 +166,22 @@ void normalize_value(std::string_view key, std::string &buffer, bool trailing_se
     }
 }
 
+std::string_view value_object_to_string(const ddwaf_object &object)
+{
+    if (object.type == DDWAF_OBJ_STRING) {
+        return {object.stringValue, static_cast<std::size_t>(object.nbEntries)};
+    }
+
+    if (object.type == DDWAF_OBJ_ARRAY && object.nbEntries == 1) {
+        const auto &child = object.array[0];
+        if (child.type == DDWAF_OBJ_STRING) {
+            return {child.stringValue, static_cast<std::size_t>(child.nbEntries)};
+        }
+    }
+
+    return {};
+}
+
 template <typename Derived, typename Output = std::string> struct field_generator {
     using output_type = Output;
 
@@ -330,11 +346,7 @@ struct kv_hash_fields : field_generator<kv_hash_fields, std::pair<std::string, s
             const std::string_view key{
                 child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
 
-            std::string_view val;
-            if (child.type == DDWAF_OBJ_STRING) {
-                val =
-                    std::string_view{child.stringValue, static_cast<std::size_t>(child.nbEntries)};
-            }
+            auto val = value_object_to_string(child);
 
             auto larger_size = std::max(key.size(), val.size());
             max_string_size = std::max(max_string_size, larger_size);
@@ -612,8 +624,8 @@ std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_i
             known_header_bitset[index] = '1';
         } else if (type == header_type::unknown) {
             unknown_headers.emplace_back(normalized_header);
-        } else if (type == header_type::user_agent && child.type == DDWAF_OBJ_STRING) {
-            user_agent = {child.stringValue, static_cast<std::size_t>(child.nbEntries)};
+        } else if (type == header_type::user_agent) {
+            user_agent = value_object_to_string(child);
         }
     }
     std::sort(unknown_headers.begin(), unknown_headers.end());
@@ -664,10 +676,11 @@ std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_
             // Verify not only precedence but also type, as a header of an unexpected
             // type will be unlikely to be used unless the framework has somehow
             // broken down the header into constituent IPs
-            if (chosen_header > index && child.type == DDWAF_OBJ_STRING) {
-                chosen_header_value = {
-                    child.stringValue, static_cast<std::size_t>(child.nbEntries)};
-                chosen_header = index;
+            if (chosen_header > index) {
+                chosen_header_value = value_object_to_string(child);
+                if (!chosen_header_value.empty()) {
+                    chosen_header = index;
+                }
             }
         }
     }
