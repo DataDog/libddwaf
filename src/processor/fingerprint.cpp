@@ -166,6 +166,22 @@ void normalize_value(std::string_view key, std::string &buffer, bool trailing_se
     }
 }
 
+std::string_view value_object_to_string(object_view view)
+{
+    if (view.is_string()) {
+        return view.as<std::string_view>();
+    }
+
+    if (view.is_array() && view.size() == 1) {
+        auto child = view.at(0);
+        if (child.is_string()) {
+            return child.as<std::string_view>();
+        }
+    }
+
+    return {};
+}
+
 template <typename Derived, typename Output = std::string> struct field_generator {
     using output_type = Output;
 
@@ -325,7 +341,7 @@ struct kv_hash_fields : field_generator<kv_hash_fields, std::pair<std::string, s
             const auto key = it.key();
             const auto child = it.value();
 
-            auto val = child.as_or_default<std::string_view>({});
+            auto val = value_object_to_string(child);
 
             auto larger_size = std::max(key.size(), val.size());
             max_string_size = std::max(max_string_size, larger_size);
@@ -602,8 +618,8 @@ std::pair<owned_object, object_store::attribute> http_header_fingerprint::eval_i
             known_header_bitset[index] = '1';
         } else if (type == header_type::unknown) {
             unknown_headers.emplace_back(normalized_header);
-        } else if (type == header_type::user_agent && child.is_string()) {
-            user_agent = child.as<std::string_view>();
+        } else if (type == header_type::user_agent) {
+            user_agent = value_object_to_string(child);
         }
     }
     std::sort(unknown_headers.begin(), unknown_headers.end());
@@ -651,9 +667,11 @@ std::pair<owned_object, object_store::attribute> http_network_fingerprint::eval_
             // Verify not only precedence but also type, as a header of an unexpected
             // type will be unlikely to be used unless the framework has somehow
             // broken down the header into constituent IPs
-            if (chosen_header > index && child.is_string()) {
-                chosen_header_value = child.as<std::string_view>();
-                chosen_header = index;
+            if (chosen_header > index) {
+                chosen_header_value = value_object_to_string(child);
+                if (!chosen_header_value.empty()) {
+                    chosen_header = index;
+                }
             }
         }
     }

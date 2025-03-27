@@ -431,6 +431,121 @@ TEST(TestHttpHeaderFingerprint, UserAgent)
     EXPECT_STRV(output_sv, "hdr-1111111111-a441b15f-0-");
 }
 
+TEST(TestHttpHeaderFingerprint, UserAgentAsArray)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object headers;
+    ddwaf_object_map(&headers);
+    ddwaf_object_map_add(&headers, "referer", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "connection", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "content-encoding", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "te", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "content-type", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_invalid(&tmp));
+
+    ddwaf_object ua_array;
+    ddwaf_object_array(&ua_array);
+    ddwaf_object_array_add(&ua_array, ddwaf_object_string(&tmp, "Random"));
+    ddwaf_object_map_add(&headers, "user-agent", &ua_array);
+
+    http_header_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    processor_cache cache;
+    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "hdr-1111111111-a441b15f-0-");
+
+    ddwaf_object_free(&headers);
+    ddwaf_object_free(&output);
+}
+
+TEST(TestHttpHeaderFingerprint, UserAgentAsArrayInvalidType)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object headers;
+    ddwaf_object_map(&headers);
+    ddwaf_object_map_add(&headers, "referer", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "connection", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "content-encoding", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "te", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "content-type", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_invalid(&tmp));
+
+    ddwaf_object ua_array;
+    ddwaf_object_array(&ua_array);
+    ddwaf_object_array_add(&ua_array, ddwaf_object_unsigned(&tmp, 42));
+    ddwaf_object_map_add(&headers, "user-agent", &ua_array);
+
+    http_header_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    processor_cache cache;
+    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "hdr-1111111111--0-");
+
+    ddwaf_object_free(&headers);
+    ddwaf_object_free(&output);
+}
+
+TEST(TestHttpHeaderFingerprint, MultipleUserAgents)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object headers;
+    ddwaf_object_map(&headers);
+    ddwaf_object_map_add(&headers, "referer", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "connection", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "content-encoding", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "te", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "content-type", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_invalid(&tmp));
+
+    ddwaf_object ua_array;
+    ddwaf_object_array(&ua_array);
+    ddwaf_object_array_add(&ua_array, ddwaf_object_string(&tmp, "Random"));
+    ddwaf_object_array_add(&ua_array, ddwaf_object_string(&tmp, "Bot"));
+    ddwaf_object_map_add(&headers, "user-agent", &ua_array);
+
+    http_header_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    processor_cache cache;
+    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "hdr-1111111111--0-");
+
+    ddwaf_object_free(&headers);
+    ddwaf_object_free(&output);
+}
+
 TEST(TestHttpHeaderFingerprint, ExcludedUnknownHeaders)
 {
     auto headers = owned_object::make_map({
@@ -595,6 +710,118 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPs)
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "net-3-1111111111");
+}
+
+TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPsAsArray)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object headers;
+    ddwaf_object_map(&headers);
+
+    ddwaf_object xff_array;
+    ddwaf_object_array(&xff_array);
+    ddwaf_object_array_add(&xff_array, ddwaf_object_string(&tmp, "192.168.1.1,::1,8.7.6.5"));
+    ddwaf_object_map_add(&headers, "x-forwarded-for", &xff_array);
+    ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_invalid(&tmp));
+
+    http_network_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    processor_cache cache;
+    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "net-3-1111111111");
+
+    ddwaf_object_free(&headers);
+    ddwaf_object_free(&output);
+}
+
+TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPsAsArrayInvalidType)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object headers;
+    ddwaf_object_map(&headers);
+
+    ddwaf_object xff_array;
+    ddwaf_object_array(&xff_array);
+    ddwaf_object_array_add(&xff_array, ddwaf_object_unsigned(&tmp, 42));
+    ddwaf_object_map_add(&headers, "x-forwarded-for", &xff_array);
+    ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_invalid(&tmp));
+
+    http_network_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    processor_cache cache;
+    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "net-0-1111111111");
+
+    ddwaf_object_free(&headers);
+    ddwaf_object_free(&output);
+}
+
+TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPsDuplicateXFF)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object headers;
+    ddwaf_object_map(&headers);
+
+    ddwaf_object xff_array;
+    ddwaf_object_array(&xff_array);
+    ddwaf_object_array_add(&xff_array, ddwaf_object_string(&tmp, "192.168.1.1,::1,8.7.6.5"));
+    ddwaf_object_array_add(&xff_array, ddwaf_object_string(&tmp, "192.168.1.44"));
+    ddwaf_object_map_add(&headers, "x-forwarded-for", &xff_array);
+    ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_invalid(&tmp));
+
+    http_network_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    processor_cache cache;
+    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "net-0-1111111111");
+
+    ddwaf_object_free(&headers);
+    ddwaf_object_free(&output);
 }
 
 TEST(TestHttpNetworkFingerprint, AllXFFHeadersRandomChosenHeader)
@@ -817,6 +1044,157 @@ TEST(TestSessionFingerprint, CookieValuesNormalization)
 
     auto output_sv = object_view{output}.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-df6143bc-64f82cf7-269500d3");
+}
+
+TEST(TestSessionFingerprint, CookieValuesAsArray)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object cookies;
+    ddwaf_object_map(&cookies);
+
+    ddwaf_object array;
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "albert,martinez"));
+    ddwaf_object_map_add(&cookies, "name", &array);
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "dark"));
+    ddwaf_object_map_add(&cookies, "theme", &array);
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "en-GB,en-US"));
+    ddwaf_object_map_add(&cookies, "language", &array);
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "xyzabc"));
+    ddwaf_object_map_add(&cookies, "tracking_id", &array);
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, ",yes"));
+    ddwaf_object_map_add(&cookies, "gdpr_consent", &array);
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "ansd0182u2n,"));
+    ddwaf_object_map_add(&cookies, "session_id", &array);
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "2024-07-16T12:00:00Z"));
+    ddwaf_object_map_add(&cookies, "last_visit", &array);
+
+    session_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    processor_cache cache;
+    auto [output, attr] = gen.eval_impl({{{}, {}, false, &cookies}},
+        {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
+
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "ssn-8c6976e5-df6143bc-64f82cf7-269500d3");
+
+    ddwaf_object_free(&cookies);
+    ddwaf_object_free(&output);
+}
+
+TEST(TestSessionFingerprint, CookieValuesAsArrayInvalidType)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object cookies;
+    ddwaf_object_map(&cookies);
+
+    ddwaf_object array;
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_unsigned(&tmp, 42));
+    ddwaf_object_map_add(&cookies, "name", &array);
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_unsigned(&tmp, 42));
+    ddwaf_object_map_add(&cookies, "theme", &array);
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_unsigned(&tmp, 42));
+    ddwaf_object_map_add(&cookies, "language", &array);
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_unsigned(&tmp, 42));
+    ddwaf_object_map_add(&cookies, "tracking_id", &array);
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_unsigned(&tmp, 42));
+    ddwaf_object_map_add(&cookies, "gdpr_consent", &array);
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_unsigned(&tmp, 42));
+    ddwaf_object_map_add(&cookies, "session_id", &array);
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_unsigned(&tmp, 42));
+    ddwaf_object_map_add(&cookies, "last_visit", &array);
+
+    session_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    processor_cache cache;
+    auto [output, attr] = gen.eval_impl({{{}, {}, false, &cookies}},
+        {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
+
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "ssn-8c6976e5-df6143bc-d3648ef2-269500d3");
+
+    ddwaf_object_free(&cookies);
+    ddwaf_object_free(&output);
+}
+
+TEST(TestSessionFingerprint, CookieValuesArrayMultiples)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object cookies;
+    ddwaf_object_map(&cookies);
+
+    ddwaf_object array;
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "albert,martinez"));
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "albert,martinez"));
+    ddwaf_object_map_add(&cookies, "name", &array);
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "dark"));
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "dark"));
+    ddwaf_object_map_add(&cookies, "theme", &array);
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "en-GB,en-US"));
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "en-GB,en-US"));
+    ddwaf_object_map_add(&cookies, "language", &array);
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "xyzabc"));
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "xyzabc"));
+    ddwaf_object_map_add(&cookies, "tracking_id", &array);
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, ",yes"));
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, ",yes"));
+    ddwaf_object_map_add(&cookies, "gdpr_consent", &array);
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "ansd0182u2n,"));
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "ansd0182u2n,"));
+    ddwaf_object_map_add(&cookies, "session_id", &array);
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "2024-07-16T12:00:00Z"));
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "2024-07-16T12:00:00Z"));
+    ddwaf_object_map_add(&cookies, "last_visit", &array);
+
+    session_fingerprint gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    processor_cache cache;
+    auto [output, attr] = gen.eval_impl({{{}, {}, false, &cookies}},
+        {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
+
+    EXPECT_EQ(output.type, DDWAF_OBJ_STRING);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    std::string_view output_sv{
+        output.stringValue, static_cast<std::size_t>(static_cast<std::size_t>(output.nbEntries))};
+    EXPECT_STRV(output_sv, "ssn-8c6976e5-df6143bc-d3648ef2-269500d3");
+
+    ddwaf_object_free(&cookies);
+    ddwaf_object_free(&output);
 }
 
 TEST(TestSessionFingerprint, CookieEmptyValues)
