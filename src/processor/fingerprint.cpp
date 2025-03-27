@@ -334,6 +334,10 @@ struct kv_hash_fields : field_generator<kv_hash_fields, std::pair<std::string, s
             if (child.type == DDWAF_OBJ_STRING) {
                 val =
                     std::string_view{child.stringValue, static_cast<std::size_t>(child.nbEntries)};
+            } else if (child.type == DDWAF_OBJ_ARRAY && child.nbEntries == 1) {
+                const auto &grandchild = child.array[0];
+                val = std::string_view{
+                    grandchild.stringValue, static_cast<std::size_t>(grandchild.nbEntries)};
             }
 
             auto larger_size = std::max(key.size(), val.size());
@@ -612,8 +616,14 @@ std::pair<ddwaf_object, object_store::attribute> http_header_fingerprint::eval_i
             known_header_bitset[index] = '1';
         } else if (type == header_type::unknown) {
             unknown_headers.emplace_back(normalized_header);
-        } else if (type == header_type::user_agent && child.type == DDWAF_OBJ_STRING) {
-            user_agent = {child.stringValue, static_cast<std::size_t>(child.nbEntries)};
+        } else if (type == header_type::user_agent) {
+            if (child.type == DDWAF_OBJ_STRING) {
+                user_agent = {child.stringValue, static_cast<std::size_t>(child.nbEntries)};
+            } else if (child.type == DDWAF_OBJ_ARRAY && child.nbEntries == 1) {
+                const auto &grandchild = child.array[0];
+                user_agent = {
+                    grandchild.stringValue, static_cast<std::size_t>(grandchild.nbEntries)};
+            }
         }
     }
     std::sort(unknown_headers.begin(), unknown_headers.end());
@@ -664,10 +674,17 @@ std::pair<ddwaf_object, object_store::attribute> http_network_fingerprint::eval_
             // Verify not only precedence but also type, as a header of an unexpected
             // type will be unlikely to be used unless the framework has somehow
             // broken down the header into constituent IPs
-            if (chosen_header > index && child.type == DDWAF_OBJ_STRING) {
-                chosen_header_value = {
-                    child.stringValue, static_cast<std::size_t>(child.nbEntries)};
-                chosen_header = index;
+            if (chosen_header > index) {
+                if (child.type == DDWAF_OBJ_STRING) {
+                    chosen_header_value = {
+                        child.stringValue, static_cast<std::size_t>(child.nbEntries)};
+                    chosen_header = index;
+                } else if (child.type == DDWAF_OBJ_ARRAY && child.nbEntries == 1) {
+                    const auto &grandchild = child.array[0];
+                    chosen_header_value = {
+                        grandchild.stringValue, static_cast<std::size_t>(grandchild.nbEntries)};
+                    chosen_header = index;
+                }
             }
         }
     }
