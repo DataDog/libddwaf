@@ -173,7 +173,7 @@ std::string_view value_object_to_string(object_view view)
     }
 
     if (view.is_array() && view.size() == 1) {
-        auto child = view.at(0);
+        auto child = view.at_value(0);
         if (child.is_string()) {
             return child.as<std::string_view>();
         }
