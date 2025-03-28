@@ -44,13 +44,19 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 
     processor_cache cache;
     ddwaf::timer deadline{2s};
-    auto [output, attr] = gen.eval_impl({{}, {}, false, buffer.get<std::string_view>()},
-        {{}, {}, false, buffer.get<std::string_view>()}, {{{}, {}, false, &query}},
-        {{{}, {}, false, &body}}, cache, deadline);
+    auto [output, attr] = gen.eval_impl({.address = {},
+                                            .key_path = {},
+                                            .ephemeral = false,
+                                            .value = buffer.get<std::string_view>()},
+        {.address = {},
+            .key_path = {},
+            .ephemeral = false,
+            .value = buffer.get<std::string_view>()},
+        {{.address = {}, .key_path = {}, .ephemeral = false, .value = &query}},
+        {{.address = {}, .key_path = {}, .ephemeral = false, .value = &body}}, cache, deadline);
 
     ddwaf_object_free(&query);
     ddwaf_object_free(&body);
-    ddwaf_object_free(&output);
 
     return 0;
 }

@@ -35,7 +35,7 @@ public:
 
     [[nodiscard]] eval_result eval(condition_cache &cache, const object_store &store,
         const exclusion::object_set_ref &objects_excluded, const matcher_mapper & /*unused*/,
-        const object_limits &limits, ddwaf::timer &deadline) const override
+        ddwaf::timer &deadline) const override
     {
 
         using func_traits = decltype(make_eval_traits(&Self::eval_impl));
@@ -51,8 +51,7 @@ public:
         return std::apply(
             [&](auto &&...args) {
                 return static_cast<const Self *>(this)->eval_impl(
-                    std::forward<decltype(args)>(args)..., cache, objects_excluded, limits,
-                    deadline);
+                    std::forward<decltype(args)>(args)..., cache, objects_excluded, deadline);
             },
             std::move(args));
     }

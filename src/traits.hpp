@@ -6,10 +6,12 @@
 
 #pragma once
 
+#include "prog.h"
 #include <tuple>
 #include <type_traits>
 #include <utility>
 
+namespace ddwaf {
 // Generate a tuple containing a subset of the arguments
 // Reference: https://stackoverflow.com/questions/71301988
 
@@ -33,7 +35,7 @@ using make_n_typelist_t = typename make_n_typelist<N, typelist<>, typelist<Ts...
 template <typename... Ts> struct tuple_from_typelist;
 
 template <typename... Ts> struct tuple_from_typelist<typelist<Ts...>> {
-    using type = std::tuple<std::remove_cv_t<std::remove_reference_t<Ts>>...>;
+    using type = std::tuple<std::decay_t<Ts>...>;
 };
 
 template <std::size_t N, typename... Args>
@@ -42,7 +44,7 @@ using n_tuple_from_args_t = typename tuple_from_typelist<make_n_typelist_t<N, Ar
 // Function traits
 template <std::size_t N, typename Class, typename... Args> struct function_traits {
     using tuple_type = n_tuple_from_args_t<N, Args...>;
-    static inline constexpr std::size_t nargs = std::tuple_size_v<tuple_type>;
+    static constexpr std::size_t nargs = std::tuple_size_v<tuple_type>;
     template <std::size_t I> using arg_type = std::tuple_element_t<I, tuple_type>;
 };
 
@@ -58,3 +60,11 @@ template <typename T, typename U> struct is_pair<std::pair<T, U>> : std::true_ty
 
 template <typename T>
 concept is_pair_v = is_pair<T>::value;
+
+template <typename T, typename... Us> struct is_type_in_set {
+    static constexpr bool value = (std::is_same_v<T, Us> || ...);
+};
+template <typename T, typename... Us>
+constexpr bool is_type_in_set_v = is_type_in_set<T, Us...>::value;
+
+} // namespace ddwaf

@@ -22,7 +22,6 @@
 #include "rule.hpp"
 #include "semver.hpp"
 #include "transformer/base.hpp"
-#include "utils.hpp"
 #include "version.hpp"
 
 namespace ddwaf {
@@ -34,7 +33,7 @@ rule_spec parse_rule(raw_configuration::map &rule, core_rule::source_type source
     std::vector<transformer_id> rule_transformers;
     auto data_source = ddwaf::data_source::values;
     auto transformers = at<raw_configuration::vector>(rule, "transformers", {});
-    if (transformers.size() > object_limits::max_transformers_per_address) {
+    if (transformers.size() > max_transformers_per_address) {
         throw ddwaf::parsing_error("number of transformers beyond allowed limit");
     }
 
