@@ -1,5 +1,13 @@
 # libddwaf release
 
+## v1.24.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+#### Fixes
+- Support single-value arrays when generating fingerprints ([#392](https://github.com/DataDog/libddwaf/pull/392))
+
+#### Miscellaneous
+- Benchmarks with PGO ([#383](https://github.com/DataDog/libddwaf/pull/383))
+
 ## v1.24.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 ### New features
