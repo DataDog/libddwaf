@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <string>
@@ -60,7 +61,8 @@ raw_configuration::operator raw_configuration::map() const
 
     std::unordered_map<std::string_view, raw_configuration> map;
     map.reserve(view_.size());
-    for (auto [key, value] : view_) {
+    for (std::size_t i = 0; i < view_.size(); ++i) {
+        auto [key, value] = view_.at(i);
         if (key.empty()) {
             throw malformed_object("invalid key on map entry");
         }
@@ -81,7 +83,7 @@ raw_configuration::operator raw_configuration::vector() const
     raw_configuration::vector vec;
     vec.reserve(view_.size());
 
-    for (auto [_, value] : view_) { vec.emplace_back(value); }
+    for (std::size_t i = 0; i < view_.size(); ++i) { vec.emplace_back(view_.at_value(i)); }
     return vec;
 }
 
@@ -98,7 +100,8 @@ raw_configuration::operator raw_configuration::string_set() const
     raw_configuration::string_set set;
     set.reserve(view_.size());
 
-    for (auto [_, value] : view_) {
+    for (std::size_t i = 0; i < view_.size(); ++i) {
+        auto value = view_.at_value(i);
         if (!value.is_string()) {
             throw malformed_object("item in array not a string, can't cast to string set");
         }
@@ -249,7 +252,8 @@ raw_configuration::operator std::vector<std::string>() const
     std::vector<std::string> vec;
     vec.reserve(view_.size());
 
-    for (auto [_, value] : view_) {
+    for (std::size_t i = 0; i < view_.size(); ++i) {
+        auto value = view_.at_value(i);
         const raw_configuration item{value};
         vec.emplace_back(static_cast<std::string>(item));
     }
@@ -269,7 +273,8 @@ raw_configuration::operator std::vector<std::string_view>() const
     std::vector<std::string_view> vec;
     vec.reserve(view_.size());
 
-    for (auto [_, value] : view_) {
+    for (std::size_t i = 0; i < view_.size(); ++i) {
+        auto value = view_.at_value(i);
         if (!value.is_string()) {
             throw malformed_object("item in array not a string, can't cast to string_view vector");
         }
@@ -290,7 +295,8 @@ raw_configuration::operator std::unordered_map<std::string, std::string>() const
 
     std::unordered_map<std::string, std::string> map;
     map.reserve(view_.size());
-    for (auto [key, value] : view_) {
+    for (std::size_t i = 0; i < view_.size(); ++i) {
+        auto [key, value] = view_.at(i);
         if (key.empty()) {
             throw malformed_object("invalid key on map entry");
         }

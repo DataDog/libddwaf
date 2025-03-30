@@ -44,7 +44,7 @@ protected:
     std::vector<std::string> path_;
 
     std::vector<std::pair<object_view, std::size_t>> stack_;
-    std::pair<object_key, object_view> current_;
+    std::pair<object_view, object_view> current_;
 
     const exclusion::object_set_ref &excluded_;
 
@@ -103,15 +103,10 @@ public:
 
     [[nodiscard]] object_view operator*()
     {
-        static thread_local detail::object key;
         if (current_.first.empty()) {
             return {};
         }
-        return (key = {.parameterName = nullptr,
-                    .parameterNameLength = 0,
-                    .stringValue = current_.first.data(),
-                    .nbEntries = current_.first.size(),
-                    .type = DDWAF_OBJ_STRING});
+        return current_.first;
     }
 
 protected:
@@ -152,18 +147,13 @@ public:
 
     [[nodiscard]] object_view operator*()
     {
-        static thread_local detail::object key;
         if (current_.second.has_value()) {
             if (scalar_value_) {
                 return current_.second;
             }
 
             if (!current_.first.empty()) {
-                return (key = {.parameterName = nullptr,
-                            .parameterNameLength = 0,
-                            .stringValue = current_.first.data(),
-                            .nbEntries = current_.first.size(),
-                            .type = DDWAF_OBJ_STRING});
+                return current_.first;
             }
         }
         return {};

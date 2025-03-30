@@ -119,11 +119,11 @@ void value_iterator::initialise_cursor_with_path(object_view obj, std::span<cons
         const std::string_view key = path[i];
         auto &[parent, index] = stack_.back();
 
-        std::pair<object_key, object_view> child;
+        std::pair<object_view, object_view> child;
         if (parent.type() == object_type::map) {
             for (std::size_t j = 0; j < parent.size(); j++) {
                 auto possible_child = parent.at(j);
-                if (possible_child.first.empty()) {
+                if (!possible_child.first.has_value()) {
                     continue;
                 }
 
@@ -245,12 +245,12 @@ void key_iterator::initialise_cursor_with_path(object_view obj, std::span<const 
         const std::string_view key = path[i];
         auto &[parent, index] = stack_.back();
 
-        std::pair<object_key, object_view> child;
+        std::pair<object_view, object_view> child;
         if (parent.type() == object_type::map) {
             for (std::size_t j = 0; j < parent.size(); j++) {
                 auto possible_child = parent.at(j);
                 ;
-                if (possible_child.first.empty()) {
+                if (!possible_child.first.has_value()) {
                     continue;
                 }
 
@@ -310,7 +310,7 @@ void key_iterator::set_cursor_to_next_object()
         }
 
         if (child.second.is_container()) {
-            if (previous.second != child.second && !child.first.empty()) {
+            if (previous.second != child.second && child.first.has_value()) {
                 current_ = child;
                 // Break to ensure the index isn't increased and this container
                 // is fully iterated.
@@ -325,7 +325,7 @@ void key_iterator::set_cursor_to_next_object()
             continue;
         }
 
-        if (!child.first.empty()) {
+        if (child.first.has_value()) {
             current_ = child;
         }
 
@@ -375,11 +375,11 @@ void kv_iterator::initialise_cursor_with_path(object_view obj, std::span<const s
         const std::string_view key = path[i];
         auto &[parent, index] = stack_.back();
 
-        std::pair<object_key, object_view> child;
+        std::pair<object_view, object_view> child;
         if (parent.type() == object_type::map) {
             for (std::size_t j = 0; j < parent.size(); j++) {
                 auto possible_child = parent.at(j);
-                if (possible_child.first.empty()) {
+                if (!possible_child.first.has_value()) {
                     continue;
                 }
 
@@ -450,7 +450,7 @@ void kv_iterator::set_cursor_to_next_object()
         }
 
         if (child.second.is_container()) {
-            if (previous.second != child.second && !child.first.empty()) {
+            if (previous.second != child.second && !child.first.has_value()) {
                 current_ = child;
                 scalar_value_ = false;
                 // Break to ensure the index isn't increased and this container
@@ -469,7 +469,7 @@ void kv_iterator::set_cursor_to_next_object()
         if (child.second.is_scalar()) {
             if (previous.second != child.second) {
                 current_ = child;
-                if (current_.first.empty()) {
+                if (!child.first.has_value()) {
                     ++index;
                     scalar_value_ = true;
                 } else {
@@ -483,7 +483,7 @@ void kv_iterator::set_cursor_to_next_object()
                 scalar_value_ = true;
                 break;
             }
-        } else if (!child.first.empty()) {
+        } else if (child.first.has_value()) {
             current_ = child;
             scalar_value_ = false;
         }

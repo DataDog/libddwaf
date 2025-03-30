@@ -3,6 +3,7 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string>
@@ -28,11 +29,11 @@ enum class search_outcome : uint8_t { found, not_found, unknown };
 
 object_view find_key(object_view parent, std::string_view key)
 {
-    for (auto it = parent.begin(); it != parent.end(); ++it) {
-        const auto &child_key = it.key();
+    for (std::size_t i = 0; i < parent.size(); ++i) {
+        const auto &[child_key, value] = parent.at(i);
 
-        if (key == child_key) {
-            return it.value();
+        if (key == child_key.as<std::string_view>()) {
+            return value;
         }
     }
 

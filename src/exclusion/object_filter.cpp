@@ -60,7 +60,7 @@ void iterate_object(const path_trie::traverser &filter, object_view object,
 
             path_trie::traverser child_traverser{nullptr};
             // Only consider children with keys
-            if (key.empty()) {
+            if (!key.has_value() || key.empty()) {
                 child_traverser = current_trie.descend_wildcard();
             } else {
                 child_traverser = current_trie.descend(key.as<std::string_view>());

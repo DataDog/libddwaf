@@ -87,6 +87,7 @@ typedef struct _ddwaf_builder* ddwaf_builder;
 #endif
 
 typedef struct _ddwaf_object ddwaf_object;
+typedef struct _ddwaf_object_kv ddwaf_object_kv;
 typedef struct _ddwaf_config ddwaf_config;
 typedef struct _ddwaf_result ddwaf_result;
 /**
@@ -94,24 +95,48 @@ typedef struct _ddwaf_result ddwaf_result;
  *
  * Generic object used to pass data and rules to the WAF.
  **/
-struct _ddwaf_object
-{
-    const char* parameterName;
-    uint64_t parameterNameLength;
-    // uintValue should be at least as wide as the widest type on the platform.
-    union
-    {
-        const char* stringValue;
-        uint64_t uintValue;
-        int64_t intValue;
-        ddwaf_object* array;
-        bool boolean;
+/*struct _ddwaf_object*/
+/*{*/
+    /*const char* parameterName;*/
+    /*uint64_t parameterNameLength;*/
+    /*// uintValue should be at least as wide as the widest type on the platform.*/
+    /*union*/
+    /*{*/
+        /*const char* stringValue;*/
+        /*uint64_t uintValue;*/
+        /*int64_t intValue;*/
+        /*ddwaf_object* array;*/
+        /*bool boolean;*/
+        /*double f64;*/
+    /*};*/
+    /*uint64_t nbEntries;*/
+    /*DDWAF_OBJ_TYPE type;*/
+/*};*/
+
+#define DDWAF_OBJ_SSTR_SIZE 11
+
+struct __attribute__((packed)) _ddwaf_object {
+    union __attribute__((packed)) {
+        bool b8;
+        uint64_t u64;
+        int64_t i64;
         double f64;
-    };
-    uint64_t nbEntries;
-    DDWAF_OBJ_TYPE type;
+        ddwaf_object_kv *map;
+        ddwaf_object *array;
+        char *str;
+        char sstr[DDWAF_OBJ_SSTR_SIZE];
+        const char *cstr;
+        ddwaf_object *ref;
+    } via;
+    uint8_t type;
+    uint16_t size;
+    uint16_t capacity;
 };
 
+struct __attribute__((packed)) _ddwaf_object_kv {
+    ddwaf_object key;
+    ddwaf_object val;
+};
 /**
  * @typedef ddwaf_object_free_fn
  *

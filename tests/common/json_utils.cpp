@@ -207,7 +207,7 @@ ddwaf_object json_to_object(const std::string &json)
     return output;
 }
 
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameter)
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 ddwaf_object read_json_file(std::string_view filename, std::string_view base)
 {
     std::string base_dir{base};
