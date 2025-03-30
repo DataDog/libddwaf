@@ -212,7 +212,7 @@ TEST(TestContextIntegration, InvalidUTF8Input)
     EXPECT_FALSE(ret.timeout);
 
     auto data = ddwaf::test::object_to_json(ret.events);
-    auto pos = data.find(mapItem.stringValue);
+    auto pos = data.find(ddwaf_object_get_string(&mapItem, nullptr));
     EXPECT_TRUE(pos != std::string::npos);
 
     ddwaf_result_free(&ret);

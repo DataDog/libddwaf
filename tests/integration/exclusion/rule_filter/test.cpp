@@ -834,7 +834,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
                                        .value = "192.168.0.1",
                                        .address = "http.client_ip",
                                    }}}}});
-        EXPECT_EQ(out.actions.nbEntries, 0);
+        EXPECT_EQ(ddwaf_object_size(&out.actions), 0);
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);

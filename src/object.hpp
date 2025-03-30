@@ -668,13 +668,13 @@ public:
     static owned_object make_array()
     {
         return owned_object{
-            {.via{.array = nullptr}, .type = DDWAF_OBJ_ARRAY, .size = 0, .capacity = 0}, nullptr};
+            {.via{.array = nullptr}, .type = DDWAF_OBJ_ARRAY, .size = 0, .capacity = 0}};
     }
 
     static owned_object make_map()
     {
         return owned_object{
-            {.via{.map = nullptr}, .type = DDWAF_OBJ_MAP, .size = 0, .capacity = 0}, nullptr};
+            {.via{.map = nullptr}, .type = DDWAF_OBJ_MAP, .size = 0, .capacity = 0}};
     }
 
     static owned_object make_array(std::initializer_list<detail::initializer::movable_object> list);

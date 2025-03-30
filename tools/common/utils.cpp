@@ -104,35 +104,35 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
 {
     switch (obj.type) {
     case DDWAF_OBJ_BOOL:
-        output = obj.boolean;
+        output = obj.via.b8;
         break;
     case DDWAF_OBJ_SIGNED:
-        output = obj.intValue;
+        output = obj.via.i64;
         break;
     case DDWAF_OBJ_UNSIGNED:
-        output = obj.uintValue;
+        output = obj.via.u64;
         break;
     case DDWAF_OBJ_FLOAT:
-        output = obj.f64;
+        output = obj.via.f64;
         break;
     case DDWAF_OBJ_STRING:
-        output = std::string{obj.stringValue, obj.nbEntries};
+        output = std::string{obj.via.str, obj.size};
         break;
     case DDWAF_OBJ_MAP:
         output = YAML::Load("{}");
-        for (unsigned i = 0; i < obj.nbEntries; i++) {
-            auto child = obj.array[i];
-            std::string key{child.parameterName, child.parameterNameLength};
+        for (unsigned i = 0; i < obj.size; i++) {
+            auto child = obj.via.map[i];
+            std::string key{child.key.via.str, child.key.size};
 
             YAML::Node value;
-            object_to_yaml_helper(child, value);
+            object_to_yaml_helper(child.val, value);
             output[key] = value;
         }
         break;
     case DDWAF_OBJ_ARRAY:
         output = YAML::Load("[]");
-        for (unsigned i = 0; i < obj.nbEntries; i++) {
-            auto child = obj.array[i];
+        for (unsigned i = 0; i < obj.size; i++) {
+            auto child = obj.via.array[i];
 
             YAML::Node value;
             object_to_yaml_helper(child, value);
@@ -261,39 +261,39 @@ void object_to_json_helper(
 {
     switch (obj.type) {
     case DDWAF_OBJ_BOOL:
-        output.SetBool(obj.boolean);
+        output.SetBool(obj.via.b8);
         break;
     case DDWAF_OBJ_SIGNED:
-        output.SetInt64(obj.intValue);
+        output.SetInt64(obj.via.i64);
         break;
     case DDWAF_OBJ_UNSIGNED:
-        output.SetUint64(obj.uintValue);
+        output.SetUint64(obj.via.u64);
         break;
     case DDWAF_OBJ_FLOAT:
-        output.SetDouble(obj.f64);
+        output.SetDouble(obj.via.f64);
         break;
     case DDWAF_OBJ_STRING: {
-        auto sv = std::string_view(obj.stringValue, obj.nbEntries);
+        auto sv = std::string_view(obj.via.str, obj.size);
         output.SetString(sv.data(), sv.size(), alloc);
     } break;
     case DDWAF_OBJ_MAP:
         output.SetObject();
-        for (unsigned i = 0; i < obj.nbEntries; i++) {
+        for (unsigned i = 0; i < obj.size; i++) {
             rapidjson::Value key;
             rapidjson::Value value;
 
-            auto child = obj.array[i];
-            object_to_json_helper(child, value, alloc);
+            auto child = obj.via.map[i];
+            object_to_json_helper(child.val, value, alloc);
 
-            key.SetString(child.parameterName, child.parameterNameLength, alloc);
+            key.SetString(child.key.via.str, child.key.size, alloc);
             output.AddMember(key, value, alloc);
         }
         break;
     case DDWAF_OBJ_ARRAY:
         output.SetArray();
-        for (unsigned i = 0; i < obj.nbEntries; i++) {
+        for (unsigned i = 0; i < obj.size; i++) {
             rapidjson::Value value;
-            auto child = obj.array[i];
+            auto child = obj.via.array[i];
             object_to_json_helper(child, value, alloc);
             output.PushBack(value, alloc);
         }

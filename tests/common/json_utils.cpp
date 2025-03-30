@@ -49,39 +49,39 @@ void object_to_json_helper(
 {
     switch (obj.type) {
     case DDWAF_OBJ_BOOL:
-        output.SetBool(obj.boolean);
+        output.SetBool(obj.via.b8);
         break;
     case DDWAF_OBJ_SIGNED:
-        output.SetInt64(obj.intValue);
+        output.SetInt64(obj.via.i64);
         break;
     case DDWAF_OBJ_UNSIGNED:
-        output.SetUint64(obj.uintValue);
+        output.SetUint64(obj.via.u64);
         break;
     case DDWAF_OBJ_FLOAT:
-        output.SetDouble(obj.f64);
+        output.SetDouble(obj.via.f64);
         break;
     case DDWAF_OBJ_STRING: {
-        auto sv = std::string_view(obj.stringValue, obj.nbEntries);
+        auto sv = std::string_view(obj.via.str, obj.size);
         output.SetString(sv.data(), sv.size(), alloc);
     } break;
     case DDWAF_OBJ_MAP:
         output.SetObject();
-        for (unsigned i = 0; i < obj.nbEntries; i++) {
+        for (unsigned i = 0; i < obj.size; i++) {
             rapidjson::Value key;
             rapidjson::Value value;
 
-            auto child = obj.array[i];
-            object_to_json_helper(child, value, alloc);
+            auto child = obj.via.map[i];
+            object_to_json_helper(child.val, value, alloc);
 
-            key.SetString(child.parameterName, child.parameterNameLength, alloc);
+            key.SetString(child.key.via.str, child.key.size, alloc);
             output.AddMember(key, value, alloc);
         }
         break;
     case DDWAF_OBJ_ARRAY:
         output.SetArray();
-        for (unsigned i = 0; i < obj.nbEntries; i++) {
+        for (unsigned i = 0; i < obj.size; i++) {
             rapidjson::Value value;
-            auto child = obj.array[i];
+            auto child = obj.via.array[i];
             object_to_json_helper(child, value, alloc);
             output.PushBack(value, alloc);
         }
@@ -182,11 +182,10 @@ rapidjson::Document object_to_rapidjson(const ddwaf_object &obj)
 std::unordered_map<std::string_view, std::string_view> object_to_map(const ddwaf_object &obj)
 {
     std::unordered_map<std::string_view, std::string_view> map;
-    for (unsigned i = 0; i < obj.nbEntries; ++i) {
-        const ddwaf_object &child = obj.array[i];
-        map.emplace(std::string_view{child.parameterName,
-                        static_cast<std::size_t>(child.parameterNameLength)},
-            std::string_view{child.stringValue, static_cast<std::size_t>(child.nbEntries)});
+    for (unsigned i = 0; i < obj.size; ++i) {
+        const ddwaf_object_kv &child = obj.via.map[i];
+        map.emplace(std::string_view{child.key.via.str, static_cast<std::size_t>(child.key.size)},
+            std::string_view{child.val.via.str, static_cast<std::size_t>(child.val.size)});
     }
     return map;
 }

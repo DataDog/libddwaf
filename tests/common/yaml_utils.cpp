@@ -48,7 +48,8 @@ ddwaf_object node_to_ddwaf_object(const Node &node)
 {
     switch (node.Type()) {
     case NodeType::Sequence: {
-        ddwaf_object arg = DDWAF_OBJECT_ARRAY;
+        ddwaf_object arg;
+        ddwaf_object_array(&arg);
         for (auto it = node.begin(); it != node.end(); ++it) {
             ddwaf_object child = node_to_ddwaf_object(*it);
             ddwaf_object_array_add(&arg, &child);
@@ -56,7 +57,8 @@ ddwaf_object node_to_ddwaf_object(const Node &node)
         return arg;
     }
     case NodeType::Map: {
-        ddwaf_object arg = DDWAF_OBJECT_MAP;
+        ddwaf_object arg;
+        ddwaf_object_map(&arg);
         for (auto it = node.begin(); it != node.end(); ++it) {
             auto key = it->first.as<std::string>();
             ddwaf_object child = node_to_ddwaf_object(it->second);
@@ -97,10 +99,16 @@ ddwaf_object node_to_ddwaf_object(const Node &node)
         ddwaf_object_stringl(&arg, value.c_str(), value.size());
         return arg;
     }
-    case NodeType::Null:
-    case NodeType::Undefined:
-        ddwaf_object arg = DDWAF_OBJECT_MAP;
+    case NodeType::Null: {
+        ddwaf_object arg;
+        ddwaf_object_null(&arg);
         return arg;
+    }
+    case NodeType::Undefined: {
+        ddwaf_object arg;
+        ddwaf_object_invalid(&arg);
+        return arg;
+    }
     }
 
     throw parsing_error("Invalid YAML node type");
