@@ -603,7 +603,7 @@ public:
     static owned_object make_null()
     {
         return owned_object{
-            {.via{.str = nullptr}, .type = DDWAF_OBJ_FLOAT, .size = 0, .capacity = 0}, nullptr};
+            {.via{.str = nullptr}, .type = DDWAF_OBJ_NULL, .size = 0, .capacity = 0}, nullptr};
     }
 
     static owned_object make_boolean(bool value)
@@ -651,10 +651,9 @@ public:
     {
         // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
         return owned_object{{.via{.str = detail::copy_string(str, len)},
-                                .type = DDWAF_OBJ_STRING,
-                                .size = static_cast<uint16_t>(len),
-                                .capacity = static_cast<uint16_t>(len)},
-            nullptr};
+            .type = DDWAF_OBJ_STRING,
+            .size = static_cast<uint16_t>(len),
+            .capacity = static_cast<uint16_t>(len)}};
     }
 
     static owned_object make_string(std::string_view str)
@@ -810,6 +809,9 @@ template <typename Derived>
     assert((static_cast<object_type>(container.type) & container_object_type) != 0);
     assert(idx < static_cast<std::size_t>(container.size));
 
+    if (container.type == object_type::map) {
+        return borrowed_object{&container.via.map[idx].val};
+    }
     return borrowed_object{&container.via.array[idx]};
 }
 

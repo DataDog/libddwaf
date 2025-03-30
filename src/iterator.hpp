@@ -98,12 +98,12 @@ public:
 
     [[nodiscard]] object_type type() const
     {
-        return !current_.first.empty() ? object_type::string : object_type::invalid;
+        return current_.first.has_value() ? object_type::string : object_type::invalid;
     }
 
     [[nodiscard]] object_view operator*()
     {
-        if (current_.first.empty()) {
+        if (!current_.first.has_value()) {
             return {};
         }
         return current_.first;
@@ -138,7 +138,7 @@ public:
                 return current_.second.type();
             }
 
-            if (!current_.first.empty()) {
+            if (current_.first.has_value()) {
                 return object_type::string;
             }
         }
@@ -152,7 +152,7 @@ public:
                 return current_.second;
             }
 
-            if (!current_.first.empty()) {
+            if (current_.first.has_value()) {
                 return current_.first;
             }
         }

@@ -191,7 +191,6 @@ TEST(TestKVIterator, TestMapSingleItem)
     ddwaf::kv_iterator it(object, {}, exclude);
     {
         EXPECT_TRUE((bool)it);
-        EXPECT_EQ((*it).ptr()->parameterName, nullptr);
         EXPECT_STREQ((*it).as<const char *>(), "key");
 
         auto path = it.get_current_path();
@@ -237,7 +236,6 @@ TEST(TestKVIterator, TestMapMultipleItems)
 
         EXPECT_TRUE(++it);
         EXPECT_STREQ((*it).as<const char *>(), value.c_str());
-        EXPECT_STREQ((*it).ptr()->parameterName, key.c_str());
 
         path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);

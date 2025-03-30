@@ -450,7 +450,7 @@ void kv_iterator::set_cursor_to_next_object()
         }
 
         if (child.second.is_container()) {
-            if (previous.second != child.second && !child.first.has_value()) {
+            if (previous.second != child.second && child.first.has_value()) {
                 current_ = child;
                 scalar_value_ = false;
                 // Break to ensure the index isn't increased and this container

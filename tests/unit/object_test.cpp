@@ -165,7 +165,7 @@ TEST(TestObject, ArrayObject)
         auto expected_value = std::to_string(100 + i);
         {
             auto [key, value] = view.at(i);
-            EXPECT_TRUE(key.empty());
+            EXPECT_FALSE(key.has_value());
             EXPECT_EQ(value.as<std::string>(), expected_value);
         }
 
@@ -176,7 +176,7 @@ TEST(TestObject, ArrayObject)
 
         {
             auto key = view.at_key(i);
-            EXPECT_TRUE(key.empty());
+            EXPECT_FALSE(key.has_value());
         }
     }
 }
