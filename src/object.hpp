@@ -828,7 +828,7 @@ borrowed_object writable_object<Derived>::emplace_back(owned_object &&value)
         container.capacity = 8;
     } else if (container.capacity == container.size) {
         auto [new_array, new_capacity] =
-        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
+            // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
             detail::realloc_helper(container.via.array, container.capacity);
         container.via.array = new_array;
         container.capacity = new_capacity;
@@ -861,7 +861,7 @@ borrowed_object writable_object<Derived>::emplace(owned_object &&key, owned_obje
         container.capacity = 8;
     } else if (container.capacity == container.size) {
         auto [new_map, new_capacity] =
-        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
+            // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
             detail::realloc_helper(container.via.map, container.capacity);
         container.via.map = new_map;
         container.capacity = new_capacity;

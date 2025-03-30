@@ -51,39 +51,40 @@ void object_to_json_helper(
 {
     switch (obj.type) {
     case DDWAF_OBJ_BOOL:
-        output.SetBool(obj.boolean);
+        output.SetBool(obj.via.b8);
         break;
     case DDWAF_OBJ_SIGNED:
-        output.SetInt64(obj.intValue);
+        output.SetInt64(obj.via.i64);
         break;
     case DDWAF_OBJ_UNSIGNED:
-        output.SetUint64(obj.uintValue);
+        output.SetUint64(obj.via.u64);
         break;
     case DDWAF_OBJ_FLOAT:
-        output.SetDouble(obj.f64);
+        output.SetDouble(obj.via.f64);
         break;
     case DDWAF_OBJ_STRING: {
-        auto sv = std::string_view(obj.stringValue, obj.nbEntries);
+        auto sv = std::string_view(obj.via.str, obj.size);
         output.SetString(sv.data(), sv.size(), alloc);
     } break;
     case DDWAF_OBJ_MAP:
         output.SetObject();
-        for (unsigned i = 0; i < obj.nbEntries; i++) {
+        for (unsigned i = 0; i < obj.size; i++) {
             rapidjson::Value key;
             rapidjson::Value value;
 
-            auto child = obj.array[i];
+            auto key_obj = obj.via.map[i].key;
+            auto child = obj.via.map[i].val;
             object_to_json_helper(child, value, alloc);
 
-            key.SetString(child.parameterName, child.parameterNameLength, alloc);
+            key.SetString(key_obj.via.str, key_obj.size, alloc);
             output.AddMember(key, value, alloc);
         }
         break;
     case DDWAF_OBJ_ARRAY:
         output.SetArray();
-        for (unsigned i = 0; i < obj.nbEntries; i++) {
+        for (unsigned i = 0; i < obj.size; i++) {
             rapidjson::Value value;
-            auto child = obj.array[i];
+            auto child = obj.via.array[i];
             object_to_json_helper(child, value, alloc);
             output.PushBack(value, alloc);
         }
@@ -126,33 +127,33 @@ ddwaf_object object_dup(const ddwaf_object &o) noexcept
         ddwaf_object_null(&copy);
         break;
     case DDWAF_OBJ_BOOL:
-        ddwaf_object_bool(&copy, o.boolean);
+        ddwaf_object_bool(&copy, o.via.b8);
         break;
     case DDWAF_OBJ_SIGNED:
-        ddwaf_object_signed(&copy, o.intValue);
+        ddwaf_object_signed(&copy, o.via.i64);
         break;
     case DDWAF_OBJ_UNSIGNED:
-        ddwaf_object_unsigned(&copy, o.uintValue);
+        ddwaf_object_unsigned(&copy, o.via.u64);
         break;
     case DDWAF_OBJ_FLOAT:
-        ddwaf_object_float(&copy, o.f64);
+        ddwaf_object_float(&copy, o.via.f64);
         break;
     case DDWAF_OBJ_STRING:
-        ddwaf_object_stringl(&copy, o.stringValue, o.nbEntries);
+        ddwaf_object_stringl(&copy, o.via.str, o.size);
         break;
     case DDWAF_OBJ_ARRAY:
         ddwaf_object_array(&copy);
-        for (decltype(o.nbEntries) i = 0; i < o.nbEntries; i++) {
-            ddwaf_object child_copy = object_dup(o.array[i]);
+        for (decltype(o.size) i = 0; i < o.size; i++) {
+            ddwaf_object child_copy = object_dup(o.via.array[i]);
             ddwaf_object_array_add(&copy, &child_copy);
         }
         break;
     case DDWAF_OBJ_MAP:
         ddwaf_object_map(&copy);
-        for (decltype(o.nbEntries) i = 0; i < o.nbEntries; i++) {
-            ddwaf_object child_copy = object_dup(o.array[i]);
+        for (decltype(o.size) i = 0; i < o.size; i++) {
+            ddwaf_object child_copy = object_dup(o.via.map[i].val);
             ddwaf_object_map_addl(
-                &copy, o.array[i].parameterName, o.array[i].parameterNameLength, &child_copy);
+                &copy, o.via.map[i].key.via.str, o.via.map[i].key.size, &child_copy);
         }
         break;
     }
