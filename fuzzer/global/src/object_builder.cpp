@@ -145,11 +145,9 @@ void build_map(Data *data, ddwaf_object *object, size_t deep)
         if (!null_key) {
             pop_string(data, &key);
 
-            if (!ddwaf_object_map_addl(object, key.via.str, key.size, &item)) {
+            if (!ddwaf_object_map_addl_nc(object, key.via.str, key.size, &item)) {
                 ddwaf_object_free(&item);
             }
-
-            ddwaf_object_free(&key);
         } else {
             if (!ddwaf_object_map_addl(object, "", 0, &item)) {
                 ddwaf_object_free(&item);

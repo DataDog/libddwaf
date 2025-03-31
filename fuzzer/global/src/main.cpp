@@ -25,39 +25,32 @@ using namespace std::chrono_literals;
 bool verbose = false;
 bool fuzzTimeout = false;
 
-const char* level_to_str(DDWAF_LOG_LEVEL level)
+const char *level_to_str(DDWAF_LOG_LEVEL level)
 {
-    switch (level)
-    {
-        case DDWAF_LOG_TRACE:
-            return "trace";
-        case DDWAF_LOG_DEBUG:
-            return "debug";
-        case DDWAF_LOG_ERROR:
-            return "error";
-        case DDWAF_LOG_WARN:
-            return "warn";
-        case DDWAF_LOG_INFO:
-            return "info";
-        case DDWAF_LOG_OFF:
-            break;
+    switch (level) {
+    case DDWAF_LOG_TRACE:
+        return "trace";
+    case DDWAF_LOG_DEBUG:
+        return "debug";
+    case DDWAF_LOG_ERROR:
+        return "error";
+    case DDWAF_LOG_WARN:
+        return "warn";
+    case DDWAF_LOG_INFO:
+        return "info";
+    case DDWAF_LOG_OFF:
+        break;
     }
 
     return "off";
 }
 
-void log_cb(DDWAF_LOG_LEVEL level,
-            const char* function, const char* file, unsigned line,
-            const char* message, uint64_t  /*length*/)
+void log_cb(DDWAF_LOG_LEVEL level, const char *function, const char *file, unsigned line,
+    const char *message, uint64_t /*length*/)
 {
-    std::cout << "[" << level_to_str(level)
-              << "][" << file
-              << ":" << function
-              << ":" << line
-              << "]: " << message
-              << '\n';
+    std::cout << "[" << level_to_str(level) << "][" << file << ":" << function << ":" << line
+              << "]: " << message << '\n';
 }
-
 
 class waf_runner {
 public:
@@ -80,8 +73,8 @@ public:
                             cv_.wait_for(lock, 100ms);
                             continue;
                         }
-                        auto [new_input, new_ephemeral, new_timeout] = objects_.top();
-                        objects_.pop();
+                        auto [new_input, new_ephemeral, new_timeout] = objects_.front();
+                        objects_.pop_front();
 
                         input = new_input;
                         timeout = new_timeout;
@@ -107,8 +100,8 @@ public:
         for (auto &t : threads_) { t.join(); }
 
         while (!objects_.empty()) {
-            auto [object, ephemeral, timeout] = objects_.top();
-            objects_.pop();
+            auto [object, ephemeral, timeout] = objects_.front();
+            objects_.pop_front();
 
             ddwaf_object_free(&object);
         }
@@ -119,7 +112,7 @@ public:
     {
         {
             std::unique_lock<std::mutex> lock{mtx_};
-            objects_.push({object, ephemeral, timeout});
+            objects_.emplace_back(object, ephemeral, timeout);
         }
         cv_.notify_one();
     }
@@ -131,7 +124,7 @@ protected:
     std::mutex mtx_;
     std::condition_variable cv_;
     std::atomic<bool> running_{true};
-    std::stack<std::tuple<ddwaf_object, bool, size_t>> objects_;
+    std::deque<std::tuple<ddwaf_object, bool, size_t>> objects_;
 };
 
 std::unique_ptr<waf_runner> runner{nullptr};
@@ -150,7 +143,9 @@ extern "C" int LLVMFuzzerInitialize(const int *argc, char ***argv)
 
     runner = std::make_unique<waf_runner>(handle, 4);
 
-    ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
+    if (verbose) {
+        ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
+    }
 
     return 0;
 }
