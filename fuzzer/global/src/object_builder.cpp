@@ -157,8 +157,9 @@ void build_map(Data *data, ddwaf_object *object, size_t deep)
                 auto index = static_cast<std::size_t>(object->size- 1);
                 auto &key = object->via.map[index].key;
                 free((void*)key.via.str);
+                //Null but not malformed
                 key.via.str = nullptr;
-                key.size = popInteger(data);
+                key.size = 0;
             }
         }
     }
