@@ -708,19 +708,6 @@ size_t ddwaf_object_size(const ddwaf_object *object);
 size_t ddwaf_object_length(const ddwaf_object *object);
 
 /**
- * ddwaf_object_get_key
- *
- * Returns the key contained within the object.
- *
- * @param object The object from which to get the key.
- * @param length Output parameter on which to return the length of the key,
- *               this parameter is optional / nullable.
- *
- * @return The key of the object or NULL if the object doesn't contain a key.
- **/
-const char* ddwaf_object_get_key(const ddwaf_object *object, size_t *length);
-
-/**
  * ddwaf_object_get_string
  *
  * Returns the string contained within the object.
