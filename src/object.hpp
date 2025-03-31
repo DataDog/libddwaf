@@ -26,7 +26,7 @@ using object = ddwaf_object;
 using object_kv = ddwaf_object_kv;
 using size_type = decltype(ddwaf_object::size);
 
-template <typename T> inline constexpr std::size_t maxof() { return std::numeric_limits<T>::max(); }
+template <typename T> constexpr std::size_t maxof() { return std::numeric_limits<T>::max(); }
 
 static_assert(maxof<size_type>() <= maxof<std::size_t>() / sizeof(object));
 static_assert(maxof<size_type>() <= maxof<std::size_t>() / sizeof(object_kv));
@@ -53,7 +53,7 @@ inline char *copy_string(const char *str, size_type size)
 template <typename T> T *alloc_helper(size_type size)
 {
     // NOLINTNEXTLINE(hicpp-no-malloc)
-    auto *data = static_cast<T *>(malloc(sizeof(T) * size));
+    auto *data = static_cast<T *>(calloc(size, sizeof(T)));
     if (size > 0 && data == nullptr) [[unlikely]] {
         throw std::bad_alloc();
     }
@@ -62,7 +62,7 @@ template <typename T> T *alloc_helper(size_type size)
 
 template <typename T> inline std::pair<T *, size_type> realloc_helper(T *data, size_type size)
 {
-    // Since allocators have no realloc interface, we're just using malloc
+    // Since allocators have no realloc interface, we're just using calloc
     // as it'll be equivalent once allocators are supported
     size_type new_size;
     if (size > maxof<size_type>() / 2) [[unlikely]] {
@@ -72,7 +72,7 @@ template <typename T> inline std::pair<T *, size_type> realloc_helper(T *data, s
     }
 
     // NOLINTNEXTLINE(hicpp-no-malloc)
-    auto *new_data = static_cast<T *>(malloc(sizeof(T) * new_size));
+    auto *new_data = static_cast<T *>(calloc(new_size, sizeof(T)));
     if (new_data == nullptr) [[unlikely]] {
         throw std::bad_alloc();
     }
@@ -107,6 +107,7 @@ public:
 
     [[nodiscard]] std::size_t size() const noexcept
     {
+        // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
         return static_cast<std::size_t>(static_cast<const Derived *>(this)->ref().size);
     }
 
@@ -695,6 +696,7 @@ borrowed_object writable_object<Derived>::emplace_back(owned_object &&value)
     if (container.size == 0) {
         // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
         container.via.array = detail::alloc_helper<detail::object>(8);
+        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
         container.capacity = 8;
     } else if (container.capacity == container.size) {
         auto [new_array, new_capacity] =
@@ -728,6 +730,7 @@ borrowed_object writable_object<Derived>::emplace(owned_object &&key, owned_obje
     if (container.size == 0) {
         // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
         container.via.map = detail::alloc_helper<detail::object_kv>(8);
+        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
         container.capacity = 8;
     } else if (container.capacity == container.size) {
         auto [new_map, new_capacity] =

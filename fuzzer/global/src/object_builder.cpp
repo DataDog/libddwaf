@@ -154,10 +154,10 @@ void build_map(Data *data, ddwaf_object *object, size_t deep)
             if (!ddwaf_object_map_addl(object, "", 0, &item)) {
                 ddwaf_object_free(&item);
             } else {
-                auto index = static_cast<std::size_t>(object->size- 1);
+                auto index = static_cast<std::size_t>(object->size - 1);
                 auto &key = object->via.map[index].key;
-                free((void*)key.via.str);
-                //Null but not malformed
+                free((void *)key.via.str);
+                // Null but not malformed
                 key.via.str = nullptr;
                 key.size = 0;
             }
@@ -220,13 +220,6 @@ ddwaf_object create_object(Data *data, size_t deep)
     }
 
     return result;
-}
-
-void log(const char *message, bool verbose)
-{
-    if (verbose) {
-        fprintf(stderr, "%s\n", message);
-    }
 }
 
 ddwaf_object build_object(
