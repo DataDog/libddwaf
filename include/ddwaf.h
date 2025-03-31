@@ -98,7 +98,13 @@ typedef struct _ddwaf_result ddwaf_result;
  *
  * Generic object used to pass data and rules to the WAF.
  **/
+
+#ifdef _MSC_VER
+#pragma pack(push,1)
+struct _ddwaf_object {
+#else
 struct __attribute__((packed)) _ddwaf_object {
+#endif
     union __attribute__((packed)) {
         bool b8;
         uint64_t u64;
@@ -116,10 +122,18 @@ struct __attribute__((packed)) _ddwaf_object {
     uint16_t capacity;
 };
 
+#ifdef _MSC_VER
+struct _ddwaf_object_kv {
+#else
 struct __attribute__((packed)) _ddwaf_object_kv {
+#endif
     ddwaf_object key;
     ddwaf_object val;
 };
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
+
 /**
  * @typedef ddwaf_object_free_fn
  *
