@@ -24,11 +24,17 @@ namespace detail {
 
 using object = ddwaf_object;
 using object_kv = ddwaf_object_kv;
+using size_type = decltype(ddwaf_object::size);
 
-template <typename Size> inline char *copy_string(const char *str, Size size)
+template <typename T> inline constexpr std::size_t maxof() { return std::numeric_limits<T>::max(); }
+
+static_assert(maxof<size_type>() <= maxof<std::size_t>() / sizeof(object));
+static_assert(maxof<size_type>() <= maxof<std::size_t>() / sizeof(object_kv));
+
+inline char *copy_string(const char *str, size_type size)
 {
     // TODO new char[size];
-    if (size >= std::numeric_limits<Size>::max()) {
+    if (size == maxof<size_type>()) {
         throw std::bad_alloc();
     }
 
@@ -44,12 +50,8 @@ template <typename Size> inline char *copy_string(const char *str, Size size)
     return copy;
 }
 
-template <typename T, typename Size> T *alloc_helper(Size size)
+template <typename T> T *alloc_helper(size_type size)
 {
-    // Ensure that we can allocate without concern
-    static_assert(
-        std::numeric_limits<Size>::max() < std::numeric_limits<std::size_t>::max() / sizeof(T));
-
     // NOLINTNEXTLINE(hicpp-no-malloc)
     auto *data = static_cast<T *>(malloc(sizeof(T) * size));
     if (size > 0 && data == nullptr) [[unlikely]] {
@@ -58,17 +60,13 @@ template <typename T, typename Size> T *alloc_helper(Size size)
     return data;
 }
 
-template <typename T, typename Size> inline std::pair<T *, Size> realloc_helper(T *data, Size size)
+template <typename T> inline std::pair<T *, size_type> realloc_helper(T *data, size_type size)
 {
-    // Ensure that we can allocate without concern
-    static_assert(
-        std::numeric_limits<Size>::max() < std::numeric_limits<std::size_t>::max() / sizeof(T));
-
     // Since allocators have no realloc interface, we're just using malloc
     // as it'll be equivalent once allocators are supported
-    std::size_t new_size;
-    if (size > std::numeric_limits<Size>::max() / 2) [[unlikely]] {
-        new_size = std::numeric_limits<Size>::max();
+    size_type new_size;
+    if (size > maxof<size_type>() / 2) [[unlikely]] {
+        new_size = maxof<size_type>();
     } else {
         new_size = size * 2;
     }
@@ -84,35 +82,6 @@ template <typename T, typename Size> inline std::pair<T *, Size> realloc_helper(
     free(data);
 
     return {new_data, new_size};
-}
-
-inline void realloc_array(object &obj)
-{
-    static constexpr std::size_t array_increment = 8;
-
-    const auto size = static_cast<std::size_t>(obj.size) + array_increment;
-    if (size > SIZE_MAX / sizeof(object)) [[unlikely]] {
-        throw std::bad_alloc();
-    }
-
-    auto *new_array = static_cast<object *>(
-        // NOLINTNEXTLINE(hicpp-no-malloc)
-        realloc(static_cast<void *>(obj.via.array), size * sizeof(object)));
-    if (new_array == nullptr) [[unlikely]] {
-        throw std::bad_alloc();
-    }
-
-    obj.via.array = new_array;
-}
-
-inline void alloc_array(object &obj)
-{
-    static constexpr std::size_t array_start_size = 8;
-    // NOLINTNEXTLINE(hicpp-no-malloc)
-    obj.via.array = static_cast<object *>(malloc(array_start_size * sizeof(object)));
-    if (obj.via.array == nullptr) [[unlikely]] {
-        throw std::bad_alloc();
-    }
 }
 
 namespace initializer {
@@ -366,107 +335,6 @@ public:
         assert(obj_->via.array != nullptr);
         return obj_->via.array[index];
     }
-
-    /*    class iterator {*/
-    /*public:*/
-    /*~iterator() = default;*/
-    /*iterator(const iterator &) = default;*/
-    /*iterator(iterator &&) = default;*/
-    /*iterator &operator=(const iterator &) = default;*/
-    /*iterator &operator=(iterator &&) = default;*/
-
-    /*[[nodiscard]] object_type container_type() const noexcept { return type_; }*/
-
-    /*// NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)*/
-    /*operator bool() const noexcept { return index_ < size_; }*/
-
-    /*bool operator!=(const iterator &rhs) const noexcept*/
-    /*{*/
-    /*return obj_ != rhs.obj_ || index_ != rhs.index_;*/
-    /*}*/
-
-    /*[[nodiscard]] object_view key() const*/
-    /*{*/
-    /*assert(obj_ != nullptr && index_ < size_);*/
-    /*if (type_ == object_type::map) {*/
-    /*return &obj_[index_];*/
-    /*}*/
-    /*return {};*/
-    /*}*/
-
-    /*[[nodiscard]] object_view value() const*/
-    /*{*/
-    /*assert(obj_ != nullptr && index_ < size_);*/
-    /*return obj_[index_];*/
-    /*}*/
-
-    /*std::pair<object_view, object_view> operator*() const*/
-    /*{*/
-    /*assert(obj_ != nullptr && index_ < size_);*/
-    /*const auto &slot = obj_[index_];*/
-    /*if (type_ == object_type::map) {*/
-    /*return {&slot, slot};*/
-    /*}*/
-    /*return {{}, slot};*/
-    /*}*/
-
-    /*[[nodiscard]] std::size_t index() const { return static_cast<std::size_t>(index_); }*/
-
-    /*iterator &operator++() noexcept*/
-    /*{*/
-    /*// Saturated increment (to size)*/
-    /*index_ += static_cast<uint32_t>(index_ < size_);*/
-    /*return *this;*/
-    /*}*/
-
-    /*[[nodiscard]] iterator prev() const noexcept*/
-    /*{*/
-    /*// Saturated decrement (to 0)*/
-    /*auto new_index = static_cast<uint16_t>(index_ - static_cast<uint16_t>(index_ > 0));*/
-    /*return {obj_, size_, new_index, type_};*/
-    /*}*/
-
-    /*protected:*/
-    /*iterator() = default;*/
-
-    /*explicit iterator(const detail::object *obj, uint16_t idx = 0)*/
-    /*: obj_(obj->array), size_(static_cast<uint16_t>(obj->size)), index_(idx),*/
-    /*type_(static_cast<object_type>(obj->type))*/
-    /*{}*/
-
-    /*iterator(*/
-    /*// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)*/
-    /*const detail::object *obj, std::uint16_t size, std::uint16_t index, object_type type)*/
-    /*: obj_(obj), size_(size), index_(index), type_(type)*/
-    /*{}*/
-
-    /*const detail::object *obj_{nullptr};*/
-    /*std::uint16_t size_{0};*/
-    /*std::uint16_t index_{0};*/
-    /*object_type type_{object_type::invalid};*/
-
-    /*friend class object_view;*/
-    /*};*/
-
-    /*[[nodiscard]] iterator begin() const*/
-    /*{*/
-    /*assert(obj_ != nullptr);*/
-    /*// This check guarantees that the object is a container and not null*/
-    /*if (!is_container()) {*/
-    /*[[unlikely]] return {};*/
-    /*}*/
-    /*return iterator{obj_};*/
-    /*}*/
-
-    /*[[nodiscard]] iterator end() const*/
-    /*{*/
-    /*assert(obj_ != nullptr);*/
-    /*// This check guarantees that the object is a container and not null*/
-    /*if (!is_container()) {*/
-    /*[[unlikely]] return {};*/
-    /*}*/
-    /*return iterator{obj_, static_cast<uint16_t>(obj_->size)};*/
-    /*}*/
 
 protected:
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)

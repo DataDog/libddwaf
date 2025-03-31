@@ -90,31 +90,14 @@ typedef struct _ddwaf_object ddwaf_object;
 typedef struct _ddwaf_object_kv ddwaf_object_kv;
 typedef struct _ddwaf_config ddwaf_config;
 typedef struct _ddwaf_result ddwaf_result;
+
+#define DDWAF_OBJ_SSTR_SIZE 11
+
 /**
  * @struct ddwaf_object
  *
  * Generic object used to pass data and rules to the WAF.
  **/
-/*struct _ddwaf_object*/
-/*{*/
-    /*const char* parameterName;*/
-    /*uint64_t parameterNameLength;*/
-    /*// uintValue should be at least as wide as the widest type on the platform.*/
-    /*union*/
-    /*{*/
-        /*const char* stringValue;*/
-        /*uint64_t uintValue;*/
-        /*int64_t intValue;*/
-        /*ddwaf_object* array;*/
-        /*bool boolean;*/
-        /*double f64;*/
-    /*};*/
-    /*uint64_t nbEntries;*/
-    /*DDWAF_OBJ_TYPE type;*/
-/*};*/
-
-#define DDWAF_OBJ_SSTR_SIZE 11
-
 struct __attribute__((packed)) _ddwaf_object {
     union __attribute__((packed)) {
         bool b8;

@@ -20,20 +20,17 @@ void ruleset_info::section_info::add_failed(
 {
     const auto &inserter = [](auto &id, auto &error, auto &cache, auto &diagnostics_array,
                                auto &failed_array) {
-        std::cout << "Error: " << error << '\n';
         auto it = cache.find(error);
         if (it == cache.end()) {
             auto array = diagnostics_array.emplace(error, owned_object::make_array());
             auto index = diagnostics_array.size() - 1;
 
-            std::cout << "Inserting: " << index << '\n';
             // TODO figure out a less hacky way
             auto key = object_view{diagnostics_array}.at_key(index);
             cache[key.template as<std::string_view>()] = index;
 
             array.emplace_back(id);
         } else {
-            std::cout << "Index: " << it->second << '\n';
             diagnostics_array.at(it->second).emplace_back(id);
         }
 
