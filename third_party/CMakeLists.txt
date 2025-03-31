@@ -96,7 +96,7 @@ else()
 endif()
 
 ExternalProject_Add(proj_yamlcpp
-    URL https://github.com/jbeder/yaml-cpp/archive/refs/tags/yaml-cpp-0.7.0.zip
+    URL https://github.com/jbeder/yaml-cpp/archive/refs/tags/0.8.0.zip
     INSTALL_DIR       ${INSTALL_DIR}
     CMAKE_ARGS  -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
                 -DCMAKE_INSTALL_LIBDIR=lib
