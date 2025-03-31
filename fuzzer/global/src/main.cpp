@@ -10,6 +10,7 @@
 #include <condition_variable>
 #include <cstring>
 #include <ddwaf.h>
+#include <iostream>
 #include <mutex>
 #include <stack>
 #include <thread>
@@ -23,6 +24,40 @@ using namespace std::chrono_literals;
 
 bool verbose = false;
 bool fuzzTimeout = false;
+
+const char* level_to_str(DDWAF_LOG_LEVEL level)
+{
+    switch (level)
+    {
+        case DDWAF_LOG_TRACE:
+            return "trace";
+        case DDWAF_LOG_DEBUG:
+            return "debug";
+        case DDWAF_LOG_ERROR:
+            return "error";
+        case DDWAF_LOG_WARN:
+            return "warn";
+        case DDWAF_LOG_INFO:
+            return "info";
+        case DDWAF_LOG_OFF:
+            break;
+    }
+
+    return "off";
+}
+
+void log_cb(DDWAF_LOG_LEVEL level,
+            const char* function, const char* file, unsigned line,
+            const char* message, uint64_t  /*length*/)
+{
+    std::cout << "[" << level_to_str(level)
+              << "][" << file
+              << ":" << function
+              << ":" << line
+              << "]: " << message
+              << '\n';
+}
+
 
 class waf_runner {
 public:
@@ -114,6 +149,8 @@ extern "C" int LLVMFuzzerInitialize(const int *argc, char ***argv)
     auto *handle = init_waf();
 
     runner = std::make_unique<waf_runner>(handle, 4);
+
+    ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
 
     return 0;
 }
