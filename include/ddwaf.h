@@ -102,10 +102,11 @@ typedef struct _ddwaf_result ddwaf_result;
 #ifdef _MSC_VER
 #pragma pack(push,1)
 struct _ddwaf_object {
+    union {
 #else
 struct __attribute__((packed)) _ddwaf_object {
-#endif
     union __attribute__((packed)) {
+#endif
         bool b8;
         uint64_t u64;
         int64_t i64;
