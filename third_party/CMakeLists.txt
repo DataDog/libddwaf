@@ -113,6 +113,7 @@ ExternalProject_Add(proj_yamlcpp
                 -DYAML_CPP_INSTALL=ON
                 -DYAML_BUILD_SHARED_LIBS=OFF
                 -DYAML_MSVC_SHARED_RT=OFF
+                -DCMAKE_POLICY_VERSION_MINIMUM=3.5
                 -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
                 -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
                 BUILD_BYPRODUCTS ${INSTALL_DIR}/lib/${LIBYAML_FILENAME}
