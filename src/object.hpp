@@ -520,9 +520,10 @@ public:
     {
         // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
         return owned_object{{.via{.str = detail::copy_string(str, len)},
-            .type = DDWAF_OBJ_STRING,
-            .size = static_cast<uint16_t>(len),
-            .capacity = static_cast<uint16_t>(len)}};
+                                .type = DDWAF_OBJ_STRING,
+                                .size = static_cast<uint16_t>(len),
+                                .capacity = static_cast<uint16_t>(len)},
+            ddwaf_object_free};
     }
 
     static owned_object make_string(std::string_view str)
@@ -536,13 +537,14 @@ public:
     static owned_object make_array()
     {
         return owned_object{
-            {.via{.array = nullptr}, .type = DDWAF_OBJ_ARRAY, .size = 0, .capacity = 0}};
+            {.via{.array = nullptr}, .type = DDWAF_OBJ_ARRAY, .size = 0, .capacity = 0},
+            ddwaf_object_free};
     }
 
     static owned_object make_map()
     {
-        return owned_object{
-            {.via{.map = nullptr}, .type = DDWAF_OBJ_MAP, .size = 0, .capacity = 0}};
+        return owned_object{{.via{.map = nullptr}, .type = DDWAF_OBJ_MAP, .size = 0, .capacity = 0},
+            ddwaf_object_free};
     }
 
     static owned_object make_array(std::initializer_list<detail::initializer::movable_object> list);
@@ -640,7 +642,6 @@ template <typename Derived> [[nodiscard]] owned_object readable_object<Derived>:
                 queue.emplace_back(child, destination.at(i));
             }
         }
-
         queue.pop_front();
     }
 
