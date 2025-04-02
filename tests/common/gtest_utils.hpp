@@ -12,18 +12,16 @@
 #include <rapidjson/document.h>
 #include <yaml-cpp/yaml.h>
 
-#include "condition/scalar_condition.hpp"
-#include "ddwaf.h"
-
-#include "common/base_utils.hpp"
 #include "common/json_utils.hpp"
 #include "common/yaml_utils.hpp"
+#include "condition/base.hpp"
 
 #define EXPECT_STR(a, b) EXPECT_STREQ(a.c_str(), std::string{b}.c_str())
 #define EXPECT_STRV(a, b) EXPECT_STR(std::string{a}, b)
 
 namespace ddwaf::test {
 
+// NOLINTBEGIN(readability-redundant-member-init)
 struct event {
     struct match {
         struct argument {
@@ -35,16 +33,17 @@ struct event {
         std::string op{};
         std::string op_value{};
         std::string highlight{};
-        std::vector<argument> args;
+        std::vector<argument> args{};
     };
 
-    std::string id;
-    std::string name;
+    std::string id{};
+    std::string name{};
     std::string stack_id{};
     std::map<std::string, std::string> tags{{"type", ""}, {"category", ""}};
     std::vector<std::string> actions{};
-    std::vector<match> matches;
+    std::vector<match> matches{};
 };
+// NOLINTEND(readability-redundant-member-init)
 
 using action_map = ::std::map<::std::string, ::std::map<::std::string, ::std::string>>;
 
@@ -56,7 +55,6 @@ bool operator==(const event &lhs, const event &rhs);
 ::std::ostream &operator<<(::std::ostream &os, const event::match &m);
 
 // Required by gtest to pretty print relevant types
-void PrintTo(const ddwaf_object &actions, ::std::ostream *os);
 void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os);
 void PrintTo(const std::list<ddwaf::test::event::match> &matches, ::std::ostream *os);
 
@@ -70,18 +68,21 @@ namespace YAML {
 template <> struct as_if<ddwaf::test::event::match, void> {
     explicit as_if(const Node &node_) : node(node_) {}
     ddwaf::test::event::match operator()() const;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const Node &node;
 };
 
 template <> struct as_if<ddwaf::test::event, void> {
     explicit as_if(const Node &node_) : node(node_) {}
     ddwaf::test::event operator()() const;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const Node &node;
 };
 
 template <> struct as_if<ddwaf::test::action_map, void> {
     explicit as_if(const Node &node_) : node(node_) {}
     ddwaf::test::action_map operator()() const;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const Node &node;
 };
 

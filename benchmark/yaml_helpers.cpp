@@ -84,30 +84,30 @@ YAML::Emitter &operator<<(YAML::Emitter &out, const ddwaf_object &o)
 
     switch (o.type) {
     case DDWAF_OBJ_BOOL:
-        out << o.boolean;
+        out << o.via.b8;
         break;
     case DDWAF_OBJ_SIGNED:
-        out << o.intValue;
+        out << o.via.i64;
         break;
     case DDWAF_OBJ_UNSIGNED:
-        out << o.uintValue;
+        out << o.via.u64;
         break;
     case DDWAF_OBJ_FLOAT:
-        out << o.f64;
+        out << o.via.f64;
         break;
     case DDWAF_OBJ_STRING:
-        out << o.stringValue;
+        out << o.via.str;
         break;
     case DDWAF_OBJ_ARRAY:
         out << YAML::BeginSeq;
-        for (decltype(o.nbEntries) i = 0; i < o.nbEntries; i++) { out << o.array[i]; }
+        for (decltype(o.size) i = 0; i < o.size; i++) { out << o.via.array[i]; }
         out << YAML::EndSeq;
         break;
     case DDWAF_OBJ_MAP:
         out << YAML::BeginMap;
-        for (decltype(o.nbEntries) i = 0; i < o.nbEntries; i++) {
-            out << YAML::Key << o.array[i].parameterName;
-            out << YAML::Value << o.array[i];
+        for (decltype(o.size) i = 0; i < o.size; i++) {
+            out << YAML::Key << o.via.map[i].key.via.str;
+            out << YAML::Value << o.via.map[i].val;
         }
         out << YAML::EndMap;
         break;
