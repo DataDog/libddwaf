@@ -6,6 +6,7 @@
 
 #include "exception.hpp"
 #include "matcher/equals.hpp"
+#include "object.hpp"
 #include "processor/base.hpp"
 
 #include <gmock/gmock.h>
@@ -13,6 +14,7 @@
 #include "common/gtest_utils.hpp"
 
 using ::testing::_;
+using ::testing::ByMove;
 using ::testing::Return;
 
 using namespace ddwaf;
@@ -31,10 +33,10 @@ public:
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
     {}
 
-    MOCK_METHOD((std::pair<ddwaf_object, object_store::attribute>), eval_impl,
-        (const unary_argument<const ddwaf_object *> &unary,
+    MOCK_METHOD((std::pair<owned_object, object_store::attribute>), eval_impl,
+        (const unary_argument<object_view> &unary,
             const optional_argument<std::string_view> &optional,
-            const variadic_argument<unsigned> &variadic, processor_cache &, ddwaf::timer &),
+            const variadic_argument<uint64_t> &variadic, processor_cache &, ddwaf::timer &),
         (const));
 };
 
@@ -42,19 +44,11 @@ public:
 
 TEST(TestStructuredProcessor, AllParametersAvailable)
 {
-    ddwaf_object output;
-    ddwaf_object_string(&output, "output_string");
+    owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object tmp;
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "unary_address", ddwaf_object_string(&tmp, "unary_string"));
-    ddwaf_object_map_add(
-        &input_map, "optional_address", ddwaf_object_string(&tmp, "optional_string"));
-    ddwaf_object_map_add(&input_map, "variadic_address_1", ddwaf_object_unsigned(&tmp, 1));
-    ddwaf_object_map_add(&input_map, "variadic_address_2", ddwaf_object_unsigned(&tmp, 1));
-
+    auto input_map = owned_object::make_map(
+        {{"unary_address", "unary_string"}, {"optional_address", "optional_string"},
+            {"variadic_address_1", 1UL}, {"variadic_address_2", 1UL}});
     object_store store;
     store.insert(input_map);
 
@@ -68,41 +62,30 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _, _))
-        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
-            output, object_store::attribute::none}));
+        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
+            std::move(output), object_store::attribute::none})));
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    ddwaf_object output_map;
-    ddwaf_object_map(&output_map);
-
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<ddwaf_object> derived{output_map};
+    auto derived = owned_object::make_map();
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-    proc.eval(store, derived, cache, {}, deadline);
+    EXPECT_EQ(derived.size(), 0);
+    proc.eval(store, derived, cache, deadline);
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 1);
-    const auto *obtained = ddwaf_object_get_index(&output_map, 0);
+    EXPECT_EQ(derived.size(), 1);
+    const auto *obtained = derived.at(0).ptr();
     EXPECT_STREQ(obtained->parameterName, "output_address");
     EXPECT_STREQ(obtained->stringValue, "output_string");
-
-    ddwaf_object_free(&output_map);
 }
 
 TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
 {
-    ddwaf_object output;
-    ddwaf_object_string(&output, "output_string");
+    owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object tmp;
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "unary_address", ddwaf_object_string(&tmp, "unary_string"));
-    ddwaf_object_map_add(&input_map, "variadic_address_1", ddwaf_object_unsigned(&tmp, 1));
-    ddwaf_object_map_add(&input_map, "variadic_address_2", ddwaf_object_unsigned(&tmp, 1));
+    auto input_map = owned_object::make_map({{"unary_address", "unary_string"},
+        {"variadic_address_1", 1UL}, {"variadic_address_2", 1UL}});
 
     object_store store;
     store.insert(input_map);
@@ -117,38 +100,28 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _, _))
-        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
-            output, object_store::attribute::none}));
+        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
+            std::move(output), object_store::attribute::none})));
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    ddwaf_object output_map;
-    ddwaf_object_map(&output_map);
-
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<ddwaf_object> derived{output_map};
+    auto derived = owned_object::make_map();
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-    proc.eval(store, derived, cache, {}, deadline);
+    EXPECT_EQ(derived.size(), 0);
+    proc.eval(store, derived, cache, deadline);
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 1);
-    const auto *obtained = ddwaf_object_get_index(&output_map, 0);
+    EXPECT_EQ(derived.size(), 1);
+    const auto *obtained = derived.at(0).ptr();
     EXPECT_STREQ(obtained->parameterName, "output_address");
     EXPECT_STREQ(obtained->stringValue, "output_string");
-
-    ddwaf_object_free(&output_map);
 }
 
 TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
 {
-    ddwaf_object tmp;
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(
-        &input_map, "optional_address", ddwaf_object_string(&tmp, "optional_string"));
-    ddwaf_object_map_add(&input_map, "variadic_address_1", ddwaf_object_unsigned(&tmp, 1));
-    ddwaf_object_map_add(&input_map, "variadic_address_2", ddwaf_object_unsigned(&tmp, 1));
+    auto input_map = owned_object::make_map({{"optional_address", "optional_string"},
+        {"variadic_address_1", 1UL}, {"variadic_address_2", 1UL}});
 
     object_store store;
     store.insert(input_map);
@@ -166,28 +139,21 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    ddwaf_object output_map;
-    ddwaf_object_map(&output_map);
-
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<ddwaf_object> derived{output_map};
+    auto derived = owned_object::make_map();
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-    proc.eval(store, derived, cache, {}, deadline);
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-
-    ddwaf_object_free(&output_map);
+    EXPECT_EQ(derived.size(), 0);
+    proc.eval(store, derived, cache, deadline);
+    EXPECT_EQ(derived.size(), 0);
 }
 
 TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
 {
-    ddwaf_object tmp;
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "unary_address", ddwaf_object_string(&tmp, "unary_string"));
-    ddwaf_object_map_add(
-        &input_map, "optional_address", ddwaf_object_string(&tmp, "optional_string"));
+    auto input_map = owned_object::make_map({
+        {"unary_address", "unary_string"},
+        {"optional_address", "optional_string"},
+    });
 
     object_store store;
     store.insert(input_map);
@@ -205,18 +171,13 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    ddwaf_object output_map;
-    ddwaf_object_map(&output_map);
-
     processor_cache cache;
     timer deadline{2s};
-    optional_ref<ddwaf_object> derived{output_map};
+    auto derived = owned_object::make_map();
 
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-    proc.eval(store, derived, cache, {}, deadline);
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-
-    ddwaf_object_free(&output_map);
+    EXPECT_EQ(derived.size(), 0);
+    proc.eval(store, derived, cache, deadline);
+    EXPECT_EQ(derived.size(), 0);
 }
 
 } // namespace

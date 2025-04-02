@@ -10,7 +10,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "ddwaf.h"
 #include "matcher/base.hpp"
 
 namespace ddwaf::matcher {
@@ -33,9 +32,10 @@ public:
 
 protected:
     static constexpr std::string_view to_string_impl() { return ""; }
-    static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
+    static constexpr bool is_supported_type_impl(object_type type)
     {
-        return type == DDWAF_OBJ_SIGNED || type == DDWAF_OBJ_UNSIGNED || type == DDWAF_OBJ_FLOAT;
+        return type == object_type::int64 || type == object_type::uint64 ||
+               type == object_type::float64;
     }
 
     template <typename U>
@@ -69,7 +69,7 @@ protected:
     greater_than &operator=(greater_than &&) noexcept = default;
 
     static constexpr std::string_view to_string_impl() { return ""; }
-    static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE /*type*/) { return false; }
+    static constexpr bool is_supported_type_impl(object_type /*type*/) { return false; }
 
     [[nodiscard]] static std::pair<bool, std::string> match_impl() { return {}; }
 
