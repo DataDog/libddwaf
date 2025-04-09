@@ -305,8 +305,6 @@ TEST(TestDiagnosticsV2Integration, MultipleDiffInvalidRules)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    std::cout << ddwaf::test::object_to_json(diagnostics) << '\n';
-
     ddwaf::raw_configuration root(diagnostics);
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
