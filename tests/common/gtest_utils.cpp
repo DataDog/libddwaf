@@ -240,6 +240,17 @@ void PrintTo(const ddwaf::test::action_map &actions, ::std::ostream *os) { *os <
     return ::testing::AssertionSuccess();
 }
 
+::testing::AssertionResult ValidateActionsSchema(const std::string &result)
+{
+    static schema_validator schema(ddwaf::test::test_directory + "/../schema/actions.json");
+    auto error = schema.validate(result.c_str());
+    if (error) {
+        return ::testing::AssertionFailure() << *error;
+    }
+
+    return ::testing::AssertionSuccess();
+}
+
 WafResultActionMatcher::WafResultActionMatcher(
     std::map<std::string, std::map<std::string, std::string>> &&v)
     : expected_(std::move(v))
