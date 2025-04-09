@@ -219,7 +219,7 @@ void PrintTo(const ddwaf::test::action_map &actions, ::std::ostream *os) { *os <
 
 ::testing::AssertionResult ValidateSchemaSchema(rapidjson::Document &doc)
 {
-    static schema_validator schema(ddwaf::test::test_directory + "/../schema/types.json");
+    static schema_validator schema(ddwaf::test::test_directory + "/../schema/schema.json");
     auto error = schema.validate(doc);
     if (error) {
         return ::testing::AssertionFailure() << *error;

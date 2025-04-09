@@ -1,7 +1,7 @@
 {
-    "title": "Serialized schema types for API Security",
+    "title": "Serialized schema for API Security",
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$defs": {
+    "definitions": {
         "type": {
             "oneOf": [
                 {
@@ -36,8 +36,8 @@
     },
     "type": "array",
     "prefixItems": [
-        { "$ref": "#/$defs/type" },
-        { "$ref": "#/$defs/metadata" }
+        { "$ref": "#/definitions/type" },
+        { "$ref": "#/definitions/metadata" }
     ],
     "minItems": 1
 }
