@@ -1,43 +1,64 @@
 {
-    "title": "WAF Actions Schema",
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "schema/actions.json",
-    "type": "object",
-    "description": "Map of unique actions",
-    "properties": {
-        "block_request": {
-            "type": "object",
-            "properties": {
-                "status_code": {"type": "string"},
-                "type": {"type": "string"},
-                "grpc_status_code": {"type": "string"}
-            },
-            "required": ["status_code", "type", "grpc_status_code"],
-            "additionalProperties": true
+  "title": "WAF Actions Schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "schema/actions.json",
+  "type": "object",
+  "description": "Map of unique actions",
+  "properties": {
+    "block_request": {
+      "type": "object",
+      "properties": {
+        "status_code": {
+          "type": "string"
         },
-        "redirect_request": {
-            "type": "object",
-            "properties": {
-                "status_code": {"type": "string"},
-                "location": {"type": "string"}
-            },
-            "required": ["status_code", "location"],
-            "additionalProperties": true
+        "type": {
+          "type": "string"
         },
-        "generate_stack": {
-            "type": "object",
-            "properties": {
-                "stack_id": {"type": "string"}
-            },
-            "required": ["stack_id"],
-            "additionalProperties": true
-        },
-        "generate_schema": {
-            "type": "object",
-            "properties": {},
-            "required": [],
-            "additionalProperties": true
+        "grpc_status_code": {
+          "type": "string"
         }
+      },
+      "required": [
+        "status_code",
+        "type",
+        "grpc_status_code"
+      ],
+      "additionalProperties": true
     },
-    "additionalProperties": true
+    "redirect_request": {
+      "type": "object",
+      "properties": {
+        "status_code": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "status_code",
+        "location"
+      ],
+      "additionalProperties": true
+    },
+    "generate_stack": {
+      "type": "object",
+      "properties": {
+        "stack_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "stack_id"
+      ],
+      "additionalProperties": true
+    },
+    "generate_schema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
 }

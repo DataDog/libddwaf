@@ -1,91 +1,102 @@
 {
-    "title": "Ruleset Diagnostics Schema",
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "schema/diagnostics.json",
-    "type": "object",
-    "properties": {
-        "ruleset_version": {
-            "type": "string",
-            "description": "The version of the parsed ruleset if available",
-            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+"
-        },
-        "error": {
-            "type": "string",
-            "description": "The single error which prevented parsing the configuration"
-        },
-        "actions": {
-            "$ref": "#/definitions/feature"
-        },
-        "rules": {
-            "$ref": "#/definitions/feature"
-        },
-        "custom_rules": {
-            "$ref": "#/definitions/feature"
-        },
-        "rules_data": {
-            "$ref": "#/definitions/feature"
-        },
-        "rules_override": {
-            "$ref": "#/definitions/feature"
-        },
-        "exclusions": {
-            "$ref": "#/definitions/feature"
-        },
-        "exclusion_data": {
-            "$ref": "#/definitions/feature"
-        },
-        "processors": {
-            "$ref": "#/definitions/feature"
-        },
-        "scanners": {
-            "$ref": "#/definitions/feature"
-        }
+  "title": "Ruleset Diagnostics Schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "schema/diagnostics.json",
+  "type": "object",
+  "properties": {
+    "ruleset_version": {
+      "type": "string",
+      "description": "The version of the parsed ruleset if available",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+"
     },
-    "additionalProperties": false,
-    "definitions": {
-        "feature": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string",
-                    "description": "The single error which prevented parsing this object"
-                },
-                "loaded": {
-                    "type": "array",
-                    "description": "A list of the unique identifiers from successfully loaded elements",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "failed": {
-                    "type": "array",
-                    "description": "A list of the unique identifiers from the elements which couldn't be loaded",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "skipped": {
-                    "type": "array",
-                    "description": "A list of the unique identifiers from the elements which were skipped due to explicit incompatibility (e.g. min/max version)",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "errors": {
-                    "type": "object",
-                    "description": "Each key corresponds to a parsing error, each value corresponds to a list of the unique identifiers of the elements which failed with said error"
-                },
-                "warnings": {
-                    "type": "object",
-                    "description": "Each key corresponds to a parsing warning, each value corresponds to a list of the unique identifiers of the elements which failed with said warnings"
-                }
-            },
-            "OneOf": [
-                { "required": ["error"] },
-                { "required": ["loaded", "failed", "skipped", "errors", "warnings"] }
-            ],
-            "additionalProperties": false
-        }
+    "error": {
+      "type": "string",
+      "description": "The single error which prevented parsing the configuration"
+    },
+    "actions": {
+      "$ref": "#/definitions/feature"
+    },
+    "rules": {
+      "$ref": "#/definitions/feature"
+    },
+    "custom_rules": {
+      "$ref": "#/definitions/feature"
+    },
+    "rules_data": {
+      "$ref": "#/definitions/feature"
+    },
+    "rules_override": {
+      "$ref": "#/definitions/feature"
+    },
+    "exclusions": {
+      "$ref": "#/definitions/feature"
+    },
+    "exclusion_data": {
+      "$ref": "#/definitions/feature"
+    },
+    "processors": {
+      "$ref": "#/definitions/feature"
+    },
+    "scanners": {
+      "$ref": "#/definitions/feature"
     }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "feature": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string",
+          "description": "The single error which prevented parsing this object"
+        },
+        "loaded": {
+          "type": "array",
+          "description": "A list of the unique identifiers from successfully loaded elements",
+          "items": {
+            "type": "string"
+          }
+        },
+        "failed": {
+          "type": "array",
+          "description": "A list of the unique identifiers from the elements which couldn't be loaded",
+          "items": {
+            "type": "string"
+          }
+        },
+        "skipped": {
+          "type": "array",
+          "description": "A list of the unique identifiers from the elements which were skipped due to explicit incompatibility (e.g. min/max version)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "errors": {
+          "type": "object",
+          "description": "Each key corresponds to a parsing error, each value corresponds to a list of the unique identifiers of the elements which failed with said error"
+        },
+        "warnings": {
+          "type": "object",
+          "description": "Each key corresponds to a parsing warning, each value corresponds to a list of the unique identifiers of the elements which failed with said warnings"
+        }
+      },
+      "OneOf": [
+        {
+          "required": [
+            "error"
+          ]
+        },
+        {
+          "required": [
+            "loaded",
+            "failed",
+            "skipped",
+            "errors",
+            "warnings"
+          ]
+        }
+      ],
+      "additionalProperties": false
+    }
+  }
 }
-
