@@ -49,13 +49,13 @@ void _print_object(ddwaf_object entry, uint8_t depth)
 
     switch (entry.type) {
     case DDWAF_OBJ_MAP:
-        if (entry.nbEntries == 0) {
+        if (entry.size == 0) {
             std::cerr << "{}";
         } else {
 
             std::cerr << "{";
 
-            for (uint64_t i = 0; i < entry.nbEntries; i++) {
+            for (uint64_t i = 0; i < entry.size; i++) {
                 if (first) {
                     first = false;
                 } else {
@@ -63,9 +63,9 @@ void _print_object(ddwaf_object entry, uint8_t depth)
                 }
 
                 indent(depth + 1);
-                print_string(entry.array[i].parameterName, entry.array[i].parameterNameLength);
+                print_string(entry.via.map[i].key.via.str, entry.via.map[i].key.size);
                 std::cerr << ": ";
-                _print_object(entry.array[i], depth + 1);
+                _print_object(entry.via.map[i].val, depth + 1);
             }
 
             indent(depth);
@@ -74,20 +74,20 @@ void _print_object(ddwaf_object entry, uint8_t depth)
         break;
 
     case DDWAF_OBJ_ARRAY:
-        if (entry.nbEntries == 0) {
+        if (entry.size == 0) {
             indent(depth);
             std::cerr << "[]";
         } else {
             std::cerr << "[";
 
-            for (uint64_t i = 0; i < entry.nbEntries; i++) {
+            for (uint64_t i = 0; i < entry.size; i++) {
                 if (first) {
                     first = false;
                 } else {
                     std::cerr << ",";
                 }
                 indent(depth + 1);
-                _print_object(entry.array[i], depth + 1);
+                _print_object(entry.via.array[i], depth + 1);
             }
 
             indent(depth);
@@ -96,19 +96,19 @@ void _print_object(ddwaf_object entry, uint8_t depth)
 
         break;
     case DDWAF_OBJ_FLOAT:
-        std::cerr << entry.f64;
+        std::cerr << entry.via.f64;
         break;
     case DDWAF_OBJ_SIGNED:
-        std::cerr << entry.intValue;
+        std::cerr << entry.via.i64;
         break;
     case DDWAF_OBJ_UNSIGNED:
-        std::cerr << entry.uintValue;
+        std::cerr << entry.via.u64;
         break;
     case DDWAF_OBJ_STRING:
-        print_string(entry.stringValue, entry.nbEntries);
+        print_string(entry.via.str, entry.size);
         break;
     case DDWAF_OBJ_BOOL:
-        std::cerr << std::boolalpha << entry.boolean;
+        std::cerr << std::boolalpha << entry.via.b8;
         break;
     case DDWAF_OBJ_NULL:
         std::cerr << "(null)";
