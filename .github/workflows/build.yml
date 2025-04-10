@@ -328,6 +328,8 @@ jobs:
           path: artifacts
       - name: Display structure of downloaded files
         run: find
+      - name: Copy schemas
+        run: for file in ./schema/*.json; do cp "$file" "./artifacts/$(basename $file .json)-schema.json"; done
       - name: Release
         uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 # v2.0.8
         with:
@@ -336,3 +338,4 @@ jobs:
             ./artifacts/**/*.tar.gz
             ./artifacts/**/*.sha256
             ./artifacts/**/*.nupkg
+            ./artifacts/**/*.json

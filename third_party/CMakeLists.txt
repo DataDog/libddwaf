@@ -15,7 +15,7 @@ if(NOT MSVC)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wno-unused-parameter -Wno-shadow")
 endif()
 
-set(RAPIDJSON_COMMIT 22a62fcc2c2fa2418f5d358cdf65c1df73b418ae)
+set(RAPIDJSON_COMMIT 24b5e7a8b27f42fa16b96fc70aade9106cf7102f)
 ExternalProject_Add(proj_rapidjson
     URL               https://github.com/Tencent/rapidjson/archive/${RAPIDJSON_COMMIT}.tar.gz
     INSTALL_DIR       ${INSTALL_DIR}
