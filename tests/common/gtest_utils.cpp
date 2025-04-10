@@ -194,7 +194,7 @@ std::ostream &operator<<(std::ostream &os, const ddwaf::test::action_map &action
 
 void PrintTo(const ddwaf::test::action_map &actions, ::std::ostream *os) { *os << actions; }
 
-::testing::AssertionResult ValidateSchema(const std::string &result)
+::testing::AssertionResult ValidateEventSchema(const std::string &result)
 {
     static schema_validator schema(ddwaf::test::test_directory + "/../schema/events.json");
     auto error = schema.validate(result.c_str());
@@ -207,8 +207,31 @@ void PrintTo(const ddwaf::test::action_map &actions, ::std::ostream *os) { *os <
 
 ::testing::AssertionResult ValidateSchemaSchema(rapidjson::Document &doc)
 {
-    static schema_validator schema(ddwaf::test::test_directory + "/../schema/types.json");
+    static schema_validator schema(ddwaf::test::test_directory + "/../schema/schema.json");
     auto error = schema.validate(doc);
+    if (error) {
+        return ::testing::AssertionFailure() << *error;
+    }
+
+    return ::testing::AssertionSuccess();
+}
+
+::testing::AssertionResult ValidateDiagnosticsSchema(const ddwaf_object &diagnostics)
+{
+    static schema_validator schema(ddwaf::test::test_directory + "/../schema/diagnostics.json");
+    auto doc = ddwaf::test::object_to_rapidjson(diagnostics);
+    auto error = schema.validate(doc);
+    if (error) {
+        return ::testing::AssertionFailure() << *error;
+    }
+
+    return ::testing::AssertionSuccess();
+}
+
+::testing::AssertionResult ValidateActionsSchema(const std::string &result)
+{
+    static schema_validator schema(ddwaf::test::test_directory + "/../schema/actions.json");
+    auto error = schema.validate(result.c_str());
     if (error) {
         return ::testing::AssertionFailure() << *error;
     }

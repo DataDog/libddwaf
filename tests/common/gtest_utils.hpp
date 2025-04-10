@@ -88,8 +88,10 @@ template <> struct as_if<ddwaf::test::action_map, void> {
 
 } // namespace YAML
 
-::testing::AssertionResult ValidateSchema(const std::string &result);
+::testing::AssertionResult ValidateEventSchema(const std::string &result);
 ::testing::AssertionResult ValidateSchemaSchema(rapidjson::Document &doc);
+::testing::AssertionResult ValidateDiagnosticsSchema(const ddwaf_object &diagnostics);
+::testing::AssertionResult ValidateActionsSchema(const std::string &result);
 
 class WafResultActionMatcher {
 public:
@@ -173,7 +175,7 @@ std::list<ddwaf::test::event::match> from_matches(
 #define EXPECT_EVENTS(result, ...)                                                                 \
     {                                                                                              \
         auto data = ddwaf::test::object_to_json(result.events);                                    \
-        EXPECT_TRUE(ValidateSchema(data));                                                         \
+        EXPECT_TRUE(ValidateEventSchema(data));                                                    \
         YAML::Node doc = YAML::Load(data.c_str());                                                 \
         auto events = doc.as<std::list<ddwaf::test::event>>();                                     \
         EXPECT_THAT(events, WithEvents({__VA_ARGS__}));                                            \
@@ -194,6 +196,7 @@ std::list<ddwaf::test::event::match> from_matches(
 #define EXPECT_ACTIONS(result, ...)                                                                \
     {                                                                                              \
         auto data = ddwaf::test::object_to_json(result.actions);                                   \
+        EXPECT_TRUE(ValidateActionsSchema(data));                                                  \
         YAML::Node doc = YAML::Load(data.c_str());                                                 \
         auto obtained = doc.as<ddwaf::test::action_map>();                                         \
         EXPECT_THAT(obtained, WithActions(__VA_ARGS__));                                           \
