@@ -19,7 +19,6 @@
 #include "matcher/base.hpp"
 #include "object_store.hpp"
 #include "rule.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -29,7 +28,7 @@ using verdict_type = rule_module::verdict_type;
 std::pair<std::optional<event>, verdict_type> eval_rule(const core_rule &rule,
     const object_store &store, core_rule::cache_type &cache,
     const exclusion::context_policy &policy, const matcher_mapper &dynamic_matchers,
-    const object_limits &limits, ddwaf::timer &deadline)
+    ddwaf::timer &deadline)
 {
     const auto &id = rule.get_id();
     auto verdict = rule.get_verdict();
@@ -65,7 +64,7 @@ std::pair<std::optional<event>, verdict_type> eval_rule(const core_rule &rule,
 
     try {
         std::optional<event> event;
-        event = rule.match(store, cache, exclusion.objects, dynamic_matchers, limits, deadline);
+        event = rule.match(store, cache, exclusion.objects, dynamic_matchers, deadline);
 
         if (event.has_value()) {
             event->action_override = action_override;
@@ -90,8 +89,7 @@ ddwaf::timer &rule_module::get_deadline(ddwaf::timer &deadline) const
 
 verdict_type rule_module::eval_with_collections(std::vector<event> &events, object_store &store,
     cache_type &cache, const exclusion::context_policy &exclusion,
-    const matcher_mapper &dynamic_matchers, const object_limits &limits,
-    ddwaf::timer &deadline) const
+    const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const
 {
     verdict_type final_verdict = verdict_type::none;
     for (const auto &collection : collections_) {
@@ -111,8 +109,8 @@ verdict_type rule_module::eval_with_collections(std::vector<event> &events, obje
 
         for (std::size_t i = collection.begin; i < collection.end; ++i) {
             const auto &rule = *rules_[i];
-            auto [event, verdict] = eval_rule(
-                rule, store, cache.rules[i], exclusion, dynamic_matchers, limits, deadline);
+            auto [event, verdict] =
+                eval_rule(rule, store, cache.rules[i], exclusion, dynamic_matchers, deadline);
             if (event.has_value()) {
                 collection_cache.type = verdict;
                 collection_cache.ephemeral = event->ephemeral;
@@ -134,7 +132,7 @@ verdict_type rule_module::eval_with_collections(std::vector<event> &events, obje
 
 verdict_type rule_module::eval(std::vector<event> &events, object_store &store, cache_type &cache,
     const exclusion::context_policy &exclusion, const matcher_mapper &dynamic_matchers,
-    const object_limits &limits, ddwaf::timer &deadline) const
+    ddwaf::timer &deadline) const
 {
     auto &apt_deadline = get_deadline(deadline);
 
@@ -144,8 +142,8 @@ verdict_type rule_module::eval(std::vector<event> &events, object_store &store, 
             const auto &rule = *rules_[i];
             auto &rule_cache = cache.rules[i];
 
-            auto [event, verdict] = eval_rule(
-                rule, store, rule_cache, exclusion, dynamic_matchers, limits, apt_deadline);
+            auto [event, verdict] =
+                eval_rule(rule, store, rule_cache, exclusion, dynamic_matchers, apt_deadline);
             if (event.has_value()) {
                 events.emplace_back(std::move(*event));
                 DDWAF_DEBUG("Found event on rule {}", rule.get_id());
@@ -158,7 +156,6 @@ verdict_type rule_module::eval(std::vector<event> &events, object_store &store, 
         return final_verdict;
     }
 
-    return eval_with_collections(
-        events, store, cache, exclusion, dynamic_matchers, limits, apt_deadline);
+    return eval_with_collections(events, store, cache, exclusion, dynamic_matchers, apt_deadline);
 }
 } // namespace ddwaf

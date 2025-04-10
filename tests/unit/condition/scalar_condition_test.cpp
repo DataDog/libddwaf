@@ -40,17 +40,14 @@ TEST(TestScalarCondition, NoMatch)
     scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_invalid(&tmp));
+    auto root = owned_object::make_map({{"server.request.uri.raw", owned_object{}}});
 
     object_store store;
-    store.insert(root);
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 }
@@ -60,17 +57,14 @@ TEST(TestScalarCondition, Timeout)
     scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_invalid(&tmp));
+    auto root = owned_object::make_map({{"server.request.uri.raw", owned_object{}}});
 
     object_store store;
-    store.insert(root);
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
-    EXPECT_THROW(cond.eval(cache, store, {}, {}, {}, deadline), ddwaf::timeout_exception);
+    EXPECT_THROW(cond.eval(cache, store, {}, {}, deadline), ddwaf::timeout_exception);
 }
 
 TEST(TestScalarCondition, SimpleMatch)
@@ -78,17 +72,14 @@ TEST(TestScalarCondition, SimpleMatch)
     scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_string(&tmp, "hello"));
+    auto root = owned_object::make_map({{"server.request.uri.raw", "hello"}});
 
     object_store store;
-    store.insert(root);
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 }
@@ -101,30 +92,25 @@ TEST(TestScalarCondition, CachedMatch)
     ddwaf::timer deadline{2s};
     condition_cache cache;
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_string(&tmp, "hello"));
+    auto root = owned_object::make_map({{"server.request.uri.raw", "hello"}});
 
     {
         object_store store;
-        store.insert(root, object_store::attribute::none, nullptr);
+        store.insert(root, object_store::attribute::none);
 
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         ASSERT_FALSE(res.ephemeral);
     }
 
     {
         object_store store;
-        store.insert(root, object_store::attribute::none, nullptr);
+        store.insert(root, object_store::attribute::none);
 
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome);
         ASSERT_FALSE(res.ephemeral);
     }
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestScalarCondition, SimpleMatchOnKeys)
@@ -135,20 +121,15 @@ TEST(TestScalarCondition, SimpleMatchOnKeys)
     scalar_condition cond{
         std::make_unique<matcher::regex_match>(".*", 0, true), {}, {std::move(param)}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object map;
-    ddwaf_object_map(&map);
-    ddwaf_object_map_add(&map, "hello", ddwaf_object_string(&tmp, "hello"));
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", &map);
+    auto root = owned_object::make_map(
+        {{"server.request.uri.raw", owned_object::make_map({{"hello", "hello"}})}});
 
     object_store store;
-    store.insert(root);
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 }
@@ -158,20 +139,17 @@ TEST(TestScalarCondition, SimpleEphemeralMatch)
     scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_string(&tmp, "hello"));
+    auto root = owned_object::make_map({{"server.request.uri.raw", "hello"}});
 
     object_store store;
     {
         auto scope = store.get_eval_scope();
 
-        store.insert(root, object_store::attribute::ephemeral, nullptr);
+        store.insert(root.clone(), object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         ASSERT_TRUE(res.ephemeral);
     }
@@ -179,16 +157,14 @@ TEST(TestScalarCondition, SimpleEphemeralMatch)
     {
         auto scope = store.get_eval_scope();
 
-        store.insert(root, object_store::attribute::ephemeral, nullptr);
+        store.insert(std::move(root), object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         ASSERT_TRUE(res.ephemeral);
     }
-
-    ddwaf_object_free(&root);
 }
 
 } // namespace

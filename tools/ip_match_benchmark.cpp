@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
     std::string rule_str = read_file(argv[1]);
     auto rule = YAML::Load(rule_str).as<ddwaf_object>();
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ddwaf_object_free(&rule);
     if (handle == nullptr) {
