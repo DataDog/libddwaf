@@ -53,7 +53,7 @@ public:
 
         auto data = ddwaf::test::object_to_json(ret.events);
         if (!HasFailure()) {
-            EXPECT_TRUE(ValidateSchema(data));
+            EXPECT_TRUE(ValidateEventSchema(data));
         }
     }
 
