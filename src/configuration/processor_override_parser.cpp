@@ -43,10 +43,6 @@ processor_override_spec parse_override(const raw_configuration::map &node)
     }
 
     auto scanners_target_array = at<raw_configuration::vector>(node, "scanners");
-    if (scanners_target_array.empty()) {
-        throw ddwaf::parsing_error("processor override without side-effects");
-    }
-
     current.scanners.reserve(scanners_target_array.size());
     for (const auto &target : scanners_target_array) {
         auto target_spec = parse_reference(static_cast<raw_configuration::map>(target));

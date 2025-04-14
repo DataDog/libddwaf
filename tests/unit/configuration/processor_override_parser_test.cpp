@@ -165,26 +165,24 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithoutScanners)
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
-        EXPECT_EQ(loaded.size(), 0);
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("index:0"), loaded.end());
 
         auto failed = at<raw_configuration::string_set>(root_map, "failed");
-        EXPECT_EQ(failed.size(), 1);
-        EXPECT_NE(failed.find("index:0"), failed.end());
+        EXPECT_EQ(failed.size(), 0);
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
-        EXPECT_EQ(errors.size(), 1);
-
-        auto it = errors.find("processor override without side-effects");
-        EXPECT_NE(it, errors.end());
-
-        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
-        EXPECT_EQ(error_rules.size(), 1);
-        EXPECT_NE(error_rules.find("index:0"), error_rules.end());
+        EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
     }
 
-    EXPECT_TRUE(change.empty());
+    EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.content, change_set::processor_overrides);
+
+    EXPECT_EQ(change.processor_overrides.size(), 1);
+    EXPECT_EQ(cfg.processor_overrides.size(), 1);
+
     EXPECT_TRUE(change.actions.empty());
     EXPECT_TRUE(change.base_rules.empty());
     EXPECT_TRUE(change.user_rules.empty());
@@ -196,7 +194,6 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithoutScanners)
     EXPECT_TRUE(change.scanners.empty());
     EXPECT_TRUE(change.rule_overrides_by_id.empty());
     EXPECT_TRUE(change.rule_overrides_by_tags.empty());
-    EXPECT_TRUE(change.processor_overrides.empty());
 
     EXPECT_TRUE(cfg.actions.empty());
     EXPECT_TRUE(cfg.base_rules.empty());
@@ -209,7 +206,6 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithoutScanners)
     EXPECT_TRUE(cfg.scanners.empty());
     EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
     EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
-    EXPECT_TRUE(cfg.processor_overrides.empty());
 }
 
 TEST(TestProcessorOverrideParser, ParseOverrideWithScannerById)
@@ -245,6 +241,7 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithScannerById)
     }
 
     EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.content, change_set::processor_overrides);
 
     EXPECT_EQ(change.processor_overrides.size(), 1);
     EXPECT_EQ(cfg.processor_overrides.size(), 1);
@@ -307,6 +304,7 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithScannerByTags)
     }
 
     EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.content, change_set::processor_overrides);
 
     EXPECT_EQ(change.processor_overrides.size(), 1);
     EXPECT_EQ(cfg.processor_overrides.size(), 1);
