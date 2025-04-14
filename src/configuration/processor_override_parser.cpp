@@ -28,31 +28,29 @@ processor_override_spec parse_override(const raw_configuration::map &node)
     // Note that ID is a duplicate field and will be deprecated at some point
     processor_override_spec current;
 
-    auto target_array = at<raw_configuration::vector>(node, "target", {});
-    if (!target_array.empty()) {
-        current.targets.reserve(target_array.size());
-
-        for (const auto &target : target_array) {
-            auto target_spec = parse_reference(static_cast<raw_configuration::map>(target));
-            current.targets.emplace_back(std::move(target_spec));
-        }
-    } else {
-        // Since the target array is empty, the ID is mandatory
-        // NOLINTNEXTLINE(hicpp-use-emplace,modernize-use-emplace)
-        current.targets.emplace_back(reference_spec{
-            .type = reference_type::id, .ref_id = at<std::string>(node, "id"), .tags = {}});
+    auto target_array = at<raw_configuration::vector>(node, "target");
+    if (target_array.empty()) {
+        throw ddwaf::parsing_error("processor override without targets");
     }
 
-    auto scanners_target_array = at<raw_configuration::vector>(node, "scanners", {});
-    if (!scanners_target_array.empty()) {
-        for (const auto &target : scanners_target_array) {
-            auto target_spec = parse_reference(static_cast<raw_configuration::map>(target));
-            current.scanners.emplace_back(std::move(target_spec));
+    current.targets.reserve(target_array.size());
+    for (const auto &target : target_array) {
+        auto target_spec = parse_reference(static_cast<raw_configuration::map>(target));
+        if (target_spec.type == reference_type::tags) {
+            throw ddwaf::parsing_error("processor override with target by tags not supported");
         }
+        current.targets.emplace_back(std::move(target_spec));
     }
 
-    if (current.targets.empty() && current.scanners.empty()) {
+    auto scanners_target_array = at<raw_configuration::vector>(node, "scanners");
+    if (scanners_target_array.empty()) {
         throw ddwaf::parsing_error("processor override without side-effects");
+    }
+
+    current.scanners.reserve(scanners_target_array.size());
+    for (const auto &target : scanners_target_array) {
+        auto target_spec = parse_reference(static_cast<raw_configuration::map>(target));
+        current.scanners.emplace_back(std::move(target_spec));
     }
 
     return current;
