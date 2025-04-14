@@ -38,8 +38,7 @@ processor_override_spec parse_override(const raw_configuration::map &node)
         }
     } else {
         // Since the target array is empty, the ID is mandatory
-        current.targets.emplace_back(reference_spec{
-            .type = reference_type::id, .ref_id = at<std::string>(node, "id"), .tags = {}});
+        current.targets.emplace_back(reference_type::id, at<std::string>(node, "id"), decltype(reference_spec::tags){});
     }
 
     auto scanners_target_array = at<raw_configuration::vector>(node, "scanners", {});

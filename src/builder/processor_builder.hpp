@@ -29,6 +29,8 @@ public:
         return true;
     }
 
+    [[nodiscard]] std::string_view get_id() const { return id_; }
+
 protected:
     std::string id_;
     processor_spec spec_;

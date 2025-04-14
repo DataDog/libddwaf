@@ -178,29 +178,34 @@ std::shared_ptr<ruleset> ruleset_builder::build(
 
     // Generate new processors
     if (!preprocessors_ || !postprocessors_ || contains(current_changes, processors_update)) {
-        // TODO skip all this if there are no overrides
-
-        // Since processors don't have tags, we can use a hash table instead
-        std::unordered_map<std::string_view, processor_builder *> proc_builder_index;
-
         // Generate builders
         std::vector<processor_builder> preproc_builders;
         std::vector<processor_builder> postproc_builders;
         for (const auto &[id, spec] : global_config.processors) {
             if (spec.evaluate) {
                 preproc_builders.emplace_back(id, spec);
-                proc_builder_index.emplace(id, &preproc_builders.back());
             } else {
                 postproc_builders.emplace_back(id, spec);
-                proc_builder_index.emplace(id, &postproc_builders.back());
             }
+        }
+
+        // Since processors don't have tags, we can use a hash table instead
+        std::unordered_map<std::string_view, processor_builder *> proc_builder_index;
+        proc_builder_index.reserve(preproc_builders.size() + postproc_builders.size());
+        for (auto &builder : preproc_builders) {
+            proc_builder_index.emplace(builder.get_id(), &builder);
+        }
+        for (auto &builder : postproc_builders) {
+            proc_builder_index.emplace(builder.get_id(), &builder);
         }
 
         // Apply overrides
         for (const auto &[id, ovrd] : global_config.processor_overrides) {
             for (const auto &target : ovrd.targets) {
-                auto &builder = proc_builder_index[target.ref_id];
-                builder->apply_override(ovrd);
+                auto builder_it = proc_builder_index.find(target.ref_id);
+                if (builder_it != proc_builder_index.end()) {
+                    builder_it->second->apply_override(ovrd);
+                }
             }
         }
 
