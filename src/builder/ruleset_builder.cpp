@@ -7,6 +7,8 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -62,11 +64,12 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     const configuration_spec &global_config, change_set current_changes)
 {
     constexpr static change_set base_rule_update =
-        change_set::rules | change_set::overrides | change_set::actions;
+        change_set::rules | change_set::rule_overrides | change_set::actions;
     constexpr static change_set custom_rule_update = change_set::custom_rules | change_set::actions;
     constexpr static change_set filters_update =
         base_rule_update | custom_rule_update | change_set::filters;
-    constexpr static change_set processors_update = change_set::processors | change_set::scanners;
+    constexpr static change_set processors_update =
+        change_set::processors | change_set::scanners | change_set::processor_overrides;
 
     if (!actions_ || contains(current_changes, change_set::actions)) {
         action_mapper_builder mapper_builder;
@@ -92,14 +95,14 @@ std::shared_ptr<ruleset> ruleset_builder::build(
         }
 
         // Overrides only impact base rules since user rules can already be modified by the user
-        for (const auto &[id, ovrd] : global_config.overrides_by_tags) {
+        for (const auto &[id, ovrd] : global_config.rule_overrides_by_tags) {
             auto rule_builder_targets = resolve_references(ovrd.targets, rule_builder_index);
             for (const auto &rule_builder_ptr : rule_builder_targets) {
                 rule_builder_ptr->apply_override(ovrd);
             }
         }
 
-        for (const auto &[id, ovrd] : global_config.overrides_by_id) {
+        for (const auto &[id, ovrd] : global_config.rule_overrides_by_id) {
             auto rule_builder_targets = resolve_references(ovrd.targets, rule_builder_index);
             for (const auto &rule_builder_ptr : rule_builder_targets) {
                 rule_builder_ptr->apply_override(ovrd);
@@ -175,16 +178,45 @@ std::shared_ptr<ruleset> ruleset_builder::build(
 
     // Generate new processors
     if (!preprocessors_ || !postprocessors_ || contains(current_changes, processors_update)) {
-        std::vector<std::unique_ptr<base_processor>> preprocessors;
-        std::vector<std::unique_ptr<base_processor>> postprocessors;
+        // TODO skip all this if there are no overrides
+
+        // Since processors don't have tags, we can use a hash table instead
+        std::unordered_map<std::string_view, processor_builder *> proc_builder_index;
+
+        // Generate builders
+        std::vector<processor_builder> preproc_builders;
+        std::vector<processor_builder> postproc_builders;
         for (const auto &[id, spec] : global_config.processors) {
-            auto proc = processor_builder::build(id, spec, scanner_index_);
             if (spec.evaluate) {
-                preprocessors.emplace_back(std::move(proc));
+                preproc_builders.emplace_back(id, spec);
+                proc_builder_index.emplace(id, &preproc_builders.back());
             } else {
-                postprocessors.emplace_back(std::move(proc));
+                postproc_builders.emplace_back(id, spec);
+                proc_builder_index.emplace(id, &postproc_builders.back());
             }
         }
+
+        // Apply overrides
+        for (const auto &[id, ovrd] : global_config.processor_overrides) {
+            for (const auto &target : ovrd.targets) {
+                auto &builder = proc_builder_index[target.ref_id];
+                builder->apply_override(ovrd);
+            }
+        }
+
+        std::vector<std::unique_ptr<base_processor>> preprocessors;
+        std::vector<std::unique_ptr<base_processor>> postprocessors;
+
+        preprocessors.reserve(preproc_builders.size());
+        postprocessors.reserve(postproc_builders.size());
+
+        for (auto &builder : preproc_builders) {
+            preprocessors.emplace_back(builder.build(scanner_index_));
+        }
+        for (auto &builder : postproc_builders) {
+            postprocessors.emplace_back(builder.build(scanner_index_));
+        }
+
         preprocessors_ = std::make_shared<const std::vector<std::unique_ptr<base_processor>>>(
             std::move(preprocessors));
         postprocessors_ = std::make_shared<const std::vector<std::unique_ptr<base_processor>>>(

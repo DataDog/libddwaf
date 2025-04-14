@@ -21,6 +21,7 @@
 #include "configuration/data_parser.hpp"
 #include "configuration/exclusion_parser.hpp"
 #include "configuration/legacy_rule_parser.hpp"
+#include "configuration/processor_override_parser.hpp"
 #include "configuration/processor_parser.hpp"
 #include "configuration/rule_override_parser.hpp"
 #include "configuration/rule_parser.hpp"
@@ -128,15 +129,30 @@ void configuration_manager::load(
 
     it = root.find("rules_override");
     if (it != root.end()) {
-        DDWAF_DEBUG("Parsing overrides");
+        DDWAF_DEBUG("Parsing rule overrides");
         auto &section = info.add_section("rules_override");
         try {
             auto overrides = static_cast<raw_configuration::vector>(it->second);
             if (!overrides.empty()) {
-                parse_overrides(overrides, collector, section);
+                parse_rule_overrides(overrides, collector, section);
             }
         } catch (const std::exception &e) {
-            DDWAF_WARN("Failed to parse overrides: {}", e.what());
+            DDWAF_WARN("Failed to parse rule overrides: {}", e.what());
+            section.set_error(e.what());
+        }
+    }
+
+    it = root.find("processor_override");
+    if (it != root.end()) {
+        DDWAF_DEBUG("Parsing processor overrides");
+        auto &section = info.add_section("processor_override");
+        try {
+            auto overrides = static_cast<raw_configuration::vector>(it->second);
+            if (!overrides.empty()) {
+                parse_processor_overrides(overrides, collector, section);
+            }
+        } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse processor overrides: {}", e.what());
             section.set_error(e.what());
         }
     }
@@ -208,9 +224,14 @@ void configuration_manager::remove_config(const configuration_change_spec &cfg)
     for (const auto &id : cfg.user_rules) { global_config_.user_rules.erase(id); }
     for (const auto &id : cfg.rule_filters) { global_config_.rule_filters.erase(id); }
     for (const auto &id : cfg.input_filters) { global_config_.input_filters.erase(id); }
-    for (const auto &id : cfg.overrides_by_id) { global_config_.overrides_by_id.erase(id); }
-    for (const auto &id : cfg.overrides_by_tags) { global_config_.overrides_by_tags.erase(id); }
+    for (const auto &id : cfg.rule_overrides_by_id) {
+        global_config_.rule_overrides_by_id.erase(id);
+    }
+    for (const auto &id : cfg.rule_overrides_by_tags) {
+        global_config_.rule_overrides_by_tags.erase(id);
+    }
     for (const auto &id : cfg.processors) { global_config_.processors.erase(id); }
+    for (const auto &id : cfg.processor_overrides) { global_config_.processor_overrides.erase(id); }
     for (const auto &id : cfg.scanners) { global_config_.scanners.erase(id); }
     for (const auto &id : cfg.actions) { global_config_.actions.erase(id); }
     for (const auto &[data_id, id] : cfg.rule_data) {

@@ -14,9 +14,24 @@
 
 namespace ddwaf {
 
-struct processor_builder {
-    static std::unique_ptr<base_processor> build(
-        const std::string &id, const processor_spec &spec, const indexer<const scanner> &scanners);
+class processor_builder {
+public:
+    processor_builder(std::string id, processor_spec spec)
+        : id_(std::move(id)), spec_(std::move(spec))
+    {}
+
+    std::unique_ptr<base_processor> build(const indexer<const scanner> &scanners);
+
+    bool apply_override(const processor_override_spec &ovrd)
+    {
+        // TODO error if processor doesn't support scanners
+        spec_.scanners = ovrd.scanners;
+        return true;
+    }
+
+protected:
+    std::string id_;
+    processor_spec spec_;
 };
 
 } // namespace ddwaf
