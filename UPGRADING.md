@@ -87,7 +87,7 @@ The addition or update may fail in certain circumstances, as denoted by the retu
 In contrast, the removal process only requires the path and it's performed through the `ddwaf_builder_remove_config` function, as can be seen on the example below:
 
 ```c
-bool result = ddwaf_builder_remove_config(&builder, path, path_len, &configuration, &diagnostics);
+bool result = ddwaf_builder_remove_config(&builder, path, path_len);
 if (!result) { /* Non critical error, possibly indicating a bug in the user's implementation */}
 ```
 
