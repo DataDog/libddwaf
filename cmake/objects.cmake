@@ -109,6 +109,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/unicode_groups.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/util/rune.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/util/strutil.cc
+    ${libddwaf_SOURCE_DIR}/src/vendor/simdjson/simdjson.cpp
 )
 
 set(LIBDDWAF_PUBLIC_INCLUDES ${libddwaf_SOURCE_DIR}/include)
@@ -121,6 +122,7 @@ set(LIBDDWAF_PRIVATE_INCLUDES
     ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick/
     ${libddwaf_SOURCE_DIR}/src/vendor/utf8proc/
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/
+    ${libddwaf_SOURCE_DIR}/src/vendor/simdjson/
 )
 
 function(gen_objects target_name)
