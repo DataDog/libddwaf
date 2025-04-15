@@ -142,10 +142,10 @@ void configuration_manager::load(
         }
     }
 
-    it = root.find("processor_override");
+    it = root.find("processor_overrides");
     if (it != root.end()) {
         DDWAF_DEBUG("Parsing processor overrides");
-        auto &section = info.add_section("processor_override");
+        auto &section = info.add_section("processor_overrides");
         try {
             auto overrides = static_cast<raw_configuration::vector>(it->second);
             if (!overrides.empty()) {
