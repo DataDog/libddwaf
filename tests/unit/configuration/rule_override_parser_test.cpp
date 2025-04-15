@@ -23,7 +23,7 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutSideEffects)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_overrides(override_array, collector, section);
+    parse_rule_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -62,8 +62,8 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutSideEffects)
     EXPECT_TRUE(change.input_filters.empty());
     EXPECT_TRUE(change.processors.empty());
     EXPECT_TRUE(change.scanners.empty());
-    EXPECT_TRUE(change.overrides_by_id.empty());
-    EXPECT_TRUE(change.overrides_by_tags.empty());
+    EXPECT_TRUE(change.rule_overrides_by_id.empty());
+    EXPECT_TRUE(change.rule_overrides_by_tags.empty());
 
     EXPECT_TRUE(cfg.actions.empty());
     EXPECT_TRUE(cfg.base_rules.empty());
@@ -74,8 +74,8 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutSideEffects)
     EXPECT_TRUE(cfg.input_filters.empty());
     EXPECT_TRUE(cfg.processors.empty());
     EXPECT_TRUE(cfg.scanners.empty());
-    EXPECT_TRUE(cfg.overrides_by_id.empty());
-    EXPECT_TRUE(cfg.overrides_by_tags.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
 }
 
 TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutTargets)
@@ -87,7 +87,7 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutTargets)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_overrides(override_array, collector, section);
+    parse_rule_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -126,8 +126,8 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutTargets)
     EXPECT_TRUE(change.input_filters.empty());
     EXPECT_TRUE(change.processors.empty());
     EXPECT_TRUE(change.scanners.empty());
-    EXPECT_TRUE(change.overrides_by_id.empty());
-    EXPECT_TRUE(change.overrides_by_tags.empty());
+    EXPECT_TRUE(change.rule_overrides_by_id.empty());
+    EXPECT_TRUE(change.rule_overrides_by_tags.empty());
 
     EXPECT_TRUE(cfg.actions.empty());
     EXPECT_TRUE(cfg.base_rules.empty());
@@ -138,8 +138,8 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideWithoutTargets)
     EXPECT_TRUE(cfg.input_filters.empty());
     EXPECT_TRUE(cfg.processors.empty());
     EXPECT_TRUE(cfg.scanners.empty());
-    EXPECT_TRUE(cfg.overrides_by_id.empty());
-    EXPECT_TRUE(cfg.overrides_by_tags.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
 }
 
 TEST(TestRuleOverrideParser, ParseRuleOverride)
@@ -152,7 +152,7 @@ TEST(TestRuleOverrideParser, ParseRuleOverride)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_overrides(override_array, collector, section);
+    parse_rule_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -174,13 +174,13 @@ TEST(TestRuleOverrideParser, ParseRuleOverride)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(change.overrides_by_id.size(), 0);
-    EXPECT_EQ(change.overrides_by_tags.size(), 1);
+    EXPECT_EQ(change.rule_overrides_by_id.size(), 0);
+    EXPECT_EQ(change.rule_overrides_by_tags.size(), 1);
 
-    EXPECT_EQ(cfg.overrides_by_id.size(), 0);
-    EXPECT_EQ(cfg.overrides_by_tags.size(), 1);
+    EXPECT_EQ(cfg.rule_overrides_by_id.size(), 0);
+    EXPECT_EQ(cfg.rule_overrides_by_tags.size(), 1);
 
-    auto &ovrd = cfg.overrides_by_tags.begin()->second;
+    auto &ovrd = cfg.rule_overrides_by_tags.begin()->second;
     EXPECT_FALSE(ovrd.enabled.has_value());
     EXPECT_TRUE(ovrd.actions.has_value());
     EXPECT_EQ(ovrd.actions->size(), 1);
@@ -204,7 +204,7 @@ TEST(TestRuleOverrideParser, ParseMultipleRuleOverrides)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_overrides(override_array, collector, section);
+    parse_rule_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -227,14 +227,14 @@ TEST(TestRuleOverrideParser, ParseMultipleRuleOverrides)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(change.overrides_by_id.size(), 1);
-    EXPECT_EQ(change.overrides_by_tags.size(), 1);
+    EXPECT_EQ(change.rule_overrides_by_id.size(), 1);
+    EXPECT_EQ(change.rule_overrides_by_tags.size(), 1);
 
-    EXPECT_EQ(cfg.overrides_by_id.size(), 1);
-    EXPECT_EQ(cfg.overrides_by_tags.size(), 1);
+    EXPECT_EQ(cfg.rule_overrides_by_id.size(), 1);
+    EXPECT_EQ(cfg.rule_overrides_by_tags.size(), 1);
 
     {
-        auto &ovrd = cfg.overrides_by_tags.begin()->second;
+        auto &ovrd = cfg.rule_overrides_by_tags.begin()->second;
         EXPECT_FALSE(ovrd.enabled.has_value());
         EXPECT_TRUE(ovrd.actions.has_value());
         EXPECT_EQ(ovrd.actions->size(), 1);
@@ -249,7 +249,7 @@ TEST(TestRuleOverrideParser, ParseMultipleRuleOverrides)
     }
 
     {
-        auto &ovrd = cfg.overrides_by_id.begin()->second;
+        auto &ovrd = cfg.rule_overrides_by_id.begin()->second;
         EXPECT_TRUE(ovrd.enabled.has_value());
         EXPECT_FALSE(*ovrd.enabled);
         EXPECT_FALSE(ovrd.actions.has_value());
@@ -272,7 +272,7 @@ TEST(TestRuleOverrideParser, ParseInconsistentRuleOverride)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_overrides(override_array, collector, section);
+    parse_rule_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -311,8 +311,8 @@ TEST(TestRuleOverrideParser, ParseInconsistentRuleOverride)
     EXPECT_TRUE(change.input_filters.empty());
     EXPECT_TRUE(change.processors.empty());
     EXPECT_TRUE(change.scanners.empty());
-    EXPECT_TRUE(change.overrides_by_id.empty());
-    EXPECT_TRUE(change.overrides_by_tags.empty());
+    EXPECT_TRUE(change.rule_overrides_by_id.empty());
+    EXPECT_TRUE(change.rule_overrides_by_tags.empty());
 
     EXPECT_TRUE(cfg.actions.empty());
     EXPECT_TRUE(cfg.base_rules.empty());
@@ -323,8 +323,8 @@ TEST(TestRuleOverrideParser, ParseInconsistentRuleOverride)
     EXPECT_TRUE(cfg.input_filters.empty());
     EXPECT_TRUE(cfg.processors.empty());
     EXPECT_TRUE(cfg.scanners.empty());
-    EXPECT_TRUE(cfg.overrides_by_id.empty());
-    EXPECT_TRUE(cfg.overrides_by_tags.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
 }
 
 TEST(TestRuleOverrideParser, ParseRuleOverrideForTags)
@@ -337,7 +337,7 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideForTags)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_overrides(override_array, collector, section);
+    parse_rule_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -359,13 +359,13 @@ TEST(TestRuleOverrideParser, ParseRuleOverrideForTags)
         ddwaf_object_free(&root);
     }
 
-    EXPECT_EQ(change.overrides_by_id.size(), 0);
-    EXPECT_EQ(change.overrides_by_tags.size(), 1);
+    EXPECT_EQ(change.rule_overrides_by_id.size(), 0);
+    EXPECT_EQ(change.rule_overrides_by_tags.size(), 1);
 
-    EXPECT_EQ(cfg.overrides_by_id.size(), 0);
-    EXPECT_EQ(cfg.overrides_by_tags.size(), 1);
+    EXPECT_EQ(cfg.rule_overrides_by_id.size(), 0);
+    EXPECT_EQ(cfg.rule_overrides_by_tags.size(), 1);
 
-    auto &ovrd = cfg.overrides_by_tags.begin()->second;
+    auto &ovrd = cfg.rule_overrides_by_tags.begin()->second;
     EXPECT_FALSE(ovrd.enabled.has_value());
     EXPECT_TRUE(ovrd.actions.has_value());
     EXPECT_EQ(ovrd.actions->size(), 1);
@@ -392,7 +392,7 @@ TEST(TestRuleOverrideParser, ParseInvalidTagsField)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_overrides(override_array, collector, section);
+    parse_rule_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -431,8 +431,8 @@ TEST(TestRuleOverrideParser, ParseInvalidTagsField)
     EXPECT_TRUE(change.input_filters.empty());
     EXPECT_TRUE(change.processors.empty());
     EXPECT_TRUE(change.scanners.empty());
-    EXPECT_TRUE(change.overrides_by_id.empty());
-    EXPECT_TRUE(change.overrides_by_tags.empty());
+    EXPECT_TRUE(change.rule_overrides_by_id.empty());
+    EXPECT_TRUE(change.rule_overrides_by_tags.empty());
 
     EXPECT_TRUE(cfg.actions.empty());
     EXPECT_TRUE(cfg.base_rules.empty());
@@ -443,8 +443,8 @@ TEST(TestRuleOverrideParser, ParseInvalidTagsField)
     EXPECT_TRUE(cfg.input_filters.empty());
     EXPECT_TRUE(cfg.processors.empty());
     EXPECT_TRUE(cfg.scanners.empty());
-    EXPECT_TRUE(cfg.overrides_by_id.empty());
-    EXPECT_TRUE(cfg.overrides_by_tags.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
 }
 
 } // namespace

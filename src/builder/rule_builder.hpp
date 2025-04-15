@@ -26,7 +26,7 @@ public:
     const std::unordered_map<std::string, std::string> &get_tags() const { return spec_.tags; }
     [[nodiscard]] bool is_enabled() const { return spec_.enabled; }
 
-    bool apply_override(const override_spec &ovrd)
+    bool apply_override(const rule_override_spec &ovrd)
     {
         if (ovrd.enabled.has_value()) {
             spec_.enabled = *ovrd.enabled;

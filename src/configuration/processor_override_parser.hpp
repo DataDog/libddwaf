@@ -2,7 +2,7 @@
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2021 Datadog, Inc.
+// Copyright 2025 Datadog, Inc.
 
 #pragma once
 
@@ -12,7 +12,7 @@
 
 namespace ddwaf {
 
-void parse_rule_overrides(const raw_configuration::vector &override_array,
+void parse_processor_overrides(const raw_configuration::vector &override_array,
     configuration_collector &cfg, ruleset_info::base_section_info &info);
 
 } // namespace ddwaf

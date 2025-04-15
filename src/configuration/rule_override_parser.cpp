@@ -24,10 +24,10 @@ namespace ddwaf {
 
 namespace {
 
-override_spec parse_override(const raw_configuration::map &node)
+rule_override_spec parse_override(const raw_configuration::map &node)
 {
     // Note that ID is a duplicate field and will be deprecated at some point
-    override_spec current;
+    rule_override_spec current;
     current.type = reference_type::none;
 
     auto it = node.find("enabled");
@@ -78,8 +78,8 @@ override_spec parse_override(const raw_configuration::map &node)
 
 } // namespace
 
-void parse_overrides(const raw_configuration::vector &override_array, configuration_collector &cfg,
-    ruleset_info::base_section_info &info)
+void parse_rule_overrides(const raw_configuration::vector &override_array,
+    configuration_collector &cfg, ruleset_info::base_section_info &info)
 {
     for (unsigned i = 0; i < override_array.size(); ++i) {
         const auto &node_param = override_array[i];
@@ -88,16 +88,16 @@ void parse_overrides(const raw_configuration::vector &override_array, configurat
             auto spec = parse_override(node);
             if (spec.type == reference_type::none) {
                 // This code is likely unreachable
-                DDWAF_WARN("Rule override with no targets");
+                DDWAF_WARN("Rule rule override with no targets");
                 info.add_failed(i, parser_error_severity::error, "rule override with no targets");
                 continue;
             }
 
-            DDWAF_DEBUG("Parsed override index:{}", i);
+            DDWAF_DEBUG("Parsed rule override index:{}", i);
             info.add_loaded(i);
             // We use a UUID since we want to have a unique identifier across
             // all configurations
-            cfg.emplace_override(uuidv4_generate_pseudo(), std::move(spec));
+            cfg.emplace_rule_override(uuidv4_generate_pseudo(), std::move(spec));
         } catch (const parsing_exception &e) {
             DDWAF_WARN("Failed to parse rule override: {}", e.what());
             info.add_failed(i, e.severity(), e.what());

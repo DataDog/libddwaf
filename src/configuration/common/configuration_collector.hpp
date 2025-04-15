@@ -60,16 +60,16 @@ public:
         }
     }
 
-    void emplace_override(std::string id, override_spec spec)
+    void emplace_rule_override(std::string id, rule_override_spec spec)
     {
-        change_.content |= change_set::overrides;
+        change_.content |= change_set::rule_overrides;
 
         if (spec.type == reference_type::id) {
-            change_.overrides_by_id.emplace(id);
-            config_.overrides_by_id.emplace(std::move(id), std::move(spec));
+            change_.rule_overrides_by_id.emplace(id);
+            config_.rule_overrides_by_id.emplace(std::move(id), std::move(spec));
         } else if (spec.type == reference_type::tags) {
-            change_.overrides_by_tags.emplace(id);
-            config_.overrides_by_tags.emplace(std::move(id), std::move(spec));
+            change_.rule_overrides_by_tags.emplace(id);
+            config_.rule_overrides_by_tags.emplace(std::move(id), std::move(spec));
         }
     }
 
@@ -95,6 +95,14 @@ public:
 
         change_.processors.emplace(id);
         config_.processors.emplace(std::move(id), std::move(spec));
+    }
+
+    void emplace_processor_override(std::string id, processor_override_spec spec)
+    {
+        change_.content |= change_set::processor_overrides;
+
+        change_.processor_overrides.emplace(id);
+        config_.processor_overrides.emplace(std::move(id), std::move(spec));
     }
 
     void emplace_scanner(std::string id, scanner scnr)

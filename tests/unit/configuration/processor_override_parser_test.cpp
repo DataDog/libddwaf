@@ -1,398 +1,29 @@
 // Unless explicitly stated otherwise all files in this repository are
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
-// This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2021 Datadog, Inc.
+// This product includes software developed at Datadog
+// (https://www.datadoghq.com/). Copyright 2025 Datadog, Inc.
 
 #include "common/gtest_utils.hpp"
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/raw_configuration.hpp"
-#include "configuration/data_parser.hpp"
+#include "configuration/processor_override_parser.hpp"
 
 using namespace ddwaf;
 
 namespace {
 
-TEST(TestExclusionDataParser, ParseIPData)
+TEST(TestProcessorOverrideParser, ParseOverrideWithoutTargets)
 {
-    auto object = yaml_to_object(
-        R"([{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
-    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
+    auto object = yaml_to_object(R"([{"target":[], "scanners":[]}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    parse_exclusion_data(input, collector, section);
-    ddwaf_object_free(&object);
-
-    {
-        raw_configuration root;
-        section.to_object(root);
-
-        auto root_map = static_cast<raw_configuration::map>(root);
-
-        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
-        EXPECT_EQ(loaded.size(), 1);
-        EXPECT_NE(loaded.find("ip_data"), loaded.end());
-
-        auto failed = at<raw_configuration::string_set>(root_map, "failed");
-        EXPECT_EQ(failed.size(), 0);
-
-        auto errors = at<raw_configuration::map>(root_map, "errors");
-        EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
-    }
-
-    EXPECT_FALSE(change.empty());
-    EXPECT_EQ(change.content, change_set::exclusion_data);
-    EXPECT_EQ(change.exclusion_data.size(), 1);
-
-    EXPECT_EQ(cfg.exclusion_data.size(), 1);
-    EXPECT_EQ(cfg.exclusion_data["ip_data"].type, data_type::ip_with_expiration);
-}
-
-TEST(TestExclusionDataParser, ParseStringData)
-{
-    auto object = yaml_to_object(
-        R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]}])");
-    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
-
-    configuration_spec cfg;
-    configuration_change_spec change;
-    configuration_collector collector{change, cfg};
-    ruleset_info::section_info section;
-    parse_exclusion_data(input, collector, section);
-    ddwaf_object_free(&object);
-
-    {
-        raw_configuration root;
-        section.to_object(root);
-
-        auto root_map = static_cast<raw_configuration::map>(root);
-
-        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
-        EXPECT_EQ(loaded.size(), 1);
-        EXPECT_NE(loaded.find("usr_data"), loaded.end());
-
-        auto failed = at<raw_configuration::string_set>(root_map, "failed");
-        EXPECT_EQ(failed.size(), 0);
-
-        auto errors = at<raw_configuration::map>(root_map, "errors");
-        EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
-    }
-
-    EXPECT_FALSE(change.empty());
-    EXPECT_EQ(change.content, change_set::exclusion_data);
-    EXPECT_EQ(change.exclusion_data.size(), 1);
-
-    EXPECT_EQ(cfg.exclusion_data.size(), 1);
-    EXPECT_EQ(cfg.exclusion_data["usr_data"].type, data_type::data_with_expiration);
-}
-
-TEST(TestExclusionDataParser, ParseMultipleData)
-{
-    auto object = yaml_to_object(
-        R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
-    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
-
-    configuration_spec cfg;
-    configuration_change_spec change;
-    configuration_collector collector{change, cfg};
-    ruleset_info::section_info section;
-    parse_exclusion_data(input, collector, section);
-    ddwaf_object_free(&object);
-
-    {
-        raw_configuration root;
-        section.to_object(root);
-
-        auto root_map = static_cast<raw_configuration::map>(root);
-
-        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
-        EXPECT_EQ(loaded.size(), 2);
-        EXPECT_NE(loaded.find("ip_data"), loaded.end());
-        EXPECT_NE(loaded.find("usr_data"), loaded.end());
-
-        auto failed = at<raw_configuration::string_set>(root_map, "failed");
-        EXPECT_EQ(failed.size(), 0);
-
-        auto errors = at<raw_configuration::map>(root_map, "errors");
-        EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
-    }
-
-    EXPECT_FALSE(change.empty());
-    EXPECT_EQ(change.content, change_set::exclusion_data);
-    EXPECT_EQ(change.exclusion_data.size(), 2);
-
-    EXPECT_EQ(cfg.exclusion_data.size(), 2);
-    EXPECT_EQ(cfg.exclusion_data["usr_data"].type, data_type::data_with_expiration);
-    EXPECT_EQ(cfg.exclusion_data["ip_data"].type, data_type::ip_with_expiration);
-}
-
-TEST(TestExclusionDataParser, ParseUnknownDataID)
-{
-    auto object = yaml_to_object(
-        R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
-    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
-
-    configuration_spec cfg;
-    configuration_change_spec change;
-    configuration_collector collector{change, cfg};
-    ruleset_info::section_info section;
-    parse_exclusion_data(input, collector, section);
-    ddwaf_object_free(&object);
-
-    {
-        raw_configuration root;
-        section.to_object(root);
-
-        auto root_map = static_cast<raw_configuration::map>(root);
-
-        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
-        EXPECT_EQ(loaded.size(), 2);
-        EXPECT_NE(loaded.find("ip_data"), loaded.end());
-        EXPECT_NE(loaded.find("usr_data"), loaded.end());
-
-        auto failed = at<raw_configuration::string_set>(root_map, "failed");
-        EXPECT_EQ(failed.size(), 0);
-
-        auto errors = at<raw_configuration::map>(root_map, "errors");
-        EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
-    }
-
-    EXPECT_FALSE(change.empty());
-    EXPECT_EQ(change.content, change_set::exclusion_data);
-    EXPECT_EQ(change.exclusion_data.size(), 2);
-
-    EXPECT_EQ(cfg.exclusion_data.size(), 2);
-    EXPECT_EQ(cfg.exclusion_data["ip_data"].type, data_type::ip_with_expiration);
-    EXPECT_EQ(cfg.exclusion_data["usr_data"].type, data_type::data_with_expiration);
-}
-
-TEST(TestExclusionDataParser, ParseUnsupportedTypes)
-{
-    auto object = yaml_to_object(
-        R"([{id: usr_data, type: blob_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: whatever, data: [{value: 192.168.1.1, expiration: 500}]}])");
-    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
-
-    configuration_spec cfg;
-    configuration_change_spec change;
-    configuration_collector collector{change, cfg};
-    ruleset_info::section_info section;
-    parse_exclusion_data(input, collector, section);
-    ddwaf_object_free(&object);
-
-    {
-        raw_configuration root;
-        section.to_object(root);
-
-        auto root_map = static_cast<raw_configuration::map>(root);
-
-        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
-        EXPECT_EQ(loaded.size(), 0);
-
-        auto failed = at<raw_configuration::string_set>(root_map, "failed");
-        EXPECT_EQ(failed.size(), 2);
-        EXPECT_NE(failed.find("ip_data"), failed.end());
-        EXPECT_NE(failed.find("usr_data"), failed.end());
-
-        auto errors = at<raw_configuration::map>(root_map, "errors");
-        EXPECT_EQ(errors.size(), 2);
-        {
-            auto it = errors.find("unknown type: 'blob_with_expiration'");
-            EXPECT_NE(it, errors.end());
-
-            auto error_rules = static_cast<raw_configuration::string_set>(it->second);
-            EXPECT_EQ(error_rules.size(), 1);
-            EXPECT_NE(error_rules.find("usr_data"), error_rules.end());
-        }
-
-        {
-            auto it = errors.find("unknown type: 'whatever'");
-            EXPECT_NE(it, errors.end());
-
-            auto error_rules = static_cast<raw_configuration::string_set>(it->second);
-            EXPECT_EQ(error_rules.size(), 1);
-            EXPECT_NE(error_rules.find("ip_data"), error_rules.end());
-        }
-
-        ddwaf_object_free(&root);
-    }
-
-    EXPECT_TRUE(change.empty());
-    EXPECT_TRUE(change.actions.empty());
-    EXPECT_TRUE(change.base_rules.empty());
-    EXPECT_TRUE(change.user_rules.empty());
-    EXPECT_TRUE(change.exclusion_data.empty());
-    EXPECT_TRUE(change.rule_data.empty());
-    EXPECT_TRUE(change.rule_filters.empty());
-    EXPECT_TRUE(change.input_filters.empty());
-    EXPECT_TRUE(change.processors.empty());
-    EXPECT_TRUE(change.scanners.empty());
-    EXPECT_TRUE(change.rule_overrides_by_id.empty());
-    EXPECT_TRUE(change.rule_overrides_by_tags.empty());
-
-    EXPECT_TRUE(cfg.actions.empty());
-    EXPECT_TRUE(cfg.base_rules.empty());
-    EXPECT_TRUE(cfg.user_rules.empty());
-    EXPECT_TRUE(cfg.exclusion_data.empty());
-    EXPECT_TRUE(cfg.rule_data.empty());
-    EXPECT_TRUE(cfg.rule_filters.empty());
-    EXPECT_TRUE(cfg.input_filters.empty());
-    EXPECT_TRUE(cfg.processors.empty());
-    EXPECT_TRUE(cfg.scanners.empty());
-    EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
-    EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
-}
-
-TEST(TestExclusionDataParser, ParseUnknownDataIDWithUnsupportedType)
-{
-    auto object = yaml_to_object(
-        R"([{id: usr_data, type: blob_with_expiration, data: [{value: user, expiration: 500}]}])");
-    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
-
-    configuration_spec cfg;
-    configuration_change_spec change;
-    configuration_collector collector{change, cfg};
-    ruleset_info::section_info section;
-    parse_exclusion_data(input, collector, section);
-    ddwaf_object_free(&object);
-
-    {
-        raw_configuration root;
-        section.to_object(root);
-
-        auto root_map = static_cast<raw_configuration::map>(root);
-
-        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
-        EXPECT_EQ(loaded.size(), 0);
-
-        auto failed = at<raw_configuration::string_set>(root_map, "failed");
-        EXPECT_EQ(failed.size(), 1);
-        EXPECT_NE(failed.find("usr_data"), failed.end());
-
-        auto errors = at<raw_configuration::map>(root_map, "errors");
-        EXPECT_EQ(errors.size(), 1);
-        auto it = errors.find("unknown type: 'blob_with_expiration'");
-        EXPECT_NE(it, errors.end());
-
-        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
-        EXPECT_EQ(error_rules.size(), 1);
-        EXPECT_NE(error_rules.find("usr_data"), error_rules.end());
-
-        ddwaf_object_free(&root);
-    }
-
-    EXPECT_TRUE(change.empty());
-    EXPECT_TRUE(change.actions.empty());
-    EXPECT_TRUE(change.base_rules.empty());
-    EXPECT_TRUE(change.user_rules.empty());
-    EXPECT_TRUE(change.exclusion_data.empty());
-    EXPECT_TRUE(change.rule_data.empty());
-    EXPECT_TRUE(change.rule_filters.empty());
-    EXPECT_TRUE(change.input_filters.empty());
-    EXPECT_TRUE(change.processors.empty());
-    EXPECT_TRUE(change.scanners.empty());
-    EXPECT_TRUE(change.rule_overrides_by_id.empty());
-    EXPECT_TRUE(change.rule_overrides_by_tags.empty());
-
-    EXPECT_TRUE(cfg.actions.empty());
-    EXPECT_TRUE(cfg.base_rules.empty());
-    EXPECT_TRUE(cfg.user_rules.empty());
-    EXPECT_TRUE(cfg.exclusion_data.empty());
-    EXPECT_TRUE(cfg.rule_data.empty());
-    EXPECT_TRUE(cfg.rule_filters.empty());
-    EXPECT_TRUE(cfg.input_filters.empty());
-    EXPECT_TRUE(cfg.processors.empty());
-    EXPECT_TRUE(cfg.scanners.empty());
-    EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
-    EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
-}
-
-TEST(TestExclusionDataParser, ParseMissingType)
-{
-    auto object =
-        yaml_to_object(R"([{id: ip_data, data: [{value: 192.168.1.1, expiration: 500}]}])");
-    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
-
-    configuration_spec cfg;
-    configuration_change_spec change;
-    configuration_collector collector{change, cfg};
-    ruleset_info::section_info section;
-    parse_exclusion_data(input, collector, section);
-    ddwaf_object_free(&object);
-
-    {
-        raw_configuration root;
-        section.to_object(root);
-
-        auto root_map = static_cast<raw_configuration::map>(root);
-
-        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
-        EXPECT_EQ(loaded.size(), 0);
-
-        auto failed = at<raw_configuration::string_set>(root_map, "failed");
-        EXPECT_EQ(failed.size(), 1);
-        EXPECT_NE(failed.find("ip_data"), failed.end());
-
-        auto errors = at<raw_configuration::map>(root_map, "errors");
-        EXPECT_EQ(errors.size(), 1);
-        auto it = errors.find("missing key 'type'");
-        EXPECT_NE(it, errors.end());
-
-        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
-        EXPECT_EQ(error_rules.size(), 1);
-        EXPECT_NE(error_rules.find("ip_data"), error_rules.end());
-
-        ddwaf_object_free(&root);
-    }
-
-    EXPECT_TRUE(change.empty());
-    EXPECT_TRUE(change.actions.empty());
-    EXPECT_TRUE(change.base_rules.empty());
-    EXPECT_TRUE(change.user_rules.empty());
-    EXPECT_TRUE(change.exclusion_data.empty());
-    EXPECT_TRUE(change.rule_data.empty());
-    EXPECT_TRUE(change.rule_filters.empty());
-    EXPECT_TRUE(change.input_filters.empty());
-    EXPECT_TRUE(change.processors.empty());
-    EXPECT_TRUE(change.scanners.empty());
-    EXPECT_TRUE(change.rule_overrides_by_id.empty());
-    EXPECT_TRUE(change.rule_overrides_by_tags.empty());
-
-    EXPECT_TRUE(cfg.actions.empty());
-    EXPECT_TRUE(cfg.base_rules.empty());
-    EXPECT_TRUE(cfg.user_rules.empty());
-    EXPECT_TRUE(cfg.exclusion_data.empty());
-    EXPECT_TRUE(cfg.rule_data.empty());
-    EXPECT_TRUE(cfg.rule_filters.empty());
-    EXPECT_TRUE(cfg.input_filters.empty());
-    EXPECT_TRUE(cfg.processors.empty());
-    EXPECT_TRUE(cfg.scanners.empty());
-    EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
-    EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
-}
-
-TEST(TestExclusionDataParser, ParseMissingID)
-{
-    auto object = yaml_to_object(
-        R"([{type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
-    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
-
-    configuration_spec cfg;
-    configuration_change_spec change;
-    configuration_collector collector{change, cfg};
-    ruleset_info::section_info section;
-    parse_exclusion_data(input, collector, section);
+    auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
+    parse_processor_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -410,7 +41,8 @@ TEST(TestExclusionDataParser, ParseMissingID)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 1);
-        auto it = errors.find("missing key 'id'");
+
+        auto it = errors.find("processor override without targets");
         EXPECT_NE(it, errors.end());
 
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
@@ -432,6 +64,140 @@ TEST(TestExclusionDataParser, ParseMissingID)
     EXPECT_TRUE(change.scanners.empty());
     EXPECT_TRUE(change.rule_overrides_by_id.empty());
     EXPECT_TRUE(change.rule_overrides_by_tags.empty());
+    EXPECT_TRUE(change.processor_overrides.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
+    EXPECT_TRUE(cfg.processor_overrides.empty());
+}
+
+TEST(TestProcessorOverrideParser, ParseOverrideWithTargetByTags)
+{
+    auto object = yaml_to_object(R"([{"target":[{"tags": {"type": "value"}}], "scanners":[]}])");
+
+    configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
+    parse_processor_overrides(override_array, collector, section);
+    ddwaf_object_free(&object);
+
+    {
+        raw_configuration root;
+        section.to_object(root);
+
+        auto root_map = static_cast<raw_configuration::map>(root);
+
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("index:0"), failed.end());
+
+        auto errors = at<raw_configuration::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+
+        auto it = errors.find("processor override with target by tags not supported");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("index:0"), error_rules.end());
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.rule_overrides_by_id.empty());
+    EXPECT_TRUE(change.rule_overrides_by_tags.empty());
+    EXPECT_TRUE(change.processor_overrides.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
+    EXPECT_TRUE(cfg.processor_overrides.empty());
+}
+
+TEST(TestProcessorOverrideParser, ParseOverrideWithoutScanners)
+{
+    auto object = yaml_to_object(R"([{"target":[{"id":"extract-content"}], "scanners":[]}])");
+
+    configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
+    parse_processor_overrides(override_array, collector, section);
+    ddwaf_object_free(&object);
+
+    {
+        raw_configuration root;
+        section.to_object(root);
+
+        auto root_map = static_cast<raw_configuration::map>(root);
+
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("index:0"), loaded.end());
+
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = at<raw_configuration::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.content, change_set::processor_overrides);
+
+    EXPECT_EQ(change.processor_overrides.size(), 1);
+    EXPECT_EQ(cfg.processor_overrides.size(), 1);
+
+    auto &ovrd = cfg.processor_overrides.begin()->second;
+    EXPECT_EQ(ovrd.targets.size(), 1);
+    EXPECT_EQ(ovrd.scanners.size(), 0);
+
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.rule_overrides_by_id.empty());
+    EXPECT_TRUE(change.rule_overrides_by_tags.empty());
 
     EXPECT_TRUE(cfg.actions.empty());
     EXPECT_TRUE(cfg.base_rules.empty());
@@ -446,16 +212,17 @@ TEST(TestExclusionDataParser, ParseMissingID)
     EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
 }
 
-TEST(TestExclusionDataParser, ParseMissingData)
+TEST(TestProcessorOverrideParser, ParseOverrideWithScannerById)
 {
-    auto object = yaml_to_object(R"([{id: ip_data, type: ip_with_expiration}])");
-    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
+    auto object = yaml_to_object(
+        R"([{"target":[{"id":"extract-content"}], "scanners": [{"id": "scanner-001"}]}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
-    parse_exclusion_data(input, collector, section);
+    auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
+    parse_processor_overrides(override_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -465,25 +232,227 @@ TEST(TestExclusionDataParser, ParseMissingData)
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
-        EXPECT_EQ(loaded.size(), 0);
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("index:0"), loaded.end());
 
         auto failed = at<raw_configuration::string_set>(root_map, "failed");
-        EXPECT_EQ(failed.size(), 1);
-        EXPECT_NE(failed.find("ip_data"), failed.end());
+        EXPECT_EQ(failed.size(), 0);
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
-        EXPECT_EQ(errors.size(), 1);
-        auto it = errors.find("missing key 'data'");
-        EXPECT_NE(it, errors.end());
-
-        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
-        EXPECT_EQ(error_rules.size(), 1);
-        EXPECT_NE(error_rules.find("ip_data"), error_rules.end());
+        EXPECT_EQ(errors.size(), 0);
 
         ddwaf_object_free(&root);
     }
 
-    EXPECT_TRUE(change.empty());
+    EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.content, change_set::processor_overrides);
+
+    EXPECT_EQ(change.processor_overrides.size(), 1);
+    EXPECT_EQ(cfg.processor_overrides.size(), 1);
+
+    auto &ovrd = cfg.processor_overrides.begin()->second;
+    EXPECT_EQ(ovrd.targets.size(), 1);
+    EXPECT_EQ(ovrd.scanners.size(), 1);
+
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.rule_overrides_by_id.empty());
+    EXPECT_TRUE(change.rule_overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
+}
+
+TEST(TestProcessorOverrideParser, ParseOverrideWithScannerByTags)
+{
+    auto object = yaml_to_object(
+        R"([{"target":[{"id":"extract-content"}], "scanners": [{"tags": {"type":"email"}}]}])");
+
+    configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
+    parse_processor_overrides(override_array, collector, section);
+    ddwaf_object_free(&object);
+
+    {
+        raw_configuration root;
+        section.to_object(root);
+
+        auto root_map = static_cast<raw_configuration::map>(root);
+
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("index:0"), loaded.end());
+
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = at<raw_configuration::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.content, change_set::processor_overrides);
+
+    EXPECT_EQ(change.processor_overrides.size(), 1);
+    EXPECT_EQ(cfg.processor_overrides.size(), 1);
+
+    auto &ovrd = cfg.processor_overrides.begin()->second;
+    EXPECT_EQ(ovrd.targets.size(), 1);
+    EXPECT_EQ(ovrd.scanners.size(), 1);
+
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.rule_overrides_by_id.empty());
+    EXPECT_TRUE(change.rule_overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
+}
+
+TEST(TestProcessorOverrideParser, ParseOverrideWithMultipleTargets)
+{
+    auto object = yaml_to_object(
+        R"([{"target":[{"id":"extract-content"}, {"id": "something-else"}, {"id": "extract-headers"}], "scanners": [{"id": "scanner-001"}]}])");
+
+    configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
+    parse_processor_overrides(override_array, collector, section);
+    ddwaf_object_free(&object);
+
+    {
+        raw_configuration root;
+        section.to_object(root);
+
+        auto root_map = static_cast<raw_configuration::map>(root);
+
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("index:0"), loaded.end());
+
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = at<raw_configuration::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.content, change_set::processor_overrides);
+
+    EXPECT_EQ(change.processor_overrides.size(), 1);
+    EXPECT_EQ(cfg.processor_overrides.size(), 1);
+
+    auto &ovrd = cfg.processor_overrides.begin()->second;
+    EXPECT_EQ(ovrd.targets.size(), 3);
+    EXPECT_EQ(ovrd.scanners.size(), 1);
+
+    EXPECT_TRUE(change.actions.empty());
+    EXPECT_TRUE(change.base_rules.empty());
+    EXPECT_TRUE(change.user_rules.empty());
+    EXPECT_TRUE(change.exclusion_data.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(change.rule_filters.empty());
+    EXPECT_TRUE(change.input_filters.empty());
+    EXPECT_TRUE(change.processors.empty());
+    EXPECT_TRUE(change.scanners.empty());
+    EXPECT_TRUE(change.rule_overrides_by_id.empty());
+    EXPECT_TRUE(change.rule_overrides_by_tags.empty());
+
+    EXPECT_TRUE(cfg.actions.empty());
+    EXPECT_TRUE(cfg.base_rules.empty());
+    EXPECT_TRUE(cfg.user_rules.empty());
+    EXPECT_TRUE(cfg.exclusion_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_filters.empty());
+    EXPECT_TRUE(cfg.input_filters.empty());
+    EXPECT_TRUE(cfg.processors.empty());
+    EXPECT_TRUE(cfg.scanners.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
+}
+
+TEST(TestProcessorOverrideParser, ParseOverrideWithMultipleTargetsAndScanners)
+{
+    auto object = yaml_to_object(
+        R"([{"target":[{"id":"extract-content"}], "scanners": [{"id": "scanner-001"}]},{"target":[{"id": "something-else"}], "scanners": [{"tags": {"type": "value"}}]},{"target":[{"id": "extract-headers"}], "scanners": [{"id": "scanner-002"}]}])");
+
+    configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
+    parse_processor_overrides(override_array, collector, section);
+    ddwaf_object_free(&object);
+
+    {
+        raw_configuration root;
+        section.to_object(root);
+
+        auto root_map = static_cast<raw_configuration::map>(root);
+
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 3);
+        EXPECT_NE(loaded.find("index:0"), loaded.end());
+        EXPECT_NE(loaded.find("index:1"), loaded.end());
+        EXPECT_NE(loaded.find("index:2"), loaded.end());
+
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = at<raw_configuration::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.content, change_set::processor_overrides);
+
+    EXPECT_EQ(change.processor_overrides.size(), 3);
+    EXPECT_EQ(cfg.processor_overrides.size(), 3);
+
     EXPECT_TRUE(change.actions.empty());
     EXPECT_TRUE(change.base_rules.empty());
     EXPECT_TRUE(change.user_rules.empty());
