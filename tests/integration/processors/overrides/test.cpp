@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "common/gtest_utils.hpp"
+#include "configuration/common/raw_configuration.hpp"
 
 using namespace ddwaf;
 
@@ -632,10 +633,15 @@ TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
         EXPECT_FALSE(out.timeout);
 
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 2);
+        ddwaf::raw_configuration derivatives_object(out.derivatives);
+        auto derivatives = static_cast<ddwaf::raw_configuration::map>(derivatives_object);
 
-        auto schema = test::object_to_json(out.derivatives);
-        EXPECT_STR(schema,
-            R"({"server.request.headers.schema":[{"email":[8,{"type":"token","category":"credential"}]}],"server.request.body.schema":[{"email":[8]}]})");
+        auto headers_schema = test::object_to_json(derivatives["server.request.headers.schema"]);
+        EXPECT_STR(headers_schema, R"([{"email":[8,{"type":"token","category":"credential"}]}])");
+
+        auto body_schema = test::object_to_json(derivatives["server.request.body.schema"]);
+        EXPECT_STR(body_schema, R"([{"email":[8]}])");
+
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
@@ -672,9 +678,16 @@ TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
 
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 2);
 
-        auto schema = test::object_to_json(out.derivatives);
-        EXPECT_STR(schema,
-            R"({"server.request.headers.schema":[{"email":[8,{"type":"email","category":"pii"}]}],"server.request.body.schema":[{"email":[8,{"type":"email","category":"pii"}]}]})");
+        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 2);
+        ddwaf::raw_configuration derivatives_object(out.derivatives);
+        auto derivatives = static_cast<ddwaf::raw_configuration::map>(derivatives_object);
+
+        auto headers_schema = test::object_to_json(derivatives["server.request.headers.schema"]);
+        EXPECT_STR(headers_schema, R"([{"email":[8,{"type":"email","category":"pii"}]}])");
+
+        auto body_schema = test::object_to_json(derivatives["server.request.body.schema"]);
+        EXPECT_STR(body_schema, R"([{"email":[8,{"type":"email","category":"pii"}]}])");
+
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
     }
