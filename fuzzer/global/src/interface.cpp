@@ -98,23 +98,15 @@ void run_waf(ddwaf_handle handle, ddwaf_object args, bool ephemeral, size_t time
 {
     ddwaf_context context = ddwaf_context_init(handle);
     if (context == nullptr) {
-        std::cout << "No context available\n";
-        __builtin_trap();
+        ddwaf_object_free(&args);
+        return;
     }
 
     ddwaf_result res;
-    auto code = DDWAF_OK;
     if (ephemeral) {
         ddwaf_run(context, nullptr, &args, &res, timeLeftInUs);
     } else {
         ddwaf_run(context, &args, nullptr, &res, timeLeftInUs);
-    }
-
-    // TODO split input in several ddwaf_object, and call ddwaf_run on the same context
-
-    if (code == DDWAF_ERR_INTERNAL) {
-        std::cout << "Internal error\n";
-        __builtin_trap();
     }
 
     ddwaf_result_free(&res);
