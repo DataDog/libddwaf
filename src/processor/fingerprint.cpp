@@ -272,7 +272,6 @@ struct key_hash_field : field_generator<key_hash_field> {
         std::size_t max_string_size = 0;
         for (std::size_t i = 0; i < value.size(); ++i) {
             const auto key = value.at_key(i);
-            ;
             max_string_size = std::max(max_string_size, key.size());
 
             keys.emplace_back(key.as<std::string_view>());
@@ -340,7 +339,6 @@ struct kv_hash_fields : field_generator<kv_hash_fields, std::pair<std::string, s
         std::size_t max_string_size = 0;
         for (std::size_t i = 0; i < value.size(); ++i) {
             const auto [key, child] = value.at(i);
-            ;
 
             auto val = value_object_to_string(child);
 
@@ -611,7 +609,6 @@ std::pair<owned_object, object_store::attribute> http_header_fingerprint::eval_i
         }
 
         const auto [key, child] = headers.value.at(i);
-        ;
         const auto header = key.as<std::string_view>();
 
         normalize_header(header, normalized_header);
@@ -660,7 +657,6 @@ std::pair<owned_object, object_store::attribute> http_network_fingerprint::eval_
         }
 
         const auto [key, child] = headers.value.at(i);
-        ;
         const auto header = key.as<std::string_view>();
 
         normalize_header(header, normalized_header);

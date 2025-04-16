@@ -25,7 +25,6 @@ void ruleset_info::section_info::add_failed(
             auto array = diagnostics_array.emplace(error, owned_object::make_array());
             auto index = diagnostics_array.size() - 1;
 
-            // TODO figure out a less hacky way
             auto key = object_view{diagnostics_array}.at_key(index);
             cache[key.template as<std::string_view>()] = index;
 
