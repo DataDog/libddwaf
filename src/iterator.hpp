@@ -31,7 +31,6 @@ public:
     bool operator++();
 
     [[nodiscard]] explicit operator bool() const { return current_.second.has_value(); }
-    [[nodiscard]] size_t depth() { return stack_.size() + path_.size(); }
     [[nodiscard]] std::vector<std::string> get_current_path() const;
 
 protected:

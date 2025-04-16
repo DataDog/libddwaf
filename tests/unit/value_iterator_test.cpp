@@ -25,6 +25,8 @@ TEST(TestValueIterator, TestInvalidIterator)
     EXPECT_EQ(path.size(), 0);
 
     EXPECT_FALSE(++it);
+
+    EXPECT_FALSE((*it).has_value());
 }
 
 TEST(TestValueIterator, TestStringScalar)
@@ -41,6 +43,8 @@ TEST(TestValueIterator, TestStringScalar)
     EXPECT_EQ(path.size(), 0);
 
     EXPECT_FALSE(++it);
+
+    EXPECT_FALSE((*it).has_value());
 }
 
 TEST(TestValueIterator, TestUnsignedScalar)
