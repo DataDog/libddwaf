@@ -22,7 +22,7 @@
 
 using namespace std::chrono_literals;
 
-bool verbose = false;
+bool verbose = true;
 bool fuzzTimeout = false;
 
 const char *level_to_str(DDWAF_LOG_LEVEL level)
@@ -141,7 +141,7 @@ extern "C" int LLVMFuzzerInitialize(const int *argc, char ***argv)
 
     auto *handle = init_waf();
 
-    runner = std::make_unique<waf_runner>(handle, 4);
+    runner = std::make_unique<waf_runner>(handle, 1);
 
     if (verbose) {
         ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);

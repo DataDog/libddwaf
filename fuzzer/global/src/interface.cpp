@@ -71,13 +71,16 @@ template <> ddwaf_object as_if<ddwaf_object, void>::operator()() const
 {
     return yaml_to_object(node);
 }
-} // namespace YAML
+
+namespace {
 
 ddwaf_object file_to_object(std::string_view filename)
 {
     YAML::Node doc = YAML::Load(read_file(filename));
     return doc.as<ddwaf_object>();
 }
+
+} // namespace
 
 ddwaf_handle init_waf()
 {
