@@ -36,7 +36,7 @@ void print_string(const char *buffer, uint64_t size)
             std::cerr << buffer[i];
         } else {
             std::cerr << "\\x" << std::hex << std::setw(2) << std::setfill('0')
-                      << static_cast<unsigned>(buffer[i]) << std::endl;
+                      << static_cast<unsigned>(buffer[i]) << '\n';
         }
     }
     std::cerr << "\"";

@@ -52,82 +52,92 @@ void log_cb(DDWAF_LOG_LEVEL level, const char *function, const char *file, unsig
               << "]: " << message << '\n';
 }
 
-class waf_runner {
-public:
-    waf_runner(ddwaf_handle handle, unsigned num_threads) : handle_(handle)
-    {
-        if (handle_ == nullptr) {
-            __builtin_trap();
-        }
+/*class waf_runner {*/
+/*public:*/
+/*waf_runner(ddwaf_handle handle, unsigned num_threads) : handle_(handle)*/
+/*{*/
+/*if (handle_ == nullptr) {*/
+/*__builtin_trap();*/
+/*}*/
 
-        threads_.reserve(num_threads);
-        for (unsigned i = 0; i < num_threads; i++) {
-            threads_.emplace_back([this]() {
-                while (running_) {
-                    ddwaf_object input;
-                    size_t timeout;
-                    bool ephemeral;
-                    {
-                        std::unique_lock<std::mutex> lock{mtx_};
-                        if (objects_.empty()) {
-                            cv_.wait_for(lock, 100ms);
-                            continue;
-                        }
-                        auto [new_input, new_ephemeral, new_timeout] = objects_.front();
-                        objects_.pop_front();
+/*threads_.reserve(num_threads);*/
+/*for (unsigned i = 0; i < num_threads; i++) {*/
+/*threads_.emplace_back([this]() {*/
+/*while (running_) {*/
+/*ddwaf_object input;*/
+/*size_t timeout;*/
+/*bool ephemeral;*/
+/*{*/
+/*std::unique_lock<std::mutex> lock{mtx_};*/
+/*if (objects_.empty()) {*/
+/*cv_.wait_for(lock, 100ms);*/
+/*continue;*/
+/*}*/
+/*auto [new_input, new_ephemeral, new_timeout] = objects_.front();*/
+/*objects_.pop_front();*/
 
-                        input = new_input;
-                        timeout = new_timeout;
-                        ephemeral = new_ephemeral;
-                    }
+/*input = new_input;*/
+/*timeout = new_timeout;*/
+/*ephemeral = new_ephemeral;*/
+/*}*/
 
-                    run_waf(handle_, input, ephemeral, timeout);
-                }
-            });
-        }
-    }
+/*run_waf(handle_, input, ephemeral, timeout);*/
+/*}*/
+/*});*/
+/*}*/
+/*}*/
 
-    waf_runner(const waf_runner &) = delete;
-    waf_runner(waf_runner &&) = delete;
-    waf_runner &operator=(const waf_runner &) = delete;
-    waf_runner &operator=(waf_runner &&) = delete;
+/*waf_runner(const waf_runner &) = delete;*/
+/*waf_runner(waf_runner &&) = delete;*/
+/*waf_runner &operator=(const waf_runner &) = delete;*/
+/*waf_runner &operator=(waf_runner &&) = delete;*/
 
-    ~waf_runner()
-    {
-        running_ = false;
-        cv_.notify_all();
+/*~waf_runner()*/
+/*{*/
+/*running_ = false;*/
+/*cv_.notify_all();*/
 
-        for (auto &t : threads_) { t.join(); }
+/*for (auto &t : threads_) { t.join(); }*/
 
-        while (!objects_.empty()) {
-            auto [object, ephemeral, timeout] = objects_.front();
-            objects_.pop_front();
+/*while (!objects_.empty()) {*/
+/*auto [object, ephemeral, timeout] = objects_.front();*/
+/*objects_.pop_front();*/
 
-            ddwaf_object_free(&object);
-        }
-        ddwaf_destroy(handle_);
-    }
+/*ddwaf_object_free(&object);*/
+/*}*/
+/*ddwaf_destroy(handle_);*/
+/*}*/
 
-    void push(ddwaf_object object, bool ephemeral, size_t timeout)
-    {
-        {
-            std::unique_lock<std::mutex> lock{mtx_};
-            objects_.emplace_back(object, ephemeral, timeout);
-        }
-        cv_.notify_one();
-    }
+/*void push(ddwaf_object object, bool ephemeral, size_t timeout)*/
+/*{*/
+/*{*/
+/*std::unique_lock<std::mutex> lock{mtx_};*/
+/*objects_.emplace_back(object, ephemeral, timeout);*/
+/*}*/
+/*cv_.notify_one();*/
+/*}*/
 
-protected:
-    ddwaf_handle handle_;
-    std::vector<std::thread> threads_;
+/*protected:*/
+/*ddwaf_handle handle_;*/
+/*std::vector<std::thread> threads_;*/
 
-    std::mutex mtx_;
-    std::condition_variable cv_;
-    std::atomic<bool> running_{true};
-    std::deque<std::tuple<ddwaf_object, bool, size_t>> objects_;
+/*std::mutex mtx_;*/
+/*std::condition_variable cv_;*/
+/*std::atomic<bool> running_{true};*/
+/*std::deque<std::tuple<ddwaf_object, bool, size_t>> objects_;*/
+/*};*/
+
+/*std::unique_ptr<waf_runner> runner{nullptr};*/
+
+namespace {
+
+struct ddwaf_destroyer {
+    void operator()(ddwaf_handle handle) { ddwaf_destroy(handle); }
 };
 
-std::unique_ptr<waf_runner> runner{nullptr};
+std::unique_ptr<std::remove_pointer_t<ddwaf_handle>, ddwaf_destroyer> handle;
+
+} // namespace
 
 extern "C" int LLVMFuzzerInitialize(const int *argc, char ***argv)
 {
@@ -139,9 +149,7 @@ extern "C" int LLVMFuzzerInitialize(const int *argc, char ***argv)
         }
     }
 
-    auto *handle = init_waf();
-
-    runner = std::make_unique<waf_runner>(handle, 1);
+    handle.reset(init_waf());
 
     if (verbose) {
         ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
@@ -156,8 +164,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     ddwaf_object args = build_object(bytes, size, verbose, fuzzTimeout, &timeLeftInUs);
 
     bool ephemeral = size > 0 && (bytes[0] & 0x01) == 0;
-    runner->push(args, ephemeral, timeLeftInUs);
-    args = {};
+
+    run_waf(handle.get(), args, ephemeral, timeLeftInUs);
 
     return 0;
 }
