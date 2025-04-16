@@ -22,9 +22,10 @@ public:
     [[nodiscard]] const char *what() const noexcept override { return what_.c_str(); }
 
 protected:
-    const std::string what_;
+    std::string what_;
 };
 
+namespace {
 // NOLINTNEXTLINE(misc-no-recursion)
 ddwaf_object yaml_to_object(const Node &node)
 {
@@ -65,12 +66,16 @@ ddwaf_object yaml_to_object(const Node &node)
     throw parsing_error("Invalid YAML node type");
 }
 
+} // namespace
+
 template <> as_if<ddwaf_object, void>::as_if(const Node &node_) : node(node_) {}
 
 template <> ddwaf_object as_if<ddwaf_object, void>::operator()() const
 {
     return yaml_to_object(node);
 }
+
+} // namespace YAML
 
 namespace {
 
