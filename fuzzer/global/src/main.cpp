@@ -129,10 +129,6 @@ protected:
 
 std::unique_ptr<waf_runner> runner{nullptr};
 
-void cleanup() {
-    runner.reset();
-}
-
 extern "C" int LLVMFuzzerInitialize(const int *argc, char ***argv)
 {
     for (int i = 0; i < *argc; i++) {
@@ -146,9 +142,6 @@ extern "C" int LLVMFuzzerInitialize(const int *argc, char ***argv)
     auto *handle = init_waf();
 
     runner = std::make_unique<waf_runner>(handle, 4);
-
-    // NOLINTNEXTLINE(cert-err33-c)
-    std::atexit(cleanup);
 
     if (verbose) {
         ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
@@ -164,5 +157,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 
     bool ephemeral = size > 0 && (bytes[0] & 0x01) == 0;
     runner->push(args, ephemeral, timeLeftInUs);
+    args = {};
+
     return 0;
 }

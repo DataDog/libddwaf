@@ -6,6 +6,7 @@
 
 #include <cstdlib>
 #include <ddwaf.h>
+#include <iostream>
 #include <stdexcept>
 #include <utility>
 #include <yaml-cpp/yaml.h>
@@ -97,6 +98,7 @@ void run_waf(ddwaf_handle handle, ddwaf_object args, bool ephemeral, size_t time
 {
     ddwaf_context context = ddwaf_context_init(handle);
     if (context == nullptr) {
+        std::cout << "No context available\n";
         __builtin_trap();
     }
 
@@ -111,6 +113,7 @@ void run_waf(ddwaf_handle handle, ddwaf_object args, bool ephemeral, size_t time
     // TODO split input in several ddwaf_object, and call ddwaf_run on the same context
 
     if (code == DDWAF_ERR_INTERNAL) {
+        std::cout << "Internal error\n";
         __builtin_trap();
     }
 
