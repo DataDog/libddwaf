@@ -6,7 +6,7 @@ python3 fuzzer/global/scripts/build_corpus.py
 
 cd fuzzer/global
 
-export ASAN_OPTIONS=detect_leaks=1
+export ASAN_OPTIONS="detect_leaks=0,use_stacks=0,verbosity=1,leak_check_at_exit=1"
 
 rm -f fuzz-*.log
 

@@ -10,7 +10,7 @@ ENDMACRO()
 
 GET_DIRS(subdirs ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(LINK_COMPILE_FLAGS -fsanitize=fuzzer,address -fprofile-instr-generate -fcoverage-mapping)
+set(LINK_COMPILE_FLAGS -fsanitize=fuzzer,address,leak,undefined -fprofile-instr-generate -fcoverage-mapping)
 
 gen_objects(fuzzer-common)
 target_compile_options(fuzzer-common PRIVATE ${LINK_COMPILE_FLAGS})

@@ -22,7 +22,8 @@
 
 using namespace std::chrono_literals;
 
-bool verbose = true;
+namespace {
+bool verbose = false;
 bool fuzzTimeout = false;
 
 const char *level_to_str(DDWAF_LOG_LEVEL level)
@@ -56,17 +57,17 @@ class waf_runner {
 public:
     waf_runner(ddwaf_handle handle, unsigned num_threads) : handle_(handle)
     {
-        /*        if (handle_ == nullptr) {*/
-        /*__builtin_trap();*/
-        /*}*/
+        if (handle_ == nullptr) {
+            __builtin_trap();
+        }
 
         threads_.reserve(num_threads);
         for (unsigned i = 0; i < num_threads; i++) {
             threads_.emplace_back([this]() {
                 while (running_) {
                     ddwaf_object input;
-                    // size_t timeout;
-                    // bool ephemeral;
+                    size_t timeout;
+                    bool ephemeral;
                     {
                         std::unique_lock<std::mutex> lock{mtx_};
                         if (objects_.empty()) {
@@ -77,12 +78,11 @@ public:
                         objects_.pop_front();
 
                         input = new_input;
-                        // timeout = new_timeout;
-                        // ephemeral = new_ephemeral;
+                        timeout = new_timeout;
+                        ephemeral = new_ephemeral;
                     }
 
-                    ddwaf_object_free(&input);
-                    // run_waf(handle_, input, ephemeral, timeout);
+                    run_waf(handle_, input, ephemeral, timeout);
                 }
             });
         }
@@ -95,8 +95,6 @@ public:
 
     ~waf_runner()
     {
-        std::cout << "===================== Calling waf runner exit handler ===================\n";
-
         running_ = false;
         cv_.notify_all();
 
@@ -108,7 +106,7 @@ public:
 
             ddwaf_object_free(&object);
         }
-        // ddwaf_destroy(handle_);
+        ddwaf_destroy(handle_);
     }
 
     void push(ddwaf_object object, bool ephemeral, size_t timeout)
@@ -132,6 +130,8 @@ protected:
 
 std::unique_ptr<waf_runner> runner{nullptr};
 
+} // namespace
+
 extern "C" int LLVMFuzzerInitialize(const int *argc, char ***argv)
 {
     for (int i = 0; i < *argc; i++) {
@@ -142,13 +142,16 @@ extern "C" int LLVMFuzzerInitialize(const int *argc, char ***argv)
         }
     }
 
-    // auto *handle = init_waf();
+    auto *handle = init_waf();
 
-    runner = std::make_unique<waf_runner>(nullptr, 4);
+    runner = std::make_unique<waf_runner>(handle, 4);
 
     if (verbose) {
         ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
     }
+
+    // NOLINTNEXTLINE(cert-err33-c)
+    // std::atexit([]() { runner.reset(); });
 
     return 0;
 }
@@ -161,7 +164,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     // bool ephemeral = size > 0 && (bytes[0] & 0x01) == 0;
     bool ephemeral = false;
     runner->push(args, ephemeral, timeLeftInUs);
-    args = {};
 
     return 0;
 }
