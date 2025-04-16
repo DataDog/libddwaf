@@ -150,9 +150,6 @@ extern "C" int LLVMFuzzerInitialize(const int *argc, char ***argv)
         ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
     }
 
-    // NOLINTNEXTLINE(cert-err33-c)
-    // std::atexit([]() { runner.reset(); });
-
     return 0;
 }
 
@@ -161,8 +158,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     size_t timeLeftInUs;
     ddwaf_object args = build_object(bytes, size, verbose, fuzzTimeout, &timeLeftInUs);
 
-    // bool ephemeral = size > 0 && (bytes[0] & 0x01) == 0;
-    bool ephemeral = false;
+    bool ephemeral = size > 0 && (bytes[0] & 0x01) == 0;
     runner->push(args, ephemeral, timeLeftInUs);
 
     return 0;
