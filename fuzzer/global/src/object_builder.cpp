@@ -237,9 +237,9 @@ ddwaf_object build_object(
     ddwaf_object result;
     build_map(&data, &result, 30);
 
-    if (verbose) {
-        print_object(result);
-    }
+/*    if (verbose) {*/
+        /*print_object(result);*/
+    /*}*/
 
     return result;
 }

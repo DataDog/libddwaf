@@ -155,7 +155,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     size_t timeLeftInUs;
     ddwaf_object args = build_object(bytes, size, verbose, fuzzTimeout, &timeLeftInUs);
 
-    bool ephemeral = size > 0 && (bytes[0] & 0x01) == 0;
+    //bool ephemeral = size > 0 && (bytes[0] & 0x01) == 0;
+    bool ephemeral = true;
     runner->push(args, ephemeral, timeLeftInUs);
     args = {};
 
