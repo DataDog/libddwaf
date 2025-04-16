@@ -65,8 +65,8 @@ public:
             threads_.emplace_back([this]() {
                 while (running_) {
                     ddwaf_object input;
-                    size_t timeout;
-                    bool ephemeral;
+                    //size_t timeout;
+                    //bool ephemeral;
                     {
                         std::unique_lock<std::mutex> lock{mtx_};
                         if (objects_.empty()) {
@@ -77,11 +77,12 @@ public:
                         objects_.pop_front();
 
                         input = new_input;
-                        timeout = new_timeout;
-                        ephemeral = new_ephemeral;
+                        //timeout = new_timeout;
+                        //ephemeral = new_ephemeral;
                     }
 
-                    run_waf(handle_, input, ephemeral, timeout);
+                    ddwaf_object_free(&input);
+                    //run_waf(handle_, input, ephemeral, timeout);
                 }
             });
         }
