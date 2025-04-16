@@ -205,7 +205,7 @@ TEST(TestExtractSchemaIntegration, ProcessorWithScannerByTags)
     EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
     EXPECT_SCHEMA_EQ(
-        out.derivatives.array[0], R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+        out.derivatives.via.map[0].val, R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -253,7 +253,7 @@ TEST(TestExtractSchemaIntegration, ProcessorWithScannerByID)
     EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
     EXPECT_SCHEMA_EQ(
-        out.derivatives.array[0], R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+        out.derivatives.via.map[0].val, R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -305,7 +305,7 @@ TEST(TestExtractSchemaIntegration, ProcessorUpdate)
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
         EXPECT_SCHEMA_EQ(
-            out.derivatives.array[0], R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+            out.derivatives.via.map[0].val, R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
@@ -344,7 +344,7 @@ TEST(TestExtractSchemaIntegration, ProcessorUpdate)
         EXPECT_FALSE(out.timeout);
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
-        EXPECT_SCHEMA_EQ(out.derivatives.array[0], R"([{"email":[8]}])");
+        EXPECT_SCHEMA_EQ(out.derivatives.via.map[0].val, R"([{"email":[8]}])");
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
@@ -398,7 +398,7 @@ TEST(TestExtractSchemaIntegration, ScannerUpdate)
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
         EXPECT_SCHEMA_EQ(
-            out.derivatives.array[0], R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+            out.derivatives.via.map[0].val, R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
@@ -439,7 +439,7 @@ TEST(TestExtractSchemaIntegration, ScannerUpdate)
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
         EXPECT_SCHEMA_EQ(
-            out.derivatives.array[0], R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+            out.derivatives.via.map[0].val, R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
@@ -493,7 +493,7 @@ TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
         EXPECT_SCHEMA_EQ(
-            out.derivatives.array[0], R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+            out.derivatives.via.map[0].val, R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
@@ -533,7 +533,7 @@ TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
         EXPECT_SCHEMA_EQ(
-            out.derivatives.array[0], R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+            out.derivatives.via.map[0].val, R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
@@ -586,7 +586,7 @@ TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
         EXPECT_SCHEMA_EQ(
-            out.derivatives.array[0], R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+            out.derivatives.via.map[0].val, R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
@@ -618,7 +618,7 @@ TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
         EXPECT_FALSE(out.timeout);
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
-        EXPECT_SCHEMA_EQ(out.derivatives.array[0], R"([{"email":[8]}])");
+        EXPECT_SCHEMA_EQ(out.derivatives.via.map[0].val, R"([{"email":[8]}])");
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);
@@ -671,7 +671,7 @@ TEST(TestExtractSchemaIntegration, EmptyProcessorUpdate)
         EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
         EXPECT_SCHEMA_EQ(
-            out.derivatives.array[0], R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+            out.derivatives.via.map[0].val, R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
         ddwaf_result_free(&out);
         ddwaf_context_destroy(context);

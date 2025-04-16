@@ -340,7 +340,7 @@ TEST(TestObjectView, ArrayObject)
         auto expected_value = std::to_string(100 + i);
         {
             auto [key, value] = view.at(i);
-            EXPECT_TRUE(key.empty());
+            EXPECT_FALSE(key.has_value());
             EXPECT_EQ(value.as<std::string>(), expected_value);
         }
 
@@ -351,7 +351,7 @@ TEST(TestObjectView, ArrayObject)
 
         {
             auto key = view.at_key(i);
-            EXPECT_TRUE(key.empty());
+            EXPECT_FALSE(key.has_value());
         }
     }
 }
@@ -386,71 +386,6 @@ TEST(TestObjectView, MapObject)
 
         {
             auto key = view.at_key(i);
-            EXPECT_EQ(key.as<std::string_view>(), expected_key);
-        }
-    }
-}
-
-TEST(TestObjectView, IterateArrayObject)
-{
-    auto root = owned_object::make_array();
-    for (unsigned i = 0; i < 20; i++) { root.emplace_back(std::to_string(i + 100)); }
-
-    object_view view(root);
-    ASSERT_TRUE(view.has_value());
-    EXPECT_EQ(view.size(), 20);
-    EXPECT_EQ(view.type(), object_type::array);
-    EXPECT_TRUE(view.is_container());
-    EXPECT_FALSE(view.is_scalar());
-
-    for (auto it = view.begin(); it != view.end(); ++it) {
-        auto expected_value = std::to_string(100 + it.index());
-        {
-            auto [key, value] = *it;
-            EXPECT_TRUE(key.empty());
-            EXPECT_EQ(value.as<std::string>(), expected_value);
-        }
-
-        {
-            auto value = it.value();
-            EXPECT_EQ(value.as<std::string>(), expected_value);
-        }
-
-        {
-            auto key = it.key();
-            EXPECT_TRUE(key.empty());
-        }
-    }
-}
-
-TEST(TestObjectView, IterateMapObject)
-{
-    auto root = owned_object::make_map();
-    for (unsigned i = 0; i < 20; i++) { root.emplace(std::to_string(i), std::to_string(i + 100)); }
-
-    object_view view(root);
-    ASSERT_TRUE(view.has_value());
-    EXPECT_EQ(view.size(), 20);
-    EXPECT_EQ(view.type(), object_type::map);
-    EXPECT_TRUE(view.is_container());
-    EXPECT_FALSE(view.is_scalar());
-
-    for (auto it = view.begin(); it != view.end(); ++it) {
-        auto expected_key = std::to_string(it.index());
-        auto expected_value = std::to_string(100 + it.index());
-        {
-            auto [key, value] = *it;
-            EXPECT_EQ(key.as<std::string_view>(), expected_key);
-            EXPECT_EQ(value.as<std::string_view>(), expected_value);
-        }
-
-        {
-            auto value = it.value();
-            EXPECT_EQ(value.as<std::string>(), expected_value);
-        }
-
-        {
-            auto key = it.key();
             EXPECT_EQ(key.as<std::string_view>(), expected_key);
         }
     }
@@ -695,7 +630,7 @@ TEST(TestObjectView, CloneArray)
         auto [input_key, input_child] = input.at(0);
         auto [output_key, output_child] = output.at(0);
 
-        EXPECT_TRUE(output_key.empty());
+        EXPECT_FALSE(output_key.has_value());
         EXPECT_EQ(output_child.type(), input_child.type());
         EXPECT_EQ(output_child.as<bool>(), input_child.as<bool>());
     }
@@ -704,7 +639,7 @@ TEST(TestObjectView, CloneArray)
         auto [input_key, input_child] = input.at(1);
         auto [output_key, output_child] = output.at(1);
 
-        EXPECT_TRUE(output_key.empty());
+        EXPECT_FALSE(output_key.has_value());
         EXPECT_EQ(output_child.type(), input_child.type());
 
         auto output_str = output_child.as<std::string_view>();
@@ -717,7 +652,7 @@ TEST(TestObjectView, CloneArray)
         auto [input_key, input_child] = input.at(2);
         auto [output_key, output_child] = output.at(2);
 
-        EXPECT_TRUE(output_key.empty());
+        EXPECT_FALSE(output_key.has_value());
         EXPECT_EQ(output_child.type(), input_child.type());
         EXPECT_EQ(output_child.as<int64_t>(), input_child.as<int64_t>());
     }

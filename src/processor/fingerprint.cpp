@@ -270,8 +270,8 @@ struct key_hash_field : field_generator<key_hash_field> {
         keys.reserve(value.size());
 
         std::size_t max_string_size = 0;
-        for (auto it = value.begin(); it != value.end(); ++it) {
-            const auto key = it.key();
+        for (std::size_t i = 0; i < value.size(); ++i) {
+            const auto key = value.at_key(i);
             max_string_size = std::max(max_string_size, key.size());
 
             keys.emplace_back(key.as<std::string_view>());
@@ -337,9 +337,8 @@ struct kv_hash_fields : field_generator<kv_hash_fields, std::pair<std::string, s
         kv_sorted.reserve(value.size());
 
         std::size_t max_string_size = 0;
-        for (auto it = value.begin(); it != value.end(); ++it) {
-            const auto key = it.key();
-            const auto child = it.value();
+        for (std::size_t i = 0; i < value.size(); ++i) {
+            const auto [key, child] = value.at(i);
 
             auto val = value_object_to_string(child);
 
@@ -604,13 +603,13 @@ std::pair<owned_object, object_store::attribute> http_header_fingerprint::eval_i
     std::string_view user_agent;
     std::vector<std::string> unknown_headers;
     std::string normalized_header;
-    for (auto it = headers.value.begin(); it != headers.value.end(); ++it) {
+    for (std::size_t i = 0; i < headers.value.size(); ++i) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const auto header = it.key().as<std::string_view>();
-        const auto child = it.value();
+        const auto [key, child] = headers.value.at(i);
+        const auto header = key.as<std::string_view>();
 
         normalize_header(header, normalized_header);
         auto [type, index] = get_header_type_and_index(normalized_header);
@@ -652,13 +651,13 @@ std::pair<owned_object, object_store::attribute> http_network_fingerprint::eval_
     unsigned chosen_header = ip_origin_headers_length;
     std::string_view chosen_header_value;
     std::string normalized_header;
-    for (auto it = headers.value.begin(); it != headers.value.end(); ++it) {
+    for (std::size_t i = 0; i < headers.value.size(); ++i) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const auto header = it.key().as<std::string_view>();
-        const auto &child = it.value();
+        const auto [key, child] = headers.value.at(i);
+        const auto header = key.as<std::string_view>();
 
         normalize_header(header, normalized_header);
         auto [type, index] = get_header_type_and_index(normalized_header);

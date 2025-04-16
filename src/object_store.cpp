@@ -3,6 +3,7 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <cstddef>
 #include <string_view>
 #include <utility>
 
@@ -46,15 +47,15 @@ bool object_store::insert(object_view input, attribute attr)
         ephemeral_targets_.reserve(size);
     }
 
-    for (auto it = input.begin(); it != input.end(); ++it) {
-        auto key_obj = it.key();
+    for (std::size_t i = 0; i < input.size(); ++i) {
+        auto [key_obj, value] = input.at(i);
         if (key_obj.empty()) {
             continue;
         }
 
         auto key = key_obj.as<std::string_view>();
         auto target = get_target_index(key);
-        insert_target_helper(target, key, it.value(), attr);
+        insert_target_helper(target, key, value, attr);
     }
 
     return true;
