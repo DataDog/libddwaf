@@ -2,6 +2,8 @@
 #include "ac_slow.hpp"
 #include "ac_fast.hpp"
 
+#include <cstddef>
+
 uint32
 AC_Converter::Calc_State_Sz(const ACS_State* s) const {
     AC_State dummy;
