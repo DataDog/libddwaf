@@ -7,7 +7,6 @@
 #pragma once
 
 #include <memory>
-#include <optional>
 #include <utility>
 
 #include "context_allocator.hpp"
@@ -17,7 +16,6 @@
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
 #include "obfuscator.hpp"
-#include "rule.hpp"
 #include "ruleset.hpp"
 #include "utils.hpp"
 
@@ -27,14 +25,12 @@ using filter_mode = exclusion::filter_mode;
 
 class context {
 public:
-    using object_set = std::unordered_set<const ddwaf_object *>;
-
     explicit context(std::shared_ptr<ruleset> ruleset)
         : ruleset_(std::move(ruleset)), preprocessors_(*ruleset_->preprocessors),
           postprocessors_(*ruleset_->postprocessors), rule_filters_(*ruleset_->rule_filters),
           input_filters_(*ruleset_->input_filters), rule_matchers_(*ruleset_->rule_matchers),
           exclusion_matchers_(*ruleset_->exclusion_matchers), actions_(*ruleset_->actions),
-          limits_(ruleset_->limits), event_obfuscator_(*ruleset_->event_obfuscator)
+          event_obfuscator_(*ruleset_->event_obfuscator)
     {
         processor_cache_.reserve(
             ruleset_->preprocessors->size() + ruleset_->postprocessors->size());
@@ -52,11 +48,13 @@ public:
     context &operator=(context &&) = delete;
     ~context() = default;
 
-    DDWAF_RET_CODE run(optional_ref<ddwaf_object>, optional_ref<ddwaf_object>,
-        optional_ref<ddwaf_result>, uint64_t);
+    DDWAF_RET_CODE run(
+        owned_object persistent, owned_object ephemeral, optional_ref<ddwaf_result>, uint64_t);
 
-    void eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline);
-    void eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline);
+    [[nodiscard]] ddwaf_object_free_fn get_free_fn() const noexcept { return ruleset_->free_fn; }
+
+    void eval_preprocessors(owned_object &derived, ddwaf::timer &deadline);
+    void eval_postprocessors(owned_object &derived, ddwaf::timer &deadline);
     // This function below returns a reference to an internal object,
     // however using them this way helps with testing
     exclusion::context_policy &eval_filters(ddwaf::timer &deadline);
@@ -100,7 +98,6 @@ protected:
 
     const action_mapper &actions_;
 
-    const object_limits &limits_;
     const obfuscator &event_obfuscator_;
     // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 
@@ -139,12 +136,14 @@ public:
     context_wrapper &operator=(context_wrapper &&) noexcept = delete;
     context_wrapper &operator=(const context_wrapper &) = delete;
 
-    DDWAF_RET_CODE run(optional_ref<ddwaf_object> persistent, optional_ref<ddwaf_object> ephemeral,
+    DDWAF_RET_CODE run(owned_object persistent, owned_object ephemeral,
         optional_ref<ddwaf_result> res, uint64_t timeout)
     {
         memory::memory_resource_guard guard(&mr_);
-        return ctx_->run(persistent, ephemeral, res, timeout);
+        return ctx_->run(std::move(persistent), std::move(ephemeral), res, timeout);
     }
+
+    [[nodiscard]] ddwaf_object_free_fn get_free_fn() const noexcept { return ctx_->get_free_fn(); }
 
 protected:
     context *ctx_;

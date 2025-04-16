@@ -24,8 +24,10 @@ TEST(TestEventSerializer, SerializeNothing)
 
     ddwaf_result output = DDWAF_RESULT_INITIALISER;
     serializer.serialize({}, output);
-    EXPECT_EQ(ddwaf_object_type(&output.events), DDWAF_OBJ_ARRAY);
-    EXPECT_EQ(ddwaf_object_size(&output.events), 0);
+
+    object_view events{output.events};
+    EXPECT_TRUE(events.is_array());
+    EXPECT_EQ(events.size(), 0);
 }
 
 TEST(TestEventSerializer, SerializeEmptyEvent)
@@ -258,8 +260,9 @@ TEST(TestEventSerializer, SerializeEventNoActions)
 
     EXPECT_ACTIONS(output, {});
 
-    EXPECT_EQ(output.actions.array, nullptr);
-    EXPECT_EQ(ddwaf_object_size(&output.actions), 0);
+    object_view actions_view{output.actions};
+    EXPECT_TRUE(actions_view.is_map());
+    EXPECT_TRUE(actions_view.empty());
 
     ddwaf_result_free(&output);
 }

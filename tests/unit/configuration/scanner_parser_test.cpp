@@ -16,7 +16,7 @@ namespace {
 
 TEST(TestScannerParser, ParseKeyOnlyScanner)
 {
-    auto definition = json_to_object(
+    auto definition = yaml_to_object<owned_object>(
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
@@ -25,11 +25,10 @@ TEST(TestScannerParser, ParseKeyOnlyScanner)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_scanners(scanners_array, collector, section);
-    ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -42,8 +41,6 @@ TEST(TestScannerParser, ParseKeyOnlyScanner)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(change.content, change_set::scanners);
@@ -57,20 +54,17 @@ TEST(TestScannerParser, ParseKeyOnlyScanner)
     std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
     EXPECT_EQ(scnr.get_tags(), tags);
 
-    ddwaf_object value;
-    ddwaf_object_string(&value, "dog@datadoghq.com");
+    owned_object value{"dog@datadoghq.com"};
     EXPECT_TRUE(scnr.eval("email", value));
     EXPECT_FALSE(scnr.eval("mail", value));
-    ddwaf_object_free(&value);
 
-    ddwaf_object_string(&value, "ansodinsod");
+    value = owned_object::make_string("ansodinsod");
     EXPECT_TRUE(scnr.eval("email", value));
-    ddwaf_object_free(&value);
 }
 
 TEST(TestScannerParser, ParseValueOnlyScanner)
 {
-    auto definition = json_to_object(
+    auto definition = yaml_to_object<owned_object>(
         R"([{"id":"ecd","value":{"operator":"match_regex","parameters":{"regex":"@"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
@@ -79,11 +73,10 @@ TEST(TestScannerParser, ParseValueOnlyScanner)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_scanners(scanners_array, collector, section);
-    ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -96,8 +89,6 @@ TEST(TestScannerParser, ParseValueOnlyScanner)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(change.content, change_set::scanners);
@@ -111,20 +102,17 @@ TEST(TestScannerParser, ParseValueOnlyScanner)
     std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
     EXPECT_EQ(scnr.get_tags(), tags);
 
-    ddwaf_object value;
-    ddwaf_object_string(&value, "dog@datadoghq.com");
+    owned_object value{"dog@datadoghq.com"};
     EXPECT_TRUE(scnr.eval("email", value));
     EXPECT_TRUE(scnr.eval("mail", value));
-    ddwaf_object_free(&value);
 
-    ddwaf_object_string(&value, "ansodinsod");
+    value = owned_object::make_string("ansodinsod");
     EXPECT_FALSE(scnr.eval("email", value));
-    ddwaf_object_free(&value);
 }
 
 TEST(TestScannerParser, ParseKeyValueScanner)
 {
-    auto definition = json_to_object(
+    auto definition = yaml_to_object<owned_object>(
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"value":{"operator":"match_regex","parameters":{"regex":"@"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
@@ -133,11 +121,10 @@ TEST(TestScannerParser, ParseKeyValueScanner)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_scanners(scanners_array, collector, section);
-    ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -150,8 +137,6 @@ TEST(TestScannerParser, ParseKeyValueScanner)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(change.content, change_set::scanners);
@@ -165,20 +150,17 @@ TEST(TestScannerParser, ParseKeyValueScanner)
     std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
     EXPECT_EQ(scnr.get_tags(), tags);
 
-    ddwaf_object value;
-    ddwaf_object_string(&value, "dog@datadoghq.com");
+    owned_object value{"dog@datadoghq.com"};
     EXPECT_TRUE(scnr.eval("email", value));
     EXPECT_FALSE(scnr.eval("mail", value));
-    ddwaf_object_free(&value);
 
-    ddwaf_object_string(&value, "ansodinsod");
+    value = owned_object::make_string("ansodinsod");
     EXPECT_FALSE(scnr.eval("email", value));
-    ddwaf_object_free(&value);
 }
 
 TEST(TestScannerParser, ParseNoID)
 {
-    auto definition = json_to_object(
+    auto definition = yaml_to_object<owned_object>(
         R"([{"key":{"operator":"match_regex","parameters":{"regex":"email"}},"value":{"operator":"match_regex","parameters":{"regex":"@"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
@@ -187,11 +169,10 @@ TEST(TestScannerParser, ParseNoID)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_scanners(scanners_array, collector, section);
-    ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -210,8 +191,6 @@ TEST(TestScannerParser, ParseNoID)
         auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -242,7 +221,7 @@ TEST(TestScannerParser, ParseNoID)
 
 TEST(TestScannerParser, ParseNoTags)
 {
-    auto definition = json_to_object(
+    auto definition = yaml_to_object<owned_object>(
         R"([{"id":"error","key":{"operator":"match_regex","parameters":{"regex":"email"}},"value":{"operator":"match_regex","parameters":{"regex":"@"}}}])");
     auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
@@ -251,11 +230,10 @@ TEST(TestScannerParser, ParseNoTags)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_scanners(scanners_array, collector, section);
-    ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -274,8 +252,6 @@ TEST(TestScannerParser, ParseNoTags)
         auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("error"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -306,8 +282,8 @@ TEST(TestScannerParser, ParseNoTags)
 
 TEST(TestScannerParser, ParseNoKeyValue)
 {
-    auto definition =
-        json_to_object(R"([{"id":"error","tags":{"type":"email","category":"pii"}}])");
+    auto definition = yaml_to_object<owned_object>(
+        R"([{"id":"error","tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
     configuration_spec cfg;
@@ -315,11 +291,10 @@ TEST(TestScannerParser, ParseNoKeyValue)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_scanners(scanners_array, collector, section);
-    ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -338,8 +313,6 @@ TEST(TestScannerParser, ParseNoKeyValue)
         auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("error"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -370,7 +343,7 @@ TEST(TestScannerParser, ParseNoKeyValue)
 
 TEST(TestScannerParser, ParseDuplicate)
 {
-    auto definition = json_to_object(
+    auto definition = yaml_to_object<owned_object>(
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}},{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
@@ -379,11 +352,10 @@ TEST(TestScannerParser, ParseDuplicate)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_scanners(scanners_array, collector, section);
-    ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -403,8 +375,6 @@ TEST(TestScannerParser, ParseDuplicate)
         auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(change.content, change_set::scanners);
@@ -416,7 +386,7 @@ TEST(TestScannerParser, ParseDuplicate)
 
 TEST(TestScannerParser, ParseKeyNoOperator)
 {
-    auto definition = json_to_object(
+    auto definition = yaml_to_object<owned_object>(
         R"([{"id":"ecd","key":{"parameters":{"regex":"email"}},"value":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
@@ -426,11 +396,9 @@ TEST(TestScannerParser, ParseKeyNoOperator)
     ruleset_info::section_info section;
     parse_scanners(scanners_array, collector, section);
 
-    ddwaf_object_free(&definition);
-
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -449,8 +417,6 @@ TEST(TestScannerParser, ParseKeyNoOperator)
         auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -481,7 +447,7 @@ TEST(TestScannerParser, ParseKeyNoOperator)
 
 TEST(TestScannerParser, ParseKeyNoParameters)
 {
-    auto definition = json_to_object(
+    auto definition = yaml_to_object<owned_object>(
         R"([{"id":"ecd","key":{"operator":"match_regex"},"value":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
@@ -490,11 +456,10 @@ TEST(TestScannerParser, ParseKeyNoParameters)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_scanners(scanners_array, collector, section);
-    ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -513,8 +478,6 @@ TEST(TestScannerParser, ParseKeyNoParameters)
         auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -545,7 +508,7 @@ TEST(TestScannerParser, ParseKeyNoParameters)
 
 TEST(TestScannerParser, ParseValueNoOperator)
 {
-    auto definition = json_to_object(
+    auto definition = yaml_to_object<owned_object>(
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"value":{"parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
@@ -554,11 +517,10 @@ TEST(TestScannerParser, ParseValueNoOperator)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_scanners(scanners_array, collector, section);
-    ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -577,8 +539,6 @@ TEST(TestScannerParser, ParseValueNoOperator)
         auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -609,7 +569,7 @@ TEST(TestScannerParser, ParseValueNoOperator)
 
 TEST(TestScannerParser, ParseValueNoParameters)
 {
-    auto definition = json_to_object(
+    auto definition = yaml_to_object<owned_object>(
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"value":{"operator":"match_regex"},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
@@ -618,11 +578,10 @@ TEST(TestScannerParser, ParseValueNoParameters)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_scanners(scanners_array, collector, section);
-    ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -641,8 +600,6 @@ TEST(TestScannerParser, ParseValueNoParameters)
         auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -673,7 +630,7 @@ TEST(TestScannerParser, ParseValueNoParameters)
 
 TEST(TestScannerParser, ParseUnknownMatcher)
 {
-    auto definition = json_to_object(
+    auto definition = yaml_to_object<owned_object>(
         R"([{"id":"ecd","key":{"operator":"what","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
@@ -683,11 +640,9 @@ TEST(TestScannerParser, ParseUnknownMatcher)
     ruleset_info::section_info section;
     parse_scanners(scanners_array, collector, section);
 
-    ddwaf_object_free(&definition);
-
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -709,8 +664,6 @@ TEST(TestScannerParser, ParseUnknownMatcher)
         auto warning_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(warning_rules.size(), 1);
         EXPECT_NE(warning_rules.find("ecd"), warning_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -741,7 +694,7 @@ TEST(TestScannerParser, ParseUnknownMatcher)
 
 TEST(TestScannerParser, ParseRuleDataID)
 {
-    auto definition = json_to_object(
+    auto definition = yaml_to_object<owned_object>(
         R"([{"id":"ecd","key":{"operator":"exact_match","parameters":{"data":"invalid"}},"tags":{"type":"email","category":"pii"}}])");
     auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
@@ -751,11 +704,9 @@ TEST(TestScannerParser, ParseRuleDataID)
     ruleset_info::section_info section;
     parse_scanners(scanners_array, collector, section);
 
-    ddwaf_object_free(&definition);
-
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -774,8 +725,6 @@ TEST(TestScannerParser, ParseRuleDataID)
         auto error_rules = static_cast<ddwaf::raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ecd"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -806,7 +755,7 @@ TEST(TestScannerParser, ParseRuleDataID)
 
 TEST(TestScannerParser, IncompatibleMinVersion)
 {
-    auto definition = json_to_object(
+    auto definition = yaml_to_object<owned_object>(
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}, "min_version": "99.0.0"}])");
     auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
@@ -816,11 +765,9 @@ TEST(TestScannerParser, IncompatibleMinVersion)
     ruleset_info::section_info section;
     parse_scanners(scanners_array, collector, section);
 
-    ddwaf_object_free(&definition);
-
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -836,8 +783,6 @@ TEST(TestScannerParser, IncompatibleMinVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -868,7 +813,7 @@ TEST(TestScannerParser, IncompatibleMinVersion)
 
 TEST(TestScannerParser, IncompatibleMaxVersion)
 {
-    auto definition = json_to_object(
+    auto definition = yaml_to_object<owned_object>(
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}, "max_version": "0.0.99"}])");
     auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
@@ -878,11 +823,9 @@ TEST(TestScannerParser, IncompatibleMaxVersion)
     ruleset_info::section_info section;
     parse_scanners(scanners_array, collector, section);
 
-    ddwaf_object_free(&definition);
-
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -898,8 +841,6 @@ TEST(TestScannerParser, IncompatibleMaxVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -930,7 +871,7 @@ TEST(TestScannerParser, IncompatibleMaxVersion)
 
 TEST(TestScannerParser, CompatibleVersion)
 {
-    auto definition = json_to_object(
+    auto definition = yaml_to_object<owned_object>(
         R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}, "min_version": "0.0.99", "max_version": "2.0.0"}])");
     auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
@@ -939,11 +880,10 @@ TEST(TestScannerParser, CompatibleVersion)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_scanners(scanners_array, collector, section);
-    ddwaf_object_free(&definition);
 
     {
-        ddwaf::raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -959,8 +899,6 @@ TEST(TestScannerParser, CompatibleVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(change.content, change_set::scanners);

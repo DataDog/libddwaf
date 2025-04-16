@@ -16,7 +16,7 @@ namespace {
 
 TEST(TestRuleDataParser, ParseIPData)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -25,11 +25,10 @@ TEST(TestRuleDataParser, ParseIPData)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_rule_data(input, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -42,8 +41,6 @@ TEST(TestRuleDataParser, ParseIPData)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -56,7 +53,7 @@ TEST(TestRuleDataParser, ParseIPData)
 
 TEST(TestRuleDataParser, ParseStringData)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -65,11 +62,10 @@ TEST(TestRuleDataParser, ParseStringData)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_rule_data(input, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -82,8 +78,6 @@ TEST(TestRuleDataParser, ParseStringData)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -96,7 +90,7 @@ TEST(TestRuleDataParser, ParseStringData)
 
 TEST(TestRuleDataParser, ParseMultipleData)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -105,11 +99,10 @@ TEST(TestRuleDataParser, ParseMultipleData)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_rule_data(input, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -123,8 +116,6 @@ TEST(TestRuleDataParser, ParseMultipleData)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -138,7 +129,7 @@ TEST(TestRuleDataParser, ParseMultipleData)
 
 TEST(TestRuleDataParser, ParseUnknownDataID)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: usr_data, type: data_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -147,11 +138,10 @@ TEST(TestRuleDataParser, ParseUnknownDataID)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_rule_data(input, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -165,8 +155,6 @@ TEST(TestRuleDataParser, ParseUnknownDataID)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -180,7 +168,7 @@ TEST(TestRuleDataParser, ParseUnknownDataID)
 
 TEST(TestRuleDataParser, ParseUnsupportedTypes)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: usr_data, type: blob_with_expiration, data: [{value: user, expiration: 500}]},{id: ip_data, type: whatever, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -189,11 +177,10 @@ TEST(TestRuleDataParser, ParseUnsupportedTypes)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_rule_data(input, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -224,8 +211,6 @@ TEST(TestRuleDataParser, ParseUnsupportedTypes)
             EXPECT_EQ(error_rules.size(), 1);
             EXPECT_NE(error_rules.find("ip_data"), error_rules.end());
         }
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -256,7 +241,7 @@ TEST(TestRuleDataParser, ParseUnsupportedTypes)
 
 TEST(TestRuleDataParser, ParseUnknownDataIDWithUnsupportedType)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: usr_data, type: blob_with_expiration, data: [{value: user, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -265,11 +250,10 @@ TEST(TestRuleDataParser, ParseUnknownDataIDWithUnsupportedType)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_rule_data(input, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -288,8 +272,6 @@ TEST(TestRuleDataParser, ParseUnknownDataIDWithUnsupportedType)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("usr_data"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -320,8 +302,8 @@ TEST(TestRuleDataParser, ParseUnknownDataIDWithUnsupportedType)
 
 TEST(TestRuleDataParser, ParseMissingType)
 {
-    auto object =
-        yaml_to_object(R"([{id: ip_data, data: [{value: 192.168.1.1, expiration: 500}]}])");
+    auto object = yaml_to_object<owned_object>(
+        R"([{id: ip_data, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
     configuration_spec cfg;
@@ -329,11 +311,10 @@ TEST(TestRuleDataParser, ParseMissingType)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_rule_data(input, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -352,8 +333,6 @@ TEST(TestRuleDataParser, ParseMissingType)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ip_data"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -384,7 +363,7 @@ TEST(TestRuleDataParser, ParseMissingType)
 
 TEST(TestRuleDataParser, ParseMissingID)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 500}]}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
@@ -393,11 +372,10 @@ TEST(TestRuleDataParser, ParseMissingID)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_rule_data(input, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -416,8 +394,6 @@ TEST(TestRuleDataParser, ParseMissingID)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -448,7 +424,7 @@ TEST(TestRuleDataParser, ParseMissingID)
 
 TEST(TestRuleDataParser, ParseMissingData)
 {
-    auto object = yaml_to_object(R"([{id: ip_data, type: ip_with_expiration}])");
+    auto object = yaml_to_object<owned_object>(R"([{id: ip_data, type: ip_with_expiration}])");
     auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
 
     configuration_spec cfg;
@@ -456,11 +432,10 @@ TEST(TestRuleDataParser, ParseMissingData)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     parse_rule_data(input, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -479,8 +454,6 @@ TEST(TestRuleDataParser, ParseMissingData)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("ip_data"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());

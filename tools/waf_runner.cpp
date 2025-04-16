@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     const auto &ruleset = rulesets[0];
 
     auto rule = YAML::Load(read_file(ruleset)).as<ddwaf_object>();
-    const ddwaf_config config{{0, 0, 0}, {key_regex, value_regex}, ddwaf_object_free};
+    const ddwaf_config config{{key_regex, value_regex}, ddwaf_object_free};
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ddwaf_object_free(&rule);
     if (handle == nullptr) {

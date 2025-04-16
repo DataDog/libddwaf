@@ -9,6 +9,8 @@
 
 #include <fstream>
 
+using namespace ddwaf;
+
 namespace YAML {
 
 template <class T> T as(const YAML::Node &node, const std::string &key)
@@ -42,13 +44,13 @@ template <class T> T as(const YAML::Node &node, unsigned key)
 namespace {
 
 // NOLINTNEXTLINE(misc-no-recursion)
-ddwaf_object node_to_arg(const Node &node)
+ddwaf_object node_to_ddwaf_object(const Node &node)
 {
     switch (node.Type()) {
     case NodeType::Sequence: {
         ddwaf_object arg = DDWAF_OBJECT_ARRAY;
         for (auto it = node.begin(); it != node.end(); ++it) {
-            ddwaf_object child = node_to_arg(*it);
+            ddwaf_object child = node_to_ddwaf_object(*it);
             ddwaf_object_array_add(&arg, &child);
         }
         return arg;
@@ -57,7 +59,7 @@ ddwaf_object node_to_arg(const Node &node)
         ddwaf_object arg = DDWAF_OBJECT_MAP;
         for (auto it = node.begin(); it != node.end(); ++it) {
             auto key = it->first.as<std::string>();
-            ddwaf_object child = node_to_arg(it->second);
+            ddwaf_object child = node_to_ddwaf_object(it->second);
             ddwaf_object_map_addl(&arg, key.c_str(), key.size(), &child);
         }
         return arg;
@@ -104,40 +106,64 @@ ddwaf_object node_to_arg(const Node &node)
     throw parsing_error("Invalid YAML node type");
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
+owned_object node_to_owned_object(const Node &node)
+{
+    switch (node.Type()) {
+    case NodeType::Sequence: {
+        auto parent = owned_object::make_array();
+        for (auto it = node.begin(); it != node.end(); ++it) {
+            parent.emplace_back(node_to_owned_object(*it));
+        }
+        return parent;
+    }
+    case NodeType::Map: {
+        auto parent = owned_object::make_map();
+        for (auto it = node.begin(); it != node.end(); ++it) {
+            parent.emplace(it->first.as<std::string>(), node_to_owned_object(it->second));
+        }
+        return parent;
+    }
+    case NodeType::Scalar: {
+        const std::string &value = node.Scalar();
+        if (node.Tag() == "?") {
+            try {
+                return owned_object{node.as<uint64_t>()};
+            } catch (...) {} // NOLINT(bugprone-empty-catch)
+
+            try {
+                return owned_object{node.as<int64_t>()};
+            } catch (...) {} // NOLINT(bugprone-empty-catch)
+
+            try {
+                return owned_object{node.as<double>()};
+            } catch (...) {} // NOLINT(bugprone-empty-catch)
+
+            try {
+                if (!value.empty() && value[0] != 'Y' && value[0] != 'y' && value[0] != 'n' &&
+                    value[0] != 'N') {
+                    // Skip the yes / no variants of boolean
+                    return owned_object{node.as<bool>()};
+                }
+            } catch (...) {} // NOLINT(bugprone-empty-catch)
+        }
+
+        return owned_object{value};
+    }
+    case NodeType::Null:
+        return owned_object{nullptr};
+    case NodeType::Undefined:
+        return {};
+    }
+
+    throw parsing_error("Invalid YAML node type");
+}
 } // namespace
 
 as_if<ddwaf_object, void>::as_if(const Node &node_) : node(node_) {}
-ddwaf_object as_if<ddwaf_object, void>::operator()() const { return node_to_arg(node); }
+ddwaf_object as_if<ddwaf_object, void>::operator()() const { return node_to_ddwaf_object(node); }
+
+as_if<owned_object, void>::as_if(const Node &node_) : node(node_) {}
+owned_object as_if<owned_object, void>::operator()() const { return node_to_owned_object(node); }
 
 } // namespace YAML
-
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-ddwaf_object read_file(std::string_view filename, std::string_view base)
-{
-    std::string base_dir{base};
-    if (*base_dir.end() != '/') {
-        base_dir += '/';
-    }
-
-    auto file_path = base_dir + "yaml/" + std::string{filename};
-
-    DDWAF_DEBUG("Opening {}", file_path.c_str());
-
-    std::ifstream file(file_path.c_str(), std::ios::in);
-    if (!file) {
-        throw std::system_error(errno, std::generic_category());
-    }
-
-    // Create a buffer equal to the file size
-    std::string buffer;
-    file.ignore(std::numeric_limits<std::streamsize>::max());
-    std::streamsize length = file.gcount();
-    file.clear();
-    buffer.resize(length, '\0');
-    file.seekg(0, std::ios::beg);
-
-    file.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
-    file.close();
-
-    return yaml_to_object(buffer);
-}
