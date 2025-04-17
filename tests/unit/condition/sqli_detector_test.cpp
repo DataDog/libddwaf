@@ -104,6 +104,7 @@ TEST_P(DialectTestFixture, BenignInjections)
         {R"(SELECT values FROM table WHERE column IN (1, 2, 3, 4, 5);)", "(1, 2, 3, 4, 5)"},
         {R"(SELECT values FROM table WHERE id=-- admin)", "-- admin"},
         {R"(SELECT values FROM table WHERE value IN (-1,-2,+3,+4);)", "-1,-2,+3,+4"},
+        {"SELECT * FROM ships WHERE id=input -", "input -"},
     };
 
     sqli_detector cond{
