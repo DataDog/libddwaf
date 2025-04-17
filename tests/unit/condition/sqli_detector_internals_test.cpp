@@ -228,6 +228,7 @@ TEST(TestSqliDetectorInternals, IsQueryCommentSuccess)
         {R"(SELECT x FROM t WHERE id=''-- AND pwd='pwd'''--)", R"('--)"},
         {R"(SELECT * FROM ships WHERE id= 1 # AND password=HASH('str') 1 # )", R"( 1 # )"},
         {"SELECT * FROM users WHERE user = 'admin'--' AND password = '' LIMIT 1", "admin'--'"},
+        {"SELECT * FROM ships WHERE id='a' --smh", "' --"},
     };
 
     for (const auto &[statement, param] : samples) {
@@ -257,7 +258,6 @@ TEST(TestSqliDetectorInternals, IsQueryCommentFailure)
         {"SELECT * FROM ships WHERE id=-- \n1", "-- \n1"},
         {"SELECT * FROM ships WHERE id=input -", "input -"},
         {"SELECT * FROM ships WHERE id='a' --smh", "' -"},
-        {"SELECT * FROM ships WHERE id='a' --smh", "' --"},
         {"SELECT * FROM ships WHERE id='a' --smh", "--s"},
     };
 
