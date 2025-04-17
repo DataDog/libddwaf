@@ -256,6 +256,9 @@ TEST(TestSqliDetectorInternals, IsQueryCommentFailure)
             R"(#  )"},
         {"SELECT * FROM ships WHERE id=-- \n1", "-- \n1"},
         {"SELECT * FROM ships WHERE id=input -", "input -"},
+        {"SELECT * FROM ships WHERE id='a' --smh", "' -"},
+        {"SELECT * FROM ships WHERE id='a' --smh", "' --"},
+        {"SELECT * FROM ships WHERE id='a' --smh", "--s"},
     };
 
     for (const auto &[statement, param] : samples) {
