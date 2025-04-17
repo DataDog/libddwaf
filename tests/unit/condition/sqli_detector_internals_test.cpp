@@ -227,15 +227,7 @@ TEST(TestSqliDetectorInternals, IsQueryCommentSuccess)
         {R"(SELECT * FROM ships WHERE id= 1 --AND password=HASH('str') 1 --)", R"( 1 --)"},
         {R"(SELECT x FROM t WHERE id=''-- AND pwd='pwd'''--)", R"('--)"},
         {R"(SELECT * FROM ships WHERE id= 1 # AND password=HASH('str') 1 # )", R"( 1 # )"},
-        {R"(SELECT * FROM ships WHERE id=#  AND password=HASH('str')
-        1 OR 1)",
-            R"(#  )"},
-        {R"(SELECT * FROM ships WHERE id=--  AND password=HASH('str')
-        1 OR 1)",
-            R"(--  )"},
-        {"-- thisisacomment\nSELECT * FROM ships WHERE id=paco", "-- thisisacomment"},
         {"SELECT * FROM users WHERE user = 'admin'--' AND password = '' LIMIT 1", "admin'--'"},
-        {"SELECT * FROM Customers WHERE CustomerName = -- AND\nCity = 'Berlin';", "--"},
     };
 
     for (const auto &[statement, param] : samples) {
@@ -248,8 +240,7 @@ TEST(TestSqliDetectorInternals, IsQueryCommentSuccess)
         auto [param_tokens, param_index] =
             internal::get_consecutive_tokens(resource_tokens, param_begin, param_end);
 
-        EXPECT_TRUE(
-            internal::is_query_comment(resource_tokens, param_tokens, param_begin, param_index));
+        EXPECT_TRUE(internal::is_query_comment(statement, param_tokens, param_end)) << statement;
     }
 }
 
@@ -258,6 +249,12 @@ TEST(TestSqliDetectorInternals, IsQueryCommentFailure)
     std::vector<std::pair<std::string, std::string>> samples{
         {"-- thisisacomment\nSELECT * FROM ships WHERE id=paco", "thisisacomment"},
         {"SELECT * FROM user WHERE id = 1 -- thisisacomment", "thisisacomment"},
+        {"-- thisisacomment\nSELECT * FROM ships WHERE id=paco", "-- thisisacomment"},
+        {"SELECT * FROM Customers WHERE CustomerName = -- AND\nCity = 'Berlin';", "--"},
+        {R"(SELECT * FROM ships WHERE id=#  AND password=HASH('str')
+        1 OR 1)",
+            R"(#  )"},
+        {"SELECT * FROM ships WHERE id=-- \n1", "-- \n1"},
     };
 
     for (const auto &[statement, param] : samples) {
@@ -270,8 +267,7 @@ TEST(TestSqliDetectorInternals, IsQueryCommentFailure)
         auto [param_tokens, param_index] =
             internal::get_consecutive_tokens(resource_tokens, param_begin, param_end);
 
-        EXPECT_FALSE(
-            internal::is_query_comment(resource_tokens, param_tokens, param_begin, param_index));
+        EXPECT_FALSE(internal::is_query_comment(statement, param_tokens, param_end));
     }
 }
 
