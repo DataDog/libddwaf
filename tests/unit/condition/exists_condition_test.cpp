@@ -33,7 +33,7 @@ TEST(TestExistsCondition, AddressAvailable)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
 }
 
@@ -65,7 +65,7 @@ TEST(TestExistsCondition, KeyPathAvailable)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
 }
 
@@ -83,7 +83,7 @@ TEST(TestExistsCondition, AddressNotAvaialble)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
 
@@ -111,7 +111,7 @@ TEST(TestExistsCondition, KeyPathNotAvailable)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
 
@@ -152,7 +152,7 @@ TEST(TestExistsCondition, KeyPathAvailableButExcluded)
     // While the key path is present, since part of the path was excluded
     // the evaluation fails to determine the presence of the full key path,
     // for that reason, no match is generated.
-    auto res = cond.eval(cache, store, excluded_ref, {}, deadline);
+    auto res = cond.eval(cache, store, excluded_ref, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
 
@@ -172,7 +172,7 @@ TEST(TestExistsCondition, MultipleAddresses)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_EQ(res.outcome, expected);
     };
 
@@ -213,7 +213,7 @@ TEST(TestExistsCondition, MultipleAddressesAndKeyPaths)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_EQ(res.outcome, expected);
     };
 
@@ -257,7 +257,7 @@ TEST(TestExistsNegatedCondition, KeyPathAvailable)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
 
@@ -285,7 +285,7 @@ TEST(TestExistsNegatedCondition, KeyPathNotAvailable)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
 }
 
@@ -322,7 +322,7 @@ TEST(TestExistsNegatedCondition, KeyPathAvailableButExcluded)
     // While the key path is not present, since part of the path was excluded
     // the evaluation fails to determine the presence of the full key path,
     // for that reason, no match is generated.
-    auto res = cond.eval(cache, store, excluded_ref, {}, deadline);
+    auto res = cond.eval(cache, store, excluded_ref, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
 

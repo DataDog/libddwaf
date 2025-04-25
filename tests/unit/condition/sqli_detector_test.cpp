@@ -49,7 +49,7 @@ TEST_P(DialectTestFixture, InvalidSql)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << statement;
     }
 }
@@ -81,7 +81,7 @@ TEST_P(DialectTestFixture, InjectionWithoutTokens)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << statement;
     }
 }
@@ -104,6 +104,7 @@ TEST_P(DialectTestFixture, BenignInjections)
         {R"(SELECT values FROM table WHERE column IN (1, 2, 3, 4, 5);)", "(1, 2, 3, 4, 5)"},
         {R"(SELECT values FROM table WHERE id=-- admin)", "-- admin"},
         {R"(SELECT values FROM table WHERE value IN (-1,-2,+3,+4);)", "-1,-2,+3,+4"},
+        {"SELECT * FROM ships WHERE id=input -", "input -"},
     };
 
     sqli_detector cond{
@@ -124,7 +125,7 @@ TEST_P(DialectTestFixture, BenignInjections)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << statement;
     }
 }
@@ -181,7 +182,7 @@ TEST_P(DialectTestFixture, MaliciousInjections)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_FALSE(res.ephemeral);
 
@@ -259,7 +260,7 @@ TEST_P(DialectTestFixture, Tautologies)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_FALSE(res.ephemeral);
 
@@ -289,11 +290,8 @@ TEST_P(DialectTestFixture, Comments)
             R"(SELECT x FROM t WHERE id=?-- AND pwd='pwd'''--)", R"('--)"},
         {R"(SELECT * FROM ships WHERE id= 1 -- AND password=HASH('str') 1 --)",
             R"(SELECT * FROM ships WHERE id= ? -- AND password=HASH('str') 1 --)", R"( 1 --)"},
-        {R"(SELECT * FROM ships WHERE id=-- AND password=HASH('str')
-        1 OR 1)",
-            R"(SELECT * FROM ships WHERE id=-- AND password=HASH('str')
-        ? OR ?)",
-            R"(-- AND)"},
+        {"SELECT * FROM ships WHERE id=-- \n1 OR 1", "SELECT * FROM ships WHERE id=-- \n? OR ?",
+            "-- \n1 OR 1"},
     };
 
     sqli_detector cond{
@@ -314,7 +312,7 @@ TEST_P(DialectTestFixture, Comments)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_FALSE(res.ephemeral);
 
@@ -331,7 +329,7 @@ TEST_P(DialectTestFixture, Comments)
     }
 }
 
-TEST(TestSQLiDetectorMySql, Comments)
+TEST(TestSqliDetectorMySql, Comments)
 {
     std::vector<std::tuple<std::string, std::string, std::string>> samples{
         {R"(SELECT x FROM t WHERE id='admin'#)", R"(SELECT x FROM t WHERE id=?#)", R"(admin'#)"},
@@ -341,11 +339,8 @@ TEST(TestSQLiDetectorMySql, Comments)
             R"(SELECT x FROM t WHERE id=?# AND pwd='pwd'''# )", R"('# )"},
         {R"(SELECT * FROM ships WHERE id= 1 # AND password=HASH('str') 1 #)",
             R"(SELECT * FROM ships WHERE id= ? # AND password=HASH('str') 1 #)", R"( 1 #)"},
-        {R"(SELECT * FROM ships WHERE id=# AND password=HASH('str')
-        1 OR 1)",
-            R"(SELECT * FROM ships WHERE id=# AND password=HASH('str')
-        ? OR ?)",
-            R"(# AND)"},
+        {"SELECT * FROM ships WHERE id=# \n1 OR 1", "SELECT * FROM ships WHERE id=# \n? OR ?",
+            "# \n1 OR 1"},
     };
 
     sqli_detector cond{
@@ -366,7 +361,7 @@ TEST(TestSQLiDetectorMySql, Comments)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_FALSE(res.ephemeral);
 
@@ -383,7 +378,7 @@ TEST(TestSQLiDetectorMySql, Comments)
     }
 }
 
-TEST(TestSQLiDetectorMySql, Tautologies)
+TEST(TestSqliDetectorMySql, Tautologies)
 {
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
@@ -418,7 +413,7 @@ TEST(TestSQLiDetectorMySql, Tautologies)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_FALSE(res.ephemeral);
 
@@ -435,7 +430,7 @@ TEST(TestSQLiDetectorMySql, Tautologies)
     }
 }
 
-TEST(TestSQLiDetectorPgSql, Tautologies)
+TEST(TestSqliDetectorPgSql, Tautologies)
 {
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
@@ -473,7 +468,7 @@ TEST(TestSQLiDetectorPgSql, Tautologies)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_FALSE(res.ephemeral);
 

@@ -27,6 +27,8 @@ TEST(TestDiagnosticsV2Integration, InvalidConfigType)
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_free(&rule);
 
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
     ddwaf::raw_configuration root(diagnostics);
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
@@ -50,6 +52,8 @@ TEST(TestDiagnosticsV2Integration, UnsupportedSchema)
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_free(&rule);
 
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
     ddwaf::raw_configuration root(diagnostics);
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
@@ -72,6 +76,8 @@ TEST(TestDiagnosticsV2Integration, NoSchema)
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
+
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     ddwaf::raw_configuration root(diagnostics);
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -108,6 +114,8 @@ TEST(TestDiagnosticsV2Integration, BasicRule)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
     ddwaf::raw_configuration root(diagnostics);
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
@@ -143,6 +151,8 @@ TEST(TestDiagnosticsV2Integration, BasicRuleWithUpdate)
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
 
     {
+        EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
         ddwaf::raw_configuration root(diagnostics);
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
@@ -167,6 +177,8 @@ TEST(TestDiagnosticsV2Integration, BasicRuleWithUpdate)
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
 
     {
+        EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
         ddwaf::raw_configuration root(diagnostics);
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
@@ -213,6 +225,8 @@ TEST(TestDiagnosticsV2Integration, InvalidRule)
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_free(&rule);
 
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
     ddwaf::raw_configuration root(diagnostics);
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
@@ -248,6 +262,8 @@ TEST(TestDiagnosticsV2Integration, MultipleSameInvalidRules)
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_free(&rule);
+
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     ddwaf::raw_configuration root(diagnostics);
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -286,6 +302,8 @@ TEST(TestDiagnosticsV2Integration, MultipleDiffInvalidRules)
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_free(&rule);
+
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     ddwaf::raw_configuration root(diagnostics);
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -336,6 +354,8 @@ TEST(TestDiagnosticsV2Integration, MultipleMixInvalidRules)
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
+
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     ddwaf::raw_configuration root(diagnostics);
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -401,6 +421,8 @@ TEST(TestDiagnosticsV2Integration, InvalidDuplicate)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
     ddwaf::raw_configuration root(diagnostics);
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
@@ -439,6 +461,8 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleset)
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_free(&rule);
+
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     ddwaf::raw_configuration root(diagnostics);
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -481,6 +505,8 @@ TEST(TestDiagnosticsV2Integration, MultipleRules)
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
+
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
         ddwaf::raw_configuration root = diagnostics;
@@ -526,6 +552,8 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
     {
         ddwaf::raw_configuration root = diagnostics;
         auto root_map = static_cast<raw_configuration::map>(root);
@@ -567,6 +595,8 @@ TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
+
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
         ddwaf::raw_configuration root = diagnostics;
@@ -610,6 +640,8 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
     {
         ddwaf::raw_configuration root = diagnostics;
         auto root_map = static_cast<raw_configuration::map>(root);
@@ -652,6 +684,8 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
+
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
         ddwaf::raw_configuration root = diagnostics;
@@ -736,6 +770,8 @@ TEST(TestDiagnosticsV2Integration, CustomRules)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
     {
         ddwaf::raw_configuration root = diagnostics;
         auto root_map = static_cast<raw_configuration::map>(root);
@@ -780,6 +816,8 @@ TEST(TestDiagnosticsV2Integration, InputFilter)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
     {
         ddwaf::raw_configuration root = diagnostics;
         auto root_map = static_cast<raw_configuration::map>(root);
@@ -817,6 +855,8 @@ TEST(TestDiagnosticsV2Integration, RuleData)
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
+
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
         ddwaf::raw_configuration root = diagnostics;
@@ -857,6 +897,8 @@ TEST(TestDiagnosticsV2Integration, Processor)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
     {
         ddwaf::raw_configuration root = diagnostics;
         auto root_map = static_cast<raw_configuration::map>(root);
@@ -895,6 +937,8 @@ TEST(TestDiagnosticsV2Integration, InvalidRulesContainer)
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
     ddwaf_object_free(&rule);
 
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
     {
         ddwaf::raw_configuration root(diagnostics);
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -924,6 +968,8 @@ TEST(TestDiagnosticsV2Integration, InvalidCustomRulesContainer)
     ddwaf_object diagnostics;
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
     ddwaf_object_free(&rule);
+
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
         ddwaf::raw_configuration root(diagnostics);
@@ -955,6 +1001,8 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionsContainer)
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
     ddwaf_object_free(&rule);
 
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
     {
         ddwaf::raw_configuration root(diagnostics);
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -984,6 +1032,8 @@ TEST(TestDiagnosticsV2Integration, InvalidOverridesContainer)
     ddwaf_object diagnostics;
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
     ddwaf_object_free(&rule);
+
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
         ddwaf::raw_configuration root(diagnostics);
@@ -1015,6 +1065,8 @@ TEST(TestDiagnosticsV2Integration, InvalidScannersContainer)
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
     ddwaf_object_free(&rule);
 
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
     {
         ddwaf::raw_configuration root(diagnostics);
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -1044,6 +1096,8 @@ TEST(TestDiagnosticsV2Integration, InvalidProcessorsContainer)
     ddwaf_object diagnostics;
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
     ddwaf_object_free(&rule);
+
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
         ddwaf::raw_configuration root(diagnostics);
@@ -1075,6 +1129,8 @@ TEST(TestDiagnosticsV2Integration, InvalidActionsContainer)
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
     ddwaf_object_free(&rule);
 
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
     {
         ddwaf::raw_configuration root(diagnostics);
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -1105,6 +1161,8 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleDataContainer)
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
     ddwaf_object_free(&rule);
 
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
     {
         ddwaf::raw_configuration root(diagnostics);
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -1134,6 +1192,8 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionDataContainer)
     ddwaf_object diagnostics;
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
     ddwaf_object_free(&rule);
+
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
         ddwaf::raw_configuration root(diagnostics);

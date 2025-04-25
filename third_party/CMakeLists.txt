@@ -15,7 +15,7 @@ if(NOT MSVC)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wno-unused-parameter -Wno-shadow")
 endif()
 
-set(RAPIDJSON_COMMIT 22a62fcc2c2fa2418f5d358cdf65c1df73b418ae)
+set(RAPIDJSON_COMMIT 24b5e7a8b27f42fa16b96fc70aade9106cf7102f)
 ExternalProject_Add(proj_rapidjson
     URL               https://github.com/Tencent/rapidjson/archive/${RAPIDJSON_COMMIT}.tar.gz
     INSTALL_DIR       ${INSTALL_DIR}
@@ -27,6 +27,7 @@ ExternalProject_Add(proj_rapidjson
                -DCMAKE_CXX_FLAGS_RELWITHDEBINFO=${CMAKE_CXX_FLAGS_RELWITHDEBINFO}
                -DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}
                -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
+               -DCMAKE_POLICY_VERSION_MINIMUM=3.5
     BUILD_COMMAND     ""
     INSTALL_COMMAND   ${CMAKE_COMMAND} -E copy_directory "<SOURCE_DIR>/include/" "<INSTALL_DIR>/include/"
 )
@@ -112,6 +113,7 @@ ExternalProject_Add(proj_yamlcpp
                 -DYAML_CPP_INSTALL=ON
                 -DYAML_BUILD_SHARED_LIBS=OFF
                 -DYAML_MSVC_SHARED_RT=OFF
+                -DCMAKE_POLICY_VERSION_MINIMUM=3.5
                 -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
                 -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
                 BUILD_BYPRODUCTS ${INSTALL_DIR}/lib/${LIBYAML_FILENAME}

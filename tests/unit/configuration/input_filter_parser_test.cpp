@@ -16,7 +16,6 @@ namespace {
 
 TEST(TestInputFilterParser, ParseEmpty)
 {
-    object_limits limits;
     auto object = yaml_to_object(R"([{id: 1, inputs: []}])");
 
     configuration_spec cfg;
@@ -24,7 +23,7 @@ TEST(TestInputFilterParser, ParseEmpty)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_filters(filters_array, collector, section, limits);
+    parse_filters(filters_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -80,8 +79,6 @@ TEST(TestInputFilterParser, ParseEmpty)
 
 TEST(TestInputFilterParser, ParseFilterWithoutID)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(R"([{inputs: [{address: http.client_ip}]}])");
 
     configuration_spec cfg;
@@ -89,7 +86,7 @@ TEST(TestInputFilterParser, ParseFilterWithoutID)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_filters(filters_array, collector, section, limits);
+    parse_filters(filters_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -145,8 +142,6 @@ TEST(TestInputFilterParser, ParseFilterWithoutID)
 
 TEST(TestInputFilterParser, ParseDuplicateFilters)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}]}, {id: 1, inputs: [{address: usr.id}]}])");
 
@@ -155,7 +150,7 @@ TEST(TestInputFilterParser, ParseDuplicateFilters)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_filters(filters_array, collector, section, limits);
+    parse_filters(filters_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -197,8 +192,6 @@ TEST(TestInputFilterParser, ParseDuplicateFilters)
 
 TEST(TestInputFilterParser, ParseUnconditionalNoTargets)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(R"([{id: 1, inputs: [{address: http.client_ip}]}])");
 
     configuration_spec cfg;
@@ -206,7 +199,7 @@ TEST(TestInputFilterParser, ParseUnconditionalNoTargets)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_filters(filters_array, collector, section, limits);
+    parse_filters(filters_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -241,8 +234,6 @@ TEST(TestInputFilterParser, ParseUnconditionalNoTargets)
 
 TEST(TestInputFilterParser, ParseUnconditionalTargetID)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}]}])");
 
@@ -251,7 +242,7 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetID)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_filters(filters_array, collector, section, limits);
+    parse_filters(filters_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -298,8 +289,6 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetID)
 
 TEST(TestInputFilterParser, ParseUnconditionalTargetTags)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
@@ -308,7 +297,7 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetTags)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_filters(filters_array, collector, section, limits);
+    parse_filters(filters_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -356,8 +345,6 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetTags)
 
 TEST(TestInputFilterParser, ParseUnconditionalTargetPriority)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939, tags: {type: rule, category: unknown}}]}])");
 
@@ -366,7 +353,7 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetPriority)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_filters(filters_array, collector, section, limits);
+    parse_filters(filters_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -412,7 +399,6 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetPriority)
 
 TEST(TestInputFilterParser, ParseUnconditionalMultipleTargets)
 {
-    object_limits limits;
 
     auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}, {tags: {type: rule, category: unknown}}]}])");
@@ -422,7 +408,7 @@ TEST(TestInputFilterParser, ParseUnconditionalMultipleTargets)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_filters(filters_array, collector, section, limits);
+    parse_filters(filters_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -479,8 +465,6 @@ TEST(TestInputFilterParser, ParseUnconditionalMultipleTargets)
 
 TEST(TestInputFilterParser, ParseMultipleUnconditional)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}]}, {id: 2, inputs: [{address: usr.id}], rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
@@ -489,7 +473,7 @@ TEST(TestInputFilterParser, ParseMultipleUnconditional)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_filters(filters_array, collector, section, limits);
+    parse_filters(filters_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -555,8 +539,6 @@ TEST(TestInputFilterParser, ParseMultipleUnconditional)
 
 TEST(TestInputFilterParser, ParseConditionalSingleCondition)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
@@ -565,7 +547,7 @@ TEST(TestInputFilterParser, ParseConditionalSingleCondition)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_filters(filters_array, collector, section, limits);
+    parse_filters(filters_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -611,7 +593,6 @@ TEST(TestInputFilterParser, ParseConditionalSingleCondition)
 
 TEST(TestInputFilterParser, ParseConditionalMultipleConditions)
 {
-    object_limits limits;
     auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
@@ -620,7 +601,7 @@ TEST(TestInputFilterParser, ParseConditionalMultipleConditions)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_filters(filters_array, collector, section, limits);
+    parse_filters(filters_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -666,8 +647,6 @@ TEST(TestInputFilterParser, ParseConditionalMultipleConditions)
 
 TEST(TestInputFilterParser, IncompatibleMinVersion)
 {
-    object_limits limits;
-
     auto object =
         yaml_to_object(R"([{id: 1, inputs: [{address: http.client_ip}], min_version: 99.0.0}])");
 
@@ -676,7 +655,7 @@ TEST(TestInputFilterParser, IncompatibleMinVersion)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_filters(filters_array, collector, section, limits);
+    parse_filters(filters_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -729,8 +708,6 @@ TEST(TestInputFilterParser, IncompatibleMinVersion)
 
 TEST(TestInputFilterParser, IncompatibleMaxVersion)
 {
-    object_limits limits;
-
     auto object =
         yaml_to_object(R"([{id: 1, inputs: [{address: http.client_ip}], max_version: 0.0.99}])");
 
@@ -739,7 +716,7 @@ TEST(TestInputFilterParser, IncompatibleMaxVersion)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_filters(filters_array, collector, section, limits);
+    parse_filters(filters_array, collector, section);
     ddwaf_object_free(&object);
 
     {
@@ -792,8 +769,6 @@ TEST(TestInputFilterParser, IncompatibleMaxVersion)
 
 TEST(TestInputFilterParser, CompatibleVersion)
 {
-    object_limits limits;
-
     auto object = yaml_to_object(
         R"([{id: 1, inputs: [{address: http.client_ip}], min_version: 0.0.99, max_version: 2.0.0}])");
 
@@ -802,7 +777,7 @@ TEST(TestInputFilterParser, CompatibleVersion)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
-    parse_filters(filters_array, collector, section, limits);
+    parse_filters(filters_array, collector, section);
     ddwaf_object_free(&object);
 
     {

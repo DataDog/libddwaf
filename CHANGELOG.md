@@ -1,4 +1,87 @@
 # libddwaf release
+
+## v1.24.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+#### Fixes
+- Support single-value arrays when generating fingerprints ([#392](https://github.com/DataDog/libddwaf/pull/392))
+
+#### Miscellaneous
+- Benchmarks with PGO ([#383](https://github.com/DataDog/libddwaf/pull/383))
+
+## v1.24.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+### New features
+This release only introduces a new builder function which can be used to retrieve the currently loaded configuration paths. This function can be useful for determining if a certain group of configurations is available and / or whether a default configuration is still presently loaded. The new function has the following signature:
+
+```c
+uint32_t ddwaf_builder_get_config_paths(ddwaf_builder builder, ddwaf_object *paths, const char *filter, uint32_t filter_len);
+```
+
+It can be used to retrieve all loaded paths as follows:
+```c
+ddwaf_builder builder = ddwaf_builder_init(nullptr);
+ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DD/default"), &default_config, nullptr);
+ddwaf_object_free(&default_config);
+
+ddwaf_object paths;
+uint32_t count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
+
+// count: 1
+// paths: [ "ASM_DD/default" ]
+```
+
+In addition, the function can also be called with a regular expression to collect only relevant configurations:
+```c
+ddwaf_builder builder = ddwaf_builder_init(nullptr);
+ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DD/default"), &default_config, nullptr);
+ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM/custom_rules"), &other_config, nullptr);
+ddwaf_object_free(&default_config);
+ddwaf_object_free(&custom_Rules);
+
+ddwaf_object paths;
+uint32_t count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM_DD/.*"));
+
+// count: 1
+// paths: [ "ASM_DD/default" ]
+```
+Note that `LSTRARG` is simply a non-standard macro for converting a literal string into: `<literal>, sizeof(<literal>) - 1`.
+
+More information on how this function must be used can be found [here](https://github.com/DataDog/libddwaf/blob/2cf8025455a1fe8c1169e08abff7ac18a1e56455/include/ddwaf.h#L418).
+
+### Release changelog
+#### Changes
+- Add function to get list of loaded configuration paths ([#384](https://github.com/DataDog/libddwaf/pull/384))
+#### Fixes
+- Make builder config const and fix build ([#374](https://github.com/DataDog/libddwaf/pull/374))
+#### Miscellaneous
+- Add benchmarks using clang-19 ([#380](https://github.com/DataDog/libddwaf/pull/380))
+
+## v1.23.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+### New features
+
+This new version of `libddwaf` introduces the WAF builder, a new mechanism for generating WAF instances through complete or partial configurations. This new mechanism aims to standardise the WAF update process across all WAF users, eliminating the possibility for incomplete or inconsistent implementations. With the introduction of the WAF builder, the `ddwaf_update` function has been deprecated, as the semantics have been drastically changed. More information about the builder can be found ([here](https://github.com/DataDog/libddwaf/blob/master/UPGRADING.md#waf-builder)).
+
+In addition, diagnostics have now been split into warnings and errors to better differentiate those which can indicate a potential issue from those which may indicate a potential, but expected, incompatibility. More information about the diagnostic changes can be found ([here](https://github.com/DataDog/libddwaf/blob/master/UPGRADING.md#warning-and-error-diagnostics)).
+
+Finally, a small but consequential change has been introduced to the endpoint fingerprint generation, which makes the `query` parameter of the postprocessor optional, meaning that fingerprints may be generated without it.
+
+Since this release introduces breaking changes, a new section has been added to the [upgrading guide](https://github.com/DataDog/libddwaf/blob/master/UPGRADING.md#upgrading-from-1220-to-1230).
+
+### Release changelog
+#### Changes
+- WAF Builder: independent configuration manager to generate WAF instances ([#363](https://github.com/DataDog/libddwaf/pull/363))
+- Change endpoint fingerprint query parameter to optional ([#365](https://github.com/DataDog/libddwaf/pull/365))
+- Split diagnostics into warnings and errors ([#368](https://github.com/DataDog/libddwaf/pull/368))
+- Pass object limits at evaluation time rather than parsing ([#370](https://github.com/DataDog/libddwaf/pull/370))
+
+#### Fixes
+- Wrap containers in the ruleset within shared pointers to reduce copies ([#366](https://github.com/DataDog/libddwaf/pull/366))
+
+#### Miscellaneous
+- Rename parameter to `raw_configuration` ([#367](https://github.com/DataDog/libddwaf/pull/367))
+- Generate coverage at multiple log levels ([#364](https://github.com/DataDog/libddwaf/pull/364))
+
 ## v1.22.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 ### New features
 

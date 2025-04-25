@@ -24,7 +24,6 @@
 #include "ruleset_info.hpp"
 #include "semver.hpp"
 #include "target_address.hpp"
-#include "utils.hpp"
 #include "version.hpp"
 
 namespace ddwaf {
@@ -69,8 +68,7 @@ std::vector<processor_mapping> parse_processor_mappings(
 } // namespace
 
 void parse_processors(const raw_configuration::vector &processor_array,
-    configuration_collector &cfg, ruleset_info::base_section_info &info,
-    const object_limits &limits)
+    configuration_collector &cfg, ruleset_info::base_section_info &info)
 {
     for (unsigned i = 0; i < processor_array.size(); i++) {
         const auto &node_param = processor_array[i];
@@ -112,7 +110,7 @@ void parse_processors(const raw_configuration::vector &processor_array,
             }
 
             auto conditions_array = at<raw_configuration::vector>(node, "conditions", {});
-            auto expr = parse_simplified_expression(conditions_array, limits);
+            auto expr = parse_simplified_expression(conditions_array);
 
             auto params = at<raw_configuration::map>(node, "parameters");
             auto mappings_vec = at<raw_configuration::vector>(params, "mappings");

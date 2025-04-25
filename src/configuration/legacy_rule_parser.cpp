@@ -40,8 +40,8 @@ namespace ddwaf {
 
 namespace {
 
-std::shared_ptr<expression> parse_expression(raw_configuration::vector &conditions_array,
-    const std::vector<transformer_id> &transformers, ddwaf::object_limits limits)
+std::shared_ptr<expression> parse_expression(
+    raw_configuration::vector &conditions_array, const std::vector<transformer_id> &transformers)
 {
     std::vector<std::unique_ptr<base_condition>> conditions;
 
@@ -120,7 +120,7 @@ std::shared_ptr<expression> parse_expression(raw_configuration::vector &conditio
         }
 
         conditions.emplace_back(std::make_unique<scalar_condition>(
-            std::move(matcher), std::string{}, std::move(definitions), limits));
+            std::move(matcher), std::string{}, std::move(definitions)));
     }
 
     return std::make_shared<expression>(std::move(conditions));
@@ -129,7 +129,7 @@ std::shared_ptr<expression> parse_expression(raw_configuration::vector &conditio
 } // namespace
 
 void parse_legacy_rules(const raw_configuration::vector &rule_array, configuration_collector &cfg,
-    base_section_info &info, object_limits limits)
+    base_section_info &info)
 {
     for (unsigned i = 0; i < rule_array.size(); ++i) {
         std::string id;
@@ -147,7 +147,7 @@ void parse_legacy_rules(const raw_configuration::vector &rule_array, configurati
             std::vector<transformer_id> rule_transformers;
             auto transformers =
                 at<raw_configuration::vector>(node, "transformers", raw_configuration::vector());
-            if (transformers.size() > limits.max_transformers_per_address) {
+            if (transformers.size() > object_limits::max_transformers_per_address) {
                 throw ddwaf::parsing_error("number of transformers beyond allowed limit");
             }
 
@@ -162,7 +162,7 @@ void parse_legacy_rules(const raw_configuration::vector &rule_array, configurati
             }
 
             auto conditions_array = at<raw_configuration::vector>(node, "conditions");
-            auto expression = parse_expression(conditions_array, rule_transformers, limits);
+            auto expression = parse_expression(conditions_array, rule_transformers);
 
             std::unordered_map<std::string, std::string> tags;
             for (auto &[key, value] : at<raw_configuration::map>(node, "tags")) {

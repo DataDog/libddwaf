@@ -378,8 +378,12 @@ ddwaf_builder ddwaf_builder_init(const ddwaf_config *config);
  * @param diagnostics Optional ruleset parsing diagnostics. (nullable)
  *
  * @return Whether the operation succeeded (true) or failed (false).
+ *
+ * @note if any of the arguments are NULL, the diagnostics object will not be initialised.
+ * @note The memory associated with the path, config and diagnostics must be freed by the caller.
+ * @note This function is not thread-safe.
  **/
-bool ddwaf_builder_add_or_update_config(ddwaf_builder builder, const char *path, uint32_t path_len, ddwaf_object *config, ddwaf_object *diagnostics);
+bool ddwaf_builder_add_or_update_config(ddwaf_builder builder, const char *path, uint32_t path_len, const ddwaf_object *config, ddwaf_object *diagnostics);
 
 /**
  * ddwaf_builder_remove_config
@@ -391,6 +395,9 @@ bool ddwaf_builder_add_or_update_config(ddwaf_builder builder, const char *path,
  * @param path_len The length of the string contained within path.
  *
  * @return Whether the operation succeeded (true) or failed (false).
+ *
+ * @note The memory associated with the path must be freed by the caller.
+ * @note This function is not thread-safe.
  **/
 bool ddwaf_builder_remove_config(ddwaf_builder builder, const char *path, uint32_t path_len);
 
@@ -402,8 +409,34 @@ bool ddwaf_builder_remove_config(ddwaf_builder builder, const char *path, uint32
  * @param builder Builder to perform the operation on. (nonnull)
  *
  * @return Handle to the new WAF instance or NULL if there was an error.
+ *
+ * @note This function is not thread-safe.
  **/
 ddwaf_handle ddwaf_builder_build_instance(ddwaf_builder builder);
+
+/**
+ * ddwaf_builder_get_config_paths
+ *
+ * Provides an array of the currently loaded paths, optionally matching the
+ * regex provided in filter. In addition, the count is provided as the return
+ * value, allowing paths to be nullptr.
+ *
+ * @param builder Builder to perform the operation on. (nonnull)
+ * @param paths The object in which paths will be returned, as an array of
+ *        strings. If NULL, only the count is provided. (nullable)
+ * @param filter An optional string regex to filter the provided paths. The
+ *        provided regular expression is used unanchored so matches can be found
+ *        at any point within the path, any necessary anchors must be explicitly
+ *        added to the regex. (nullable).
+ * @oaran filter_len The length of the filter string (or 0 otherwise).
+ *
+ * @return The total number of configurations loaded or, if provided, the number
+ *         of those matching the filter.
+ *
+ * @note This function is not thread-safe and the memory of the paths object must
+ *       be freed by the caller.
+ **/
+uint32_t ddwaf_builder_get_config_paths(ddwaf_builder builder, ddwaf_object *paths, const char *filter, uint32_t filter_len);
 
 /**
  * ddwaf_builder_destroy

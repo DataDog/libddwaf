@@ -2637,4 +2637,393 @@ TEST(TestWafIntegration, KnownActionsNullHandle)
     EXPECT_EQ(actions, nullptr);
 }
 
+std::unordered_set<std::string_view> object_to_string_set(const ddwaf_object *array)
+{
+    std::unordered_set<std::string_view> set;
+    for (std::size_t i = 0; i < ddwaf_object_size(array); ++i) {
+        const ddwaf_object *child = ddwaf_object_get_index(array, i);
+        EXPECT_EQ(ddwaf_object_type(child), DDWAF_OBJ_STRING);
+        set.emplace(child->stringValue, static_cast<std::size_t>(child->nbEntries));
+    }
+    return set;
+}
+
+TEST(TestWafIntegration, GetConfigPathSingleConfig)
+{
+    auto rule = read_file("interface.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DD/default"), &rule, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf_object paths;
+        auto count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
+
+        EXPECT_EQ(count, 1);
+        EXPECT_EQ(ddwaf_object_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+        auto path_set = object_to_string_set(&paths);
+        EXPECT_TRUE(path_set.contains("ASM_DD/default"));
+
+        ddwaf_object_free(&paths);
+    }
+
+    {
+        auto count = ddwaf_builder_get_config_paths(builder, nullptr, nullptr, 0);
+        EXPECT_EQ(count, 1);
+    }
+
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestWafIntegration, GetConfigPathMultipleConfigs)
+{
+
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    {
+        auto rule = read_file("interface.yaml", base_dir);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DD/default"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    {
+        auto overrides = yaml_to_object(
+            R"({rules_override: [{rules_target: [{rule_id: id-rule-1}], enabled: false}]})");
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM/overrides"), &overrides, nullptr);
+        ddwaf_object_free(&overrides);
+    }
+
+    {
+        auto data = read_file("rule_data.yaml", base_dir);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DATA/blocked"), &data, nullptr);
+        ddwaf_object_free(&data);
+    }
+
+    {
+        ddwaf_object paths;
+        auto count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
+
+        EXPECT_EQ(count, 3);
+        EXPECT_EQ(ddwaf_object_size(&paths), 3);
+        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+        auto path_set = object_to_string_set(&paths);
+        EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
+        EXPECT_TRUE(path_set.contains("ASM/overrides"));
+        EXPECT_TRUE(path_set.contains("ASM_DD/default"));
+
+        ddwaf_object_free(&paths);
+    }
+
+    {
+        auto count = ddwaf_builder_get_config_paths(builder, nullptr, nullptr, 0);
+        EXPECT_EQ(count, 3);
+    }
+
+    ddwaf_builder_remove_config(builder, LSTRARG("ASM/overrides"));
+    {
+        ddwaf_object paths;
+        auto count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
+
+        EXPECT_EQ(count, 2);
+        EXPECT_EQ(ddwaf_object_size(&paths), 2);
+        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+        auto path_set = object_to_string_set(&paths);
+        EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
+        EXPECT_TRUE(path_set.contains("ASM_DD/default"));
+
+        ddwaf_object_free(&paths);
+    }
+
+    {
+        auto count = ddwaf_builder_get_config_paths(builder, nullptr, nullptr, 0);
+        EXPECT_EQ(count, 2);
+    }
+
+    ddwaf_builder_remove_config(builder, LSTRARG("ASM_DATA/blocked"));
+    {
+        ddwaf_object paths;
+        auto count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
+
+        EXPECT_EQ(count, 1);
+        EXPECT_EQ(ddwaf_object_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+        auto path_set = object_to_string_set(&paths);
+        EXPECT_TRUE(path_set.contains("ASM_DD/default"));
+
+        ddwaf_object_free(&paths);
+    }
+
+    {
+        auto count = ddwaf_builder_get_config_paths(builder, nullptr, nullptr, 0);
+        EXPECT_EQ(count, 1);
+    }
+
+    ddwaf_builder_remove_config(builder, LSTRARG("ASM_DD/default"));
+    {
+        ddwaf_object paths;
+        auto count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
+
+        EXPECT_EQ(count, 0);
+        EXPECT_EQ(ddwaf_object_size(&paths), 0);
+        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+        ddwaf_object_free(&paths);
+    }
+
+    {
+        auto count = ddwaf_builder_get_config_paths(builder, nullptr, nullptr, 0);
+        EXPECT_EQ(count, 0);
+    }
+
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestWafIntegration, GetFilteredConfigPathSingleConfig)
+{
+    auto rule = read_file("interface.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DD/default"), &rule, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf_object paths;
+        auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM_DD/.*"));
+        EXPECT_EQ(count, 1);
+        EXPECT_EQ(ddwaf_object_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+        auto path_set = object_to_string_set(&paths);
+        EXPECT_TRUE(path_set.contains("ASM_DD/default"));
+
+        ddwaf_object_free(&paths);
+    }
+
+    {
+        auto count = ddwaf_builder_get_config_paths(builder, nullptr, LSTRARG("^ASM_DD/.*"));
+        EXPECT_EQ(count, 1);
+    }
+
+    {
+        ddwaf_object paths;
+        auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM/.*"));
+
+        EXPECT_EQ(count, 0);
+        EXPECT_EQ(ddwaf_object_size(&paths), 0);
+        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+        ddwaf_object_free(&paths);
+    }
+
+    {
+        auto count = ddwaf_builder_get_config_paths(builder, nullptr, LSTRARG("^ASM/.*"));
+        EXPECT_EQ(count, 0);
+    }
+
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
+{
+
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    {
+        auto rule = read_file("interface.yaml", base_dir);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DD/default"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    {
+        auto overrides = yaml_to_object(
+            R"({rules_override: [{rules_target: [{rule_id: id-rule-1}], enabled: false}]})");
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM/overrides"), &overrides, nullptr);
+        ddwaf_object_free(&overrides);
+    }
+
+    {
+        auto data = read_file("rule_data.yaml", base_dir);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DATA/blocked"), &data, nullptr);
+        ddwaf_object_free(&data);
+    }
+
+    {
+        ddwaf_object paths;
+        auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^random"));
+
+        EXPECT_EQ(count, 0);
+        EXPECT_EQ(ddwaf_object_size(&paths), 0);
+        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+        ddwaf_object_free(&paths);
+    }
+
+    {
+        auto count = ddwaf_builder_get_config_paths(builder, nullptr, LSTRARG("^random"));
+        EXPECT_EQ(count, 0);
+    }
+
+    {
+        ddwaf_object paths;
+        auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM.*"));
+
+        EXPECT_EQ(count, 3);
+        EXPECT_EQ(ddwaf_object_size(&paths), 3);
+        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+        auto path_set = object_to_string_set(&paths);
+        EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
+        EXPECT_TRUE(path_set.contains("ASM/overrides"));
+        EXPECT_TRUE(path_set.contains("ASM_DD/default"));
+
+        ddwaf_object_free(&paths);
+    }
+
+    {
+        auto count = ddwaf_builder_get_config_paths(builder, nullptr, LSTRARG("^ASM.*"));
+        EXPECT_EQ(count, 3);
+    }
+
+    {
+        ddwaf_object paths;
+        auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM_DD/.*"));
+
+        EXPECT_EQ(count, 1);
+        EXPECT_EQ(ddwaf_object_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+        auto path_set = object_to_string_set(&paths);
+        EXPECT_TRUE(path_set.contains("ASM_DD/default"));
+
+        ddwaf_object_free(&paths);
+    }
+
+    {
+        auto count = ddwaf_builder_get_config_paths(builder, nullptr, LSTRARG("^ASM_DD/.*"));
+        EXPECT_EQ(count, 1);
+    }
+
+    {
+        ddwaf_object paths;
+        auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM_D.*"));
+
+        EXPECT_EQ(count, 2);
+        EXPECT_EQ(ddwaf_object_size(&paths), 2);
+        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+        auto path_set = object_to_string_set(&paths);
+        EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
+        EXPECT_TRUE(path_set.contains("ASM_DD/default"));
+
+        ddwaf_object_free(&paths);
+    }
+
+    {
+        auto count = ddwaf_builder_get_config_paths(builder, nullptr, LSTRARG("^ASM_D.*"));
+        EXPECT_EQ(count, 2);
+    }
+
+    {
+        ddwaf_object paths;
+        auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM/.*"));
+
+        EXPECT_EQ(count, 1);
+        EXPECT_EQ(ddwaf_object_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+        auto path_set = object_to_string_set(&paths);
+        EXPECT_TRUE(path_set.contains("ASM/overrides"));
+
+        ddwaf_object_free(&paths);
+    }
+
+    {
+        auto count = ddwaf_builder_get_config_paths(builder, nullptr, LSTRARG("^ASM/.*"));
+        EXPECT_EQ(count, 1);
+    }
+
+    ddwaf_builder_remove_config(builder, LSTRARG("ASM/overrides"));
+
+    {
+        ddwaf_object paths;
+        auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM_D.*"));
+
+        EXPECT_EQ(count, 2);
+        EXPECT_EQ(ddwaf_object_size(&paths), 2);
+        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+        auto path_set = object_to_string_set(&paths);
+        EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
+        EXPECT_TRUE(path_set.contains("ASM_DD/default"));
+
+        ddwaf_object_free(&paths);
+    }
+
+    {
+        auto count = ddwaf_builder_get_config_paths(builder, nullptr, LSTRARG("^ASM_D.*"));
+        EXPECT_EQ(count, 2);
+    }
+
+    ddwaf_builder_remove_config(builder, LSTRARG("ASM_DATA/blocked"));
+    {
+        ddwaf_object paths;
+        auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM_DD/.*"));
+
+        EXPECT_EQ(count, 1);
+        EXPECT_EQ(ddwaf_object_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+        auto path_set = object_to_string_set(&paths);
+        EXPECT_TRUE(path_set.contains("ASM_DD/default"));
+
+        ddwaf_object_free(&paths);
+    }
+
+    {
+        auto count = ddwaf_builder_get_config_paths(builder, nullptr, LSTRARG("^ASM_DD/.*"));
+        EXPECT_EQ(count, 1);
+    }
+
+    {
+        ddwaf_object paths;
+        auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^random"));
+
+        EXPECT_EQ(count, 0);
+        EXPECT_EQ(ddwaf_object_size(&paths), 0);
+        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+        ddwaf_object_free(&paths);
+    }
+
+    {
+        auto count = ddwaf_builder_get_config_paths(builder, nullptr, LSTRARG("^random"));
+        EXPECT_EQ(count, 0);
+    }
+
+    ddwaf_builder_remove_config(builder, LSTRARG("ASM_DD/default"));
+    {
+        ddwaf_object paths;
+        auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM.*"));
+
+        EXPECT_EQ(count, 0);
+        EXPECT_EQ(ddwaf_object_size(&paths), 0);
+        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+
+        ddwaf_object_free(&paths);
+    }
+
+    {
+        auto count = ddwaf_builder_get_config_paths(builder, nullptr, LSTRARG("^ASM.*"));
+        EXPECT_EQ(count, 0);
+    }
+
+    ddwaf_builder_destroy(builder);
+}
+
 } // namespace
