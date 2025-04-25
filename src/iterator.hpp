@@ -66,7 +66,7 @@ public:
     value_iterator &operator=(const value_iterator &) = delete;
     value_iterator &operator=(value_iterator &&) = delete;
 
-    [[nodiscard]] const ddwaf_object *operator*() { return current_; }
+    [[nodiscard]] const ddwaf_object *operator*() const { return current_; }
 
     [[nodiscard]] DDWAF_OBJ_TYPE type() const
     {

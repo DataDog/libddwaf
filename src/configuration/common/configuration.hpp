@@ -65,6 +65,7 @@ enum class processor_type : unsigned {
     http_network_fingerprint,
     http_header_fingerprint,
     session_fingerprint,
+    jwt_decoder,
 };
 
 struct processor_spec {

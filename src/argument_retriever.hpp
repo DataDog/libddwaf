@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "condition/base.hpp"
+#include "iterator.hpp"
 #include "traits.hpp"
 #include "utils.hpp"
 
@@ -95,6 +96,16 @@ template <typename T> struct argument_retriever<unary_argument<T>> : default_arg
         auto [object, attr] = store.get_target(target.index);
         if (object == nullptr || objects_excluded.contains(object)) {
             return std::nullopt;
+        }
+
+        if (!target.key_path.empty()) {
+            object::value_iterator it{object, target.key_path, objects_excluded};
+
+            if (!it) {
+                return std::nullopt;
+            }
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+            object = const_cast<ddwaf_object *>(*it);
         }
 
         auto converted = convert<T>(object);
