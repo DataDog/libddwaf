@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 #include "processor/jwt_decoder.hpp"
 
+#include "iterator.hpp"
 #include "transformer/base64_decode.hpp"
 
 #include <rapidjson/prettywriter.h>
@@ -14,21 +15,14 @@ using namespace std::literals;
 
 namespace ddwaf {
 
-template <std::size_t N> std::array<std::string_view, N> split(std::string_view source, char delim)
+std::array<std::string_view, 3> split_token(std::string_view source, char delim)
 {
-    std::array<std::string_view, N> parts{};
-    std::size_t i = 0;
-    for (; i < (N - 1) && !source.empty(); ++i) {
+    std::array<std::string_view, 3> parts{};
+    for (std::size_t i = 0; i < 3 && !source.empty(); ++i) {
         auto end = source.find_first_of(delim);
-        if (end == std::string_view::npos) {
-            break;
-        }
-
         parts[i] = source.substr(0, end);
         source = source.substr(end + 1);
     }
-    parts[i] = source;
-
     return parts;
 }
 
@@ -116,18 +110,24 @@ ddwaf_object decode_and_parse(std::string_view source)
 }
 
 std::pair<ddwaf_object, object_store::attribute> jwt_decoder::eval_impl(
-    const unary_argument<std::string_view> &input, processor_cache & /*cache*/,
+    const unary_argument<const ddwaf_object *> &input, processor_cache & /*cache*/,
     ddwaf::timer & /*deadline*/) const
 {
-    if (input.value.empty()) {
-        return {};
-    }
-
     const object_store::attribute attr =
         input.ephemeral ? object_store::attribute::ephemeral : object_store::attribute::none;
 
+    object::value_iterator it{input.value, input.key_path, {}};
+
+    const auto *object = *it;
+    if (object == nullptr || object->type != DDWAF_OBJ_STRING || object->nbEntries == 0 ||
+        object->stringValue == nullptr) {
+        return {};
+    }
+
+    std::string_view token{object->stringValue, static_cast<std::size_t>(object->nbEntries)};
+
     // Split jwt
-    auto [header_base64, payload_base64, signature] = split<3>(input.value, '.');
+    auto [header_base64, payload_base64, signature] = split_token(token, '.');
 
     // Decode header and payload
     auto header = decode_and_parse(header_base64);
