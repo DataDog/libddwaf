@@ -97,7 +97,9 @@ elseif(WIN32)
     list(APPEND LIBDDWAF_INTERFACE_LIBRARIES ws2_32)
 endif()
 
-set(LIBDDWAF_PRIVATE_LIBRARIES "")
+add_subdirectory(third_party EXCLUDE_FROM_ALL)
+
+set(LIBDDWAF_PRIVATE_LIBRARIES "lib_rapidjson")
 if(NOT MSVC AND LIBDDWAF_TESTING AND LIBDDWAF_TEST_COVERAGE)
     list(APPEND LIBDDWAF_PRIVATE_LIBRARIES gcov)
 endif()
@@ -121,7 +123,6 @@ endif()
 include(cmake/package.cmake)
 
 if (LIBDDWAF_TESTING)
-    add_subdirectory(third_party EXCLUDE_FROM_ALL)
     add_subdirectory(tests EXCLUDE_FROM_ALL)
     add_subdirectory(validator EXCLUDE_FROM_ALL)
     add_subdirectory(benchmark EXCLUDE_FROM_ALL)
