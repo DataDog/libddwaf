@@ -5,11 +5,22 @@
 // Copyright 2021 Datadog, Inc.
 #include "processor/jwt_decoder.hpp"
 
+#include "argument_retriever.hpp"
+#include "clock.hpp"
+#include "ddwaf.h"
 #include "iterator.hpp"
+#include "object_store.hpp"
+#include "processor/base.hpp"
 #include "transformer/base64_decode.hpp"
+#include "transformer/common/cow_string.hpp"
 
-#include <rapidjson/prettywriter.h>
-#include <rapidjson/schema.h>
+#include <array>
+#include <cstddef>
+#include <rapidjson/document.h>
+#include <rapidjson/error/error.h>
+#include <rapidjson/rapidjson.h>
+#include <string_view>
+#include <utility>
 
 using namespace std::literals;
 
@@ -109,6 +120,7 @@ ddwaf_object decode_and_parse(std::string_view source)
     return json_to_object(static_cast<std::string_view>(cstr));
 }
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<ddwaf_object, object_store::attribute> jwt_decoder::eval_impl(
     const unary_argument<const ddwaf_object *> &input, processor_cache & /*cache*/,
     ddwaf::timer & /*deadline*/) const
@@ -116,7 +128,7 @@ std::pair<ddwaf_object, object_store::attribute> jwt_decoder::eval_impl(
     const object_store::attribute attr =
         input.ephemeral ? object_store::attribute::ephemeral : object_store::attribute::none;
 
-    object::value_iterator it{input.value, input.key_path, {}};
+    const object::value_iterator it{input.value, input.key_path, {}};
 
     const auto *object = *it;
     if (object == nullptr || object->type != DDWAF_OBJ_STRING || object->nbEntries == 0 ||
@@ -124,7 +136,7 @@ std::pair<ddwaf_object, object_store::attribute> jwt_decoder::eval_impl(
         return {};
     }
 
-    std::string_view token{object->stringValue, static_cast<std::size_t>(object->nbEntries)};
+    const std::string_view token{object->stringValue, static_cast<std::size_t>(object->nbEntries)};
 
     // Split jwt
     auto [header_base64, payload_base64, signature] = split_token(token, '.');
