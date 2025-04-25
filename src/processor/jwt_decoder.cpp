@@ -26,6 +26,8 @@ using namespace std::literals;
 
 namespace ddwaf {
 
+namespace {
+
 std::array<std::string_view, 3> split_token(std::string_view source, char delim)
 {
     std::array<std::string_view, 3> parts{};
@@ -37,10 +39,8 @@ std::array<std::string_view, 3> split_token(std::string_view source, char delim)
     return parts;
 }
 
-template <typename T>
 // NOLINTNEXTLINE(misc-no-recursion)
-void json_to_object_helper(ddwaf_object *object, T &doc)
-    requires std::is_same_v<rapidjson::Document, T> || std::is_same_v<rapidjson::Value, T>
+void json_to_object_helper(ddwaf_object *object, rapidjson::Value &doc)
 {
     switch (doc.GetType()) {
     case rapidjson::kFalseType:
@@ -105,6 +105,7 @@ ddwaf_object json_to_object(std::string_view json)
         if (!result.IsError()) {
             json_to_object_helper(&output, doc);
         }
+        // NOLINTNEXTLINE(bugprone-empty-catch)
     } catch (...) {}
 
     return output;
@@ -119,6 +120,8 @@ ddwaf_object decode_and_parse(std::string_view source)
 
     return json_to_object(static_cast<std::string_view>(cstr));
 }
+
+} // namespace
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<ddwaf_object, object_store::attribute> jwt_decoder::eval_impl(
