@@ -15,9 +15,7 @@
 #include "transformer/base64_decode.hpp"
 #include "transformer/common/cow_string.hpp"
 
-#include <array>
 #include <cstddef>
-#include <cstdint>
 #include <deque>
 #include <rapidjson/document.h>
 #include <rapidjson/error/error.h>
@@ -30,14 +28,32 @@ namespace ddwaf {
 
 namespace {
 
-std::array<std::string_view, 3> split_token(std::string_view source, char delim)
+struct exploded_jwt {
+    std::string_view header;
+    std::string_view payload;
+    std::string_view secret;
+};
+
+exploded_jwt split_token(std::string_view source)
 {
-    std::array<std::string_view, 3> parts{};
-    for (std::size_t i = 0; i < 3 && !source.empty(); ++i) {
-        auto end = source.find_first_of(delim);
-        parts[i] = source.substr(0, end);
-        source = source.substr(end + 1);
+    constexpr char delim = '.';
+
+    exploded_jwt parts;
+    std::size_t end = source.find(delim);
+
+    parts.header = source.substr(0, end);
+    if (end == std::string_view::npos || end == source.size() - 1) {
+        return parts;
     }
+    source.remove_prefix(end + 1);
+
+    end = source.find(delim);
+    parts.payload = source.substr(0, end);
+    if (end == std::string_view::npos || end == source.size() - 1) {
+        return parts;
+    }
+
+    parts.secret = source.substr(end + 1);
     return parts;
 }
 
@@ -147,11 +163,11 @@ std::pair<ddwaf_object, object_store::attribute> jwt_decoder::eval_impl(
     const std::string_view token{object->stringValue, static_cast<std::size_t>(object->nbEntries)};
 
     // Split jwt
-    auto [header_base64, payload_base64, signature] = split_token(token, '.');
+    auto jwt = split_token(token);
 
     // Decode header and payload
-    auto header = decode_and_parse(header_base64);
-    auto payload = decode_and_parse(payload_base64);
+    auto header = decode_and_parse(jwt.header);
+    auto payload = decode_and_parse(jwt.payload);
 
     // Generate output
     ddwaf_object output;
@@ -160,7 +176,7 @@ std::pair<ddwaf_object, object_store::attribute> jwt_decoder::eval_impl(
     ddwaf_object_map_addl(&output, "payload", sizeof("payload") - 1, &payload);
 
     ddwaf_object signature_available;
-    ddwaf_object_bool(&signature_available, !signature.empty());
+    ddwaf_object_bool(&signature_available, !jwt.secret.empty());
     ddwaf_object_map_addl(&output, "signature", sizeof("signature") - 1, &signature_available);
 
     return {output, attr};
