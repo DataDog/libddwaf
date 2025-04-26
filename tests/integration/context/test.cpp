@@ -757,6 +757,43 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndPersistentPriority)
     ddwaf_destroy(handle);
 }
 
+TEST(TestContextIntegration, ReplaceEphemeral)
+{
+    auto rule = read_file<ddwaf_object>("processor7.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    {
+        ddwaf_object tmp;
+        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
+        ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
+
+        ddwaf_result ret;
+        EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EVENTS(ret, {.id = "1",
+                               .name = "rule1",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = "^string.*",
+                                   .highlight = "string 1",
+                                   .args = {{
+                                       .value = "string 1",
+                                       .address = "arg1",
+                                   }}}}});
+        ddwaf_result_free(&ret);
+    }
+
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
 TEST(TestContextIntegration, EphemeralPriorityAndPersistentNonPriority)
 {
     auto rule = read_file<ddwaf_object>("processor7.yaml", base_dir);

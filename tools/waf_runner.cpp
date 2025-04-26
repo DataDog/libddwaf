@@ -64,24 +64,33 @@ int main(int argc, char *argv[])
 
     const std::vector<std::string> rulesets = args["--ruleset"];
     const std::vector<std::string> inputs = args["--input"];
-    if (rulesets.empty() || rulesets.size() > 1 || inputs.empty()) {
+    if (rulesets.empty() || inputs.empty()) {
         std::cout << "Usage: " << argv[0] << " --ruleset <json/yaml file>"
                   << " --input <json input> [<json input>..]\n";
         return EXIT_FAILURE;
     }
 
-    const auto &ruleset = rulesets[0];
+    const ddwaf_config config{{.key_regex=key_regex, .value_regex=value_regex}, ddwaf_object_free};
+    ddwaf_builder builder = ddwaf_builder_init(&config);
 
-    auto rule = YAML::Load(read_file(ruleset)).as<ddwaf_object>();
-    const ddwaf_config config{{key_regex, value_regex}, ddwaf_object_free};
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ddwaf_object_free(&rule);
-    if (handle == nullptr) {
-        std::cout << "Failed to load " << ruleset << '\n';
-        return EXIT_FAILURE;
+    std::size_t index = 0;
+    for (const auto & config : rulesets) {
+        auto rule = YAML::Load(read_file(config)).as<ddwaf_object>();
+        auto path = "config/" + std::to_string(index++);
+
+        if (!ddwaf_builder_add_or_update_config(builder, path.data(), path.size(), &rule, nullptr)) {
+            std::cout << "Failed to add configuration: " << config << '\n';
+        }
+
+        ddwaf_object_free(&rule);
     }
 
-    std::cout << "-- Run with " << ruleset << '\n';
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
+    ddwaf_builder_destroy(builder);
+    if (handle == nullptr) {
+        std::cout << "Failed to instantiate handle\n";
+        return EXIT_FAILURE;
+    }
 
     ddwaf_context context = ddwaf_context_init(handle);
     if (context == nullptr) {
@@ -158,6 +167,7 @@ int main(int argc, char *argv[])
     }
 
     ddwaf_context_destroy(context);
+
 
     ddwaf_destroy(handle);
 
