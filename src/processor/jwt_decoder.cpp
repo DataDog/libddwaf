@@ -2,7 +2,8 @@
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2021 Datadog, Inc.
+// Copyright 2025 Datadog, Inc.
+
 #include "processor/jwt_decoder.hpp"
 
 #include "argument_retriever.hpp"
@@ -16,9 +17,10 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
+#include <deque>
 #include <rapidjson/document.h>
 #include <rapidjson/error/error.h>
-#include <rapidjson/rapidjson.h>
 #include <string_view>
 #include <utility>
 
@@ -39,76 +41,79 @@ std::array<std::string_view, 3> split_token(std::string_view source, char delim)
     return parts;
 }
 
-// NOLINTNEXTLINE(misc-no-recursion)
-void json_to_object_helper(ddwaf_object *object, rapidjson::Value &doc)
-{
-    switch (doc.GetType()) {
-    case rapidjson::kFalseType:
-        ddwaf_object_bool(object, false);
-        break;
-    case rapidjson::kTrueType:
-        ddwaf_object_bool(object, true);
-        break;
-    case rapidjson::kObjectType: {
-        ddwaf_object_map(object);
-        for (auto &kv : doc.GetObject()) {
-            ddwaf_object element;
-            json_to_object_helper(&element, kv.value);
-
-            const std::string_view key = kv.name.GetString();
-            ddwaf_object_map_addl(object, key.data(), key.length(), &element);
-        }
-        break;
-    }
-    case rapidjson::kArrayType: {
-        ddwaf_object_array(object);
-        for (auto &v : doc.GetArray()) {
-            ddwaf_object element;
-            json_to_object_helper(&element, v);
-
-            ddwaf_object_array_add(object, &element);
-        }
-        break;
-    }
-    case rapidjson::kStringType: {
-        const std::string_view str = doc.GetString();
-        ddwaf_object_stringl(object, str.data(), str.size());
-        break;
-    }
-    case rapidjson::kNumberType: {
-        if (doc.IsInt64()) {
-            ddwaf_object_signed(object, doc.GetInt64());
-        } else if (doc.IsUint64()) {
-            ddwaf_object_unsigned(object, doc.GetUint64());
-        } else if (doc.IsDouble()) {
-            ddwaf_object_float(object, doc.GetDouble());
-        }
-        break;
-    }
-    case rapidjson::kNullType:
-        ddwaf_object_null(object);
-        break;
-    default:
-        ddwaf_object_invalid(object);
-        break;
-    }
-}
-
 ddwaf_object json_to_object(std::string_view json)
 {
-    ddwaf_object output;
-    ddwaf_object_invalid(&output);
+    auto to_object = [](const rapidjson::Value &doc) -> ddwaf_object {
+        ddwaf_object object;
+        if (doc.IsBool()) {
+            ddwaf_object_bool(&object, doc.GetBool());
+        } else if (doc.IsInt64()) {
+            ddwaf_object_signed(&object, doc.GetInt64());
+        } else if (doc.IsUint64()) {
+            ddwaf_object_unsigned(&object, doc.GetUint64());
+        } else if (doc.IsDouble()) {
+            ddwaf_object_float(&object, doc.GetDouble());
+        } else if (doc.IsString()) {
+            const std::string_view str = doc.GetString();
+            ddwaf_object_stringl(&object, str.data(), str.size());
+        } else if (doc.IsNull()) {
+            ddwaf_object_null(&object);
+        } else if (doc.IsObject()) {
+            ddwaf_object_map(&object);
+        } else if (doc.IsArray()) {
+            ddwaf_object_array(&object);
+        } else {
+            ddwaf_object_invalid(&object);
+        }
+        return object;
+    };
 
     rapidjson::Document doc;
-    try {
-        const rapidjson::ParseResult result = doc.Parse(json.data());
-        if (!result.IsError()) {
-            json_to_object_helper(&output, doc);
-        }
-        // NOLINTNEXTLINE(bugprone-empty-catch)
-    } catch (...) {}
+    const rapidjson::ParseResult result = doc.Parse(json.data());
+    if (result.IsError()) {
+        return {};
+    }
 
-    return output;
+    std::deque<std::pair<rapidjson::Value *, ddwaf_object *>> queue;
+    auto object = to_object(doc);
+    if (doc.IsArray() || doc.IsObject()) {
+        queue.emplace_back(&doc, &object);
+    }
+
+    while (!queue.empty()) {
+        auto &[source, destination] = queue.front();
+        if (source->IsArray()) {
+            for (auto &value : source->GetArray()) {
+                auto value_object = to_object(value);
+                ddwaf_object_array_add(destination, &value_object);
+            }
+
+            std::size_t i = 0;
+            for (auto &value : source->GetArray()) {
+                if (value.IsArray() || value.IsObject()) {
+                    queue.emplace_back(&value, &destination->array[i++]);
+                }
+            }
+        } else if (source->IsObject()) {
+            for (auto &[key, value] : source->GetObject()) {
+                auto value_object = to_object(value);
+
+                const std::string_view key_sv = key.GetString();
+                ddwaf_object_map_addl(destination, key_sv.data(), key_sv.length(), &value_object);
+            }
+
+            std::size_t i = 0;
+            for (auto &[_, value] : source->GetObject()) {
+                if (value.IsArray() || value.IsObject()) {
+                    queue.emplace_back(&value, &destination->array[i++]);
+                }
+            }
+        }
+
+        queue.pop_front();
+    }
+
+    return object;
 }
 
 ddwaf_object decode_and_parse(std::string_view source)
