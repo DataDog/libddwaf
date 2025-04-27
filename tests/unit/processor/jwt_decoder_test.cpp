@@ -45,4 +45,60 @@ TEST(TestJwtDecoder, Basic)
     ddwaf_object_free(&output);
 }
 
+TEST(TestJwtDecoder, NoSignature)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object headers;
+    ddwaf_object_map(&headers);
+    ddwaf_object_map_add(&headers, "authorization",
+        ddwaf_object_string(&tmp,
+            "Bearer "
+            "eyJhbGciOiJub25lIn0."
+            "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
+            "NjIzOTAyMiwicm9sZXMiOlsiYWRtaW4iLCIxODM5MDIxZCIsICJ-fiJdfQo."));
+
+    jwt_decoder gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    processor_cache cache;
+    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_MAP);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    EXPECT_JSON(output,
+        R"({"header":{"alg":"none"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022,"roles":["admin","1839021d", "~~"]},"signature":false})");
+
+    ddwaf_object_free(&headers);
+    ddwaf_object_free(&output);
+}
+
+TEST(TestJwtDecoder, NoSignatureNoDelim)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object headers;
+    ddwaf_object_map(&headers);
+    ddwaf_object_map_add(&headers, "authorization",
+        ddwaf_object_string(&tmp,
+            "Bearer "
+            "eyJhbGciOiJub25lIn0."
+            "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
+            "NjIzOTAyMiwicm9sZXMiOlsiYWRtaW4iLCIxODM5MDIxZCIsICJ-fiJdfQo"));
+
+    jwt_decoder gen{"id", {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    processor_cache cache;
+    auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_MAP);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    EXPECT_JSON(output,
+        R"({"header":{"alg":"none"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022,"roles":["admin","1839021d", "~~"]},"signature":false})");
+
+    ddwaf_object_free(&headers);
+    ddwaf_object_free(&output);
+}
+
 } // namespace

@@ -14,6 +14,7 @@
 #include "processor/base.hpp"
 #include "transformer/base64_decode.hpp"
 #include "transformer/common/cow_string.hpp"
+#include "utils.hpp"
 
 #include <cstddef>
 #include <deque>
@@ -108,7 +109,7 @@ ddwaf_object json_to_object(std::string_view json)
         auto &[source, destination, idx] = stack.back();
         if (source->IsArray()) {
             for (; idx < source->Size(); ++idx) {
-                auto &value = source[idx];
+                auto &value = (*source)[idx];
 
                 auto value_object = to_object(value);
                 ddwaf_object_array_add(destination, &value_object);
@@ -130,7 +131,7 @@ ddwaf_object json_to_object(std::string_view json)
 
                 if ((it->value.IsObject() || it->value.IsArray()) && stack.size() < max_depth) {
                     container_found = true;
-                    stack.emplace_back(&it->value, &destination->array[idx++], 0);
+                    stack.emplace_back(&(it->value), &destination->array[idx++], 0);
                     break;
                 }
             }
@@ -147,7 +148,7 @@ ddwaf_object json_to_object(std::string_view json)
 ddwaf_object decode_and_parse(std::string_view source)
 {
     cow_string cstr{source};
-    if (!transformer::base64_decode::transform(cstr)) {
+    if (!transformer::base64url_decode::transform(cstr)) {
         return {};
     }
 
@@ -174,7 +175,7 @@ std::pair<ddwaf_object, object_store::attribute> jwt_decoder::eval_impl(
 
     std::string_view token{object->stringValue, static_cast<std::size_t>(object->nbEntries)};
 
-    std::string_view prefix = "Bearer";
+    static const std::string_view prefix = "Bearer";
     if (!token.starts_with(prefix)) {
         // Unlikely to be a JWT
         return {};
@@ -184,7 +185,7 @@ std::pair<ddwaf_object, object_store::attribute> jwt_decoder::eval_impl(
     token.remove_prefix(prefix.size());
 
     std::size_t spaces = 0;
-    while (!token.empty() && isspace(token[spaces])) { ++spaces; }
+    while (!token.empty() && ddwaf::isspace(token[spaces])) { ++spaces; }
 
     token.remove_prefix(spaces);
 

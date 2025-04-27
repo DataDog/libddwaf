@@ -68,6 +68,8 @@ bool call_transformer(transformer_id id, cow_string &str)
         return html_entity_decode::transform(str);
     case transformer_id::base64_decode:
         return base64_decode::transform(str);
+    case transformer_id::base64url_decode:
+        return base64url_decode::transform(str);
     case transformer_id::base64_encode:
         return base64_encode::transform(str);
     }

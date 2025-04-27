@@ -10,7 +10,6 @@
 #include <cstring>
 #include <string_view>
 
-#include "ddwaf.h"
 #include "transformer/common/cow_string.hpp"
 
 namespace ddwaf {
@@ -27,6 +26,7 @@ enum class transformer_id : uint8_t {
     js_decode,
     html_entity_decode,
     base64_decode,
+    base64url_decode,
     base64_encode,
     shell_unescape,
     url_basename,
