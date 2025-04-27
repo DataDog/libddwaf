@@ -21,7 +21,7 @@ TEST(TestJwtDecoder, Basic)
     ddwaf_object_map(&headers);
     ddwaf_object_map_add(&headers, "authorization",
         ddwaf_object_string(&tmp,
-            "eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
+            "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
             "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
             "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
             "8B48NpATozzMHn0j3rE0xVUldxShzy0xeJ7vYAccVXu2Gs9rnTVqouc-UZu_wJHkZiKBL67j8_"
@@ -37,6 +37,9 @@ TEST(TestJwtDecoder, Basic)
     auto [output, attr] = gen.eval_impl({{}, {}, false, &headers}, cache, deadline);
     EXPECT_EQ(output.type, DDWAF_OBJ_MAP);
     EXPECT_EQ(attr, object_store::attribute::none);
+
+    EXPECT_JSON(output,
+        R"({"header":{"alg":"RS384","typ":"JWT"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022},"signature":true})");
 
     ddwaf_object_free(&headers);
     ddwaf_object_free(&output);

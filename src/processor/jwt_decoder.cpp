@@ -172,7 +172,21 @@ std::pair<ddwaf_object, object_store::attribute> jwt_decoder::eval_impl(
         return {};
     }
 
-    const std::string_view token{object->stringValue, static_cast<std::size_t>(object->nbEntries)};
+    std::string_view token{object->stringValue, static_cast<std::size_t>(object->nbEntries)};
+
+    std::string_view prefix = "Bearer";
+    if (!token.starts_with(prefix)) {
+        // Unlikely to be a JWT
+        return {};
+    }
+
+    // Remove prefix and spaces
+    token.remove_prefix(prefix.size());
+
+    std::size_t spaces = 0;
+    while (!token.empty() && isspace(token[spaces])) { ++spaces; }
+
+    token.remove_prefix(spaces);
 
     // Split jwt
     auto jwt = split_token(token);

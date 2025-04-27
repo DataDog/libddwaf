@@ -200,4 +200,14 @@ std::list<ddwaf::test::event::match> from_matches(
         auto obtained = doc.as<ddwaf::test::action_map>();                                         \
         EXPECT_THAT(obtained, WithActions(__VA_ARGS__));                                           \
     }
+
+#define EXPECT_JSON(obtained, expected)                                                            \
+    {                                                                                              \
+        auto obtained_doc = test::object_to_rapidjson(obtained);                                   \
+        rapidjson::Document expected_doc;                                                          \
+        expected_doc.Parse(expected);                                                              \
+        EXPECT_FALSE(expected_doc.HasParseError());                                                \
+        EXPECT_TRUE(json_equals(obtained_doc, expected_doc)) << test::object_to_json(obtained);    \
+    }
+
 // NOLINTEND(cppcoreguidelines-macro-usage)

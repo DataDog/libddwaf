@@ -1,0 +1,29 @@
+{
+  "version": "2.2",
+  "metadata": {
+    "rules_version": "1.8.0"
+  },
+  "rules": [],
+  "processors": [
+    {
+      "id": "processor-001",
+      "generator": "jwt_decoder",
+      "conditions": [],
+      "parameters": {
+        "mappings": [
+          {
+            "inputs": [
+              {
+                "address": "server.request.headers.no_cookies",
+                "key_path": [ "authorization" ]
+              }
+            ],
+            "output": "server.request.jwt"
+          }
+        ]
+      },
+      "evaluate": false,
+      "output": true
+    }
+  ]
+}
