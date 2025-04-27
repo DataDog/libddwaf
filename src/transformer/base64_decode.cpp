@@ -127,6 +127,18 @@ bool base64url_decode::needs_transform(std::string_view str)
     // All characters must be valid
     for (size_t pos = 0; pos < str.length(); ++pos) {
         if (!ddwaf::isalnum(str[pos]) && str[pos] != '-' && str[pos] != '_') {
+            // If it's not a valid base64, it must be the trailing =
+            if (str[pos] == '=') {
+                size_t equals = 0;
+                while (pos + equals < str.length() && str[pos + equals] == '=') { equals += 1; }
+
+                // The = must go to the end, and there musn't be too many
+                const size_t padding = 4 - (pos % 4);
+                if (pos + equals == str.length() && equals <= 3 && equals <= padding) {
+                    continue;
+                }
+            }
+
             // Anything wrong -> nope
             return false;
         }
