@@ -3,7 +3,31 @@
   "metadata": {
     "rules_version": "1.8.0"
   },
-  "rules": [],
+  "rules": [
+    {
+      "id": "rule1",
+      "name": "rule1",
+      "tags": {
+        "type": "flow1",
+        "category": "category1"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.jwt",
+                "key_path": [ "header", "alg" ]
+              }
+            ],
+            "value": "RS384",
+            "type": "string"
+          },
+          "operator": "equals"
+        }
+      ]
+    }
+  ],
   "processors": [
     {
       "id": "processor-001",
