@@ -20,6 +20,7 @@
 #include <rapidjson/document.h>
 #include <rapidjson/error/error.h>
 #include <string_view>
+#include <tuple>
 #include <utility>
 
 using namespace std::literals;
@@ -59,6 +60,11 @@ exploded_jwt split_token(std::string_view source)
 
 ddwaf_object json_to_object(std::string_view json)
 {
+    // Safety limit, potentially not necessary as if we can decode and parse
+    // we should have a manageable json structure as other limits are already
+    // in place.
+    constexpr std::size_t max_depth = 20;
+
     auto to_object = [](const rapidjson::Value &doc) -> ddwaf_object {
         ddwaf_object object;
         if (doc.IsBool()) {
@@ -90,43 +96,49 @@ ddwaf_object json_to_object(std::string_view json)
         return {};
     }
 
-    std::deque<std::pair<rapidjson::Value *, ddwaf_object *>> queue;
+    std::deque<std::tuple<rapidjson::Value *, ddwaf_object *, std::size_t>> stack;
     auto object = to_object(doc);
     if (doc.IsArray() || doc.IsObject()) {
-        queue.emplace_back(&doc, &object);
+        stack.emplace_back(&doc, &object, 0);
     }
 
-    while (!queue.empty()) {
-        auto &[source, destination] = queue.front();
+    while (!stack.empty()) {
+        bool container_found = false;
+
+        auto &[source, destination, idx] = stack.back();
         if (source->IsArray()) {
-            for (auto &value : source->GetArray()) {
+            for (; idx < source->Size(); ++idx) {
+                auto &value = source[idx];
+
                 auto value_object = to_object(value);
                 ddwaf_object_array_add(destination, &value_object);
-            }
 
-            std::size_t i = 0;
-            for (auto &value : source->GetArray()) {
-                if (value.IsArray() || value.IsObject()) {
-                    queue.emplace_back(&value, &destination->array[i++]);
+                if ((value.IsObject() || value.IsArray()) && stack.size() < max_depth) {
+                    container_found = true;
+                    stack.emplace_back(&value, &destination->array[idx++], 0);
+                    break;
                 }
             }
         } else if (source->IsObject()) {
-            for (auto &[key, value] : source->GetObject()) {
-                auto value_object = to_object(value);
+            using DifferenceType = rapidjson::Value::MemberIterator::DifferenceType;
+            auto it = source->MemberBegin() + static_cast<DifferenceType>(idx);
+            for (; it != source->MemberEnd(); ++idx, ++it) {
+                auto value_object = to_object(it->value);
 
-                const std::string_view key_sv = key.GetString();
+                const std::string_view key_sv = it->name.GetString();
                 ddwaf_object_map_addl(destination, key_sv.data(), key_sv.length(), &value_object);
-            }
 
-            std::size_t i = 0;
-            for (auto &[_, value] : source->GetObject()) {
-                if (value.IsArray() || value.IsObject()) {
-                    queue.emplace_back(&value, &destination->array[i++]);
+                if ((it->value.IsObject() || it->value.IsArray()) && stack.size() < max_depth) {
+                    container_found = true;
+                    stack.emplace_back(&it->value, &destination->array[idx++], 0);
+                    break;
                 }
             }
         }
 
-        queue.pop_front();
+        if (!container_found) {
+            stack.pop_back();
+        }
     }
 
     return object;
