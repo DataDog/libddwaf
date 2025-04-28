@@ -36,27 +36,34 @@ struct exploded_jwt {
     std::string_view signature;
 };
 
-exploded_jwt split_token(std::string_view source)
+std::pair<bool, exploded_jwt> split_token(std::string_view source)
 {
     constexpr char delim = '.';
 
     exploded_jwt parts;
     std::size_t end = source.find(delim);
+    if (end == std::string_view::npos || end == source.size() - 1) {
+        // We expect at least one more delimiter, so this can't be at the end
+        // and the delimiter must exist
+        return {false, {}};
+    }
 
     parts.header = source.substr(0, end);
-    if (end == std::string_view::npos || end == source.size() - 1) {
-        return parts;
-    }
     source.remove_prefix(end + 1);
 
     end = source.find(delim);
+    if (end == std::string_view::npos) {
+        // This delimiter must exist, but it can be at the end
+        return {false, {}};
+    }
     parts.payload = source.substr(0, end);
-    if (end == std::string_view::npos || end == source.size() - 1) {
-        return parts;
+
+    if (end != source.size() - 1) {
+        // If we have a signature, extract it
+        parts.signature = source.substr(end + 1);
     }
 
-    parts.signature = source.substr(end + 1);
-    return parts;
+    return {true, parts};
 }
 
 ddwaf_object json_to_object(std::string_view json)
@@ -92,7 +99,7 @@ ddwaf_object json_to_object(std::string_view json)
     };
 
     rapidjson::Document doc;
-    const rapidjson::ParseResult result = doc.Parse(json.data());
+    const rapidjson::ParseResult result = doc.Parse(json.data(), json.size());
     if (result.IsError()) {
         return {};
     }
@@ -190,7 +197,11 @@ std::pair<ddwaf_object, object_store::attribute> jwt_decode::eval_impl(
     token.remove_prefix(spaces);
 
     // Split jwt
-    auto jwt = split_token(token);
+    auto [valid, jwt] = split_token(token);
+    if (!valid) {
+        // Not a valid JWT
+        return {};
+    }
 
     // Decode header and payload
     auto header = decode_and_parse(jwt.header);
