@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2025 Datadog, Inc.
 
-#include "processor/jwt_decoder.hpp"
+#include "processor/jwt_decode.hpp"
 
 #include "argument_retriever.hpp"
 #include "clock.hpp"
@@ -33,7 +33,7 @@ namespace {
 struct exploded_jwt {
     std::string_view header;
     std::string_view payload;
-    std::string_view secret;
+    std::string_view signature;
 };
 
 exploded_jwt split_token(std::string_view source)
@@ -55,7 +55,7 @@ exploded_jwt split_token(std::string_view source)
         return parts;
     }
 
-    parts.secret = source.substr(end + 1);
+    parts.signature = source.substr(end + 1);
     return parts;
 }
 
@@ -158,7 +158,7 @@ ddwaf_object decode_and_parse(std::string_view source)
 } // namespace
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-std::pair<ddwaf_object, object_store::attribute> jwt_decoder::eval_impl(
+std::pair<ddwaf_object, object_store::attribute> jwt_decode::eval_impl(
     const unary_argument<const ddwaf_object *> &input, processor_cache & /*cache*/,
     ddwaf::timer & /*deadline*/) const
 {
@@ -203,7 +203,7 @@ std::pair<ddwaf_object, object_store::attribute> jwt_decoder::eval_impl(
     ddwaf_object_map_addl(&output, "payload", sizeof("payload") - 1, &payload);
 
     ddwaf_object signature_available;
-    ddwaf_object_bool(&signature_available, !jwt.secret.empty());
+    ddwaf_object_bool(&signature_available, !jwt.signature.empty());
     ddwaf_object_map_addl(&output, "signature", sizeof("signature") - 1, &signature_available);
 
     return {output, attr};

@@ -6,7 +6,7 @@
 
 #include "common/gtest_utils.hpp"
 #include "ddwaf.h"
-#include "processor/jwt_decoder.hpp"
+#include "processor/jwt_decode.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -30,7 +30,7 @@ TEST(TestJwtDecoder, Basic)
             "qFl5OMeYlgGFsyvvSHvXCzQrsEXqyCdS4tQJd73ayYA4SPtCb9clz76N1zE5WsV4Z0BYrxeb77oA7jJh"
             "h994RAPzCG0hmQ"));
 
-    jwt_decoder gen{"id", {}, {}, false, true};
+    jwt_decode gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
@@ -58,7 +58,7 @@ TEST(TestJwtDecoder, NoSignature)
             "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
             "NjIzOTAyMiwicm9sZXMiOlsiYWRtaW4iLCIxODM5MDIxZCIsICJ-fiJdfQo."));
 
-    jwt_decoder gen{"id", {}, {}, false, true};
+    jwt_decode gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
@@ -86,7 +86,7 @@ TEST(TestJwtDecoder, NoSignatureNoDelim)
             "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
             "NjIzOTAyMiwicm9sZXMiOlsiYWRtaW4iLCIxODM5MDIxZCIsICJ-fiJdfQo"));
 
-    jwt_decoder gen{"id", {}, {}, false, true};
+    jwt_decode gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;

@@ -31,7 +31,7 @@
   "processors": [
     {
       "id": "processor-001",
-      "generator": "jwt_decoder",
+      "generator": "jwt_decode",
       "conditions": [],
       "parameters": {
         "mappings": [
@@ -47,7 +47,7 @@
         ]
       },
       "evaluate": true,
-      "output": true
+      "output": false
     }
   ]
 }

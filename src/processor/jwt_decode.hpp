@@ -10,11 +10,11 @@
 
 namespace ddwaf {
 
-class jwt_decoder : public structured_processor<jwt_decoder> {
+class jwt_decode : public structured_processor<jwt_decode> {
 public:
     static constexpr std::array<std::string_view, 1> param_names{"inputs"};
 
-    jwt_decoder(std::string id, std::shared_ptr<expression> expr,
+    jwt_decode(std::string id, std::shared_ptr<expression> expr,
         std::vector<processor_mapping> mappings, bool evaluate, bool output)
         : structured_processor(
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)

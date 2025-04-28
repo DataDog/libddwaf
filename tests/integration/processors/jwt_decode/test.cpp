@@ -9,7 +9,7 @@
 using namespace ddwaf;
 
 namespace {
-constexpr std::string_view base_dir = "integration/processors/jwt_decoder";
+constexpr std::string_view base_dir = "integration/processors/jwt_decode";
 
 TEST(TestJwtDecoderIntegration, Preprocessor)
 {
