@@ -114,7 +114,7 @@ TEST(TestJwtDecoderIntegration, Postprocessor)
     EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
     EXPECT_JSON(out.derivatives,
-        R"({"server.request.jwt":{"header":{"alg":"RS384","typ":"JWT"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022},"signature":true}})");
+        R"({"server.request.jwt":{"header":{"alg":"RS384","typ":"JWT"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022},"signature":{"available":true}}})");
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);
@@ -176,7 +176,7 @@ TEST(TestJwtDecoderIntegration, Processor)
     EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
 
     EXPECT_JSON(out.derivatives,
-        R"({"server.request.jwt":{"header":{"alg":"RS384","typ":"JWT"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022},"signature":true}})");
+        R"({"server.request.jwt":{"header":{"alg":"RS384","typ":"JWT"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022},"signature":{"available":true}}})");
 
     ddwaf_result_free(&out);
     ddwaf_context_destroy(context);

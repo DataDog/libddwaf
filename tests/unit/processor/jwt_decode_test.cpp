@@ -39,7 +39,7 @@ TEST(TestJwtDecoder, Basic)
     EXPECT_EQ(attr, object_store::attribute::none);
 
     EXPECT_JSON(output,
-        R"({"header":{"alg":"RS384","typ":"JWT"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022},"signature":true})");
+        R"({"header":{"alg":"RS384","typ":"JWT"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022},"signature":{"available":true}})");
 
     ddwaf_object_free(&headers);
     ddwaf_object_free(&output);
@@ -67,7 +67,7 @@ TEST(TestJwtDecoder, NoSignature)
     EXPECT_EQ(attr, object_store::attribute::none);
 
     EXPECT_JSON(output,
-        R"({"header":{"alg":"none"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022,"roles":["admin","1839021d", "~~"]},"signature":false})");
+        R"({"header":{"alg":"none"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022,"roles":["admin","1839021d", "~~"]},"signature":{"available":false}})");
 
     ddwaf_object_free(&headers);
     ddwaf_object_free(&output);
@@ -95,7 +95,7 @@ TEST(TestJwtDecoder, NoSignatureNoDelim)
     EXPECT_EQ(attr, object_store::attribute::none);
 
     EXPECT_JSON(output,
-        R"({"header":{"alg":"none"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022,"roles":["admin","1839021d", "~~"]},"signature":false})");
+        R"({"header":{"alg":"none"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022,"roles":["admin","1839021d", "~~"]},"signature":{"available":false}})");
 
     ddwaf_object_free(&headers);
     ddwaf_object_free(&output);

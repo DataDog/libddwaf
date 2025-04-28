@@ -199,12 +199,18 @@ std::pair<ddwaf_object, object_store::attribute> jwt_decode::eval_impl(
     // Generate output
     ddwaf_object output;
     ddwaf_object_map(&output);
-    ddwaf_object_map_addl(&output, "header", sizeof("header") - 1, &header);
-    ddwaf_object_map_addl(&output, "payload", sizeof("payload") - 1, &payload);
+    ddwaf_object_map_addl(&output, STRL("header"), &header);
+    ddwaf_object_map_addl(&output, STRL("payload"), &payload);
+
+    ddwaf_object signature_map;
+    ddwaf_object_map(&signature_map);
 
     ddwaf_object signature_available;
     ddwaf_object_bool(&signature_available, !jwt.signature.empty());
-    ddwaf_object_map_addl(&output, "signature", sizeof("signature") - 1, &signature_available);
+
+    ddwaf_object_map_addl(&signature_map, STRL("available"), &signature_available);
+
+    ddwaf_object_map_addl(&output, STRL("signature"), &signature_map);
 
     return {output, attr};
 }

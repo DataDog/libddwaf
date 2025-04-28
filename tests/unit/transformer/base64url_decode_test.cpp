@@ -7,13 +7,15 @@
 #include "transformer/base64_decode.hpp"
 #include "transformer_utils.hpp"
 
+#include "common/gtest_utils.hpp"
+
 using namespace ddwaf;
 
 namespace {
 
 TEST(TestBase64UrlDecode, NameAndID)
 {
-    EXPECT_STREQ(transformer::base64url_decode::name().data(), "base64url_decode");
+    EXPECT_STRV(transformer::base64url_decode::name(), "base64url_decode");
     EXPECT_EQ(transformer::base64url_decode::id(), transformer_id::base64url_decode);
 }
 
@@ -21,6 +23,15 @@ TEST(TestBase64UrlDecode, EmptyString) { EXPECT_NO_TRANSFORM(base64url_decode, "
 
 TEST(TestBase64UrlDecode, ValidTransform)
 {
+    EXPECT_TRANSFORM(base64url_decode, "eyJrZXkiOiJ-fjEifQ==", R"({"key":"~~1"})");
+    EXPECT_TRANSFORM(base64url_decode, "eyJrZXkiOiJ-fjEifQ=", R"({"key":"~~1"})");
+    EXPECT_TRANSFORM(base64url_decode, "eyJrZXkiOiJ-fjEifQ", R"({"key":"~~1"})");
+    EXPECT_TRANSFORM(
+        base64url_decode, "eyJ1cmwiOiJsb2dpbnM_X2Q9MTIifQ==", R"({"url":"logins?_d=12"})");
+    EXPECT_TRANSFORM(
+        base64url_decode, "eyJ1cmwiOiJsb2dpbnM_X2Q9MTIifQ=", R"({"url":"logins?_d=12"})");
+    EXPECT_TRANSFORM(
+        base64url_decode, "eyJ1cmwiOiJsb2dpbnM_X2Q9MTIifQ", R"({"url":"logins?_d=12"})");
     EXPECT_TRANSFORM(base64url_decode, "Zm9vYmFy", "foobar");
     EXPECT_TRANSFORM(base64url_decode, "Zm9vYmE=", "fooba");
     EXPECT_TRANSFORM(base64url_decode, "Zm9vYg==", "foob");
@@ -37,6 +48,12 @@ TEST(TestBase64UrlDecode, InvalidTransform)
 {
     EXPECT_NO_TRANSFORM(base64url_decode, "normal sentence");
     EXPECT_NO_TRANSFORM(base64url_decode, "normalsentence===");
+    EXPECT_NO_TRANSFORM(base64url_decode, "eyJrZXkiOiJ+fjEifQ==");
+    EXPECT_NO_TRANSFORM(base64url_decode, "eyJrZXkiOiJ+fjEifQ=");
+    EXPECT_NO_TRANSFORM(base64url_decode, "eyJrZXkiOiJ+fjEifQ");
+    EXPECT_NO_TRANSFORM(base64url_decode, "eyJ1cmwiOiJsb2dpbnM/X2Q9MTIifQ==");
+    EXPECT_NO_TRANSFORM(base64url_decode, "eyJ1cmwiOiJsb2dpbnM/X2Q9MTIifQ=");
+    EXPECT_NO_TRANSFORM(base64url_decode, "eyJ1cmwiOiJsb2dpbnM/X2Q9MTIifQ");
 }
 
 } // namespace

@@ -28,15 +28,6 @@ template <std::size_t N> constexpr std::array<char, N - 1> literal_to_array(cons
 // NOLINTEND(hicpp-avoid-c-arrays,modernize-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays)
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
-#define EXPECT_EVENTS(result, ...)                                                                 \
-    {                                                                                              \
-        auto data = ddwaf::test::object_to_json(result.events);                                    \
-        EXPECT_TRUE(ValidateSchema(data));                                                         \
-        YAML::Node doc = YAML::Load(data.c_str());                                                 \
-        auto events = doc.as<std::list<ddwaf::test::event>>();                                     \
-        EXPECT_ACTIONS(result, __VA_ARGS__)                                                        \
-    }
-
 #define EXPECT_TRANSFORM(name, source, expected)                                                   \
     {                                                                                              \
         {                                                                                          \
