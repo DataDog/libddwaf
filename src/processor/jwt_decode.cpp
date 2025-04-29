@@ -9,7 +9,6 @@
 #include "argument_retriever.hpp"
 #include "clock.hpp"
 #include "ddwaf.h"
-#include "iterator.hpp"
 #include "json_utils.hpp"
 #include "object_store.hpp"
 #include "processor/base.hpp"
@@ -18,6 +17,9 @@
 #include "utils.hpp"
 
 #include <cstddef>
+#include <cstdint>
+#include <span>
+#include <string>
 #include <string_view>
 #include <tuple>
 #include <utility>
@@ -74,6 +76,64 @@ ddwaf_object decode_and_parse(std::string_view source)
     return json_to_object(static_cast<std::string_view>(cstr));
 }
 
+// This could eventually be delegated to the argument retriever, albeit it would
+// need to be refactored to allow for key path retrieval or not
+const ddwaf_object *find_key_path(const ddwaf_object &root, std::span<const std::string> key_path)
+{
+    auto find_key = [](const ddwaf_object &root, std::string_view key) -> const ddwaf_object * {
+        if (root.type != DDWAF_OBJ_MAP) {
+            return nullptr;
+        }
+
+        const std::size_t size = static_cast<uint32_t>(root.nbEntries);
+        for (std::size_t i = 0; i < size; ++i) {
+            const auto &child = root.array[i];
+
+            if (child.parameterName == nullptr) [[unlikely]] {
+                continue;
+            }
+            const std::string_view child_key{
+                child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
+
+            if (key == child_key) {
+                return &child;
+            }
+        }
+        return nullptr;
+    };
+
+    const auto *current = &root;
+    for (auto it = key_path.begin(); current != nullptr && it != key_path.end(); ++it) {
+        current = find_key(*current, *it);
+    }
+    return current;
+}
+
+std::string_view find_token(const ddwaf_object &root, std::span<const std::string> key_path)
+{
+    const ddwaf_object *object = &root;
+    if (!key_path.empty()) {
+        object = find_key_path(root, key_path);
+        if (object == nullptr) {
+            return {};
+        }
+    }
+
+    if (object->type == DDWAF_OBJ_ARRAY && object->nbEntries >= 1) {
+        // If the object is an array (which can happen due to serialisation)
+        // take only the first element. Otherwise, the next if statement will
+        // already take care of bailing out.
+        object = &object->array[0];
+    }
+
+    if (object->type != DDWAF_OBJ_STRING || object->nbEntries == 0 ||
+        object->stringValue == nullptr) {
+        return {};
+    }
+
+    return {object->stringValue, static_cast<std::size_t>(object->nbEntries)};
+}
+
 } // namespace
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
@@ -84,15 +144,10 @@ std::pair<ddwaf_object, object_store::attribute> jwt_decode::eval_impl(
     const object_store::attribute attr =
         input.ephemeral ? object_store::attribute::ephemeral : object_store::attribute::none;
 
-    const object::value_iterator it{input.value, input.key_path, {}};
-
-    const auto *object = *it;
-    if (object == nullptr || object->type != DDWAF_OBJ_STRING || object->nbEntries == 0 ||
-        object->stringValue == nullptr) {
+    std::string_view token = find_token(*input.value, input.key_path);
+    if (token.empty()) {
         return {};
     }
-
-    std::string_view token{object->stringValue, static_cast<std::size_t>(object->nbEntries)};
 
     static const std::string_view prefix = "Bearer";
     if (!token.starts_with(prefix)) {
