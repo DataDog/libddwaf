@@ -125,9 +125,9 @@ std::unique_ptr<base_processor> processor_builder::build(const indexer<const sca
     case processor_type::http_network_fingerprint:
         return build_with_type<http_network_fingerprint>(id_, spec_, scanners);
     case processor_type::session_fingerprint:
-        return build_with_type<session_fingerprint>(id, spec, scanners);
+        return build_with_type<session_fingerprint>(id_, spec_, scanners);
     case processor_type::jwt_decode:
-        return build_with_type<jwt_decode>(id, spec, scanners);
+        return build_with_type<jwt_decode>(id_, spec_, scanners);
     default:
         break;
     }
