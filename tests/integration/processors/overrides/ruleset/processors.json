@@ -1,0 +1,54 @@
+{
+  "version": "2.2",
+  "metadata": {
+    "rules_version": "1.99.99"
+  },
+  "processors": [
+    {
+      "id": "extract-content",
+      "generator": "extract_schema",
+      "conditions": [],
+      "parameters": {
+        "mappings": [
+          {
+            "inputs": [
+              {
+                "address": "server.request.body"
+              }
+            ],
+            "output": "server.request.body.schema"
+          }
+        ],
+        "scanners": []
+      },
+      "evaluate": false,
+      "output": true
+    },
+    {
+      "id": "extract-headers",
+      "generator": "extract_schema",
+      "conditions": [],
+      "parameters": {
+        "mappings": [
+          {
+            "inputs": [
+              {
+                "address": "server.request.headers"
+              }
+            ],
+            "output": "server.request.headers.schema"
+          }
+        ],
+        "scanners": [
+          {
+            "tags": {
+              "category": "credential"
+            }
+          }
+        ]
+      },
+      "evaluate": false,
+      "output": true
+    }
+  ]
+}

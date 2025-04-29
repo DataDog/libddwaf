@@ -43,6 +43,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/configuration/data_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/exclusion_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/processor_parser.cpp
+    ${libddwaf_SOURCE_DIR}/src/configuration/processor_override_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/rule_override_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/rule_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/legacy_rule_parser.cpp

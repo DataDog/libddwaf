@@ -6,7 +6,6 @@
 
 #include <memory>
 #include <set>
-#include <string>
 #include <vector>
 
 #include "builder/processor_builder.hpp"
@@ -114,18 +113,17 @@ template <typename T>
 } // namespace
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-std::unique_ptr<base_processor> processor_builder::build(
-    const std::string &id, const processor_spec &spec, const indexer<const scanner> &scanners)
+std::unique_ptr<base_processor> processor_builder::build(const indexer<const scanner> &scanners)
 {
-    switch (spec.type) {
+    switch (spec_.type) {
     case processor_type::extract_schema:
-        return build_with_type<extract_schema>(id, spec, scanners);
+        return build_with_type<extract_schema>(id_, spec_, scanners);
     case processor_type::http_endpoint_fingerprint:
-        return build_with_type<http_endpoint_fingerprint>(id, spec, scanners);
+        return build_with_type<http_endpoint_fingerprint>(id_, spec_, scanners);
     case processor_type::http_header_fingerprint:
-        return build_with_type<http_header_fingerprint>(id, spec, scanners);
+        return build_with_type<http_header_fingerprint>(id_, spec_, scanners);
     case processor_type::http_network_fingerprint:
-        return build_with_type<http_network_fingerprint>(id, spec, scanners);
+        return build_with_type<http_network_fingerprint>(id_, spec_, scanners);
     case processor_type::session_fingerprint:
         return build_with_type<session_fingerprint>(id, spec, scanners);
     case processor_type::jwt_decode:

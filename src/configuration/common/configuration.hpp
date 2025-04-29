@@ -30,7 +30,7 @@ struct rule_spec {
     std::vector<std::string> actions;
 };
 
-enum class reference_type { none, id, tags };
+enum class reference_type : uint8_t { none, id, tags };
 
 struct reference_spec {
     reference_type type;
@@ -38,7 +38,7 @@ struct reference_spec {
     std::unordered_map<std::string, std::string> tags;
 };
 
-struct override_spec {
+struct rule_override_spec {
     reference_type type;
     std::optional<bool> enabled;
     std::optional<std::vector<std::string>> actions;
@@ -59,7 +59,7 @@ struct input_filter_spec {
     std::vector<reference_spec> targets;
 };
 
-enum class processor_type : unsigned {
+enum class processor_type : uint8_t {
     extract_schema,
     http_endpoint_fingerprint,
     http_network_fingerprint,
@@ -75,6 +75,11 @@ struct processor_spec {
     std::vector<reference_spec> scanners;
     bool evaluate{false};
     bool output{true};
+};
+
+struct processor_override_spec {
+    std::vector<reference_spec> targets;
+    std::vector<reference_spec> scanners;
 };
 
 enum class data_type : uint8_t { unknown, data_with_expiration, ip_with_expiration };
@@ -95,13 +100,14 @@ enum class change_set : uint16_t {
     none = 0,
     rules = 1,
     custom_rules = 2,
-    overrides = 4,
+    rule_overrides = 4,
     filters = 8,
     rule_data = 16,
     processors = 32,
-    scanners = 64,
-    actions = 128,
-    exclusion_data = 256,
+    processor_overrides = 64,
+    scanners = 128,
+    actions = 256,
+    exclusion_data = 512,
 };
 
 // NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange)
@@ -138,9 +144,9 @@ struct configuration_change_spec {
     // Rule data IDs consist of a pair containing the data ID and a given unique
     // ID for the given data spec.
     std::vector<std::pair<std::string, std::string>> rule_data;
-    // Override IDs consisting of a unique ID auto-generated for each override
-    std::unordered_set<std::string> overrides_by_id;
-    std::unordered_set<std::string> overrides_by_tags;
+    // Rule override IDs consisting of a unique ID auto-generated for each override
+    std::unordered_set<std::string> rule_overrides_by_id;
+    std::unordered_set<std::string> rule_overrides_by_tags;
     // Filter IDs
     std::unordered_set<std::string> rule_filters;
     std::unordered_set<std::string> input_filters;
@@ -149,6 +155,8 @@ struct configuration_change_spec {
     std::vector<std::pair<std::string, std::string>> exclusion_data;
     // Processor IDs
     std::unordered_set<std::string> processors;
+    // Processor  override IDs consisting of a unique ID auto-generated for each override
+    std::unordered_set<std::string> processor_overrides;
     // Scanner IDs
     std::unordered_set<std::string> scanners;
     // Action IDs
@@ -169,8 +177,8 @@ struct configuration_spec {
     // Obtained from 'rules_override'
     // The distinction is only necessary due to the restriction that
     // overrides by ID are to be considered a priority over overrides by tags
-    std::unordered_map<std::string, override_spec> overrides_by_id;
-    std::unordered_map<std::string, override_spec> overrides_by_tags;
+    std::unordered_map<std::string, rule_override_spec> rule_overrides_by_id;
+    std::unordered_map<std::string, rule_override_spec> rule_overrides_by_tags;
     // Obtained from 'exclusions'
     std::unordered_map<std::string, rule_filter_spec> rule_filters;
     std::unordered_map<std::string, input_filter_spec> input_filters;
@@ -178,6 +186,8 @@ struct configuration_spec {
     std::unordered_map<std::string, data_spec> exclusion_data;
     // Obtained from 'processors'
     std::unordered_map<std::string, processor_spec> processors;
+    // Obtained from 'processor_override'
+    std::unordered_map<std::string, processor_override_spec> processor_overrides;
     // Obtained from 'scanners'
     // Scanners are stored directly in an indexer to simplify their use
     std::unordered_map<std::string, scanner> scanners;
