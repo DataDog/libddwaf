@@ -58,8 +58,8 @@ TEST(TestRuleFilterParser, ParseEmptyFilter)
     EXPECT_TRUE(change.input_filters.empty());
     EXPECT_TRUE(change.processors.empty());
     EXPECT_TRUE(change.scanners.empty());
-    EXPECT_TRUE(change.overrides_by_id.empty());
-    EXPECT_TRUE(change.overrides_by_tags.empty());
+    EXPECT_TRUE(change.rule_overrides_by_id.empty());
+    EXPECT_TRUE(change.rule_overrides_by_tags.empty());
 
     EXPECT_TRUE(cfg.actions.empty());
     EXPECT_TRUE(cfg.base_rules.empty());
@@ -70,8 +70,8 @@ TEST(TestRuleFilterParser, ParseEmptyFilter)
     EXPECT_TRUE(cfg.input_filters.empty());
     EXPECT_TRUE(cfg.processors.empty());
     EXPECT_TRUE(cfg.scanners.empty());
-    EXPECT_TRUE(cfg.overrides_by_id.empty());
-    EXPECT_TRUE(cfg.overrides_by_tags.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
 }
 
 TEST(TestRuleFilterParser, ParseFilterWithoutID)
@@ -118,8 +118,8 @@ TEST(TestRuleFilterParser, ParseFilterWithoutID)
     EXPECT_TRUE(change.input_filters.empty());
     EXPECT_TRUE(change.processors.empty());
     EXPECT_TRUE(change.scanners.empty());
-    EXPECT_TRUE(change.overrides_by_id.empty());
-    EXPECT_TRUE(change.overrides_by_tags.empty());
+    EXPECT_TRUE(change.rule_overrides_by_id.empty());
+    EXPECT_TRUE(change.rule_overrides_by_tags.empty());
 
     EXPECT_TRUE(cfg.actions.empty());
     EXPECT_TRUE(cfg.base_rules.empty());
@@ -130,8 +130,8 @@ TEST(TestRuleFilterParser, ParseFilterWithoutID)
     EXPECT_TRUE(cfg.input_filters.empty());
     EXPECT_TRUE(cfg.processors.empty());
     EXPECT_TRUE(cfg.scanners.empty());
-    EXPECT_TRUE(cfg.overrides_by_id.empty());
-    EXPECT_TRUE(cfg.overrides_by_tags.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
 }
 
 TEST(TestRuleFilterParser, ParseDuplicateUnconditional)
@@ -799,8 +799,8 @@ TEST(TestRuleFilterParser, ParseInvalidOnMatch)
     EXPECT_TRUE(change.input_filters.empty());
     EXPECT_TRUE(change.processors.empty());
     EXPECT_TRUE(change.scanners.empty());
-    EXPECT_TRUE(change.overrides_by_id.empty());
-    EXPECT_TRUE(change.overrides_by_tags.empty());
+    EXPECT_TRUE(change.rule_overrides_by_id.empty());
+    EXPECT_TRUE(change.rule_overrides_by_tags.empty());
 
     EXPECT_TRUE(cfg.actions.empty());
     EXPECT_TRUE(cfg.base_rules.empty());
@@ -811,8 +811,8 @@ TEST(TestRuleFilterParser, ParseInvalidOnMatch)
     EXPECT_TRUE(cfg.input_filters.empty());
     EXPECT_TRUE(cfg.processors.empty());
     EXPECT_TRUE(cfg.scanners.empty());
-    EXPECT_TRUE(cfg.overrides_by_id.empty());
-    EXPECT_TRUE(cfg.overrides_by_tags.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
 }
 
 TEST(TestRuleFilterParser, IncompatibleMinVersion)
@@ -857,8 +857,8 @@ TEST(TestRuleFilterParser, IncompatibleMinVersion)
     EXPECT_TRUE(change.input_filters.empty());
     EXPECT_TRUE(change.processors.empty());
     EXPECT_TRUE(change.scanners.empty());
-    EXPECT_TRUE(change.overrides_by_id.empty());
-    EXPECT_TRUE(change.overrides_by_tags.empty());
+    EXPECT_TRUE(change.rule_overrides_by_id.empty());
+    EXPECT_TRUE(change.rule_overrides_by_tags.empty());
 
     EXPECT_TRUE(cfg.actions.empty());
     EXPECT_TRUE(cfg.base_rules.empty());
@@ -869,8 +869,8 @@ TEST(TestRuleFilterParser, IncompatibleMinVersion)
     EXPECT_TRUE(cfg.input_filters.empty());
     EXPECT_TRUE(cfg.processors.empty());
     EXPECT_TRUE(cfg.scanners.empty());
-    EXPECT_TRUE(cfg.overrides_by_id.empty());
-    EXPECT_TRUE(cfg.overrides_by_tags.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
 }
 
 TEST(TestRuleFilterParser, IncompatibleMaxVersion)
@@ -915,8 +915,8 @@ TEST(TestRuleFilterParser, IncompatibleMaxVersion)
     EXPECT_TRUE(change.input_filters.empty());
     EXPECT_TRUE(change.processors.empty());
     EXPECT_TRUE(change.scanners.empty());
-    EXPECT_TRUE(change.overrides_by_id.empty());
-    EXPECT_TRUE(change.overrides_by_tags.empty());
+    EXPECT_TRUE(change.rule_overrides_by_id.empty());
+    EXPECT_TRUE(change.rule_overrides_by_tags.empty());
 
     EXPECT_TRUE(cfg.actions.empty());
     EXPECT_TRUE(cfg.base_rules.empty());
@@ -927,8 +927,8 @@ TEST(TestRuleFilterParser, IncompatibleMaxVersion)
     EXPECT_TRUE(cfg.input_filters.empty());
     EXPECT_TRUE(cfg.processors.empty());
     EXPECT_TRUE(cfg.scanners.empty());
-    EXPECT_TRUE(cfg.overrides_by_id.empty());
-    EXPECT_TRUE(cfg.overrides_by_tags.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
+    EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
 }
 
 TEST(TestRuleFilterParser, CompatibleVersion)
