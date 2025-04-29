@@ -95,6 +95,10 @@ TEST(TestTransformerManager, InvalidTypes)
         EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
     }
     {
+        std::vector<transformer_id> ids{transformer_id::base64url_decode};
+        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+    }
+    {
         std::vector<transformer_id> ids{transformer_id::base64_encode};
         EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
     }
@@ -140,6 +144,7 @@ TEST(TestTransformerManager, EmptyStrings)
     EXPECT_NO_TRANSFORM("", transformer_id::url_decode);
     EXPECT_NO_TRANSFORM("", transformer_id::url_decode_iis);
     EXPECT_NO_TRANSFORM("", transformer_id::base64_decode);
+    EXPECT_NO_TRANSFORM("", transformer_id::base64url_decode);
     EXPECT_NO_TRANSFORM("", transformer_id::base64_encode);
     EXPECT_NO_TRANSFORM("", transformer_id::url_path);
     EXPECT_NO_TRANSFORM("", transformer_id::url_basename);
@@ -162,6 +167,7 @@ TEST(TestTransformerManager, ValidSingleTransforms)
     EXPECT_TRANSFORM("%41", "A", transformer_id::url_decode);
     EXPECT_TRANSFORM("%%341", "A", transformer_id::url_decode_iis);
     EXPECT_TRANSFORM("Zm9vYmF", "fooba@", transformer_id::base64_decode);
+    EXPECT_TRANSFORM("Zm9vYmF", "fooba@", transformer_id::base64url_decode);
     EXPECT_TRANSFORM("fooba@", "Zm9vYmFA", transformer_id::base64_encode);
     EXPECT_TRANSFORM("/querystring/index/?a=b#frag", "a=b", transformer_id::url_querystring);
     EXPECT_TRANSFORM("/path/index/?a=b", "/path/index/", transformer_id::url_path);
@@ -184,6 +190,7 @@ TEST(TestTransformerManager, InvalidSingleTransforms)
     EXPECT_NO_TRANSFORM("A", transformer_id::url_decode);
     EXPECT_NO_TRANSFORM("A", transformer_id::url_decode_iis);
     EXPECT_NO_TRANSFORM("normal sentence", transformer_id::base64_decode);
+    EXPECT_NO_TRANSFORM("normal sentence", transformer_id::base64url_decode);
     EXPECT_NO_TRANSFORM("/path/to/index/", transformer_id::url_path);
     EXPECT_NO_TRANSFORM("index.php", transformer_id::url_basename);
     EXPECT_NO_TRANSFORM("normal sentence(really)", transformer_id::shell_unescape);
