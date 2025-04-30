@@ -200,6 +200,42 @@ TEST(TestJwtDecoder, MissingKeypath)
     ddwaf_object_free(&output);
 }
 
+TEST(TestJwtDecoder, EmptyHeader)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object headers;
+    ddwaf_object_map(&headers);
+    ddwaf_object_map_add(&headers, "authorization",
+        ddwaf_object_string(&tmp,
+            "Bearer ."
+            "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
+            "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
+            "8B48NpATozzMHn0j3rE0xVUldxShzy0xeJ7vYAccVXu2Gs9rnTVqouc-UZu_wJHkZiKBL67j8_"
+            "61L6SXswzPAQu4kVDwAefGf5hyYBUM-80vYZwWPEpLI8K4yCBsF6I9N1yQaZAJmkMp_"
+            "Iw371Menae4Mp4JusvBJS-s6LrmG2QbiZaFaxVJiW8KlUkWyUCns8-"
+            "qFl5OMeYlgGFsyvvSHvXCzQrsEXqyCdS4tQJd73ayYA4SPtCb9clz76N1zE5WsV4Z0BYrxeb77oA7jJh"
+            "h994RAPzCG0hmQ"));
+
+    jwt_decode gen{"id", {}, {}, false, true};
+
+    std::vector<std::string> key_path{"authorization"};
+
+    ddwaf::timer deadline{2s};
+    processor_cache cache;
+    auto [output, attr] =
+        gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = &headers},
+            cache, deadline);
+    EXPECT_EQ(output.type, DDWAF_OBJ_MAP);
+    EXPECT_EQ(attr, object_store::attribute::none);
+
+    EXPECT_JSON(output,
+        R"({"header":null,"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022},"signature":{"available":true}})");
+
+    ddwaf_object_free(&headers);
+    ddwaf_object_free(&output);
+}
+
 TEST(TestJwtDecoder, EmptyPayload)
 {
     ddwaf_object tmp;
@@ -234,6 +270,7 @@ TEST(TestJwtDecoder, EmptyPayload)
     ddwaf_object_free(&headers);
     ddwaf_object_free(&output);
 }
+
 TEST(TestJwtDecoder, LargePayloadBeyondLimit)
 {
     ddwaf_object tmp;
