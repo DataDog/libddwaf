@@ -18,7 +18,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 
     ddwaf_object headers;
     ddwaf_object_map(&headers);
-    ddwaf_object_map_add(&headers, "authorization", ddwaf_object_stringl(&tmp, reinterpret_cast<const char *>(bytes), size));
+    ddwaf_object_map_add(&headers, "authorization",
+        ddwaf_object_stringl(&tmp, reinterpret_cast<const char *>(bytes), size));
 
     jwt_decode gen{"id", {}, {}, false, true};
 
