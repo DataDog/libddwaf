@@ -80,13 +80,16 @@ ddwaf_object decode_and_parse(std::string_view source)
 // need to be refactored to allow for key path retrieval or not
 const ddwaf_object *find_key_path(const ddwaf_object &root, std::span<const std::string> key_path)
 {
-    auto find_key = [](const ddwaf_object &root, std::string_view key) -> const ddwaf_object * {
+    const auto *current = &root;
+    for (auto it = key_path.begin(); current != nullptr && it != key_path.end(); ++it) {
+        const auto &root = *current;
         if (root.type != DDWAF_OBJ_MAP) {
             return nullptr;
         }
 
-        const std::size_t size = static_cast<uint32_t>(root.nbEntries);
-        for (std::size_t i = 0; i < size; ++i) {
+        // Reset to search for next object in the path
+        current = nullptr;
+        for (std::size_t i = 0; i < static_cast<uint32_t>(root.nbEntries); ++i) {
             const auto &child = root.array[i];
 
             if (child.parameterName == nullptr) [[unlikely]] {
@@ -95,16 +98,11 @@ const ddwaf_object *find_key_path(const ddwaf_object &root, std::span<const std:
             const std::string_view child_key{
                 child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
 
-            if (key == child_key) {
-                return &child;
+            if (*it == child_key) {
+                current = &child;
+                break;
             }
         }
-        return nullptr;
-    };
-
-    const auto *current = &root;
-    for (auto it = key_path.begin(); current != nullptr && it != key_path.end(); ++it) {
-        current = find_key(*current, *it);
     }
     return current;
 }
