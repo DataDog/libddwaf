@@ -64,7 +64,15 @@ class object_reader_handler
     : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, object_reader_handler> {
 public:
     object_reader_handler() { stack_.reserve(max_depth + 1); }
-
+    ~object_reader_handler()
+    {
+        // Cleanup
+        ddwaf_object_free(&root_);
+        if (key_ != nullptr) {
+            // NOLINTNEXTLINE(hicpp-no-malloc)
+            free(key_);
+        }
+    }
     bool Null()
     {
         if (stack_.size() > max_depth) [[unlikely]] {
@@ -275,6 +283,7 @@ ddwaf_object json_to_object(std::string_view json)
     rapidjson::Reader reader;
     const rapidjson::ParseResult res = reader.Parse(ss, handler);
     if (res.IsError()) {
+        // Not interested in partial JSON for now
         return {};
     }
 

@@ -232,4 +232,13 @@ TEST(TestJsonUtils, NestedEmptyMapsHardcodedLimit)
     ddwaf_object_free(&object);
 }
 
+TEST(TestJsonUtils, InvalidJson)
+{
+    std::string json_str =
+        R"([null,true,-1,18446744073709551615,1.2,"string",["array",["array"],{"map":true}],{"map":{"map":-42},"array":])";
+
+    auto object = ddwaf::json_to_object(json_str);
+    EXPECT_EQ(object.type, DDWAF_OBJ_INVALID);
+}
+
 } // namespace
