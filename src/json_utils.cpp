@@ -73,6 +73,11 @@ public:
             free(key_);
         }
     }
+    object_reader_handler(object_reader_handler &&) = delete;
+    object_reader_handler(const object_reader_handler &) = delete;
+    object_reader_handler &operator=(object_reader_handler &&) = delete;
+    object_reader_handler &operator=(const object_reader_handler &) = delete;
+
     bool Null()
     {
         if (stack_.size() > max_depth) [[unlikely]] {
