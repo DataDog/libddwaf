@@ -82,21 +82,20 @@ bool decode_common(cow_string &str, const std::array<char, 256> &b64Reverse)
 bool base64_decode::needs_transform(std::string_view str)
 {
     // All characters must be valid
-    for (size_t pos = 0; pos < str.length(); ++pos) {
+    std::size_t pos = 0;
+    for (; pos < str.length(); ++pos) {
         if (!ddwaf::isalnum(str[pos]) && str[pos] != '+' && str[pos] != '/') {
-            // If it's not a valid base64, it must be the trailing =
-            if (str[pos] == '=') {
-                size_t equals = 0;
-                while (pos + equals < str.length() && str[pos + equals] == '=') { equals += 1; }
+            break;
+        }
+    }
 
-                // The = must go to the end, and there musn't be too many
-                const size_t padding = 4 - (pos % 4);
-                if (pos + equals == str.length() && equals <= 3 && equals <= padding) {
-                    continue;
-                }
-            }
+    auto remaining = str.length() - pos;
+    if (remaining > 2) {
+        return false;
+    }
 
-            // Anything wrong -> nope
+    for (; pos < str.length(); ++pos) {
+        if (str[pos] != '=') {
             return false;
         }
     }
@@ -125,24 +124,24 @@ bool base64_decode::transform_impl(cow_string &str)
 bool base64url_decode::needs_transform(std::string_view str)
 {
     // All characters must be valid
-    for (size_t pos = 0; pos < str.length(); ++pos) {
+    std::size_t pos = 0;
+    for (; pos < str.length(); ++pos) {
         if (!ddwaf::isalnum(str[pos]) && str[pos] != '-' && str[pos] != '_') {
-            // If it's not a valid base64, it must be the trailing =
-            if (str[pos] == '=') {
-                size_t equals = 0;
-                while (pos + equals < str.length() && str[pos + equals] == '=') { equals += 1; }
+            break;
+        }
+    }
 
-                // The = must go to the end, and there musn't be too many
-                const size_t padding = 4 - (pos % 4);
-                if (pos + equals == str.length() && equals <= 3 && equals <= padding) {
-                    continue;
-                }
-            }
+    auto remaining = str.length() - pos;
+    if (remaining > 2) {
+        return false;
+    }
 
-            // Anything wrong -> nope
+    for (; pos < str.length(); ++pos) {
+        if (str[pos] != '=') {
             return false;
         }
     }
+
     return true;
 }
 

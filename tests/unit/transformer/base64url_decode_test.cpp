@@ -38,7 +38,6 @@ TEST(TestBase64UrlDecode, ValidTransform)
     EXPECT_TRANSFORM(base64url_decode, "Zm9v", "foo");
     EXPECT_TRANSFORM(base64url_decode, "Zm8=", "fo");
     EXPECT_TRANSFORM(base64url_decode, "Zg==", "f");
-    EXPECT_TRANSFORM(base64url_decode, "Z===", "d");
     EXPECT_TRANSFORM(base64url_decode, "ZA==", "d");
     EXPECT_TRANSFORM(base64url_decode, "ZAA=", "d");
     EXPECT_TRANSFORM(base64url_decode, "Zm9vYmF", "fooba@");
