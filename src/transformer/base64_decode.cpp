@@ -89,8 +89,13 @@ bool base64_decode::needs_transform(std::string_view str)
         }
     }
 
+    auto expected_padding = 4 - (pos % 4);
     auto remaining = str.length() - pos;
-    if (remaining > 2) {
+
+    // We also tolerate an incorrect number of padding characters to account
+    // for possible truncation.
+    // An expected padding of 3 would indicate this is not base64
+    if (remaining > 0 && (expected_padding == 3 || remaining > expected_padding)) {
         return false;
     }
 
@@ -131,8 +136,13 @@ bool base64url_decode::needs_transform(std::string_view str)
         }
     }
 
+    auto expected_padding = 4 - (pos % 4);
     auto remaining = str.length() - pos;
-    if (remaining > 2) {
+
+    // We also tolerate an incorrect number of padding characters to account
+    // for possible truncation.
+    // An expected padding of 3 would indicate this is not base64
+    if (remaining > 0 && (expected_padding == 3 || remaining > expected_padding)) {
         return false;
     }
 
