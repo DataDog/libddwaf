@@ -164,6 +164,8 @@ public:
             return true;
         }
 
+        assert(key_ == nullptr && key_size_ == 0);
+
         // NOLINTNEXTLINE(hicpp-no-malloc)
         key_ = static_cast<char *>(malloc(length));
         if (key_ == nullptr) {
@@ -240,7 +242,7 @@ private:
             root_ = *object;
             if (is_container) {
                 stack_.push_back(&root_);
-                // No need to check for the stack limit here
+                // No need to check the depth limit given that it's larger than 1
             }
         } else {
             auto *container = stack_.back();
