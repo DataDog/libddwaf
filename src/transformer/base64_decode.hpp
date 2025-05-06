@@ -22,4 +22,16 @@ protected:
     friend class base<base64_decode>;
 };
 
+class base64url_decode : public base<base64url_decode> {
+public:
+    static transformer_id id() { return transformer_id::base64url_decode; }
+    static std::string_view name() { return "base64url_decode"; }
+
+protected:
+    static bool needs_transform(std::string_view str);
+    static bool transform_impl(cow_string &str);
+
+    friend class base<base64url_decode>;
+};
+
 } // namespace ddwaf::transformer

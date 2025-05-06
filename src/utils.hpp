@@ -28,6 +28,8 @@
 // Convert numbers to strings
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
+// (string, length), only for literals
+#define STRL(value) value, sizeof(value) - 1
 
 template <typename T> using optional_ref = std::optional<std::reference_wrapper<T>>;
 
