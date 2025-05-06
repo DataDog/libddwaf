@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 #include <rapidjson/encodings.h>
 #include <rapidjson/error/error.h>
 #include <rapidjson/rapidjson.h>
@@ -68,10 +69,6 @@ public:
     {
         // Cleanup
         ddwaf_object_free(&root_);
-        if (key_ != nullptr) {
-            // NOLINTNEXTLINE(hicpp-no-malloc)
-            free(key_);
-        }
     }
     object_reader_handler(object_reader_handler &&) = delete;
     object_reader_handler(const object_reader_handler &) = delete;
@@ -167,12 +164,12 @@ public:
         assert(key_ == nullptr && key_size_ == 0);
 
         // NOLINTNEXTLINE(hicpp-no-malloc)
-        key_ = static_cast<char *>(malloc(length));
+        key_.reset(static_cast<char *>(malloc(length)));
         if (key_ == nullptr) {
             return false;
         }
 
-        memcpy(key_, str, length);
+        memcpy(key_.get(), str, length);
         key_size_ = length;
 
         return true;
@@ -247,10 +244,9 @@ private:
         } else {
             auto *container = stack_.back();
             if (container->type == DDWAF_OBJ_MAP) {
-                res = ddwaf_object_map_addl_nc(container, key_, key_size_, object);
+                res = ddwaf_object_map_addl_nc(container, key_.release(), key_size_, object);
 
                 // Reset key
-                key_ = nullptr;
                 key_size_ = 0;
             } else if (container->type == DDWAF_OBJ_ARRAY) {
                 res = ddwaf_object_array_add(container, object);
@@ -274,7 +270,7 @@ private:
     ddwaf_object root_{};
     std::vector<ddwaf_object *> stack_;
 
-    char *key_{nullptr};
+    std::unique_ptr<char, decltype(&free)> key_{nullptr, free};
     std::size_t key_size_{0};
 
     std::size_t depth_skip_count_{0};
