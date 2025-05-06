@@ -15,51 +15,14 @@
 
 namespace ddwaf::transformer {
 
-bool base64_decode::needs_transform(std::string_view str)
-{
-    // All characters must be valid
-    for (size_t pos = 0; pos < str.length(); ++pos) {
-        if (!ddwaf::isalnum(str[pos]) && str[pos] != '+' && str[pos] != '/') {
-            // If it's not a valid base64, it must be the trailing =
-            if (str[pos] == '=') {
-                size_t equals = 0;
-                while (pos + equals < str.length() && str[pos + equals] == '=') { equals += 1; }
+namespace {
 
-                // The = must go to the end, and there musn't be too many
-                const size_t padding = 4 - (pos % 4);
-                if (pos + equals == str.length() && equals <= 3 && equals <= padding) {
-                    continue;
-                }
-            }
-
-            // Anything wrong -> nope
-            return false;
-        }
-    }
-
-    return true;
-}
-
-bool base64_decode::transform_impl(cow_string &str)
+bool decode_common(cow_string &str, const std::array<char, 256> &b64Reverse)
 {
     /*
-     * We ignore the invalid characters in this loop as `doesNeedTransform` will prevent decoding
-     * invalid base64 sequences
+     * We ignore the invalid characters in this loop as `needs_transform` will
+     * prevent decoding invalid sequences
      */
-
-    static constexpr std::array<char, 256> b64Reverse{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60,
-        61, -1, -1, -1, 64, -1, -1, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
-        17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1, -1, 26, 27, 28, 29, 30, 31, 32, 33,
-        34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
-
     size_t read = 0;
     size_t write = 0;
     while (read < str.length()) {
@@ -68,7 +31,7 @@ bool base64_decode::transform_impl(cow_string &str)
         size_t pos = 0;
 
         for (; pos < 4 && read < str.length(); ++read) {
-            // If a valid base64 character
+            // If a valid base64url character
             auto idx = str.at<uint8_t>(read);
             auto c = b64Reverse[idx];
             if ((c & 0x40) == 0) {
@@ -113,4 +76,101 @@ bool base64_decode::transform_impl(cow_string &str)
 
     return true;
 }
+
+} // namespace
+
+bool base64_decode::needs_transform(std::string_view str)
+{
+    // All characters must be valid
+    std::size_t pos = 0;
+    for (; pos < str.length(); ++pos) {
+        if (!ddwaf::isalnum(str[pos]) && str[pos] != '+' && str[pos] != '/') {
+            break;
+        }
+    }
+
+    auto expected_padding = 4 - (pos % 4);
+    auto remaining = str.length() - pos;
+
+    // We also tolerate an incorrect number of padding characters to account
+    // for possible truncation.
+    // An expected padding of 3 would indicate this is not base64
+    if (remaining > 0 && (expected_padding == 3 || remaining > expected_padding)) {
+        return false;
+    }
+
+    for (; pos < str.length(); ++pos) {
+        if (str[pos] != '=') {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool base64_decode::transform_impl(cow_string &str)
+{
+    static constexpr std::array<char, 256> b64Reverse{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60,
+        61, -1, -1, -1, 64, -1, -1, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+        17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1, -1, 26, 27, 28, 29, 30, 31, 32, 33,
+        34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+
+    return decode_common(str, b64Reverse);
+}
+
+bool base64url_decode::needs_transform(std::string_view str)
+{
+    // All characters must be valid
+    std::size_t pos = 0;
+    for (; pos < str.length(); ++pos) {
+        if (!ddwaf::isalnum(str[pos]) && str[pos] != '-' && str[pos] != '_') {
+            break;
+        }
+    }
+
+    auto expected_padding = 4 - (pos % 4);
+    auto remaining = str.length() - pos;
+
+    // We also tolerate an incorrect number of padding characters to account
+    // for possible truncation.
+    // An expected padding of 3 would indicate this is not base64
+    if (remaining > 0 && (expected_padding == 3 || remaining > expected_padding)) {
+        return false;
+    }
+
+    for (; pos < str.length(); ++pos) {
+        if (str[pos] != '=') {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool base64url_decode::transform_impl(cow_string &str)
+{
+    static constexpr std::array<char, 256> b64Reverse{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, 52, 53, 54, 55, 56, 57, 58, 59, 60,
+        61, -1, -1, -1, 64, -1, -1, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+        17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, 63, -1, 26, 27, 28, 29, 30, 31, 32, 33,
+        34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+
+    return decode_common(str, b64Reverse);
+}
+
 } // namespace ddwaf::transformer

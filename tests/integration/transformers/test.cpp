@@ -73,6 +73,37 @@ TEST(TestTransformers, Base64DecodeAlias)
     ddwaf_destroy(handle);
 }
 
+TEST(TestTransformers, Base64UrlDecode)
+{
+    auto rule = read_file("base64url_decode.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object string;
+    ddwaf_object_string(&string, "J09SIDE9MS8q");
+    ddwaf_object_map_add(&map, "value1", &string);
+
+    ddwaf_result out;
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_FALSE(out.timeout);
+    EXPECT_EVENTS(out, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "is_sqli",
+                               .highlight = "s&1c",
+                               .args = {{.value = "'OR 1=1/*", .address = "value1"}}}}});
+
+    ddwaf_result_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
 TEST(TestTransformers, Base64Encode)
 {
     auto rule = read_file<ddwaf_object>("base64_encode.yaml", base_dir);

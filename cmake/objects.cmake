@@ -13,6 +13,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/log.cpp
     ${libddwaf_SOURCE_DIR}/src/obfuscator.cpp
     ${libddwaf_SOURCE_DIR}/src/uri_utils.cpp
+    ${libddwaf_SOURCE_DIR}/src/json_utils.cpp
     ${libddwaf_SOURCE_DIR}/src/platform.cpp
     ${libddwaf_SOURCE_DIR}/src/sha256.cpp
     ${libddwaf_SOURCE_DIR}/src/uuid.cpp
@@ -48,6 +49,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/configuration/configuration_manager.cpp
     ${libddwaf_SOURCE_DIR}/src/processor/extract_schema.cpp
     ${libddwaf_SOURCE_DIR}/src/processor/fingerprint.cpp
+    ${libddwaf_SOURCE_DIR}/src/processor/jwt_decode.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/exists.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/lfi_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/sqli_detector.cpp

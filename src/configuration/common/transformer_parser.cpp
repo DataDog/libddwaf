@@ -30,6 +30,7 @@ std::optional<transformer_id> transformer_from_string(std::string_view str)
         {"js_decode", transformer_id::js_decode},
         {"html_entity_decode", transformer_id::html_entity_decode},
         {"base64_decode", transformer_id::base64_decode},
+        {"base64url_decode", transformer_id::base64url_decode},
         {"base64_encode", transformer_id::base64_encode},
         {"shell_unescape", transformer_id::shell_unescape},
         {"url_basename", transformer_id::url_basename},
