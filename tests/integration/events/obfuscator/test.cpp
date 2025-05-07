@@ -32,7 +32,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -44,7 +44,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
                                        .value = "rule1",
                                        .address = "value",
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -56,7 +56,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
         ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
         ddwaf_object_map_add(&parameter, "value", &inter);
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -69,7 +69,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -80,7 +80,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -92,7 +92,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
                                        .value = "<Redacted>",
                                        .address = "value",
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -104,7 +104,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
         ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1_obf"));
         ddwaf_object_map_add(&parameter, "value", &inter);
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -117,7 +117,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -142,7 +142,7 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -154,7 +154,7 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
                                        .value = "rule1",
                                        .address = "value",
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -166,7 +166,7 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
         ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
         ddwaf_object_map_add(&parameter, "value", &inter);
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -179,7 +179,7 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -190,7 +190,7 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -202,7 +202,7 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
                                        .value = "rule1_obf",
                                        .address = "value",
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -227,7 +227,7 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -239,7 +239,7 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
                                        .value = "rule1",
                                        .address = "value",
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -251,7 +251,7 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
         ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
         ddwaf_object_map_add(&parameter, "value", &inter);
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -264,7 +264,7 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -275,7 +275,7 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -287,7 +287,7 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
                                        .value = "<Redacted>",
                                        .address = "value",
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -312,7 +312,7 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "badvalue_something"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
@@ -323,7 +323,7 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
                                        .value = "<Redacted>",
                                        .address = "value",
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -334,7 +334,7 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "othervalue_badvalue"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
@@ -345,7 +345,7 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
                                        .value = "othervalue_badvalue",
                                        .address = "value",
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -370,7 +370,7 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -382,7 +382,7 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
                                        .value = "rule1",
                                        .address = "value",
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -394,7 +394,7 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
         ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
         ddwaf_object_map_add(&parameter, "value", &inter);
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -407,7 +407,7 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -418,7 +418,7 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -430,7 +430,7 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
                                        .value = "rule1_obf",
                                        .address = "value",
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -455,7 +455,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -467,7 +467,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
                                        .value = "rule1",
                                        .address = "value",
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -479,7 +479,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
         ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
         ddwaf_object_map_add(&parameter, "value", &inter);
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -492,7 +492,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -503,7 +503,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -515,7 +515,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
                                        .value = "rule1_obf",
                                        .address = "value",
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -540,7 +540,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -552,7 +552,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
                                        .value = "rule1",
                                        .address = "value",
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -564,7 +564,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
         ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
         ddwaf_object_map_add(&parameter, "value", &inter);
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -577,7 +577,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -588,7 +588,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
@@ -600,7 +600,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
                                        .value = "rule1_obf",
                                        .address = "value",
                                    }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 

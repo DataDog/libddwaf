@@ -273,8 +273,6 @@ void serialize_action(std::string_view id, ddwaf_object &action_map, const actio
 
 void serialize_actions(ddwaf_object &action_map, const action_tracker &actions)
 {
-    ddwaf_object_map(&action_map);
-
     if (actions.blocking_action_type != action_type::none) {
         serialize_action(actions.blocking_action, action_map, actions);
     }
@@ -286,16 +284,17 @@ void serialize_actions(ddwaf_object &action_map, const action_tracker &actions)
 
 } // namespace
 
-void event_serializer::serialize(const std::vector<event> &events, ddwaf_result &output) const
+void event_serializer::serialize(const std::vector<event> &events, ddwaf_object &output) const
 {
-    if (events.empty()) {
-        return;
-    }
-
     action_tracker actions{
         .blocking_action = {}, .stack_id = {}, .non_blocking_actions = {}, .mapper = actions_};
 
-    ddwaf_object_array(&output.events);
+    ddwaf_object output_events;
+    ddwaf_object output_actions;
+
+    ddwaf_object_array(&output_events);
+    ddwaf_object_map(&output_actions);
+
     for (const auto &event : events) {
         ddwaf_object root_map;
         ddwaf_object rule_map;
@@ -328,10 +327,13 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_result 
             ddwaf_object_map_add(&root_map, "stack_id", &stack_id);
         }
 
-        ddwaf_object_array_add(&output.events, &root_map);
+        ddwaf_object_array_add(&output_events, &root_map);
     }
 
-    serialize_actions(output.actions, actions);
+    serialize_actions(output_actions, actions);
+
+    ddwaf_object_map_addl(&output, "events", sizeof("events") - 1, &output_events);
+    ddwaf_object_map_addl(&output, "actions", sizeof("actions") - 1, &output_actions);
 }
 
 } // namespace ddwaf

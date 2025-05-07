@@ -796,7 +796,9 @@ TEST(TestContext, RuleFilterWithEphemeralConditionMatch)
         ddwaf_object_map(&persistent);
         ddwaf_object_map_add(&persistent, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        EXPECT_EQ(ctx.run(persistent, ephemeral, {}, LONG_TIME), DDWAF_OK);
+        auto [code, res] = ctx.run(persistent, ephemeral, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_OK);
+        ddwaf_object_free(&res);
     }
 
     {
@@ -805,7 +807,9 @@ TEST(TestContext, RuleFilterWithEphemeralConditionMatch)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        EXPECT_EQ(ctx.run(root, {}, {}, LONG_TIME), DDWAF_MATCH);
+        auto [code, res] = ctx.run(root, {}, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_MATCH);
+        ddwaf_object_free(&res);
     }
 }
 
@@ -868,7 +872,9 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
         ddwaf_object_map_add(&persistent, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ddwaf_object_map_add(&persistent, "http.route", ddwaf_object_string(&tmp, "unrouted"));
 
-        EXPECT_EQ(ctx.run(persistent, ephemeral, {}, LONG_TIME), DDWAF_OK);
+        auto [code, res] = ctx.run(persistent, ephemeral, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_OK);
+        ddwaf_object_free(&res);
     }
 
     {
@@ -877,10 +883,13 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf_result result = DDWAF_RESULT_INITIALISER;
-        EXPECT_EQ(ctx.run(root, {}, result, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_object_size(&result.actions), 0);
-        ddwaf_result_free(&result);
+        auto [code, res] = ctx.run(root, {}, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_MATCH);
+
+        const auto *actions = ddwaf_object_find(&res, STRL("actions"));
+        EXPECT_EQ(ddwaf_object_size(actions), 0);
+
+        ddwaf_object_free(&res);
     }
 }
 
@@ -943,7 +952,9 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
         ddwaf_object_map_add(&persistent, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ddwaf_object_map_add(&persistent, "http.route", ddwaf_object_string(&tmp, "unrouted"));
 
-        EXPECT_EQ(ctx.run(persistent, ephemeral, {}, LONG_TIME), DDWAF_OK);
+        auto [code, res] = ctx.run(persistent, ephemeral, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_OK);
+        ddwaf_object_free(&res);
     }
 
     {
@@ -952,7 +963,9 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        EXPECT_EQ(ctx.run(root, {}, {}, LONG_TIME), DDWAF_OK);
+        auto [code, res] = ctx.run(root, {}, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_OK);
+        ddwaf_object_free(&res);
     }
 }
 
@@ -1455,7 +1468,9 @@ TEST(TestContext, InputFilterExcludeEphemeral)
         ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        EXPECT_EQ(ctx.run({}, root, {}, LONG_TIME), DDWAF_OK);
+        auto [code, res] = ctx.run({}, root, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_OK);
+        ddwaf_object_free(&res);
     }
 
     {
@@ -1463,7 +1478,9 @@ TEST(TestContext, InputFilterExcludeEphemeral)
         ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        EXPECT_EQ(ctx.run({}, root, {}, LONG_TIME), DDWAF_OK);
+        auto [code, res] = ctx.run({}, root, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_OK);
+        ddwaf_object_free(&res);
     }
 
     {
@@ -1471,7 +1488,9 @@ TEST(TestContext, InputFilterExcludeEphemeral)
         ddwaf_object tmp;
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.peer_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        EXPECT_EQ(ctx.run({}, root, {}, LONG_TIME), DDWAF_MATCH);
+        auto [code, res] = ctx.run({}, root, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_MATCH);
+        ddwaf_object_free(&res);
     }
 }
 
@@ -1502,14 +1521,22 @@ TEST(TestContext, InputFilterExcludeEphemeralReuseObject)
     ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-    EXPECT_EQ(ctx.run({}, root, {}, LONG_TIME), DDWAF_OK);
+    {
+        auto [code, res] = ctx.run({}, root, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_OK);
+        ddwaf_object_free(&res);
+    }
 
     std::string peer_ip = "http.peer_ip";
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
     memcpy(const_cast<char *>(root.array[0].parameterName), peer_ip.c_str(), peer_ip.size());
     root.array[0].parameterNameLength = peer_ip.size();
 
-    EXPECT_EQ(ctx.run({}, root, {}, LONG_TIME), DDWAF_MATCH);
+    {
+        auto [code, res] = ctx.run({}, root, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_MATCH);
+        ddwaf_object_free(&res);
+    }
 
     ddwaf_object_free(&root);
 }
@@ -1878,7 +1905,9 @@ TEST(TestContext, InputFilterWithEphemeralCondition)
         ddwaf_object_map(&ephemeral);
         ddwaf_object_map_add(&ephemeral, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        EXPECT_EQ(ctx.run(persistent, ephemeral, {}, LONG_TIME), DDWAF_OK);
+        auto [code, res] = ctx.run(persistent, ephemeral, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_OK);
+        ddwaf_object_free(&res);
     }
 
     {
@@ -1887,7 +1916,9 @@ TEST(TestContext, InputFilterWithEphemeralCondition)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-        EXPECT_EQ(ctx.run(root, {}, {}, LONG_TIME), DDWAF_MATCH);
+        auto [code, res] = ctx.run(root, {}, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_MATCH);
+        ddwaf_object_free(&res);
     }
 }
 

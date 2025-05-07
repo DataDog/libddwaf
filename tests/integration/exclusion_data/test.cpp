@@ -36,7 +36,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
@@ -58,7 +58,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
                         .address = "http.client_ip",
                     }}}}});
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -82,7 +82,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
@@ -94,7 +94,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
                                        .address = "http.client_ip",
                                    }}}}});
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -112,7 +112,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
@@ -134,7 +134,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
                         .address = "http.client_ip",
                     }}}}});
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -169,7 +169,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
@@ -191,7 +191,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
                         .address = "usr.id",
                     }}}}});
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -215,7 +215,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
@@ -227,7 +227,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
                                        .address = "usr.id",
                                    }}}}});
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -245,7 +245,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
@@ -266,7 +266,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
                         .value = "admin",
                         .address = "usr.id",
                     }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -301,7 +301,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
@@ -323,7 +323,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
                         .address = "usr.id",
                     }}}}});
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -347,7 +347,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
@@ -359,7 +359,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
                                        .address = "usr.id",
                                    }}}}});
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -383,7 +383,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
@@ -404,7 +404,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
                         .value = "admin",
                         .address = "usr.id",
                     }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -439,7 +439,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
@@ -461,7 +461,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
                         .address = "usr.id",
                     }}}}});
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -485,7 +485,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
@@ -497,7 +497,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
                                        .address = "usr.id",
                                    }}}}});
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -515,7 +515,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
@@ -536,7 +536,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
                         .value = "admin",
                         .address = "usr.id",
                     }}}}});
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 

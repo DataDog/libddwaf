@@ -52,8 +52,8 @@ public:
     context &operator=(context &&) = delete;
     ~context() = default;
 
-    DDWAF_RET_CODE run(optional_ref<ddwaf_object>, optional_ref<ddwaf_object>,
-        optional_ref<ddwaf_result>, uint64_t);
+    std::pair<DDWAF_RET_CODE, ddwaf_object> run(
+        optional_ref<ddwaf_object>, optional_ref<ddwaf_object>, uint64_t);
 
     void eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline);
     void eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline);
@@ -139,11 +139,11 @@ public:
     context_wrapper &operator=(context_wrapper &&) noexcept = delete;
     context_wrapper &operator=(const context_wrapper &) = delete;
 
-    DDWAF_RET_CODE run(optional_ref<ddwaf_object> persistent, optional_ref<ddwaf_object> ephemeral,
-        optional_ref<ddwaf_result> res, uint64_t timeout)
+    std::pair<DDWAF_RET_CODE, ddwaf_object> run(optional_ref<ddwaf_object> persistent,
+        optional_ref<ddwaf_object> ephemeral, uint64_t timeout)
     {
         memory::memory_resource_guard guard(&mr_);
-        return ctx_->run(persistent, ephemeral, res, timeout);
+        return ctx_->run(persistent, ephemeral, timeout);
     }
 
 protected:

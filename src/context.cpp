@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "clock.hpp"
@@ -51,48 +52,43 @@ void set_context_event_address(object_store &store)
 } // namespace
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
-    optional_ref<ddwaf_object> ephemeral, optional_ref<ddwaf_result> res, uint64_t timeout)
+std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
+    optional_ref<ddwaf_object> persistent, optional_ref<ddwaf_object> ephemeral, uint64_t timeout)
 {
     // This scope ensures that all ephemeral and cached objects are removed
     // from the store at the end of the evaluation
     auto store_cleanup_scope = store_.get_eval_scope();
     auto on_exit = scope_exit([this]() { this->exclusion_policy_.ephemeral.clear(); });
 
-    if (res.has_value()) {
-        ddwaf_result &output = *res;
-        output = DDWAF_RESULT_INITIALISER;
-    }
+    ddwaf_object output;
+    ddwaf_object_map(&output);
 
     auto *free_fn = ruleset_->free_fn;
     if (persistent.has_value() && !store_.insert(*persistent, attribute::none, free_fn)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
-        return DDWAF_ERR_INVALID_OBJECT;
+        return {DDWAF_ERR_INVALID_OBJECT, output};
     }
 
     if (ephemeral.has_value() && !store_.insert(*ephemeral, attribute::ephemeral, free_fn)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
-        return DDWAF_ERR_INVALID_OBJECT;
+        return {DDWAF_ERR_INVALID_OBJECT, output};
     }
 
     ddwaf::timer deadline{std::chrono::microseconds(timeout)};
 
     if (!store_.has_new_targets()) {
-        return DDWAF_OK;
+        return {DDWAF_OK, output};
     }
 
     const event_serializer serializer(event_obfuscator_, actions_);
 
-    optional_ref<ddwaf_object> derived;
-    if (res.has_value()) {
-        ddwaf_result &output = *res;
-        ddwaf_object_map(&output.derivatives);
-        derived.emplace(output.derivatives);
-    }
+    ddwaf_object attributes;
+    ddwaf_object_map(&attributes);
+    optional_ref<ddwaf_object> attributes_ref{attributes};
 
     std::vector<ddwaf::event> events;
     try {
-        eval_preprocessors(derived, deadline);
+        eval_preprocessors(attributes_ref, deadline);
 
         // If no rule targets are available, there is no point in evaluating them
         const bool should_eval_rules = check_new_rule_targets();
@@ -112,19 +108,21 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
             }
         }
 
-        eval_postprocessors(derived, deadline);
+        eval_postprocessors(attributes_ref, deadline);
         // NOLINTNEXTLINE(bugprone-empty-catch)
     } catch (const ddwaf::timeout_exception &) {}
 
     const DDWAF_RET_CODE code = events.empty() ? DDWAF_OK : DDWAF_MATCH;
-    if (res.has_value()) {
-        ddwaf_result &output = *res;
-        serializer.serialize(events, output);
-        output.total_runtime = deadline.elapsed().count();
-        output.timeout = deadline.expired_before();
-    }
 
-    return code;
+    ddwaf_object tmp;
+    serializer.serialize(events, output);
+    ddwaf_object_map_addl(&output, "attributes", sizeof("attributes") - 1, &attributes);
+    ddwaf_object_map_addl(&output, "duration", sizeof("duration") - 1,
+        ddwaf_object_unsigned(&tmp, deadline.elapsed().count()));
+    ddwaf_object_map_addl(&output, "timeout", sizeof("timeout") - 1,
+        ddwaf_object_bool(&tmp, deadline.expired_before()));
+
+    return {code, output};
 }
 
 void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline)

@@ -93,7 +93,6 @@ typedef struct _ddwaf_builder* ddwaf_builder;
 
 typedef struct _ddwaf_object ddwaf_object;
 typedef struct _ddwaf_config ddwaf_config;
-typedef struct _ddwaf_result ddwaf_result;
 /**
  * @struct ddwaf_object
  *
@@ -152,27 +151,6 @@ struct _ddwaf_config
      *  to ddwaf_run. If the value of this function is NULL, the objects will
      *  not be freed. The default value should be ddwaf_object_free. */
     ddwaf_object_free_fn free_fn;
-};
-
-/**
- * @struct ddwaf_result
- *
- * Structure containing the result of a WAF run.
- **/
-struct _ddwaf_result
-{
-    /** Whether there has been a timeout during the operation **/
-    bool timeout;
-    /** Array of events generated, this is guaranteed to be an array **/
-    ddwaf_object events;
-    /** Map of actions generated, this is guaranteed to be a map in the format:
-     * {action type: { <parameter map> }, ...}
-     **/
-    ddwaf_object actions;
-    /** Map containing all derived objects in the format (address, value) **/
-    ddwaf_object derivatives;
-    /** Total WAF runtime in nanoseconds **/
-    uint64_t total_runtime;
 };
 
 /**
@@ -330,7 +308,7 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle);
  *  recommended and might be explicitly rejected in the future.
  **/
 DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
-    ddwaf_object *ephemeral_data, ddwaf_result *result,  uint64_t timeout);
+    ddwaf_object *ephemeral_data, ddwaf_object *result,  uint64_t timeout);
 
 /**
  * ddwaf_context_destroy
@@ -341,15 +319,6 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
  * @param context Context to destroy. (nonnull)
  **/
 void ddwaf_context_destroy(ddwaf_context context);
-
-/**
- * ddwaf_result_free
- *
- * Free a ddwaf_result structure.
- *
- * @param result Structure to free. (nonnull)
- **/
-void ddwaf_result_free(ddwaf_result *result);
 
 /**
  * ddwaf_builder_init
@@ -781,6 +750,19 @@ bool ddwaf_object_get_bool(const ddwaf_object *object);
  **/
 const ddwaf_object* ddwaf_object_get_index(const ddwaf_object *object, size_t index);
 
+/**
+ * ddwaf_object_find
+ *
+ * Returns the object within the given map with a key matching the provided one.
+ *
+ * @param object The container from which to extract the object.
+ * @param key A string representing the key to find.
+ * @param length Length of the key.
+ *
+ * @return The requested object or NULL if the key was not found or the
+ *         object is not a container.
+ **/
+const ddwaf_object* ddwaf_object_find(const ddwaf_object *object, const char *key, size_t length);
 
 /**
  * ddwaf_object_free

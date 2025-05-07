@@ -26,9 +26,11 @@ TEST(TestConditionExistsIntegration, AddressAvailable)
     ddwaf_object value;
     ddwaf_object_map_add(&map, "input-1", ddwaf_object_invalid(&value));
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1-exists",
                            .tags = {{"type", "flow"}, {"category", "category"}},
@@ -38,7 +40,7 @@ TEST(TestConditionExistsIntegration, AddressAvailable)
                                    .address = "input-1",
                                }}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -58,9 +60,9 @@ TEST(TestConditionExistsIntegration, AddressNotAvailable)
     ddwaf_object value;
     ddwaf_object_map_add(&map, "input", ddwaf_object_invalid(&value));
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -82,9 +84,10 @@ TEST(TestConditionExistsIntegration, KeyPathAvailable)
     ddwaf_object_map_add(&intermediate, "path", ddwaf_object_invalid(&value));
     ddwaf_object_map_add(&map, "input-2", &intermediate);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2-exists-kp",
                            .tags = {{"type", "flow"}, {"category", "category"}},
@@ -92,7 +95,7 @@ TEST(TestConditionExistsIntegration, KeyPathAvailable)
                                .highlight = "",
                                .args = {{.address = "input-2", .path = {"path"}}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -114,10 +117,10 @@ TEST(TestConditionExistsIntegration, KeyPathNotAvailable)
     ddwaf_object_map_add(&intermediate, "poth", ddwaf_object_invalid(&value));
     ddwaf_object_map_add(&map, "input-2", &intermediate);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -137,9 +140,10 @@ TEST(TestConditionExistsIntegration, AddressAvailableVariadicRule)
     ddwaf_object value;
     ddwaf_object_map_add(&map, "input-3-1", ddwaf_object_invalid(&value));
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "3",
                            .name = "rule3-exists-multi",
                            .tags = {{"type", "flow"}, {"category", "category"}},
@@ -149,7 +153,7 @@ TEST(TestConditionExistsIntegration, AddressAvailableVariadicRule)
                                    .address = "input-3-1",
                                }}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -171,9 +175,10 @@ TEST(TestConditionExistsIntegration, KeyPathAvailableVariadicRule)
     ddwaf_object_map_add(&intermediate, "path", ddwaf_object_invalid(&value));
     ddwaf_object_map_add(&map, "input-3-2", &intermediate);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "3",
                            .name = "rule3-exists-multi",
                            .tags = {{"type", "flow"}, {"category", "category"}},
@@ -181,7 +186,7 @@ TEST(TestConditionExistsIntegration, KeyPathAvailableVariadicRule)
                                .highlight = "",
                                .args = {{.address = "input-3-2", .path = {"path"}}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -204,9 +209,10 @@ TEST(TestConditionExistsIntegration, AddressAvailableKeyPathNotAvailableVariadic
     ddwaf_object_map_add(&map, "input-3-2", &intermediate);
     ddwaf_object_map_add(&map, "input-3-1", ddwaf_object_invalid(&value));
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "3",
                            .name = "rule3-exists-multi",
                            .tags = {{"type", "flow"}, {"category", "category"}},
@@ -216,7 +222,7 @@ TEST(TestConditionExistsIntegration, AddressAvailableKeyPathNotAvailableVariadic
                                    .address = "input-3-1",
                                }}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -236,10 +242,10 @@ TEST(TestConditionExistsNegatedIntegration, AddressAvailable)
     ddwaf_object value;
     ddwaf_object_map_add(&map, "input-1", ddwaf_object_invalid(&value));
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -262,10 +268,10 @@ TEST(TestConditionExistsNegatedIntegration, AddressNotAvailable)
     // Even though the address isn't present, this test shouldn't result in a match
     // as the !exists operator only supports address + key path, since we can't
     // assert the absence of an address given that these are provided in stages
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -287,9 +293,10 @@ TEST(TestConditionExistsNegatedIntegration, KeyPathNotAvailable)
     ddwaf_object_map_add(&intermediate, "poth", ddwaf_object_invalid(&value));
     ddwaf_object_map_add(&map, "input-2", &intermediate);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2-not-exists-kp",
                            .tags = {{"type", "flow"}, {"category", "category"}},
@@ -297,7 +304,7 @@ TEST(TestConditionExistsNegatedIntegration, KeyPathNotAvailable)
                                .highlight = "",
                                .args = {{.address = "input-2", .path = {"path"}}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -319,10 +326,10 @@ TEST(TestConditionExistsNegatedIntegration, KeyPathAvailable)
     ddwaf_object_map_add(&intermediate, "path", ddwaf_object_invalid(&value));
     ddwaf_object_map_add(&map, "input-2", &intermediate);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }

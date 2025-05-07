@@ -40,16 +40,18 @@ TEST(TestProcessorOverridesIntegration, AddScannersById)
         ddwaf_object_map_add(&value, "email", ddwaf_object_string(&tmp, "employee@company.com"));
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.body.schema":[{"email":[8]}]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -75,17 +77,19 @@ TEST(TestProcessorOverridesIntegration, AddScannersById)
         ddwaf_object_map_add(&value, "email", ddwaf_object_string(&tmp, "employee@company.com"));
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema,
             R"({"server.request.body.schema":[{"email":[8,{"type":"email","category":"pii"}]}]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -121,16 +125,18 @@ TEST(TestProcessorOverridesIntegration, AddScannersByTags)
         ddwaf_object_map_add(&value, "email", ddwaf_object_string(&tmp, "employee@company.com"));
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.body.schema":[{"email":[8]}]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -156,17 +162,19 @@ TEST(TestProcessorOverridesIntegration, AddScannersByTags)
         ddwaf_object_map_add(&value, "email", ddwaf_object_string(&tmp, "employee@company.com"));
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema,
             R"({"server.request.body.schema":[{"email":[8,{"type":"email","category":"pii"}]}]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -202,17 +210,19 @@ TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
         ddwaf_object_map_add(&value, "email", ddwaf_object_string(&tmp, "employee@company.com"));
         ddwaf_object_map_add(&map, "server.request.headers", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema,
             R"({"server.request.headers.schema":[{"email":[8,{"type":"token","category":"credential"}]}]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -238,17 +248,19 @@ TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
         ddwaf_object_map_add(&value, "email", ddwaf_object_string(&tmp, "employee@company.com"));
         ddwaf_object_map_add(&map, "server.request.headers", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema,
             R"({"server.request.headers.schema":[{"email":[8,{"type":"email","category":"pii"}]}]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -274,16 +286,18 @@ TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
         ddwaf_object_map_add(&value, "email", ddwaf_object_string(&tmp, "employee@company.com"));
         ddwaf_object_map_add(&map, "server.request.headers", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.headers.schema":[{"email":[8]}]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -319,17 +333,19 @@ TEST(TestProcessorOverridesIntegration, DisableDefaultScanners)
         ddwaf_object_map_add(&value, "email", ddwaf_object_string(&tmp, "employee@company.com"));
         ddwaf_object_map_add(&map, "server.request.headers", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema,
             R"({"server.request.headers.schema":[{"email":[8,{"type":"token","category":"credential"}]}]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -355,16 +371,18 @@ TEST(TestProcessorOverridesIntegration, DisableDefaultScanners)
         ddwaf_object_map_add(&value, "email", ddwaf_object_string(&tmp, "employee@company.com"));
         ddwaf_object_map_add(&map, "server.request.headers", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.headers.schema":[{"email":[8]}]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -400,16 +418,18 @@ TEST(TestProcessorOverridesIntegration, RemoveScannersAfterOverride)
         ddwaf_object_map_add(&value, "email", ddwaf_object_string(&tmp, "employee@company.com"));
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.body.schema":[{"email":[8]}]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -435,17 +455,19 @@ TEST(TestProcessorOverridesIntegration, RemoveScannersAfterOverride)
         ddwaf_object_map_add(&value, "email", ddwaf_object_string(&tmp, "employee@company.com"));
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema,
             R"({"server.request.body.schema":[{"email":[8,{"type":"email","category":"pii"}]}]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -467,16 +489,18 @@ TEST(TestProcessorOverridesIntegration, RemoveScannersAfterOverride)
         ddwaf_object_map_add(&value, "email", ddwaf_object_string(&tmp, "employee@company.com"));
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.body.schema":[{"email":[8]}]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -512,16 +536,18 @@ TEST(TestProcessorOverridesIntegration, RemoveOverride)
         ddwaf_object_map_add(&value, "email", ddwaf_object_string(&tmp, "employee@company.com"));
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.body.schema":[{"email":[8]}]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -547,17 +573,19 @@ TEST(TestProcessorOverridesIntegration, RemoveOverride)
         ddwaf_object_map_add(&value, "email", ddwaf_object_string(&tmp, "employee@company.com"));
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema,
             R"({"server.request.body.schema":[{"email":[8,{"type":"email","category":"pii"}]}]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -579,16 +607,18 @@ TEST(TestProcessorOverridesIntegration, RemoveOverride)
         ddwaf_object_map_add(&value, "email", ddwaf_object_string(&tmp, "employee@company.com"));
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.body.schema":[{"email":[8]}]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -628,12 +658,14 @@ TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
         ddwaf_object_map_add(&value, "email", ddwaf_object_string(&tmp, "employee@company.com"));
         ddwaf_object_map_add(&map, "server.request.headers", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 2);
-        ddwaf::raw_configuration derivatives_object(out.derivatives);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 2);
+        ddwaf::raw_configuration derivatives_object(*attributes);
         auto derivatives = static_cast<ddwaf::raw_configuration::map>(derivatives_object);
 
         auto headers_schema = test::object_to_json(derivatives["server.request.headers.schema"]);
@@ -642,7 +674,7 @@ TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
         auto body_schema = test::object_to_json(derivatives["server.request.body.schema"]);
         EXPECT_STR(body_schema, R"([{"email":[8]}])");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -672,14 +704,16 @@ TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
         ddwaf_object_map_add(&value, "email", ddwaf_object_string(&tmp, "employee@company.com"));
         ddwaf_object_map_add(&map, "server.request.headers", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 2);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 2);
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 2);
-        ddwaf::raw_configuration derivatives_object(out.derivatives);
+        EXPECT_EQ(ddwaf_object_size(attributes), 2);
+        ddwaf::raw_configuration derivatives_object(*attributes);
         auto derivatives = static_cast<ddwaf::raw_configuration::map>(derivatives_object);
 
         auto headers_schema = test::object_to_json(derivatives["server.request.headers.schema"]);
@@ -688,7 +722,7 @@ TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
         auto body_schema = test::object_to_json(derivatives["server.request.body.schema"]);
         EXPECT_STR(body_schema, R"([{"email":[8,{"type":"email","category":"pii"}]}])");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 

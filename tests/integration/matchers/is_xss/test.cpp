@@ -29,11 +29,12 @@ TEST(TestIsXSSIntegration, Match)
     ddwaf_object_map(&param);
     ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "<script>alert(1);</script>"));
 
-    ddwaf_result ret;
+    ddwaf_object ret;
 
     auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
-    EXPECT_FALSE(ret.timeout);
+    const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(ret, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -42,7 +43,7 @@ TEST(TestIsXSSIntegration, Match)
                                    .value = "<script>alert(1);</script>",
                                    .address = "arg1",
                                }}}}});
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);

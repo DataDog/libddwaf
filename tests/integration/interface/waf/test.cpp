@@ -31,7 +31,8 @@ TEST(TestWafIntegration, GetWafVersion)
 
 TEST(TestWafIntegration, HandleBad)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, ddwaf_object_free};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, ddwaf_object_free};
 
     ddwaf_object tmp;
     ddwaf_object object = DDWAF_OBJECT_INVALID;
@@ -61,9 +62,13 @@ TEST(TestWafIntegration, HandleBad)
 
     object = DDWAF_OBJECT_MAP;
     ddwaf_object_map_add(&object, "value1", ddwaf_object_string(&tmp, "value"));
-    ddwaf_result res;
+    ddwaf_object res;
     EXPECT_EQ(ddwaf_run(context, &object, nullptr, &res, 0), DDWAF_OK);
-    EXPECT_TRUE(res.timeout);
+
+    const auto *timeout = ddwaf_object_find(&res, STRL("timeout"));
+    EXPECT_TRUE(ddwaf_object_get_bool(timeout));
+
+    ddwaf_object_free(&res);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -74,7 +79,8 @@ TEST(TestWafIntegration, RootAddresses)
     auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -97,7 +103,8 @@ TEST(TestWafIntegration, HandleLifetime)
     auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -111,7 +118,8 @@ TEST(TestWafIntegration, HandleLifetime)
 
     ddwaf_object parameter = DDWAF_OBJECT_MAP;
     ddwaf_object tmp;
-    ddwaf_object param_key = DDWAF_OBJECT_ARRAY, param_val = DDWAF_OBJECT_ARRAY;
+    ddwaf_object param_key = DDWAF_OBJECT_ARRAY;
+    ddwaf_object param_val = DDWAF_OBJECT_ARRAY;
 
     ddwaf_object_array_add(&param_key, ddwaf_object_string_from_unsigned(&tmp, 4242));
     ddwaf_object_array_add(&param_key, ddwaf_object_string(&tmp, "randomString"));
@@ -174,7 +182,8 @@ TEST(TestWafIntegration, InvalidVersion)
     auto rule = yaml_to_object("{version: 3.0, rules: []}");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
 
     ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
     ASSERT_EQ(handle1, nullptr);
@@ -186,7 +195,8 @@ TEST(TestWafIntegration, InvalidVersionNoRules)
     auto rule = yaml_to_object("{version: 3.0}");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
 
     ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
     ASSERT_EQ(handle1, nullptr);
@@ -291,7 +301,8 @@ TEST(TestWafIntegration, UpdateRules)
     auto rule = read_file("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
 
     ddwaf_builder builder = ddwaf_builder_init(&config);
     ddwaf_builder_add_or_update_config(builder, "default", sizeof("default") - 1, &rule, nullptr);
@@ -420,7 +431,8 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByID)
 
 TEST(TestWafIntegration, UpdateDisableEnableRuleByTags)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -509,7 +521,8 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByTags)
 
 TEST(TestWafIntegration, UpdateActionsByID)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
     ASSERT_NE(builder, nullptr);
 
@@ -557,8 +570,8 @@ TEST(TestWafIntegration, UpdateActionsByID)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        ddwaf_result result1;
-        ddwaf_result result2;
+        ddwaf_object result1;
+        ddwaf_object result2;
 
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
@@ -570,8 +583,8 @@ TEST(TestWafIntegration, UpdateActionsByID)
             result2, {{"block_request",
                          {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
 
-        ddwaf_result_free(&result1);
-        ddwaf_result_free(&result2);
+        ddwaf_object_free(&result1);
+        ddwaf_object_free(&result2);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -588,8 +601,8 @@ TEST(TestWafIntegration, UpdateActionsByID)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));
 
-        ddwaf_result result1;
-        ddwaf_result result2;
+        ddwaf_object result1;
+        ddwaf_object result2;
 
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
@@ -599,8 +612,8 @@ TEST(TestWafIntegration, UpdateActionsByID)
         EXPECT_ACTIONS(result1, {});
         EXPECT_ACTIONS(result2, {});
 
-        ddwaf_result_free(&result1);
-        ddwaf_result_free(&result2);
+        ddwaf_object_free(&result1);
+        ddwaf_object_free(&result2);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -634,8 +647,8 @@ TEST(TestWafIntegration, UpdateActionsByID)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        ddwaf_result result2;
-        ddwaf_result result3;
+        ddwaf_object result2;
+        ddwaf_object result3;
 
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_MATCH);
@@ -648,8 +661,8 @@ TEST(TestWafIntegration, UpdateActionsByID)
         EXPECT_ACTIONS(result3,
             {{"redirect_request", {{"status_code", "303"}, {"location", "http://google.com"}}}});
 
-        ddwaf_result_free(&result2);
-        ddwaf_result_free(&result3);
+        ddwaf_object_free(&result2);
+        ddwaf_object_free(&result3);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context3);
@@ -663,7 +676,8 @@ TEST(TestWafIntegration, UpdateActionsByID)
 
 TEST(TestWafIntegration, UpdateActionsByTags)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -710,8 +724,8 @@ TEST(TestWafIntegration, UpdateActionsByTags)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        ddwaf_result result1;
-        ddwaf_result result2;
+        ddwaf_object result1;
+        ddwaf_object result2;
 
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
@@ -723,8 +737,8 @@ TEST(TestWafIntegration, UpdateActionsByTags)
             result2, {{"block_request",
                          {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
 
-        ddwaf_result_free(&result1);
-        ddwaf_result_free(&result2);
+        ddwaf_object_free(&result1);
+        ddwaf_object_free(&result2);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -741,8 +755,8 @@ TEST(TestWafIntegration, UpdateActionsByTags)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));
 
-        ddwaf_result result1;
-        ddwaf_result result2;
+        ddwaf_object result1;
+        ddwaf_object result2;
 
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
@@ -752,8 +766,8 @@ TEST(TestWafIntegration, UpdateActionsByTags)
         EXPECT_ACTIONS(result1, {});
         EXPECT_ACTIONS(result2, {});
 
-        ddwaf_result_free(&result1);
-        ddwaf_result_free(&result2);
+        ddwaf_object_free(&result1);
+        ddwaf_object_free(&result2);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -767,7 +781,8 @@ TEST(TestWafIntegration, UpdateActionsByTags)
 
 TEST(TestWafIntegration, UpdateTagsByID)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -801,8 +816,8 @@ TEST(TestWafIntegration, UpdateTagsByID)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        ddwaf_result result1;
-        ddwaf_result result2;
+        ddwaf_object result1;
+        ddwaf_object result2;
 
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
@@ -830,8 +845,8 @@ TEST(TestWafIntegration, UpdateTagsByID)
 
         ddwaf_object_free(&parameter);
 
-        ddwaf_result_free(&result1);
-        ddwaf_result_free(&result2);
+        ddwaf_object_free(&result1);
+        ddwaf_object_free(&result2);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -851,8 +866,8 @@ TEST(TestWafIntegration, UpdateTagsByID)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        ddwaf_result result3;
-        ddwaf_result result2;
+        ddwaf_object result3;
+        ddwaf_object result2;
 
         EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
@@ -880,8 +895,8 @@ TEST(TestWafIntegration, UpdateTagsByID)
 
         ddwaf_object_free(&parameter);
 
-        ddwaf_result_free(&result3);
-        ddwaf_result_free(&result2);
+        ddwaf_object_free(&result3);
+        ddwaf_object_free(&result2);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context3);
@@ -896,7 +911,8 @@ TEST(TestWafIntegration, UpdateTagsByID)
 
 TEST(TestWafIntegration, UpdateTagsByTags)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -931,8 +947,8 @@ TEST(TestWafIntegration, UpdateTagsByTags)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        ddwaf_result result1;
-        ddwaf_result result2;
+        ddwaf_object result1;
+        ddwaf_object result2;
 
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
@@ -960,8 +976,8 @@ TEST(TestWafIntegration, UpdateTagsByTags)
                     .args = {
                         {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
 
-        ddwaf_result_free(&result1);
-        ddwaf_result_free(&result2);
+        ddwaf_object_free(&result1);
+        ddwaf_object_free(&result2);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -978,8 +994,8 @@ TEST(TestWafIntegration, UpdateTagsByTags)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));
 
-        ddwaf_result result1;
-        ddwaf_result result2;
+        ddwaf_object result1;
+        ddwaf_object result2;
 
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
@@ -1006,8 +1022,8 @@ TEST(TestWafIntegration, UpdateTagsByTags)
                     .args = {
                         {.name = "input", .value = "rule2", .address = "value1", .path = {}}}}}});
 
-        ddwaf_result_free(&result1);
-        ddwaf_result_free(&result2);
+        ddwaf_object_free(&result1);
+        ddwaf_object_free(&result2);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -1024,8 +1040,8 @@ TEST(TestWafIntegration, UpdateTagsByTags)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value2", ddwaf_object_string(&tmp, "rule3"));
 
-        ddwaf_result result1;
-        ddwaf_result result2;
+        ddwaf_object result1;
+        ddwaf_object result2;
 
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
@@ -1053,8 +1069,8 @@ TEST(TestWafIntegration, UpdateTagsByTags)
                     .args = {
                         {.name = "input", .value = "rule3", .address = "value2", .path = {}}}}}});
 
-        ddwaf_result_free(&result1);
-        ddwaf_result_free(&result2);
+        ddwaf_object_free(&result1);
+        ddwaf_object_free(&result2);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -1074,8 +1090,8 @@ TEST(TestWafIntegration, UpdateTagsByTags)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value2", ddwaf_object_string(&tmp, "rule3"));
 
-        ddwaf_result result3;
-        ddwaf_result result2;
+        ddwaf_object result3;
+        ddwaf_object result2;
 
         EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
@@ -1102,8 +1118,8 @@ TEST(TestWafIntegration, UpdateTagsByTags)
                     .highlight = "rule3",
                     .args = {
                         {.name = "input", .value = "rule3", .address = "value2", .path = {}}}}}});
-        ddwaf_result_free(&result3);
-        ddwaf_result_free(&result2);
+        ddwaf_object_free(&result3);
+        ddwaf_object_free(&result2);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context3);
@@ -1118,7 +1134,8 @@ TEST(TestWafIntegration, UpdateTagsByTags)
 
 TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -1153,8 +1170,8 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        ddwaf_result result1;
-        ddwaf_result result2;
+        ddwaf_object result1;
+        ddwaf_object result2;
 
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
@@ -1186,8 +1203,8 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
             result2, {{"block_request",
                          {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
 
-        ddwaf_result_free(&result1);
-        ddwaf_result_free(&result2);
+        ddwaf_object_free(&result1);
+        ddwaf_object_free(&result2);
 
         ddwaf_object_free(&parameter);
 
@@ -1217,8 +1234,8 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        ddwaf_result result2;
-        ddwaf_result result3;
+        ddwaf_object result2;
+        ddwaf_object result3;
 
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_MATCH);
@@ -1250,8 +1267,8 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
                          {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
         EXPECT_ACTIONS(result3, {});
 
-        ddwaf_result_free(&result2);
-        ddwaf_result_free(&result3);
+        ddwaf_object_free(&result2);
+        ddwaf_object_free(&result3);
 
         ddwaf_object_free(&parameter);
 
@@ -1300,7 +1317,8 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
 
 TEST(TestWafIntegration, UpdateInvalidOverrides)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     auto rule = read_file("interface.yaml", base_dir);
@@ -1405,7 +1423,8 @@ TEST(TestWafIntegration, UpdateRuleData)
 
 TEST(TestWafIntegration, UpdateAndRevertRuleData)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -1482,7 +1501,8 @@ TEST(TestWafIntegration, UpdateAndRevertRuleData)
 
 TEST(TestWafIntegration, UpdateRuleExclusions)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -1579,7 +1599,8 @@ TEST(TestWafIntegration, UpdateRuleExclusions)
 
 TEST(TestWafIntegration, UpdateInputExclusions)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -1695,7 +1716,8 @@ TEST(TestWafIntegration, UpdateInputExclusions)
 
 TEST(TestWafIntegration, UpdateEverything)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -1789,8 +1811,8 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object_map_add(
             &parameter, "server.response.status", ddwaf_object_string(&tmp, "rule5"));
 
-        ddwaf_result result2;
-        ddwaf_result result3;
+        ddwaf_object result2;
+        ddwaf_object result3;
 
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_MATCH);
@@ -1802,8 +1824,8 @@ TEST(TestWafIntegration, UpdateEverything)
             result3, {{"block_request",
                          {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
 
-        ddwaf_result_free(&result2);
-        ddwaf_result_free(&result3);
+        ddwaf_object_free(&result2);
+        ddwaf_object_free(&result3);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context3);
@@ -1857,8 +1879,8 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object_map_add(
             &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
 
-        ddwaf_result result3;
-        ddwaf_result result4;
+        ddwaf_object result3;
+        ddwaf_object result4;
 
         EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_OK);
         EXPECT_EQ(ddwaf_run(context4, &parameter, nullptr, &result4, LONG_TIME), DDWAF_MATCH);
@@ -1870,8 +1892,8 @@ TEST(TestWafIntegration, UpdateEverything)
             result4, {{"block_request",
                          {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
 
-        ddwaf_result_free(&result3);
-        ddwaf_result_free(&result4);
+        ddwaf_object_free(&result3);
+        ddwaf_object_free(&result4);
 
         ddwaf_context_destroy(context3);
         ddwaf_context_destroy(context4);
@@ -1920,8 +1942,8 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object_map_add(
             &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
 
-        ddwaf_result result4;
-        ddwaf_result result5;
+        ddwaf_object result4;
+        ddwaf_object result5;
 
         EXPECT_EQ(ddwaf_run(context4, &parameter, nullptr, &result4, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context5, &parameter, nullptr, &result5, LONG_TIME), DDWAF_MATCH);
@@ -1935,8 +1957,8 @@ TEST(TestWafIntegration, UpdateEverything)
             result5, {{"block_request",
                          {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
 
-        ddwaf_result_free(&result4);
-        ddwaf_result_free(&result5);
+        ddwaf_object_free(&result4);
+        ddwaf_object_free(&result5);
 
         ddwaf_context_destroy(context4);
         ddwaf_context_destroy(context5);
@@ -1974,8 +1996,8 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object_map_add(
             &parameter, "server.response.status", ddwaf_object_string(&tmp, "rule5"));
 
-        ddwaf_result result4;
-        ddwaf_result result5;
+        ddwaf_object result4;
+        ddwaf_object result5;
 
         EXPECT_EQ(ddwaf_run(context4, &parameter, nullptr, &result4, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context5, &parameter, nullptr, &result5, LONG_TIME), DDWAF_OK);
@@ -1987,8 +2009,8 @@ TEST(TestWafIntegration, UpdateEverything)
                          {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
         EXPECT_ACTIONS(result5, {});
 
-        ddwaf_result_free(&result4);
-        ddwaf_result_free(&result5);
+        ddwaf_object_free(&result4);
+        ddwaf_object_free(&result5);
 
         ddwaf_context_destroy(context4);
         ddwaf_context_destroy(context5);
@@ -2021,8 +2043,8 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object_map_add(
             &parameter, "server.response.status", ddwaf_object_string(&tmp, "rule5"));
 
-        ddwaf_result result5;
-        ddwaf_result result6;
+        ddwaf_object result5;
+        ddwaf_object result6;
 
         EXPECT_EQ(ddwaf_run(context5, &parameter, nullptr, &result5, LONG_TIME), DDWAF_OK);
         EXPECT_EQ(ddwaf_run(context6, &parameter, nullptr, &result6, LONG_TIME), DDWAF_MATCH);
@@ -2034,8 +2056,8 @@ TEST(TestWafIntegration, UpdateEverything)
             result6, {{"block_request",
                          {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
 
-        ddwaf_result_free(&result5);
-        ddwaf_result_free(&result6);
+        ddwaf_object_free(&result5);
+        ddwaf_object_free(&result6);
 
         ddwaf_context_destroy(context5);
         ddwaf_context_destroy(context6);
@@ -2053,8 +2075,8 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object_map_add(
             &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
 
-        ddwaf_result result5;
-        ddwaf_result result6;
+        ddwaf_object result5;
+        ddwaf_object result6;
 
         EXPECT_EQ(ddwaf_run(context5, &parameter, nullptr, &result5, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context6, &parameter, nullptr, &result6, LONG_TIME), DDWAF_MATCH);
@@ -2068,8 +2090,8 @@ TEST(TestWafIntegration, UpdateEverything)
             result6, {{"block_request",
                          {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
 
-        ddwaf_result_free(&result5);
-        ddwaf_result_free(&result6);
+        ddwaf_object_free(&result5);
+        ddwaf_object_free(&result6);
 
         ddwaf_context_destroy(context5);
         ddwaf_context_destroy(context6);
@@ -2110,8 +2132,8 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object_map_add(
             &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
 
-        ddwaf_result result6;
-        ddwaf_result result7;
+        ddwaf_object result6;
+        ddwaf_object result7;
 
         EXPECT_EQ(ddwaf_run(context6, &parameter, nullptr, &result6, LONG_TIME), DDWAF_OK);
         EXPECT_EQ(ddwaf_run(context7, &parameter, nullptr, &result7, LONG_TIME), DDWAF_MATCH);
@@ -2123,8 +2145,8 @@ TEST(TestWafIntegration, UpdateEverything)
             result7, {{"block_request",
                          {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
 
-        ddwaf_result_free(&result6);
-        ddwaf_result_free(&result7);
+        ddwaf_object_free(&result6);
+        ddwaf_object_free(&result7);
 
         ddwaf_context_destroy(context6);
         ddwaf_context_destroy(context7);
@@ -2150,8 +2172,8 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object_map_add(
             &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
 
-        ddwaf_result result7;
-        ddwaf_result result8;
+        ddwaf_object result7;
+        ddwaf_object result8;
 
         EXPECT_EQ(ddwaf_run(context7, &parameter, nullptr, &result7, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context8, &parameter, nullptr, &result8, LONG_TIME), DDWAF_MATCH);
@@ -2163,8 +2185,8 @@ TEST(TestWafIntegration, UpdateEverything)
                          {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
         EXPECT_ACTIONS(result8, {});
 
-        ddwaf_result_free(&result7);
-        ddwaf_result_free(&result8);
+        ddwaf_object_free(&result7);
+        ddwaf_object_free(&result8);
 
         ddwaf_context_destroy(context7);
         ddwaf_context_destroy(context8);
@@ -2182,8 +2204,8 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object_map_add(
             &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
 
-        ddwaf_result result7;
-        ddwaf_result result8;
+        ddwaf_object result7;
+        ddwaf_object result8;
 
         EXPECT_EQ(ddwaf_run(context7, &parameter, nullptr, &result7, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context8, &parameter, nullptr, &result8, LONG_TIME), DDWAF_MATCH);
@@ -2195,8 +2217,8 @@ TEST(TestWafIntegration, UpdateEverything)
                          {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}});
         EXPECT_ACTIONS(result8, {});
 
-        ddwaf_result_free(&result7);
-        ddwaf_result_free(&result8);
+        ddwaf_object_free(&result7);
+        ddwaf_object_free(&result8);
 
         ddwaf_context_destroy(context7);
         ddwaf_context_destroy(context8);
@@ -2219,8 +2241,8 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object_map_add(
             &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
 
-        ddwaf_result result8;
-        ddwaf_result result9;
+        ddwaf_object result8;
+        ddwaf_object result9;
 
         EXPECT_EQ(ddwaf_run(context8, &parameter, nullptr, &result8, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context9, &parameter, nullptr, &result9, LONG_TIME), DDWAF_MATCH);
@@ -2230,8 +2252,8 @@ TEST(TestWafIntegration, UpdateEverything)
         EXPECT_ACTIONS(result8, {});
         EXPECT_ACTIONS(result9, {});
 
-        ddwaf_result_free(&result8);
-        ddwaf_result_free(&result9);
+        ddwaf_object_free(&result8);
+        ddwaf_object_free(&result9);
 
         ddwaf_context_destroy(context8);
         ddwaf_context_destroy(context9);
@@ -2249,18 +2271,18 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object_map_add(
             &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
 
-        ddwaf_result result8;
-        ddwaf_result result9;
+        ddwaf_object result8;
+        ddwaf_object result9;
 
         EXPECT_EQ(ddwaf_run(context8, &parameter, nullptr, &result8, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_run(context9, &parameter, nullptr, &result9, LONG_TIME), DDWAF_OK);
 
         ddwaf_object_free(&parameter);
 
-        EXPECT_EQ(ddwaf_object_size(&result9.actions), 0);
+        EXPECT_ACTIONS(result9, {});
 
-        ddwaf_result_free(&result8);
-        ddwaf_result_free(&result9);
+        ddwaf_object_free(&result8);
+        ddwaf_object_free(&result9);
 
         ddwaf_context_destroy(context8);
         ddwaf_context_destroy(context9);
@@ -2307,7 +2329,8 @@ TEST(TestWafIntegration, UpdateEverything)
 
 TEST(TestWafIntegration, KnownAddressesDisabledRule)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
@@ -2374,7 +2397,8 @@ TEST(TestWafIntegration, KnownAddressesDisabledRule)
 
 TEST(TestWafIntegration, KnownActions)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
+        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {

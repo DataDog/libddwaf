@@ -33,7 +33,7 @@ public:
         : obfuscator_(event_obfuscator), actions_(actions)
     {}
 
-    void serialize(const std::vector<event> &events, ddwaf_result &output) const;
+    void serialize(const std::vector<event> &events, ddwaf_object &output) const;
 
 protected:
     const ddwaf::obfuscator &obfuscator_;
