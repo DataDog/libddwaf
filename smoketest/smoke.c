@@ -255,7 +255,9 @@ int main() {
     ddwaf_object result = {0};
     ddwaf_run(ctx, &data, NULL, &result, (uint32_t)-1);
     
-    if (ddwaf_object_size(&result.events) == 0) {
+
+    const ddwaf_object *events = ddwaf_object_find(&result, "events", sizeof("events") - 1);
+    if (ddwaf_object_size(events) == 0) {
         puts("result is empty");
         return 1;
     }
