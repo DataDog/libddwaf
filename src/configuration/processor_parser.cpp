@@ -21,6 +21,7 @@
 #include "processor/base.hpp"
 #include "processor/extract_schema.hpp"
 #include "processor/fingerprint.hpp"
+#include "processor/jwt_decode.hpp"
 #include "ruleset_info.hpp"
 #include "semver.hpp"
 #include "target_address.hpp"
@@ -51,10 +52,17 @@ std::vector<processor_mapping> parse_processor_mappings(
             auto input = static_cast<raw_configuration::map>(inputs[0]);
             auto input_address = at<std::string>(input, "address");
 
+            auto kp = at<std::vector<std::string>>(input, "key_path", {});
+            for (const auto &path : kp) {
+                if (path.empty()) {
+                    throw ddwaf::parsing_error("empty key_path");
+                }
+            }
+
             parameters.emplace_back(
                 processor_parameter{{processor_target{.index = get_target_index(input_address),
                     .name = std::move(input_address),
-                    .key_path = {}}}});
+                    .key_path = kp}}});
         }
         auto output = at<std::string>(mapping, "output");
         mappings.emplace_back(processor_mapping{.inputs = std::move(parameters),
@@ -105,6 +113,8 @@ void parse_processors(const raw_configuration::vector &processor_array,
                 type = processor_type::http_header_fingerprint;
             } else if (generator_id == "session_fingerprint") {
                 type = processor_type::session_fingerprint;
+            } else if (generator_id == "jwt_decode") {
+                type = processor_type::jwt_decode;
             } else {
                 throw unknown_generator(generator_id);
             }
@@ -126,8 +136,10 @@ void parse_processors(const raw_configuration::vector &processor_array,
             } else if (type == processor_type::http_network_fingerprint) {
                 mappings =
                     parse_processor_mappings(mappings_vec, http_network_fingerprint::param_names);
-            } else {
+            } else if (type == processor_type::session_fingerprint) {
                 mappings = parse_processor_mappings(mappings_vec, session_fingerprint::param_names);
+            } else {
+                mappings = parse_processor_mappings(mappings_vec, jwt_decode::param_names);
             }
 
             std::vector<reference_spec> scanners;

@@ -104,6 +104,8 @@ jobs:
             params: ""
           - fuzzer: session_fingerprint
             params: ""
+          - fuzzer: jwt_decode
+            params: ""
     steps:
       - uses: actions/checkout@v4
         with:

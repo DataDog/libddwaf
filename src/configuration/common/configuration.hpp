@@ -65,6 +65,7 @@ enum class processor_type : uint8_t {
     http_network_fingerprint,
     http_header_fingerprint,
     session_fingerprint,
+    jwt_decode,
 };
 
 struct processor_spec {
