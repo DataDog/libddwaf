@@ -192,9 +192,6 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
     ddwaf_object *ephemeral_data, ddwaf_object *result, uint64_t timeout)
 {
     if (context == nullptr || (persistent_data == nullptr && ephemeral_data == nullptr)) {
-        if (result != nullptr) {
-            ddwaf_object_map(result);
-        }
         DDWAF_WARN("Illegal WAF call: context or data was null");
         return DDWAF_ERR_INVALID_ARGUMENT;
     }
@@ -219,6 +216,7 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
         if (result != nullptr) {
             *result = res;
         } else {
+            // Nullability of the result structure supported for testing
             ddwaf_object_free(&res);
         }
         return code;

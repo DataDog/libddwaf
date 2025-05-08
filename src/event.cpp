@@ -284,16 +284,12 @@ void serialize_actions(ddwaf_object &action_map, const action_tracker &actions)
 
 } // namespace
 
-void event_serializer::serialize(const std::vector<event> &events, ddwaf_object &output) const
+void event_serializer::serialize(const std::vector<event> &events,
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    ddwaf_object &output_events, ddwaf_object &output_actions) const
 {
     action_tracker actions{
         .blocking_action = {}, .stack_id = {}, .non_blocking_actions = {}, .mapper = actions_};
-
-    ddwaf_object output_events;
-    ddwaf_object output_actions;
-
-    ddwaf_object_array(&output_events);
-    ddwaf_object_map(&output_actions);
 
     for (const auto &event : events) {
         ddwaf_object root_map;
@@ -331,9 +327,6 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_object 
     }
 
     serialize_actions(output_actions, actions);
-
-    ddwaf_object_map_addl(&output, "events", sizeof("events") - 1, &output_events);
-    ddwaf_object_map_addl(&output, "actions", sizeof("actions") - 1, &output_actions);
 }
 
 } // namespace ddwaf
