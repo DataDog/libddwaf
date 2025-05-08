@@ -210,7 +210,6 @@ private:
         try {
             if (stack_.empty()) {
                 assert(root_.is_invalid());
-                ;
 
                 root_ = std::move(object);
                 if (root_.is_container()) {
