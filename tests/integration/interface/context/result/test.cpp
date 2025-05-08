@@ -7,8 +7,6 @@
 #include "common/gtest_utils.hpp"
 #include "ddwaf.h"
 
-#include <memory_resource>
-#include <new>
 using namespace ddwaf;
 
 namespace {
