@@ -75,7 +75,7 @@ TEST(TestTransformers, Base64DecodeAlias)
 
 TEST(TestTransformers, Base64UrlDecode)
 {
-    auto rule = read_file("base64url_decode.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("base64url_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);

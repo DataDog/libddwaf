@@ -107,7 +107,7 @@ TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
 
     // Add the first config
     {
-        auto config = read_file("base_rules_1.yaml", base_dir);
+        auto config = read_file<ddwaf_object>("base_rules_1.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules1"), &config, nullptr);
         ddwaf_object_free(&config);
@@ -115,7 +115,7 @@ TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
 
     // Add the second config with duplicate rule 1
     {
-        auto config = read_file("base_rules_1_2_duplicate.yaml", base_dir);
+        auto config = read_file<ddwaf_object>("base_rules_1_2_duplicate.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules2"), &config, nullptr);
         ddwaf_object_free(&config);
