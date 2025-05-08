@@ -108,6 +108,9 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
     auto on_exit = scope_exit([this]() { this->exclusion_policy_.ephemeral.clear(); });
 
     auto *free_fn = ruleset_->free_fn;
+
+    // TODO these checks should be moved to the interface through something along the
+    // lines of ctx.insert(...) -> bool
     if (persistent.has_value() && !store_.insert(*persistent, attribute::none, free_fn)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
         return {DDWAF_ERR_INVALID_OBJECT, {}};
@@ -118,6 +121,7 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
         return {DDWAF_ERR_INVALID_OBJECT, {}};
     }
 
+    // Generate result object once relevant checks have been made
     ddwaf_object result_object;
     const std::unique_ptr<ddwaf_object, decltype(&ddwaf_object_free)> res{
         &result_object, ddwaf_object_free};
@@ -147,7 +151,7 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
             const auto &policy = eval_filters(deadline);
 
             if (should_eval_rules) {
-                events = eval_rules(policy, deadline);
+                eval_rules(policy, events, deadline);
                 if (!events.empty()) {
                     set_context_event_address(store_);
                 }
@@ -260,11 +264,9 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
     return exclusion_policy_;
 }
 
-std::vector<event> context::eval_rules(
-    const exclusion::context_policy &policy, ddwaf::timer &deadline)
+void context::eval_rules(const exclusion::context_policy &policy, std::vector<ddwaf::event> &events,
+    ddwaf::timer &deadline)
 {
-    std::vector<ddwaf::event> events;
-
     for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
         const auto &mod = ruleset_->rule_modules[i];
         auto &cache = rule_module_cache_[i];
@@ -274,8 +276,6 @@ std::vector<event> context::eval_rules(
             break;
         }
     }
-
-    return events;
 }
 
 } // namespace ddwaf
