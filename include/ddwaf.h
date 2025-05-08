@@ -274,7 +274,10 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle);
  *    can be of an arbitrary type. This parameter can be null if persistent data
  *    is provided.
  *
- * @param result Structure containing the result of the operation. (nullable)
+ * @param result Object map containing all generated events, actions, attributes,
+ *               etc. This structure must be freed by the caller and will
+ *               contain all relevant keys when the result of ddwaf_run is a
+ *               non-error one (e.g. DDWAF_OK, DDWAF_MATCH). (nullable)
  * @param timeout Maximum time budget in microseconds.
  *
  * @return Return code of the operation.
