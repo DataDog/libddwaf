@@ -52,7 +52,7 @@ void set_context_event_address(object_store &store)
 }
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
-struct result_wrapper {
+struct result_components {
     ddwaf_object &events;
     ddwaf_object &actions;
     ddwaf_object &duration;
@@ -62,7 +62,7 @@ struct result_wrapper {
 };
 // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 
-result_wrapper initialise_result_object(ddwaf_object &object)
+result_components initialise_result_object(ddwaf_object &object)
 {
     ddwaf_object_map(&object);
 
@@ -79,7 +79,7 @@ result_wrapper initialise_result_object(ddwaf_object &object)
         throw std::runtime_error("failed to generate result object");
     }
 
-    result_wrapper res{.events = object.array[0],
+    result_components res{.events = object.array[0],
         .actions = object.array[1],
         .duration = object.array[2],
         .timeout = object.array[3],
