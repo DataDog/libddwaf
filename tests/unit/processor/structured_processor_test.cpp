@@ -69,13 +69,13 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
 
     processor_cache cache;
     timer deadline{2s};
-    auto derived = owned_object::make_map();
+    auto attributes = owned_object::make_map();
 
-    EXPECT_EQ(derived.size(), 0);
-    proc.eval(store, derived, cache, deadline);
+    EXPECT_EQ(attributes.size(), 0);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
 
-    EXPECT_EQ(derived.size(), 1);
-    const auto [obtained_key, obtained_value] = object_view{derived}.at(0);
+    EXPECT_EQ(attributes.size(), 1);
+    const auto [obtained_key, obtained_value] = object_view{attributes}.at(0);
     EXPECT_STRV(obtained_key.as<std::string_view>(), "output_address");
     EXPECT_STRV(obtained_value.as<std::string_view>(), "output_string");
 }
@@ -107,13 +107,13 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
 
     processor_cache cache;
     timer deadline{2s};
-    auto derived = owned_object::make_map();
+    auto attributes = owned_object::make_map();
 
-    EXPECT_EQ(derived.size(), 0);
-    proc.eval(store, derived, cache, deadline);
+    EXPECT_EQ(attributes.size(), 0);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
 
-    EXPECT_EQ(derived.size(), 1);
-    const auto [obtained_key, obtained_value] = object_view{derived}.at(0);
+    EXPECT_EQ(attributes.size(), 1);
+    const auto [obtained_key, obtained_value] = object_view{attributes}.at(0);
     EXPECT_STRV(obtained_key.as<std::string_view>(), "output_address");
     EXPECT_STRV(obtained_value.as<std::string_view>(), "output_string");
 }
@@ -141,11 +141,11 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
 
     processor_cache cache;
     timer deadline{2s};
-    auto derived = owned_object::make_map();
+    auto attributes = owned_object::make_map();
 
-    EXPECT_EQ(derived.size(), 0);
-    proc.eval(store, derived, cache, deadline);
-    EXPECT_EQ(derived.size(), 0);
+    EXPECT_EQ(attributes.size(), 0);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
+    EXPECT_EQ(attributes.size(), 0);
 }
 
 TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
@@ -173,11 +173,11 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
 
     processor_cache cache;
     timer deadline{2s};
-    auto derived = owned_object::make_map();
+    auto attributes = owned_object::make_map();
 
-    EXPECT_EQ(derived.size(), 0);
-    proc.eval(store, derived, cache, deadline);
-    EXPECT_EQ(derived.size(), 0);
+    EXPECT_EQ(attributes.size(), 0);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
+    EXPECT_EQ(attributes.size(), 0);
 }
 
 } // namespace

@@ -12,7 +12,6 @@
 
 #include "action_mapper.hpp"
 #include "condition/base.hpp"
-#include "ddwaf.h"
 #include "event.hpp"
 #include "obfuscator.hpp"
 #include "object.hpp"
@@ -217,7 +216,8 @@ void serialize_and_consolidate_rule_actions(const core_rule &rule, owned_object 
     }
 }
 
-void serialize_action(std::string_view id, owned_object &action_map, const action_tracker &actions)
+void serialize_action(
+    std::string_view id, borrowed_object &action_map, const action_tracker &actions)
 {
     auto action_it = actions.mapper.find(id);
     if (action_it == actions.mapper.end()) {
@@ -238,10 +238,8 @@ void serialize_action(std::string_view id, owned_object &action_map, const actio
     }
 }
 
-owned_object serialize_actions(const action_tracker &actions)
+void serialize_actions(borrowed_object action_map, const action_tracker &actions)
 {
-    auto action_map = owned_object::make_map();
-
     if (actions.blocking_action_type != action_type::none) {
         serialize_action(actions.blocking_action, action_map, actions);
     }
@@ -249,24 +247,19 @@ owned_object serialize_actions(const action_tracker &actions)
     for (const auto &id : actions.non_blocking_actions) {
         serialize_action(id, action_map, actions);
     }
-
-    return action_map;
 }
 
 } // namespace
 
-void event_serializer::serialize(const std::vector<event> &events, ddwaf_result &output) const
+void event_serializer::serialize(const std::vector<event> &events,
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    borrowed_object output_events, borrowed_object output_actions) const
 {
-    if (events.empty()) {
-        return;
-    }
-
     action_tracker actions{
         .blocking_action = {}, .stack_id = {}, .non_blocking_actions = {}, .mapper = actions_};
 
-    auto events_array = owned_object::make_array();
     for (const auto &event : events) {
-        auto root_map = events_array.emplace_back(owned_object::make_map());
+        auto root_map = output_events.emplace_back(owned_object::make_map());
         auto match_array = owned_object::make_array();
 
         owned_object rule_map;
@@ -291,8 +284,7 @@ void event_serializer::serialize(const std::vector<event> &events, ddwaf_result 
         }
     }
 
-    output.events = events_array.move();
-    output.actions = serialize_actions(actions).move();
+    serialize_actions(output_actions, actions);
 }
 
 } // namespace ddwaf

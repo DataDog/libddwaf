@@ -48,17 +48,18 @@ public:
     context &operator=(context &&) = delete;
     ~context() = default;
 
-    DDWAF_RET_CODE run(
-        owned_object persistent, owned_object ephemeral, optional_ref<ddwaf_result>, uint64_t);
+    std::pair<DDWAF_RET_CODE, owned_object> run(
+        owned_object persistent, owned_object ephemeral, uint64_t);
 
     [[nodiscard]] ddwaf_object_free_fn get_free_fn() const noexcept { return ruleset_->free_fn; }
 
-    void eval_preprocessors(owned_object &derived, ddwaf::timer &deadline);
-    void eval_postprocessors(owned_object &derived, ddwaf::timer &deadline);
+    void eval_preprocessors(borrowed_object &attributes, ddwaf::timer &deadline);
+    void eval_postprocessors(borrowed_object &attributes, ddwaf::timer &deadline);
     // This function below returns a reference to an internal object,
     // however using them this way helps with testing
     exclusion::context_policy &eval_filters(ddwaf::timer &deadline);
-    std::vector<event> eval_rules(const exclusion::context_policy &policy, ddwaf::timer &deadline);
+    void eval_rules(const exclusion::context_policy &policy, std::vector<event> &events,
+        ddwaf::timer &deadline);
 
 protected:
     bool is_first_run() const { return store_.empty(); }
@@ -136,11 +137,11 @@ public:
     context_wrapper &operator=(context_wrapper &&) noexcept = delete;
     context_wrapper &operator=(const context_wrapper &) = delete;
 
-    DDWAF_RET_CODE run(owned_object persistent, owned_object ephemeral,
-        optional_ref<ddwaf_result> res, uint64_t timeout)
+    std::pair<DDWAF_RET_CODE, owned_object> run(
+        owned_object persistent, owned_object ephemeral, uint64_t timeout)
     {
         memory::memory_resource_guard guard(&mr_);
-        return ctx_->run(std::move(persistent), std::move(ephemeral), res, timeout);
+        return ctx_->run(std::move(persistent), std::move(ephemeral), timeout);
     }
 
     [[nodiscard]] ddwaf_object_free_fn get_free_fn() const noexcept { return ctx_->get_free_fn(); }

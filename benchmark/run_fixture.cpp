@@ -58,18 +58,20 @@ uint64_t run_fixture::test_main()
     uint64_t total_runtime = 0;
 
     for (auto &object : objects_) {
-        ddwaf_result res;
+        ddwaf_object res;
         auto code = ddwaf_run(ctx_, nullptr, &object, &res, std::numeric_limits<uint32_t>::max());
         if (code < 0) {
             throw std::runtime_error("WAF returned " + std::to_string(code));
         }
 
-        if (res.timeout) {
+        const auto *timeout = ddwaf_object_find(&res, "timeout", sizeof("timeout") - 1);
+        if (ddwaf_object_get_bool(timeout)) {
             throw std::runtime_error("WAF timed-out");
         }
 
-        total_runtime += res.total_runtime;
-        ddwaf_result_free(&res);
+        const auto *duration = ddwaf_object_find(&res, "duration", sizeof("duration") - 1);
+        total_runtime += ddwaf_object_get_unsigned(duration);
+        ddwaf_object_free(&res);
     }
 
     return total_runtime;

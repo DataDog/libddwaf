@@ -49,7 +49,8 @@ TEST(TestWaf, BasicContextRun)
 
     auto root = owned_object::make_map({{"value1", "rule1"}});
     auto *ctx = instance.create_context();
-    EXPECT_EQ(ctx->run(std::move(root), {}, std::nullopt, LONG_TIME), DDWAF_MATCH);
+    auto [code, res] = ctx->run(std::move(root), {}, LONG_TIME);
+    EXPECT_EQ(code, DDWAF_MATCH);
     delete ctx;
 }
 

@@ -29,7 +29,7 @@ TEST(TestActionsIntegration, DefaultActions)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "block"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "block-rule",
@@ -46,14 +46,14 @@ TEST(TestActionsIntegration, DefaultActions)
 
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
     }
 
     {
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "stack_trace"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "stack-trace-rule",
@@ -71,7 +71,9 @@ TEST(TestActionsIntegration, DefaultActions)
 
         std::string stack_id;
         {
-            auto data = ddwaf::test::object_to_json(res.events);
+            const auto *object = ddwaf_object_find(&res, STRL("events"));
+            ASSERT_NE(object, nullptr);
+            auto data = ddwaf::test::object_to_json(*object);
             YAML::Node doc = YAML::Load(data.c_str());
             auto events = doc.as<std::list<ddwaf::test::event>>();
             ASSERT_EQ(events.size(), 1);
@@ -79,7 +81,10 @@ TEST(TestActionsIntegration, DefaultActions)
         }
 
         {
-            auto data = ddwaf::test::object_to_json(res.actions);
+            const auto *object = ddwaf_object_find(&res, STRL("actions"));
+            ASSERT_NE(object, nullptr);
+
+            auto data = ddwaf::test::object_to_json(*object);
             YAML::Node doc = YAML::Load(data.c_str());
             auto obtained = doc.as<ddwaf::test::action_map>();
             EXPECT_TRUE(obtained.contains("generate_stack"));
@@ -90,14 +95,14 @@ TEST(TestActionsIntegration, DefaultActions)
             EXPECT_EQ(it->second.at("stack_id"), stack_id);
         }
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
     }
 
     {
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "extract_schema"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "extract-schema-rule",
@@ -114,14 +119,14 @@ TEST(TestActionsIntegration, DefaultActions)
 
         EXPECT_ACTIONS(res, {{"generate_schema", {}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
     }
 
     {
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "unblock"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "unblock-rule",
@@ -139,7 +144,7 @@ TEST(TestActionsIntegration, DefaultActions)
         // The unblock action doesn't exist, so no user action is reported, however
         // the rule definition within the event still contains the unblock action
         EXPECT_ACTIONS(res, {});
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
     }
     ddwaf_context_destroy(context1);
     ddwaf_destroy(handle);
@@ -167,7 +172,7 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "block-rule",
@@ -184,7 +189,7 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
 
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
 
         ddwaf_context_destroy(context);
     }
@@ -208,7 +213,7 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "block-rule",
@@ -225,7 +230,7 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
 
         EXPECT_ACTIONS(res,
             {{"redirect_request", {{"location", "http://google.com"}, {"status_code", "303"}}}});
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
 
         ddwaf_context_destroy(context);
     }
@@ -255,7 +260,7 @@ TEST(TestActionsIntegration, AddNewAction)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "unblock-rule",
@@ -271,7 +276,7 @@ TEST(TestActionsIntegration, AddNewAction)
                                    }}}}});
 
         EXPECT_ACTIONS(res, {});
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
 
         ddwaf_context_destroy(context);
     }
@@ -295,7 +300,7 @@ TEST(TestActionsIntegration, AddNewAction)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "unblock-rule",
@@ -312,7 +317,7 @@ TEST(TestActionsIntegration, AddNewAction)
 
         EXPECT_ACTIONS(res, {{"unblock_request", {{"code", "303"}}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
 
         ddwaf_context_destroy(context);
     }
@@ -337,7 +342,7 @@ TEST(TestActionsIntegration, EmptyOrInvalidActions)
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_result res;
+    ddwaf_object res;
     EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_EVENTS(res, {.id = "block-rule",
@@ -354,7 +359,7 @@ TEST(TestActionsIntegration, EmptyOrInvalidActions)
 
     EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                {"type", "auto"}}}});
-    ddwaf_result_free(&res);
+    ddwaf_object_free(&res);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);

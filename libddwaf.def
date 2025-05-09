@@ -11,7 +11,6 @@ EXPORTS
   ddwaf_context_init
   ddwaf_run
   ddwaf_context_destroy
-  ddwaf_result_free
   ddwaf_object_invalid
   ddwaf_object_null
   ddwaf_object_string
@@ -42,3 +41,4 @@ EXPORTS
   ddwaf_get_version
   ddwaf_set_log_cb
   ddwaf_known_actions
+  ddwaf_object_find

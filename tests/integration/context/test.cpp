@@ -32,10 +32,11 @@ TEST(TestContextIntegration, Basic)
     ddwaf_object_map_add(&subMap, "key", ddwaf_object_string(&tmp, "rule3"));
     ddwaf_object_map_add(&parameter, "value2", &subMap); // ddwaf_object_string(&,"rule3"));
 
-    ddwaf_result ret;
+    ddwaf_object ret;
     EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
 
-    EXPECT_FALSE(ret.timeout);
+    const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(ret, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -55,7 +56,7 @@ TEST(TestContextIntegration, Basic)
                                        .path = {"key"},
                                    }}}}});
 
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -79,10 +80,11 @@ TEST(TestContextIntegration, KeyPaths)
     ddwaf_object_map_add(&param, "x", ddwaf_object_string(&tmp, "Sqreen"));
     ddwaf_object_map_add(&root, "param", &param);
 
-    ddwaf_result ret;
+    ddwaf_object ret;
     EXPECT_EQ(ddwaf_run(context, &root, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
 
-    EXPECT_FALSE(ret.timeout);
+    const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(ret, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -95,7 +97,7 @@ TEST(TestContextIntegration, KeyPaths)
                                    .path = {"x"},
                                }}}}});
 
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
 
     root = DDWAF_OBJECT_MAP;
     param = DDWAF_OBJECT_MAP;
@@ -104,7 +106,8 @@ TEST(TestContextIntegration, KeyPaths)
 
     EXPECT_EQ(ddwaf_run(context, &root, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
 
-    EXPECT_FALSE(ret.timeout);
+    timeout = ddwaf_object_find(&ret, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(ret, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow2"}, {"category", "category2"}},
@@ -116,7 +119,7 @@ TEST(TestContextIntegration, KeyPaths)
                                    .address = "param",
                                    .path = {"z"},
                                }}}}});
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
     ddwaf_context_destroy(context);
 
     context = ddwaf_context_init(handle);
@@ -130,7 +133,8 @@ TEST(TestContextIntegration, KeyPaths)
 
     EXPECT_EQ(ddwaf_run(context, &root, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
 
-    EXPECT_FALSE(ret.timeout);
+    timeout = ddwaf_object_find(&ret, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(ret, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -143,7 +147,7 @@ TEST(TestContextIntegration, KeyPaths)
                                    .path = {"y"},
                                }}}}});
 
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -168,14 +172,17 @@ TEST(TestContextIntegration, MissingParameter)
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
     ddwaf_object_map_add(&param, "param", ddwaf_object_signed(&tmp, 42));
 
-    ddwaf_result ret;
+    ddwaf_object ret;
     EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, LONG_TIME), DDWAF_OK);
 
-    EXPECT_FALSE(ret.timeout);
-    EXPECT_EQ(ddwaf_object_type(&ret.events), DDWAF_OBJ_ARRAY);
-    EXPECT_EQ(ddwaf_object_size(&ret.events), 0);
+    const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-    ddwaf_result_free(&ret);
+    const auto *events = ddwaf_object_find(&ret, STRL("events"));
+    EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
+    EXPECT_EQ(ddwaf_object_size(events), 0);
+
+    ddwaf_object_free(&ret);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -206,16 +213,18 @@ TEST(TestContextIntegration, InvalidUTF8Input)
     ddwaf_object_map_addl(&param, ba1.c_str(), ba1.length(), &mapItem);
     ddwaf_object_map_addl(&param, ba2.c_str(), ba2.length(), ddwaf_object_map(&tmp));
 
-    ddwaf_result ret;
+    ddwaf_object ret;
     EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
 
-    EXPECT_FALSE(ret.timeout);
+    const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-    auto data = ddwaf::test::object_to_json(ret.events);
-    auto pos = data.find(ddwaf_object_get_string(&mapItem, nullptr));
+    const auto *events = ddwaf_object_find(&ret, STRL("events"));
+    auto data = ddwaf::test::object_to_json(*events);
+    auto pos = data.find(std::string_view{mapItem.via.str, mapItem.size});
     EXPECT_TRUE(pos != std::string::npos);
 
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -231,7 +240,7 @@ TEST(TestContextIntegration, SingleCollectionMatch)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_result ret;
+    ddwaf_object ret;
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
@@ -241,7 +250,8 @@ TEST(TestContextIntegration, SingleCollectionMatch)
         ddwaf_object_map_add(&param1, "param1", ddwaf_object_string(&tmp, "Sqreen"));
 
         EXPECT_EQ(ddwaf_run(context, &param1, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
-        EXPECT_FALSE(ret.timeout);
+        const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -252,7 +262,7 @@ TEST(TestContextIntegration, SingleCollectionMatch)
                                        .value = "Sqreen",
                                        .address = "param1",
                                    }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     {
@@ -261,11 +271,14 @@ TEST(TestContextIntegration, SingleCollectionMatch)
         ddwaf_object_map_add(&param, "param2", ddwaf_object_string(&tmp, "Sqreen"));
 
         EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(ret.timeout);
-        EXPECT_EQ(ddwaf_object_type(&ret.events), DDWAF_OBJ_ARRAY);
-        EXPECT_EQ(ddwaf_object_size(&ret.events), 0);
+        const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        ddwaf_result_free(&ret);
+        const auto *events = ddwaf_object_find(&ret, STRL("events"));
+        EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_size(events), 0);
+
+        ddwaf_object_free(&ret);
     }
 
     ddwaf_context_destroy(context);
@@ -282,7 +295,7 @@ TEST(TestContextIntegration, MultiCollectionMatches)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_result ret;
+    ddwaf_object ret;
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
@@ -292,7 +305,8 @@ TEST(TestContextIntegration, MultiCollectionMatches)
         ddwaf_object_map_add(&param, "param1", ddwaf_object_string(&tmp, "Sqreen"));
 
         EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
-        EXPECT_FALSE(ret.timeout);
+        const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -303,7 +317,7 @@ TEST(TestContextIntegration, MultiCollectionMatches)
                                        .value = "Sqreen",
                                        .address = "param1",
                                    }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     {
@@ -312,11 +326,13 @@ TEST(TestContextIntegration, MultiCollectionMatches)
         ddwaf_object_map_add(&param, "param", ddwaf_object_string(&tmp, "Pony"));
 
         EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(ret.timeout);
-        EXPECT_EQ(ddwaf_object_type(&ret.events), DDWAF_OBJ_ARRAY);
-        EXPECT_EQ(ddwaf_object_size(&ret.events), 0);
+        const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
+        const auto *events = ddwaf_object_find(&ret, STRL("events"));
+        EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_size(events), 0);
 
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     {
@@ -325,7 +341,8 @@ TEST(TestContextIntegration, MultiCollectionMatches)
         ddwaf_object_map_add(&param, "param2", ddwaf_object_string(&tmp, "Sqreen"));
 
         EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
-        EXPECT_FALSE(ret.timeout);
+        const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "flow2"}, {"category", "category2"}},
@@ -336,7 +353,7 @@ TEST(TestContextIntegration, MultiCollectionMatches)
                                        .value = "Sqreen",
                                        .address = "param2",
                                    }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     ddwaf_context_destroy(context);
@@ -352,7 +369,7 @@ TEST(TestContextIntegration, Timeout)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_result ret;
+    ddwaf_object ret;
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
@@ -361,9 +378,10 @@ TEST(TestContextIntegration, Timeout)
     ddwaf_object_map_add(&param, "pm_param", ddwaf_object_string(&tmp, "aaaabbbbbaaa"));
 
     EXPECT_EQ(ddwaf_run(context, &param, nullptr, &ret, SHORT_TIME), DDWAF_OK);
-    EXPECT_TRUE(ret.timeout);
+    const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+    EXPECT_TRUE(ddwaf_object_get_bool(timeout));
 
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -390,11 +408,12 @@ TEST(TestContextIntegration, ParameterOverride)
 
     // Run with both arg1 and arg2, but arg1 is wrong
     //	// Run with just arg1
-    ddwaf_result ret;
+    ddwaf_object ret;
     auto code = ddwaf_run(context, &param1, nullptr, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_OK);
-    EXPECT_FALSE(ret.timeout);
-    ddwaf_result_free(&ret);
+    const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
+    ddwaf_object_free(&ret);
 
     // Override `arg1`
     code = ddwaf_run(context, &param2, nullptr, &ret, LONG_TIME);
@@ -417,13 +436,16 @@ TEST(TestContextIntegration, ParameterOverride)
                                        .address = "arg2",
                                    }}}}});
 
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
 
     // Run again without change
     code = ddwaf_run(context, ddwaf_object_map(&tmp), nullptr, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_OK);
-    EXPECT_FALSE(ret.timeout);
-    ddwaf_result_free(&ret);
+
+    timeout = ddwaf_object_find(&ret, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
+
+    ddwaf_object_free(&ret);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -446,7 +468,7 @@ TEST(TestContextIntegration, DuplicateEphemeralMatch)
         ddwaf_object param1 = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&param1, "param1", ddwaf_object_string(&tmp, "Sqreen"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
         EXPECT_EQ(ddwaf_run(context, nullptr, &param1, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
@@ -458,7 +480,7 @@ TEST(TestContextIntegration, DuplicateEphemeralMatch)
                                        .value = "Sqreen",
                                        .address = "param1",
                                    }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     {
@@ -466,7 +488,7 @@ TEST(TestContextIntegration, DuplicateEphemeralMatch)
         ddwaf_object param1 = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&param1, "param1", ddwaf_object_string(&tmp, "Sqreen"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
         EXPECT_EQ(ddwaf_run(context, nullptr, &param1, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
@@ -478,7 +500,7 @@ TEST(TestContextIntegration, DuplicateEphemeralMatch)
                                        .value = "Sqreen",
                                        .address = "param1",
                                    }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     ddwaf_context_destroy(context);
@@ -504,7 +526,7 @@ TEST(TestContextIntegration, EphemeralAndPersistentMatches)
         ddwaf_object_map_add(&persistent, "arg1", ddwaf_object_string(&tmp, "string 1"));
         ddwaf_object_map_add(&ephemeral, "arg2", ddwaf_object_string(&tmp, "string 2"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
         EXPECT_EQ(ddwaf_run(context, &persistent, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
@@ -523,7 +545,7 @@ TEST(TestContextIntegration, EphemeralAndPersistentMatches)
                                            .value = "string 2",
                                            .address = "arg2",
                                        }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     {
@@ -531,7 +553,7 @@ TEST(TestContextIntegration, EphemeralAndPersistentMatches)
         ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&ephemeral, "arg2", ddwaf_object_string(&tmp, "string 8"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
         EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
@@ -550,7 +572,7 @@ TEST(TestContextIntegration, EphemeralAndPersistentMatches)
                                            .value = "string 8",
                                            .address = "arg2",
                                        }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     {
@@ -558,7 +580,7 @@ TEST(TestContextIntegration, EphemeralAndPersistentMatches)
         ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&ephemeral, "arg2", ddwaf_object_string(&tmp, "string 3"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
         EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
@@ -577,7 +599,7 @@ TEST(TestContextIntegration, EphemeralAndPersistentMatches)
                                            .value = "string 3",
                                            .address = "arg2",
                                        }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     ddwaf_context_destroy(context);
@@ -601,7 +623,7 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndEphemeralPriority)
         ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
         EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
@@ -613,7 +635,7 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndEphemeralPriority)
                                        .value = "string 1",
                                        .address = "arg1",
                                    }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     {
@@ -622,7 +644,7 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndEphemeralPriority)
         ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
         ddwaf_object_map_add(&ephemeral, "arg2", ddwaf_object_string(&tmp, "string 8"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
         EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
@@ -635,7 +657,7 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndEphemeralPriority)
                                        .value = "string 8",
                                        .address = "arg2",
                                    }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     ddwaf_context_destroy(context);
@@ -660,7 +682,7 @@ TEST(TestContextIntegration, EphemeralPriorityAndEphemeralNonPriority)
         ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
         ddwaf_object_map_add(&ephemeral, "arg2", ddwaf_object_string(&tmp, "string 8"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
         EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
@@ -673,7 +695,7 @@ TEST(TestContextIntegration, EphemeralPriorityAndEphemeralNonPriority)
                                        .value = "string 8",
                                        .address = "arg2",
                                    }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     {
@@ -681,7 +703,7 @@ TEST(TestContextIntegration, EphemeralPriorityAndEphemeralNonPriority)
         ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
         EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
@@ -693,7 +715,7 @@ TEST(TestContextIntegration, EphemeralPriorityAndEphemeralNonPriority)
                                        .value = "string 1",
                                        .address = "arg1",
                                    }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     ddwaf_context_destroy(context);
@@ -717,7 +739,7 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndPersistentPriority)
         ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
         EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
@@ -729,7 +751,7 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndPersistentPriority)
                                        .value = "string 1",
                                        .address = "arg1",
                                    }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     {
@@ -737,7 +759,7 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndPersistentPriority)
         ddwaf_object persistent = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&persistent, "arg2", ddwaf_object_string(&tmp, "string 8"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
         EXPECT_EQ(ddwaf_run(context, &persistent, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
@@ -750,7 +772,7 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndPersistentPriority)
                                        .value = "string 8",
                                        .address = "arg2",
                                    }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     ddwaf_context_destroy(context);
@@ -775,7 +797,7 @@ TEST(TestContextIntegration, ReplaceEphemeral)
         ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
         ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
         EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
@@ -787,7 +809,7 @@ TEST(TestContextIntegration, ReplaceEphemeral)
                                        .value = "string 1",
                                        .address = "arg1",
                                    }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     ddwaf_context_destroy(context);
@@ -811,7 +833,7 @@ TEST(TestContextIntegration, EphemeralPriorityAndPersistentNonPriority)
         ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&ephemeral, "arg2", ddwaf_object_string(&tmp, "string 8"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
         EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
@@ -824,7 +846,7 @@ TEST(TestContextIntegration, EphemeralPriorityAndPersistentNonPriority)
                                        .value = "string 8",
                                        .address = "arg2",
                                    }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     {
@@ -832,7 +854,7 @@ TEST(TestContextIntegration, EphemeralPriorityAndPersistentNonPriority)
         ddwaf_object persistent = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&persistent, "arg1", ddwaf_object_string(&tmp, "string 1"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
         EXPECT_EQ(ddwaf_run(context, &persistent, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
@@ -845,7 +867,7 @@ TEST(TestContextIntegration, EphemeralPriorityAndPersistentNonPriority)
                                        .address = "arg1",
                                    }}}}});
 
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     ddwaf_context_destroy(context);
@@ -869,7 +891,7 @@ TEST(TestContextIntegration, PersistentPriorityAndEphemeralNonPriority)
         ddwaf_object persistent = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&persistent, "arg2", ddwaf_object_string(&tmp, "string 8"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
         EXPECT_EQ(ddwaf_run(context, &persistent, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
@@ -882,7 +904,7 @@ TEST(TestContextIntegration, PersistentPriorityAndEphemeralNonPriority)
                                        .value = "string 8",
                                        .address = "arg2",
                                    }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     {
@@ -890,9 +912,9 @@ TEST(TestContextIntegration, PersistentPriorityAndEphemeralNonPriority)
         ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
         EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_OK);
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
     }
 
     ddwaf_context_destroy(context);
@@ -929,13 +951,15 @@ TEST(TestContextIntegration, WafContextEventAddress)
 
         ddwaf_object_map_add(&map, "waf.trigger", ddwaf_object_string(&tmp, "irrelevant"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 0);
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -959,17 +983,19 @@ TEST(TestContextIntegration, WafContextEventAddress)
 
         ddwaf_object_map_add(&map, "waf.trigger", ddwaf_object_string(&tmp, "rule"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto json = test::object_to_json(out.derivatives);
+        auto json = test::object_to_json(*attributes);
         EXPECT_STR(
             json, R"({"_dd.appsec.fp.http.endpoint":"http-put-729d56c3-2c70e12b-2c70e12b"})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -987,7 +1013,7 @@ TEST(TestContextIntegration, MultipleModuleSingleCollectionMatch)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_result ret;
+    ddwaf_object ret;
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
@@ -996,7 +1022,8 @@ TEST(TestContextIntegration, MultipleModuleSingleCollectionMatch)
     ddwaf_object_map_add(&param1, "param1", ddwaf_object_string(&tmp, "Sqreen"));
 
     EXPECT_EQ(ddwaf_run(context, &param1, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(ret.timeout);
+    const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(ret,
         {.id = "1",
             .name = "rule1",
@@ -1018,7 +1045,7 @@ TEST(TestContextIntegration, MultipleModuleSingleCollectionMatch)
                     .value = "Sqreen",
                     .address = "param1",
                 }}}}});
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -1045,11 +1072,12 @@ TEST(TestContextIntegration, TimeoutBeyondLimit)
     ddwaf_object_map_add(&subMap, "key", ddwaf_object_string(&tmp, "rule3"));
     ddwaf_object_map_add(&parameter, "value2", &subMap); // ddwaf_object_string(&,"rule3"));
 
-    ddwaf_result ret;
+    ddwaf_object ret;
     EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &ret, std::numeric_limits<uint64_t>::max()),
         DDWAF_MATCH);
 
-    EXPECT_FALSE(ret.timeout);
+    const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(ret, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -1069,7 +1097,7 @@ TEST(TestContextIntegration, TimeoutBeyondLimit)
                                        .path = {"key"},
                                    }}}}});
 
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }

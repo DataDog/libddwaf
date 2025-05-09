@@ -337,6 +337,20 @@ public:
         return obj_->via.array[index];
     }
 
+    [[nodiscard]] object_view find(std::string_view expected_key) const noexcept
+    {
+        assert(obj_ != nullptr && type() == object_type::map && obj_->via.map != nullptr);
+
+        for (std::size_t i = 0; i < size(); ++i) {
+            auto [key, value] = at(i);
+
+            if (expected_key == key.as<std::string_view>()) {
+                return value;
+            }
+        }
+        return {};
+    }
+
 protected:
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const detail::object *obj_{nullptr};

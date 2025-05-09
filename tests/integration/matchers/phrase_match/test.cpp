@@ -27,9 +27,10 @@ TEST(TestPhraseMatchMatcherIntegration, Match)
     ddwaf_object_string(&value, "string00");
     ddwaf_object_map_add(&map, "input1", &value);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1-phrase-match",
                            .tags = {{"type", "flow"}, {"category", "category"}},
@@ -40,7 +41,7 @@ TEST(TestPhraseMatchMatcherIntegration, Match)
                                    .address = "input1",
                                }}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -62,9 +63,10 @@ TEST(TestPhraseMatchMatcherIntegration, MatchWordBound)
         ddwaf_object_string(&value, "string01;");
         ddwaf_object_map_add(&map, "input2", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2-phrase-match-word-bound",
                                .tags = {{"type", "flow"}, {"category", "category"}},
@@ -75,7 +77,7 @@ TEST(TestPhraseMatchMatcherIntegration, MatchWordBound)
                                        .address = "input2",
                                    }}}}});
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -88,11 +90,12 @@ TEST(TestPhraseMatchMatcherIntegration, MatchWordBound)
         ddwaf_object_string(&value, "string010");
         ddwaf_object_map_add(&map, "input2", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 

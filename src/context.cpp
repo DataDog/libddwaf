@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -48,48 +49,67 @@ void set_context_event_address(object_store &store)
     store.insert(event_addr_idx, event_addr, owned_object{true}, attribute::none);
 }
 
+struct result_components {
+    borrowed_object events;
+    borrowed_object actions;
+    borrowed_object duration;
+    borrowed_object timeout;
+    borrowed_object attributes;
+    borrowed_object keep;
+};
+
+std::pair<owned_object, result_components> initialise_result_object()
+{
+    auto object = owned_object::make_map({{"events", owned_object::make_array()},
+        {"actions", owned_object::make_map()}, {"duration", owned_object::make_unsigned(0)},
+        {"timeout", false}, {"attributes", owned_object::make_map()}, {"keep", false}});
+
+    const result_components res{.events = object.at(0),
+        .actions = object.at(1),
+        .duration = object.at(2),
+        .timeout = object.at(3),
+        .attributes = object.at(4),
+        .keep = object.at(5)};
+
+    return {std::move(object), res};
+}
+
 } // namespace
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-DDWAF_RET_CODE context::run(owned_object persistent, owned_object ephemeral,
-    optional_ref<ddwaf_result> res, uint64_t timeout)
+std::pair<DDWAF_RET_CODE, owned_object> context::run(
+    owned_object persistent, owned_object ephemeral, uint64_t timeout)
 {
     // This scope ensures that all ephemeral and cached objects are removed
     // from the store at the end of the evaluation
     auto store_cleanup_scope = store_.get_eval_scope();
     auto on_exit = scope_exit([this]() { this->exclusion_policy_.ephemeral.clear(); });
 
-    if (res.has_value()) {
-        ddwaf_result &output = *res;
-        output = DDWAF_RESULT_INITIALISER;
-    }
-
+    // TODO these checks should be moved to the interface through something along the
+    // lines of ctx.insert(...) -> bool
     if (persistent.is_valid() && !store_.insert(std::move(persistent), attribute::none)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
-        return DDWAF_ERR_INVALID_OBJECT;
+        return {DDWAF_ERR_INVALID_OBJECT, owned_object{}};
     }
 
     if (ephemeral.is_valid() && !store_.insert(std::move(ephemeral), attribute::ephemeral)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
-        return DDWAF_ERR_INVALID_OBJECT;
+        return {DDWAF_ERR_INVALID_OBJECT, owned_object{}};
     }
 
+    // Generate result object once relevant checks have been made
+    auto [result_object, result] = initialise_result_object();
     ddwaf::timer deadline{std::chrono::microseconds(timeout)};
 
     if (!store_.has_new_targets()) {
-        return DDWAF_OK;
+        return {DDWAF_OK, std::move(result_object)};
     }
 
     const event_serializer serializer(event_obfuscator_, actions_);
 
-    owned_object derived;
-    if (res.has_value()) {
-        derived = owned_object::make_map();
-    }
-
     std::vector<ddwaf::event> events;
     try {
-        eval_preprocessors(derived, deadline);
+        eval_preprocessors(result.attributes, deadline);
 
         // If no rule targets are available, there is no point in evaluating them
         const bool should_eval_rules = check_new_rule_targets();
@@ -102,30 +122,29 @@ DDWAF_RET_CODE context::run(owned_object persistent, owned_object ephemeral,
             const auto &policy = eval_filters(deadline);
 
             if (should_eval_rules) {
-                events = eval_rules(policy, deadline);
+                eval_rules(policy, events, deadline);
                 if (!events.empty()) {
                     set_context_event_address(store_);
                 }
             }
         }
 
-        eval_postprocessors(derived, deadline);
+        eval_postprocessors(result.attributes, deadline);
         // NOLINTNEXTLINE(bugprone-empty-catch)
     } catch (const ddwaf::timeout_exception &) {}
 
-    const DDWAF_RET_CODE code = events.empty() ? DDWAF_OK : DDWAF_MATCH;
-    if (res.has_value()) {
-        ddwaf_result &output = *res;
-        serializer.serialize(events, output);
-        output.derivatives = derived.move();
-        output.total_runtime = deadline.elapsed().count();
-        output.timeout = deadline.expired_before();
-    }
+    serializer.serialize(events, result.events, result.actions);
 
-    return code;
+    // Replacing the object would remove their keys, this won't be an issue
+    // once keys and values have been split.
+    // TODO: Add helpers to fix this
+    result.duration.ref().via.u64 = deadline.elapsed().count();
+    result.timeout.ref().via.b8 = deadline.expired_before();
+
+    return {events.empty() ? DDWAF_OK : DDWAF_MATCH, std::move(result_object)};
 }
 
-void context::eval_preprocessors(owned_object &derived, ddwaf::timer &deadline)
+void context::eval_preprocessors(borrowed_object &attributes, ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating preprocessors");
 
@@ -141,11 +160,11 @@ void context::eval_preprocessors(owned_object &derived, ddwaf::timer &deadline)
             it = new_it;
         }
 
-        preproc->eval(store_, derived, it->second, deadline);
+        preproc->eval(store_, attributes, it->second, deadline);
     }
 }
 
-void context::eval_postprocessors(owned_object &derived, ddwaf::timer &deadline)
+void context::eval_postprocessors(borrowed_object &attributes, ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating postprocessors");
 
@@ -161,7 +180,7 @@ void context::eval_postprocessors(owned_object &derived, ddwaf::timer &deadline)
             it = new_it;
         }
 
-        postproc->eval(store_, derived, it->second, deadline);
+        postproc->eval(store_, attributes, it->second, deadline);
     }
 }
 
@@ -217,11 +236,9 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
     return exclusion_policy_;
 }
 
-std::vector<event> context::eval_rules(
-    const exclusion::context_policy &policy, ddwaf::timer &deadline)
+void context::eval_rules(const exclusion::context_policy &policy, std::vector<ddwaf::event> &events,
+    ddwaf::timer &deadline)
 {
-    std::vector<ddwaf::event> events;
-
     for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
         const auto &mod = ruleset_->rule_modules[i];
         auto &cache = rule_module_cache_[i];
@@ -231,8 +248,6 @@ std::vector<event> context::eval_rules(
             break;
         }
     }
-
-    return events;
 }
 
 } // namespace ddwaf

@@ -41,16 +41,18 @@ TEST(TestExtractSchemaIntegration, Postprocessor)
     ddwaf_object_map_add(&settings, "extract-schema", &value);
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-    EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+    const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+    EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-    auto schema = test::object_to_json(out.derivatives);
+    auto schema = test::object_to_json(*attributes);
     EXPECT_STR(schema, R"({"server.request.body.schema":[8]})");
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -85,9 +87,10 @@ TEST(TestExtractSchemaIntegration, Preprocessor)
     ddwaf_object_map_add(&settings, "extract-schema", &value);
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     EXPECT_EVENTS(out, {.id = "rule1",
                            .name = "rule1",
@@ -101,9 +104,10 @@ TEST(TestExtractSchemaIntegration, Preprocessor)
                                    .path = {"0"},
                                }}}}});
 
-    EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
+    const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+    EXPECT_EQ(ddwaf_object_size(attributes), 0);
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -140,9 +144,10 @@ TEST(TestExtractSchemaIntegration, Processor)
     ddwaf_object_map_add(&settings, "extract-schema", &value);
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     EXPECT_EVENTS(out, {.id = "rule1",
                            .name = "rule1",
@@ -156,12 +161,13 @@ TEST(TestExtractSchemaIntegration, Processor)
                                    .path = {"0"},
                                }}}}});
 
-    EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+    const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+    EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-    auto schema = test::object_to_json(out.derivatives);
+    auto schema = test::object_to_json(*attributes);
     EXPECT_STR(schema, R"({"server.request.body.schema":[8]})");
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -199,15 +205,17 @@ TEST(TestExtractSchemaIntegration, ProcessorWithScannerByTags)
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
-    EXPECT_FALSE(out.timeout);
-    EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-    EXPECT_SCHEMA_EQ(
-        out.derivatives.via.map[0].val, R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+    const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+    EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0),
+        R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 
@@ -247,15 +255,17 @@ TEST(TestExtractSchemaIntegration, ProcessorWithScannerByID)
     ddwaf_context context = ddwaf_context_init(handle);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
-    EXPECT_FALSE(out.timeout);
-    EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-    EXPECT_SCHEMA_EQ(
-        out.derivatives.via.map[0].val, R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+    const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+    EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0),
+        R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
 
     ddwaf_destroy(handle);
@@ -299,15 +309,18 @@ TEST(TestExtractSchemaIntegration, ProcessorUpdate)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
-        EXPECT_FALSE(out.timeout);
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_SCHEMA_EQ(
-            out.derivatives.via.map[0].val, R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        ddwaf_result_free(&out);
+        EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0),
+            R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -339,14 +352,16 @@ TEST(TestExtractSchemaIntegration, ProcessorUpdate)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
-        EXPECT_FALSE(out.timeout);
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_SCHEMA_EQ(out.derivatives.via.map[0].val, R"([{"email":[8]}])");
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0), R"([{"email":[8]}])");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -392,15 +407,18 @@ TEST(TestExtractSchemaIntegration, ScannerUpdate)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
-        EXPECT_FALSE(out.timeout);
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_SCHEMA_EQ(
-            out.derivatives.via.map[0].val, R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        ddwaf_result_free(&out);
+        EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0),
+            R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -433,15 +451,18 @@ TEST(TestExtractSchemaIntegration, ScannerUpdate)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
-        EXPECT_FALSE(out.timeout);
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_SCHEMA_EQ(
-            out.derivatives.via.map[0].val, R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        ddwaf_result_free(&out);
+        EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0),
+            R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -487,15 +508,18 @@ TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
-        EXPECT_FALSE(out.timeout);
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_SCHEMA_EQ(
-            out.derivatives.via.map[0].val, R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        ddwaf_result_free(&out);
+        EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0),
+            R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -527,15 +551,18 @@ TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
-        EXPECT_FALSE(out.timeout);
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_SCHEMA_EQ(
-            out.derivatives.via.map[0].val, R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        ddwaf_result_free(&out);
+        EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0),
+            R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -580,15 +607,18 @@ TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
-        EXPECT_FALSE(out.timeout);
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_SCHEMA_EQ(
-            out.derivatives.via.map[0].val, R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        ddwaf_result_free(&out);
+        EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0),
+            R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -613,14 +643,16 @@ TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
-        EXPECT_FALSE(out.timeout);
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_SCHEMA_EQ(out.derivatives.via.map[0].val, R"([{"email":[8]}])");
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0), R"([{"email":[8]}])");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -665,15 +697,18 @@ TEST(TestExtractSchemaIntegration, EmptyProcessorUpdate)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
-        EXPECT_FALSE(out.timeout);
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_SCHEMA_EQ(
-            out.derivatives.via.map[0].val, R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        ddwaf_result_free(&out);
+        EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0),
+            R"([{"email":[8,{"category":"pii","type":"email"}]}])");
+
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -705,12 +740,15 @@ TEST(TestExtractSchemaIntegration, EmptyProcessorUpdate)
         ddwaf_context context = ddwaf_context_init(handle);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
-        EXPECT_FALSE(out.timeout);
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        ddwaf_result_free(&out);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+
+        ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
     }
 
@@ -750,16 +788,18 @@ TEST(TestExtractSchemaIntegration, PostprocessorWithEphemeralMapping)
         ddwaf_object_string(&value, "value");
         ddwaf_object_map_add(&ephemeral, "server.request.body", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &persistent, &ephemeral, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.body.schema":[8]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     {
@@ -769,16 +809,18 @@ TEST(TestExtractSchemaIntegration, PostprocessorWithEphemeralMapping)
         ddwaf_object_map_add(&map, "key", &value);
         ddwaf_object_map_add(&ephemeral, "server.request.body", &map);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, nullptr, &ephemeral, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.body.schema":[{"key":[8]}]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     ddwaf_context_destroy(context);
@@ -817,9 +859,10 @@ TEST(TestExtractSchemaIntegration, PreprocessorWithEphemeralMapping)
         ddwaf_object_string(&value, "value");
         ddwaf_object_map_add(&ephemeral, "server.request.body", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &persistent, &ephemeral, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         EXPECT_EVENTS(out, {.id = "rule1",
                                .name = "rule1",
@@ -833,9 +876,10 @@ TEST(TestExtractSchemaIntegration, PreprocessorWithEphemeralMapping)
                                        .path = {"0"},
                                    }}}}});
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 0);
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     {
@@ -843,9 +887,10 @@ TEST(TestExtractSchemaIntegration, PreprocessorWithEphemeralMapping)
         ddwaf_object_string(&value, "value");
         ddwaf_object_map_add(&ephemeral, "server.request.body", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, nullptr, &ephemeral, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         EXPECT_EVENTS(out, {.id = "rule1",
                                .name = "rule1",
@@ -859,9 +904,10 @@ TEST(TestExtractSchemaIntegration, PreprocessorWithEphemeralMapping)
                                        .path = {"0"},
                                    }}}}});
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 0);
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     ddwaf_context_destroy(context);
@@ -901,16 +947,18 @@ TEST(TestExtractSchemaIntegration, ProcessorEphemeralExpression)
         ddwaf_object_map_add(&settings, "extract-schema", &value);
         ddwaf_object_map_add(&ephemeral, "waf.context.processor", &settings);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &persistent, &ephemeral, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.query.schema":[8]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     {
@@ -918,13 +966,15 @@ TEST(TestExtractSchemaIntegration, ProcessorEphemeralExpression)
         ddwaf_object_string(&value, "value");
         ddwaf_object_map_add(&persistent, "server.request.body", &value);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &persistent, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 0);
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     {
@@ -934,9 +984,10 @@ TEST(TestExtractSchemaIntegration, ProcessorEphemeralExpression)
         ddwaf_object_map_add(&settings, "extract-schema", &value);
         ddwaf_object_map_add(&ephemeral, "waf.context.processor", &settings);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, nullptr, &ephemeral, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         EXPECT_EVENTS(out, {.id = "rule1",
                                .name = "rule1",
@@ -950,12 +1001,13 @@ TEST(TestExtractSchemaIntegration, ProcessorEphemeralExpression)
                                        .path = {"0"},
                                    }}}}});
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto schema = test::object_to_json(out.derivatives);
+        auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.body.schema":[8]})");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     ddwaf_context_destroy(context);
