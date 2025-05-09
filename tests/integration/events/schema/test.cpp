@@ -43,15 +43,19 @@ public:
         context = nullptr;
     }
 
-    void Validate(ddwaf_result ret, DDWAF_RET_CODE code)
+    void Validate(ddwaf_object ret, DDWAF_RET_CODE code)
     {
         Document d;
         EXPECT_EQ(code, DDWAF_MATCH);
-        ASSERT_EQ(ddwaf_object_type(&ret.events), DDWAF_OBJ_ARRAY);
-        ASSERT_GT(ddwaf_object_size(&ret.events), 0);
-        EXPECT_FALSE(ret.timeout);
 
-        auto data = ddwaf::test::object_to_json(ret.events);
+        const auto *events = ddwaf_object_find(&ret, STRL("events"));
+        ASSERT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
+        ASSERT_GT(ddwaf_object_size(events), 0);
+
+        const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
+
+        auto data = ddwaf::test::object_to_json(*events);
         if (!HasFailure()) {
             EXPECT_TRUE(ValidateEventSchema(data));
         }
@@ -74,10 +78,10 @@ TEST_F(TestSchemaIntegration, SimpleResult)
 
     ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "rule1"));
 
-    ddwaf_result ret;
+    ddwaf_object ret;
     auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
     Validate(ret, code);
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
 }
 
 TEST_F(TestSchemaIntegration, SimpleResultWithKeyPath)
@@ -88,10 +92,10 @@ TEST_F(TestSchemaIntegration, SimpleResultWithKeyPath)
     ddwaf_object_map_add(&arg2, "key1", ddwaf_object_string(&tmp, "rule2"));
     ddwaf_object_map_add(&param, "arg2", &arg2);
 
-    ddwaf_result ret;
+    ddwaf_object ret;
     auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
     Validate(ret, code);
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
 }
 
 TEST_F(TestSchemaIntegration, SimpleResultWithMultiKeyPath)
@@ -105,10 +109,10 @@ TEST_F(TestSchemaIntegration, SimpleResultWithMultiKeyPath)
     ddwaf_object_map_add(&arg2, "key1", &array);
     ddwaf_object_map_add(&param, "arg2", &arg2);
 
-    ddwaf_result ret;
+    ddwaf_object ret;
     auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
     Validate(ret, code);
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
 }
 
 TEST_F(TestSchemaIntegration, ResultWithMultiCondition)
@@ -122,10 +126,10 @@ TEST_F(TestSchemaIntegration, ResultWithMultiCondition)
     ddwaf_object_map_add(&arg4, "key1", ddwaf_object_string(&tmp, "rule3"));
     ddwaf_object_map_add(&param, "arg4", &arg4);
 
-    ddwaf_result ret;
+    ddwaf_object ret;
     auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
     Validate(ret, code);
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
 }
 
 TEST_F(TestSchemaIntegration, MultiResultWithMultiCondition)
@@ -147,10 +151,10 @@ TEST_F(TestSchemaIntegration, MultiResultWithMultiCondition)
     ddwaf_object_map_add(&arg4, "key1", ddwaf_object_string(&tmp, "rule3"));
     ddwaf_object_map_add(&param, "arg4", &arg4);
 
-    ddwaf_result ret;
+    ddwaf_object ret;
     auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
     Validate(ret, code);
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
 }
 
 } // namespace

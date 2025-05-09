@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <string_view>
 
 #include "ddwaf.h"
 #include "log.hpp"
@@ -457,5 +458,30 @@ const ddwaf_object *ddwaf_object_get_index(const ddwaf_object *object, size_t in
     }
 
     return &object->array[index];
+}
+
+const ddwaf_object *ddwaf_object_find(const ddwaf_object *object, const char *key, size_t length)
+{
+    if (object == nullptr || key == nullptr || length == 0 || !ddwaf::object::is_map(object) ||
+        object->nbEntries == 0) {
+        return nullptr;
+    }
+
+    const std::string_view expected_key{key, length};
+    for (uint64_t i = 0; i < object->nbEntries; ++i) {
+        const auto &child = object->array[i];
+
+        if (child.parameterName == nullptr || child.parameterNameLength == 0) {
+            continue;
+        }
+
+        const std::string_view child_key{
+            child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
+        if (child_key == expected_key) {
+            return &child;
+        }
+    }
+
+    return nullptr;
 }
 }

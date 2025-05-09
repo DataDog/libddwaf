@@ -187,24 +187,16 @@ ddwaf_context ddwaf_context_init(ddwaf::waf *handle)
     return nullptr;
 }
 
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
-    ddwaf_object *ephemeral_data, ddwaf_result *result, uint64_t timeout)
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    ddwaf_object *ephemeral_data, ddwaf_object *result, uint64_t timeout)
 {
-    if (result != nullptr) {
-        *result = DDWAF_RESULT_INITIALISER;
-    }
-
     if (context == nullptr || (persistent_data == nullptr && ephemeral_data == nullptr)) {
         DDWAF_WARN("Illegal WAF call: context or data was null");
         return DDWAF_ERR_INVALID_ARGUMENT;
     }
-    try {
-        optional_ref<ddwaf_result> res{std::nullopt};
-        if (result != nullptr) {
-            res = *result;
-        }
 
+    try {
         optional_ref<ddwaf_object> persistent{std::nullopt};
         if (persistent_data != nullptr) {
             persistent = *persistent_data;
@@ -220,7 +212,14 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
         constexpr uint64_t max_timeout_ms = std::chrono::nanoseconds::max().count() / 1000;
         timeout = std::min(timeout, max_timeout_ms);
 
-        return context->run(persistent, ephemeral, res, timeout);
+        auto [code, res] = context->run(persistent, ephemeral, timeout);
+        if (result != nullptr) {
+            *result = res;
+        } else {
+            // Nullability of the result structure supported for testing
+            ddwaf_object_free(&res);
+        }
+        return code;
     } catch (const std::exception &e) {
         // catch-all to avoid std::terminate
         DDWAF_ERROR("{}", e.what());
@@ -254,16 +253,6 @@ bool ddwaf_set_log_cb(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level)
     ddwaf::logger::init(cb, min_level);
     DDWAF_INFO("Sending log messages to binding, min level {}", log_level_to_str(min_level));
     return true;
-}
-
-void ddwaf_result_free(ddwaf_result *result)
-{
-    // NOLINTNEXTLINE
-    ddwaf_object_free(&result->events);
-    ddwaf_object_free(&result->actions);
-    ddwaf_object_free(&result->derivatives);
-
-    *result = DDWAF_RESULT_INITIALISER;
 }
 
 ddwaf_builder ddwaf_builder_init(const ddwaf_config *config)

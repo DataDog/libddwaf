@@ -173,7 +173,9 @@ std::list<ddwaf::test::event::match> from_matches(
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define EXPECT_EVENTS(result, ...)                                                                 \
     {                                                                                              \
-        auto data = ddwaf::test::object_to_json(result.events);                                    \
+        const auto *object = ddwaf_object_find(&result, STRL("events"));                           \
+        EXPECT_NE(object, nullptr);                                                                \
+        auto data = ddwaf::test::object_to_json(*object);                                          \
         EXPECT_TRUE(ValidateEventSchema(data));                                                    \
         YAML::Node doc = YAML::Load(data.c_str());                                                 \
         auto events = doc.as<std::list<ddwaf::test::event>>();                                     \
@@ -194,7 +196,9 @@ std::list<ddwaf::test::event::match> from_matches(
 
 #define EXPECT_ACTIONS(result, ...)                                                                \
     {                                                                                              \
-        auto data = ddwaf::test::object_to_json(result.actions);                                   \
+        const auto *object = ddwaf_object_find(&result, STRL("actions"));                          \
+        EXPECT_NE(object, nullptr);                                                                \
+        auto data = ddwaf::test::object_to_json(*object);                                          \
         EXPECT_TRUE(ValidateActionsSchema(data));                                                  \
         YAML::Node doc = YAML::Load(data.c_str());                                                 \
         auto obtained = doc.as<ddwaf::test::action_map>();                                         \

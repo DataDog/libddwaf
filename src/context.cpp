@@ -6,7 +6,10 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
+#include <stdexcept>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "clock.hpp"
@@ -48,51 +51,94 @@ void set_context_event_address(object_store &store)
     store.insert(event_addr_idx, event_addr, true_obj, attribute::none);
 }
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
+struct result_components {
+    ddwaf_object &events;
+    ddwaf_object &actions;
+    ddwaf_object &duration;
+    ddwaf_object &timeout;
+    ddwaf_object &attributes;
+    ddwaf_object &keep;
+};
+// NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
+
+result_components initialise_result_object(ddwaf_object &object)
+{
+    ddwaf_object_map(&object);
+
+    bool add_res = true;
+    ddwaf_object tmp;
+    add_res &= ddwaf_object_map_addl(&object, STRL("events"), ddwaf_object_array(&tmp));
+    add_res &= ddwaf_object_map_addl(&object, STRL("actions"), ddwaf_object_map(&tmp));
+    add_res &= ddwaf_object_map_addl(&object, STRL("duration"), ddwaf_object_unsigned(&tmp, 0));
+    add_res &= ddwaf_object_map_addl(&object, STRL("timeout"), ddwaf_object_bool(&tmp, false));
+    add_res &= ddwaf_object_map_addl(&object, STRL("attributes"), ddwaf_object_map(&tmp));
+    add_res &= ddwaf_object_map_addl(&object, STRL("keep"), ddwaf_object_bool(&tmp, false));
+
+    if (!add_res) {
+        throw std::runtime_error("failed to generate result object");
+    }
+
+    result_components res{.events = object.array[0],
+        .actions = object.array[1],
+        .duration = object.array[2],
+        .timeout = object.array[3],
+        .attributes = object.array[4],
+        .keep = object.array[5]};
+
+    return res;
+}
+
+ddwaf_object move_object(ddwaf_object &object)
+{
+    auto aux = object;
+    ddwaf_object_invalid(&object);
+    return aux;
+}
+
 } // namespace
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
-    optional_ref<ddwaf_object> ephemeral, optional_ref<ddwaf_result> res, uint64_t timeout)
+std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
+    optional_ref<ddwaf_object> persistent, optional_ref<ddwaf_object> ephemeral, uint64_t timeout)
 {
     // This scope ensures that all ephemeral and cached objects are removed
     // from the store at the end of the evaluation
     auto store_cleanup_scope = store_.get_eval_scope();
     auto on_exit = scope_exit([this]() { this->exclusion_policy_.ephemeral.clear(); });
 
-    if (res.has_value()) {
-        ddwaf_result &output = *res;
-        output = DDWAF_RESULT_INITIALISER;
-    }
-
     auto *free_fn = ruleset_->free_fn;
+
+    // TODO these checks should be moved to the interface through something along the
+    // lines of ctx.insert(...) -> bool
     if (persistent.has_value() && !store_.insert(*persistent, attribute::none, free_fn)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
-        return DDWAF_ERR_INVALID_OBJECT;
+        return {DDWAF_ERR_INVALID_OBJECT, {}};
     }
 
     if (ephemeral.has_value() && !store_.insert(*ephemeral, attribute::ephemeral, free_fn)) {
         DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
-        return DDWAF_ERR_INVALID_OBJECT;
+        return {DDWAF_ERR_INVALID_OBJECT, {}};
     }
 
+    // Generate result object once relevant checks have been made
+    ddwaf_object result_object;
+    const std::unique_ptr<ddwaf_object, decltype(&ddwaf_object_free)> res{
+        &result_object, ddwaf_object_free};
+
+    auto result = initialise_result_object(result_object);
     ddwaf::timer deadline{std::chrono::microseconds(timeout)};
 
     if (!store_.has_new_targets()) {
-        return DDWAF_OK;
+        return {DDWAF_OK, move_object(result_object)};
     }
 
     const event_serializer serializer(event_obfuscator_, actions_);
 
-    optional_ref<ddwaf_object> derived;
-    if (res.has_value()) {
-        ddwaf_result &output = *res;
-        ddwaf_object_map(&output.derivatives);
-        derived.emplace(output.derivatives);
-    }
-
     std::vector<ddwaf::event> events;
     try {
-        eval_preprocessors(derived, deadline);
+        optional_ref<ddwaf_object> attributes_ref{result.attributes};
+        eval_preprocessors(attributes_ref, deadline);
 
         // If no rule targets are available, there is no point in evaluating them
         const bool should_eval_rules = check_new_rule_targets();
@@ -105,26 +151,25 @@ DDWAF_RET_CODE context::run(optional_ref<ddwaf_object> persistent,
             const auto &policy = eval_filters(deadline);
 
             if (should_eval_rules) {
-                events = eval_rules(policy, deadline);
+                eval_rules(policy, events, deadline);
                 if (!events.empty()) {
                     set_context_event_address(store_);
                 }
             }
         }
 
-        eval_postprocessors(derived, deadline);
+        eval_postprocessors(attributes_ref, deadline);
         // NOLINTNEXTLINE(bugprone-empty-catch)
     } catch (const ddwaf::timeout_exception &) {}
 
-    const DDWAF_RET_CODE code = events.empty() ? DDWAF_OK : DDWAF_MATCH;
-    if (res.has_value()) {
-        ddwaf_result &output = *res;
-        serializer.serialize(events, output);
-        output.total_runtime = deadline.elapsed().count();
-        output.timeout = deadline.expired_before();
-    }
+    serializer.serialize(events, result.events, result.actions);
 
-    return code;
+    // Using the interface functions would replace the key contained within the
+    // object. This will not be an issue in v2.
+    result.duration.uintValue = deadline.elapsed().count();
+    result.timeout.boolean = deadline.expired_before();
+
+    return {events.empty() ? DDWAF_OK : DDWAF_MATCH, move_object(result_object)};
 }
 
 void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline)
@@ -219,11 +264,9 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
     return exclusion_policy_;
 }
 
-std::vector<event> context::eval_rules(
-    const exclusion::context_policy &policy, ddwaf::timer &deadline)
+void context::eval_rules(const exclusion::context_policy &policy, std::vector<ddwaf::event> &events,
+    ddwaf::timer &deadline)
 {
-    std::vector<ddwaf::event> events;
-
     for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
         const auto &mod = ruleset_->rule_modules[i];
         auto &cache = rule_module_cache_[i];
@@ -233,8 +276,6 @@ std::vector<event> context::eval_rules(
             break;
         }
     }
-
-    return events;
 }
 
 } // namespace ddwaf

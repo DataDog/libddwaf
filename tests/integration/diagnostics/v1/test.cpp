@@ -27,12 +27,13 @@ void run_test(ddwaf_handle handle)
     ddwaf_object_map_add(&arg2, "y", ddwaf_object_string(&tmp, "string 3"));
     ddwaf_object_map_add(&param, "arg2", &arg2);
 
-    ddwaf_result ret;
+    ddwaf_object ret;
 
     // Run with just arg1
     auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
-    EXPECT_FALSE(ret.timeout);
+    const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(ret, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -60,7 +61,7 @@ void run_test(ddwaf_handle handle)
                                        .address = "arg2",
                                        .path = {"y"},
                                    }}}}});
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
 
     ddwaf_context_destroy(context);
 }

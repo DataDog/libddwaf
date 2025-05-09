@@ -115,7 +115,7 @@ TEST(TestCustomRulesIntegration, RegularCustomRulesPrecedence)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value3", ddwaf_object_string(&tmp, "custom_rule"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule3",
@@ -125,7 +125,7 @@ TEST(TestCustomRulesIntegration, RegularCustomRulesPrecedence)
                                    .op_value = "custom_rule",
                                    .highlight = "custom_rule",
                                    .args = {{.value = "custom_rule", .address = "value3"}}}}});
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
 
@@ -155,7 +155,7 @@ TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value4", ddwaf_object_string(&tmp, "custom_rule"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
@@ -170,7 +170,7 @@ TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
 
@@ -200,7 +200,7 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
@@ -214,7 +214,7 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
 
@@ -262,7 +262,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "rule4",
@@ -276,7 +276,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
 
@@ -284,7 +284,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
@@ -298,7 +298,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
 
@@ -350,7 +350,7 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
@@ -364,7 +364,7 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
 
@@ -372,7 +372,7 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule5",
@@ -383,7 +383,7 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
                                    .highlight = "custom_rule",
                                    .args = {{.value = "custom_rule", .address = "value34"}}}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
 
@@ -458,7 +458,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
@@ -472,7 +472,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
 
@@ -480,7 +480,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "rule4",
@@ -494,7 +494,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
 
@@ -546,7 +546,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
@@ -560,7 +560,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
 
@@ -568,7 +568,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
@@ -582,7 +582,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
 
@@ -648,7 +648,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value4", ddwaf_object_string(&tmp, "custom_rule"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "rule4",
@@ -662,7 +662,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
 
@@ -679,7 +679,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value4", ddwaf_object_string(&tmp, "custom_rule"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
@@ -693,7 +693,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
 
@@ -746,7 +746,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
@@ -760,7 +760,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
 
@@ -768,7 +768,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "rule4",
@@ -782,7 +782,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
 
@@ -848,7 +848,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "rule4",
@@ -865,7 +865,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
 
@@ -873,7 +873,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "rule3",
@@ -887,7 +887,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
                                        .address = "value34",
                                    }}}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
 
@@ -895,7 +895,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
 
-        ddwaf_result res;
+        ddwaf_object res;
         EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule3",
@@ -909,7 +909,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
                                        .address = "value34",
                                    }}}}});
 
-        ddwaf_result_free(&res);
+        ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
 

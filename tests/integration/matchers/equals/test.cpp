@@ -27,9 +27,10 @@ TEST(TestEqualsMatcherIntegration, StringEquals)
     ddwaf_object_string(&value, "arachni");
     ddwaf_object_map_add(&map, "input", &value);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1-string-equals",
                            .tags = {{"type", "flow"}, {"category", "category"}},
@@ -40,7 +41,7 @@ TEST(TestEqualsMatcherIntegration, StringEquals)
                                    .address = "input",
                                }}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -61,9 +62,10 @@ TEST(TestEqualsMatcherIntegration, BoolEquals)
     ddwaf_object_bool(&value, false);
     ddwaf_object_map_add(&map, "input", &value);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2-bool-equals",
                            .tags = {{"type", "flow"}, {"category", "category"}},
@@ -76,7 +78,7 @@ TEST(TestEqualsMatcherIntegration, BoolEquals)
                                }},
                            }}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -97,9 +99,10 @@ TEST(TestEqualsMatcherIntegration, SignedEquals)
     ddwaf_object_signed(&value, -42);
     ddwaf_object_map_add(&map, "input", &value);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "3",
                            .name = "rule3-signed-equals",
                            .tags = {{"type", "flow"}, {"category", "category"}},
@@ -110,7 +113,7 @@ TEST(TestEqualsMatcherIntegration, SignedEquals)
                                    .address = "input",
                                }}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -131,9 +134,10 @@ TEST(TestEqualsMatcherIntegration, UnsignedEquals)
     ddwaf_object_unsigned(&value, 42);
     ddwaf_object_map_add(&map, "input", &value);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "4",
                            .name = "rule4-unsigned-equals",
                            .tags = {{"type", "flow"}, {"category", "category"}},
@@ -146,7 +150,7 @@ TEST(TestEqualsMatcherIntegration, UnsignedEquals)
                                }},
                            }}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -167,9 +171,10 @@ TEST(TestEqualsMatcherIntegration, FloatEquals)
     ddwaf_object_float(&value, 42.01);
     ddwaf_object_map_add(&map, "input", &value);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "5",
                            .name = "rule5-float-equals",
                            .tags = {{"type", "flow"}, {"category", "category"}},
@@ -182,7 +187,7 @@ TEST(TestEqualsMatcherIntegration, FloatEquals)
                                }},
                            }}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }

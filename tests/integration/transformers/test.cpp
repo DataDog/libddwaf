@@ -27,9 +27,10 @@ TEST(TestTransformers, Base64Decode)
     ddwaf_object_string(&string, "J09SIDE9MS8q");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -37,7 +38,7 @@ TEST(TestTransformers, Base64Decode)
                                .highlight = "s&1c",
                                .args = {{.value = "'OR 1=1/*", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -58,9 +59,10 @@ TEST(TestTransformers, Base64DecodeAlias)
     ddwaf_object_string(&string, "J09SIDE9MS8q");
     ddwaf_object_map_add(&map, "value2", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -68,7 +70,7 @@ TEST(TestTransformers, Base64DecodeAlias)
                                .highlight = "s&1c",
                                .args = {{.value = "'OR 1=1/*", .address = "value2"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -89,9 +91,10 @@ TEST(TestTransformers, Base64UrlDecode)
     ddwaf_object_string(&string, "J09SIDE9MS8q");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -99,7 +102,7 @@ TEST(TestTransformers, Base64UrlDecode)
                                .highlight = "s&1c",
                                .args = {{.value = "'OR 1=1/*", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -120,9 +123,10 @@ TEST(TestTransformers, Base64Encode)
     ddwaf_object_string(&string, "'OR 1=1/*");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -131,7 +135,7 @@ TEST(TestTransformers, Base64Encode)
                                .highlight = "J09SIDE9MS8q",
                                .args = {{.value = "J09SIDE9MS8q", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -152,9 +156,10 @@ TEST(TestTransformers, Base64EncodeAlias)
     ddwaf_object_string(&string, "'OR 1=1/*");
     ddwaf_object_map_add(&map, "value2", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -163,7 +168,7 @@ TEST(TestTransformers, Base64EncodeAlias)
                                .highlight = "J09SIDE9MS8q",
                                .args = {{.value = "J09SIDE9MS8q", .address = "value2"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -184,9 +189,10 @@ TEST(TestTransformers, CompressWhitespace)
     ddwaf_object_string(&string, "attack      value");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -195,7 +201,7 @@ TEST(TestTransformers, CompressWhitespace)
                                .highlight = "attack value",
                                .args = {{.value = "attack value", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -216,9 +222,10 @@ TEST(TestTransformers, CompressWhitespaceAlias)
     ddwaf_object_string(&string, "attack      value");
     ddwaf_object_map_add(&map, "value2", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -227,7 +234,7 @@ TEST(TestTransformers, CompressWhitespaceAlias)
                                .highlight = "attack value",
                                .args = {{.value = "attack value", .address = "value2"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -248,9 +255,10 @@ TEST(TestTransformers, CssDecode)
     ddwaf_object_string(&string, "CSS\\\n tran\\sformations");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -259,7 +267,7 @@ TEST(TestTransformers, CssDecode)
                                .highlight = "CSS transformations",
                                .args = {{.value = "CSS transformations", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -280,9 +288,10 @@ TEST(TestTransformers, CssDecodeAlias)
     ddwaf_object_string(&string, "CSS\\\n tran\\sformations");
     ddwaf_object_map_add(&map, "value2", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -291,7 +300,7 @@ TEST(TestTransformers, CssDecodeAlias)
                                .highlight = "CSS transformations",
                                .args = {{.value = "CSS transformations", .address = "value2"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -312,9 +321,10 @@ TEST(TestTransformers, HtmlEntityDecode)
     ddwaf_object_string(&string, "HTML &#x0000000000000000000000000000041 &#x41; transformation");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
         out, {.id = "1",
                  .name = "rule1",
@@ -324,7 +334,7 @@ TEST(TestTransformers, HtmlEntityDecode)
                      .highlight = "HTML A A transformation",
                      .args = {{.value = "HTML A A transformation", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -345,9 +355,10 @@ TEST(TestTransformers, HtmlEntityDecodeAlias)
     ddwaf_object_string(&string, "HTML &#x0000000000000000000000000000041 &#x41; transformation");
     ddwaf_object_map_add(&map, "value2", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
         out, {.id = "2",
                  .name = "rule2",
@@ -357,7 +368,7 @@ TEST(TestTransformers, HtmlEntityDecodeAlias)
                      .highlight = "HTML A A transformation",
                      .args = {{.value = "HTML A A transformation", .address = "value2"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -378,9 +389,10 @@ TEST(TestTransformers, JsDecode)
     ddwaf_object_string(&string, R"(\x41\x20\x4aS\x20transf\x6Frmation)");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -389,7 +401,7 @@ TEST(TestTransformers, JsDecode)
                                .highlight = "A JS transformation",
                                .args = {{.value = "A JS transformation", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -410,9 +422,10 @@ TEST(TestTransformers, JsDecodeAlias)
     ddwaf_object_string(&string, R"(\x41\x20\x4aS\x20transf\x6Frmation)");
     ddwaf_object_map_add(&map, "value2", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -421,7 +434,7 @@ TEST(TestTransformers, JsDecodeAlias)
                                .highlight = "A JS transformation",
                                .args = {{.value = "A JS transformation", .address = "value2"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -442,9 +455,10 @@ TEST(TestTransformers, Lowercase)
     ddwaf_object_string(&string, "ArAcHnI");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -453,7 +467,7 @@ TEST(TestTransformers, Lowercase)
                                .highlight = "arachni",
                                .args = {{.value = "arachni", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -474,9 +488,10 @@ TEST(TestTransformers, NormalizePath)
     ddwaf_object_string(&string, "/etc/dir1/dir2/../../passwd");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -485,7 +500,7 @@ TEST(TestTransformers, NormalizePath)
                                .highlight = "/etc/passwd",
                                .args = {{.value = "/etc/passwd", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -506,9 +521,10 @@ TEST(TestTransformers, NormalizePathAlias)
     ddwaf_object_string(&string, "/etc/dir1/dir2/../../passwd");
     ddwaf_object_map_add(&map, "value2", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -517,7 +533,7 @@ TEST(TestTransformers, NormalizePathAlias)
                                .highlight = "/etc/passwd",
                                .args = {{.value = "/etc/passwd", .address = "value2"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -538,9 +554,10 @@ TEST(TestTransformers, NormalizePathWin)
     ddwaf_object_string(&string, R"(\etc\dir1\dir2\..\..\passwd)");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -549,7 +566,7 @@ TEST(TestTransformers, NormalizePathWin)
                                .highlight = "/etc/passwd",
                                .args = {{.value = "/etc/passwd", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -570,9 +587,10 @@ TEST(TestTransformers, NormalizePathAliasWin)
     ddwaf_object_string(&string, R"(\etc\dir1\dir2\..\..\passwd)");
     ddwaf_object_map_add(&map, "value2", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -581,7 +599,7 @@ TEST(TestTransformers, NormalizePathAliasWin)
                                .highlight = "/etc/passwd",
                                .args = {{.value = "/etc/passwd", .address = "value2"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -602,9 +620,10 @@ TEST(TestTransformers, RemoveComments)
     ddwaf_object_string(&string, "passwd#asdsd");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -613,7 +632,7 @@ TEST(TestTransformers, RemoveComments)
                                .highlight = "passwd",
                                .args = {{.value = "passwd", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -634,9 +653,10 @@ TEST(TestTransformers, RemoveCommentsAlias)
     ddwaf_object_string(&string, "passwd#asdsd");
     ddwaf_object_map_add(&map, "value2", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -645,7 +665,7 @@ TEST(TestTransformers, RemoveCommentsAlias)
                                .highlight = "passwd",
                                .args = {{.value = "passwd", .address = "value2"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -666,9 +686,10 @@ TEST(TestTransformers, RemoveNulls)
     ddwaf_object_stringl(&string, "/etc/\0passwd", sizeof("/etc/\0passwd") - 1);
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -677,7 +698,7 @@ TEST(TestTransformers, RemoveNulls)
                                .highlight = "/etc/passwd",
                                .args = {{.value = "/etc/passwd", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -698,9 +719,10 @@ TEST(TestTransformers, RemoveNullsAlias)
     ddwaf_object_stringl(&string, "/etc/\0passwd", sizeof("/etc/\0passwd") - 1);
     ddwaf_object_map_add(&map, "value2", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -709,7 +731,7 @@ TEST(TestTransformers, RemoveNullsAlias)
                                .highlight = "/etc/passwd",
                                .args = {{.value = "/etc/passwd", .address = "value2"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -730,9 +752,10 @@ TEST(TestTransformers, ShellUnescape)
     ddwaf_object_string(&string, "/\\etc/\"pass^wd");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -741,7 +764,7 @@ TEST(TestTransformers, ShellUnescape)
                                .highlight = "/etc/passwd",
                                .args = {{.value = "/etc/passwd", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -762,9 +785,10 @@ TEST(TestTransformers, ShellUnescapeAlias)
     ddwaf_object_string(&string, "/\\etc/\"pass^wd");
     ddwaf_object_map_add(&map, "value2", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -773,7 +797,7 @@ TEST(TestTransformers, ShellUnescapeAlias)
                                .highlight = "/etc/passwd",
                                .args = {{.value = "/etc/passwd", .address = "value2"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -794,9 +818,10 @@ TEST(TestTransformers, UnicodeNormalize)
     ddwaf_object_string(&string, "/étc/p𝑎ßwd");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -805,7 +830,7 @@ TEST(TestTransformers, UnicodeNormalize)
                                .highlight = "/etc/passwd",
                                .args = {{.value = "/etc/passwd", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -826,9 +851,10 @@ TEST(TestTransformers, UrlBasename)
     ddwaf_object_string(&string, "/path/to/index.php?a=b#frag");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -837,7 +863,7 @@ TEST(TestTransformers, UrlBasename)
                                .highlight = "index.php",
                                .args = {{.value = "index.php", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -858,9 +884,10 @@ TEST(TestTransformers, UrlBasenameAlias)
     ddwaf_object_string(&string, "/path/to/index.php?a=b#frag");
     ddwaf_object_map_add(&map, "value2", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -869,7 +896,7 @@ TEST(TestTransformers, UrlBasenameAlias)
                                .highlight = "index.php",
                                .args = {{.value = "index.php", .address = "value2"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -890,9 +917,10 @@ TEST(TestTransformers, UrlDecode)
     ddwaf_object_string(&string, "%61n+%61ttack%20valu%65");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -901,7 +929,7 @@ TEST(TestTransformers, UrlDecode)
                                .highlight = "an attack value",
                                .args = {{.value = "an attack value", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -922,9 +950,10 @@ TEST(TestTransformers, UrlDecodeAlias)
     ddwaf_object_string(&string, "%61n+%61ttack%20valu%65");
     ddwaf_object_map_add(&map, "value2", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -933,7 +962,7 @@ TEST(TestTransformers, UrlDecodeAlias)
                                .highlight = "an attack value",
                                .args = {{.value = "an attack value", .address = "value2"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -954,9 +983,10 @@ TEST(TestTransformers, UrlDecodeIis)
     ddwaf_object_string(&string, "%61n+%61ttack%20valu%65");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -965,7 +995,7 @@ TEST(TestTransformers, UrlDecodeIis)
                                .highlight = "an attack value",
                                .args = {{.value = "an attack value", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -986,9 +1016,10 @@ TEST(TestTransformers, UrlDecodeIisAlias)
     ddwaf_object_string(&string, "%61n+%61ttack%20valu%65");
     ddwaf_object_map_add(&map, "value2", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -997,7 +1028,7 @@ TEST(TestTransformers, UrlDecodeIisAlias)
                                .highlight = "an attack value",
                                .args = {{.value = "an attack value", .address = "value2"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -1018,9 +1049,10 @@ TEST(TestTransformers, UrlPath)
     ddwaf_object_string(&string, "/path/to/index.php?a=b#frag");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -1029,7 +1061,7 @@ TEST(TestTransformers, UrlPath)
                                .highlight = "/path/to/index.php",
                                .args = {{.value = "/path/to/index.php", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -1050,9 +1082,10 @@ TEST(TestTransformers, UrlPathAlias)
     ddwaf_object_string(&string, "/path/to/index.php?a=b#frag");
     ddwaf_object_map_add(&map, "value2", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -1061,7 +1094,7 @@ TEST(TestTransformers, UrlPathAlias)
                                .highlight = "/path/to/index.php",
                                .args = {{.value = "/path/to/index.php", .address = "value2"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -1082,9 +1115,10 @@ TEST(TestTransformers, UrlQuerystring)
     ddwaf_object_string(&string, "/path/to/index.php?a=b#frag");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -1093,7 +1127,7 @@ TEST(TestTransformers, UrlQuerystring)
                                .highlight = "a=b",
                                .args = {{.value = "a=b", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -1114,9 +1148,10 @@ TEST(TestTransformers, UrlQuerystringAlias)
     ddwaf_object_string(&string, "/path/to/index.php?a=b#frag");
     ddwaf_object_map_add(&map, "value2", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -1125,7 +1160,7 @@ TEST(TestTransformers, UrlQuerystringAlias)
                                .highlight = "a=b",
                                .args = {{.value = "a=b", .address = "value2"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -1146,9 +1181,10 @@ TEST(TestTransformers, Mixed)
     ddwaf_object_string(&string, "L3AgIGEgIHRIL3QgIE8vRmlsRS5QSFA/YT1iI2ZyYWc=");
     ddwaf_object_map_add(&map, "value1", &string);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
         out, {.id = "1",
                  .name = "rule1",
@@ -1158,7 +1194,7 @@ TEST(TestTransformers, Mixed)
                      .highlight = "L3AgYSB0aC90IG8vZmlsZS5waHA=",
                      .args = {{.value = "L3AgYSB0aC90IG8vZmlsZS5waHA=", .address = "value1"}}}}});
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }

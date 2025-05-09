@@ -93,7 +93,6 @@ typedef struct _ddwaf_builder* ddwaf_builder;
 
 typedef struct _ddwaf_object ddwaf_object;
 typedef struct _ddwaf_config ddwaf_config;
-typedef struct _ddwaf_result ddwaf_result;
 /**
  * @struct ddwaf_object
  *
@@ -152,27 +151,6 @@ struct _ddwaf_config
      *  to ddwaf_run. If the value of this function is NULL, the objects will
      *  not be freed. The default value should be ddwaf_object_free. */
     ddwaf_object_free_fn free_fn;
-};
-
-/**
- * @struct ddwaf_result
- *
- * Structure containing the result of a WAF run.
- **/
-struct _ddwaf_result
-{
-    /** Whether there has been a timeout during the operation **/
-    bool timeout;
-    /** Array of events generated, this is guaranteed to be an array **/
-    ddwaf_object events;
-    /** Map of actions generated, this is guaranteed to be a map in the format:
-     * {action type: { <parameter map> }, ...}
-     **/
-    ddwaf_object actions;
-    /** Map containing all derived objects in the format (address, value) **/
-    ddwaf_object derivatives;
-    /** Total WAF runtime in nanoseconds **/
-    uint64_t total_runtime;
 };
 
 /**
@@ -296,7 +274,20 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle);
  *    can be of an arbitrary type. This parameter can be null if persistent data
  *    is provided.
  *
- * @param result Structure containing the result of the operation. (nullable)
+ * @param result (nullable) Object map containing the following items:
+ *               - events: an array of the generated events.
+ *               - actions: a map of the generated actions in the format:
+ *                          {action type: { <parameter map> }, ...}
+ *               - duration: an unsigned specifying the total runtime of the
+ *                           call in nanoseconds.
+ *               - timeout: whether there has been a timeout during the call.
+ *               - attributes: a map containing all derived objects in the
+ *                             format: {tag, value}
+ *               - keep: whether the data contained herein must override any
+ *                       transport sampling through the relevant mechanism.
+ *               This structure must be freed by the caller and will contain all
+ *               specified keys when the value returned by ddwaf_run is either
+ *               DDWAF_OK or DDWAF_MATCH and will be empty otherwise.
  * @param timeout Maximum time budget in microseconds.
  *
  * @return Return code of the operation.
@@ -330,7 +321,7 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle);
  *  recommended and might be explicitly rejected in the future.
  **/
 DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
-    ddwaf_object *ephemeral_data, ddwaf_result *result,  uint64_t timeout);
+    ddwaf_object *ephemeral_data, ddwaf_object *result,  uint64_t timeout);
 
 /**
  * ddwaf_context_destroy
@@ -341,15 +332,6 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
  * @param context Context to destroy. (nonnull)
  **/
 void ddwaf_context_destroy(ddwaf_context context);
-
-/**
- * ddwaf_result_free
- *
- * Free a ddwaf_result structure.
- *
- * @param result Structure to free. (nonnull)
- **/
-void ddwaf_result_free(ddwaf_result *result);
 
 /**
  * ddwaf_builder_init
@@ -781,6 +763,19 @@ bool ddwaf_object_get_bool(const ddwaf_object *object);
  **/
 const ddwaf_object* ddwaf_object_get_index(const ddwaf_object *object, size_t index);
 
+/**
+ * ddwaf_object_find
+ *
+ * Returns the object within the given map with a key matching the provided one.
+ *
+ * @param object The container from which to extract the object.
+ * @param key A string representing the key to find.
+ * @param length Length of the key.
+ *
+ * @return The requested object or NULL if the key was not found or the
+ *         object is not a container.
+ **/
+const ddwaf_object* ddwaf_object_find(const ddwaf_object *object, const char *key, size_t length);
 
 /**
  * ddwaf_object_free

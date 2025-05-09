@@ -175,7 +175,7 @@ rules:
 
 int main()
 {
-    YAML::Node doc = YAML::Load(waf_rule.data());
+    YAML::Node doc = YAML::Load(waf_rule.data(), waf_rule.size());
 
     auto rule = doc.as<ddwaf_object>(); //= convert_yaml_to_args(doc);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -190,12 +190,13 @@ int main()
         return EXIT_FAILURE;
     }
 
-    ddwaf_object root, tmp;
+    ddwaf_object root;
+    ddwaf_object tmp;
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "arg1", ddwaf_object_string(&tmp, "string 1"));
     ddwaf_object_map_add(&root, "arg2", ddwaf_object_string(&tmp, "string 2"));
 
-    ddwaf_result ret;
+    ddwaf_object ret;
     auto code = ddwaf_run(context, &root, nullptr, &ret, LONG_TIME);
     std::cout << "Output second run: " << code << '\n';
     if (code == DDWAF_MATCH) {
@@ -203,11 +204,10 @@ int main()
         out.SetIndent(2);
         out.SetMapFormat(YAML::Block);
         out.SetSeqFormat(YAML::Block);
-        out << object_to_yaml(ret.events);
-        out << object_to_yaml(ret.actions);
+        out << object_to_yaml(ret);
     }
 
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);

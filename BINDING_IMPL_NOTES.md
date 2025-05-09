@@ -141,7 +141,7 @@ struct ctx_wrapper {
 };
 
 DDWAF_RET_CODE run_waf(
-    ctx_wrapper &wrapper, ddwaf_object *data, ddwaf_result *result, uint64_t timeout)
+    ctx_wrapper &wrapper, ddwaf_object *data, ddwaf_object *result, uint64_t timeout)
 {
     std::lock_guard<std::mutex> lock{wrapper.mutex}; // acquire exclusive lock
     if (wrapper.ctx == nullptr) { /* context already destroyed */ }

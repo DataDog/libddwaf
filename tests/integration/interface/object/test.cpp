@@ -388,4 +388,46 @@ TEST(TestUTF8, TestLongUTF8)
     EXPECT_EQ(find_string_cutoff(buffer, (uint64_t)sizeof(buffer)), DDWAF_MAX_STRING_LENGTH);
 }
 
+TEST(TestObject, FindNullObject) { EXPECT_EQ(ddwaf_object_find(nullptr, STRL("key")), nullptr); }
+
+TEST(TestObject, FindInvalidKey)
+{
+    ddwaf_object tmp;
+    ddwaf_object map;
+    ddwaf_object_map(&map);
+    ddwaf_object_map_add(&map, "key", ddwaf_object_invalid(&tmp));
+
+    EXPECT_EQ(ddwaf_object_find(&map, nullptr, 1), nullptr);
+    EXPECT_EQ(ddwaf_object_find(&map, "", 0), nullptr);
+
+    ddwaf_object_free(&map);
+}
+
+TEST(TestObject, FindNotMap)
+{
+    ddwaf_object tmp;
+    ddwaf_object array;
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_invalid(&tmp));
+
+    EXPECT_EQ(ddwaf_object_find(&array, STRL("key")), nullptr);
+
+    ddwaf_object_free(&array);
+}
+
+TEST(TestObject, FindEmptyMap)
+{
+    ddwaf_object tmp;
+    ddwaf_object map;
+    ddwaf_object_map(&map);
+    ddwaf_object_map_add(&map, "key", ddwaf_object_unsigned(&tmp, 42));
+
+    const auto *object = ddwaf_object_find(&map, STRL("key"));
+    ASSERT_NE(object, nullptr);
+    EXPECT_EQ(ddwaf_object_type(object), DDWAF_OBJ_UNSIGNED);
+    EXPECT_EQ(ddwaf_object_get_unsigned(object), 42);
+
+    ddwaf_object_free(&map);
+}
+
 } // namespace

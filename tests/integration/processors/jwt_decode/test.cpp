@@ -49,9 +49,10 @@ TEST(TestJwtDecoderIntegration, Preprocessor)
 
     ddwaf_object_map_add(&map, "server.request.headers.no_cookies", &headers);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     EXPECT_EVENTS(out, {.id = "rule1",
                            .name = "rule1",
@@ -63,9 +64,10 @@ TEST(TestJwtDecoderIntegration, Preprocessor)
                                    .path = {"header", "alg"},
                                }}}}});
 
-    EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
+    const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+    EXPECT_EQ(ddwaf_object_size(attributes), 0);
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -107,16 +109,18 @@ TEST(TestJwtDecoderIntegration, Postprocessor)
 
     ddwaf_object_map_add(&map, "server.request.headers.no_cookies", &headers);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-    EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+    const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+    EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-    EXPECT_JSON(out.derivatives,
+    EXPECT_JSON(*attributes,
         R"({"server.request.jwt":{"header":{"alg":"RS384","typ":"JWT"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022},"signature":{"available":true}}})");
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -159,9 +163,10 @@ TEST(TestJwtDecoderIntegration, Processor)
 
     ddwaf_object_map_add(&map, "server.request.headers.no_cookies", &headers);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     EXPECT_EVENTS(out, {.id = "rule1",
                            .name = "rule1",
@@ -173,12 +178,13 @@ TEST(TestJwtDecoderIntegration, Processor)
                                    .path = {"header", "alg"},
                                }}}}});
 
-    EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+    const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+    EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-    EXPECT_JSON(out.derivatives,
+    EXPECT_JSON(*attributes,
         R"({"server.request.jwt":{"header":{"alg":"RS384","typ":"JWT"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022},"signature":{"available":true}}})");
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
