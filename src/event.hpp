@@ -10,7 +10,6 @@
 
 #include "action_mapper.hpp"
 #include "condition/base.hpp"
-#include "ddwaf.h"
 #include "obfuscator.hpp"
 
 namespace ddwaf {
@@ -33,8 +32,8 @@ public:
         : obfuscator_(event_obfuscator), actions_(actions)
     {}
 
-    void serialize(const std::vector<event> &events, ddwaf_object &output_events,
-        ddwaf_object &output_actions) const;
+    void serialize(const std::vector<event> &events, borrowed_object output_events,
+        borrowed_object output_actions) const;
 
 protected:
     const ddwaf::obfuscator &obfuscator_;

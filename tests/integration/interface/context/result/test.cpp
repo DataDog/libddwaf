@@ -15,7 +15,7 @@ constexpr std::string_view base_dir = "integration/interface/context/result/";
 
 TEST(TestContextResultIntegration, ResultInvalidArgumentNullContext)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -41,7 +41,7 @@ TEST(TestContextResultIntegration, ResultInvalidArgumentNullContext)
 
 TEST(TestContextResultIntegration, ResultInvalidArgumentNoData)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -65,7 +65,7 @@ TEST(TestContextResultIntegration, ResultInvalidArgumentNoData)
 
 TEST(TestContextResultIntegration, ResultInvalidObjectInvalidPersistentDataSchema)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -95,7 +95,7 @@ TEST(TestContextResultIntegration, ResultInvalidObjectInvalidPersistentDataSchem
 
 TEST(TestContextResultIntegration, ResultInvalidObjectInvalidEphemeralDataSchema)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -125,7 +125,7 @@ TEST(TestContextResultIntegration, ResultInvalidObjectInvalidEphemeralDataSchema
 
 TEST(TestContextResultIntegration, ResultOk)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -182,7 +182,7 @@ TEST(TestContextResultIntegration, ResultOk)
 
 TEST(TestContextResultIntegration, ResultOkWithAttributes)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -244,7 +244,7 @@ TEST(TestContextResultIntegration, ResultOkWithAttributes)
 
 TEST(TestContextResultIntegration, ResultOkWithTimeout)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -301,7 +301,7 @@ TEST(TestContextResultIntegration, ResultOkWithTimeout)
 
 TEST(TestContextResultIntegration, ResultMatch)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -358,7 +358,7 @@ TEST(TestContextResultIntegration, ResultMatch)
 
 TEST(TestContextResultIntegration, ResultMatchWithTimeout)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);

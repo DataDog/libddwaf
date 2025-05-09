@@ -19,7 +19,7 @@
 #include "common/json_utils.hpp"
 #include "common/yaml_utils.hpp"
 
-#define EXPECT_STR(a, b) EXPECT_STREQ(a.c_str(), b)
+#define EXPECT_STR(a, b) EXPECT_STREQ(a.c_str(), std::string{b}.c_str())
 #define EXPECT_STRV(a, b) EXPECT_STR(std::string{a}, b)
 
 namespace ddwaf::test {
@@ -173,9 +173,7 @@ std::list<ddwaf::test::event::match> from_matches(
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define EXPECT_EVENTS(result, ...)                                                                 \
     {                                                                                              \
-        const auto *object = ddwaf_object_find(&result, STRL("events"));                           \
-        EXPECT_NE(object, nullptr);                                                                \
-        auto data = ddwaf::test::object_to_json(*object);                                          \
+        auto data = ddwaf::test::object_to_json(ddwaf::object_view{result}.find("events").ref());  \
         EXPECT_TRUE(ValidateEventSchema(data));                                                    \
         YAML::Node doc = YAML::Load(data.c_str());                                                 \
         auto events = doc.as<std::list<ddwaf::test::event>>();                                     \
@@ -196,9 +194,7 @@ std::list<ddwaf::test::event::match> from_matches(
 
 #define EXPECT_ACTIONS(result, ...)                                                                \
     {                                                                                              \
-        const auto *object = ddwaf_object_find(&result, STRL("actions"));                          \
-        EXPECT_NE(object, nullptr);                                                                \
-        auto data = ddwaf::test::object_to_json(*object);                                          \
+        auto data = ddwaf::test::object_to_json(ddwaf::object_view{result}.find("actions").ref()); \
         EXPECT_TRUE(ValidateActionsSchema(data));                                                  \
         YAML::Node doc = YAML::Load(data.c_str());                                                 \
         auto obtained = doc.as<ddwaf::test::action_map>();                                         \

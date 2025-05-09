@@ -22,22 +22,14 @@ TEST(TestEventSerializer, SerializeNothing)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
-
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
-
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
+    auto output = owned_object::make_map();
+    auto events_object = output.emplace("events", owned_object::make_array());
+    auto actions_object = output.emplace("actions", owned_object::make_map());
 
     serializer.serialize({}, events_object, actions_object);
 
     EXPECT_EVENTS(output, ); // This means no events
     EXPECT_ACTIONS(output, {});
-
-    ddwaf_object_free(&output);
 }
 
 TEST(TestEventSerializer, SerializeEmptyEvent)
@@ -45,22 +37,14 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, action_mapper_builder().build());
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
-
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
-
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
+    auto output = owned_object::make_map();
+    auto events_object = output.emplace("events", owned_object::make_array());
+    auto actions_object = output.emplace("actions", owned_object::make_map());
 
     serializer.serialize({ddwaf::event{}}, events_object, actions_object);
 
     EXPECT_EVENTS(output, {});
     EXPECT_ACTIONS(output, {});
-
-    ddwaf_object_free(&output);
 }
 
 TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
@@ -85,15 +69,9 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
-
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
-
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
+    auto output = owned_object::make_map();
+    auto events_object = output.emplace("events", owned_object::make_array());
+    auto actions_object = output.emplace("actions", owned_object::make_map());
 
     serializer.serialize({event}, events_object, actions_object);
     EXPECT_EVENTS(output, {.id = "xasd1022",
@@ -111,8 +89,6 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     EXPECT_ACTIONS(output,
         {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}},
             {"monitor_request", {}}});
-
-    ddwaf_object_free(&output);
 }
 
 TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
@@ -152,15 +128,9 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
-
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
-
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
+    auto output = owned_object::make_map();
+    auto events_object = output.emplace("events", owned_object::make_array());
+    auto actions_object = output.emplace("actions", owned_object::make_map());
 
     serializer.serialize({event}, events_object, actions_object);
 
@@ -205,8 +175,6 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     EXPECT_ACTIONS(output,
         {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}},
             {"monitor_request", {}}});
-
-    ddwaf_object_free(&output);
 }
 
 TEST(TestEventSerializer, SerializeMultipleEvents)
@@ -262,15 +230,9 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
 
     events.emplace_back(ddwaf::event{});
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
-
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
-
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
+    auto output = owned_object::make_map();
+    auto events_object = output.emplace("events", owned_object::make_array());
+    auto actions_object = output.emplace("actions", owned_object::make_map());
 
     serializer.serialize(events, events_object, actions_object);
     EXPECT_EVENTS(output,
@@ -314,8 +276,6 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     EXPECT_ACTIONS(output,
         {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}},
             {"monitor_request", {}}, {"unknown", {}}});
-
-    ddwaf_object_free(&output);
 }
 
 TEST(TestEventSerializer, SerializeEventNoActions)
@@ -339,15 +299,9 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
-
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
-
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
+    auto output = owned_object::make_map();
+    auto events_object = output.emplace("events", owned_object::make_array());
+    auto actions_object = output.emplace("actions", owned_object::make_map());
 
     serializer.serialize({event}, events_object, actions_object);
 
@@ -364,8 +318,6 @@ TEST(TestEventSerializer, SerializeEventNoActions)
                                   }}}}});
 
     EXPECT_ACTIONS(output, {});
-
-    ddwaf_object_free(&output);
 }
 
 TEST(TestEventSerializer, SerializeAllTags)
@@ -394,15 +346,9 @@ TEST(TestEventSerializer, SerializeAllTags)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
-
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
-
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
+    auto output = owned_object::make_map();
+    auto events_object = output.emplace("events", owned_object::make_array());
+    auto actions_object = output.emplace("actions", owned_object::make_map());
 
     serializer.serialize({event}, events_object, actions_object);
 
@@ -421,8 +367,6 @@ TEST(TestEventSerializer, SerializeAllTags)
                                   }}}}});
 
     EXPECT_ACTIONS(output, {{"unknown", {}}});
-
-    ddwaf_object_free(&output);
 }
 
 TEST(TestEventSerializer, NoMonitorActions)
@@ -448,15 +392,9 @@ TEST(TestEventSerializer, NoMonitorActions)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
-
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
-
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
+    auto output = owned_object::make_map();
+    auto events_object = output.emplace("events", owned_object::make_array());
+    auto actions_object = output.emplace("actions", owned_object::make_map());
 
     serializer.serialize({event}, events_object, actions_object);
 
@@ -476,8 +414,6 @@ TEST(TestEventSerializer, NoMonitorActions)
 
     // Monitor action should not be reported here
     EXPECT_ACTIONS(output, {});
-
-    ddwaf_object_free(&output);
 }
 
 TEST(TestEventSerializer, UndefinedActions)
@@ -503,15 +439,9 @@ TEST(TestEventSerializer, UndefinedActions)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
-
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
-
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
+    auto output = owned_object::make_map();
+    auto events_object = output.emplace("events", owned_object::make_array());
+    auto actions_object = output.emplace("actions", owned_object::make_map());
 
     serializer.serialize({event}, events_object, actions_object);
 
@@ -531,8 +461,6 @@ TEST(TestEventSerializer, UndefinedActions)
 
     // Monitor action should not be reported here
     EXPECT_ACTIONS(output, {});
-
-    ddwaf_object_free(&output);
 }
 
 TEST(TestEventSerializer, StackTraceAction)
@@ -558,15 +486,9 @@ TEST(TestEventSerializer, StackTraceAction)
     ddwaf::obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
-
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
-
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
+    auto output = owned_object::make_map();
+    auto events_object = output.emplace("events", owned_object::make_array());
+    auto actions_object = output.emplace("actions", owned_object::make_map());
 
     serializer.serialize({event}, events_object, actions_object);
 
@@ -588,7 +510,7 @@ TEST(TestEventSerializer, StackTraceAction)
     std::string stack_id;
 
     {
-        auto data = ddwaf::test::object_to_json(events_object);
+        auto data = ddwaf::test::object_to_json(events_object.ref());
         YAML::Node doc = YAML::Load(data.c_str());
         auto events = doc.as<std::list<ddwaf::test::event>>();
         ASSERT_EQ(events.size(), 1);
@@ -596,7 +518,7 @@ TEST(TestEventSerializer, StackTraceAction)
     }
 
     {
-        auto data = ddwaf::test::object_to_json(actions_object);
+        auto data = ddwaf::test::object_to_json(actions_object.ref());
         YAML::Node doc = YAML::Load(data.c_str());
         auto obtained = doc.as<ddwaf::test::action_map>();
         EXPECT_TRUE(obtained.contains("generate_stack"));
@@ -605,8 +527,6 @@ TEST(TestEventSerializer, StackTraceAction)
         EXPECT_TRUE(it->second.contains("stack_id"));
         EXPECT_EQ(it->second.at("stack_id"), stack_id);
     }
-
-    ddwaf_object_free(&output);
 }
 
 } // namespace

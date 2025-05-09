@@ -13,7 +13,7 @@ namespace {
 TEST(TestIsXSSIntegration, Match)
 {
     // Initialize a WAF rule
-    auto rule = yaml_to_object(
+    auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: is_xss, parameters: {inputs: [{address: arg1}]}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 

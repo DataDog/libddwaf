@@ -14,7 +14,7 @@ constexpr std::string_view base_dir = "integration/context/";
 TEST(TestContextIntegration, Basic)
 {
     // Initialize a WAF rule
-    auto rule = read_file("processor.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("processor.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -64,7 +64,7 @@ TEST(TestContextIntegration, Basic)
 TEST(TestContextIntegration, KeyPaths)
 {
     // Initialize a WAF rule
-    auto rule = read_file("processor5.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("processor5.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -155,7 +155,7 @@ TEST(TestContextIntegration, KeyPaths)
 TEST(TestContextIntegration, MissingParameter)
 {
     // Initialize a WAF rule
-    auto rule = read_file("processor.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("processor.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -190,7 +190,7 @@ TEST(TestContextIntegration, MissingParameter)
 TEST(TestContextIntegration, InvalidUTF8Input)
 {
     // Initialize a WAF rule
-    auto rule = yaml_to_object(
+    auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: values}, {address: keys}], regex: bla}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -233,7 +233,7 @@ TEST(TestContextIntegration, SingleCollectionMatch)
 {
     // NOTE: this test only works due to the order of the rules in the ruleset
     // Initialize a WAF rule
-    auto rule = read_file("processor3.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("processor3.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -288,7 +288,7 @@ TEST(TestContextIntegration, SingleCollectionMatch)
 TEST(TestContextIntegration, MultiCollectionMatches)
 {
     // Initialize a WAF rule
-    auto rule = read_file("processor4.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("processor4.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -362,7 +362,7 @@ TEST(TestContextIntegration, MultiCollectionMatches)
 
 TEST(TestContextIntegration, Timeout)
 {
-    auto rule = read_file("slow.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("slow.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -388,7 +388,7 @@ TEST(TestContextIntegration, Timeout)
 
 TEST(TestContextIntegration, ParameterOverride)
 {
-    auto rule = read_file("processor6.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("processor6.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -453,7 +453,7 @@ TEST(TestContextIntegration, ParameterOverride)
 
 TEST(TestContextIntegration, DuplicateEphemeralMatch)
 {
-    auto rule = read_file("processor3.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("processor3.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -509,7 +509,7 @@ TEST(TestContextIntegration, DuplicateEphemeralMatch)
 
 TEST(TestContextIntegration, EphemeralAndPersistentMatches)
 {
-    auto rule = read_file("processor6.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("processor6.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -608,7 +608,7 @@ TEST(TestContextIntegration, EphemeralAndPersistentMatches)
 
 TEST(TestContextIntegration, EphemeralNonPriorityAndEphemeralPriority)
 {
-    auto rule = read_file("processor7.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("processor7.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -666,7 +666,7 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndEphemeralPriority)
 
 TEST(TestContextIntegration, EphemeralPriorityAndEphemeralNonPriority)
 {
-    auto rule = read_file("processor7.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("processor7.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -724,7 +724,7 @@ TEST(TestContextIntegration, EphemeralPriorityAndEphemeralNonPriority)
 
 TEST(TestContextIntegration, EphemeralNonPriorityAndPersistentPriority)
 {
-    auto rule = read_file("processor7.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("processor7.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -781,7 +781,7 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndPersistentPriority)
 
 TEST(TestContextIntegration, ReplaceEphemeral)
 {
-    auto rule = read_file("processor7.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("processor7.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -818,7 +818,7 @@ TEST(TestContextIntegration, ReplaceEphemeral)
 
 TEST(TestContextIntegration, EphemeralPriorityAndPersistentNonPriority)
 {
-    auto rule = read_file("processor7.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("processor7.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -876,7 +876,7 @@ TEST(TestContextIntegration, EphemeralPriorityAndPersistentNonPriority)
 
 TEST(TestContextIntegration, PersistentPriorityAndEphemeralNonPriority)
 {
-    auto rule = read_file("processor7.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("processor7.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -1006,7 +1006,7 @@ TEST(TestContextIntegration, MultipleModuleSingleCollectionMatch)
 {
     // NOTE: this test only works due to the order of the rules in the ruleset
     // Initialize a WAF rule
-    auto rule = read_file("same-type-different-module.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("same-type-different-module.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -1054,7 +1054,7 @@ TEST(TestContextIntegration, MultipleModuleSingleCollectionMatch)
 TEST(TestContextIntegration, TimeoutBeyondLimit)
 {
     // Initialize a WAF rule
-    auto rule = read_file("processor.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("processor.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
