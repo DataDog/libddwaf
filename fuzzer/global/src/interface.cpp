@@ -6,6 +6,7 @@
 
 #include <cstdlib>
 #include <ddwaf.h>
+#include <iostream>
 #include <stdexcept>
 #include <utility>
 #include <yaml-cpp/yaml.h>
@@ -21,9 +22,10 @@ public:
     [[nodiscard]] const char *what() const noexcept override { return what_.c_str(); }
 
 protected:
-    const std::string what_;
+    std::string what_;
 };
 
+namespace {
 // NOLINTNEXTLINE(misc-no-recursion)
 ddwaf_object yaml_to_object(const Node &node)
 {
@@ -64,19 +66,26 @@ ddwaf_object yaml_to_object(const Node &node)
     throw parsing_error("Invalid YAML node type");
 }
 
+} // namespace
+
 template <> as_if<ddwaf_object, void>::as_if(const Node &node_) : node(node_) {}
 
 template <> ddwaf_object as_if<ddwaf_object, void>::operator()() const
 {
     return yaml_to_object(node);
 }
+
 } // namespace YAML
+
+namespace {
 
 ddwaf_object file_to_object(std::string_view filename)
 {
     YAML::Node doc = YAML::Load(read_file(filename));
     return doc.as<ddwaf_object>();
 }
+
+} // namespace
 
 ddwaf_handle init_waf()
 {
@@ -97,11 +106,11 @@ void run_waf(ddwaf_handle handle, ddwaf_object args, bool ephemeral, size_t time
 {
     ddwaf_context context = ddwaf_context_init(handle);
     if (context == nullptr) {
-        __builtin_trap();
+        ddwaf_object_free(&args);
+        return;
     }
 
     ddwaf_object res;
-    auto code = DDWAF_OK;
     if (ephemeral) {
         ddwaf_run(context, nullptr, &args, &res, timeLeftInUs);
     } else {
@@ -109,10 +118,6 @@ void run_waf(ddwaf_handle handle, ddwaf_object args, bool ephemeral, size_t time
     }
 
     // TODO split input in several ddwaf_object, and call ddwaf_run on the same context
-
-    if (code == DDWAF_ERR_INTERNAL) {
-        __builtin_trap();
-    }
 
     ddwaf_object_free(&res);
     ddwaf_context_destroy(context);

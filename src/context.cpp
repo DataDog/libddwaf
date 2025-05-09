@@ -137,8 +137,9 @@ std::pair<DDWAF_RET_CODE, owned_object> context::run(
 
     // Replacing the object would remove their keys, this won't be an issue
     // once keys and values have been split.
-    result.duration.ref().uintValue = deadline.elapsed().count();
-    result.timeout.ref().boolean = deadline.expired_before();
+    // TODO: Add helpers to fix this
+    result.duration.ref().via.u64 = deadline.elapsed().count();
+    result.timeout.ref().via.b8 = deadline.expired_before();
 
     return {events.empty() ? DDWAF_OK : DDWAF_MATCH, std::move(result_object)};
 }

@@ -87,29 +87,52 @@ typedef struct _ddwaf_builder* ddwaf_builder;
 #endif
 
 typedef struct _ddwaf_object ddwaf_object;
+typedef struct _ddwaf_object_kv ddwaf_object_kv;
 typedef struct _ddwaf_config ddwaf_config;
+
+#define DDWAF_OBJ_SSTR_SIZE 11
+
 /**
  * @struct ddwaf_object
  *
  * Generic object used to pass data and rules to the WAF.
  **/
-struct _ddwaf_object
-{
-    const char* parameterName;
-    uint64_t parameterNameLength;
-    // uintValue should be at least as wide as the widest type on the platform.
-    union
-    {
-        const char* stringValue;
-        uint64_t uintValue;
-        int64_t intValue;
-        ddwaf_object* array;
-        bool boolean;
+
+#ifdef _MSC_VER
+#pragma pack(push,1)
+struct _ddwaf_object {
+    union {
+#else
+struct __attribute__((packed)) _ddwaf_object {
+    union __attribute__((packed)) {
+#endif
+        bool b8;
+        uint64_t u64;
+        int64_t i64;
         double f64;
-    };
-    uint64_t nbEntries;
-    DDWAF_OBJ_TYPE type;
+        ddwaf_object_kv *map;
+        ddwaf_object *array;
+        char *str;
+        char sstr[DDWAF_OBJ_SSTR_SIZE];
+        const char *cstr;
+        ddwaf_object *ref;
+    } via;
+    uint8_t type;
+    uint16_t size;
+    uint16_t capacity;
 };
+
+#ifdef _MSC_VER
+struct _ddwaf_object_kv {
+#else
+struct __attribute__((packed)) _ddwaf_object_kv {
+#endif
+    ddwaf_object key;
+    ddwaf_object val;
+};
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 
 /**
  * @typedef ddwaf_object_free_fn
@@ -665,19 +688,6 @@ size_t ddwaf_object_size(const ddwaf_object *object);
  * @return The string length or 0 if the object is not a string.
  **/
 size_t ddwaf_object_length(const ddwaf_object *object);
-
-/**
- * ddwaf_object_get_key
- *
- * Returns the key contained within the object.
- *
- * @param object The object from which to get the key.
- * @param length Output parameter on which to return the length of the key,
- *               this parameter is optional / nullable.
- *
- * @return The key of the object or NULL if the object doesn't contain a key.
- **/
-const char* ddwaf_object_get_key(const ddwaf_object *object, size_t *length);
 
 /**
  * ddwaf_object_get_string
