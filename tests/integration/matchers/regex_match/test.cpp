@@ -31,11 +31,12 @@ TEST(TestRegexMatchIntegration, CaseSensitiveMatch)
         ddwaf_object_map_add(
             &param, "arg1", ddwaf_object_string(&tmp, "<script>alert(1);</script>"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
 
         auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
-        EXPECT_FALSE(ret.timeout);
+        const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -46,7 +47,7 @@ TEST(TestRegexMatchIntegration, CaseSensitiveMatch)
                                        .value = "<script>alert(1);</script>",
                                        .address = "arg1",
                                    }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
 
         ddwaf_context_destroy(context);
     }
@@ -61,12 +62,13 @@ TEST(TestRegexMatchIntegration, CaseSensitiveMatch)
         ddwaf_object_map_add(
             &param, "arg1", ddwaf_object_string(&tmp, "<script>AlErT(1);</script>"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
 
         auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_OK);
-        EXPECT_FALSE(ret.timeout);
-        ddwaf_result_free(&ret);
+        const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
+        ddwaf_object_free(&ret);
 
         ddwaf_context_destroy(context);
     }
@@ -94,11 +96,12 @@ TEST(TestRegexMatchIntegration, CaseInsensitiveMatch)
         ddwaf_object_map_add(
             &param, "arg1", ddwaf_object_string(&tmp, "<script>alert(1);</script>"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
 
         auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
-        EXPECT_FALSE(ret.timeout);
+        const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -109,7 +112,7 @@ TEST(TestRegexMatchIntegration, CaseInsensitiveMatch)
                                        .value = "<script>alert(1);</script>",
                                        .address = "arg1",
                                    }}}}});
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
 
         ddwaf_context_destroy(context);
     }
@@ -124,7 +127,7 @@ TEST(TestRegexMatchIntegration, CaseInsensitiveMatch)
         ddwaf_object_map_add(
             &param, "arg1", ddwaf_object_string(&tmp, "<script>AlErT(1);</script>"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
 
         auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
@@ -139,8 +142,9 @@ TEST(TestRegexMatchIntegration, CaseInsensitiveMatch)
                                        .address = "arg1",
                                    }}}}});
 
-        EXPECT_FALSE(ret.timeout);
-        ddwaf_result_free(&ret);
+        const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
+        ddwaf_object_free(&ret);
 
         ddwaf_context_destroy(context);
     }
@@ -167,11 +171,11 @@ TEST(TestRegexMatchIntegration, MinLength)
         ddwaf_object_map(&param);
         ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "alert("));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
 
         auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_OK);
-        ddwaf_result_free(&ret);
+        ddwaf_object_free(&ret);
 
         ddwaf_context_destroy(context);
     }
@@ -186,7 +190,7 @@ TEST(TestRegexMatchIntegration, MinLength)
         ddwaf_object_map_add(
             &param, "arg1", ddwaf_object_string(&tmp, "<script>AlErT(1);</script>"));
 
-        ddwaf_result ret;
+        ddwaf_object ret;
 
         auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
@@ -201,8 +205,9 @@ TEST(TestRegexMatchIntegration, MinLength)
                                        .address = "arg1",
                                    }}}}});
 
-        EXPECT_FALSE(ret.timeout);
-        ddwaf_result_free(&ret);
+        const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
+        ddwaf_object_free(&ret);
 
         ddwaf_context_destroy(context);
     }

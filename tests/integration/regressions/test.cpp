@@ -28,10 +28,11 @@ TEST(TestRegressionsIntegration, DuplicateFlowMatches)
     ddwaf_object_map_add(&parameter, "param1", ddwaf_object_string(&tmp, "Sqreen"));
     ddwaf_object_map_add(&parameter, "param2", ddwaf_object_string(&tmp, "Duplicate"));
 
-    ddwaf_result ret;
+    ddwaf_object ret;
     EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
 
-    EXPECT_FALSE(ret.timeout);
+    const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(ret, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "flow1"}, {"category", "category2"}},
@@ -50,7 +51,7 @@ TEST(TestRegressionsIntegration, DuplicateFlowMatches)
                                        .address = "param2",
                                    }}}}});
 
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }

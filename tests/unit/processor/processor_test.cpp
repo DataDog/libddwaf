@@ -60,13 +60,13 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
 
     processor_cache cache;
     timer deadline{2s};
-    auto derived = owned_object::make_map();
+    auto attributes = owned_object::make_map();
 
-    EXPECT_EQ(derived.size(), 0);
-    proc.eval(store, derived, cache, deadline);
+    EXPECT_EQ(attributes.size(), 0);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
 
-    EXPECT_EQ(derived.size(), 1);
-    const auto *obtained = derived.at(0).ptr();
+    EXPECT_EQ(attributes.size(), 1);
+    const auto *obtained = attributes.at(0).ptr();
     EXPECT_STREQ(obtained->parameterName, "output_address");
     EXPECT_STREQ(obtained->stringValue, "output_string");
 }
@@ -99,20 +99,20 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
 
     processor_cache cache;
     timer deadline{2s};
-    auto derived = owned_object::make_map();
+    auto attributes = owned_object::make_map();
 
-    EXPECT_EQ(derived.size(), 0);
-    proc.eval(store, derived, cache, deadline);
+    EXPECT_EQ(attributes.size(), 0);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
 
-    EXPECT_EQ(derived.size(), 2);
+    EXPECT_EQ(attributes.size(), 2);
     {
-        const auto *obtained = derived.at(0).ptr();
+        const auto *obtained = attributes.at(0).ptr();
         EXPECT_STREQ(obtained->parameterName, "output_address.first");
         EXPECT_STREQ(obtained->stringValue, "first_output_string");
     }
 
     {
-        const auto *obtained = derived.at(1).ptr();
+        const auto *obtained = attributes.at(1).ptr();
         EXPECT_STREQ(obtained->parameterName, "output_address.second");
         EXPECT_STREQ(obtained->stringValue, "second_output_string");
     }
@@ -147,13 +147,13 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
 
     processor_cache cache;
     timer deadline{2s};
-    auto derived = owned_object::make_map();
+    auto attributes = owned_object::make_map();
 
-    EXPECT_EQ(derived.size(), 0);
-    proc.eval(store, derived, cache, deadline);
+    EXPECT_EQ(attributes.size(), 0);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
 
-    EXPECT_EQ(derived.size(), 1);
-    const auto *obtained = derived.at(0).ptr();
+    EXPECT_EQ(attributes.size(), 1);
+    const auto *obtained = attributes.at(0).ptr();
     EXPECT_STREQ(obtained->parameterName, "output_address");
     EXPECT_STREQ(obtained->stringValue, "output_string");
 }
@@ -186,11 +186,11 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
 
     processor_cache cache;
     timer deadline{2s};
-    auto derived = owned_object::make_map();
+    auto attributes = owned_object::make_map();
 
-    EXPECT_EQ(derived.size(), 0);
-    proc.eval(store, derived, cache, deadline);
-    EXPECT_EQ(derived.size(), 0);
+    EXPECT_EQ(attributes.size(), 0);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
+    EXPECT_EQ(attributes.size(), 0);
 
     input_map = owned_object::make_map({
         {"input_address", "input_string"},
@@ -198,11 +198,11 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
 
     store.insert(std::move(input_map));
 
-    EXPECT_EQ(derived.size(), 0);
-    proc.eval(store, derived, cache, deadline);
-    EXPECT_EQ(derived.size(), 1);
+    EXPECT_EQ(attributes.size(), 0);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
+    EXPECT_EQ(attributes.size(), 1);
 
-    const auto *obtained = derived.at(0).ptr();
+    const auto *obtained = attributes.at(0).ptr();
     EXPECT_STREQ(obtained->parameterName, "output_address");
     EXPECT_STREQ(obtained->stringValue, "output_string");
 }
@@ -232,12 +232,12 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
 
     processor_cache cache;
     timer deadline{2s};
-    auto derived = owned_object::make_map();
+    auto attributes = owned_object::make_map();
 
-    EXPECT_EQ(derived.size(), 0);
-    proc.eval(store, derived, cache, deadline);
+    EXPECT_EQ(attributes.size(), 0);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
 
-    EXPECT_EQ(derived.size(), 0);
+    EXPECT_EQ(attributes.size(), 0);
 }
 
 TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
@@ -265,14 +265,14 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
     processor_cache cache;
     timer deadline{2s};
 
-    owned_object derived;
+    owned_object attributes;
 
     {
         auto obtained = store.get_target("output_address").first;
         EXPECT_FALSE(obtained.has_value());
     }
 
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
 
     {
         auto obtained = store.get_target("output_address").first;
@@ -311,11 +311,11 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
 
     timer deadline{2s};
 
-    owned_object derived;
+    owned_object attributes;
 
     EXPECT_FALSE(store.get_target("output_address").first.has_value());
 
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
 
     {
         auto obtained = store.get_target("output_address").first;
@@ -350,10 +350,10 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
     processor_cache cache;
     timer deadline{2s};
 
-    owned_object derived;
+    owned_object attributes;
 
     EXPECT_FALSE(store.get_target("output_address").first.has_value());
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
 
     EXPECT_FALSE(store.get_target("output_address").first.has_value());
 }
@@ -386,12 +386,12 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
 
     processor_cache cache;
     timer deadline{2s};
-    owned_object derived;
+    owned_object attributes;
 
     EXPECT_FALSE(store.get_target("output_address.first").first.has_value());
     EXPECT_FALSE(store.get_target("output_address.second").first.has_value());
 
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
 
     {
         auto obtained = store.get_target("output_address.first").first;
@@ -435,15 +435,15 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     processor_cache cache;
     timer deadline{2s};
 
-    auto derived = owned_object::make_map();
+    auto attributes = owned_object::make_map();
 
     {
         auto obtained = store.get_target("output_address").first;
         EXPECT_FALSE(obtained.has_value());
-        EXPECT_EQ(derived.size(), 0);
+        EXPECT_EQ(attributes.size(), 0);
     }
 
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
 
     {
         auto obtained = store.get_target("output_address").first;
@@ -452,8 +452,8 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     }
 
     {
-        EXPECT_EQ(derived.size(), 1);
-        const auto *obtained = derived.at(0).ptr();
+        EXPECT_EQ(attributes.size(), 1);
+        const auto *obtained = attributes.at(0).ptr();
         EXPECT_STREQ(obtained->parameterName, "output_address");
         EXPECT_STREQ(obtained->stringValue, "output_string");
     }
@@ -478,10 +478,10 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
 
     processor_cache cache;
     timer deadline{2s};
-    auto derived = owned_object::make_map();
+    auto attributes = owned_object::make_map();
 
-    EXPECT_EQ(derived.size(), 0);
-    proc.eval(store, derived, cache, deadline);
+    EXPECT_EQ(attributes.size(), 0);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
 }
 
 TEST(TestProcessor, OutputAlreadyGenerated)
@@ -504,11 +504,11 @@ TEST(TestProcessor, OutputAlreadyGenerated)
 
     processor_cache cache;
     timer deadline{2s};
-    auto derived = owned_object::make_map();
+    auto attributes = owned_object::make_map();
 
-    EXPECT_EQ(derived.size(), 0);
-    proc.eval(store, derived, cache, deadline);
-    proc.eval(store, derived, cache, deadline);
+    EXPECT_EQ(attributes.size(), 0);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
 }
 
 TEST(TestProcessor, EvalAlreadyAvailableInStore)
@@ -530,12 +530,12 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
 
     processor_cache cache;
     timer deadline{2s};
-    owned_object derived;
+    owned_object attributes;
 
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
 }
 
-TEST(TestProcessor, OutputWithoutDerivedMap)
+TEST(TestProcessor, OutputWithoutattributesMap)
 {
     auto input_map = owned_object::make_map({
         {"input_address", "input_string"},
@@ -555,12 +555,12 @@ TEST(TestProcessor, OutputWithoutDerivedMap)
 
     processor_cache cache;
     timer deadline{2s};
-    owned_object derived;
+    owned_object attributes;
 
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
 }
 
-TEST(TestProcessor, OutputEvalWithoutDerivedMap)
+TEST(TestProcessor, OutputEvalWithoutattributesMap)
 {
     owned_object output = owned_object::make_string("output_string");
 
@@ -585,14 +585,14 @@ TEST(TestProcessor, OutputEvalWithoutDerivedMap)
     processor_cache cache;
     timer deadline{2s};
 
-    owned_object derived;
+    owned_object attributes;
 
     {
         auto obtained = store.get_target("output_address").first;
         EXPECT_FALSE(obtained.has_value());
     }
 
-    proc.eval(store, derived, cache, deadline);
+    proc.eval(store, borrowed_object{attributes}, cache, deadline);
 
     {
         auto obtained = store.get_target("output_address").first;
@@ -616,9 +616,10 @@ TEST(TestProcessor, Timeout)
 
     processor_cache cache;
     timer deadline{0s};
-    owned_object derived;
+    owned_object attributes;
 
-    EXPECT_THROW(proc.eval(store, derived, cache, deadline), ddwaf::timeout_exception);
+    EXPECT_THROW(
+        proc.eval(store, borrowed_object{attributes}, cache, deadline), ddwaf::timeout_exception);
 }
 
 } // namespace

@@ -15,7 +15,6 @@
 #include <exception>
 #include <limits>
 #include <memory>
-#include <optional>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -183,24 +182,16 @@ ddwaf_context ddwaf_context_init(ddwaf::waf *handle)
     return nullptr;
 }
 
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
-    ddwaf_object *ephemeral_data, ddwaf_result *result, uint64_t timeout)
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    ddwaf_object *ephemeral_data, ddwaf_object *result, uint64_t timeout)
 {
-    if (result != nullptr) {
-        *result = DDWAF_RESULT_INITIALISER;
-    }
-
     if (context == nullptr || (persistent_data == nullptr && ephemeral_data == nullptr)) {
         DDWAF_WARN("Illegal WAF call: context or data was null");
         return DDWAF_ERR_INVALID_ARGUMENT;
     }
-    try {
-        optional_ref<ddwaf_result> res{std::nullopt};
-        if (result != nullptr) {
-            res = *result;
-        }
 
+    try {
         auto free_fn = context->get_free_fn();
 
         owned_object persistent;
@@ -218,7 +209,11 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
         constexpr uint64_t max_timeout_ms = std::chrono::nanoseconds::max().count() / 1000;
         timeout = std::min(timeout, max_timeout_ms);
 
-        return context->run(std::move(persistent), std::move(ephemeral), res, timeout);
+        auto [code, res] = context->run(std::move(persistent), std::move(ephemeral), timeout);
+        if (result != nullptr) {
+            *result = res.move();
+        }
+        return code;
     } catch (const std::exception &e) {
         // catch-all to avoid std::terminate
         DDWAF_ERROR("{}", e.what());
@@ -252,16 +247,6 @@ bool ddwaf_set_log_cb(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level)
     ddwaf::logger::init(cb, min_level);
     DDWAF_INFO("Sending log messages to binding, min level {}", log_level_to_str(min_level));
     return true;
-}
-
-void ddwaf_result_free(ddwaf_result *result)
-{
-    // NOLINTNEXTLINE
-    ddwaf_object_free(&result->events);
-    ddwaf_object_free(&result->actions);
-    ddwaf_object_free(&result->derivatives);
-
-    *result = DDWAF_RESULT_INITIALISER;
 }
 
 ddwaf_builder ddwaf_builder_init(const ddwaf_config *config)
@@ -709,5 +694,15 @@ const ddwaf_object *ddwaf_object_get_index(const ddwaf_object *object, size_t in
     }
 
     return view.at_value(index).ptr();
+}
+
+const ddwaf_object *ddwaf_object_find(const ddwaf_object *object, const char *key, size_t length)
+{
+    const object_view view{object};
+    if (!view.has_value() || !view.is_map() || view.empty() || key == nullptr || length == 0) {
+        return nullptr;
+    }
+
+    return view.find(std::string_view{key, length}).ptr();
 }
 }

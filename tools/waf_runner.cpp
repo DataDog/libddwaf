@@ -126,44 +126,49 @@ int main(int argc, char *argv[])
             }
         }
 
-        ddwaf_result ret;
+        ddwaf_object ret;
         auto code =
             ddwaf_run(context, &persistent, &ephemeral, &ret, std::numeric_limits<uint64_t>::max());
-        if (code == DDWAF_MATCH && ddwaf_object_size(&ret.events) > 0) {
+
+        const auto *events = ddwaf_object_find(&ret, "events", sizeof("events") - 1);
+        if (code == DDWAF_MATCH && ddwaf_object_size(events) > 0) {
             std::stringstream ss;
             YAML::Emitter out(ss);
             out.SetIndent(2);
             out.SetMapFormat(YAML::Block);
             out.SetSeqFormat(YAML::Block);
-            out << object_to_yaml(ret.events);
+            out << object_to_yaml(*events);
 
             std::cout << "Events:\n" << ss.str() << "\n\n";
         }
 
-        if (code == DDWAF_MATCH && ddwaf_object_size(&ret.actions) > 0) {
+        const auto *actions = ddwaf_object_find(&ret, "actions", sizeof("actions") - 1);
+        if (code == DDWAF_MATCH && ddwaf_object_size(actions) > 0) {
             std::stringstream ss;
             YAML::Emitter out(ss);
             out.SetIndent(2);
             out.SetMapFormat(YAML::Block);
             out.SetSeqFormat(YAML::Block);
-            out << object_to_yaml(ret.actions);
+            out << object_to_yaml(*actions);
 
             std::cout << "Actions:\n" << ss.str() << "\n\n";
         }
 
-        if (ddwaf_object_size(&ret.derivatives) > 0) {
+        const auto *attributes = ddwaf_object_find(&ret, "attributes", sizeof("attributes") - 1);
+        if (ddwaf_object_size(attributes) > 0) {
             std::stringstream ss;
             YAML::Emitter out(ss);
             out.SetIndent(2);
             out.SetMapFormat(YAML::Block);
             out.SetSeqFormat(YAML::Block);
-            out << object_to_yaml(ret.derivatives);
+            out << object_to_yaml(*attributes);
 
-            std::cout << "Derivatives:\n" << ss.str() << "\n\n";
+            std::cout << "Attributes:\n" << ss.str() << "\n\n";
         }
 
-        std::cout << "Total time: " << ret.total_runtime << '\n';
-        ddwaf_result_free(&ret);
+        const auto *duration = ddwaf_object_find(&ret, "duration", sizeof("duration") - 1);
+        std::cout << "Total time: " << ddwaf_object_get_unsigned(duration) << '\n';
+        ddwaf_object_free(&ret);
     }
 
     ddwaf_context_destroy(context);

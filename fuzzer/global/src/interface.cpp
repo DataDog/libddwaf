@@ -100,7 +100,7 @@ void run_waf(ddwaf_handle handle, ddwaf_object args, bool ephemeral, size_t time
         __builtin_trap();
     }
 
-    ddwaf_result res;
+    ddwaf_object res;
     auto code = DDWAF_OK;
     if (ephemeral) {
         ddwaf_run(context, nullptr, &args, &res, timeLeftInUs);
@@ -114,6 +114,6 @@ void run_waf(ddwaf_handle handle, ddwaf_object args, bool ephemeral, size_t time
         __builtin_trap();
     }
 
-    ddwaf_result_free(&res);
+    ddwaf_object_free(&res);
     ddwaf_context_destroy(context);
 }

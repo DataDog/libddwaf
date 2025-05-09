@@ -120,7 +120,7 @@ int main()
     ddwaf_object_map_add(&root, "arg1", ddwaf_object_string(&tmp, "string 1"));
     ddwaf_object_map_add(&root, "arg2", ddwaf_object_string(&tmp, "string 2"));
 
-    ddwaf_result ret;
+    ddwaf_object ret;
     auto code = ddwaf_run(context, &root, nullptr, &ret, 1000000 /* microseconds */);
     std::cout << "Output second run: " << code << '\n';
     if (code == DDWAF_MATCH) {
@@ -128,11 +128,10 @@ int main()
         out.SetIndent(2);
         out.SetMapFormat(YAML::Block);
         out.SetSeqFormat(YAML::Block);
-        out << object_to_yaml(ret.events);
-        out << object_to_yaml(ret.actions);
+        out << object_to_yaml(ret);
     }
 
-    ddwaf_result_free(&ret);
+    ddwaf_object_free(&ret);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);

@@ -96,19 +96,21 @@ TEST(TestFingerprintIntegration, Postprocessor)
     ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-    EXPECT_EQ(ddwaf_object_size(&out.derivatives), 4);
+    const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+    EXPECT_EQ(ddwaf_object_size(attributes), 4);
 
-    auto derivatives = test::object_to_map(out.derivatives);
+    auto derivatives = test::object_to_map(*attributes);
     EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3-2c70e12b-2c70e12b");
     EXPECT_STRV(derivatives["_dd.appsec.fp.http.header"], "hdr-1111111111-a441b15f-0-");
     EXPECT_STRV(derivatives["_dd.appsec.fp.http.network"], "net-1-1111111111");
     EXPECT_STRV(derivatives["_dd.appsec.fp.session"], "ssn-8c6976e5-df6143bc-60ba1602-269500d3");
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -177,18 +179,20 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
         ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 3);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 3);
 
-        auto derivatives = test::object_to_map(out.derivatives);
+        auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3--");
         EXPECT_STRV(derivatives["_dd.appsec.fp.http.header"], "hdr-1111111111-a441b15f-0-");
         EXPECT_STRV(derivatives["_dd.appsec.fp.http.network"], "net-1-1111111111");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     {
@@ -200,16 +204,18 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         ddwaf_object_map_add(&body, "key", ddwaf_object_invalid(&tmp));
         ddwaf_object_map_add(&map, "server.request.body", &body);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto derivatives = test::object_to_map(out.derivatives);
+        auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3--2c70e12b");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     {
@@ -221,17 +227,19 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
         ddwaf_object_map_add(&map, "server.request.query", &query);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto derivatives = test::object_to_map(out.derivatives);
+        auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(
             derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3-2c70e12b-2c70e12b");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     {
@@ -251,16 +259,18 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
             &cookies, "last_visit", ddwaf_object_string(&tmp, "2024-07-16T12:00:00Z"));
         ddwaf_object_map_add(&map, "server.request.cookies", &cookies);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto derivatives = test::object_to_map(out.derivatives);
+        auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(derivatives["_dd.appsec.fp.session"], "ssn--df6143bc-60ba1602-");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     {
@@ -270,16 +280,18 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
 
         ddwaf_object_map_add(&map, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto derivatives = test::object_to_map(out.derivatives);
+        auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(derivatives["_dd.appsec.fp.session"], "ssn-8c6976e5-df6143bc-60ba1602-");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     {
@@ -288,17 +300,19 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         ddwaf_object map = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&map, "usr.session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto derivatives = test::object_to_map(out.derivatives);
+        auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(
             derivatives["_dd.appsec.fp.session"], "ssn-8c6976e5-df6143bc-60ba1602-269500d3");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     ddwaf_context_destroy(context);
@@ -394,9 +408,10 @@ TEST(TestFingerprintIntegration, Preprocessor)
     ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     EXPECT_EVENTS(out,
         {.id = "rule1",
@@ -444,9 +459,10 @@ TEST(TestFingerprintIntegration, Preprocessor)
                     .path = {},
                 }}}}}, );
 
-    EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
+    const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+    EXPECT_EQ(ddwaf_object_size(attributes), 0);
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -519,9 +535,10 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
         ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
         ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         EXPECT_EVENTS(out,
             {.id = "rule2",
@@ -547,8 +564,9 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
                         .path = {},
                     }}}}}, );
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
-        ddwaf_result_free(&out);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        ddwaf_object_free(&out);
     }
 
     {
@@ -560,13 +578,15 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
         ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
         ddwaf_object_map_add(&map, "server.request.query", &query);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 0);
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     {
@@ -578,9 +598,10 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
         ddwaf_object_map_add(&body, "key", ddwaf_object_invalid(&tmp));
         ddwaf_object_map_add(&map, "server.request.body", &body);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         EXPECT_EVENTS(out,
             {.id = "rule1",
@@ -595,8 +616,9 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
                         .path = {},
                     }}}}}, );
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
-        ddwaf_result_free(&out);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        ddwaf_object_free(&out);
     }
 
     {
@@ -617,12 +639,17 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
 
         ddwaf_object_map_add(&map, "server.request.cookies", &cookies);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
-        EXPECT_EQ(ddwaf_object_size(&out.events), 0);
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
-        ddwaf_result_free(&out);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
+
+        const auto *events = ddwaf_object_find(&out, STRL("events"));
+        EXPECT_EQ(ddwaf_object_size(events), 0);
+
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        ddwaf_object_free(&out);
     }
 
     {
@@ -633,9 +660,10 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
         ddwaf_object_map_add(&map, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ddwaf_object_map_add(&map, "usr.session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         EXPECT_EVENTS(out,
             {.id = "rule4",
@@ -650,8 +678,9 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
                         .path = {},
                     }}}}}, );
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 0);
-        ddwaf_result_free(&out);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        ddwaf_object_free(&out);
     }
 
     ddwaf_context_destroy(context);
@@ -748,9 +777,10 @@ TEST(TestFingerprintIntegration, Processor)
     ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
-    ddwaf_result out;
+    ddwaf_object out;
     ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    EXPECT_FALSE(out.timeout);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     EXPECT_EVENTS(out,
         {.id = "rule1",
@@ -798,15 +828,16 @@ TEST(TestFingerprintIntegration, Processor)
                     .path = {},
                 }}}}}, );
 
-    EXPECT_EQ(ddwaf_object_size(&out.derivatives), 4);
+    const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+    EXPECT_EQ(ddwaf_object_size(attributes), 4);
 
-    auto derivatives = test::object_to_map(out.derivatives);
+    auto derivatives = test::object_to_map(*attributes);
     EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3-2c70e12b-2c70e12b");
     EXPECT_STRV(derivatives["_dd.appsec.fp.http.header"], "hdr-1111111111-a441b15f-0-");
     EXPECT_STRV(derivatives["_dd.appsec.fp.http.network"], "net-1-1111111111");
     EXPECT_STRV(derivatives["_dd.appsec.fp.session"], "ssn-8c6976e5-df6143bc-60ba1602-269500d3");
 
-    ddwaf_result_free(&out);
+    ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -880,9 +911,10 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
         ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
         ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         EXPECT_EVENTS(out,
             {.id = "rule2",
@@ -908,14 +940,15 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
                         .path = {},
                     }}}}}, );
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 3);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 3);
 
-        auto derivatives = test::object_to_map(out.derivatives);
+        auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3--");
         EXPECT_STRV(derivatives["_dd.appsec.fp.http.header"], "hdr-1111111111-a441b15f-0-");
         EXPECT_STRV(derivatives["_dd.appsec.fp.http.network"], "net-1-1111111111");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     {
@@ -927,16 +960,18 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
         ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
         ddwaf_object_map_add(&map, "server.request.query", &query);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto derivatives = test::object_to_map(out.derivatives);
+        auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3-2c70e12b-");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     {
@@ -948,9 +983,10 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
         ddwaf_object_map_add(&body, "key", ddwaf_object_invalid(&tmp));
         ddwaf_object_map_add(&map, "server.request.body", &body);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         EXPECT_EVENTS(out,
             {.id = "rule1",
@@ -965,13 +1001,14 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
                         .path = {},
                     }}}}}, );
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto derivatives = test::object_to_map(out.derivatives);
+        auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(
             derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3-2c70e12b-2c70e12b");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     {
@@ -992,16 +1029,21 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
 
         ddwaf_object_map_add(&map, "server.request.cookies", &cookies);
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
-        EXPECT_FALSE(out.timeout);
-        EXPECT_EQ(ddwaf_object_size(&out.events), 0);
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        auto derivatives = test::object_to_map(out.derivatives);
+        const auto *events = ddwaf_object_find(&out, STRL("events"));
+        EXPECT_EQ(ddwaf_object_size(events), 0);
+
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+
+        auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(derivatives["_dd.appsec.fp.session"], "ssn--df6143bc-60ba1602-");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     {
@@ -1011,9 +1053,10 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
         ddwaf_object_map_add(&map, "usr.id", ddwaf_object_string(&tmp, "admin"));
         ddwaf_object_map_add(&map, "usr.session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
 
-        ddwaf_result out;
+        ddwaf_object out;
         ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-        EXPECT_FALSE(out.timeout);
+        const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         EXPECT_EVENTS(out,
             {.id = "rule4",
@@ -1028,13 +1071,14 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
                         .path = {},
                     }}}}}, );
 
-        EXPECT_EQ(ddwaf_object_size(&out.derivatives), 1);
+        const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+        EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        auto derivatives = test::object_to_map(out.derivatives);
+        auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(
             derivatives["_dd.appsec.fp.session"], "ssn-8c6976e5-df6143bc-60ba1602-269500d3");
 
-        ddwaf_result_free(&out);
+        ddwaf_object_free(&out);
     }
 
     ddwaf_context_destroy(context);

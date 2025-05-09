@@ -65,7 +65,8 @@ TEST(TestContext, MatchTimeout)
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
     ctx.insert(std::move(root));
 
-    EXPECT_THROW(ctx.eval_rules({}, deadline), ddwaf::timeout_exception);
+    std::vector<ddwaf::event> events;
+    EXPECT_THROW(ctx.eval_rules({}, events, deadline), ddwaf::timeout_exception);
 }
 
 TEST(TestContext, NoMatch)
@@ -87,7 +88,8 @@ TEST(TestContext, NoMatch)
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.2"}});
     ctx.insert(std::move(root));
 
-    auto events = ctx.eval_rules({}, deadline);
+    std::vector<ddwaf::event> events;
+    ctx.eval_rules({}, events, deadline);
     EXPECT_EQ(events.size(), 0);
 }
 
@@ -110,7 +112,8 @@ TEST(TestContext, Match)
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
     ctx.insert(std::move(root));
 
-    auto events = ctx.eval_rules({}, deadline);
+    std::vector<ddwaf::event> events;
+    ctx.eval_rules({}, events, deadline);
     EXPECT_EQ(events.size(), 1);
 }
 
@@ -149,7 +152,8 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
     ctx.insert(std::move(root));
 
-    auto events = ctx.eval_rules({}, deadline);
+    std::vector<ddwaf::event> events;
+    ctx.eval_rules({}, events, deadline);
     EXPECT_EQ(events.size(), 1);
 
     auto &event = events[0];
@@ -211,7 +215,8 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
         ctx.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        auto events = ctx.eval_rules({}, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules({}, events, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto event = events[0];
@@ -228,7 +233,8 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
         ctx.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        auto events = ctx.eval_rules({}, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules({}, events, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto event = events[0];
@@ -275,7 +281,8 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
-        auto events = ctx.eval_rules({}, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules({}, events, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
@@ -300,7 +307,8 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         auto root = owned_object::make_map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
-        auto events = ctx.eval_rules({}, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules({}, events, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 }
@@ -343,7 +351,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
-        auto events = ctx.eval_rules({}, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules({}, events, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
@@ -370,7 +379,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         auto root = owned_object::make_map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
-        auto events = ctx.eval_rules({}, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules({}, events, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
@@ -432,7 +442,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
-        auto events = ctx.eval_rules({}, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules({}, events, deadline);
         EXPECT_EQ(events.size(), 1);
 
         auto &event = events[0];
@@ -459,7 +470,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         auto root = owned_object::make_map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
-        auto events = ctx.eval_rules({}, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules({}, events, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 }
@@ -500,7 +512,8 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
     ctx.insert(std::move(root));
 
-    auto events = ctx.eval_rules({}, deadline);
+    std::vector<ddwaf::event> events;
+    ctx.eval_rules({}, events, deadline);
     EXPECT_EQ(events.size(), 2);
 }
 
@@ -543,7 +556,8 @@ TEST(TestContext, MatchPriorityCollectionsSingleRun)
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
     ctx.insert(std::move(root));
 
-    auto events = ctx.eval_rules({}, deadline);
+    std::vector<ddwaf::event> events;
+    ctx.eval_rules({}, events, deadline);
     EXPECT_EQ(events.size(), 1);
 }
 
@@ -584,7 +598,8 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
         auto root = owned_object::make_map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
-        auto events = ctx.eval_rules({}, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules({}, events, deadline);
         EXPECT_EQ(events.size(), 1);
     }
 
@@ -592,7 +607,8 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
-        auto events = ctx.eval_rules({}, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules({}, events, deadline);
         EXPECT_EQ(events.size(), 1);
     }
 }
@@ -637,7 +653,8 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
         auto root = owned_object::make_map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
-        auto events = ctx.eval_rules({}, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules({}, events, deadline);
         EXPECT_EQ(events.size(), 1);
     }
 
@@ -645,7 +662,8 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
-        auto events = ctx.eval_rules({}, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules({}, events, deadline);
         EXPECT_EQ(events.size(), 1);
     }
 }
@@ -691,7 +709,8 @@ TEST(TestContext, RuleFilterWithCondition)
     EXPECT_EQ(rules_to_exclude.size(), 1);
     EXPECT_TRUE(rules_to_exclude.contains(rule));
 
-    auto events = ctx.eval_rules(rules_to_exclude, deadline);
+    std::vector<ddwaf::event> events;
+    ctx.eval_rules(rules_to_exclude, events, deadline);
     EXPECT_EQ(events.size(), 0);
 }
 
@@ -732,13 +751,14 @@ TEST(TestContext, RuleFilterWithEphemeralConditionMatch)
         auto persistent = owned_object::make_map({{"usr.id", "admin"}});
         auto ephemeral = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        EXPECT_EQ(ctx.run(std::move(persistent), std::move(ephemeral), {}, LONG_TIME), DDWAF_OK);
+        auto [code, res] = ctx.run(std::move(persistent), std::move(ephemeral), LONG_TIME);
+        EXPECT_EQ(code, DDWAF_OK);
     }
 
     {
         auto root = owned_object::make_map({{"usr.id", "admin"}});
-
-        EXPECT_EQ(ctx.run(std::move(root), {}, {}, LONG_TIME), DDWAF_MATCH);
+        auto [code, res] = ctx.run(std::move(root), {}, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_MATCH);
     }
 }
 
@@ -792,17 +812,17 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
         auto persistent = owned_object::make_map({{"usr.id", "admin"}, {"http.route", "unrouted"}});
         auto ephemeral = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        EXPECT_EQ(ctx.run(std::move(persistent), std::move(ephemeral), {}, LONG_TIME), DDWAF_OK);
+        auto [code, res] = ctx.run(std::move(persistent), std::move(ephemeral), LONG_TIME);
+        EXPECT_EQ(code, DDWAF_OK);
     }
 
     {
         auto root = owned_object::make_map({{"usr.id", "admin"}});
 
-        ddwaf_result result = DDWAF_RESULT_INITIALISER;
-        EXPECT_EQ(ctx.run(std::move(root), {}, result, LONG_TIME), DDWAF_MATCH);
-        auto actions = object_view{result.actions};
-        EXPECT_TRUE(actions.empty());
-        ddwaf_result_free(&result);
+        auto [code, res] = ctx.run(std::move(root), {}, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_MATCH);
+
+        EXPECT_TRUE(object_view{res}.find("actions").empty());
     }
 }
 
@@ -856,13 +876,15 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
         auto persistent = owned_object::make_map({{"usr.id", "admin"}, {"http.route", "unrouted"}});
         auto ephemeral = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        EXPECT_EQ(ctx.run(std::move(persistent), std::move(ephemeral), {}, LONG_TIME), DDWAF_OK);
+        auto [code, res] = ctx.run(std::move(persistent), std::move(ephemeral), LONG_TIME);
+        EXPECT_EQ(code, DDWAF_OK);
     }
 
     {
         auto root = owned_object::make_map({{"usr.id", "admin"}});
 
-        EXPECT_EQ(ctx.run(std::move(root), {}, {}, LONG_TIME), DDWAF_OK);
+        auto [code, res] = ctx.run(std::move(root), {}, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_OK);
     }
 }
 
@@ -946,7 +968,8 @@ TEST(TestContext, NoRuleFilterWithCondition)
     auto rules_to_exclude = ctx.eval_filters(deadline);
     EXPECT_TRUE(rules_to_exclude.empty());
 
-    auto events = ctx.eval_rules(rules_to_exclude, deadline);
+    std::vector<ddwaf::event> events;
+    ctx.eval_rules(rules_to_exclude, events, deadline);
     EXPECT_EQ(events.size(), 1);
 }
 
@@ -1310,7 +1333,8 @@ TEST(TestContext, InputFilterExclude)
     auto objects_to_exclude = ctx.eval_filters(deadline);
     EXPECT_EQ(objects_to_exclude.size(), 1);
 
-    auto events = ctx.eval_rules(objects_to_exclude, deadline);
+    std::vector<ddwaf::event> events;
+    ctx.eval_rules(objects_to_exclude, events, deadline);
     EXPECT_EQ(events.size(), 0);
 }
 
@@ -1339,17 +1363,20 @@ TEST(TestContext, InputFilterExcludeEphemeral)
 
     {
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        EXPECT_EQ(ctx.run({}, std::move(root), {}, LONG_TIME), DDWAF_OK);
+        auto [code, res] = ctx.run({}, std::move(root), LONG_TIME);
+        EXPECT_EQ(code, DDWAF_OK);
     }
 
     {
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        EXPECT_EQ(ctx.run({}, std::move(root), {}, LONG_TIME), DDWAF_OK);
+        auto [code, res] = ctx.run({}, std::move(root), LONG_TIME);
+        EXPECT_EQ(code, DDWAF_OK);
     }
 
     {
         auto root = owned_object::make_map({{"http.peer_ip", "192.168.0.1"}});
-        EXPECT_EQ(ctx.run({}, std::move(root), {}, LONG_TIME), DDWAF_MATCH);
+        auto [code, res] = ctx.run({}, std::move(root), LONG_TIME);
+        EXPECT_EQ(code, DDWAF_MATCH);
     }
 }
 
@@ -1378,16 +1405,20 @@ TEST(TestContext, InputFilterExcludeEphemeral)
 /*ddwaf::test::context ctx(rbuilder.build());*/
 
 /*auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});*/
-/*EXPECT_EQ(ctx.run({}, std::move(root), {}, LONG_TIME), DDWAF_OK);*/
+/*    {*/
+/*auto [code, res] = ctx.run({}, std::move(root), LONG_TIME);*/
+/*EXPECT_EQ(code, DDWAF_OK);*/
+/*}*/
 
 /*std::string peer_ip = "http.peer_ip";*/
 /*// NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)*/
 /*memcpy(const_cast<char *>(root.array[0].parameterName), peer_ip.c_str(), peer_ip.size());*/
 /*root.array[0].parameterNameLength = peer_ip.size();*/
 
-/*EXPECT_EQ(ctx.run({}, root, {}, LONG_TIME), DDWAF_MATCH);*/
-
-/*ddwaf_object_free(&root);*/
+/*{*/
+/*auto [code, res] = ctx.run({}, std::move(root), LONG_TIME);*/
+/*EXPECT_EQ(code, DDWAF_MATCH);*/
+/*}*/
 /*}*/
 
 TEST(TestContext, InputFilterExcludeRule)
@@ -1427,7 +1458,8 @@ TEST(TestContext, InputFilterExcludeRule)
     it->second.mode = filter_mode::none;
     EXPECT_TRUE(it->second.objects.empty());
 
-    auto events = ctx.eval_rules(objects_to_exclude, deadline);
+    std::vector<ddwaf::event> events;
+    ctx.eval_rules(objects_to_exclude, events, deadline);
     EXPECT_EQ(events.size(), 1);
 }
 
@@ -1644,7 +1676,8 @@ TEST(TestContext, InputFilterWithCondition)
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 0);
-        auto events = ctx.eval_rules(objects_to_exclude, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules(objects_to_exclude, events, deadline);
         EXPECT_EQ(events.size(), 1);
     }
 
@@ -1659,7 +1692,8 @@ TEST(TestContext, InputFilterWithCondition)
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 0);
-        auto events = ctx.eval_rules(objects_to_exclude, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules(objects_to_exclude, events, deadline);
         EXPECT_EQ(events.size(), 1);
     }
 
@@ -1674,7 +1708,8 @@ TEST(TestContext, InputFilterWithCondition)
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 1);
-        auto events = ctx.eval_rules(objects_to_exclude, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules(objects_to_exclude, events, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 }
@@ -1717,12 +1752,14 @@ TEST(TestContext, InputFilterWithEphemeralCondition)
         auto persistent = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
         auto ephemeral = owned_object::make_map({{"usr.id", "admin"}});
 
-        EXPECT_EQ(ctx.run(std::move(persistent), std::move(ephemeral), {}, LONG_TIME), DDWAF_OK);
+        auto [code, res] = ctx.run(std::move(persistent), std::move(ephemeral), LONG_TIME);
+        EXPECT_EQ(code, DDWAF_OK);
     }
 
     {
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        EXPECT_EQ(ctx.run(std::move(root), {}, {}, LONG_TIME), DDWAF_MATCH);
+        auto [code, res] = ctx.run(std::move(root), {}, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_MATCH);
     }
 }
 
@@ -1781,7 +1818,8 @@ TEST(TestContext, InputFilterMultipleRules)
             EXPECT_EQ(policy.objects.size(), 1);
         }
 
-        auto events = ctx.eval_rules(objects_to_exclude, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules(objects_to_exclude, events, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -1800,7 +1838,8 @@ TEST(TestContext, InputFilterMultipleRules)
             EXPECT_EQ(policy.objects.size(), 2);
         }
 
-        auto events = ctx.eval_rules(objects_to_exclude, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules(objects_to_exclude, events, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -1819,7 +1858,8 @@ TEST(TestContext, InputFilterMultipleRules)
             EXPECT_EQ(policy.objects.size(), 2);
         }
 
-        auto events = ctx.eval_rules(objects_to_exclude, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules(objects_to_exclude, events, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 }
@@ -1887,7 +1927,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
             EXPECT_EQ(objects.size(), 1);
         }
 
-        auto events = ctx.eval_rules(objects_to_exclude, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules(objects_to_exclude, events, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -1907,7 +1948,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
             EXPECT_EQ(objects.size(), 1);
         }
 
-        auto events = ctx.eval_rules(objects_to_exclude, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules(objects_to_exclude, events, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -1927,7 +1969,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
             EXPECT_EQ(objects.size(), 1);
         }
 
-        auto events = ctx.eval_rules(objects_to_exclude, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules(objects_to_exclude, events, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 }
@@ -2024,7 +2067,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             EXPECT_TRUE(objects.contains(root.at(0)));
         }
 
-        auto events = ctx.eval_rules(objects_to_exclude, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules(objects_to_exclude, events, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -2043,7 +2087,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             EXPECT_TRUE(objects.contains(root.at(0)));
         }
 
-        auto events = ctx.eval_rules(objects_to_exclude, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules(objects_to_exclude, events, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -2063,7 +2108,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             EXPECT_TRUE(objects.contains(root.at(0)));
         }
 
-        auto events = ctx.eval_rules(objects_to_exclude, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules(objects_to_exclude, events, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -2083,7 +2129,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             EXPECT_TRUE(objects.contains(root.at(0)));
             EXPECT_TRUE(objects.contains(root.at(1)));
         }
-        auto events = ctx.eval_rules(objects_to_exclude, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules(objects_to_exclude, events, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -2104,7 +2151,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             EXPECT_TRUE(objects.contains(root.at(0)));
             EXPECT_TRUE(objects.contains(root.at(1)));
         }
-        auto events = ctx.eval_rules(objects_to_exclude, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules(objects_to_exclude, events, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 
@@ -2126,7 +2174,8 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             EXPECT_TRUE(objects.contains(root.at(1)));
             EXPECT_TRUE(objects.contains(root.at(2)));
         }
-        auto events = ctx.eval_rules(objects_to_exclude, deadline);
+        std::vector<ddwaf::event> events;
+        ctx.eval_rules(objects_to_exclude, events, deadline);
         EXPECT_EQ(events.size(), 0);
     }
 }

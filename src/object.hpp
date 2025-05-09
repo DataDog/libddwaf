@@ -372,6 +372,26 @@ public:
         return obj_->array[index];
     }
 
+    [[nodiscard]] object_view find(std::string_view key) const noexcept
+    {
+        assert(obj_ != nullptr && obj_->array != nullptr);
+
+        for (uint64_t i = 0; i < obj_->nbEntries; ++i) {
+            const auto &child = obj_->array[i];
+
+            if (child.parameterName == nullptr || child.parameterNameLength == 0) {
+                continue;
+            }
+
+            const std::string_view child_key{
+                child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
+            if (child_key == key) {
+                return &child;
+            }
+        }
+        return {};
+    }
+
     class iterator {
     public:
         ~iterator() = default;
