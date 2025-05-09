@@ -4,6 +4,8 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2025 Datadog, Inc.
 
+#pragma once
+
 #include "ddwaf.h"
 
 #include <cstddef>
@@ -12,8 +14,11 @@
 #include <memory>
 #include <string_view>
 
+namespace ddwaf {
+
 class dynamic_string {
 public:
+    dynamic_string() = default;
     explicit dynamic_string(std::size_t capacity)
         // NOLINTNEXTLINE(hicpp-no-malloc)
         : buffer(static_cast<char *>(malloc(capacity)), free), capacity_(capacity)
@@ -24,8 +29,10 @@ public:
     }
 
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-    dynamic_string(std::string_view str)
-    // NOLINTNEXTLINE(hicpp-no-malloc)
+    template <typename T>
+    dynamic_string(T str)
+        requires std::is_same_v<std::string_view, T> || std::is_same_v<std::string, T>
+        // NOLINTNEXTLINE(hicpp-no-malloc)
         : buffer(static_cast<char *>(malloc(str.size())), free), size_(str.size()),
           capacity_(str.size())
     {
@@ -33,13 +40,51 @@ public:
             throw std::bad_alloc{};
         }
 
-        memcpy(buffer.get(), str.data(), str.size());
+        if (!str.empty()) {
+            memcpy(buffer.get(), str.data(), str.size());
+        }
+    }
+
+    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
+    dynamic_string(const char *str) : size_(strlen(str)), capacity_(size_)
+    {
+        // NOLINTNEXTLINE(hicpp-no-malloc)
+        buffer.reset(static_cast<char *>(malloc(size_)));
+        if (buffer == nullptr) {
+            throw std::bad_alloc{};
+        }
+
+        memcpy(buffer.get(), str, size_);
     }
 
     ~dynamic_string() = default;
 
-    dynamic_string(const dynamic_string &) = delete;
-    dynamic_string &operator=(const dynamic_string &) = delete;
+    dynamic_string(const dynamic_string &str)
+        // NOLINTNEXTLINE(hicpp-no-malloc)
+        : buffer(static_cast<char *>(malloc(str.size())), free), size_(str.size()),
+          capacity_(str.size())
+    {
+        if (buffer == nullptr) {
+            throw std::bad_alloc{};
+        }
+
+        if (!str.empty()) {
+            memcpy(buffer.get(), str.data(), str.size());
+        }
+    }
+
+    dynamic_string &operator=(const dynamic_string &str)
+    {
+        if (this == &str) {
+            return *this;
+        }
+
+        // NOLINTNEXTLINE(hicpp-no-malloc)
+        buffer.reset(static_cast<char *>(malloc(str.size())));
+        size_ = capacity_ = str.size();
+        memcpy(buffer.get(), str.buffer.get(), size_);
+        return *this;
+    }
 
     dynamic_string(dynamic_string &&other) noexcept
         : buffer(std::move(other.buffer)), size_(other.size_), capacity_(other.capacity_)
@@ -61,6 +106,7 @@ public:
     [[nodiscard]] std::size_t size() const noexcept { return size_; }
     [[nodiscard]] bool empty() const noexcept { return size_ == 0; }
     [[nodiscard]] std::size_t capacity() const noexcept { return capacity_; }
+    [[nodiscard]] const char *data() const noexcept { return buffer.get(); }
 
     void append(std::string_view str)
     {
@@ -79,6 +125,8 @@ public:
 
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
     operator std::string_view() const { return {buffer.get(), size_}; }
+    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
+    operator std::string() const { return {buffer.get(), size_}; }
 
     ddwaf_object move()
     {
@@ -92,6 +140,11 @@ public:
     {
         buffer.reset(nullptr);
         size_ = capacity_ = 0;
+    }
+
+    bool operator==(const dynamic_string &other) const
+    {
+        return std::string_view{*this} == std::string_view{other};
     }
 
 protected:
@@ -114,5 +167,7 @@ protected:
 
     std::unique_ptr<char, decltype(&free)> buffer{nullptr, free};
     std::size_t size_{0};
-    std::size_t capacity_{};
+    std::size_t capacity_{0};
 };
+
+} // namespace ddwaf

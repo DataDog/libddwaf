@@ -12,6 +12,7 @@
 
 #include "clock.hpp"
 #include "context_allocator.hpp"
+#include "dynamic_string.hpp"
 #include "exclusion/common.hpp"
 #include "matcher/base.hpp"
 #include "object_store.hpp"
@@ -25,13 +26,13 @@ enum class data_source : uint8_t { values, keys, object };
 struct condition_match {
     struct argument {
         std::string_view name;
-        std::string resolved;
+        dynamic_string resolved;
         std::string_view address{};
         std::vector<std::string> key_path{};
     };
 
     std::vector<argument> args;
-    std::vector<std::string> highlights;
+    std::vector<dynamic_string> highlights;
     std::string_view operator_name;
     std::string_view operator_value;
     bool ephemeral{false};
