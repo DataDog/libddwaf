@@ -28,10 +28,11 @@ public:
         }
     }
 
-    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
     template <typename T>
+    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
     dynamic_string(T str)
-        requires std::is_same_v<std::string_view, T> || std::is_same_v<std::string, T>
+        requires std::is_same_v<std::string_view, std::decay_t<T>> ||
+                     std::is_same_v<std::string, std::decay_t<T>>
         // NOLINTNEXTLINE(hicpp-no-malloc)
         : buffer(static_cast<char *>(malloc(str.size())), free), size_(str.size()),
           capacity_(str.size())

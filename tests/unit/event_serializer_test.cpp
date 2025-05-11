@@ -32,7 +32,8 @@ TEST(TestEventSerializer, SerializeNothing)
     ddwaf_object &events_object = output.array[0];
     ddwaf_object &actions_object = output.array[1];
 
-    serializer.serialize({}, events_object, actions_object);
+    std::vector<ddwaf::event> events;
+    serializer.serialize(events, events_object, actions_object);
 
     EXPECT_EVENTS(output, ); // This means no events
     EXPECT_ACTIONS(output, {});
@@ -55,7 +56,8 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
     ddwaf_object &events_object = output.array[0];
     ddwaf_object &actions_object = output.array[1];
 
-    serializer.serialize({ddwaf::event{}}, events_object, actions_object);
+    std::vector<ddwaf::event> events{ddwaf::event{}};
+    serializer.serialize(events, events_object, actions_object);
 
     EXPECT_EVENTS(output, {});
     EXPECT_ACTIONS(output, {});
@@ -95,7 +97,8 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     ddwaf_object &events_object = output.array[0];
     ddwaf_object &actions_object = output.array[1];
 
-    serializer.serialize({event}, events_object, actions_object);
+    std::vector<ddwaf::event> events{event};
+    serializer.serialize(events, events_object, actions_object);
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
                               .tags = {{"type", "test"}, {"category", "none"}},
@@ -162,7 +165,8 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     ddwaf_object &events_object = output.array[0];
     ddwaf_object &actions_object = output.array[1];
 
-    serializer.serialize({event}, events_object, actions_object);
+    std::vector<ddwaf::event> events{event};
+    serializer.serialize(events, events_object, actions_object);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
@@ -349,7 +353,8 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     ddwaf_object &events_object = output.array[0];
     ddwaf_object &actions_object = output.array[1];
 
-    serializer.serialize({event}, events_object, actions_object);
+    std::vector<ddwaf::event> events{event};
+    serializer.serialize(events, events_object, actions_object);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
@@ -404,7 +409,8 @@ TEST(TestEventSerializer, SerializeAllTags)
     ddwaf_object &events_object = output.array[0];
     ddwaf_object &actions_object = output.array[1];
 
-    serializer.serialize({event}, events_object, actions_object);
+    std::vector<ddwaf::event> events{event};
+    serializer.serialize(events, events_object, actions_object);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
@@ -458,7 +464,8 @@ TEST(TestEventSerializer, NoMonitorActions)
     ddwaf_object &events_object = output.array[0];
     ddwaf_object &actions_object = output.array[1];
 
-    serializer.serialize({event}, events_object, actions_object);
+    std::vector<ddwaf::event> events{event};
+    serializer.serialize(events, events_object, actions_object);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
@@ -513,7 +520,8 @@ TEST(TestEventSerializer, UndefinedActions)
     ddwaf_object &events_object = output.array[0];
     ddwaf_object &actions_object = output.array[1];
 
-    serializer.serialize({event}, events_object, actions_object);
+    std::vector<ddwaf::event> events{event};
+    serializer.serialize(events, events_object, actions_object);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
@@ -568,7 +576,8 @@ TEST(TestEventSerializer, StackTraceAction)
     ddwaf_object &events_object = output.array[0];
     ddwaf_object &actions_object = output.array[1];
 
-    serializer.serialize({event}, events_object, actions_object);
+    std::vector<ddwaf::event> events{event};
+    serializer.serialize(events, events_object, actions_object);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",

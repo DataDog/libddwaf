@@ -299,7 +299,7 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
     auto rule = read_file("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, "^badvalue$"}, ddwaf_object_free};
+    ddwaf_config config{{0, 0, 0}, {nullptr, "^badvalue"}, ddwaf_object_free};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ddwaf_object_free(&rule);
