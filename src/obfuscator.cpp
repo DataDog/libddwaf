@@ -147,12 +147,13 @@ bool obfuscator::obfuscate_value(dynamic_string &value) const
         if (find_and_consume(&input, *value_regex_, matches)) {
             for (auto &match : matches) {
                 if (!match.empty()) {
-                    output.append({prev.data(), match.data() - prev.data()});
+                    output.append(
+                        {prev.data(), static_cast<std::size_t>(match.data() - prev.data())});
                     output.append(redaction_msg);
 
                     const auto *next = match.data() + match.size();
                     if (next != input.data()) {
-                        output.append({next, input.data() - next});
+                        output.append({next, static_cast<std::size_t>(input.data() - next)});
                     }
                     break;
                 }
