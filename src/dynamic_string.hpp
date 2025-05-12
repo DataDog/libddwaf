@@ -13,6 +13,7 @@
 #include <cstring>
 #include <limits>
 #include <memory>
+#include <string>
 #include <string_view>
 
 namespace ddwaf {
