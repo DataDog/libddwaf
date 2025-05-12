@@ -308,4 +308,96 @@ MIIEpAIBAAKCAQEAwKFIxQKIn8FJyX1TqV2QIDAQABAoIBAQC/UYHm6+NHmY6U
     }
 }
 
+TEST(TestObfuscator, FallbackToDefaultRegexes)
+{
+    // Backreferences are not supported, therefore these regexes will cause the
+    // obfuscator to revert to the default
+    ddwaf::obfuscator event_obfuscator{R"(^(a*)\1$)", R"(^(a*)\1$)"};
+
+    {
+        // Verify that when the key matches, both value and highlight are redacted
+        condition_match match{
+            .args = {{.name = "input", .resolved = "random", .key_path = {"password"}}},
+            .highlights = {"random"},
+            .operator_name = {},
+            .operator_value = {}};
+
+        event_obfuscator.obfuscate_match(match);
+        EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
+        EXPECT_STR(match.args[0].resolved, obfuscator::redaction_msg);
+    }
+
+    {
+        // Verify that the value is redacted when it matches the regex and that
+        // the highlight is redacted due to the condition argument being input
+        condition_match match{.args = {{.name = "input", .resolved = "password=something"}},
+            .highlights = {"not sensitive"},
+            .operator_name = {},
+            .operator_value = {}};
+
+        event_obfuscator.obfuscate_match(match);
+        EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
+        EXPECT_STR(match.args[0].resolved, "password=<Redacted>");
+    }
+
+    {
+        // Verify that the value is redacted when it matches the regex and that
+        // the highlight is redacted due to the condition argument being param
+        condition_match match{.args = {{.name = "params",
+                                  .resolved = "token:qweqweqweqweq",
+                                  .key_path = {"unrelated"}}},
+            .highlights = {"not sensitive"},
+            .operator_name = {},
+            .operator_value = {}};
+
+        event_obfuscator.obfuscate_match(match);
+        EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
+        EXPECT_STR(match.args[0].resolved, "token:<Redacted>");
+    }
+
+    {
+        // Verify that the value is redacted when it matches the regex and that
+        // the highlight isn't because the it isn't related to the value
+        condition_match match{.args = {{.name = "unrelated to highlight",
+                                  .resolved = "ssh-rsa "
+                                              "1234567890123456789012345678901234567890123456789012"
+                                              "345678901234567890123456789012345678901234567890",
+                                  .key_path = {"unrelated"}}},
+            .highlights = {"not sensitive"},
+            .operator_name = {},
+            .operator_value = {}};
+
+        event_obfuscator.obfuscate_match(match);
+        EXPECT_STR(match.highlights[0], "not sensitive");
+        EXPECT_STR(match.args[0].resolved, "ssh-rsa <Redacted>");
+    }
+
+    {
+        // Verify that the highlight is only redacted when the value is
+        condition_match match{
+            .args = {{.name = "params", .resolved = "not sensitive", .key_path = {"unrelated"}}},
+            .highlights = {"password=2020"},
+            .operator_name = {},
+            .operator_value = {}};
+
+        event_obfuscator.obfuscate_match(match);
+        EXPECT_STR(match.highlights[0], "password=2020");
+        EXPECT_STR(match.args[0].resolved, "not sensitive");
+    }
+
+    {
+        // Verify that when neither the key nor the value match, no redaction is
+        // performed
+        condition_match match{
+            .args = {{.name = "input", .resolved = "random", .key_path = {"unredacted"}}},
+            .highlights = {"random"},
+            .operator_name = {},
+            .operator_value = {}};
+
+        event_obfuscator.obfuscate_match(match);
+        EXPECT_STR(match.highlights[0], "random");
+        EXPECT_STR(match.args[0].resolved, "random");
+    }
+}
+
 } // namespace
