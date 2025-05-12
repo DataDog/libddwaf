@@ -18,26 +18,16 @@
 
 namespace ddwaf {
 
+// This is a modifiable string type which allows transferring ownership  the
+// internal buffer. This is particularly useful for strings which ultimately
+// result in an output object, as it prevents copying unnecessary strings.
 class dynamic_string {
 public:
     dynamic_string() : dynamic_string(static_cast<std::size_t>(0)){};
 
     explicit dynamic_string(std::size_t capacity)
     {
-        if (capacity == std::numeric_limits<std::size_t>::max()) {
-            throw std::bad_alloc{};
-        }
-
-        // Add one more for nul-character which is currently being included to
-        // ensure that all output strings are zero-terminated
-        capacity_ = capacity + 1;
-
-        // NOLINTNEXTLINE(hicpp-no-malloc)
-        buffer_.reset(static_cast<char *>(malloc(capacity_)));
-        if (buffer_ == nullptr) {
-            throw std::bad_alloc{};
-        }
-
+        realloc_if_needed(capacity);
         buffer_.get()[0] = '\0';
     }
 
@@ -48,54 +38,19 @@ public:
                  std::is_same_v<std::string, std::decay_t<T>>
         : size_(str.size())
     {
-        if (size_ == std::numeric_limits<std::size_t>::max()) {
-            throw std::bad_alloc{};
-        }
-
-        // Add one more for nul-character which is currently being included to
-        // ensure that all output strings are zero-terminated
-        capacity_ = size_ + 1;
-
-        // NOLINTNEXTLINE(hicpp-no-malloc)
-        buffer_.reset(static_cast<char *>(malloc(capacity_)));
-        if (buffer_ == nullptr) {
-            throw std::bad_alloc{};
-        }
-
+        realloc_if_needed(size_);
         if (!str.empty()) {
             memcpy(buffer_.get(), str.data(), size_);
         }
-
         buffer_.get()[size_] = '\0';
     }
 
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-    dynamic_string(const char *str) : size_(strlen(str)), capacity_(size_ + 1)
-    {
-        // NOLINTNEXTLINE(hicpp-no-malloc)
-        buffer_.reset(static_cast<char *>(malloc(capacity_)));
-        if (buffer_ == nullptr) {
-            throw std::bad_alloc{};
-        }
-
-        // Copy up to the nul-character
-        memcpy(buffer_.get(), str, capacity_);
-    }
+    dynamic_string(const char *str) : dynamic_string(std::string_view{str}) {}
 
     ~dynamic_string() = default;
 
-    dynamic_string(const dynamic_string &str)
-        // NOLINTNEXTLINE(hicpp-no-malloc)
-        : buffer_(static_cast<char *>(malloc(str.capacity())), free), size_(str.size()),
-          capacity_(str.capacity())
-    {
-        if (buffer_ == nullptr) {
-            throw std::bad_alloc{};
-        }
-
-        // Copy up to the nul-character
-        memcpy(buffer_.get(), str.data(), capacity_);
-    }
+    dynamic_string(const dynamic_string &str) : dynamic_string(std::string_view{str}) {}
 
     dynamic_string &operator=(const dynamic_string &str)
     {
@@ -103,18 +58,7 @@ public:
             return *this;
         }
 
-        size_ = str.size();
-        capacity_ = str.capacity();
-
-        // NOLINTNEXTLINE(hicpp-no-malloc)
-        buffer_.reset(static_cast<char *>(malloc(str.capacity())));
-        if (buffer_ == nullptr) {
-            throw std::bad_alloc{};
-        }
-
-        // Copy up to the nul-character
-        memcpy(buffer_.get(), str.data(), capacity_);
-        return *this;
+        return (*this = dynamic_string(std::string_view{str}));
     }
 
     // For performance reasons, a move construction, move assignment or move to
@@ -180,7 +124,7 @@ public:
 protected:
     void realloc_if_needed(std::size_t at_least)
     {
-        // We need to be able to allocate at_least + 1
+        // We need to be able to allocate at_least + 1 to include the nul-character
         if (at_least >= (std::numeric_limits<std::size_t>::max() - capacity_)) {
             throw std::bad_alloc{};
         }
@@ -193,7 +137,9 @@ protected:
                 throw std::bad_alloc{};
             }
 
-            memcpy(new_buffer, buffer_.get(), size_);
+            if (buffer_) {
+                memcpy(new_buffer, buffer_.get(), size_);
+            }
 
             buffer_.reset(new_buffer);
             capacity_ = new_capacity_;

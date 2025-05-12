@@ -290,6 +290,8 @@ MIIEpAIBAAKCAQEAwKFIxQKIn8FJyX1TqV2QIDAQABAoIBAQC/UYHm6+NHmY6U
             R"(ssh-rsa <Redacted>)"},
         {R"(ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC1xjOvnPJuorR8lHymz4uoypHy1h7uMKw29lJr3p6eJ6OxNc1Rkqv8hDxnN9nJSxIOLRG2fDu1K5XmRe+Jp0iYzPcwupTV6Mg93clo0BhE0mzwIoxFDq2w==)",
             R"(ssh-rsa <Redacted>==)"},
+        {R"(site.com/?api_token=sensitive&value=something&PHPSESSID=something&json={"token":"value","somethingelse":"ghp_000000000000000000000000000000000000"})",
+            R"(site.com/?api_token=<Redacted>&value=something&PHPSESSID=<Redacted>&json={"token":<Redacted>,"somethingelse":"ghp_<Redacted>"})"},
     };
 
     ddwaf::obfuscator event_obfuscator{
