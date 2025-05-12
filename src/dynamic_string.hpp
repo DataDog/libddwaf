@@ -19,7 +19,7 @@ namespace ddwaf {
 
 class dynamic_string {
 public:
-    dynamic_string() : dynamic_string(0UL){};
+    dynamic_string() : dynamic_string(static_cast<std::size_t>(0)){};
 
     explicit dynamic_string(std::size_t capacity)
     {
