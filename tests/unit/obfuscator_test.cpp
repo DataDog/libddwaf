@@ -12,6 +12,21 @@ using namespace std::literals;
 
 namespace {
 
+TEST(TestObfuscator, ValidateValueRegex)
+{
+    re2::RE2::Options options;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+    options.set_max_mem(static_cast<int64_t>(512 * 1024));
+    options.set_log_errors(false);
+    options.set_case_sensitive(false);
+
+    const re2::StringPiece sp(
+        obfuscator::default_value_regex_str.data(), obfuscator::default_value_regex_str.size());
+    re2::RE2 regex{sp, options};
+    EXPECT_TRUE(regex.ok());
+    EXPECT_EQ(regex.NumberOfCapturingGroups(), 8);
+}
+
 TEST(TestObfuscator, IsSensitiveKeyValue)
 {
     ddwaf::obfuscator event_obfuscator("^password$"sv, "value"sv);
@@ -233,7 +248,8 @@ TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
     {
         // Verify that the highlight is only redacted when the value is
         condition_match match{
-            .args = {{.name = "params", .resolved = "not sensitive", .key_path = {"unrelated"}}},
+            .args = {{.name = "params", .resolved = "not sensitive", .key_path = {"unrelated"}},
+                {.name = "not_params", .resolved = "password=paco"}},
             .highlights = {"password=2020"},
             .operator_name = {},
             .operator_value = {}};
@@ -241,6 +257,7 @@ TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
         event_obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], "password=2020");
         EXPECT_STR(match.args[0].resolved, "not sensitive");
+        EXPECT_STR(match.args[1].resolved, "password=<Redacted>");
     }
 
     {
