@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 #include <memory>
 #include <string_view>
 
@@ -18,60 +19,81 @@ namespace ddwaf {
 
 class dynamic_string {
 public:
-    dynamic_string() = default;
+    dynamic_string() : dynamic_string(0UL){};
+
     explicit dynamic_string(std::size_t capacity)
-        // NOLINTNEXTLINE(hicpp-no-malloc)
-        : buffer(static_cast<char *>(malloc(capacity)), free), capacity_(capacity)
     {
-        if (buffer == nullptr) {
+        if (capacity == std::numeric_limits<std::size_t>::max()) {
             throw std::bad_alloc{};
         }
+
+        // Add one more for nul-character which is currently being included to
+        // ensure that all output strings are zero-terminated
+        capacity_ = capacity + 1;
+
+        // NOLINTNEXTLINE(hicpp-no-malloc)
+        buffer_.reset(static_cast<char *>(malloc(capacity_)));
+        if (buffer_ == nullptr) {
+            throw std::bad_alloc{};
+        }
+
+        buffer_.get()[0] = '\0';
     }
 
     template <typename T>
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
     dynamic_string(T str)
         requires std::is_same_v<std::string_view, std::decay_t<T>> ||
-                     std::is_same_v<std::string, std::decay_t<T>>
-        // NOLINTNEXTLINE(hicpp-no-malloc)
-        : buffer(static_cast<char *>(malloc(str.size())), free), size_(str.size()),
-          capacity_(str.size())
+                 std::is_same_v<std::string, std::decay_t<T>>
+        : size_(str.size())
     {
-        if (buffer == nullptr) {
+        if (size_ == std::numeric_limits<std::size_t>::max()) {
+            throw std::bad_alloc{};
+        }
+
+        // Add one more for nul-character which is currently being included to
+        // ensure that all output strings are zero-terminated
+        capacity_ = size_ + 1;
+
+        // NOLINTNEXTLINE(hicpp-no-malloc)
+        buffer_.reset(static_cast<char *>(malloc(capacity_)));
+        if (buffer_ == nullptr) {
             throw std::bad_alloc{};
         }
 
         if (!str.empty()) {
-            memcpy(buffer.get(), str.data(), str.size());
+            memcpy(buffer_.get(), str.data(), size_);
         }
+
+        buffer_.get()[size_] = '\0';
     }
 
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-    dynamic_string(const char *str) : size_(strlen(str)), capacity_(size_)
+    dynamic_string(const char *str) : size_(strlen(str)), capacity_(size_ + 1)
     {
         // NOLINTNEXTLINE(hicpp-no-malloc)
-        buffer.reset(static_cast<char *>(malloc(size_)));
-        if (buffer == nullptr) {
+        buffer_.reset(static_cast<char *>(malloc(capacity_)));
+        if (buffer_ == nullptr) {
             throw std::bad_alloc{};
         }
 
-        memcpy(buffer.get(), str, size_);
+        // Copy up to the nul-character
+        memcpy(buffer_.get(), str, capacity_);
     }
 
     ~dynamic_string() = default;
 
     dynamic_string(const dynamic_string &str)
         // NOLINTNEXTLINE(hicpp-no-malloc)
-        : buffer(static_cast<char *>(malloc(str.size())), free), size_(str.size()),
-          capacity_(str.size())
+        : buffer_(static_cast<char *>(malloc(str.capacity())), free), size_(str.size()),
+          capacity_(str.capacity())
     {
-        if (buffer == nullptr) {
+        if (buffer_ == nullptr) {
             throw std::bad_alloc{};
         }
 
-        if (!str.empty()) {
-            memcpy(buffer.get(), str.data(), str.size());
-        }
+        // Copy up to the nul-character
+        memcpy(buffer_.get(), str.data(), capacity_);
     }
 
     dynamic_string &operator=(const dynamic_string &str)
@@ -80,22 +102,32 @@ public:
             return *this;
         }
 
+        size_ = str.size();
+        capacity_ = str.capacity();
+
         // NOLINTNEXTLINE(hicpp-no-malloc)
-        buffer.reset(static_cast<char *>(malloc(str.size())));
-        size_ = capacity_ = str.size();
-        memcpy(buffer.get(), str.buffer.get(), size_);
+        buffer_.reset(static_cast<char *>(malloc(str.capacity())));
+        if (buffer_ == nullptr) {
+            throw std::bad_alloc{};
+        }
+
+        // Copy up to the nul-character
+        memcpy(buffer_.get(), str.data(), capacity_);
         return *this;
     }
 
+    // For performance reasons, a move construction, move assignment or move to
+    // object leaves the original string in an unusable state and must be
+    // reinitialised if reuse is required.
     dynamic_string(dynamic_string &&other) noexcept
-        : buffer(std::move(other.buffer)), size_(other.size_), capacity_(other.capacity_)
+        : buffer_(std::move(other.buffer_)), size_(other.size_), capacity_(other.capacity_)
     {
         other.size_ = other.capacity_ = 0;
     }
 
     dynamic_string &operator=(dynamic_string &&other) noexcept
     {
-        buffer = std::move(other.buffer);
+        buffer_ = std::move(other.buffer_);
         size_ = other.size_;
         capacity_ = other.capacity_;
 
@@ -104,69 +136,70 @@ public:
         return *this;
     }
 
+    ddwaf_object move()
+    {
+        ddwaf_object object;
+        ddwaf_object_stringl_nc(&object, buffer_.release(), size_);
+        size_ = capacity_ = 0;
+        return object; // NOLINT(clang-analyzer-unix.Malloc)
+    }
+
     [[nodiscard]] std::size_t size() const noexcept { return size_; }
     [[nodiscard]] bool empty() const noexcept { return size_ == 0; }
     [[nodiscard]] std::size_t capacity() const noexcept { return capacity_; }
-    [[nodiscard]] const char *data() const noexcept { return buffer.get(); }
+    [[nodiscard]] const char *data() const noexcept { return buffer_.get(); }
 
     void append(std::string_view str)
     {
         realloc_if_needed(str.size());
-        if (!str.empty() && (size_ + str.size()) <= capacity_) [[likely]] {
-            memcpy(&buffer.get()[size_], str.data(), str.size());
+        if (!str.empty()) [[likely]] {
+            memcpy(&buffer_.get()[size_], str.data(), str.size());
             size_ += str.size();
         }
+        buffer_.get()[size_] = '\0';
     }
 
     void append(char c)
     {
         realloc_if_needed(1);
-        buffer.get()[size_++] = c;
+        buffer_.get()[size_++] = c;
+        buffer_.get()[size_] = '\0';
     }
 
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-    operator std::string_view() const { return {buffer.get(), size_}; }
+    operator std::string_view() const { return {buffer_.get(), size_}; }
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-    operator std::string() const { return {buffer.get(), size_}; }
-
-    ddwaf_object move()
-    {
-        ddwaf_object object;
-        ddwaf_object_stringl_nc(&object, buffer.release(), size_);
-        size_ = capacity_ = 0;
-        return object; // NOLINT(clang-analyzer-unix.Malloc)
-    }
-
-    void clear()
-    {
-        buffer.reset(nullptr);
-        size_ = capacity_ = 0;
-    }
+    operator std::string() const { return {buffer_.get(), size_}; }
 
     bool operator==(const dynamic_string &other) const
     {
-        return std::string_view{*this} == std::string_view{other};
+        return size_ == other.size_ && (memcmp(buffer_.get(), other.buffer_.get(), size_) == 0);
     }
 
 protected:
     void realloc_if_needed(std::size_t at_least)
     {
-        if ((size_ + at_least) >= capacity_) {
-            auto new_capacity_ = capacity_ + std::max(capacity_, at_least);
+        // We need to be able to allocate at_least + 1
+        if (at_least >= (std::numeric_limits<std::size_t>::max() - capacity_)) {
+            throw std::bad_alloc{};
+        }
+
+        if ((size_ + at_least + 1) >= capacity_) {
+            auto new_capacity_ = capacity_ + std::max(capacity_, at_least + 1);
             // NOLINTNEXTLINE(hicpp-no-malloc)
             char *new_buffer = static_cast<char *>(malloc(new_capacity_));
             if (new_buffer == nullptr) {
                 throw std::bad_alloc{};
             }
 
-            memcpy(new_buffer, buffer.get(), size_);
+            memcpy(new_buffer, buffer_.get(), size_);
 
-            buffer.reset(new_buffer);
+            buffer_.reset(new_buffer);
             capacity_ = new_capacity_;
         }
     }
 
-    std::unique_ptr<char, decltype(&free)> buffer{nullptr, free};
+    std::unique_ptr<char, decltype(&free)> buffer_{nullptr, free};
     std::size_t size_{0};
     std::size_t capacity_{0};
 };

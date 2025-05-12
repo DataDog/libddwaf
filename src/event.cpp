@@ -39,13 +39,14 @@ void serialize_match(condition_match &match, ddwaf_object &match_map, auto &obfu
 
     ddwaf_object highlight_arr;
     ddwaf_object_array(&highlight_arr);
-    for (const auto &highlight : match.highlights) {
-        ddwaf_object_array_add(&highlight_arr, to_object(tmp, highlight));
+    for (auto &highlight : match.highlights) {
+        auto value = highlight.move();
+        ddwaf_object_array_add(&highlight_arr, &value);
     }
 
     // Scalar case
     if (match.args.size() == 1 && match.args[0].name == "input") {
-        const auto &arg = match.args[0];
+        auto &arg = match.args[0];
 
         ddwaf_object key_path;
         ddwaf_object_array(&key_path);
@@ -55,21 +56,24 @@ void serialize_match(condition_match &match, ddwaf_object &match_map, auto &obfu
 
         ddwaf_object_map_add(&param, "address", to_object(tmp, arg.address));
         ddwaf_object_map_add(&param, "key_path", &key_path);
-        ddwaf_object_map_add(&param, "value", to_object(tmp, arg.resolved));
+        auto resolved = arg.resolved.move();
+        ddwaf_object_map_add(&param, "value", &resolved);
     } else {
-        for (const auto &arg : match.args) {
+        for (auto &arg : match.args) {
             ddwaf_object argument;
             ddwaf_object_map(&argument);
 
             ddwaf_object key_path;
             ddwaf_object_array(&key_path);
-            for (const auto &key : arg.key_path) {
+            for (auto &key : arg.key_path) {
                 ddwaf_object_array_add(&key_path, to_object(tmp, key));
             }
 
             ddwaf_object_map_add(&argument, "address", to_object(tmp, arg.address));
             ddwaf_object_map_add(&argument, "key_path", &key_path);
-            ddwaf_object_map_add(&argument, "value", to_object(tmp, arg.resolved));
+
+            auto resolved = arg.resolved.move();
+            ddwaf_object_map_add(&argument, "value", &resolved);
 
             ddwaf_object_map_addl(&param, arg.name.data(), arg.name.size(), &argument);
         }
