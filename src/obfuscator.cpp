@@ -144,22 +144,23 @@ bool obfuscator::obfuscate_value(dynamic_string &value) const
     auto prev = input;
     while (!input.empty()) {
         std::array<re2::StringPiece, 8> matches;
-        if (find_and_consume(&input, *value_regex_, matches)) {
-            for (auto &match : matches) {
-                if (!match.empty()) {
-                    output.append(
-                        {prev.data(), static_cast<std::size_t>(match.data() - prev.data())});
-                    output.append(redaction_msg);
-
-                    const auto *next = match.data() + match.size();
-                    if (next != input.data()) {
-                        output.append({next, static_cast<std::size_t>(input.data() - next)});
-                    }
-                    break;
-                }
-            }
-            prev = input;
+        if (!find_and_consume(&input, *value_regex_, matches)) {
+            break;
         }
+
+        for (auto &match : matches) {
+            if (!match.empty()) {
+                output.append({prev.data(), static_cast<std::size_t>(match.data() - prev.data())});
+                output.append(redaction_msg);
+
+                const auto *next = match.data() + match.size();
+                if (next != input.data()) {
+                    output.append({next, static_cast<std::size_t>(input.data() - next)});
+                }
+                break;
+            }
+        }
+        prev = input;
     }
 
     if (!output.empty()) {
