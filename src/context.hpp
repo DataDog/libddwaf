@@ -10,6 +10,7 @@
 #include <optional>
 #include <utility>
 
+#include "attribute_collector.hpp"
 #include "context_allocator.hpp"
 #include "ddwaf.h"
 #include "event.hpp"
@@ -55,8 +56,8 @@ public:
     std::pair<DDWAF_RET_CODE, ddwaf_object> run(
         optional_ref<ddwaf_object>, optional_ref<ddwaf_object>, uint64_t);
 
-    void eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline);
-    void eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline);
+    void eval_preprocessors(attribute_collector &collector, ddwaf::timer &deadline);
+    void eval_postprocessors(attribute_collector &collector, ddwaf::timer &deadline);
     // This function below returns a reference to an internal object,
     // however using them this way helps with testing
     exclusion::context_policy &eval_filters(ddwaf::timer &deadline);

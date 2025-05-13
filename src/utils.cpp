@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <list>
+#include <span>
 #include <utility>
 
 #include "ddwaf.h"
@@ -50,13 +51,13 @@ void clone_helper(const ddwaf_object &source, ddwaf_object &destination)
 
 } // namespace
 
-ddwaf_object clone(ddwaf_object *input)
+ddwaf_object clone(const ddwaf_object *input)
 {
     ddwaf_object tmp;
     ddwaf_object_invalid(&tmp);
 
     ddwaf_object copy;
-    std::list<std::pair<ddwaf_object *, ddwaf_object *>> queue;
+    std::list<std::pair<const ddwaf_object *, ddwaf_object *>> queue;
 
     clone_helper(*input, copy);
     if (is_container(input)) {
@@ -86,6 +87,37 @@ ddwaf_object clone(ddwaf_object *input)
     }
 
     return copy;
+}
+
+// This could eventually be delegated to the argument retriever, albeit it would
+// need to be refactored to allow for key path retrieval or not
+const ddwaf_object *find_key_path(const ddwaf_object &root, std::span<const std::string> key_path)
+{
+    const auto *current = &root;
+    for (auto it = key_path.begin(); current != nullptr && it != key_path.end(); ++it) {
+        const auto &root = *current;
+        if (root.type != DDWAF_OBJ_MAP) {
+            return nullptr;
+        }
+
+        // Reset to search for next object in the path
+        current = nullptr;
+        for (std::size_t i = 0; i < static_cast<uint32_t>(root.nbEntries); ++i) {
+            const auto &child = root.array[i];
+
+            if (child.parameterName == nullptr) [[unlikely]] {
+                continue;
+            }
+            const std::string_view child_key{
+                child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
+
+            if (*it == child_key) {
+                current = &child;
+                break;
+            }
+        }
+    }
+    return current;
 }
 
 } // namespace ddwaf::object

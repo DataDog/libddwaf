@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "attribute_collector.hpp"
 #include "clock.hpp"
 #include "context.hpp"
 #include "ddwaf.h"
@@ -136,9 +137,9 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
     const event_serializer serializer(event_obfuscator_, actions_);
 
     std::vector<ddwaf::event> events;
+    attribute_collector collector;
     try {
-        optional_ref<ddwaf_object> attributes_ref{result.attributes};
-        eval_preprocessors(attributes_ref, deadline);
+        eval_preprocessors(collector, deadline);
 
         // If no rule targets are available, there is no point in evaluating them
         const bool should_eval_rules = check_new_rule_targets();
@@ -158,10 +159,13 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
             }
         }
 
-        eval_postprocessors(attributes_ref, deadline);
+        eval_postprocessors(collector, deadline);
         // NOLINTNEXTLINE(bugprone-empty-catch)
     } catch (const ddwaf::timeout_exception &) {}
 
+    // Collect any pending attributes, some may have been generated through postprocessors
+    collector.collect_pending(store_);
+    result.attributes = collector.move_current_batch();
     serializer.serialize(events, result.events, result.actions);
 
     // Using the interface functions would replace the key contained within the
@@ -172,7 +176,7 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
     return {events.empty() ? DDWAF_OK : DDWAF_MATCH, move_object(result_object)};
 }
 
-void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline)
+void context::eval_preprocessors(attribute_collector &collector, ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating preprocessors");
 
@@ -188,11 +192,11 @@ void context::eval_preprocessors(optional_ref<ddwaf_object> &derived, ddwaf::tim
             it = new_it;
         }
 
-        preproc->eval(store_, derived, it->second, limits_, deadline);
+        preproc->eval(store_, collector, it->second, limits_, deadline);
     }
 }
 
-void context::eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::timer &deadline)
+void context::eval_postprocessors(attribute_collector &collector, ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating postprocessors");
 
@@ -208,7 +212,7 @@ void context::eval_postprocessors(optional_ref<ddwaf_object> &derived, ddwaf::ti
             it = new_it;
         }
 
-        postproc->eval(store_, derived, it->second, limits_, deadline);
+        postproc->eval(store_, collector, it->second, limits_, deadline);
     }
 }
 

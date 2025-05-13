@@ -76,42 +76,11 @@ ddwaf_object decode_and_parse(std::string_view source)
     return json_to_object(static_cast<std::string_view>(cstr));
 }
 
-// This could eventually be delegated to the argument retriever, albeit it would
-// need to be refactored to allow for key path retrieval or not
-const ddwaf_object *find_key_path(const ddwaf_object &root, std::span<const std::string> key_path)
-{
-    const auto *current = &root;
-    for (auto it = key_path.begin(); current != nullptr && it != key_path.end(); ++it) {
-        const auto &root = *current;
-        if (root.type != DDWAF_OBJ_MAP) {
-            return nullptr;
-        }
-
-        // Reset to search for next object in the path
-        current = nullptr;
-        for (std::size_t i = 0; i < static_cast<uint32_t>(root.nbEntries); ++i) {
-            const auto &child = root.array[i];
-
-            if (child.parameterName == nullptr) [[unlikely]] {
-                continue;
-            }
-            const std::string_view child_key{
-                child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
-
-            if (*it == child_key) {
-                current = &child;
-                break;
-            }
-        }
-    }
-    return current;
-}
-
 std::string_view find_token(const ddwaf_object &root, std::span<const std::string> key_path)
 {
     const ddwaf_object *object = &root;
     if (!key_path.empty()) {
-        object = find_key_path(root, key_path);
+        object = object::find_key_path(root, key_path);
         if (object == nullptr) {
             return {};
         }
