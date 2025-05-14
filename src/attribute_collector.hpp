@@ -32,6 +32,8 @@ public:
 
     ddwaf_object collect_pending(const object_store &store);
 
+    [[nodiscard]] bool has_pending_attributes() const { return !pending_.empty(); }
+
 protected:
     enum class collection_state : uint8_t { success, unavailable, failed };
 

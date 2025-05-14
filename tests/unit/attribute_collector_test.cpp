@@ -23,6 +23,8 @@ TEST(TestAttributeCollector, EmplaceNoCopy)
     object_store store;
     auto attributes = collector.collect_pending(store);
 
+    EXPECT_FALSE(collector.has_pending_attributes());
+
     EXPECT_EQ(ddwaf_object_size(&attributes), 1);
 
     const auto *obtained = ddwaf_object_get_index(&attributes, 0);
@@ -43,6 +45,8 @@ TEST(TestAttributeCollector, EmplaceCopy)
 
     object_store store;
     auto attributes = collector.collect_pending(store);
+
+    EXPECT_FALSE(collector.has_pending_attributes());
 
     EXPECT_EQ(ddwaf_object_size(&attributes), 1);
 
@@ -69,6 +73,8 @@ TEST(TestAttributeCollector, CollectAvailableScalar)
     collector.collect(store, get_target_index("input_address"), {}, "output_address");
     auto attributes = collector.collect_pending(store);
 
+    EXPECT_FALSE(collector.has_pending_attributes());
+
     EXPECT_EQ(ddwaf_object_size(&attributes), 1);
 
     const auto *expected = ddwaf_object_get_index(&input_map, 0);
@@ -80,7 +86,7 @@ TEST(TestAttributeCollector, CollectAvailableScalar)
     ddwaf_object_free(&attributes);
 }
 
-TEST(TestAttributeCollector, CollectAvailableScalarFromArray)
+TEST(TestAttributeCollector, CollectAvailableScalarFromSingleValueArray)
 {
     ddwaf_object tmp;
     ddwaf_object intermediate_array;
@@ -98,6 +104,8 @@ TEST(TestAttributeCollector, CollectAvailableScalarFromArray)
     collector.collect(store, get_target_index("input_address"), {}, "output_address");
     auto attributes = collector.collect_pending(store);
 
+    EXPECT_FALSE(collector.has_pending_attributes());
+
     EXPECT_EQ(ddwaf_object_size(&attributes), 1);
 
     const auto *expected = ddwaf_object_get_index(ddwaf_object_get_index(&input_map, 0), 0);
@@ -109,7 +117,40 @@ TEST(TestAttributeCollector, CollectAvailableScalarFromArray)
     ddwaf_object_free(&attributes);
 }
 
-TEST(TestAttributeCollector, CollectInvalidScalarFromArray)
+TEST(TestAttributeCollector, CollectAvailableScalarFromMultiValueArray)
+{
+    ddwaf_object tmp;
+    ddwaf_object intermediate_array;
+    ddwaf_object_array(&intermediate_array);
+    ddwaf_object_array_add(&intermediate_array, ddwaf_object_string(&tmp, "value0"));
+    ddwaf_object_array_add(&intermediate_array, ddwaf_object_string(&tmp, "value1"));
+    ddwaf_object_array_add(&intermediate_array, ddwaf_object_string(&tmp, "value2"));
+
+    ddwaf_object input_map;
+    ddwaf_object_map(&input_map);
+    ddwaf_object_map_add(&input_map, "input_address", &intermediate_array);
+
+    object_store store;
+    store.insert(input_map);
+
+    attribute_collector collector;
+    collector.collect(store, get_target_index("input_address"), {}, "output_address");
+    auto attributes = collector.collect_pending(store);
+
+    EXPECT_FALSE(collector.has_pending_attributes());
+
+    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+
+    const auto *expected = ddwaf_object_get_index(ddwaf_object_get_index(&input_map, 0), 0);
+    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
+    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
+    EXPECT_NE(obtained->stringValue, expected->stringValue);
+    EXPECT_STREQ(obtained->stringValue, expected->stringValue);
+
+    ddwaf_object_free(&attributes);
+}
+
+TEST(TestAttributeCollector, CollectInvalidObjectFromArray)
 {
     ddwaf_object tmp;
     ddwaf_object intermediate_array;
@@ -127,6 +168,8 @@ TEST(TestAttributeCollector, CollectInvalidScalarFromArray)
     collector.collect(store, get_target_index("input_address"), {}, "output_address");
     auto attributes = collector.collect_pending(store);
 
+    EXPECT_FALSE(collector.has_pending_attributes());
+
     EXPECT_EQ(ddwaf_object_size(&attributes), 0);
 
     ddwaf_object_free(&attributes);
@@ -139,8 +182,10 @@ TEST(TestAttributeCollector, CollectUnavailableScalar)
 
     // The attribute should be in the pending queue
     collector.collect(store, get_target_index("input_address"), {}, "output_address");
+    EXPECT_TRUE(collector.has_pending_attributes());
 
     auto attributes = collector.collect_pending(store);
+    EXPECT_TRUE(collector.has_pending_attributes());
     EXPECT_EQ(ddwaf_object_size(&attributes), 0);
 
     // After adding the attribute, collect_pending should extract, copy and return
@@ -153,6 +198,7 @@ TEST(TestAttributeCollector, CollectUnavailableScalar)
     store.insert(input_map);
     attributes = collector.collect_pending(store);
 
+    EXPECT_FALSE(collector.has_pending_attributes());
     EXPECT_EQ(ddwaf_object_size(&attributes), 1);
 
     const auto *expected = ddwaf_object_get_index(&input_map, 0);
@@ -164,15 +210,17 @@ TEST(TestAttributeCollector, CollectUnavailableScalar)
     ddwaf_object_free(&attributes);
 }
 
-TEST(TestAttributeCollector, CollectUnavailableScalarFromArray)
+TEST(TestAttributeCollector, CollectUnavailableScalarFromSingleValueArray)
 {
     object_store store;
     attribute_collector collector;
 
     // The attribute should be in the pending queue
     collector.collect(store, get_target_index("input_address"), {}, "output_address");
+    EXPECT_TRUE(collector.has_pending_attributes());
 
     auto attributes = collector.collect_pending(store);
+    EXPECT_TRUE(collector.has_pending_attributes());
     EXPECT_EQ(ddwaf_object_size(&attributes), 0);
 
     // After adding the attribute, collect_pending should extract, copy and return
@@ -189,6 +237,7 @@ TEST(TestAttributeCollector, CollectUnavailableScalarFromArray)
     store.insert(input_map);
     attributes = collector.collect_pending(store);
 
+    EXPECT_FALSE(collector.has_pending_attributes());
     EXPECT_EQ(ddwaf_object_size(&attributes), 1);
 
     const auto *expected = ddwaf_object_get_index(ddwaf_object_get_index(&input_map, 0), 0);
@@ -198,6 +247,174 @@ TEST(TestAttributeCollector, CollectUnavailableScalarFromArray)
     EXPECT_STREQ(obtained->stringValue, expected->stringValue);
 
     ddwaf_object_free(&attributes);
+}
+
+TEST(TestAttributeCollector, CollectUnavailableScalarFromMultiValueArray)
+{
+    object_store store;
+    attribute_collector collector;
+
+    // The attribute should be in the pending queue
+    collector.collect(store, get_target_index("input_address"), {}, "output_address");
+    EXPECT_TRUE(collector.has_pending_attributes());
+
+    auto attributes = collector.collect_pending(store);
+    EXPECT_TRUE(collector.has_pending_attributes());
+    EXPECT_EQ(ddwaf_object_size(&attributes), 0);
+
+    // After adding the attribute, collect_pending should extract, copy and return
+    // the expected attribute
+    ddwaf_object tmp;
+    ddwaf_object intermediate_array;
+    ddwaf_object_array(&intermediate_array);
+    ddwaf_object_array_add(&intermediate_array, ddwaf_object_string(&tmp, "value0"));
+    ddwaf_object_array_add(&intermediate_array, ddwaf_object_string(&tmp, "value1"));
+    ddwaf_object_array_add(&intermediate_array, ddwaf_object_string(&tmp, "value2"));
+
+    ddwaf_object input_map;
+    ddwaf_object_map(&input_map);
+    ddwaf_object_map_add(&input_map, "input_address", &intermediate_array);
+
+    store.insert(input_map);
+    attributes = collector.collect_pending(store);
+
+    EXPECT_FALSE(collector.has_pending_attributes());
+    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+
+    const auto *expected = ddwaf_object_get_index(ddwaf_object_get_index(&input_map, 0), 0);
+    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
+    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
+    EXPECT_NE(obtained->stringValue, expected->stringValue);
+    EXPECT_STREQ(obtained->stringValue, expected->stringValue);
+
+    ddwaf_object_free(&attributes);
+}
+
+TEST(TestAttributeCollector, CollectUnavailableInvalidObject)
+{
+    object_store store;
+    attribute_collector collector;
+
+    // The attribute should be in the pending queue
+    collector.collect(store, get_target_index("input_address"), {}, "output_address");
+    EXPECT_TRUE(collector.has_pending_attributes());
+
+    auto attributes = collector.collect_pending(store);
+    EXPECT_TRUE(collector.has_pending_attributes());
+    EXPECT_EQ(ddwaf_object_size(&attributes), 0);
+
+    // After adding the attribute, collect_pending should extract, copy and return
+    // the expected attribute
+    ddwaf_object tmp;
+    ddwaf_object input_map;
+    ddwaf_object_map(&input_map);
+    ddwaf_object_map_add(&input_map, "input_address", ddwaf_object_array(&tmp));
+
+    store.insert(input_map);
+    attributes = collector.collect_pending(store);
+    EXPECT_FALSE(collector.has_pending_attributes());
+
+    EXPECT_EQ(ddwaf_object_size(&attributes), 0);
+
+    ddwaf_object_free(&attributes);
+}
+
+TEST(TestAttributeCollector, CollectMultipleUnavailableScalars)
+{
+    object_store store;
+    attribute_collector collector;
+
+    {
+        // The attribute should be in the pending queue
+        collector.collect(store, get_target_index("input_address_0"), {}, "output_address_0");
+        EXPECT_TRUE(collector.has_pending_attributes());
+
+        // Nothing to be collected
+        auto attributes = collector.collect_pending(store);
+        EXPECT_TRUE(collector.has_pending_attributes());
+        EXPECT_EQ(ddwaf_object_size(&attributes), 0);
+    }
+
+    {
+        // The attribute should be in the pending queue
+        collector.collect(store, get_target_index("input_address_1"), {}, "output_address_1");
+        EXPECT_TRUE(collector.has_pending_attributes());
+
+        // Nothing to be collected
+        auto attributes = collector.collect_pending(store);
+        EXPECT_TRUE(collector.has_pending_attributes());
+        EXPECT_EQ(ddwaf_object_size(&attributes), 0);
+    }
+
+    {
+        // After adding the attribute, collect_pending should extract, copy and return
+        // the expected attribute
+        ddwaf_object tmp;
+        ddwaf_object input_map;
+        ddwaf_object_map(&input_map);
+        ddwaf_object_map_add(&input_map, "input_address_0", ddwaf_object_string(&tmp, "value"));
+
+        store.insert(input_map);
+
+        collector.collect(store, get_target_index("input_address_2"), {}, "output_address_2");
+        auto attributes = collector.collect_pending(store);
+        EXPECT_TRUE(collector.has_pending_attributes());
+        EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+
+        const auto *expected = ddwaf_object_get_index(&input_map, 0);
+        const auto *obtained = ddwaf_object_get_index(&attributes, 0);
+        EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
+        EXPECT_NE(obtained->stringValue, expected->stringValue);
+        EXPECT_STREQ(obtained->stringValue, expected->stringValue);
+
+        ddwaf_object_free(&attributes);
+    }
+
+    {
+        // After adding the attribute, collect_pending should extract, copy and return
+        // the expected attribute
+        ddwaf_object tmp;
+        ddwaf_object input_map;
+        ddwaf_object_map(&input_map);
+        ddwaf_object_map_add(&input_map, "input_address_2", ddwaf_object_string(&tmp, "value"));
+
+        store.insert(input_map);
+
+        auto attributes = collector.collect_pending(store);
+        EXPECT_TRUE(collector.has_pending_attributes());
+        EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+
+        const auto *expected = ddwaf_object_get_index(&input_map, 0);
+        const auto *obtained = ddwaf_object_get_index(&attributes, 0);
+        EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
+        EXPECT_NE(obtained->stringValue, expected->stringValue);
+        EXPECT_STREQ(obtained->stringValue, expected->stringValue);
+
+        ddwaf_object_free(&attributes);
+    }
+
+    {
+        // After adding the attribute, collect_pending should extract, copy and return
+        // the expected attribute
+        ddwaf_object tmp;
+        ddwaf_object input_map;
+        ddwaf_object_map(&input_map);
+        ddwaf_object_map_add(&input_map, "input_address_1", ddwaf_object_string(&tmp, "value"));
+
+        store.insert(input_map);
+
+        auto attributes = collector.collect_pending(store);
+        EXPECT_FALSE(collector.has_pending_attributes());
+        EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+
+        const auto *expected = ddwaf_object_get_index(&input_map, 0);
+        const auto *obtained = ddwaf_object_get_index(&attributes, 0);
+        EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
+        EXPECT_NE(obtained->stringValue, expected->stringValue);
+        EXPECT_STREQ(obtained->stringValue, expected->stringValue);
+
+        ddwaf_object_free(&attributes);
+    }
 }
 
 } // namespace
