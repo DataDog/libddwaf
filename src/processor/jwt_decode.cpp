@@ -17,7 +17,6 @@
 #include "utils.hpp"
 
 #include <cstddef>
-#include <cstdint>
 #include <span>
 #include <string>
 #include <string_view>

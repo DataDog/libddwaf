@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "attribute_collector.hpp"
 #include "clock.hpp"
 #include "event.hpp"
 #include "exception.hpp"

@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 #include "attribute_collector.hpp"
@@ -23,11 +24,12 @@
 namespace ddwaf {
 
 struct rule_attribute {
-    struct {
+    struct input_target {
         std::string name;
         target_index index;
         std::vector<std::string> key_path;
-    } input;
+    };
+    std::variant<input_target, std::string, uint64_t, int64_t, double, bool> input;
     std::string output;
 };
 
@@ -84,7 +86,20 @@ public:
         }
 
         for (const auto &attr : attributes_) {
-            collector.collect(store, attr.input.index, attr.input.key_path, attr.output);
+            if (std::holds_alternative<rule_attribute::input_target>(attr.input)) {
+                auto input = std::get<rule_attribute::input_target>(attr.input);
+                collector.collect(store, input.index, input.key_path, attr.output);
+            } else if (std::holds_alternative<std::string>(attr.input)) {
+                collector.emplace(attr.output, std::get<std::string>(attr.input));
+            } else if (std::holds_alternative<uint64_t>(attr.input)) {
+                collector.emplace(attr.output, std::get<uint64_t>(attr.input));
+            } else if (std::holds_alternative<int64_t>(attr.input)) {
+                collector.emplace(attr.output, std::get<int64_t>(attr.input));
+            } else if (std::holds_alternative<double>(attr.input)) {
+                collector.emplace(attr.output, std::get<double>(attr.input));
+            } else if (std::holds_alternative<bool>(attr.input)) {
+                collector.emplace(attr.output, std::get<bool>(attr.input));
+            }
         }
 
         if (!event_) {

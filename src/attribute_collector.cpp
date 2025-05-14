@@ -5,10 +5,12 @@
 // Copyright 2025 Datadog, Inc.
 
 #include <span>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 
 #include "attribute_collector.hpp"
+#include "ddwaf.h"
 #include "object_store.hpp"
 #include "target_address.hpp"
 #include "utils.hpp"

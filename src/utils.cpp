@@ -4,9 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <cstddef>
 #include <cstdint>
 #include <list>
 #include <span>
+#include <string>
+#include <string_view>
 #include <utility>
 
 #include "ddwaf.h"

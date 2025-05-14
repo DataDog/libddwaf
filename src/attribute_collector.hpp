@@ -25,6 +25,42 @@ public:
     attribute_collector &operator=(attribute_collector &&) = delete;
     ~attribute_collector() { ddwaf_object_free(&attributes_); }
 
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    bool emplace(std::string_view key, std::string_view value)
+    {
+        ddwaf_object object;
+        ddwaf_object_stringl(&object, value.data(), value.size());
+        return emplace(key, object, false);
+    }
+
+    bool emplace(std::string_view key, uint64_t value)
+    {
+        ddwaf_object object;
+        ddwaf_object_unsigned(&object, value);
+        return emplace(key, object, false);
+    }
+
+    bool emplace(std::string_view key, int64_t value)
+    {
+        ddwaf_object object;
+        ddwaf_object_signed(&object, value);
+        return emplace(key, object, false);
+    }
+
+    bool emplace(std::string_view key, double value)
+    {
+        ddwaf_object object;
+        ddwaf_object_float(&object, value);
+        return emplace(key, object, false);
+    }
+
+    bool emplace(std::string_view key, bool value)
+    {
+        ddwaf_object object;
+        ddwaf_object_bool(&object, value);
+        return emplace(key, object, false);
+    }
+
     bool emplace(std::string_view key, const ddwaf_object &value, bool copy);
 
     void collect(const object_store &store, target_index input_target,
