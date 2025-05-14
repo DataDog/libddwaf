@@ -163,9 +163,9 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
         // NOLINTNEXTLINE(bugprone-empty-catch)
     } catch (const ddwaf::timeout_exception &) {}
 
-    // Collect any pending attributes, some may have been generated through postprocessors
-    collector.collect_pending(store_);
-    result.attributes = collector.move_current_batch();
+    // Collect pending checks again if any of the pending attributes have been
+    // collected, as some may have been generated through postprocessors
+    result.attributes = collector.collect_pending(store_); // TODO: Fix
     serializer.serialize(events, result.events, result.actions);
 
     // Using the interface functions would replace the key contained within the

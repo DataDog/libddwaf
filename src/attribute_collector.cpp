@@ -15,38 +15,35 @@
 
 namespace ddwaf {
 
-// This method creates a copy of the provided object
 bool attribute_collector::emplace(std::string_view key, const ddwaf_object &value, bool copy)
 {
     if (emplaced_attributes_.contains(key)) {
         return false;
     }
 
-    auto object = copy ? object::clone(&value) : value;
-    auto res = ddwaf_object_map_addl(&attributes_, key.data(), key.size(), &object);
-    if (res) {
-        if (copy) {
-            ddwaf_object_free(&object);
-        }
-    } else {
-        emplaced_attributes_.emplace(key);
-    }
-    return res;
+    return emplace_helper(key, value, copy);
 }
 
 void attribute_collector::collect(const object_store &store, target_index input_target,
     std::span<std::string> input_key_path, std::string_view output)
 {
+    if (emplaced_attributes_.contains(output)) {
+        return;
+    }
+
     auto state = collect_helper(store, input_target, input_key_path, output);
     if (state == collection_state::unavailable) {
         pending_.emplace(output, target_type{input_target, input_key_path});
     }
 }
 
-void attribute_collector::collect_pending(const object_store &store)
+ddwaf_object attribute_collector::collect_pending(const object_store &store)
 {
     for (auto it = pending_.begin(); it != pending_.end(); ++it) {
         auto output = it->first;
+        // No need to check if the key is already present, as emplace and collect
+        // already perform the check. As for items in the pending map, since the
+        // map key is the output key, duplicates aren't possible.
         auto &[input_target, input_key_path] = it->second;
 
         auto state = collect_helper(store, input_target, input_key_path, output);
@@ -54,6 +51,10 @@ void attribute_collector::collect_pending(const object_store &store)
             it = pending_.erase(it);
         }
     }
+
+    auto output_object = attributes_;
+    ddwaf_object_map(&attributes_);
+    return output_object;
 }
 
 attribute_collector::collection_state attribute_collector::collect_helper(const object_store &store,
@@ -72,15 +73,29 @@ attribute_collector::collection_state attribute_collector::collect_helper(const 
     }
 
     if (object::is_scalar(resolved)) {
-        emplace(output, *resolved, true);
+        emplace_helper(output, *resolved, true);
     } else if (resolved->type == DDWAF_OBJ_ARRAY && resolved->nbEntries > 0) {
-        emplace(output, resolved->array[0], true);
+        emplace_helper(output, resolved->array[0], true);
     } else {
         // The type is not a valid one, we mark it as failed.
         return collection_state::failed;
     }
 
     return collection_state::success;
+}
+
+bool attribute_collector::emplace_helper(std::string_view key, const ddwaf_object &value, bool copy)
+{
+    auto object = copy ? object::clone(&value) : value;
+    auto res = ddwaf_object_map_addl(&attributes_, key.data(), key.size(), &object);
+    if (!res) {
+        if (copy) {
+            ddwaf_object_free(&object);
+        }
+    } else {
+        emplaced_attributes_.emplace(key);
+    }
+    return res;
 }
 
 } // namespace ddwaf
