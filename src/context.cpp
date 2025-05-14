@@ -168,8 +168,9 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
         // NOLINTNEXTLINE(bugprone-empty-catch)
     } catch (const ddwaf::timeout_exception &) {}
 
-    // Collect pending checks again if any of the pending attributes have been
-    // collected, as some may have been generated through postprocessors
+    // Collect pending attributes, this will check if any new attributes are
+    // available (e.g. from a postprocessor) and return a map of all attributes
+    // generated during this call.
     object::assign(result.attributes, collector_.collect_pending(store_));
     serializer.serialize(events, result.events, result.actions);
 
