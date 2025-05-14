@@ -23,11 +23,14 @@ namespace ddwaf {
 
 struct rule_spec {
     bool enabled;
+    bool event;
+    bool keep;
     core_rule::source_type source;
     std::string name;
     std::unordered_map<std::string, std::string> tags;
     std::shared_ptr<expression> expr;
     std::vector<std::string> actions;
+    std::vector<rule_attribute> attributes;
 };
 
 enum class reference_type : uint8_t { none, id, tags };

@@ -56,8 +56,8 @@ public:
     std::pair<DDWAF_RET_CODE, ddwaf_object> run(
         optional_ref<ddwaf_object>, optional_ref<ddwaf_object>, uint64_t);
 
-    void eval_preprocessors(attribute_collector &collector, ddwaf::timer &deadline);
-    void eval_postprocessors(attribute_collector &collector, ddwaf::timer &deadline);
+    void eval_preprocessors(ddwaf::timer &deadline);
+    void eval_postprocessors(ddwaf::timer &deadline);
     // This function below returns a reference to an internal object,
     // however using them this way helps with testing
     exclusion::context_policy &eval_filters(ddwaf::timer &deadline);
@@ -89,6 +89,7 @@ protected:
 
     std::shared_ptr<ruleset> ruleset_;
     ddwaf::object_store store_;
+    attribute_collector collector_;
 
     // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
     const std::vector<std::unique_ptr<base_processor>> &preprocessors_;

@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "attribute_collector.hpp"
 #include "clock.hpp"
 #include "event.hpp"
 #include "exclusion/common.hpp"
@@ -20,6 +21,15 @@
 #include "object_store.hpp"
 
 namespace ddwaf {
+
+struct rule_attribute {
+    struct {
+        std::string name;
+        target_index index;
+        std::vector<std::string> key_path;
+    } input;
+    std::string output;
+};
 
 // A core rule constitutes the most important type of entity within the
 // evaluation process. These rules are "request-bound", i.e. they are used to
@@ -35,10 +45,11 @@ public:
     core_rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
         std::shared_ptr<expression> expr, std::vector<std::string> actions = {},
         bool enabled = true, source_type source = source_type::base,
-        verdict_type verdict = verdict_type::monitor)
-        : enabled_(enabled), source_(source), verdict_(verdict), id_(std::move(id)),
-          name_(std::move(name)), tags_(std::move(tags)), actions_(std::move(actions)),
-          expr_(std::move(expr))
+        verdict_type verdict = verdict_type::monitor, std::vector<rule_attribute> attributes = {},
+        bool event = true, bool keep = true)
+        : enabled_(enabled), event_(event), keep_(keep), source_(source), verdict_(verdict),
+          id_(std::move(id)), name_(std::move(name)), tags_(std::move(tags)),
+          actions_(std::move(actions)), attributes_(std::move(attributes)), expr_(std::move(expr))
     {
         if (!expr_) {
             throw std::invalid_argument("rule constructed with null expression");
@@ -60,7 +71,7 @@ public:
 
     virtual std::optional<event> match(const object_store &store, cache_type &cache,
         const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
-        const object_limits &limits, ddwaf::timer &deadline) const
+        attribute_collector &collector, const object_limits &limits, ddwaf::timer &deadline) const
     {
         if (expression::get_result(cache)) {
             // An event was already produced, so we skip the rule
@@ -72,7 +83,19 @@ public:
             return std::nullopt;
         }
 
-        return {ddwaf::event{this, expression::get_matches(cache), res.ephemeral, {}}};
+        for (const auto &attr : attributes_) {
+            collector.collect(store, attr.input.index, attr.input.key_path, attr.output);
+        }
+
+        if (!event_) {
+            // No event needs to be generated
+            return std::nullopt;
+        }
+
+        return {ddwaf::event{.rule = this,
+            .matches = expression::get_matches(cache),
+            .ephemeral = res.ephemeral,
+            .action_override = {}}};
     }
 
     [[nodiscard]] bool is_enabled() const { return enabled_; }
@@ -105,18 +128,23 @@ public:
     verdict_type get_verdict() const { return verdict_; }
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
-        return expr_->get_addresses(addresses);
+        expr_->get_addresses(addresses);
     }
+
+    [[nodiscard]] bool should_keep() const { return keep_; }
 
 protected:
     // General metadata
     bool enabled_{true};
+    bool event_{true};
+    bool keep_{true};
     source_type source_;
     verdict_type verdict_{verdict_type::monitor};
     std::string id_;
     std::string name_;
     std::unordered_map<std::string, std::string> tags_;
     std::vector<std::string> actions_;
+    std::vector<rule_attribute> attributes_;
 
     // Frequently accessed tags
     std::string_view type_;

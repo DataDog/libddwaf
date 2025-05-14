@@ -25,7 +25,7 @@ bool attribute_collector::emplace(std::string_view key, const ddwaf_object &valu
 }
 
 void attribute_collector::collect(const object_store &store, target_index input_target,
-    std::span<std::string> input_key_path, std::string_view output)
+    std::span<const std::string> input_key_path, std::string_view output)
 {
     if (emplaced_attributes_.contains(output)) {
         return;
@@ -55,12 +55,15 @@ ddwaf_object attribute_collector::collect_pending(const object_store &store)
     }
 
     auto output_object = attributes_;
+    // Reset attributes
     ddwaf_object_map(&attributes_);
+    emplaced_attributes_.clear();
+
     return output_object;
 }
 
 attribute_collector::collection_state attribute_collector::collect_helper(const object_store &store,
-    target_index input_target, std::span<std::string> input_key_path, std::string_view output)
+    target_index input_target, std::span<const std::string> input_key_path, std::string_view output)
 {
     auto [object, attr] = store.get_target(input_target);
     if (object == nullptr) {

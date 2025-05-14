@@ -137,12 +137,11 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
     const event_serializer serializer(event_obfuscator_, actions_);
 
     std::vector<ddwaf::event> events;
-    attribute_collector collector;
 
     try {
         // Evaluate preprocessors first in their own try-catch, if there's a
         // timeout we still need to evaluate rules unaffected by it.
-        eval_preprocessors(collector, deadline);
+        eval_preprocessors(deadline);
         // NOLINTNEXTLINE(bugprone-empty-catch)
     } catch (const ddwaf::timeout_exception &) {}
 
@@ -165,13 +164,13 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
             }
         }
 
-        eval_postprocessors(collector, deadline);
+        eval_postprocessors(deadline);
         // NOLINTNEXTLINE(bugprone-empty-catch)
     } catch (const ddwaf::timeout_exception &) {}
 
     // Collect pending checks again if any of the pending attributes have been
     // collected, as some may have been generated through postprocessors
-    object::assign(result.attributes, collector.collect_pending(store_));
+    object::assign(result.attributes, collector_.collect_pending(store_));
     serializer.serialize(events, result.events, result.actions);
 
     // Using the interface functions would replace the key contained within the
@@ -182,7 +181,7 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
     return {events.empty() ? DDWAF_OK : DDWAF_MATCH, move_object(result_object)};
 }
 
-void context::eval_preprocessors(attribute_collector &collector, ddwaf::timer &deadline)
+void context::eval_preprocessors(ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating preprocessors");
 
@@ -198,11 +197,11 @@ void context::eval_preprocessors(attribute_collector &collector, ddwaf::timer &d
             it = new_it;
         }
 
-        preproc->eval(store_, collector, it->second, limits_, deadline);
+        preproc->eval(store_, collector_, it->second, limits_, deadline);
     }
 }
 
-void context::eval_postprocessors(attribute_collector &collector, ddwaf::timer &deadline)
+void context::eval_postprocessors(ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating postprocessors");
 
@@ -218,7 +217,7 @@ void context::eval_postprocessors(attribute_collector &collector, ddwaf::timer &
             it = new_it;
         }
 
-        postproc->eval(store_, collector, it->second, limits_, deadline);
+        postproc->eval(store_, collector_, it->second, limits_, deadline);
     }
 }
 
@@ -281,7 +280,8 @@ void context::eval_rules(const exclusion::context_policy &policy, std::vector<dd
         const auto &mod = ruleset_->rule_modules[i];
         auto &cache = rule_module_cache_[i];
 
-        auto verdict = mod.eval(events, store_, cache, policy, rule_matchers_, limits_, deadline);
+        auto verdict =
+            mod.eval(events, store_, cache, policy, rule_matchers_, collector_, limits_, deadline);
         if (verdict == rule_module::verdict_type::block) {
             break;
         }
