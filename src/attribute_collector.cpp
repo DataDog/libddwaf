@@ -33,13 +33,15 @@ void attribute_collector::collect(const object_store &store, target_index input_
 
     auto state = collect_helper(store, input_target, input_key_path, output);
     if (state == collection_state::unavailable) {
+        std::cout << "Adding target to queue\n";
         pending_.emplace(output, target_type{input_target, input_key_path});
     }
 }
 
 ddwaf_object attribute_collector::collect_pending(const object_store &store)
 {
-    for (auto it = pending_.begin(); it != pending_.end(); ++it) {
+    std::cout << "Collecting pending targets: " << pending_.size() << '\n';
+    for (auto it = pending_.begin(); it != pending_.end();) {
         auto output = it->first;
         // No need to check if the key is already present, as emplace and collect
         // already perform the check. As for items in the pending map, since the
@@ -49,6 +51,8 @@ ddwaf_object attribute_collector::collect_pending(const object_store &store)
         auto state = collect_helper(store, input_target, input_key_path, output);
         if (state != collection_state::unavailable) {
             it = pending_.erase(it);
+        } else {
+            ++it;
         }
     }
 
@@ -74,14 +78,17 @@ attribute_collector::collection_state attribute_collector::collect_helper(const 
 
     if (object::is_scalar(resolved)) {
         emplace_helper(output, *resolved, true);
-    } else if (resolved->type == DDWAF_OBJ_ARRAY && resolved->nbEntries > 0) {
-        emplace_helper(output, resolved->array[0], true);
-    } else {
-        // The type is not a valid one, we mark it as failed.
-        return collection_state::failed;
+        return collection_state::success;
     }
 
-    return collection_state::success;
+    if (resolved->type == DDWAF_OBJ_ARRAY && resolved->nbEntries > 0) {
+        auto &candidate = resolved->array[0];
+        if (object::is_scalar(&candidate)) {
+            emplace_helper(output, candidate, true);
+            return collection_state::success;
+        }
+    }
+    return collection_state::failed;
 }
 
 bool attribute_collector::emplace_helper(std::string_view key, const ddwaf_object &value, bool copy)
