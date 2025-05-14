@@ -65,8 +65,15 @@ rule_spec parse_rule(raw_configuration::map &rule, core_rule::source_type source
     }
 
     auto output = at<raw_configuration::map>(rule, "output", {});
-    auto attr_map = at<raw_configuration::map>(output, "attributes", {});
+    rule_flags flags = rule_flags::none;
+    if (at<bool>(output, "event", true)) {
+        flags = flags | rule_flags::generate_event;
+    }
+    if (at<bool>(output, "keep", true)) {
+        flags = flags | rule_flags::keep_outcome;
+    }
 
+    auto attr_map = at<raw_configuration::map>(output, "attributes", {});
     std::vector<rule_attribute> attributes;
     for (auto &[output, value_or_target] : attr_map) {
         rule_attribute attr_spec;
@@ -104,8 +111,7 @@ rule_spec parse_rule(raw_configuration::map &rule, core_rule::source_type source
     }
 
     return {.enabled = at<bool>(rule, "enabled", true),
-        .event = at<bool>(output, "event", true),
-        .keep = at<bool>(output, "keep", true),
+        .flags = flags,
         .source = source,
         .name = at<std::string>(rule, "name"),
         .tags = std::move(tags),
@@ -141,7 +147,7 @@ void parse_rules(const raw_configuration::vector &rule_array, configuration_coll
             }
 
             auto rule = parse_rule(node, source);
-            if (!rule.event && rule.attributes.empty()) {
+            if (!contains(rule.flags, rule_flags::generate_event) && rule.attributes.empty()) {
                 DDWAF_WARN("Rule generates no events or attributes: {}", id);
                 info.add_failed(
                     id, parser_error_severity::error, "rule generate no events or attributes");

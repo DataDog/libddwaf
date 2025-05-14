@@ -183,8 +183,8 @@ TEST(TestModuleUngrouped, BlockingRuleMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{base_rule_precedence, null_grouping_key};
@@ -244,8 +244,8 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{base_rule_precedence, null_grouping_key};
@@ -306,8 +306,8 @@ TEST(TestModuleUngrouped, BlockingRuleMatchBasePrecedence)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::user,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::user, core_rule::verdict_type::block));
         rules.emplace_back(
             std::make_shared<core_rule>("id", "name", std::move(tags), builder.build()));
     }
@@ -323,8 +323,8 @@ TEST(TestModuleUngrouped, BlockingRuleMatchBasePrecedence)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{base_rule_precedence, null_grouping_key};
@@ -370,8 +370,8 @@ TEST(TestModuleUngrouped, BlockingRuleMatchUserPrecedence)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::user,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::user, core_rule::verdict_type::block));
         rules.emplace_back(
             std::make_shared<core_rule>("id", "name", std::move(tags), builder.build()));
     }
@@ -387,8 +387,8 @@ TEST(TestModuleUngrouped, BlockingRuleMatchUserPrecedence)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, null_grouping_key};
@@ -513,8 +513,9 @@ TEST(TestModuleUngrouped, DisabledRules)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category"}};
 
-        rules.emplace_back(std::make_shared<core_rule>(
-            "id1", "name", std::move(tags), builder.build(), std::vector<std::string>{}, false));
+        rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::monitor, false));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, null_grouping_key};
@@ -629,8 +630,8 @@ TEST(TestModuleGrouped, MultipleGroupsBlockingRuleMatch)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{base_rule_precedence, type_grouping_key};
@@ -688,8 +689,8 @@ TEST(TestModuleGrouped, SingleGroupBlockingRuleMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{base_rule_precedence, type_grouping_key};
@@ -805,7 +806,8 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupMonitoringUserMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
@@ -863,7 +865,8 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupMonitoringBaseMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     rule_module_builder mod_builder{base_rule_precedence, type_grouping_key};
@@ -907,8 +910,8 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingBaseMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     {
@@ -922,7 +925,8 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingBaseMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
@@ -966,8 +970,8 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingUserMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     {
@@ -981,8 +985,8 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingUserMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::user,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::user, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
@@ -1026,8 +1030,8 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingBaseMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     {
@@ -1041,7 +1045,8 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingBaseMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     rule_module_builder mod_builder{base_rule_precedence, type_grouping_key};
@@ -1084,9 +1089,9 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingUserMatch)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
-        rules.emplace_back(
-            std::make_shared<core_rule>("id1", "name", std::move(tags), builder.build(),
-                std::vector<std::string>{"block"}, true, core_rule::source_type::base));
+        rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base));
     }
 
     {
@@ -1100,8 +1105,8 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingUserMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::user,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::user, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{base_rule_precedence, type_grouping_key};
@@ -1159,7 +1164,8 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsMonitoringMatch)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
@@ -1218,8 +1224,8 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsBlockingMatch)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::user,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::user, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
@@ -1277,7 +1283,8 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsMonitoringMatch)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     rule_module_builder mod_builder{base_rule_precedence, type_grouping_key};
@@ -1322,8 +1329,8 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsBlockingMatch)
             {"type", "type1"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     {
@@ -1381,8 +1388,8 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
             {"type", "type1"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     {
@@ -1410,7 +1417,8 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id3", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     {
@@ -1424,8 +1432,8 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id4", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user, core_rule::verdict_type::block));
     }
 
     {
@@ -1439,7 +1447,8 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
             {"type", "type3"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id5", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     {
@@ -1467,8 +1476,8 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
             {"type", "type5"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id7", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user, core_rule::verdict_type::block));
     }
 
     {
@@ -1482,8 +1491,8 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
             {"type", "type6"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id8", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
@@ -1559,7 +1568,8 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id3", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     {
@@ -1573,7 +1583,8 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id4", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     {
@@ -1587,7 +1598,8 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
             {"type", "type3"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id5", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
@@ -1663,8 +1675,8 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id3", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user, core_rule::verdict_type::block));
     }
 
     {
@@ -1678,7 +1690,8 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id4", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     {
@@ -1692,7 +1705,8 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
             {"type", "type3"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id5", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
@@ -1736,8 +1750,9 @@ TEST(TestModuleGrouped, DisabledRules)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category"}};
 
-        rules.emplace_back(std::make_shared<core_rule>(
-            "id1", "name", std::move(tags), builder.build(), std::vector<std::string>{}, false));
+        rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::monitor, false));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};

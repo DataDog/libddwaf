@@ -33,6 +33,38 @@ struct rule_attribute {
     std::string output;
 };
 
+/**
+ * Flags that control rule behavior
+ */
+enum class rule_flags : uint8_t {
+    none = 0,
+    generate_event = 1 << 0, // Generate an event when rule matches
+    keep_outcome = 1 << 1    // Keep the rule outcome in memory
+};
+
+// Enable bitwise operations on rule_flags
+constexpr ddwaf::rule_flags operator|(ddwaf::rule_flags a, ddwaf::rule_flags b) noexcept
+{
+    return static_cast<ddwaf::rule_flags>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
+}
+
+constexpr ddwaf::rule_flags operator&(ddwaf::rule_flags a, ddwaf::rule_flags b) noexcept
+{
+    return static_cast<ddwaf::rule_flags>(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
+}
+
+constexpr bool operator==(ddwaf::rule_flags a, ddwaf::rule_flags b) noexcept
+{
+    return static_cast<uint8_t>(a) == static_cast<uint8_t>(b);
+}
+
+constexpr bool operator!=(ddwaf::rule_flags a, ddwaf::rule_flags b) noexcept
+{
+    return static_cast<uint8_t>(a) != static_cast<uint8_t>(b);
+}
+
+constexpr bool contains(rule_flags set, rule_flags opt) { return (set & opt) != rule_flags::none; }
+
 // A core rule constitutes the most important type of entity within the
 // evaluation process. These rules are "request-bound", i.e. they are used to
 // specifically analyse request data, as opposed to other types of rules such
@@ -44,14 +76,21 @@ public:
 
     using cache_type = expression::cache_type;
 
-    core_rule(std::string id, std::string name, std::unordered_map<std::string, std::string> tags,
-        std::shared_ptr<expression> expr, std::vector<std::string> actions = {},
-        bool enabled = true, source_type source = source_type::base,
-        verdict_type verdict = verdict_type::monitor, std::vector<rule_attribute> attributes = {},
-        bool event = true, bool keep = true)
-        : enabled_(enabled), event_(event), keep_(keep), source_(source), verdict_(verdict),
-          id_(std::move(id)), name_(std::move(name)), tags_(std::move(tags)),
-          actions_(std::move(actions)), attributes_(std::move(attributes)), expr_(std::move(expr))
+    core_rule(std::string id,                              // Required: Unique identifier
+        std::string name,                                  // Required: Human-readable name
+        std::unordered_map<std::string, std::string> tags, // Required: Rule metadata
+        std::shared_ptr<expression> expr,                  // Required: Rule expression
+        std::vector<std::string> actions = {},             // Optional: Rule actions, default: none
+        std::vector<rule_attribute> attributes = {},       // Optional: Attributes, default: none
+        source_type source = source_type::base,            // Optional: Rule source, default: base
+        verdict_type verdict = verdict_type::monitor, // Optional: Rule verdict: default: monitor
+        bool enabled = true,                          // Optional: Enabled by default
+        rule_flags flags = rule_flags::generate_event |
+                           rule_flags::keep_outcome // Optional: Default flags
+        )
+        : enabled_(enabled), flags_(flags), source_(source), verdict_(verdict), id_(std::move(id)),
+          name_(std::move(name)), tags_(std::move(tags)), actions_(std::move(actions)),
+          attributes_(std::move(attributes)), expr_(std::move(expr))
     {
         if (!expr_) {
             throw std::invalid_argument("rule constructed with null expression");
@@ -59,6 +98,7 @@ public:
 
         // If the tag is not present, the default is `waf`
         mod_ = string_to_rule_module_category(get_tag_or("module", "waf"));
+
         // Type is guaranteed to be present
         type_ = get_tag("type");
     }
@@ -102,7 +142,7 @@ public:
             }
         }
 
-        if (!event_) {
+        if (!contains(flags_, rule_flags::generate_event)) {
             // No event needs to be generated
             return std::nullopt;
         }
@@ -146,13 +186,12 @@ public:
         expr_->get_addresses(addresses);
     }
 
-    [[nodiscard]] bool should_keep() const { return keep_; }
+    [[nodiscard]] bool should_keep() const { return contains(flags_, rule_flags::keep_outcome); }
 
 protected:
     // General metadata
     bool enabled_{true};
-    bool event_{true};
-    bool keep_{true};
+    rule_flags flags_{rule_flags::generate_event | rule_flags::keep_outcome};
     source_type source_;
     verdict_type verdict_{verdict_type::monitor};
     std::string id_;

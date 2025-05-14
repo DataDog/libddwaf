@@ -210,8 +210,8 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
             {"type", "type"}, {"category", "category2"}};
 
         rbuilder.insert_base_rule(core_rule{"id2", "name2", std::move(tags), builder.build(),
-            std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block});
+            std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block});
     }
 
     auto ruleset = rbuilder.build();
@@ -360,8 +360,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
             {"type", "type"}, {"category", "category2"}};
 
         rbuilder.insert_base_rule(core_rule{"id2", "name2", std::move(tags), builder.build(),
-            std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block});
+            std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block});
     }
 
     ddwaf::timer deadline{2s};
@@ -444,8 +444,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
             {"type", "type"}, {"category", "category1"}};
 
         rbuilder.insert_base_rule(core_rule{"id1", "name1", std::move(tags), builder.build(),
-            std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block});
+            std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block});
     }
 
     {
@@ -568,8 +568,8 @@ TEST(TestContext, MatchPriorityCollectionsSingleRun)
             {"type", "type1"}, {"category", "category1"}};
 
         rbuilder.insert_base_rule(core_rule{"id1", "name1", std::move(tags), builder.build(),
-            std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block});
+            std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block});
     }
 
     {
@@ -674,8 +674,8 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
             {"type", "type1"}, {"category", "category1"}};
 
         rbuilder.insert_base_rule(core_rule{"id1", "name1", std::move(tags), builder.build(),
-            std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block});
+            std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block});
     }
 
     {
@@ -849,8 +849,8 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
             {"type", "type"}, {"category", "category"}};
 
         rule = rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build(),
-            std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block});
+            std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block});
     }
 
     // Generate filter
@@ -929,8 +929,8 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
             {"type", "type"}, {"category", "category"}};
 
         rule = rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build(),
-            std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block});
+            std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block});
     }
 
     // Generate filter

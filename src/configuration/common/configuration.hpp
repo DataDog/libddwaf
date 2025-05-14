@@ -23,8 +23,7 @@ namespace ddwaf {
 
 struct rule_spec {
     bool enabled;
-    bool event;
-    bool keep;
+    rule_flags flags;
     core_rule::source_type source;
     std::string name;
     std::unordered_map<std::string, std::string> tags;

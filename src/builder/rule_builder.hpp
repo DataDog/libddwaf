@@ -66,7 +66,8 @@ public:
         ancillary_tags_.merge(spec_.tags);
 
         return {std::move(id_), std::move(spec_.name), std::move(ancillary_tags_),
-            std::move(spec_.expr), std::move(spec_.actions), spec_.enabled, spec_.source, verdict};
+            std::move(spec_.expr), std::move(spec_.actions), std::move(spec_.attributes),
+            spec_.source, verdict, spec_.enabled, spec_.flags};
     }
 
 protected:
