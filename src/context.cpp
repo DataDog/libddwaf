@@ -165,7 +165,7 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
 
     // Collect pending checks again if any of the pending attributes have been
     // collected, as some may have been generated through postprocessors
-    result.attributes = collector.collect_pending(store_); // TODO: Fix
+    object::assign(result.attributes, collector.collect_pending(store_));
     serializer.serialize(events, result.events, result.actions);
 
     // Using the interface functions would replace the key contained within the

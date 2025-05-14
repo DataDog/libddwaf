@@ -120,4 +120,14 @@ const ddwaf_object *find_key_path(const ddwaf_object &root, std::span<const std:
     return current;
 }
 
+void assign(ddwaf_object &dest, const ddwaf_object &source)
+{
+    const auto *parameterName = dest.parameterName;
+    auto parameterNameLength = dest.parameterNameLength;
+
+    dest = source;
+    dest.parameterName = parameterName;
+    dest.parameterNameLength = parameterNameLength;
+}
+
 } // namespace ddwaf::object
