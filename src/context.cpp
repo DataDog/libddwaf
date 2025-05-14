@@ -138,9 +138,15 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
 
     std::vector<ddwaf::event> events;
     attribute_collector collector;
-    try {
-        eval_preprocessors(collector, deadline);
 
+    try {
+        // Evaluate preprocessors first in their own try-catch, if there's a
+        // timeout we still need to evaluate rules unaffected by it.
+        eval_preprocessors(collector, deadline);
+        // NOLINTNEXTLINE(bugprone-empty-catch)
+    } catch (const ddwaf::timeout_exception &) {}
+
+    try {
         // If no rule targets are available, there is no point in evaluating them
         const bool should_eval_rules = check_new_rule_targets();
         const bool should_eval_filters = should_eval_rules || check_new_filter_targets();

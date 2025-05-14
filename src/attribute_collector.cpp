@@ -33,14 +33,12 @@ void attribute_collector::collect(const object_store &store, target_index input_
 
     auto state = collect_helper(store, input_target, input_key_path, output);
     if (state == collection_state::unavailable) {
-        std::cout << "Adding target to queue\n";
         pending_.emplace(output, target_type{input_target, input_key_path});
     }
 }
 
 ddwaf_object attribute_collector::collect_pending(const object_store &store)
 {
-    std::cout << "Collecting pending targets: " << pending_.size() << '\n';
     for (auto it = pending_.begin(); it != pending_.end();) {
         auto output = it->first;
         // No need to check if the key is already present, as emplace and collect
