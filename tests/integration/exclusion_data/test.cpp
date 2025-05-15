@@ -8,6 +8,7 @@
 #include "ddwaf.h"
 
 using namespace ddwaf;
+using namespace std::literals;
 
 namespace {
 constexpr std::string_view base_dir = "integration/exclusion_data/";
@@ -43,18 +44,18 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .highlight = "192.168.0.1",
+                    .highlight = "192.168.0.1"sv,
                     .args = {{
-                        .value = "192.168.0.1",
+                        .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .highlight = "192.168.0.1",
+                    .highlight = "192.168.0.1"sv,
                     .args = {{
-                        .value = "192.168.0.1",
+                        .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}});
 
@@ -88,9 +89,9 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
                                .matches = {{.op = "ip_match",
-                                   .highlight = "192.168.0.1",
+                                   .highlight = "192.168.0.1"sv,
                                    .args = {{
-                                       .value = "192.168.0.1",
+                                       .value = "192.168.0.1"sv,
                                        .address = "http.client_ip",
                                    }}}}});
 
@@ -119,18 +120,18 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .highlight = "192.168.0.1",
+                    .highlight = "192.168.0.1"sv,
                     .args = {{
-                        .value = "192.168.0.1",
+                        .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .highlight = "192.168.0.1",
+                    .highlight = "192.168.0.1"sv,
                     .args = {{
-                        .value = "192.168.0.1",
+                        .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}});
 
@@ -176,18 +177,18 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "exact_match",
-                    .highlight = "admin",
+                    .highlight = "admin"sv,
                     .args = {{
-                        .value = "admin",
+                        .value = "admin"sv,
                         .address = "usr.id",
                     }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "exact_match",
-                    .highlight = "admin",
+                    .highlight = "admin"sv,
                     .args = {{
-                        .value = "admin",
+                        .value = "admin"sv,
                         .address = "usr.id",
                     }}}}});
 
@@ -221,9 +222,9 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
                                .matches = {{.op = "exact_match",
-                                   .highlight = "admin",
+                                   .highlight = "admin"sv,
                                    .args = {{
-                                       .value = "admin",
+                                       .value = "admin"sv,
                                        .address = "usr.id",
                                    }}}}});
 
@@ -252,18 +253,18 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "exact_match",
-                    .highlight = "admin",
+                    .highlight = "admin"sv,
                     .args = {{
-                        .value = "admin",
+                        .value = "admin"sv,
                         .address = "usr.id",
                     }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "exact_match",
-                    .highlight = "admin",
+                    .highlight = "admin"sv,
                     .args = {{
-                        .value = "admin",
+                        .value = "admin"sv,
                         .address = "usr.id",
                     }}}}});
         ddwaf_object_free(&out);
@@ -308,18 +309,18 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "exact_match",
-                    .highlight = "admin",
+                    .highlight = "admin"sv,
                     .args = {{
-                        .value = "admin",
+                        .value = "admin"sv,
                         .address = "usr.id",
                     }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "exact_match",
-                    .highlight = "admin",
+                    .highlight = "admin"sv,
                     .args = {{
-                        .value = "admin",
+                        .value = "admin"sv,
                         .address = "usr.id",
                     }}}}});
 
@@ -353,9 +354,9 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
                                .matches = {{.op = "exact_match",
-                                   .highlight = "admin",
+                                   .highlight = "admin"sv,
                                    .args = {{
-                                       .value = "admin",
+                                       .value = "admin"sv,
                                        .address = "usr.id",
                                    }}}}});
 
@@ -390,18 +391,18 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "exact_match",
-                    .highlight = "admin",
+                    .highlight = "admin"sv,
                     .args = {{
-                        .value = "admin",
+                        .value = "admin"sv,
                         .address = "usr.id",
                     }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "exact_match",
-                    .highlight = "admin",
+                    .highlight = "admin"sv,
                     .args = {{
-                        .value = "admin",
+                        .value = "admin"sv,
                         .address = "usr.id",
                     }}}}});
         ddwaf_object_free(&out);
@@ -446,18 +447,18 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "exact_match",
-                    .highlight = "admin",
+                    .highlight = "admin"sv,
                     .args = {{
-                        .value = "admin",
+                        .value = "admin"sv,
                         .address = "usr.id",
                     }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "exact_match",
-                    .highlight = "admin",
+                    .highlight = "admin"sv,
                     .args = {{
-                        .value = "admin",
+                        .value = "admin"sv,
                         .address = "usr.id",
                     }}}}});
 
@@ -491,9 +492,9 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
                                .matches = {{.op = "exact_match",
-                                   .highlight = "admin",
+                                   .highlight = "admin"sv,
                                    .args = {{
-                                       .value = "admin",
+                                       .value = "admin"sv,
                                        .address = "usr.id",
                                    }}}}});
 
@@ -522,18 +523,18 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "exact_match",
-                    .highlight = "admin",
+                    .highlight = "admin"sv,
                     .args = {{
-                        .value = "admin",
+                        .value = "admin"sv,
                         .address = "usr.id",
                     }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "exact_match",
-                    .highlight = "admin",
+                    .highlight = "admin"sv,
                     .args = {{
-                        .value = "admin",
+                        .value = "admin"sv,
                         .address = "usr.id",
                     }}}}});
         ddwaf_object_free(&out);

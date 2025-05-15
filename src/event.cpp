@@ -13,7 +13,6 @@
 #include "condition/base.hpp"
 #include "ddwaf.h"
 #include "event.hpp"
-#include "obfuscator.hpp"
 #include "rule.hpp"
 #include "uuid.hpp"
 
@@ -21,59 +20,33 @@ namespace ddwaf {
 
 namespace {
 
-bool redact_match(const ddwaf::obfuscator &obfuscator, const condition_match &match)
-{
-    for (const auto &arg : match.args) {
-        for (const auto &key : arg.key_path) {
-            if (obfuscator.is_sensitive_key(key)) {
-                return true;
-            }
-        }
-
-        if (obfuscator.is_sensitive_value(arg.resolved)) {
-            return true;
-        }
-    }
-
-    for (const auto &highlight : match.highlights) {
-        if (obfuscator.is_sensitive_value(highlight)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-ddwaf_object *to_object(ddwaf_object &tmp, std::string_view str, bool redact = false)
+ddwaf_object *to_object(ddwaf_object &tmp, std::string_view str)
 {
     if (str.empty()) {
         return ddwaf_object_stringl(&tmp, "", 0);
     }
 
-    if (redact) {
-        return ddwaf_object_stringl(
-            &tmp, ddwaf::obfuscator::redaction_msg.data(), ddwaf::obfuscator::redaction_msg.size());
-    }
     return ddwaf_object_stringl(&tmp, str.data(), str.size());
 }
 
-void serialize_match(const condition_match &match, ddwaf_object &match_map, auto &obfuscator)
+void serialize_match(condition_match &match, ddwaf_object &match_map, auto &obfuscator)
 {
     ddwaf_object tmp;
     ddwaf_object param;
     ddwaf_object_map(&param);
 
-    const bool redact = redact_match(obfuscator, match);
+    obfuscator.obfuscate_match(match);
 
     ddwaf_object highlight_arr;
     ddwaf_object_array(&highlight_arr);
-    for (const auto &highlight : match.highlights) {
-        ddwaf_object_array_add(&highlight_arr, to_object(tmp, highlight, redact));
+    for (auto &highlight : match.highlights) {
+        auto value = highlight.to_object();
+        ddwaf_object_array_add(&highlight_arr, &value);
     }
 
     // Scalar case
     if (match.args.size() == 1 && match.args[0].name == "input") {
-        const auto &arg = match.args[0];
+        auto &arg = match.args[0];
 
         ddwaf_object key_path;
         ddwaf_object_array(&key_path);
@@ -83,21 +56,24 @@ void serialize_match(const condition_match &match, ddwaf_object &match_map, auto
 
         ddwaf_object_map_add(&param, "address", to_object(tmp, arg.address));
         ddwaf_object_map_add(&param, "key_path", &key_path);
-        ddwaf_object_map_add(&param, "value", to_object(tmp, arg.resolved, redact));
+        auto resolved = arg.resolved.to_object();
+        ddwaf_object_map_add(&param, "value", &resolved);
     } else {
-        for (const auto &arg : match.args) {
+        for (auto &arg : match.args) {
             ddwaf_object argument;
             ddwaf_object_map(&argument);
 
             ddwaf_object key_path;
             ddwaf_object_array(&key_path);
-            for (const auto &key : arg.key_path) {
+            for (auto &key : arg.key_path) {
                 ddwaf_object_array_add(&key_path, to_object(tmp, key));
             }
 
             ddwaf_object_map_add(&argument, "address", to_object(tmp, arg.address));
             ddwaf_object_map_add(&argument, "key_path", &key_path);
-            ddwaf_object_map_add(&argument, "value", to_object(tmp, arg.resolved, redact));
+
+            auto resolved = arg.resolved.to_object();
+            ddwaf_object_map_add(&argument, "value", &resolved);
 
             ddwaf_object_map_addl(&param, arg.name.data(), arg.name.size(), &argument);
         }
@@ -284,14 +260,14 @@ void serialize_actions(ddwaf_object &action_map, const action_tracker &actions)
 
 } // namespace
 
-void event_serializer::serialize(const std::vector<event> &events,
+void event_serializer::serialize(std::vector<event> &events,
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     ddwaf_object &output_events, ddwaf_object &output_actions) const
 {
     action_tracker actions{
         .blocking_action = {}, .stack_id = {}, .non_blocking_actions = {}, .mapper = actions_};
 
-    for (const auto &event : events) {
+    for (auto &event : events) {
         ddwaf_object root_map;
         ddwaf_object rule_map;
         ddwaf_object match_array;
@@ -310,7 +286,7 @@ void event_serializer::serialize(const std::vector<event> &events,
             serialize_empty_rule(rule_map);
         }
 
-        for (const auto &match : event.matches) {
+        for (auto &match : event.matches) {
             ddwaf_object match_map;
             ddwaf_object_map(&match_map);
             serialize_match(match, match_map, obfuscator_);

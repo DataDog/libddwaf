@@ -32,7 +32,8 @@ TEST(TestEventSerializer, SerializeNothing)
     ddwaf_object &events_object = output.array[0];
     ddwaf_object &actions_object = output.array[1];
 
-    serializer.serialize({}, events_object, actions_object);
+    std::vector<ddwaf::event> events;
+    serializer.serialize(events, events_object, actions_object);
 
     EXPECT_EVENTS(output, ); // This means no events
     EXPECT_ACTIONS(output, {});
@@ -55,7 +56,8 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
     ddwaf_object &events_object = output.array[0];
     ddwaf_object &actions_object = output.array[1];
 
-    serializer.serialize({ddwaf::event{}}, events_object, actions_object);
+    std::vector<ddwaf::event> events{ddwaf::event{}};
+    serializer.serialize(events, events_object, actions_object);
 
     EXPECT_EVENTS(output, {});
     EXPECT_ACTIONS(output, {});
@@ -71,10 +73,10 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     ddwaf::event event;
     event.rule = &rule;
     event.matches = {{.args = {{.name = "input",
-                          .resolved = "value",
+                          .resolved = "value"sv,
                           .address = "query",
                           .key_path = {"root", "key"}}},
-        .highlights = {"val"},
+        .highlights = {"val"sv},
         .operator_name = "random",
         .operator_value = "val"}};
 
@@ -95,16 +97,17 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     ddwaf_object &events_object = output.array[0];
     ddwaf_object &actions_object = output.array[1];
 
-    serializer.serialize({event}, events_object, actions_object);
+    std::vector<ddwaf::event> events{event};
+    serializer.serialize(events, events_object, actions_object);
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
                               .tags = {{"type", "test"}, {"category", "none"}},
                               .actions = {"block", "monitor_request"},
                               .matches = {{.op = "random",
                                   .op_value = "val",
-                                  .highlight = "val",
+                                  .highlight = "val"sv,
                                   .args = {{.name = "input",
-                                      .value = "value",
+                                      .value = "value"sv,
                                       .address = "query",
                                       .path = {"root", "key"}}}}}});
 
@@ -123,22 +126,22 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     ddwaf::event event;
     event.rule = &rule;
     event.matches = {{.args = {{.name = "input",
-                          .resolved = "value",
+                          .resolved = "value"sv,
                           .address = "query",
                           .key_path = {"root", "key"}}},
-                         .highlights = {"val"},
+                         .highlights = {"val"sv},
                          .operator_name = "random",
                          .operator_value = "val"},
-        {.args = {{.name = "input", .resolved = "string", .address = "response.body"}},
-            .highlights = {"string"},
+        {.args = {{.name = "input", .resolved = "string"sv, .address = "response.body"}},
+            .highlights = {"string"sv},
             .operator_name = "match_regex",
             .operator_value = ".*"},
-        {.args = {{.name = "input", .resolved = "192.168.0.1", .address = "client.ip"}},
-            .highlights = {"192.168.0.1"},
+        {.args = {{.name = "input", .resolved = "192.168.0.1"sv, .address = "client.ip"}},
+            .highlights = {"192.168.0.1"sv},
             .operator_name = "ip_match",
             .operator_value = ""},
         {.args = {{.name = "input",
-             .resolved = "<script>",
+             .resolved = "<script>"sv,
              .address = "path_params",
              .key_path = {"key"}}},
             .highlights = {},
@@ -162,7 +165,8 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     ddwaf_object &events_object = output.array[0];
     ddwaf_object &actions_object = output.array[1];
 
-    serializer.serialize({event}, events_object, actions_object);
+    std::vector<ddwaf::event> events{event};
+    serializer.serialize(events, events_object, actions_object);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
@@ -170,34 +174,34 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
                               .actions = {"block", "monitor_request"},
                               .matches = {{.op = "random",
                                               .op_value = "val",
-                                              .highlight = "val",
+                                              .highlight = "val"sv,
                                               .args = {{
                                                   .name = "input",
-                                                  .value = "value",
+                                                  .value = "value"sv,
                                                   .address = "query",
                                                   .path = {"root", "key"},
                                               }}},
                                   {
                                       .op = "match_regex",
                                       .op_value = ".*",
-                                      .highlight = "string",
+                                      .highlight = "string"sv,
                                       .args = {{
                                           .name = "input",
-                                          .value = "string",
+                                          .value = "string"sv,
                                           .address = "response.body",
                                       }},
                                   },
                                   {.op = "ip_match",
-                                      .highlight = "192.168.0.1",
+                                      .highlight = "192.168.0.1"sv,
                                       .args = {{
                                           .name = "input",
-                                          .value = "192.168.0.1",
+                                          .value = "192.168.0.1"sv,
                                           .address = "client.ip",
                                       }}},
                                   {.op = "is_xss",
                                       .args = {{
                                           .name = "input",
-                                          .value = "<script>",
+                                          .value = "<script>"sv,
                                           .address = "path_params",
                                           .path = {"key"},
                                       }}}}});
@@ -228,18 +232,18 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
         ddwaf::event event;
         event.rule = &rule1;
         event.matches = {{.args = {{.name = "input",
-                              .resolved = "value",
+                              .resolved = "value"sv,
                               .address = "query",
                               .key_path = {"root", "key"}}},
-                             .highlights = {"val"},
+                             .highlights = {"val"sv},
                              .operator_name = "random",
                              .operator_value = "val"},
-            {.args = {{.name = "input", .resolved = "string", .address = "response.body"}},
-                .highlights = {"string"},
+            {.args = {{.name = "input", .resolved = "string"sv, .address = "response.body"}},
+                .highlights = {"string"sv},
                 .operator_name = "match_regex",
                 .operator_value = ".*"},
             {.args = {{.name = "input",
-                 .resolved = "<script>",
+                 .resolved = "<script>"sv,
                  .address = "path_params",
                  .key_path = {"key"}}},
                 .highlights = {},
@@ -252,8 +256,8 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
         ddwaf::event event;
         event.rule = &rule2;
         event.matches = {
-            {.args = {{.name = "input", .resolved = "192.168.0.1", .address = "client.ip"}},
-                .highlights = {"192.168.0.1"},
+            {.args = {{.name = "input", .resolved = "192.168.0.1"sv, .address = "client.ip"}},
+                .highlights = {"192.168.0.1"sv},
                 .operator_name = "ip_match",
                 .operator_value = ""},
         };
@@ -280,22 +284,22 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
             .actions = {"block", "monitor_request"},
             .matches = {{.op = "random",
                             .op_value = "val",
-                            .highlight = "val",
+                            .highlight = "val"sv,
                             .args = {{
-                                .value = "value",
+                                .value = "value"sv,
                                 .address = "query",
                                 .path = {"root", "key"},
                             }}},
                 {.op = "match_regex",
                     .op_value = ".*",
-                    .highlight = "string",
+                    .highlight = "string"sv,
                     .args = {{
-                        .value = "string",
+                        .value = "string"sv,
                         .address = "response.body",
                     }}},
                 {.op = "is_xss",
                     .args = {{
-                        .value = "<script>",
+                        .value = "<script>"sv,
                         .address = "path_params",
                         .path = {"key"},
                     }}}}},
@@ -304,9 +308,9 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
             .tags = {{"type", "test"}, {"category", "none"}},
             .actions = {"unblock"},
             .matches = {{.op = "ip_match",
-                .highlight = "192.168.0.1",
+                .highlight = "192.168.0.1"sv,
                 .args = {{
-                    .value = "192.168.0.1",
+                    .value = "192.168.0.1"sv,
                     .address = "client.ip",
                 }}}}},
         {});
@@ -327,10 +331,10 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     event.rule = &rule;
     event.matches = {
         {.args = {{.name = "input",
-             .resolved = "value",
+             .resolved = "value"sv,
              .address = "query",
              .key_path = {"root", "key"}}},
-            .highlights = {"val"},
+            .highlights = {"val"sv},
             .operator_name = "random",
             .operator_value = "val"},
     };
@@ -349,16 +353,17 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     ddwaf_object &events_object = output.array[0];
     ddwaf_object &actions_object = output.array[1];
 
-    serializer.serialize({event}, events_object, actions_object);
+    std::vector<ddwaf::event> events{event};
+    serializer.serialize(events, events_object, actions_object);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
                               .tags = {{"type", "test"}, {"category", "none"}},
                               .matches = {{.op = "random",
                                   .op_value = "val",
-                                  .highlight = "val",
+                                  .highlight = "val"sv,
                                   .args = {{
-                                      .value = "value",
+                                      .value = "value"sv,
                                       .address = "query",
                                       .path = {"root", "key"},
                                   }}}}});
@@ -379,10 +384,10 @@ TEST(TestEventSerializer, SerializeAllTags)
     event.rule = &rule;
     event.matches = {
         {.args = {{.name = "input",
-             .resolved = "value",
+             .resolved = "value"sv,
              .address = "query",
              .key_path = {"root", "key"}}},
-            .highlights = {"val"},
+            .highlights = {"val"sv},
             .operator_name = "random",
             .operator_value = "val"},
     };
@@ -404,7 +409,8 @@ TEST(TestEventSerializer, SerializeAllTags)
     ddwaf_object &events_object = output.array[0];
     ddwaf_object &actions_object = output.array[1];
 
-    serializer.serialize({event}, events_object, actions_object);
+    std::vector<ddwaf::event> events{event};
+    serializer.serialize(events, events_object, actions_object);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
@@ -413,9 +419,9 @@ TEST(TestEventSerializer, SerializeAllTags)
                               .actions = {"unblock"},
                               .matches = {{.op = "random",
                                   .op_value = "val",
-                                  .highlight = "val",
+                                  .highlight = "val"sv,
                                   .args = {{
-                                      .value = "value",
+                                      .value = "value"sv,
                                       .address = "query",
                                       .path = {"root", "key"},
                                   }}}}});
@@ -436,10 +442,10 @@ TEST(TestEventSerializer, NoMonitorActions)
     event.rule = &rule;
     event.matches = {
         {.args = {{.name = "input",
-             .resolved = "value",
+             .resolved = "value"sv,
              .address = "query",
              .key_path = {"root", "key"}}},
-            .highlights = {"val"},
+            .highlights = {"val"sv},
             .operator_name = "random",
             .operator_value = "val"},
     };
@@ -458,7 +464,8 @@ TEST(TestEventSerializer, NoMonitorActions)
     ddwaf_object &events_object = output.array[0];
     ddwaf_object &actions_object = output.array[1];
 
-    serializer.serialize({event}, events_object, actions_object);
+    std::vector<ddwaf::event> events{event};
+    serializer.serialize(events, events_object, actions_object);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
@@ -467,9 +474,9 @@ TEST(TestEventSerializer, NoMonitorActions)
                               .actions = {"monitor"},
                               .matches = {{.op = "random",
                                   .op_value = "val",
-                                  .highlight = "val",
+                                  .highlight = "val"sv,
                                   .args = {{
-                                      .value = "value",
+                                      .value = "value"sv,
                                       .address = "query",
                                       .path = {"root", "key"},
                                   }}}}});
@@ -491,10 +498,10 @@ TEST(TestEventSerializer, UndefinedActions)
     event.rule = &rule;
     event.matches = {
         {.args = {{.name = "input",
-             .resolved = "value",
+             .resolved = "value"sv,
              .address = "query",
              .key_path = {"root", "key"}}},
-            .highlights = {"val"},
+            .highlights = {"val"sv},
             .operator_name = "random",
             .operator_value = "val"},
     };
@@ -513,7 +520,8 @@ TEST(TestEventSerializer, UndefinedActions)
     ddwaf_object &events_object = output.array[0];
     ddwaf_object &actions_object = output.array[1];
 
-    serializer.serialize({event}, events_object, actions_object);
+    std::vector<ddwaf::event> events{event};
+    serializer.serialize(events, events_object, actions_object);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
@@ -522,9 +530,9 @@ TEST(TestEventSerializer, UndefinedActions)
                               .actions = {"unblock_request"},
                               .matches = {{.op = "random",
                                   .op_value = "val",
-                                  .highlight = "val",
+                                  .highlight = "val"sv,
                                   .args = {{
-                                      .value = "value",
+                                      .value = "value"sv,
                                       .address = "query",
                                       .path = {"root", "key"},
                                   }}}}});
@@ -546,10 +554,10 @@ TEST(TestEventSerializer, StackTraceAction)
     event.rule = &rule;
     event.matches = {
         {.args = {{.name = "input",
-             .resolved = "value",
+             .resolved = "value"sv,
              .address = "query",
              .key_path = {"root", "key"}}},
-            .highlights = {"val"},
+            .highlights = {"val"sv},
             .operator_name = "random",
             .operator_value = "val"},
     };
@@ -568,7 +576,8 @@ TEST(TestEventSerializer, StackTraceAction)
     ddwaf_object &events_object = output.array[0];
     ddwaf_object &actions_object = output.array[1];
 
-    serializer.serialize({event}, events_object, actions_object);
+    std::vector<ddwaf::event> events{event};
+    serializer.serialize(events, events_object, actions_object);
 
     EXPECT_EVENTS(output, {.id = "xasd1022",
                               .name = "random rule",
@@ -578,9 +587,9 @@ TEST(TestEventSerializer, StackTraceAction)
                               .actions = {"stack_trace"},
                               .matches = {{.op = "random",
                                   .op_value = "val",
-                                  .highlight = "val",
+                                  .highlight = "val"sv,
                                   .args = {{
-                                      .value = "value",
+                                      .value = "value"sv,
                                       .address = "query",
                                       .path = {"root", "key"},
                                   }}}}});

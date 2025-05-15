@@ -7,6 +7,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
 
 namespace {
 constexpr std::string_view base_dir = "integration/matchers/phrase_match/";
@@ -35,9 +36,9 @@ TEST(TestPhraseMatchMatcherIntegration, Match)
                            .name = "rule1-phrase-match",
                            .tags = {{"type", "flow"}, {"category", "category"}},
                            .matches = {{.op = "phrase_match",
-                               .highlight = "string00",
+                               .highlight = "string00"sv,
                                .args = {{
-                                   .value = "string00",
+                                   .value = "string00"sv,
                                    .address = "input1",
                                }}}}});
 
@@ -71,9 +72,9 @@ TEST(TestPhraseMatchMatcherIntegration, MatchWordBound)
                                .name = "rule2-phrase-match-word-bound",
                                .tags = {{"type", "flow"}, {"category", "category"}},
                                .matches = {{.op = "phrase_match",
-                                   .highlight = "string01",
+                                   .highlight = "string01"sv,
                                    .args = {{
-                                       .value = "string01;",
+                                       .value = "string01;"sv,
                                        .address = "input2",
                                    }}}}});
 

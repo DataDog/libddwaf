@@ -56,8 +56,8 @@ TEST(TestRule, Match)
         EXPECT_FALSE(event->ephemeral);
 
         auto &match = event->matches[0];
-        EXPECT_STREQ(match.args[0].resolved.c_str(), "192.168.0.1");
-        EXPECT_STREQ(match.highlights[0].c_str(), "192.168.0.1");
+        EXPECT_STR(match.args[0].resolved, "192.168.0.1");
+        EXPECT_STR(match.highlights[0], "192.168.0.1");
         EXPECT_STREQ(match.operator_name.data(), "ip_match");
         EXPECT_STREQ(match.operator_value.data(), "");
         EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
@@ -208,8 +208,8 @@ TEST(TestRule, ValidateCachedMatch)
 
         {
             auto &match = event->matches[0];
-            EXPECT_STREQ(match.args[0].resolved.c_str(), "192.168.0.1");
-            EXPECT_STREQ(match.highlights[0].c_str(), "192.168.0.1");
+            EXPECT_STR(match.args[0].resolved, "192.168.0.1");
+            EXPECT_STR(match.highlights[0], "192.168.0.1");
             EXPECT_STREQ(match.operator_name.data(), "ip_match");
             EXPECT_STREQ(match.operator_value.data(), "");
             EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
@@ -217,8 +217,8 @@ TEST(TestRule, ValidateCachedMatch)
         }
         {
             auto &match = event->matches[1];
-            EXPECT_STREQ(match.args[0].resolved.c_str(), "admin");
-            EXPECT_STREQ(match.highlights[0].c_str(), "admin");
+            EXPECT_STR(match.args[0].resolved, "admin");
+            EXPECT_STR(match.highlights[0], "admin");
             EXPECT_STREQ(match.operator_name.data(), "exact_match");
             EXPECT_STREQ(match.operator_value.data(), "");
             EXPECT_STREQ(match.args[0].address.data(), "usr.id");
@@ -276,8 +276,8 @@ TEST(TestRule, MatchWithoutCache)
 
         {
             auto &match = event->matches[0];
-            EXPECT_STREQ(match.args[0].resolved.c_str(), "192.168.0.1");
-            EXPECT_STREQ(match.highlights[0].c_str(), "192.168.0.1");
+            EXPECT_STR(match.args[0].resolved, "192.168.0.1");
+            EXPECT_STR(match.highlights[0], "192.168.0.1");
             EXPECT_STREQ(match.operator_name.data(), "ip_match");
             EXPECT_STREQ(match.operator_value.data(), "");
             EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
@@ -285,8 +285,8 @@ TEST(TestRule, MatchWithoutCache)
         }
         {
             auto &match = event->matches[1];
-            EXPECT_STREQ(match.args[0].resolved.c_str(), "admin");
-            EXPECT_STREQ(match.highlights[0].c_str(), "admin");
+            EXPECT_STR(match.args[0].resolved, "admin");
+            EXPECT_STR(match.highlights[0], "admin");
             EXPECT_STREQ(match.operator_name.data(), "exact_match");
             EXPECT_STREQ(match.operator_value.data(), "");
             EXPECT_STREQ(match.args[0].address.data(), "usr.id");

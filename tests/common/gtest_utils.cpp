@@ -37,6 +37,11 @@ struct indent {
     unsigned size_;
 };
 
+std::ostream &operator<<(std::ostream &os, const ddwaf::dynamic_string &str)
+{
+    return os << std::string_view{str};
+}
+
 std::ostream &operator<<(std::ostream &os, const indent &offset)
 {
     for (unsigned i = 0; i < offset.size_; i++) { os << ' '; }
