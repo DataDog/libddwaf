@@ -7,6 +7,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
 
 namespace {
 constexpr std::string_view base_dir = "integration/matchers/equals/";
@@ -35,9 +36,9 @@ TEST(TestEqualsMatcherIntegration, StringEquals)
                            .name = "rule1-string-equals",
                            .tags = {{"type", "flow"}, {"category", "category"}},
                            .matches = {{.op = "equals",
-                               .highlight = "",
+                               .highlight = ""sv,
                                .args = {{
-                                   .value = "arachni",
+                                   .value = "arachni"sv,
                                    .address = "input",
                                }}}}});
 
@@ -71,9 +72,9 @@ TEST(TestEqualsMatcherIntegration, BoolEquals)
                            .tags = {{"type", "flow"}, {"category", "category"}},
                            .matches = {{
                                .op = "equals",
-                               .highlight = "",
+                               .highlight = ""sv,
                                .args = {{
-                                   .value = "false",
+                                   .value = "false"sv,
                                    .address = "input",
                                }},
                            }}});
@@ -107,9 +108,9 @@ TEST(TestEqualsMatcherIntegration, SignedEquals)
                            .name = "rule3-signed-equals",
                            .tags = {{"type", "flow"}, {"category", "category"}},
                            .matches = {{.op = "equals",
-                               .highlight = "",
+                               .highlight = ""sv,
                                .args = {{
-                                   .value = "-42",
+                                   .value = "-42"sv,
                                    .address = "input",
                                }}}}});
 
@@ -143,9 +144,9 @@ TEST(TestEqualsMatcherIntegration, UnsignedEquals)
                            .tags = {{"type", "flow"}, {"category", "category"}},
                            .matches = {{
                                .op = "equals",
-                               .highlight = "",
+                               .highlight = ""sv,
                                .args = {{
-                                   .value = "42",
+                                   .value = "42"sv,
                                    .address = "input",
                                }},
                            }}});
@@ -180,9 +181,9 @@ TEST(TestEqualsMatcherIntegration, FloatEquals)
                            .tags = {{"type", "flow"}, {"category", "category"}},
                            .matches = {{
                                .op = "equals",
-                               .highlight = "",
+                               .highlight = ""sv,
                                .args = {{
-                                   .value = "42.01",
+                                   .value = "42.01"sv,
                                    .address = "input",
                                }},
                            }}});

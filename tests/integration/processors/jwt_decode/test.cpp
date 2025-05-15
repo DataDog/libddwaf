@@ -7,6 +7,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
 
 namespace {
 constexpr std::string_view base_dir = "integration/processors/jwt_decode";
@@ -59,7 +60,7 @@ TEST(TestJwtDecoderIntegration, Preprocessor)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "equals",
                                .args = {{
-                                   .value = "RS384",
+                                   .value = "RS384"sv,
                                    .address = "server.request.jwt",
                                    .path = {"header", "alg"},
                                }}}}});
@@ -173,7 +174,7 @@ TEST(TestJwtDecoderIntegration, Processor)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "equals",
                                .args = {{
-                                   .value = "RS384",
+                                   .value = "RS384"sv,
                                    .address = "server.request.jwt",
                                    .path = {"header", "alg"},
                                }}}}});

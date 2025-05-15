@@ -7,6 +7,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
 
 namespace {
 constexpr std::string_view base_dir = "integration/processors/fingerprint";
@@ -419,9 +420,9 @@ TEST(TestFingerprintIntegration, Preprocessor)
             .tags = {{"type", "flow1"}, {"category", "category1"}},
             .matches = {{.op = "match_regex",
                 .op_value = "http-put-729d56c3-2c70e12b-2c70e12b",
-                .highlight = "http-put-729d56c3-2c70e12b-2c70e12b",
+                .highlight = "http-put-729d56c3-2c70e12b-2c70e12b"sv,
                 .args = {{
-                    .value = "http-put-729d56c3-2c70e12b-2c70e12b",
+                    .value = "http-put-729d56c3-2c70e12b-2c70e12b"sv,
                     .address = "_dd.appsec.fp.http.endpoint",
                     .path = {},
                 }}}}},
@@ -430,9 +431,9 @@ TEST(TestFingerprintIntegration, Preprocessor)
             .tags = {{"type", "flow2"}, {"category", "category2"}},
             .matches = {{.op = "match_regex",
                 .op_value = "hdr-1111111111-a441b15f-0-",
-                .highlight = "hdr-1111111111-a441b15f-0-",
+                .highlight = "hdr-1111111111-a441b15f-0-"sv,
                 .args = {{
-                    .value = "hdr-1111111111-a441b15f-0-",
+                    .value = "hdr-1111111111-a441b15f-0-"sv,
                     .address = "_dd.appsec.fp.http.header",
                     .path = {},
                 }}}}},
@@ -441,9 +442,9 @@ TEST(TestFingerprintIntegration, Preprocessor)
             .tags = {{"type", "flow3"}, {"category", "category3"}},
             .matches = {{.op = "match_regex",
                 .op_value = "net-1-1111111111",
-                .highlight = "net-1-1111111111",
+                .highlight = "net-1-1111111111"sv,
                 .args = {{
-                    .value = "net-1-1111111111",
+                    .value = "net-1-1111111111"sv,
                     .address = "_dd.appsec.fp.http.network",
                     .path = {},
                 }}}}},
@@ -452,9 +453,9 @@ TEST(TestFingerprintIntegration, Preprocessor)
             .tags = {{"type", "flow4"}, {"category", "category4"}},
             .matches = {{.op = "match_regex",
                 .op_value = "ssn-8c6976e5-df6143bc-60ba1602-269500d3",
-                .highlight = "ssn-8c6976e5-df6143bc-60ba1602-269500d3",
+                .highlight = "ssn-8c6976e5-df6143bc-60ba1602-269500d3"sv,
                 .args = {{
-                    .value = "ssn-8c6976e5-df6143bc-60ba1602-269500d3",
+                    .value = "ssn-8c6976e5-df6143bc-60ba1602-269500d3"sv,
                     .address = "_dd.appsec.fp.session",
                     .path = {},
                 }}}}}, );
@@ -546,9 +547,9 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
                 .tags = {{"type", "flow2"}, {"category", "category2"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "hdr-1111111111-a441b15f-0-",
-                    .highlight = "hdr-1111111111-a441b15f-0-",
+                    .highlight = "hdr-1111111111-a441b15f-0-"sv,
                     .args = {{
-                        .value = "hdr-1111111111-a441b15f-0-",
+                        .value = "hdr-1111111111-a441b15f-0-"sv,
                         .address = "_dd.appsec.fp.http.header",
                         .path = {},
                     }}}}},
@@ -557,9 +558,9 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
                 .tags = {{"type", "flow3"}, {"category", "category3"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "net-1-1111111111",
-                    .highlight = "net-1-1111111111",
+                    .highlight = "net-1-1111111111"sv,
                     .args = {{
-                        .value = "net-1-1111111111",
+                        .value = "net-1-1111111111"sv,
                         .address = "_dd.appsec.fp.http.network",
                         .path = {},
                     }}}}}, );
@@ -609,9 +610,9 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
                 .tags = {{"type", "flow1"}, {"category", "category1"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "http-put-729d56c3-2c70e12b-2c70e12b",
-                    .highlight = "http-put-729d56c3-2c70e12b-2c70e12b",
+                    .highlight = "http-put-729d56c3-2c70e12b-2c70e12b"sv,
                     .args = {{
-                        .value = "http-put-729d56c3-2c70e12b-2c70e12b",
+                        .value = "http-put-729d56c3-2c70e12b-2c70e12b"sv,
                         .address = "_dd.appsec.fp.http.endpoint",
                         .path = {},
                     }}}}}, );
@@ -671,9 +672,9 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
                 .tags = {{"type", "flow4"}, {"category", "category4"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "ssn-8c6976e5-df6143bc-60ba1602-269500d3",
-                    .highlight = "ssn-8c6976e5-df6143bc-60ba1602-269500d3",
+                    .highlight = "ssn-8c6976e5-df6143bc-60ba1602-269500d3"sv,
                     .args = {{
-                        .value = "ssn-8c6976e5-df6143bc-60ba1602-269500d3",
+                        .value = "ssn-8c6976e5-df6143bc-60ba1602-269500d3"sv,
                         .address = "_dd.appsec.fp.session",
                         .path = {},
                     }}}}}, );
@@ -788,9 +789,9 @@ TEST(TestFingerprintIntegration, Processor)
             .tags = {{"type", "flow1"}, {"category", "category1"}},
             .matches = {{.op = "match_regex",
                 .op_value = "http-put-729d56c3-2c70e12b-2c70e12b",
-                .highlight = "http-put-729d56c3-2c70e12b-2c70e12b",
+                .highlight = "http-put-729d56c3-2c70e12b-2c70e12b"sv,
                 .args = {{
-                    .value = "http-put-729d56c3-2c70e12b-2c70e12b",
+                    .value = "http-put-729d56c3-2c70e12b-2c70e12b"sv,
                     .address = "_dd.appsec.fp.http.endpoint",
                     .path = {},
                 }}}}},
@@ -799,9 +800,9 @@ TEST(TestFingerprintIntegration, Processor)
             .tags = {{"type", "flow2"}, {"category", "category2"}},
             .matches = {{.op = "match_regex",
                 .op_value = "hdr-1111111111-a441b15f-0-",
-                .highlight = "hdr-1111111111-a441b15f-0-",
+                .highlight = "hdr-1111111111-a441b15f-0-"sv,
                 .args = {{
-                    .value = "hdr-1111111111-a441b15f-0-",
+                    .value = "hdr-1111111111-a441b15f-0-"sv,
                     .address = "_dd.appsec.fp.http.header",
                     .path = {},
                 }}}}},
@@ -810,9 +811,9 @@ TEST(TestFingerprintIntegration, Processor)
             .tags = {{"type", "flow3"}, {"category", "category3"}},
             .matches = {{.op = "match_regex",
                 .op_value = "net-1-1111111111",
-                .highlight = "net-1-1111111111",
+                .highlight = "net-1-1111111111"sv,
                 .args = {{
-                    .value = "net-1-1111111111",
+                    .value = "net-1-1111111111"sv,
                     .address = "_dd.appsec.fp.http.network",
                     .path = {},
                 }}}}},
@@ -821,9 +822,9 @@ TEST(TestFingerprintIntegration, Processor)
             .tags = {{"type", "flow4"}, {"category", "category4"}},
             .matches = {{.op = "match_regex",
                 .op_value = "ssn-8c6976e5-df6143bc-60ba1602-269500d3",
-                .highlight = "ssn-8c6976e5-df6143bc-60ba1602-269500d3",
+                .highlight = "ssn-8c6976e5-df6143bc-60ba1602-269500d3"sv,
                 .args = {{
-                    .value = "ssn-8c6976e5-df6143bc-60ba1602-269500d3",
+                    .value = "ssn-8c6976e5-df6143bc-60ba1602-269500d3"sv,
                     .address = "_dd.appsec.fp.session",
                     .path = {},
                 }}}}}, );
@@ -922,9 +923,9 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
                 .tags = {{"type", "flow2"}, {"category", "category2"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "hdr-1111111111-a441b15f-0-",
-                    .highlight = "hdr-1111111111-a441b15f-0-",
+                    .highlight = "hdr-1111111111-a441b15f-0-"sv,
                     .args = {{
-                        .value = "hdr-1111111111-a441b15f-0-",
+                        .value = "hdr-1111111111-a441b15f-0-"sv,
                         .address = "_dd.appsec.fp.http.header",
                         .path = {},
                     }}}}},
@@ -933,9 +934,9 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
                 .tags = {{"type", "flow3"}, {"category", "category3"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "net-1-1111111111",
-                    .highlight = "net-1-1111111111",
+                    .highlight = "net-1-1111111111"sv,
                     .args = {{
-                        .value = "net-1-1111111111",
+                        .value = "net-1-1111111111"sv,
                         .address = "_dd.appsec.fp.http.network",
                         .path = {},
                     }}}}}, );
@@ -994,9 +995,9 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
                 .tags = {{"type", "flow1"}, {"category", "category1"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "http-put-729d56c3-2c70e12b-2c70e12b",
-                    .highlight = "http-put-729d56c3-2c70e12b-2c70e12b",
+                    .highlight = "http-put-729d56c3-2c70e12b-2c70e12b"sv,
                     .args = {{
-                        .value = "http-put-729d56c3-2c70e12b-2c70e12b",
+                        .value = "http-put-729d56c3-2c70e12b-2c70e12b"sv,
                         .address = "_dd.appsec.fp.http.endpoint",
                         .path = {},
                     }}}}}, );
@@ -1064,9 +1065,9 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
                 .tags = {{"type", "flow4"}, {"category", "category4"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "ssn-8c6976e5-df6143bc-60ba1602-269500d3",
-                    .highlight = "ssn-8c6976e5-df6143bc-60ba1602-269500d3",
+                    .highlight = "ssn-8c6976e5-df6143bc-60ba1602-269500d3"sv,
                     .args = {{
-                        .value = "ssn-8c6976e5-df6143bc-60ba1602-269500d3",
+                        .value = "ssn-8c6976e5-df6143bc-60ba1602-269500d3"sv,
                         .address = "_dd.appsec.fp.session",
                         .path = {},
                     }}}}}, );

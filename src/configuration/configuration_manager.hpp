@@ -14,6 +14,8 @@
 #include "configuration/common/raw_configuration.hpp"
 #include "ruleset_info.hpp"
 
+#include "re2.h"
+
 namespace ddwaf {
 
 class configuration_manager {
