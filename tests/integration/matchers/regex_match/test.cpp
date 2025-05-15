@@ -7,6 +7,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf::matcher;
+using namespace std::literals;
 
 namespace {
 
@@ -42,9 +43,9 @@ TEST(TestRegexMatchIntegration, CaseSensitiveMatch)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "alert",
-                                   .highlight = "alert",
+                                   .highlight = "alert"sv,
                                    .args = {{
-                                       .value = "<script>alert(1);</script>",
+                                       .value = "<script>alert(1);</script>"sv,
                                        .address = "arg1",
                                    }}}}});
         ddwaf_object_free(&ret);
@@ -107,9 +108,9 @@ TEST(TestRegexMatchIntegration, CaseInsensitiveMatch)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "alert",
-                                   .highlight = "alert",
+                                   .highlight = "alert"sv,
                                    .args = {{
-                                       .value = "<script>alert(1);</script>",
+                                       .value = "<script>alert(1);</script>"sv,
                                        .address = "arg1",
                                    }}}}});
         ddwaf_object_free(&ret);
@@ -136,9 +137,9 @@ TEST(TestRegexMatchIntegration, CaseInsensitiveMatch)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "alert",
-                                   .highlight = "AlErT",
+                                   .highlight = "AlErT"sv,
                                    .args = {{
-                                       .value = "<script>AlErT(1);</script>",
+                                       .value = "<script>AlErT(1);</script>"sv,
                                        .address = "arg1",
                                    }}}}});
 
@@ -199,9 +200,9 @@ TEST(TestRegexMatchIntegration, MinLength)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "alert",
-                                   .highlight = "AlErT",
+                                   .highlight = "AlErT"sv,
                                    .args = {{
-                                       .value = "<script>AlErT(1);</script>",
+                                       .value = "<script>AlErT(1);</script>"sv,
                                        .address = "arg1",
                                    }}}}});
 

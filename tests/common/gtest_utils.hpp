@@ -12,6 +12,7 @@
 #include <rapidjson/document.h>
 #include <yaml-cpp/yaml.h>
 
+#include "condition/base.hpp"
 #include "condition/scalar_condition.hpp"
 #include "ddwaf.h"
 
@@ -19,8 +20,10 @@
 #include "common/json_utils.hpp"
 #include "common/yaml_utils.hpp"
 
-#define EXPECT_STR(a, b) EXPECT_STREQ(a.c_str(), std::string{b}.c_str())
-#define EXPECT_STRV(a, b) EXPECT_STR(std::string{a}, b)
+#include "dynamic_string.hpp"
+
+#define EXPECT_STR(a, b) EXPECT_EQ(std::string_view{a}, std::string_view{b})
+#define EXPECT_STRV(a, b) EXPECT_STR(a, b)
 
 namespace ddwaf::test {
 
@@ -28,13 +31,13 @@ struct event {
     struct match {
         struct argument {
             std::string name{"input"};
-            std::string value{};
+            dynamic_string value{};
             std::string address{};
             std::vector<std::string> path{};
         };
         std::string op{};
         std::string op_value{};
-        std::string highlight{};
+        dynamic_string highlight{};
         std::vector<argument> args;
     };
 

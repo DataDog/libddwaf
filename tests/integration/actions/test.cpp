@@ -8,6 +8,7 @@
 #include "ddwaf.h"
 
 using namespace ddwaf;
+using namespace std::literals;
 
 namespace {
 constexpr std::string_view base_dir = "integration/actions/";
@@ -38,9 +39,9 @@ TEST(TestActionsIntegration, DefaultActions)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "^block",
-                                   .highlight = "block",
+                                   .highlight = "block"sv,
                                    .args = {{
-                                       .value = "block",
+                                       .value = "block"sv,
                                        .address = "value",
                                    }}}}});
 
@@ -63,9 +64,9 @@ TEST(TestActionsIntegration, DefaultActions)
                                .actions = {"stack_trace"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "stack_trace",
-                                   .highlight = "stack_trace",
+                                   .highlight = "stack_trace"sv,
                                    .args = {{
-                                       .value = "stack_trace",
+                                       .value = "stack_trace"sv,
                                        .address = "value",
                                    }}}}});
 
@@ -111,9 +112,9 @@ TEST(TestActionsIntegration, DefaultActions)
                                .actions = {"extract_schema"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "extract_schema",
-                                   .highlight = "extract_schema",
+                                   .highlight = "extract_schema"sv,
                                    .args = {{
-                                       .value = "extract_schema",
+                                       .value = "extract_schema"sv,
                                        .address = "value",
                                    }}}}});
 
@@ -135,9 +136,9 @@ TEST(TestActionsIntegration, DefaultActions)
                                .actions = {"unblock"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "unblock",
-                                   .highlight = "unblock",
+                                   .highlight = "unblock"sv,
                                    .args = {{
-                                       .value = "unblock",
+                                       .value = "unblock"sv,
                                        .address = "value",
                                    }}}}});
 
@@ -181,9 +182,9 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "^block",
-                                   .highlight = "block",
+                                   .highlight = "block"sv,
                                    .args = {{
-                                       .value = "block",
+                                       .value = "block"sv,
                                        .address = "value",
                                    }}}}});
 
@@ -222,9 +223,9 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "^block",
-                                   .highlight = "block",
+                                   .highlight = "block"sv,
                                    .args = {{
-                                       .value = "block",
+                                       .value = "block"sv,
                                        .address = "value",
                                    }}}}});
 
@@ -269,9 +270,9 @@ TEST(TestActionsIntegration, AddNewAction)
                                .actions = {"unblock"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "unblock",
-                                   .highlight = "unblock",
+                                   .highlight = "unblock"sv,
                                    .args = {{
-                                       .value = "unblock",
+                                       .value = "unblock"sv,
                                        .address = "value",
                                    }}}}});
 
@@ -309,9 +310,9 @@ TEST(TestActionsIntegration, AddNewAction)
                                .actions = {"unblock"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "unblock",
-                                   .highlight = "unblock",
+                                   .highlight = "unblock"sv,
                                    .args = {{
-                                       .value = "unblock",
+                                       .value = "unblock"sv,
                                        .address = "value",
                                    }}}}});
 
@@ -351,9 +352,9 @@ TEST(TestActionsIntegration, EmptyOrInvalidActions)
                            .actions = {"block"},
                            .matches = {{.op = "match_regex",
                                .op_value = "^block",
-                               .highlight = "block",
+                               .highlight = "block"sv,
                                .args = {{
-                                   .value = "block",
+                                   .value = "block"sv,
                                    .address = "value",
                                }}}}});
 

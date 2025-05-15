@@ -22,34 +22,11 @@ namespace ddwaf {
 
 namespace {
 
-bool redact_match(const ddwaf::obfuscator &obfuscator, const condition_match &match)
-{
-    for (const auto &arg : match.args) {
-        for (const auto &key : arg.key_path) {
-            if (obfuscator.is_sensitive_key(key)) {
-                return true;
-            }
-        }
-
-        if (obfuscator.is_sensitive_value(arg.resolved)) {
-            return true;
-        }
-    }
-
-    for (const auto &highlight : match.highlights) {
-        if (obfuscator.is_sensitive_value(highlight)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-owned_object serialize_match(const condition_match &match, auto &obfuscator)
+owned_object serialize_match(condition_match &match, const ddwaf::obfuscator &obfuscator)
 {
     auto match_map = owned_object::make_map();
 
-    const bool redact = redact_match(obfuscator, match);
+    obfuscator.obfuscate_match(match);
 
     match_map.emplace("operator", match.operator_name);
     match_map.emplace("operator_value", match.operator_value);
@@ -58,39 +35,23 @@ owned_object serialize_match(const condition_match &match, auto &obfuscator)
     auto param = parameters.emplace_back(owned_object::make_map());
 
     auto highlight_arr = param.emplace("highlight", owned_object::make_array());
-    for (const auto &highlight : match.highlights) {
-        if (redact) {
-            highlight_arr.emplace_back(ddwaf::obfuscator::redaction_msg);
-        } else {
-            highlight_arr.emplace_back(highlight);
-        }
-    }
+    for (auto &highlight : match.highlights) { highlight_arr.emplace_back(highlight.to_object()); }
 
     // Scalar case
     if (match.args.size() == 1 && match.args[0].name == "input") {
-        const auto &arg = match.args[0];
+        auto &arg = match.args[0];
 
         param.emplace("address", arg.address);
-
-        if (redact) {
-            param.emplace("value", ddwaf::obfuscator::redaction_msg);
-        } else {
-            param.emplace("value", arg.resolved);
-        }
+        param.emplace("value", arg.resolved.to_object());
 
         auto key_path = param.emplace("key_path", owned_object::make_array());
         for (const auto &key : arg.key_path) { key_path.emplace_back(key); }
     } else {
-        for (const auto &arg : match.args) {
+        for (auto &arg : match.args) {
             auto argument = param.emplace(arg.name, owned_object::make_map());
 
             argument.emplace("address", arg.address);
-
-            if (redact) {
-                argument.emplace("value", ddwaf::obfuscator::redaction_msg);
-            } else {
-                argument.emplace("value", arg.resolved);
-            }
+            argument.emplace("value", arg.resolved.to_object());
 
             auto key_path = argument.emplace("key_path", owned_object::make_array());
             for (const auto &key : arg.key_path) { key_path.emplace_back(key); }
@@ -251,14 +212,14 @@ void serialize_actions(borrowed_object action_map, const action_tracker &actions
 
 } // namespace
 
-void event_serializer::serialize(const std::vector<event> &events,
+void event_serializer::serialize(std::vector<event> &events,
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     borrowed_object output_events, borrowed_object output_actions) const
 {
     action_tracker actions{
         .blocking_action = {}, .stack_id = {}, .non_blocking_actions = {}, .mapper = actions_};
 
-    for (const auto &event : events) {
+    for (auto &event : events) {
         auto root_map = output_events.emplace_back(owned_object::make_map());
         auto match_array = owned_object::make_array();
 
@@ -273,7 +234,7 @@ void event_serializer::serialize(const std::vector<event> &events,
             rule_map = serialize_empty_rule();
         }
 
-        for (const auto &match : event.matches) {
+        for (auto &match : event.matches) {
             match_array.emplace_back(serialize_match(match, obfuscator_));
         }
 

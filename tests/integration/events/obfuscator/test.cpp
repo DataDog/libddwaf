@@ -39,9 +39,9 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "rule1",
+                                   .highlight = "rule1"sv,
                                    .args = {{
-                                       .value = "rule1",
+                                       .value = "rule1"sv,
                                        .address = "value",
                                    }}}}});
         ddwaf_object_free(&out);
@@ -63,9 +63,9 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "<Redacted>",
+                                   .highlight = "<Redacted>"sv,
                                    .args = {{
-                                       .value = "<Redacted>",
+                                       .value = "<Redacted>"sv,
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
@@ -87,9 +87,9 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "<Redacted>",
+                                   .highlight = "<Redacted>"sv,
                                    .args = {{
-                                       .value = "<Redacted>",
+                                       .value = "<Redacted>"sv,
                                        .address = "value",
                                    }}}}});
         ddwaf_object_free(&out);
@@ -111,9 +111,9 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "<Redacted>",
+                                   .highlight = "<Redacted>"sv,
                                    .args = {{
-                                       .value = "<Redacted>",
+                                       .value = "<Redacted>"sv,
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
@@ -149,9 +149,9 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "rule1",
+                                   .highlight = "rule1"sv,
                                    .args = {{
-                                       .value = "rule1",
+                                       .value = "rule1"sv,
                                        .address = "value",
                                    }}}}});
         ddwaf_object_free(&out);
@@ -173,9 +173,9 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "<Redacted>",
+                                   .highlight = "<Redacted>"sv,
                                    .args = {{
-                                       .value = "<Redacted>",
+                                       .value = "<Redacted>"sv,
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
@@ -197,9 +197,9 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "rule1",
+                                   .highlight = "rule1"sv,
                                    .args = {{
-                                       .value = "rule1_obf",
+                                       .value = "rule1_obf"sv,
                                        .address = "value",
                                    }}}}});
         ddwaf_object_free(&out);
@@ -234,9 +234,9 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "rule1",
+                                   .highlight = "rule1"sv,
                                    .args = {{
-                                       .value = "rule1",
+                                       .value = "rule1"sv,
                                        .address = "value",
                                    }}}}});
         ddwaf_object_free(&out);
@@ -258,9 +258,9 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "rule1",
+                                   .highlight = "rule1"sv,
                                    .args = {{
-                                       .value = "rule1",
+                                       .value = "rule1"sv,
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
@@ -282,9 +282,9 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "<Redacted>",
+                                   .highlight = "<Redacted>"sv,
                                    .args = {{
-                                       .value = "<Redacted>",
+                                       .value = "<Redacted>"sv,
                                        .address = "value",
                                    }}}}});
         ddwaf_object_free(&out);
@@ -299,7 +299,7 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, "^badvalue$"}, ddwaf_object_free};
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = "^badvalue"}, ddwaf_object_free};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ddwaf_object_free(&rule);
@@ -318,9 +318,9 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
                                .name = "rule2",
                                .tags = {{"type", "security_scanner"}, {"category", "category2"}},
                                .matches = {{.op = "phrase_match",
-                                   .highlight = "<Redacted>",
+                                   .highlight = "<Redacted>"sv,
                                    .args = {{
-                                       .value = "<Redacted>",
+                                       .value = "<Redacted>"sv,
                                        .address = "value",
                                    }}}}});
         ddwaf_object_free(&out);
@@ -340,9 +340,9 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
                                .name = "rule2",
                                .tags = {{"type", "security_scanner"}, {"category", "category2"}},
                                .matches = {{.op = "phrase_match",
-                                   .highlight = "othervalue",
+                                   .highlight = "othervalue"sv,
                                    .args = {{
-                                       .value = "othervalue_badvalue",
+                                       .value = "othervalue_badvalue"sv,
                                        .address = "value",
                                    }}}}});
         ddwaf_object_free(&out);
@@ -377,9 +377,9 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "rule1",
+                                   .highlight = "rule1"sv,
                                    .args = {{
-                                       .value = "rule1",
+                                       .value = "rule1"sv,
                                        .address = "value",
                                    }}}}});
         ddwaf_object_free(&out);
@@ -401,9 +401,9 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "rule1",
+                                   .highlight = "rule1"sv,
                                    .args = {{
-                                       .value = "rule1",
+                                       .value = "rule1"sv,
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
@@ -425,9 +425,9 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "rule1",
+                                   .highlight = "rule1"sv,
                                    .args = {{
-                                       .value = "rule1_obf",
+                                       .value = "rule1_obf"sv,
                                        .address = "value",
                                    }}}}});
         ddwaf_object_free(&out);
@@ -462,9 +462,9 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "rule1",
+                                   .highlight = "rule1"sv,
                                    .args = {{
-                                       .value = "rule1",
+                                       .value = "rule1"sv,
                                        .address = "value",
                                    }}}}});
         ddwaf_object_free(&out);
@@ -486,9 +486,9 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "<Redacted>",
+                                   .highlight = "<Redacted>"sv,
                                    .args = {{
-                                       .value = "<Redacted>",
+                                       .value = "<Redacted>"sv,
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
@@ -510,9 +510,9 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "rule1",
+                                   .highlight = "rule1"sv,
                                    .args = {{
-                                       .value = "rule1_obf",
+                                       .value = "rule1_obf"sv,
                                        .address = "value",
                                    }}}}});
         ddwaf_object_free(&out);
@@ -547,9 +547,9 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "rule1",
+                                   .highlight = "rule1"sv,
                                    .args = {{
-                                       .value = "rule1",
+                                       .value = "rule1"sv,
                                        .address = "value",
                                    }}}}});
         ddwaf_object_free(&out);
@@ -571,9 +571,9 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "rule1",
+                                   .highlight = "rule1"sv,
                                    .args = {{
-                                       .value = "rule1",
+                                       .value = "rule1"sv,
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
@@ -595,9 +595,9 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule1",
-                                   .highlight = "rule1",
+                                   .highlight = "rule1"sv,
                                    .args = {{
-                                       .value = "rule1_obf",
+                                       .value = "rule1_obf"sv,
                                        .address = "value",
                                    }}}}});
         ddwaf_object_free(&out);

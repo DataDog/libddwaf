@@ -9,6 +9,7 @@
 #include "version.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
 
 namespace {
 
@@ -818,9 +819,9 @@ TEST(TestWafIntegration, UpdateTagsByID)
                 .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "1"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule1",
-                    .highlight = "rule1",
+                    .highlight = "rule1"sv,
                     .args = {
-                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
+                        {.name = "input", .value = "rule1"sv, .address = "value1", .path = {}}}}}});
 
         EXPECT_EVENTS(result2,
             {.id = "1",
@@ -829,9 +830,9 @@ TEST(TestWafIntegration, UpdateTagsByID)
                     {"new_tag", "value"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule1",
-                    .highlight = "rule1",
+                    .highlight = "rule1"sv,
                     .args = {
-                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
+                        {.name = "input", .value = "rule1"sv, .address = "value1", .path = {}}}}}});
 
         ddwaf_object_free(&parameter);
 
@@ -868,9 +869,9 @@ TEST(TestWafIntegration, UpdateTagsByID)
                 .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "1"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule1",
-                    .highlight = "rule1",
+                    .highlight = "rule1"sv,
                     .args = {
-                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
+                        {.name = "input", .value = "rule1"sv, .address = "value1", .path = {}}}}}});
 
         EXPECT_EVENTS(result2,
             {.id = "1",
@@ -879,9 +880,9 @@ TEST(TestWafIntegration, UpdateTagsByID)
                     {"new_tag", "value"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule1",
-                    .highlight = "rule1",
+                    .highlight = "rule1"sv,
                     .args = {
-                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
+                        {.name = "input", .value = "rule1"sv, .address = "value1", .path = {}}}}}});
 
         ddwaf_object_free(&parameter);
 
@@ -950,9 +951,9 @@ TEST(TestWafIntegration, UpdateTagsByTags)
                 .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "1"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule1",
-                    .highlight = "rule1",
+                    .highlight = "rule1"sv,
                     .args = {
-                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
+                        {.name = "input", .value = "rule1"sv, .address = "value1", .path = {}}}}}});
 
         EXPECT_EVENTS(result2,
             {.id = "1",
@@ -961,9 +962,9 @@ TEST(TestWafIntegration, UpdateTagsByTags)
                     {"new_tag", "value"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule1",
-                    .highlight = "rule1",
+                    .highlight = "rule1"sv,
                     .args = {
-                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
+                        {.name = "input", .value = "rule1"sv, .address = "value1", .path = {}}}}}});
 
         ddwaf_object_free(&result1);
         ddwaf_object_free(&result2);
@@ -997,9 +998,9 @@ TEST(TestWafIntegration, UpdateTagsByTags)
                 .tags = {{"type", "flow2"}, {"category", "category2"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule2",
-                    .highlight = "rule2",
+                    .highlight = "rule2"sv,
                     .args = {
-                        {.name = "input", .value = "rule2", .address = "value1", .path = {}}}}}});
+                        {.name = "input", .value = "rule2"sv, .address = "value1", .path = {}}}}}});
 
         EXPECT_EVENTS(result2,
             {.id = "2",
@@ -1007,9 +1008,9 @@ TEST(TestWafIntegration, UpdateTagsByTags)
                 .tags = {{"type", "flow2"}, {"category", "category2"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule2",
-                    .highlight = "rule2",
+                    .highlight = "rule2"sv,
                     .args = {
-                        {.name = "input", .value = "rule2", .address = "value1", .path = {}}}}}});
+                        {.name = "input", .value = "rule2"sv, .address = "value1", .path = {}}}}}});
 
         ddwaf_object_free(&result1);
         ddwaf_object_free(&result2);
@@ -1043,9 +1044,9 @@ TEST(TestWafIntegration, UpdateTagsByTags)
                 .tags = {{"type", "flow2"}, {"category", "category3"}, {"confidence", "1"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule3",
-                    .highlight = "rule3",
+                    .highlight = "rule3"sv,
                     .args = {
-                        {.name = "input", .value = "rule3", .address = "value2", .path = {}}}}}});
+                        {.name = "input", .value = "rule3"sv, .address = "value2", .path = {}}}}}});
 
         EXPECT_EVENTS(result2,
             {.id = "3",
@@ -1054,9 +1055,9 @@ TEST(TestWafIntegration, UpdateTagsByTags)
                     {"new_tag", "value"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule3",
-                    .highlight = "rule3",
+                    .highlight = "rule3"sv,
                     .args = {
-                        {.name = "input", .value = "rule3", .address = "value2", .path = {}}}}}});
+                        {.name = "input", .value = "rule3"sv, .address = "value2", .path = {}}}}}});
 
         ddwaf_object_free(&result1);
         ddwaf_object_free(&result2);
@@ -1093,9 +1094,9 @@ TEST(TestWafIntegration, UpdateTagsByTags)
                 .tags = {{"type", "flow2"}, {"category", "category3"}, {"confidence", "1"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule3",
-                    .highlight = "rule3",
+                    .highlight = "rule3"sv,
                     .args = {
-                        {.name = "input", .value = "rule3", .address = "value2", .path = {}}}}}});
+                        {.name = "input", .value = "rule3"sv, .address = "value2", .path = {}}}}}});
 
         EXPECT_EVENTS(result2,
             {.id = "3",
@@ -1104,9 +1105,9 @@ TEST(TestWafIntegration, UpdateTagsByTags)
                     {"new_tag", "value"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule3",
-                    .highlight = "rule3",
+                    .highlight = "rule3"sv,
                     .args = {
-                        {.name = "input", .value = "rule3", .address = "value2", .path = {}}}}}});
+                        {.name = "input", .value = "rule3"sv, .address = "value2", .path = {}}}}}});
         ddwaf_object_free(&result3);
         ddwaf_object_free(&result2);
 
@@ -1170,9 +1171,9 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
                 .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "1"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule1",
-                    .highlight = "rule1",
+                    .highlight = "rule1"sv,
                     .args = {
-                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
+                        {.name = "input", .value = "rule1"sv, .address = "value1", .path = {}}}}}});
 
         EXPECT_EVENTS(result2,
             {.id = "1",
@@ -1182,9 +1183,9 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
                 .actions = {"block"},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule1",
-                    .highlight = "rule1",
+                    .highlight = "rule1"sv,
                     .args = {
-                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
+                        {.name = "input", .value = "rule1"sv, .address = "value1", .path = {}}}}}});
 
         EXPECT_ACTIONS(result1, {});
         EXPECT_ACTIONS(
@@ -1236,9 +1237,9 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
                 .actions = {"block"},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule1",
-                    .highlight = "rule1",
+                    .highlight = "rule1"sv,
                     .args = {
-                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
+                        {.name = "input", .value = "rule1"sv, .address = "value1", .path = {}}}}}});
 
         EXPECT_EVENTS(result3,
             {.id = "1",
@@ -1246,9 +1247,9 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
                 .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "1"}},
                 .matches = {{.op = "match_regex",
                     .op_value = "rule1",
-                    .highlight = "rule1",
+                    .highlight = "rule1"sv,
                     .args = {
-                        {.name = "input", .value = "rule1", .address = "value1", .path = {}}}}}});
+                        {.name = "input", .value = "rule1"sv, .address = "value1", .path = {}}}}}});
 
         EXPECT_ACTIONS(
             result2, {{"block_request",
