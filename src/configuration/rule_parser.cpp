@@ -108,6 +108,7 @@ rule_spec parse_rule(raw_configuration::map &rule, core_rule::source_type source
                 .index = get_target_index(address),
                 .key_path = at<std::vector<std::string>>(value_or_target_map, "key_path", {})};
         }
+        attributes.emplace_back(std::move(attr_spec));
     }
 
     return {.enabled = at<bool>(rule, "enabled", true),
