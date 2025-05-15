@@ -161,7 +161,7 @@ bool obfuscator::obfuscate_value(dynamic_string &value) const
     }
 
     if (!output.empty()) {
-        output.append({read, value.data() + value.size() - read});
+        output.append({read, static_cast<std::size_t>(value.data() + value.size() - read)});
         value = output;
     }
 
