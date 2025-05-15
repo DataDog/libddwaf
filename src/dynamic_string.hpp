@@ -128,7 +128,7 @@ public:
 protected:
     void ensure_spare_capacity(std::size_t at_least)
     {
-        // We need to be able to allocate at_least + 1 to include the nul-character
+        // We need to be able to allocate at_least + 1 to include the null character
         if (at_least >= (std::numeric_limits<std::size_t>::max() - capacity_)) {
             throw std::bad_alloc{};
         }
@@ -151,8 +151,8 @@ protected:
     }
 
     std::unique_ptr<char, decltype(&free)> buffer_{nullptr, free};
-    // Size explicitly excludes the nul-character, while capacity includes it as
-    // if refers to the total memory allocated.
+    // Size explicitly excludes the null character, while capacity includes it
+    // as if refers to the total memory allocated.
     std::size_t size_{0};
     std::size_t capacity_{0};
 };
