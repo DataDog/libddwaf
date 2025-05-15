@@ -27,30 +27,34 @@ public:
 
     explicit dynamic_string(std::size_t capacity)
     {
-        realloc_if_needed(capacity);
+        ensure_spare_capacity(capacity);
         buffer_.get()[0] = '\0';
     }
 
-    template <typename T>
-    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-    dynamic_string(T str)
-        requires std::is_same_v<std::string_view, std::decay_t<T>> ||
-                 std::is_same_v<std::string, std::decay_t<T>>
-        : size_(str.size())
+    dynamic_string(const char *str, std::size_t size) : size_(size)
     {
-        realloc_if_needed(size_);
-        if (!str.empty()) {
-            memcpy(buffer_.get(), str.data(), size_);
+        ensure_spare_capacity(size_);
+        if (size_ != 0) {
+            memcpy(buffer_.get(), str, size_);
         }
         buffer_.get()[size_] = '\0';
     }
 
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-    dynamic_string(const char *str) : dynamic_string(std::string_view{str}) {}
+    dynamic_string(std::string_view str) : dynamic_string(str.data(), str.size()) {}
+
+    dynamic_string(const char *str) = delete;
+
+    template <typename T>
+    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
+    dynamic_string(T str)
+        requires std::is_constructible_v<std::string_view, T>
+        : dynamic_string(std::string_view{str})
+    {}
 
     ~dynamic_string() = default;
 
-    dynamic_string(const dynamic_string &str) : dynamic_string(std::string_view{str}) {}
+    dynamic_string(const dynamic_string &str) : dynamic_string(str.data(), str.size()) {}
 
     dynamic_string &operator=(const dynamic_string &str)
     {
@@ -81,7 +85,8 @@ public:
         return *this;
     }
 
-    ddwaf_object move()
+    // This method moves the contents of the string into the resulting object
+    ddwaf_object to_object()
     {
         ddwaf_object object;
         ddwaf_object_stringl_nc(&object, buffer_.release(), size_);
@@ -96,7 +101,7 @@ public:
 
     void append(std::string_view str)
     {
-        realloc_if_needed(str.size());
+        ensure_spare_capacity(str.size());
         if (!str.empty()) [[likely]] {
             memcpy(&buffer_.get()[size_], str.data(), str.size());
             size_ += str.size();
@@ -106,15 +111,14 @@ public:
 
     void append(char c)
     {
-        realloc_if_needed(1);
+        ensure_spare_capacity(1);
         buffer_.get()[size_++] = c;
         buffer_.get()[size_] = '\0';
     }
 
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
     operator std::string_view() const { return {buffer_.get(), size_}; }
-    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-    operator std::string() const { return {buffer_.get(), size_}; }
+    explicit operator std::string() const { return {buffer_.get(), size_}; }
 
     bool operator==(const dynamic_string &other) const
     {
@@ -122,7 +126,7 @@ public:
     }
 
 protected:
-    void realloc_if_needed(std::size_t at_least)
+    void ensure_spare_capacity(std::size_t at_least)
     {
         // We need to be able to allocate at_least + 1 to include the nul-character
         if (at_least >= (std::numeric_limits<std::size_t>::max() - capacity_)) {
@@ -147,6 +151,8 @@ protected:
     }
 
     std::unique_ptr<char, decltype(&free)> buffer_{nullptr, free};
+    // Size explicitly excludes the nul-character, while capacity includes it as
+    // if refers to the total memory allocated.
     std::size_t size_{0};
     std::size_t capacity_{0};
 };

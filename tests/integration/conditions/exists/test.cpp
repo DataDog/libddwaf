@@ -7,6 +7,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
 
 namespace {
 constexpr std::string_view base_dir = "integration/conditions/exists";
@@ -35,7 +36,7 @@ TEST(TestConditionExistsIntegration, AddressAvailable)
                            .name = "rule1-exists",
                            .tags = {{"type", "flow"}, {"category", "category"}},
                            .matches = {{.op = "exists",
-                               .highlight = "",
+                               .highlight = ""sv,
                                .args = {{
                                    .address = "input-1",
                                }}}}});
@@ -92,7 +93,7 @@ TEST(TestConditionExistsIntegration, KeyPathAvailable)
                            .name = "rule2-exists-kp",
                            .tags = {{"type", "flow"}, {"category", "category"}},
                            .matches = {{.op = "exists",
-                               .highlight = "",
+                               .highlight = ""sv,
                                .args = {{.address = "input-2", .path = {"path"}}}}}});
 
     ddwaf_object_free(&out);
@@ -148,7 +149,7 @@ TEST(TestConditionExistsIntegration, AddressAvailableVariadicRule)
                            .name = "rule3-exists-multi",
                            .tags = {{"type", "flow"}, {"category", "category"}},
                            .matches = {{.op = "exists",
-                               .highlight = "",
+                               .highlight = ""sv,
                                .args = {{
                                    .address = "input-3-1",
                                }}}}});
@@ -183,7 +184,7 @@ TEST(TestConditionExistsIntegration, KeyPathAvailableVariadicRule)
                            .name = "rule3-exists-multi",
                            .tags = {{"type", "flow"}, {"category", "category"}},
                            .matches = {{.op = "exists",
-                               .highlight = "",
+                               .highlight = ""sv,
                                .args = {{.address = "input-3-2", .path = {"path"}}}}}});
 
     ddwaf_object_free(&out);
@@ -217,7 +218,7 @@ TEST(TestConditionExistsIntegration, AddressAvailableKeyPathNotAvailableVariadic
                            .name = "rule3-exists-multi",
                            .tags = {{"type", "flow"}, {"category", "category"}},
                            .matches = {{.op = "exists",
-                               .highlight = "",
+                               .highlight = ""sv,
                                .args = {{
                                    .address = "input-3-1",
                                }}}}});
@@ -301,7 +302,7 @@ TEST(TestConditionExistsNegatedIntegration, KeyPathNotAvailable)
                            .name = "rule2-not-exists-kp",
                            .tags = {{"type", "flow"}, {"category", "category"}},
                            .matches = {{.op = "!exists",
-                               .highlight = "",
+                               .highlight = ""sv,
                                .args = {{.address = "input-2", .path = {"path"}}}}}});
 
     ddwaf_object_free(&out);

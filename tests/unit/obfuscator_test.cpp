@@ -101,8 +101,8 @@ TEST(TestObfuscator, MatchObfuscationCustomRegexes)
     {
         // Verify that when the key matches, both value and highlight are redacted
         condition_match match{
-            .args = {{.name = "input", .resolved = "random", .key_path = {"password"}}},
-            .highlights = {"random"},
+            .args = {{.name = "input", .resolved = "random"sv, .key_path = {"password"}}},
+            .highlights = {"random"sv},
             .operator_name = {},
             .operator_value = {}};
 
@@ -115,8 +115,8 @@ TEST(TestObfuscator, MatchObfuscationCustomRegexes)
         // Verify that the value is redacted when it matches the regex and that
         // the highlight is redacted due to the condition argument being input
         condition_match match{
-            .args = {{.name = "input", .resolved = "value", .key_path = {"unrelated"}}},
-            .highlights = {"not sensitive"},
+            .args = {{.name = "input", .resolved = "value"sv, .key_path = {"unrelated"}}},
+            .highlights = {"not sensitive"sv},
             .operator_name = {},
             .operator_value = {}};
 
@@ -129,8 +129,8 @@ TEST(TestObfuscator, MatchObfuscationCustomRegexes)
         // Verify that the value is redacted when it matches the regex and that
         // the highlight is redacted due to the condition argument being param
         condition_match match{
-            .args = {{.name = "params", .resolved = "value", .key_path = {"unrelated"}}},
-            .highlights = {"not sensitive"},
+            .args = {{.name = "params", .resolved = "value"sv, .key_path = {"unrelated"}}},
+            .highlights = {"not sensitive"sv},
             .operator_name = {},
             .operator_value = {}};
 
@@ -143,9 +143,9 @@ TEST(TestObfuscator, MatchObfuscationCustomRegexes)
         // Verify that the value is redacted when it matches the regex and that
         // the highlight isn't because it isn't related to the value
         condition_match match{.args = {{.name = "unrelated to highlight",
-                                  .resolved = "value",
+                                  .resolved = "value"sv,
                                   .key_path = {"unrelated"}}},
-            .highlights = {"not sensitive"},
+            .highlights = {"not sensitive"sv},
             .operator_name = {},
             .operator_value = {}};
 
@@ -157,8 +157,8 @@ TEST(TestObfuscator, MatchObfuscationCustomRegexes)
     {
         // Verify that the highlight is only redacted when the value is
         condition_match match{
-            .args = {{.name = "params", .resolved = "not sensitive", .key_path = {"unrelated"}}},
-            .highlights = {"value"},
+            .args = {{.name = "params", .resolved = "not sensitive"sv, .key_path = {"unrelated"}}},
+            .highlights = {"value"sv},
             .operator_name = {},
             .operator_value = {}};
 
@@ -171,8 +171,8 @@ TEST(TestObfuscator, MatchObfuscationCustomRegexes)
         // Verify that when neither the key nor the value match, no redaction is
         // performed
         condition_match match{
-            .args = {{.name = "input", .resolved = "random", .key_path = {"unredacted"}}},
-            .highlights = {"random"},
+            .args = {{.name = "input", .resolved = "random"sv, .key_path = {"unredacted"}}},
+            .highlights = {"random"sv},
             .operator_name = {},
             .operator_value = {}};
 
@@ -190,8 +190,8 @@ TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
     {
         // Verify that when the key matches, both value and highlight are redacted
         condition_match match{
-            .args = {{.name = "input", .resolved = "random", .key_path = {"password"}}},
-            .highlights = {"random"},
+            .args = {{.name = "input", .resolved = "random"sv, .key_path = {"password"}}},
+            .highlights = {"random"sv},
             .operator_name = {},
             .operator_value = {}};
 
@@ -203,8 +203,8 @@ TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
     {
         // Verify that the value is redacted when it matches the regex and that
         // the highlight is redacted due to the condition argument being input
-        condition_match match{.args = {{.name = "input", .resolved = "password=something"}},
-            .highlights = {"not sensitive"},
+        condition_match match{.args = {{.name = "input", .resolved = "password=something"sv}},
+            .highlights = {"not sensitive"sv},
             .operator_name = {},
             .operator_value = {}};
 
@@ -217,9 +217,9 @@ TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
         // Verify that the value is redacted when it matches the regex and that
         // the highlight is redacted due to the condition argument being param
         condition_match match{.args = {{.name = "params",
-                                  .resolved = "token:qweqweqweqweq",
+                                  .resolved = "token:qweqweqweqweq"sv,
                                   .key_path = {"unrelated"}}},
-            .highlights = {"not sensitive"},
+            .highlights = {"not sensitive"sv},
             .operator_name = {},
             .operator_value = {}};
 
@@ -232,11 +232,11 @@ TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
         // Verify that the value is redacted when it matches the regex and that
         // the highlight isn't because the it isn't related to the value
         condition_match match{.args = {{.name = "unrelated to highlight",
-                                  .resolved = "ssh-rsa "
+                                  .resolved = "ssh-rsa "sv
                                               "1234567890123456789012345678901234567890123456789012"
                                               "345678901234567890123456789012345678901234567890",
                                   .key_path = {"unrelated"}}},
-            .highlights = {"not sensitive"},
+            .highlights = {"not sensitive"sv},
             .operator_name = {},
             .operator_value = {}};
 
@@ -248,9 +248,9 @@ TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
     {
         // Verify that the highlight is only redacted when the value is
         condition_match match{
-            .args = {{.name = "params", .resolved = "not sensitive", .key_path = {"unrelated"}},
-                {.name = "not_params", .resolved = "password=paco"}},
-            .highlights = {"password=2020"},
+            .args = {{.name = "params", .resolved = "not sensitive"sv, .key_path = {"unrelated"}},
+                {.name = "not_params", .resolved = "password=paco"sv}},
+            .highlights = {"password=2020"sv},
             .operator_name = {},
             .operator_value = {}};
 
@@ -264,8 +264,8 @@ TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
         // Verify that when neither the key nor the value match, no redaction is
         // performed
         condition_match match{
-            .args = {{.name = "input", .resolved = "random", .key_path = {"unredacted"}}},
-            .highlights = {"random"},
+            .args = {{.name = "input", .resolved = "random"sv, .key_path = {"unredacted"}}},
+            .highlights = {"random"sv},
             .operator_name = {},
             .operator_value = {}};
 
@@ -309,6 +309,10 @@ MIIEpAIBAAKCAQEAwKFIxQKIn8FJyX1TqV2QIDAQABAoIBAQC/UYHm6+NHmY6U
             R"(ssh-rsa <Redacted>==)"},
         {R"(site.com/?api_token=sensitive&value=something&PHPSESSID=something&json={"token":"value","somethingelse":"ghp_000000000000000000000000000000000000"})",
             R"(site.com/?api_token=<Redacted>&value=something&PHPSESSID=<Redacted>&json={"token":<Redacted>,"somethingelse":"ghp_<Redacted>"})"},
+        {R"(-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEAwKFIxQKIn8FJyX1TqV2QIDAQABAoIBAQC/UYHm6+NHmY6U
+-----END RSA PRIVATE KEY-----,ghp_000000000000000000000000000000000000)",
+            R"(-----BEGIN RSA PRIVATE KEY-----<Redacted>-----END RSA PRIVATE KEY-----,ghp_<Redacted>)"},
     };
 
     ddwaf::obfuscator event_obfuscator{
@@ -316,7 +320,7 @@ MIIEpAIBAAKCAQEAwKFIxQKIn8FJyX1TqV2QIDAQABAoIBAQC/UYHm6+NHmY6U
 
     for (const auto &[original, expected] : test_cases) {
         condition_match match{.args = {{.name = "input", .resolved = original}},
-            .highlights = {"random"},
+            .highlights = {"random"sv},
             .operator_name = {},
             .operator_value = {}};
 
@@ -334,8 +338,8 @@ TEST(TestObfuscator, FallbackToDefaultRegexes)
     {
         // Verify that when the key matches, both value and highlight are redacted
         condition_match match{
-            .args = {{.name = "input", .resolved = "random", .key_path = {"password"}}},
-            .highlights = {"random"},
+            .args = {{.name = "input", .resolved = "random"sv, .key_path = {"password"}}},
+            .highlights = {"random"sv},
             .operator_name = {},
             .operator_value = {}};
 
@@ -347,8 +351,8 @@ TEST(TestObfuscator, FallbackToDefaultRegexes)
     {
         // Verify that the value is redacted when it matches the regex and that
         // the highlight is redacted due to the condition argument being input
-        condition_match match{.args = {{.name = "input", .resolved = "password=something"}},
-            .highlights = {"not sensitive"},
+        condition_match match{.args = {{.name = "input", .resolved = "password=something"sv}},
+            .highlights = {"not sensitive"sv},
             .operator_name = {},
             .operator_value = {}};
 
@@ -361,9 +365,9 @@ TEST(TestObfuscator, FallbackToDefaultRegexes)
         // Verify that the value is redacted when it matches the regex and that
         // the highlight is redacted due to the condition argument being param
         condition_match match{.args = {{.name = "params",
-                                  .resolved = "token:qweqweqweqweq",
+                                  .resolved = "token:qweqweqweqweq"sv,
                                   .key_path = {"unrelated"}}},
-            .highlights = {"not sensitive"},
+            .highlights = {"not sensitive"sv},
             .operator_name = {},
             .operator_value = {}};
 
@@ -376,11 +380,11 @@ TEST(TestObfuscator, FallbackToDefaultRegexes)
         // Verify that the value is redacted when it matches the regex and that
         // the highlight isn't because the it isn't related to the value
         condition_match match{.args = {{.name = "unrelated to highlight",
-                                  .resolved = "ssh-rsa "
+                                  .resolved = "ssh-rsa "sv
                                               "1234567890123456789012345678901234567890123456789012"
                                               "345678901234567890123456789012345678901234567890",
                                   .key_path = {"unrelated"}}},
-            .highlights = {"not sensitive"},
+            .highlights = {"not sensitive"sv},
             .operator_name = {},
             .operator_value = {}};
 
@@ -392,8 +396,8 @@ TEST(TestObfuscator, FallbackToDefaultRegexes)
     {
         // Verify that the highlight is only redacted when the value is
         condition_match match{
-            .args = {{.name = "params", .resolved = "not sensitive", .key_path = {"unrelated"}}},
-            .highlights = {"password=2020"},
+            .args = {{.name = "params", .resolved = "not sensitive"sv, .key_path = {"unrelated"}}},
+            .highlights = {"password=2020"sv},
             .operator_name = {},
             .operator_value = {}};
 
@@ -406,8 +410,8 @@ TEST(TestObfuscator, FallbackToDefaultRegexes)
         // Verify that when neither the key nor the value match, no redaction is
         // performed
         condition_match match{
-            .args = {{.name = "input", .resolved = "random", .key_path = {"unredacted"}}},
-            .highlights = {"random"},
+            .args = {{.name = "input", .resolved = "random"sv, .key_path = {"unredacted"}}},
+            .highlights = {"random"sv},
             .operator_name = {},
             .operator_value = {}};
 

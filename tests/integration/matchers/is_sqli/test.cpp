@@ -7,6 +7,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf::matcher;
+using namespace std::literals;
 
 namespace {
 
@@ -39,9 +40,9 @@ TEST(TestIsSQLiIntegration, Match)
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "is_sqli",
-                               .highlight = "s&1c",
+                               .highlight = "s&1c"sv,
                                .args = {{
-                                   .value = "'OR 1=1/*",
+                                   .value = "'OR 1=1/*"sv,
                                    .address = "arg1",
                                }}}}});
     ddwaf_object_free(&ret);

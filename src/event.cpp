@@ -40,7 +40,7 @@ void serialize_match(condition_match &match, ddwaf_object &match_map, auto &obfu
     ddwaf_object highlight_arr;
     ddwaf_object_array(&highlight_arr);
     for (auto &highlight : match.highlights) {
-        auto value = highlight.move();
+        auto value = highlight.to_object();
         ddwaf_object_array_add(&highlight_arr, &value);
     }
 
@@ -56,7 +56,7 @@ void serialize_match(condition_match &match, ddwaf_object &match_map, auto &obfu
 
         ddwaf_object_map_add(&param, "address", to_object(tmp, arg.address));
         ddwaf_object_map_add(&param, "key_path", &key_path);
-        auto resolved = arg.resolved.move();
+        auto resolved = arg.resolved.to_object();
         ddwaf_object_map_add(&param, "value", &resolved);
     } else {
         for (auto &arg : match.args) {
@@ -72,7 +72,7 @@ void serialize_match(condition_match &match, ddwaf_object &match_map, auto &obfu
             ddwaf_object_map_add(&argument, "address", to_object(tmp, arg.address));
             ddwaf_object_map_add(&argument, "key_path", &key_path);
 
-            auto resolved = arg.resolved.move();
+            auto resolved = arg.resolved.to_object();
             ddwaf_object_map_add(&argument, "value", &resolved);
 
             ddwaf_object_map_addl(&param, arg.name.data(), arg.name.size(), &argument);

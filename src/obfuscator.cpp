@@ -4,11 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 #include <array>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string_view>
-#include <utility>
 
 #include "condition/base.hpp"
 #include "dynamic_string.hpp"
@@ -45,18 +45,14 @@ bool load_regex(std::string_view regex_str, std::unique_ptr<re2::RE2> &regex)
     return regex->ok();
 }
 
-template <std::size_t N, std::size_t... I>
-bool find_and_consume_sequence(re2::StringPiece *input, re2::RE2 &regex,
-    std::array<re2::StringPiece, N> &array, std::index_sequence<I...> /*unused*/)
-{
-    return re2::RE2::FindAndConsume(input, regex, &array[I]...);
-}
-
 template <std::size_t N>
 bool find_and_consume(
     re2::StringPiece *input, re2::RE2 &regex, std::array<re2::StringPiece, N> &array)
 {
-    return find_and_consume_sequence(input, regex, array, std::make_index_sequence<N>{});
+    return std::apply(
+        [input, &regex](
+            auto &...elements) { return re2::RE2::FindAndConsume(input, regex, &elements...); },
+        array);
 }
 
 } // namespace
@@ -138,33 +134,34 @@ bool obfuscator::obfuscate_value(dynamic_string &value) const
         return false;
     }
 
+    // The default regular expression used for values should have the following
+    // number of capturing groups
+    static constexpr std::size_t capturing_groups = 8;
+    assert(value_regex_->NumberOfCapturingGroups() == capturing_groups);
+
     dynamic_string output{value.size()};
     re2::StringPiece input{value.data(), value.size()};
 
-    auto prev = input;
+    const auto *read = input.data();
     while (!input.empty()) {
-        std::array<re2::StringPiece, 8> matches;
+        std::array<re2::StringPiece, capturing_groups> matches;
         if (!find_and_consume(&input, *value_regex_, matches)) {
             break;
         }
 
         for (auto &match : matches) {
             if (!match.empty()) {
-                output.append({prev.data(), static_cast<std::size_t>(match.data() - prev.data())});
+                output.append({read, static_cast<std::size_t>(match.data() - read)});
                 output.append(redaction_msg);
 
-                const auto *next = match.data() + match.size();
-                if (next != input.data()) {
-                    output.append({next, static_cast<std::size_t>(input.data() - next)});
-                }
+                read = match.data() + match.size();
                 break;
             }
         }
-        prev = input;
     }
 
     if (!output.empty()) {
-        output.append({prev.data(), prev.size()});
+        output.append({read, value.data() + value.size() - read});
         value = output;
     }
 

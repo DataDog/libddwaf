@@ -79,22 +79,6 @@ TEST(TestDynamicString, StringConstructor)
     EXPECT_EQ(str, str);
 }
 
-TEST(TestDynamicString, CstringConstructor)
-{
-    dynamic_string str{"thisisastring"};
-
-    // +1 for nul-character
-    EXPECT_EQ(str.capacity(), 14);
-
-    EXPECT_EQ(str.size(), 13);
-    EXPECT_FALSE(str.empty());
-    EXPECT_NE(str.data(), nullptr);
-    EXPECT_STREQ(str.data(), "thisisastring");
-    EXPECT_STR(static_cast<std::string_view>(str), "thisisastring");
-    EXPECT_STR(static_cast<std::string>(str), "thisisastring");
-    EXPECT_EQ(str, str);
-}
-
 TEST(TestDynamicString, CopyConstructor)
 {
     dynamic_string str{"thisisastring"sv};
@@ -168,7 +152,7 @@ TEST(TestDynamicString, MoveToObject)
     dynamic_string str{"thisisastring"sv};
     EXPECT_NE(str.data(), nullptr);
 
-    auto object = str.move();
+    auto object = str.to_object();
 
     std::size_t length;
     const char *cstr = ddwaf_object_get_string(&object, &length);
@@ -254,19 +238,19 @@ TEST(TestDynamicString, AppendCharsAndStrings)
 
 TEST(TestDynamicString, Equality)
 {
-    dynamic_string hello{"hello"};
-    dynamic_string bye{"bye"};
+    dynamic_string hello{"hello"sv};
+    dynamic_string bye{"bye"sv};
 
     EXPECT_NE(hello, bye);
     EXPECT_EQ(hello, hello);
     EXPECT_EQ(bye, bye);
 
-    dynamic_string hello2{"hello"};
+    dynamic_string hello2{"hello"sv};
     EXPECT_NE(hello.data(), hello2.data());
     EXPECT_EQ(hello, hello2);
     EXPECT_EQ(hello2, hello);
 
-    dynamic_string hello_plus{"hello is just a substring"};
+    dynamic_string hello_plus{"hello is just a substring"sv};
     EXPECT_NE(hello, hello_plus);
     EXPECT_NE(hello_plus, hello);
 }
