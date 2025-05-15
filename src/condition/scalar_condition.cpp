@@ -230,6 +230,6 @@ eval_result scalar_negated_condition::eval(condition_cache &cache, const object_
     }
 
     return {.outcome = false, .ephemeral = false};
-} // NOLINT(clang-analyzer-unix.Malloc)
+}
 
 } // namespace ddwaf

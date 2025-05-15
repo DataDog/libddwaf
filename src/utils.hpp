@@ -24,7 +24,6 @@
 #include <vector>
 
 #include "ddwaf.h"
-#include "dynamic_string.hpp"
 
 // Convert numbers to strings
 #define STR_HELPER(x) #x
@@ -123,11 +122,11 @@ inline bool isspace(char c)
 {
     return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v';
 }
-inline bool isupper(char c) { return static_cast<unsigned>(c) - 'A' < 26; }
+inline constexpr bool isupper(char c) { return static_cast<unsigned>(c) - 'A' < 26; }
 inline bool islower(char c) { return static_cast<unsigned>(c) - 'a' < 26; }
 inline bool isalnum(char c) { return isalpha(c) || isdigit(c); }
 inline bool isboundary(char c) { return !isalnum(c) && c != '_'; }
-inline char tolower(char c) { return isupper(c) ? static_cast<char>(c | 32) : c; }
+inline constexpr char tolower(char c) { return isupper(c) ? static_cast<char>(c | 32) : c; }
 inline uint8_t from_hex(char c)
 {
     auto uc = static_cast<uint8_t>(c);
@@ -158,7 +157,8 @@ concept has_from_chars = requires(T v) { std::from_chars(nullptr, nullptr, std::
 template <typename StringType, typename T>
 StringType to_string(T value)
     requires std::is_integral_v<T> && (!std::is_same_v<T, bool>) &&
-             (std::is_same_v<StringType, std::string> || std::is_same_v<StringType, dynamic_string>)
+             std::is_same_v<StringType, std::basic_string<char, typename StringType::traits_type,
+                                            typename StringType::allocator_type>>
 {
     // Maximum number of characters required to represent a 64 bit integer as a string
     // 20 bytes for UINT64_MAX or INT64_MIN
@@ -169,7 +169,7 @@ StringType to_string(T value)
     [[unlikely]] if (ec != std::errc()) {
         return {};
     }
-    return {str.data(), static_cast<std::size_t>(ptr - str.data())};
+    return {str.data(), ptr};
 }
 
 template <typename T>
@@ -181,7 +181,8 @@ inline constexpr std::size_t max_exp_digits = sizeof(T) == 4 ? 2 : 4;
 template <typename StringType, typename T>
 StringType to_string(T value)
     requires(std::is_same_v<T, float> || std::is_same_v<T, double>) &&
-            (std::is_same_v<StringType, std::string> || std::is_same_v<StringType, dynamic_string>)
+            std::is_same_v<StringType, std::basic_string<char, typename StringType::traits_type,
+                                           typename StringType::allocator_type>>
 {
     if constexpr (has_to_chars<T>) {
         static constexpr std::size_t max_chars = std::numeric_limits<T>::digits10 + 1 +
@@ -195,25 +196,24 @@ StringType to_string(T value)
             // This is likely unreachable if the max_chars calculation is accurate
             return {};
         }
-        return {str.data(), static_cast<std::size_t>(ptr - str.data())};
+        return {str.data(), ptr};
     } else {
         using char_type = typename StringType::value_type;
         using traits_type = typename StringType::traits_type;
         using allocator_type = typename StringType::allocator_type;
         std::basic_ostringstream<char_type, traits_type, allocator_type> ss;
         ss << std::setprecision(std::numeric_limits<T>::digits10) << value;
-        auto str = ss.str();
-        return {str.data(), str.size()};
+        return std::move(ss).str();
     }
 }
 
 template <typename StringType, typename T>
 StringType to_string(T value)
     requires std::is_same_v<T, bool> &&
-             (std::is_same_v<StringType, std::string> || std::is_same_v<StringType, dynamic_string>)
+             std::is_same_v<StringType, std::basic_string<char, typename StringType::traits_type,
+                                            typename StringType::allocator_type>>
 {
-    using namespace std::literals;
-    return StringType{value ? "true"sv : "false"sv};
+    return value ? "true" : "false";
 }
 
 template <typename T> std::pair<bool, T> from_string(std::string_view str)
@@ -236,26 +236,26 @@ template <typename T> std::pair<bool, T> from_string(std::string_view str)
     return {false, {}};
 }
 
-inline dynamic_string object_to_string(const ddwaf_object &object)
+inline std::string object_to_string(const ddwaf_object &object)
 {
     if (object.type == DDWAF_OBJ_STRING) {
-        return dynamic_string{object.stringValue, static_cast<std::size_t>(object.nbEntries)};
+        return std::string{object.stringValue, static_cast<std::size_t>(object.nbEntries)};
     }
 
     if (object.type == DDWAF_OBJ_BOOL) {
-        return to_string<dynamic_string>(object.boolean);
+        return to_string<std::string>(object.boolean);
     }
 
     if (object.type == DDWAF_OBJ_SIGNED) {
-        return to_string<dynamic_string>(object.intValue);
+        return to_string<std::string>(object.intValue);
     }
 
     if (object.type == DDWAF_OBJ_UNSIGNED) {
-        return to_string<dynamic_string>(object.uintValue);
+        return to_string<std::string>(object.uintValue);
     }
 
     if (object.type == DDWAF_OBJ_FLOAT) {
-        return to_string<dynamic_string>(object.f64);
+        return to_string<std::string>(object.f64);
     }
 
     return {};
