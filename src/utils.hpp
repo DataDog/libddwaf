@@ -203,7 +203,7 @@ StringType to_string(T value)
         std::basic_ostringstream<char_type, traits_type, allocator_type> ss;
         ss << std::setprecision(std::numeric_limits<T>::digits10) << value;
         auto str = ss.str();
-        return {str.data, str.size()};
+        return {str.data(), str.size()};
     }
 }
 
