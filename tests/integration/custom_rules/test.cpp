@@ -8,6 +8,7 @@
 #include "ddwaf.h"
 
 using namespace ddwaf;
+using namespace std::literals;
 
 namespace {
 constexpr std::string_view base_dir = "integration/custom_rules/";
@@ -123,8 +124,8 @@ TEST(TestCustomRulesIntegration, RegularCustomRulesPrecedence)
                                .tags = {{"type", "flow34"}, {"category", "category3"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .highlight = "custom_rule",
-                                   .args = {{.value = "custom_rule", .address = "value3"}}}}});
+                                   .highlight = "custom_rule"sv,
+                                   .args = {{.value = "custom_rule"sv, .address = "value3"}}}}});
         ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
     }
@@ -164,8 +165,8 @@ TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .highlight = "custom_rule",
-                                   .args = {{.value = "custom_rule", .address = "value4"}}}}});
+                                   .highlight = "custom_rule"sv,
+                                   .args = {{.value = "custom_rule"sv, .address = "value4"}}}}});
 
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
@@ -209,8 +210,8 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .highlight = "custom_rule",
-                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
+                                   .highlight = "custom_rule"sv,
+                                   .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
@@ -271,8 +272,8 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule",
-                                   .highlight = "rule",
-                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
+                                   .highlight = "rule"sv,
+                                   .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
@@ -293,8 +294,8 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .highlight = "custom_rule",
-                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
+                                   .highlight = "custom_rule"sv,
+                                   .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
@@ -359,8 +360,8 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .highlight = "custom_rule",
-                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
+                                   .highlight = "custom_rule"sv,
+                                   .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
@@ -380,8 +381,8 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
                                .tags = {{"type", "flow5"}, {"category", "category5"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .highlight = "custom_rule",
-                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
+                                   .highlight = "custom_rule"sv,
+                                   .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
 
         ddwaf_object_free(&res);
         ddwaf_object_free(&parameter);
@@ -467,8 +468,8 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .highlight = "custom_rule",
-                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
+                                   .highlight = "custom_rule"sv,
+                                   .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
@@ -489,8 +490,8 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule",
-                                   .highlight = "rule",
-                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
+                                   .highlight = "rule"sv,
+                                   .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
@@ -555,8 +556,8 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .highlight = "custom_rule",
-                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
+                                   .highlight = "custom_rule"sv,
+                                   .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
@@ -577,8 +578,8 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .highlight = "custom_rule",
-                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
+                                   .highlight = "custom_rule"sv,
+                                   .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
@@ -657,8 +658,8 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule",
-                                   .highlight = "rule",
-                                   .args = {{.value = "custom_rule", .address = "value4"}}}}});
+                                   .highlight = "rule"sv,
+                                   .args = {{.value = "custom_rule"sv, .address = "value4"}}}}});
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
@@ -688,8 +689,8 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .highlight = "custom_rule",
-                                   .args = {{.value = "custom_rule", .address = "value4"}}}}});
+                                   .highlight = "custom_rule"sv,
+                                   .args = {{.value = "custom_rule"sv, .address = "value4"}}}}});
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
@@ -755,8 +756,8 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .highlight = "custom_rule",
-                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
+                                   .highlight = "custom_rule"sv,
+                                   .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
@@ -777,8 +778,8 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule",
-                                   .highlight = "rule",
-                                   .args = {{.value = "custom_rule", .address = "value34"}}}}});
+                                   .highlight = "rule"sv,
+                                   .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
@@ -857,9 +858,9 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule",
-                                   .highlight = "rule",
+                                   .highlight = "rule"sv,
                                    .args = {{
-                                       .value = "custom_rule",
+                                       .value = "custom_rule"sv,
                                        .address = "value34",
                                    }}}}});
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
@@ -881,9 +882,9 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
                                .tags = {{"type", "flow34"}, {"category", "category3"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "rule",
-                                   .highlight = "rule",
+                                   .highlight = "rule"sv,
                                    .args = {{
-                                       .value = "custom_rule",
+                                       .value = "custom_rule"sv,
                                        .address = "value34",
                                    }}}}});
 
@@ -903,9 +904,9 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
                                .tags = {{"type", "flow34"}, {"category", "category3"}},
                                .matches = {{.op = "match_regex",
                                    .op_value = "custom_rule",
-                                   .highlight = "custom_rule",
+                                   .highlight = "custom_rule"sv,
                                    .args = {{
-                                       .value = "custom_rule",
+                                       .value = "custom_rule"sv,
                                        .address = "value34",
                                    }}}}});
 

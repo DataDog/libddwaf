@@ -7,6 +7,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
 
 namespace {
 constexpr std::string_view base_dir = "integration/regressions/";
@@ -38,16 +39,16 @@ TEST(TestRegressionsIntegration, DuplicateFlowMatches)
                            .tags = {{"type", "flow1"}, {"category", "category2"}},
                            .matches = {{.op = "match_regex",
                                            .op_value = "Sqreen",
-                                           .highlight = "Sqreen",
+                                           .highlight = "Sqreen"sv,
                                            .args = {{
-                                               .value = "Sqreen",
+                                               .value = "Sqreen"sv,
                                                .address = "param1",
                                            }}},
                                {.op = "match_regex",
                                    .op_value = "Duplicate",
-                                   .highlight = "Duplicate",
+                                   .highlight = "Duplicate"sv,
                                    .args = {{
-                                       .value = "Duplicate",
+                                       .value = "Duplicate"sv,
                                        .address = "param2",
                                    }}}}});
 

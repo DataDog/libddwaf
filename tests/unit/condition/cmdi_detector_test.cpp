@@ -249,7 +249,7 @@ TEST(TestCmdiDetector, ExecutableInjectionLinux)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+        EXPECT_STRV(cache.match->args[0].resolved, resource_str);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");

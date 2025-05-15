@@ -45,16 +45,16 @@ void match_path_and_input(
             EXPECT_TRUE(cache.match);
             if (cache.match) { // Silence linter
                 EXPECT_STRV(cache.match->args[0].address, "server.io.net.url");
-                EXPECT_STR(cache.match->args[0].resolved, path.c_str());
+                EXPECT_STR(cache.match->args[0].resolved, path);
                 EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
                 EXPECT_STRV(cache.match->args[1].address, "server.request.query");
                 if (sample.resolved.empty()) {
-                    EXPECT_STR(cache.match->args[1].resolved, sample.yaml.c_str());
-                    EXPECT_STR(cache.match->highlights[0], sample.yaml.c_str());
+                    EXPECT_STR(cache.match->args[1].resolved, sample.yaml);
+                    EXPECT_STR(cache.match->highlights[0], sample.yaml);
                 } else {
-                    EXPECT_STR(cache.match->args[1].resolved, sample.resolved.c_str());
-                    EXPECT_STR(cache.match->highlights[0], sample.resolved.c_str());
+                    EXPECT_STR(cache.match->args[1].resolved, sample.resolved);
+                    EXPECT_STR(cache.match->highlights[0], sample.resolved);
                 }
                 EXPECT_TRUE(cache.match->args[1].key_path == sample.key_path) << path;
             }

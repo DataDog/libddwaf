@@ -7,6 +7,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf::matcher;
+using namespace std::literals;
 
 namespace {
 
@@ -40,7 +41,7 @@ TEST(TestIsXSSIntegration, Match)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "is_xss",
                                .args = {{
-                                   .value = "<script>alert(1);</script>",
+                                   .value = "<script>alert(1);</script>"sv,
                                    .address = "arg1",
                                }}}}});
     ddwaf_object_free(&ret);

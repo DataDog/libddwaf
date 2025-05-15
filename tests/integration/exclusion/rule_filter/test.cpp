@@ -36,9 +36,9 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRule)
                            .name = "rule2",
                            .tags = {{"type", "type2"}, {"category", "category"}},
                            .matches = {{.op = "ip_match",
-                               .highlight = "192.168.0.1",
+                               .highlight = "192.168.0.1"sv,
                                .args = {{
-                                   .value = "192.168.0.1",
+                                   .value = "192.168.0.1"sv,
                                    .address = "http.client_ip",
                                }}}}});
     ddwaf_object_free(&out);
@@ -69,9 +69,9 @@ TEST(TestRuleFilterIntegration, ExcludeByType)
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
                            .matches = {{.op = "ip_match",
-                               .highlight = "192.168.0.1",
+                               .highlight = "192.168.0.1"sv,
                                .args = {{
-                                   .value = "192.168.0.1",
+                                   .value = "192.168.0.1"sv,
                                    .address = "http.client_ip",
                                }}}}});
     ddwaf_object_free(&out);
@@ -127,9 +127,9 @@ TEST(TestRuleFilterIntegration, ExcludeByTags)
                            .name = "rule2",
                            .tags = {{"type", "type2"}, {"category", "category"}},
                            .matches = {{.op = "ip_match",
-                               .highlight = "192.168.0.1",
+                               .highlight = "192.168.0.1"sv,
                                .args = {{
-                                   .value = "192.168.0.1",
+                                   .value = "192.168.0.1"sv,
                                    .address = "http.client_ip",
                                }}}}});
     ddwaf_object_free(&out);
@@ -179,18 +179,18 @@ TEST(TestRuleFilterIntegration, ExcludeAllWithCondition)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .highlight = "192.168.0.1",
+                    .highlight = "192.168.0.1"sv,
                     .args = {{
-                        .value = "192.168.0.1",
+                        .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .highlight = "192.168.0.1",
+                    .highlight = "192.168.0.1"sv,
                     .args = {{
-                        .value = "192.168.0.1",
+                        .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}});
         ddwaf_object_free(&out);
@@ -224,9 +224,9 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithCondition)
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
                                .matches = {{.op = "ip_match",
-                                   .highlight = "192.168.0.1",
+                                   .highlight = "192.168.0.1"sv,
                                    .args = {{
-                                       .value = "192.168.0.1",
+                                       .value = "192.168.0.1"sv,
                                        .address = "http.client_ip",
                                    }}}}});
 
@@ -250,18 +250,18 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithCondition)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .highlight = "192.168.0.1",
+                    .highlight = "192.168.0.1"sv,
                     .args = {{
-                        .value = "192.168.0.1",
+                        .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .highlight = "192.168.0.1",
+                    .highlight = "192.168.0.1"sv,
                     .args = {{
-                        .value = "192.168.0.1",
+                        .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}});
         ddwaf_object_free(&out);
@@ -296,9 +296,9 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithConditionAndTransformers)
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
                                .matches = {{.op = "ip_match",
-                                   .highlight = "192.168.0.1",
+                                   .highlight = "192.168.0.1"sv,
                                    .args = {{
-                                       .value = "192.168.0.1",
+                                       .value = "192.168.0.1"sv,
                                        .address = "http.client_ip",
                                    }}}}});
 
@@ -322,18 +322,18 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithConditionAndTransformers)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .highlight = "192.168.0.1",
+                    .highlight = "192.168.0.1"sv,
                     .args = {{
-                        .value = "192.168.0.1",
+                        .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .highlight = "192.168.0.1",
+                    .highlight = "192.168.0.1"sv,
                     .args = {{
-                        .value = "192.168.0.1",
+                        .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}});
         ddwaf_object_free(&out);
@@ -366,9 +366,9 @@ TEST(TestRuleFilterIntegration, ExcludeByTypeWithCondition)
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
                                .matches = {{.op = "ip_match",
-                                   .highlight = "192.168.0.1",
+                                   .highlight = "192.168.0.1"sv,
                                    .args = {{
-                                       .value = "192.168.0.1",
+                                       .value = "192.168.0.1"sv,
                                        .address = "http.client_ip",
                                    }}}}});
 
@@ -392,18 +392,18 @@ TEST(TestRuleFilterIntegration, ExcludeByTypeWithCondition)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .highlight = "192.168.0.1",
+                    .highlight = "192.168.0.1"sv,
                     .args = {{
-                        .value = "192.168.0.1",
+                        .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .highlight = "192.168.0.1",
+                    .highlight = "192.168.0.1"sv,
                     .args = {{
-                        .value = "192.168.0.1",
+                        .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}});
         ddwaf_object_free(&out);
@@ -454,18 +454,18 @@ TEST(TestRuleFilterIntegration, ExcludeByCategoryWithCondition)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .highlight = "192.168.0.1",
+                    .highlight = "192.168.0.1"sv,
                     .args = {{
-                        .value = "192.168.0.1",
+                        .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .highlight = "192.168.0.1",
+                    .highlight = "192.168.0.1"sv,
                     .args = {{
-                        .value = "192.168.0.1",
+                        .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}});
         ddwaf_object_free(&out);
@@ -499,9 +499,9 @@ TEST(TestRuleFilterIntegration, ExcludeByTagsWithCondition)
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
                                .matches = {{.op = "ip_match",
-                                   .highlight = "192.168.0.1",
+                                   .highlight = "192.168.0.1"sv,
                                    .args = {{
-                                       .value = "192.168.0.1",
+                                       .value = "192.168.0.1"sv,
                                        .address = "http.client_ip",
                                    }}}}});
 
@@ -525,18 +525,18 @@ TEST(TestRuleFilterIntegration, ExcludeByTagsWithCondition)
                 .name = "rule1",
                 .tags = {{"type", "type1"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .highlight = "192.168.0.1",
+                    .highlight = "192.168.0.1"sv,
                     .args = {{
-                        .value = "192.168.0.1",
+                        .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}},
             {.id = "2",
                 .name = "rule2",
                 .tags = {{"type", "type2"}, {"category", "category"}},
                 .matches = {{.op = "ip_match",
-                    .highlight = "192.168.0.1",
+                    .highlight = "192.168.0.1"sv,
                     .args = {{
-                        .value = "192.168.0.1",
+                        .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}});
         ddwaf_object_free(&out);
@@ -569,9 +569,9 @@ TEST(TestRuleFilterIntegration, MonitorSingleRule)
                            .tags = {{"type", "type1"}, {"category", "category"}},
                            .actions = {"monitor"},
                            .matches = {{.op = "ip_match",
-                               .highlight = "192.168.0.1",
+                               .highlight = "192.168.0.1"sv,
                                .args = {{
-                                   .value = "192.168.0.1",
+                                   .value = "192.168.0.1"sv,
                                    .address = "http.client_ip",
                                }}}}});
     EXPECT_ACTIONS(out, {});
@@ -605,9 +605,9 @@ TEST(TestRuleFilterIntegration, AvoidHavingTwoMonitorOnActions)
                            .tags = {{"type", "type1"}, {"category", "category"}},
                            .actions = {"monitor"},
                            .matches = {{.op = "ip_match",
-                               .highlight = "192.168.0.1",
+                               .highlight = "192.168.0.1"sv,
                                .args = {{
-                                   .value = "192.168.0.1",
+                                   .value = "192.168.0.1"sv,
                                    .address = "http.client_ip",
                                }}}}});
     EXPECT_ACTIONS(out, {});
@@ -663,9 +663,9 @@ TEST(TestRuleFilterIntegration, MonitorCustomFilterModePrecedence)
                            .tags = {{"type", "type1"}, {"category", "category"}},
                            .actions = {"monitor"},
                            .matches = {{.op = "ip_match",
-                               .highlight = "192.168.0.1",
+                               .highlight = "192.168.0.1"sv,
                                .args = {{
-                                   .value = "192.168.0.1",
+                                   .value = "192.168.0.1"sv,
                                    .address = "http.client_ip",
                                }}}}});
     EXPECT_ACTIONS(out, {});
@@ -722,9 +722,9 @@ TEST(TestRuleFilterIntegration, UnconditionalCustomFilterMode)
                            .tags = {{"type", "type1"}, {"category", "category"}},
                            .actions = {"block"},
                            .matches = {{.op = "ip_match",
-                               .highlight = "192.168.0.1",
+                               .highlight = "192.168.0.1"sv,
                                .args = {{
-                                   .value = "192.168.0.1",
+                                   .value = "192.168.0.1"sv,
                                    .address = "http.client_ip",
                                }}}}});
     EXPECT_ACTIONS(out,
@@ -760,9 +760,9 @@ TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
                                .tags = {{"type", "type1"}, {"category", "category"}},
                                .actions = {"block"},
                                .matches = {{.op = "ip_match",
-                                   .highlight = "192.168.0.1",
+                                   .highlight = "192.168.0.1"sv,
                                    .args = {{
-                                       .value = "192.168.0.1",
+                                       .value = "192.168.0.1"sv,
                                        .address = "http.client_ip",
                                    }}}}});
         EXPECT_ACTIONS(out, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
@@ -787,9 +787,9 @@ TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
                                .matches = {{.op = "ip_match",
-                                   .highlight = "192.168.0.2",
+                                   .highlight = "192.168.0.2"sv,
                                    .args = {{
-                                       .value = "192.168.0.2",
+                                       .value = "192.168.0.2"sv,
                                        .address = "http.client_ip",
                                    }}}}});
         EXPECT_ACTIONS(out, {})
@@ -829,9 +829,9 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
                                .matches = {{.op = "ip_match",
-                                   .highlight = "192.168.0.1",
+                                   .highlight = "192.168.0.1"sv,
                                    .args = {{
-                                       .value = "192.168.0.1",
+                                       .value = "192.168.0.1"sv,
                                        .address = "http.client_ip",
                                    }}}}});
         EXPECT_ACTIONS(out, {});
@@ -866,9 +866,9 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
                                .tags = {{"type", "type1"}, {"category", "category"}},
                                .actions = {"block2"},
                                .matches = {{.op = "ip_match",
-                                   .highlight = "192.168.0.1",
+                                   .highlight = "192.168.0.1"sv,
                                    .args = {{
-                                       .value = "192.168.0.1",
+                                       .value = "192.168.0.1"sv,
                                        .address = "http.client_ip",
                                    }}}}});
         EXPECT_ACTIONS(out, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
@@ -910,9 +910,9 @@ TEST(TestRuleFilterIntegration, CustomFilterModeNonblockingAction)
                            .tags = {{"type", "type1"}, {"category", "category"}},
                            .actions = {"block"},
                            .matches = {{.op = "ip_match",
-                               .highlight = "192.168.0.1",
+                               .highlight = "192.168.0.1"sv,
                                .args = {{
-                                   .value = "192.168.0.1",
+                                   .value = "192.168.0.1"sv,
                                    .address = "http.client_ip",
                                }}}}});
     EXPECT_ACTIONS(out,

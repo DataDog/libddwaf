@@ -8,6 +8,7 @@
 #include "configuration/common/common.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
 
 namespace {
 
@@ -39,25 +40,25 @@ void run_test(ddwaf_handle handle)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "match_regex",
                                            .op_value = ".*",
-                                           .highlight = "string 1",
+                                           .highlight = "string 1"sv,
                                            .args = {{
-                                               .value = "string 1",
+                                               .value = "string 1"sv,
                                                .address = "arg1",
                                                .path = {},
                                            }}},
                                {.op = "match_regex",
                                    .op_value = ".*",
-                                   .highlight = "string 2",
+                                   .highlight = "string 2"sv,
                                    .args = {{
-                                       .value = "string 2",
+                                       .value = "string 2"sv,
                                        .address = "arg2",
                                        .path = {"x"},
                                    }}},
                                {.op = "match_regex",
                                    .op_value = ".*",
-                                   .highlight = "string 3",
+                                   .highlight = "string 3"sv,
                                    .args = {{
-                                       .value = "string 3",
+                                       .value = "string 3"sv,
                                        .address = "arg2",
                                        .path = {"y"},
                                    }}}}});

@@ -39,9 +39,9 @@ TEST(TestExpression, SimpleMatch)
     EXPECT_FALSE(matches[0].ephemeral);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = ".*",
-                                .highlight = "value",
+                                .highlight = "value"sv,
                                 .args = {{
-                                    .value = "value",
+                                    .value = "value"sv,
                                     .address = "server.request.query",
                                 }}});
 }
@@ -73,9 +73,9 @@ TEST(TestExpression, SimpleNegatedMatch)
     EXPECT_FALSE(matches[0].ephemeral);
     EXPECT_MATCHES(matches, {.op = "!match_regex",
                                 .op_value = ".*",
-                                .highlight = "",
+                                .highlight = ""sv,
                                 .args = {{
-                                    .value = "val",
+                                    .value = "val"sv,
                                     .address = "server.request.query",
                                 }}});
 }
@@ -107,9 +107,9 @@ TEST(TestExpression, EphemeralMatch)
     EXPECT_TRUE(matches[0].ephemeral);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = ".*",
-                                .highlight = "value",
+                                .highlight = "value"sv,
                                 .args = {{
-                                    .value = "value",
+                                    .value = "value"sv,
                                     .address = "server.request.query",
                                 }}});
 }
@@ -158,9 +158,9 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
         auto matches = ddwaf::expression::get_matches(cache);
         EXPECT_MATCHES(matches, {.op = "match_regex",
                                     .op_value = "^value$",
-                                    .highlight = "value",
+                                    .highlight = "value"sv,
                                     .args = {{
-                                        .value = "value",
+                                        .value = "value"sv,
                                         .address = "server.request.body",
                                     }}});
     }
@@ -209,9 +209,9 @@ TEST(TestExpression, EphemeralMatchOnSecondEval)
         auto matches = ddwaf::expression::get_matches(cache);
         EXPECT_MATCHES(matches, {.op = "match_regex",
                                     .op_value = "^value$",
-                                    .highlight = "value",
+                                    .highlight = "value"sv,
                                     .args = {{
-                                        .value = "value",
+                                        .value = "value"sv,
                                         .address = "server.request.body",
                                     }}});
     }
@@ -255,16 +255,16 @@ TEST(TestExpression, EphemeralMatchTwoConditions)
     EXPECT_MATCHES(matches,
         {.op = "match_regex",
             .op_value = "^value$",
-            .highlight = "value",
+            .highlight = "value"sv,
             .args = {{
-                .value = "value",
+                .value = "value"sv,
                 .address = "server.request.query",
             }}},
         {.op = "match_regex",
             .op_value = "^value$",
-            .highlight = "value",
+            .highlight = "value"sv,
             .args = {{
-                .value = "value",
+                .value = "value"sv,
                 .address = "server.request.body",
             }}});
 }
@@ -488,9 +488,9 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
         EXPECT_FALSE(matches[0].ephemeral);
         EXPECT_MATCHES(matches, {.op = "match_regex",
                                     .op_value = "^value$",
-                                    .highlight = "value",
+                                    .highlight = "value"sv,
                                     .args = {{
-                                        .value = "value",
+                                        .value = "value"sv,
                                         .address = "server.request.query",
                                     }}});
     }
@@ -659,9 +659,9 @@ TEST(TestExpression, MatchWithKeyPath)
     auto matches = ddwaf::expression::get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = ".*",
-                                .highlight = "value",
+                                .highlight = "value"sv,
                                 .args = {{
-                                    .value = "value",
+                                    .value = "value"sv,
                                     .address = "server.request.query",
                                     .path = {"key"},
                                 }}});
@@ -688,9 +688,9 @@ TEST(TestExpression, MatchWithTransformer)
     auto matches = ddwaf::expression::get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = "value",
-                                .highlight = "value",
+                                .highlight = "value"sv,
                                 .args = {{
-                                    .value = "value",
+                                    .value = "value"sv,
                                     .address = "server.request.query",
                                 }}});
 }
@@ -717,9 +717,9 @@ TEST(TestExpression, MatchWithMultipleTransformers)
     auto matches = ddwaf::expression::get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = "^ value $",
-                                .highlight = " value ",
+                                .highlight = " value "sv,
                                 .args = {{
-                                    .value = " value ",
+                                    .value = " value "sv,
                                     .address = "server.request.query",
                                 }}});
 }
@@ -746,9 +746,9 @@ TEST(TestExpression, MatchOnKeys)
     auto matches = ddwaf::expression::get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = "value",
-                                .highlight = "value",
+                                .highlight = "value"sv,
                                 .args = {{
-                                    .value = "value",
+                                    .value = "value"sv,
                                     .address = "server.request.query",
                                     .path = {"value"},
                                 }}});
@@ -776,9 +776,9 @@ TEST(TestExpression, MatchOnKeysWithTransformer)
     auto matches = ddwaf::expression::get_matches(cache);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = "value",
-                                .highlight = "value",
+                                .highlight = "value"sv,
                                 .args = {{
-                                    .value = "value",
+                                    .value = "value"sv,
                                     .address = "server.request.query",
                                     .path = {"VALUE"},
                                 }}});

@@ -137,14 +137,14 @@ eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
 
             cache.match = condition_match{.args = {{.name = "resource"sv,
-                                                       .resolved = std::string{path.value},
+                                                       .resolved = path.value,
                                                        .address = path.address,
                                                        .key_path = path_kp},
                                               {.name = "params"sv,
                                                   .resolved = highlight,
                                                   .address = param.address,
                                                   .key_path = param_kp}},
-                .highlights = {std::move(highlight)},
+                .highlights = {highlight},
                 .operator_name = "lfi_detector",
                 .operator_value = {},
                 .ephemeral = ephemeral};

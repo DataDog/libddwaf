@@ -166,8 +166,8 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     EXPECT_EQ(event.matches.size(), 1);
 
     auto &match = event.matches[0];
-    EXPECT_STREQ(match.args[0].resolved.c_str(), "192.168.0.1");
-    EXPECT_STREQ(match.highlights[0].c_str(), "192.168.0.1");
+    EXPECT_STR(match.args[0].resolved, "192.168.0.1");
+    EXPECT_STR(match.highlights[0], "192.168.0.1");
     EXPECT_STRV(match.operator_name, "ip_match");
     EXPECT_STRV(match.operator_value, "");
     EXPECT_STRV(match.args[0].address, "http.client_ip");
@@ -295,8 +295,8 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
-        EXPECT_STREQ(match.args[0].resolved.c_str(), "192.168.0.1");
-        EXPECT_STREQ(match.highlights[0].c_str(), "192.168.0.1");
+        EXPECT_STR(match.args[0].resolved, "192.168.0.1");
+        EXPECT_STR(match.highlights[0], "192.168.0.1");
         EXPECT_STRV(match.operator_name, "ip_match");
         EXPECT_STRV(match.operator_value, "");
         EXPECT_STRV(match.args[0].address, "http.client_ip");
@@ -365,8 +365,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
-        EXPECT_STREQ(match.args[0].resolved.c_str(), "192.168.0.1");
-        EXPECT_STREQ(match.highlights[0].c_str(), "192.168.0.1");
+        EXPECT_STR(match.args[0].resolved, "192.168.0.1");
+        EXPECT_STR(match.highlights[0], "192.168.0.1");
         EXPECT_STRV(match.operator_name, "ip_match");
         EXPECT_STRV(match.operator_value, "");
         EXPECT_STRV(match.args[0].address, "http.client_ip");
@@ -394,8 +394,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
-        EXPECT_STREQ(match.args[0].resolved.c_str(), "admin");
-        EXPECT_STREQ(match.highlights[0].c_str(), "admin");
+        EXPECT_STR(match.args[0].resolved, "admin");
+        EXPECT_STR(match.highlights[0], "admin");
         EXPECT_STRV(match.operator_name, "exact_match");
         EXPECT_STRV(match.operator_value, "");
         EXPECT_STRV(match.args[0].address, "usr.id");
@@ -456,8 +456,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
-        EXPECT_STREQ(match.args[0].resolved.c_str(), "192.168.0.1");
-        EXPECT_STREQ(match.highlights[0].c_str(), "192.168.0.1");
+        EXPECT_STR(match.args[0].resolved, "192.168.0.1");
+        EXPECT_STR(match.highlights[0], "192.168.0.1");
         EXPECT_STRV(match.operator_name, "ip_match");
         EXPECT_STRV(match.operator_value, "");
         EXPECT_STRV(match.args[0].address, "http.client_ip");

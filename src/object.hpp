@@ -7,6 +7,7 @@
 #pragma once
 
 #include "ddwaf.h"
+#include "dynamic_string.hpp"
 #include "object_type.hpp"
 #include "traits.hpp"
 #include "utils.hpp"
@@ -443,7 +444,7 @@ public:
 
     template <typename T>
     explicit owned_object(T value)
-        requires is_type_in_set_v<T, std::string, std::string_view, const char *>
+        requires is_type_in_set_v<T, std::string, std::string_view, const char *, dynamic_string>
     {
         *this = make_string(std::string_view{value});
     }

@@ -7,6 +7,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
 
 namespace {
 constexpr std::string_view base_dir = "integration/processors/extract_schema";
@@ -97,9 +98,9 @@ TEST(TestExtractSchemaIntegration, Preprocessor)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "equals",
                                .op_value = "",
-                               .highlight = "",
+                               .highlight = ""sv,
                                .args = {{
-                                   .value = "8",
+                                   .value = "8"sv,
                                    .address = "server.request.body.schema",
                                    .path = {"0"},
                                }}}}});
@@ -154,9 +155,9 @@ TEST(TestExtractSchemaIntegration, Processor)
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .matches = {{.op = "equals",
                                .op_value = "",
-                               .highlight = "",
+                               .highlight = ""sv,
                                .args = {{
-                                   .value = "8",
+                                   .value = "8"sv,
                                    .address = "server.request.body.schema",
                                    .path = {"0"},
                                }}}}});
@@ -869,9 +870,9 @@ TEST(TestExtractSchemaIntegration, PreprocessorWithEphemeralMapping)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "equals",
                                    .op_value = "",
-                                   .highlight = "",
+                                   .highlight = ""sv,
                                    .args = {{
-                                       .value = "8",
+                                       .value = "8"sv,
                                        .address = "server.request.body.schema",
                                        .path = {"0"},
                                    }}}}});
@@ -897,9 +898,9 @@ TEST(TestExtractSchemaIntegration, PreprocessorWithEphemeralMapping)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "equals",
                                    .op_value = "",
-                                   .highlight = "",
+                                   .highlight = ""sv,
                                    .args = {{
-                                       .value = "8",
+                                       .value = "8"sv,
                                        .address = "server.request.body.schema",
                                        .path = {"0"},
                                    }}}}});
@@ -994,9 +995,9 @@ TEST(TestExtractSchemaIntegration, ProcessorEphemeralExpression)
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .matches = {{.op = "equals",
                                    .op_value = "",
-                                   .highlight = "",
+                                   .highlight = ""sv,
                                    .args = {{
-                                       .value = "8",
+                                       .value = "8"sv,
                                        .address = "server.request.body.schema",
                                        .path = {"0"},
                                    }}}}});
