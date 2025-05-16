@@ -1,0 +1,53 @@
+version: '2.1'
+rules:
+  - id: rule1
+    name: rule1
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value1
+          regex: ^rule1
+    output:
+      event: false
+      keep: false
+      attributes:
+        result.rule1: 
+          value: something
+  - id: rule2
+    name: rule2
+    tags:
+      type: flow2
+      category: category2
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value2
+          regex: ^rule2
+    output:
+      event: true
+      keep: false
+      attributes:
+        result.rule2: 
+          value: something
+  - id: rule3
+    name: rule3
+    tags:
+      type: flow3
+      category: category3
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value3
+          regex: ^rule3
+    output:
+      event: false
+      keep: false
+      attributes:
+        result.rule3: 
+          address: value3
