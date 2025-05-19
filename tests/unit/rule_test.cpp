@@ -48,8 +48,7 @@ TEST(TestRule, Match)
 
         EXPECT_STREQ(event->rule->get_id().data(), "id");
         EXPECT_STREQ(event->rule->get_name().data(), "name");
-        EXPECT_STREQ(event->rule->get_tag("type").data(), "type");
-        EXPECT_STREQ(event->rule->get_tag("category").data(), "category");
+        EXPECT_STREQ(event->rule->get_type().data(), "type");
         std::vector<std::string> expected_actions{"update", "block", "passlist"};
         EXPECT_EQ(event->rule->get_actions(), expected_actions);
         EXPECT_EQ(event->matches.size(), 1);
@@ -201,8 +200,7 @@ TEST(TestRule, ValidateCachedMatch)
         EXPECT_TRUE(event.has_value());
         EXPECT_STREQ(event->rule->get_id().data(), "id");
         EXPECT_STREQ(event->rule->get_name().data(), "name");
-        EXPECT_STREQ(event->rule->get_tag("type").data(), "type");
-        EXPECT_STREQ(event->rule->get_tag("category").data(), "category");
+        EXPECT_STREQ(event->rule->get_type().data(), "type");
         EXPECT_TRUE(event->rule->get_actions().empty());
         EXPECT_EQ(event->matches.size(), 2);
 

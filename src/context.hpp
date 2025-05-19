@@ -7,13 +7,11 @@
 #pragma once
 
 #include <memory>
-#include <optional>
 #include <utility>
 
 #include "attribute_collector.hpp"
 #include "context_allocator.hpp"
 #include "ddwaf.h"
-#include "event.hpp"
 #include "exclusion/common.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
@@ -61,7 +59,7 @@ public:
     // This function below returns a reference to an internal object,
     // however using them this way helps with testing
     exclusion::context_policy &eval_filters(ddwaf::timer &deadline);
-    void eval_rules(const exclusion::context_policy &policy, std::vector<event> &events,
+    void eval_rules(const exclusion::context_policy &policy, std::vector<rule_result> &results,
         ddwaf::timer &deadline);
 
 protected:

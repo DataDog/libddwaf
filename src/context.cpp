@@ -12,7 +12,6 @@
 #include <utility>
 #include <vector>
 
-#include "attribute_collector.hpp"
 #include "clock.hpp"
 #include "context.hpp"
 #include "ddwaf.h"
@@ -51,17 +50,6 @@ void set_context_event_address(object_store &store)
     ddwaf_object_bool(&true_obj, true);
     store.insert(event_addr_idx, event_addr, true_obj, attribute::none);
 }
-
-// NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
-struct result_components {
-    ddwaf_object &events;
-    ddwaf_object &actions;
-    ddwaf_object &duration;
-    ddwaf_object &timeout;
-    ddwaf_object &attributes;
-    ddwaf_object &keep;
-};
-// NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 
 result_components initialise_result_object(ddwaf_object &object)
 {
@@ -127,7 +115,7 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
     const std::unique_ptr<ddwaf_object, decltype(&ddwaf_object_free)> res{
         &result_object, ddwaf_object_free};
 
-    auto result = initialise_result_object(result_object);
+    auto output = initialise_result_object(result_object);
     ddwaf::timer deadline{std::chrono::microseconds(timeout)};
 
     if (!store_.has_new_targets()) {
@@ -136,14 +124,14 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
 
     const event_serializer serializer(event_obfuscator_, actions_);
 
-    std::vector<ddwaf::event> events;
-
     try {
         // Evaluate preprocessors first in their own try-catch, if there's a
         // timeout we still need to evaluate rules unaffected by it.
         eval_preprocessors(deadline);
         // NOLINTNEXTLINE(bugprone-empty-catch)
     } catch (const ddwaf::timeout_exception &) {}
+
+    std::vector<rule_result> results;
 
     try {
         // If no rule targets are available, there is no point in evaluating them
@@ -157,8 +145,8 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
             const auto &policy = eval_filters(deadline);
 
             if (should_eval_rules) {
-                eval_rules(policy, events, deadline);
-                if (!events.empty()) {
+                eval_rules(policy, results, deadline);
+                if (!results.empty()) {
                     set_context_event_address(store_);
                 }
             }
@@ -171,15 +159,15 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
     // Collect pending attributes, this will check if any new attributes are
     // available (e.g. from a postprocessor) and return a map of all attributes
     // generated during this call.
-    object::assign(result.attributes, collector_.collect_pending(store_));
-    serializer.serialize(events, result.events, result.actions);
+    // object::assign(result.attributes, collector_.collect_pending(store_));
+    serializer.serialize(results, collector_, output);
 
     // Using the interface functions would replace the key contained within the
     // object. This will not be an issue in v2.
-    result.duration.uintValue = deadline.elapsed().count();
-    result.timeout.boolean = deadline.expired_before();
+    output.duration.uintValue = deadline.elapsed().count();
+    output.timeout.boolean = deadline.expired_before();
 
-    return {events.empty() ? DDWAF_OK : DDWAF_MATCH, move_object(result_object)};
+    return {results.empty() ? DDWAF_OK : DDWAF_MATCH, move_object(result_object)};
 }
 
 void context::eval_preprocessors(ddwaf::timer &deadline)
@@ -274,15 +262,14 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
     return exclusion_policy_;
 }
 
-void context::eval_rules(const exclusion::context_policy &policy, std::vector<ddwaf::event> &events,
+void context::eval_rules(const exclusion::context_policy &policy, std::vector<rule_result> &results,
     ddwaf::timer &deadline)
 {
     for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
         const auto &mod = ruleset_->rule_modules[i];
         auto &cache = rule_module_cache_[i];
 
-        auto verdict =
-            mod.eval(events, store_, cache, policy, rule_matchers_, collector_, limits_, deadline);
+        auto verdict = mod.eval(results, store_, cache, policy, rule_matchers_, limits_, deadline);
         if (verdict == rule_module::verdict_type::block) {
             break;
         }

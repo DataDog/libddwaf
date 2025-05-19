@@ -6,25 +6,24 @@
 
 #pragma once
 
-#include <optional>
-
 #include "action_mapper.hpp"
-#include "condition/base.hpp"
+#include "attribute_collector.hpp"
 #include "ddwaf.h"
 #include "obfuscator.hpp"
+#include "rule.hpp"
 
 namespace ddwaf {
 
-class core_rule;
-
-struct event {
-    const core_rule *rule{nullptr};
-    std::vector<condition_match> matches;
-    bool ephemeral{false};
-    std::string_view action_override;
+// NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
+struct result_components {
+    ddwaf_object &events;
+    ddwaf_object &actions;
+    ddwaf_object &duration;
+    ddwaf_object &timeout;
+    ddwaf_object &attributes;
+    ddwaf_object &keep;
 };
-
-using optional_event = std::optional<event>;
+// NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 
 class event_serializer {
 public:
@@ -33,8 +32,8 @@ public:
         : obfuscator_(event_obfuscator), actions_(actions)
     {}
 
-    void serialize(std::vector<event> &events, ddwaf_object &output_events,
-        ddwaf_object &output_actions) const;
+    void serialize(std::vector<rule_result> &results, attribute_collector &collector,
+        result_components output) const;
 
 protected:
     const ddwaf::obfuscator &obfuscator_;

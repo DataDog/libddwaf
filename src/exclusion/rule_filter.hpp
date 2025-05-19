@@ -35,9 +35,9 @@ public:
     rule_filter &operator=(const rule_filter &) = delete;
     rule_filter(rule_filter &&) = default;
     rule_filter &operator=(rule_filter &&) = default;
-    virtual ~rule_filter() = default;
+    ~rule_filter() = default;
 
-    virtual std::optional<excluded_set> match(const object_store &store, cache_type &cache,
+    std::optional<excluded_set> match(const object_store &store, cache_type &cache,
         const matcher_mapper &dynamic_matchers, const object_limits &limits,
         ddwaf::timer &deadline) const;
 

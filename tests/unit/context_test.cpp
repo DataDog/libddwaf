@@ -167,8 +167,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     auto &event = events[0];
     EXPECT_STRV(event.rule->get_id(), "id1");
     EXPECT_STRV(event.rule->get_name(), "name1");
-    EXPECT_STRV(event.rule->get_tag("type"), "type");
-    EXPECT_STRV(event.rule->get_tag("category"), "category1");
+    EXPECT_STRV(event.rule->get_type(), "type");
     std::vector<std::string> expected_actions{};
     EXPECT_EQ(event.rule->get_actions(), expected_actions);
     EXPECT_EQ(event.matches.size(), 1);
@@ -305,8 +304,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         auto &event = events[0];
         EXPECT_STRV(event.rule->get_id(), "id1");
         EXPECT_STRV(event.rule->get_name(), "name1");
-        EXPECT_STRV(event.rule->get_tag("type"), "type");
-        EXPECT_STRV(event.rule->get_tag("category"), "category1");
+        EXPECT_STRV(event.rule->get_type(), "type");
         std::vector<std::string> expected_actions{};
         EXPECT_EQ(event.rule->get_actions(), expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
@@ -381,8 +379,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         auto &event = events[0];
         EXPECT_STRV(event.rule->get_id(), "id1");
         EXPECT_STRV(event.rule->get_name(), "name1");
-        EXPECT_STRV(event.rule->get_tag("type"), "type");
-        EXPECT_STRV(event.rule->get_tag("category"), "category1");
+        EXPECT_STRV(event.rule->get_type(), "type");
         std::vector<std::string> expected_actions{};
         EXPECT_EQ(event.rule->get_actions(), expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
@@ -413,8 +410,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         EXPECT_EQ(events.size(), 1);
         EXPECT_STRV(event.rule->get_id(), "id2");
         EXPECT_STRV(event.rule->get_name(), "name2");
-        EXPECT_STRV(event.rule->get_tag("type"), "type");
-        EXPECT_STRV(event.rule->get_tag("category"), "category2");
+        EXPECT_STRV(event.rule->get_type(), "type");
         std::vector<std::string> expected_actions{"block"};
         EXPECT_EQ(event.rule->get_actions(), expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
@@ -478,8 +474,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         auto &event = events[0];
         EXPECT_STRV(event.rule->get_id(), "id1");
         EXPECT_STRV(event.rule->get_name(), "name1");
-        EXPECT_STRV(event.rule->get_tag("type"), "type");
-        EXPECT_STRV(event.rule->get_tag("category"), "category1");
+        EXPECT_STRV(event.rule->get_type(), "type");
         std::vector<std::string> expected_actions{"block"};
         EXPECT_EQ(event.rule->get_actions(), expected_actions);
         EXPECT_EQ(event.matches.size(), 1);

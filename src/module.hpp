@@ -7,7 +7,6 @@
 #pragma once
 
 #include "context_allocator.hpp"
-#include "event.hpp"
 #include "rule.hpp"
 
 #include <vector>
@@ -51,15 +50,15 @@ public:
 
     [[nodiscard]] bool may_expire() const { return policy_ == expiration_policy::expiring; }
 
-    verdict_type eval(std::vector<event> &events, object_store &store, cache_type &cache,
+    verdict_type eval(std::vector<rule_result> &results, object_store &store, cache_type &cache,
         const exclusion::context_policy &exclusion, const matcher_mapper &dynamic_matchers,
-        attribute_collector &collector, const object_limits &limits, ddwaf::timer &deadline) const;
+        const object_limits &limits, ddwaf::timer &deadline) const;
 
 protected:
-    verdict_type eval_with_collections(std::vector<event> &events, object_store &store,
+    verdict_type eval_with_collections(std::vector<rule_result> &results, object_store &store,
         cache_type &cache, const exclusion::context_policy &exclusion,
-        const matcher_mapper &dynamic_matchers, attribute_collector &collector,
-        const object_limits &limits, ddwaf::timer &deadline) const;
+        const matcher_mapper &dynamic_matchers, const object_limits &limits,
+        ddwaf::timer &deadline) const;
 
     ddwaf::timer &get_deadline(ddwaf::timer &deadline) const;
 
