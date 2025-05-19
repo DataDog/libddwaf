@@ -371,4 +371,32 @@ void result_serializer::serialize(const object_store &store, std::vector<rule_re
     serialize_actions(output.actions, actions);
 }
 
+std::pair<ddwaf_object, result_components> result_serializer::initialise_result_object()
+{
+    ddwaf_object object;
+    ddwaf_object_map(&object);
+
+    bool add_res = true;
+    ddwaf_object tmp;
+    add_res &= ddwaf_object_map_addl(&object, STRL("events"), ddwaf_object_array(&tmp));
+    add_res &= ddwaf_object_map_addl(&object, STRL("actions"), ddwaf_object_map(&tmp));
+    add_res &= ddwaf_object_map_addl(&object, STRL("duration"), ddwaf_object_unsigned(&tmp, 0));
+    add_res &= ddwaf_object_map_addl(&object, STRL("timeout"), ddwaf_object_bool(&tmp, false));
+    add_res &= ddwaf_object_map_addl(&object, STRL("attributes"), ddwaf_object_map(&tmp));
+    add_res &= ddwaf_object_map_addl(&object, STRL("keep"), ddwaf_object_bool(&tmp, false));
+
+    if (!add_res) {
+        throw std::runtime_error("failed to generate result object");
+    }
+
+    result_components res{.events = object.array[0],
+        .actions = object.array[1],
+        .duration = object.array[2],
+        .timeout = object.array[3],
+        .attributes = object.array[4],
+        .keep = object.array[5]};
+
+    return {object, res};
+}
+
 } // namespace ddwaf

@@ -31,7 +31,7 @@ std::pair<rule_verdict, std::optional<rule_result>> core_rule::match(const objec
     }
 
     rule_result result{.keep = contains(flags_, rule_flags::keep_outcome),
-        // Rules with no event need not be evaluated again on ephemeral matches
+        // Rules with no event need not be evaluated again on ephemeral matche
         .ephemeral = res.ephemeral && contains(flags_, rule_flags::generate_event),
         .action_override = {},
         .actions = actions_,

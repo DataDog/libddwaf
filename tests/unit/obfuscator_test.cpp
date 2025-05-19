@@ -20,8 +20,8 @@ TEST(TestObfuscator, ValidateValueRegex)
     options.set_log_errors(false);
     options.set_case_sensitive(false);
 
-    const re2::StringPiece sp(
-        obfuscator::default_value_regex_str.data(), obfuscator::default_value_regex_str.size());
+    const re2::StringPiece sp(match_obfuscator::default_value_regex_str.data(),
+        match_obfuscator::default_value_regex_str.size());
     re2::RE2 regex{sp, options};
     EXPECT_TRUE(regex.ok());
     EXPECT_EQ(regex.NumberOfCapturingGroups(), 8);
@@ -29,7 +29,7 @@ TEST(TestObfuscator, ValidateValueRegex)
 
 TEST(TestObfuscator, IsSensitiveKeyValue)
 {
-    ddwaf::match_obfuscator obfuscator("^password$"sv, "value"sv);
+    match_obfuscator obfuscator("^password$"sv, "value"sv);
 
     EXPECT_TRUE(obfuscator.is_sensitive_key("password"sv));
     EXPECT_FALSE(obfuscator.is_sensitive_key("passworde"sv));
@@ -42,7 +42,7 @@ TEST(TestObfuscator, IsSensitiveKeyValue)
 
 TEST(TestObfuscator, IsSensitiveKey)
 {
-    ddwaf::match_obfuscator obfuscator("^password$"sv);
+    match_obfuscator obfuscator("^password$"sv);
 
     EXPECT_TRUE(obfuscator.is_sensitive_key("password"sv));
     EXPECT_FALSE(obfuscator.is_sensitive_key("passworde"sv));
@@ -53,7 +53,7 @@ TEST(TestObfuscator, IsSensitiveKey)
 
 TEST(TestObfuscator, IsSensitiveValue)
 {
-    ddwaf::match_obfuscator obfuscator({}, "value"sv);
+    match_obfuscator obfuscator({}, "value"sv);
 
     EXPECT_FALSE(obfuscator.is_sensitive_key("password"sv));
 
@@ -64,7 +64,7 @@ TEST(TestObfuscator, IsSensitiveValue)
 
 TEST(TestObfuscator, IsSensitiveKeyValueNoRegexes)
 {
-    ddwaf::match_obfuscator obfuscator;
+    match_obfuscator obfuscator;
 
     EXPECT_FALSE(obfuscator.is_sensitive_key("password"sv));
     EXPECT_FALSE(obfuscator.is_sensitive_value("value"sv));
@@ -91,13 +91,13 @@ TEST(TestObfuscator, IsSensitiveKeyDefaultRegex)
         "CONSUMER_SECRET", "CONSUMERSECRET", "SIGNED", "SIGNATURE", "BEARER", "AUTHORIZATION",
         "JSESSIONID", "PHPSESSID", "ASP.NET_SESSIONID", "ASP.NET-SESSIONID", "SID", "JWT"};
 
-    ddwaf::match_obfuscator obfuscator{ddwaf::match_obfuscator::default_key_regex_str, {}};
+    match_obfuscator obfuscator{match_obfuscator::default_key_regex_str, {}};
     for (auto &sample : samples) { EXPECT_TRUE(obfuscator.is_sensitive_key(sample)); }
 }
 
 TEST(TestObfuscator, MatchObfuscationCustomRegexes)
 {
-    ddwaf::match_obfuscator obfuscator("^password$"sv, "value"sv);
+    match_obfuscator obfuscator("^password$"sv, "value"sv);
     {
         // Verify that when the key matches, both value and highlight are redacted
         condition_match match{
@@ -107,8 +107,8 @@ TEST(TestObfuscator, MatchObfuscationCustomRegexes)
             .operator_value = {}};
 
         obfuscator.obfuscate_match(match);
-        EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
-        EXPECT_STR(match.args[0].resolved, obfuscator::redaction_msg);
+        EXPECT_STR(match.highlights[0], match_obfuscator::redaction_msg);
+        EXPECT_STR(match.args[0].resolved, match_obfuscator::redaction_msg);
     }
 
     {
@@ -121,8 +121,8 @@ TEST(TestObfuscator, MatchObfuscationCustomRegexes)
             .operator_value = {}};
 
         obfuscator.obfuscate_match(match);
-        EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
-        EXPECT_STR(match.args[0].resolved, obfuscator::redaction_msg);
+        EXPECT_STR(match.highlights[0], match_obfuscator::redaction_msg);
+        EXPECT_STR(match.args[0].resolved, match_obfuscator::redaction_msg);
     }
 
     {
@@ -135,8 +135,8 @@ TEST(TestObfuscator, MatchObfuscationCustomRegexes)
             .operator_value = {}};
 
         obfuscator.obfuscate_match(match);
-        EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
-        EXPECT_STR(match.args[0].resolved, obfuscator::redaction_msg);
+        EXPECT_STR(match.highlights[0], match_obfuscator::redaction_msg);
+        EXPECT_STR(match.args[0].resolved, match_obfuscator::redaction_msg);
     }
 
     {
@@ -151,7 +151,7 @@ TEST(TestObfuscator, MatchObfuscationCustomRegexes)
 
         obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], "not sensitive");
-        EXPECT_STR(match.args[0].resolved, obfuscator::redaction_msg);
+        EXPECT_STR(match.args[0].resolved, match_obfuscator::redaction_msg);
     }
 
     {
@@ -184,8 +184,8 @@ TEST(TestObfuscator, MatchObfuscationCustomRegexes)
 
 TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
 {
-    ddwaf::match_obfuscator obfuscator{
-        obfuscator::default_key_regex_str, obfuscator::default_value_regex_str};
+    match_obfuscator obfuscator{
+        match_obfuscator::default_key_regex_str, match_obfuscator::default_value_regex_str};
 
     {
         // Verify that when the key matches, both value and highlight are redacted
@@ -196,8 +196,8 @@ TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
             .operator_value = {}};
 
         obfuscator.obfuscate_match(match);
-        EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
-        EXPECT_STR(match.args[0].resolved, obfuscator::redaction_msg);
+        EXPECT_STR(match.highlights[0], match_obfuscator::redaction_msg);
+        EXPECT_STR(match.args[0].resolved, match_obfuscator::redaction_msg);
     }
 
     {
@@ -209,7 +209,7 @@ TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
             .operator_value = {}};
 
         obfuscator.obfuscate_match(match);
-        EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
+        EXPECT_STR(match.highlights[0], match_obfuscator::redaction_msg);
         EXPECT_STR(match.args[0].resolved, "password=<Redacted>");
     }
 
@@ -224,7 +224,7 @@ TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
             .operator_value = {}};
 
         obfuscator.obfuscate_match(match);
-        EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
+        EXPECT_STR(match.highlights[0], match_obfuscator::redaction_msg);
         EXPECT_STR(match.args[0].resolved, "token:<Redacted>");
     }
 
@@ -315,8 +315,8 @@ MIIEpAIBAAKCAQEAwKFIxQKIn8FJyX1TqV2QIDAQABAoIBAQC/UYHm6+NHmY6U
             R"(-----BEGIN RSA PRIVATE KEY-----<Redacted>-----END RSA PRIVATE KEY-----,ghp_<Redacted>)"},
     };
 
-    ddwaf::match_obfuscator obfuscator{
-        obfuscator::default_key_regex_str, obfuscator::default_value_regex_str};
+    match_obfuscator obfuscator{
+        match_obfuscator::default_key_regex_str, match_obfuscator::default_value_regex_str};
 
     for (const auto &[original, expected] : test_cases) {
         condition_match match{.args = {{.name = "input", .resolved = original}},
@@ -333,7 +333,7 @@ TEST(TestObfuscator, FallbackToDefaultRegexes)
 {
     // Backreferences are not supported, therefore these regexes will cause the
     // obfuscator to revert to the default
-    ddwaf::match_obfuscator obfuscator{R"(^(a*)\1$)", R"(^(a*)\1$)"};
+    match_obfuscator obfuscator{R"(^(a*)\1$)", R"(^(a*)\1$)"};
 
     {
         // Verify that when the key matches, both value and highlight are redacted
@@ -344,8 +344,8 @@ TEST(TestObfuscator, FallbackToDefaultRegexes)
             .operator_value = {}};
 
         obfuscator.obfuscate_match(match);
-        EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
-        EXPECT_STR(match.args[0].resolved, obfuscator::redaction_msg);
+        EXPECT_STR(match.highlights[0], match_obfuscator::redaction_msg);
+        EXPECT_STR(match.args[0].resolved, match_obfuscator::redaction_msg);
     }
 
     {
@@ -357,7 +357,7 @@ TEST(TestObfuscator, FallbackToDefaultRegexes)
             .operator_value = {}};
 
         obfuscator.obfuscate_match(match);
-        EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
+        EXPECT_STR(match.highlights[0], match_obfuscator::redaction_msg);
         EXPECT_STR(match.args[0].resolved, "password=<Redacted>");
     }
 
@@ -372,7 +372,7 @@ TEST(TestObfuscator, FallbackToDefaultRegexes)
             .operator_value = {}};
 
         obfuscator.obfuscate_match(match);
-        EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
+        EXPECT_STR(match.highlights[0], match_obfuscator::redaction_msg);
         EXPECT_STR(match.args[0].resolved, "token:<Redacted>");
     }
 

@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "attribute_collector.hpp"
 #include "common/gtest_utils.hpp"
 #include "expression.hpp"
 #include "matcher/exact_match.hpp"
@@ -37,29 +36,30 @@ TEST(TestRule, Match)
 
     ddwaf::timer deadline{2s};
 
-    attribute_collector collector;
     core_rule::cache_type cache;
     {
         auto scope = store.get_eval_scope();
         store.insert(root, object_store::attribute::none, nullptr);
 
-        auto event = rule.match(store, cache, {}, {}, collector, {}, deadline);
-        EXPECT_TRUE(event.has_value());
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
+        ASSERT_TRUE(result.has_value());
+        ASSERT_TRUE(result->event.has_value());
 
-        EXPECT_STREQ(event->rule->get_id().data(), "id");
-        EXPECT_STREQ(event->rule->get_name().data(), "name");
-        EXPECT_STREQ(event->rule->get_type().data(), "type");
+        auto &event = result->event.value();
+        EXPECT_STR(event.rule.id, "id");
+        EXPECT_STR(event.rule.name, "name");
+        EXPECT_STR(event.rule.tags.get().at("type"), "type");
         std::vector<std::string> expected_actions{"update", "block", "passlist"};
-        EXPECT_EQ(event->rule->get_actions(), expected_actions);
-        EXPECT_EQ(event->matches.size(), 1);
-        EXPECT_FALSE(event->ephemeral);
+        EXPECT_EQ(result->actions.get(), expected_actions);
+        EXPECT_EQ(event.matches.size(), 1);
+        EXPECT_FALSE(result->ephemeral);
 
-        auto &match = event->matches[0];
+        auto &match = event.matches[0];
         EXPECT_STR(match.args[0].resolved, "192.168.0.1");
         EXPECT_STR(match.highlights[0], "192.168.0.1");
-        EXPECT_STREQ(match.operator_name.data(), "ip_match");
-        EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
+        EXPECT_STR(match.operator_name, "ip_match");
+        EXPECT_STR(match.operator_value, "");
+        EXPECT_STR(match.args[0].address, "http.client_ip");
         EXPECT_TRUE(match.args[0].key_path.empty());
         EXPECT_FALSE(match.ephemeral);
     }
@@ -68,8 +68,8 @@ TEST(TestRule, Match)
         auto scope = store.get_eval_scope();
         store.insert(root, object_store::attribute::none, nullptr);
 
-        auto event = rule.match(store, cache, {}, {}, collector, {}, deadline);
-        EXPECT_FALSE(event.has_value());
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
+        EXPECT_FALSE(result.has_value());
     }
 
     EXPECT_TRUE(cache.result);
@@ -97,24 +97,23 @@ TEST(TestRule, EphemeralMatch)
 
     ddwaf::timer deadline{2s};
 
-    attribute_collector collector;
     core_rule::cache_type cache;
     {
         auto scope = store.get_eval_scope();
         store.insert(root, object_store::attribute::ephemeral, nullptr);
 
-        auto event = rule.match(store, cache, {}, {}, collector, {}, deadline);
-        ASSERT_TRUE(event.has_value());
-        EXPECT_TRUE(event->ephemeral);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
+        ASSERT_TRUE(result.has_value());
+        EXPECT_TRUE(result->ephemeral);
     }
 
     {
         auto scope = store.get_eval_scope();
         store.insert(root, object_store::attribute::ephemeral, nullptr);
 
-        auto event = rule.match(store, cache, {}, {}, collector, {}, deadline);
-        ASSERT_TRUE(event.has_value());
-        EXPECT_TRUE(event->ephemeral);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
+        ASSERT_TRUE(result.has_value());
+        EXPECT_TRUE(result->ephemeral);
     }
 
     EXPECT_FALSE(cache.result);
@@ -143,10 +142,9 @@ TEST(TestRule, NoMatch)
 
     ddwaf::timer deadline{2s};
 
-    attribute_collector collector;
     core_rule::cache_type cache;
-    auto match = rule.match(store, cache, {}, {}, collector, {}, deadline);
-    EXPECT_FALSE(match.has_value());
+    auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
+    EXPECT_FALSE(result.has_value());
 }
 
 TEST(TestRule, ValidateCachedMatch)
@@ -166,7 +164,6 @@ TEST(TestRule, ValidateCachedMatch)
 
     core_rule rule("id", "name", std::move(tags), builder.build());
 
-    attribute_collector collector;
     core_rule::cache_type cache;
 
     // To validate that the cache works, we pass an object store containing
@@ -182,8 +179,8 @@ TEST(TestRule, ValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto event = rule.match(store, cache, {}, {}, collector, {}, deadline);
-        EXPECT_FALSE(event.has_value());
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
+        EXPECT_FALSE(result.has_value());
     }
 
     {
@@ -196,30 +193,34 @@ TEST(TestRule, ValidateCachedMatch)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto event = rule.match(store, cache, {}, {}, collector, {}, deadline);
-        EXPECT_TRUE(event.has_value());
-        EXPECT_STREQ(event->rule->get_id().data(), "id");
-        EXPECT_STREQ(event->rule->get_name().data(), "name");
-        EXPECT_STREQ(event->rule->get_type().data(), "type");
-        EXPECT_TRUE(event->rule->get_actions().empty());
-        EXPECT_EQ(event->matches.size(), 2);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
+        ASSERT_TRUE(result.has_value());
+        ASSERT_TRUE(result->event.has_value());
+
+        auto &event = result->event.value();
+        EXPECT_STR(event.rule.id, "id");
+        EXPECT_STR(event.rule.name, "name");
+        EXPECT_STR(event.rule.tags.get().at("type"), "type");
+        EXPECT_EQ(event.matches.size(), 2);
+
+        EXPECT_TRUE(result->actions.get().empty());
 
         {
-            auto &match = event->matches[0];
+            auto &match = event.matches[0];
             EXPECT_STR(match.args[0].resolved, "192.168.0.1");
             EXPECT_STR(match.highlights[0], "192.168.0.1");
-            EXPECT_STREQ(match.operator_name.data(), "ip_match");
-            EXPECT_STREQ(match.operator_value.data(), "");
-            EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
+            EXPECT_STR(match.operator_name, "ip_match");
+            EXPECT_STR(match.operator_value, "");
+            EXPECT_STR(match.args[0].address, "http.client_ip");
             EXPECT_TRUE(match.args[0].key_path.empty());
         }
         {
-            auto &match = event->matches[1];
+            auto &match = event.matches[1];
             EXPECT_STR(match.args[0].resolved, "admin");
             EXPECT_STR(match.highlights[0], "admin");
-            EXPECT_STREQ(match.operator_name.data(), "exact_match");
-            EXPECT_STREQ(match.operator_value.data(), "");
-            EXPECT_STREQ(match.args[0].address.data(), "usr.id");
+            EXPECT_STR(match.operator_name, "exact_match");
+            EXPECT_STR(match.operator_value, "");
+            EXPECT_STR(match.args[0].address, "usr.id");
             EXPECT_TRUE(match.args[0].key_path.empty());
         }
     }
@@ -245,7 +246,6 @@ TEST(TestRule, MatchWithoutCache)
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
     // the second run when there isn't a cached match.
-    attribute_collector collector;
     ddwaf::object_store store;
     {
         ddwaf_object root, tmp;
@@ -256,8 +256,8 @@ TEST(TestRule, MatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
-        auto event = rule.match(store, cache, {}, {}, collector, {}, deadline);
-        EXPECT_FALSE(event.has_value());
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
+        EXPECT_FALSE(result.has_value());
     }
 
     {
@@ -269,25 +269,27 @@ TEST(TestRule, MatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
-        auto event = rule.match(store, cache, {}, {}, collector, {}, deadline);
-        EXPECT_TRUE(event.has_value());
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
+        ASSERT_TRUE(result.has_value());
+        ASSERT_TRUE(result->event.has_value());
 
+        auto &event = result->event.value();
         {
-            auto &match = event->matches[0];
+            auto &match = event.matches[0];
             EXPECT_STR(match.args[0].resolved, "192.168.0.1");
             EXPECT_STR(match.highlights[0], "192.168.0.1");
-            EXPECT_STREQ(match.operator_name.data(), "ip_match");
-            EXPECT_STREQ(match.operator_value.data(), "");
-            EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
+            EXPECT_STR(match.operator_name, "ip_match");
+            EXPECT_STR(match.operator_value, "");
+            EXPECT_STR(match.args[0].address, "http.client_ip");
             EXPECT_TRUE(match.args[0].key_path.empty());
         }
         {
-            auto &match = event->matches[1];
+            auto &match = event.matches[1];
             EXPECT_STR(match.args[0].resolved, "admin");
             EXPECT_STR(match.highlights[0], "admin");
-            EXPECT_STREQ(match.operator_name.data(), "exact_match");
-            EXPECT_STREQ(match.operator_value.data(), "");
-            EXPECT_STREQ(match.args[0].address.data(), "usr.id");
+            EXPECT_STR(match.operator_name, "exact_match");
+            EXPECT_STR(match.operator_value, "");
+            EXPECT_STR(match.args[0].address, "usr.id");
             EXPECT_TRUE(match.args[0].key_path.empty());
         }
     }
@@ -310,7 +312,6 @@ TEST(TestRule, NoMatchWithoutCache)
 
     core_rule rule("id", "name", std::move(tags), builder.build());
 
-    attribute_collector collector;
     // In this test we validate that when the cache is empty and only one
     // address is passed, the filter doesn't match (as it should be).
     {
@@ -323,8 +324,8 @@ TEST(TestRule, NoMatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
-        auto event = rule.match(store, cache, {}, {}, collector, {}, deadline);
-        EXPECT_FALSE(event.has_value());
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
+        EXPECT_FALSE(result.has_value());
     }
 
     {
@@ -337,8 +338,8 @@ TEST(TestRule, NoMatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
-        auto event = rule.match(store, cache, {}, {}, collector, {}, deadline);
-        EXPECT_FALSE(event.has_value());
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
+        EXPECT_FALSE(result.has_value());
     }
 }
 
@@ -362,7 +363,6 @@ TEST(TestRule, FullCachedMatchSecondRun)
     // In this test we validate that when a match has already occurred, the
     // second run for the same rule returns no events regardless of input.
 
-    attribute_collector collector;
     core_rule::cache_type cache;
     {
         ddwaf_object root, tmp;
@@ -374,8 +374,9 @@ TEST(TestRule, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto event = rule.match(store, cache, {}, {}, collector, {}, deadline);
-        EXPECT_TRUE(event.has_value());
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
+        ASSERT_TRUE(result.has_value());
+        ASSERT_TRUE(result->event.has_value());
     }
 
     {
@@ -388,8 +389,8 @@ TEST(TestRule, FullCachedMatchSecondRun)
         store.insert(root);
 
         ddwaf::timer deadline{2s};
-        auto event = rule.match(store, cache, {}, {}, collector, {}, deadline);
-        EXPECT_FALSE(event.has_value());
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
+        EXPECT_FALSE(result.has_value());
     }
 }
 
@@ -416,10 +417,9 @@ TEST(TestRule, ExcludeObject)
     ddwaf::timer deadline{2s};
 
     std::unordered_set<const ddwaf_object *> excluded_set{&root.array[0]};
-    attribute_collector collector;
     core_rule::cache_type cache;
-    auto event = rule.match(
-        store, cache, {.persistent = excluded_set, .ephemeral = {}}, {}, collector, {}, deadline);
-    EXPECT_FALSE(event.has_value());
+    auto [verdict, result] =
+        rule.match(store, cache, {.persistent = excluded_set, .ephemeral = {}}, {}, {}, deadline);
+    EXPECT_FALSE(result.has_value());
 }
 } // namespace

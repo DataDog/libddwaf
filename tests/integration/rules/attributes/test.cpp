@@ -34,7 +34,7 @@ TEST(TestRuleAttributesIntegration, SingleValueOutputNoEvent)
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
         ddwaf_object result;
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_MAP);
 
@@ -147,7 +147,7 @@ TEST(TestRuleAttributesIntegration, SingleTargetOutputNoEvent)
         ddwaf_object_map_add(&parameter, "value3", ddwaf_object_string(&tmp, "rule3"));
 
         ddwaf_object result;
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_MAP);
 

@@ -34,6 +34,8 @@ public:
     void serialize(const object_store &store, std::vector<rule_result> &results,
         attribute_collector &collector, const timer &deadline, result_components output) const;
 
+    static std::pair<ddwaf_object, result_components> initialise_result_object();
+
 protected:
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const match_obfuscator &obfuscator_;

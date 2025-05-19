@@ -51,33 +51,6 @@ void set_context_event_address(object_store &store)
     store.insert(event_addr_idx, event_addr, true_obj, attribute::none);
 }
 
-result_components initialise_result_object(ddwaf_object &object)
-{
-    ddwaf_object_map(&object);
-
-    bool add_res = true;
-    ddwaf_object tmp;
-    add_res &= ddwaf_object_map_addl(&object, STRL("events"), ddwaf_object_array(&tmp));
-    add_res &= ddwaf_object_map_addl(&object, STRL("actions"), ddwaf_object_map(&tmp));
-    add_res &= ddwaf_object_map_addl(&object, STRL("duration"), ddwaf_object_unsigned(&tmp, 0));
-    add_res &= ddwaf_object_map_addl(&object, STRL("timeout"), ddwaf_object_bool(&tmp, false));
-    add_res &= ddwaf_object_map_addl(&object, STRL("attributes"), ddwaf_object_map(&tmp));
-    add_res &= ddwaf_object_map_addl(&object, STRL("keep"), ddwaf_object_bool(&tmp, false));
-
-    if (!add_res) {
-        throw std::runtime_error("failed to generate result object");
-    }
-
-    result_components res{.events = object.array[0],
-        .actions = object.array[1],
-        .duration = object.array[2],
-        .timeout = object.array[3],
-        .attributes = object.array[4],
-        .keep = object.array[5]};
-
-    return res;
-}
-
 ddwaf_object move_object(ddwaf_object &object)
 {
     auto aux = object;
@@ -111,18 +84,16 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
     }
 
     // Generate result object once relevant checks have been made
-    ddwaf_object result_object;
+    auto [result_object, output] = result_serializer::initialise_result_object();
     const std::unique_ptr<ddwaf_object, decltype(&ddwaf_object_free)> res{
         &result_object, ddwaf_object_free};
-
-    auto output = initialise_result_object(result_object);
-    ddwaf::timer deadline{std::chrono::microseconds(timeout)};
 
     if (!store_.has_new_targets()) {
         return {DDWAF_OK, move_object(result_object)};
     }
 
     const result_serializer serializer(obfuscator_, actions_);
+    ddwaf::timer deadline{std::chrono::microseconds(timeout)};
 
     try {
         // Evaluate preprocessors first in their own try-catch, if there's a

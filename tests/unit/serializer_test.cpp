@@ -7,8 +7,8 @@
 #include "common/gtest_utils.hpp"
 
 #include "builder/action_mapper_builder.hpp"
-#include "serializer.hpp"
 #include "rule.hpp"
+#include "serializer.hpp"
 #include "utils.hpp"
 
 using namespace ddwaf;
@@ -20,197 +20,217 @@ TEST(TestEventSerializer, SerializeNothing)
 {
     ddwaf::action_mapper actions;
     ddwaf::match_obfuscator obfuscator;
-    ddwaf::event_serializer serializer(obfuscator, actions);
+    result_serializer serializer(obfuscator, actions);
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
+    std::vector<rule_result> results;
+    object_store store;
+    attribute_collector collector;
 
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
+    ddwaf::timer deadline{2s};
+    auto [result_object, output] = result_serializer::initialise_result_object();
+    serializer.serialize(store, results, collector, deadline, output);
 
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
+    EXPECT_EVENTS(result_object, ); // This means no results
+    EXPECT_ACTIONS(result_object, {});
 
-    std::vector<ddwaf::event> events;
-    serializer.serialize(events, events_object, actions_object);
-
-    EXPECT_EVENTS(output, ); // This means no events
-    EXPECT_ACTIONS(output, {});
-
-    ddwaf_object_free(&output);
+    ddwaf_object_free(&result_object);
 }
 
 TEST(TestEventSerializer, SerializeEmptyEvent)
 {
     ddwaf::match_obfuscator obfuscator;
-    ddwaf::event_serializer serializer(obfuscator, action_mapper_builder().build());
+    result_serializer serializer(obfuscator, action_mapper_builder().build());
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
+    object_store store;
+    attribute_collector collector;
+    ddwaf::timer deadline{2s};
+    auto [result_object, output] = result_serializer::initialise_result_object();
 
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
+    std::unordered_map<std::string, std::string> tags{{"type", {}}, {"category", {}}};
+    std::vector<std::string> actions;
+    std::vector<rule_attribute> attributes;
 
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
+    rule_result result{
+        .event = rule_event{.rule{
+                                .id = {},
+                                .name = {},
+                                .tags = tags,
+                            },
+            .matches = {}},
+        .action_override = {},
+        .actions = actions,
+        .attributes = attributes,
+    };
 
-    std::vector<ddwaf::event> events{ddwaf::event{}};
-    serializer.serialize(events, events_object, actions_object);
+    std::vector<rule_result> results{result};
+    serializer.serialize(store, results, collector, deadline, output);
 
-    EXPECT_EVENTS(output, {});
-    EXPECT_ACTIONS(output, {});
+    EXPECT_EVENTS(result_object, {});
+    EXPECT_ACTIONS(result_object, {});
 
-    ddwaf_object_free(&output);
+    ddwaf_object_free(&result_object);
 }
 
 TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
 {
-    core_rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
-        std::make_shared<expression>(), {"block", "monitor_request"}};
-
-    ddwaf::event event;
-    event.rule = &rule;
-    event.matches = {{.args = {{.name = "input",
-                          .resolved = "value"sv,
-                          .address = "query",
-                          .key_path = {"root", "key"}}},
-        .highlights = {"val"sv},
-        .operator_name = "random",
-        .operator_value = "val"}};
-
     ddwaf::action_mapper_builder builder;
     builder.set_action("monitor_request", "monitor_request", {});
-    auto actions = builder.build();
+    auto action_definitions = builder.build();
 
     ddwaf::match_obfuscator obfuscator;
-    ddwaf::event_serializer serializer(obfuscator, actions);
+    result_serializer serializer(obfuscator, action_definitions);
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
+    std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"}};
+    std::vector<std::string> actions{"block", "monitor_request"};
+    std::vector<rule_attribute> attributes;
 
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
+    rule_result result{
+        .event = rule_event{.rule{
+                                .id = "xasd1022",
+                                .name = "random rule",
+                                .tags = tags,
+                            },
+            .matches = {{.args = {{.name = "input",
+                             .resolved = "value"sv,
+                             .address = "query",
+                             .key_path = {"root", "key"}}},
+                .highlights = {"val"sv},
+                .operator_name = "random",
+                .operator_value = "val"}}},
+        .action_override = {},
+        .actions = actions,
+        .attributes = attributes,
+    };
 
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
+    std::vector<rule_result> results{result};
+    object_store store;
+    attribute_collector collector;
 
-    std::vector<ddwaf::event> events{event};
-    serializer.serialize(events, events_object, actions_object);
-    EXPECT_EVENTS(output, {.id = "xasd1022",
-                              .name = "random rule",
-                              .tags = {{"type", "test"}, {"category", "none"}},
-                              .actions = {"block", "monitor_request"},
-                              .matches = {{.op = "random",
-                                  .op_value = "val",
-                                  .highlight = "val"sv,
-                                  .args = {{.name = "input",
-                                      .value = "value"sv,
-                                      .address = "query",
-                                      .path = {"root", "key"}}}}}});
+    ddwaf::timer deadline{2s};
+    auto [result_object, output] = result_serializer::initialise_result_object();
+    serializer.serialize(store, results, collector, deadline, output);
+    EXPECT_EVENTS(result_object, {.id = "xasd1022",
+                                     .name = "random rule",
+                                     .tags = {{"type", "test"}, {"category", "none"}},
+                                     .actions = {"block", "monitor_request"},
+                                     .matches = {{.op = "random",
+                                         .op_value = "val",
+                                         .highlight = "val"sv,
+                                         .args = {{.name = "input",
+                                             .value = "value"sv,
+                                             .address = "query",
+                                             .path = {"root", "key"}}}}}});
 
-    EXPECT_ACTIONS(output,
+    EXPECT_ACTIONS(result_object,
         {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}},
             {"monitor_request", {}}});
 
-    ddwaf_object_free(&output);
+    ddwaf_object_free(&result_object);
 }
 
 TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
 {
-    core_rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
-        std::make_shared<expression>(), {"block", "monitor_request"}};
-
-    ddwaf::event event;
-    event.rule = &rule;
-    event.matches = {{.args = {{.name = "input",
-                          .resolved = "value"sv,
-                          .address = "query",
-                          .key_path = {"root", "key"}}},
-                         .highlights = {"val"sv},
-                         .operator_name = "random",
-                         .operator_value = "val"},
-        {.args = {{.name = "input", .resolved = "string"sv, .address = "response.body"}},
-            .highlights = {"string"sv},
-            .operator_name = "match_regex",
-            .operator_value = ".*"},
-        {.args = {{.name = "input", .resolved = "192.168.0.1"sv, .address = "client.ip"}},
-            .highlights = {"192.168.0.1"sv},
-            .operator_name = "ip_match",
-            .operator_value = ""},
-        {.args = {{.name = "input",
-             .resolved = "<script>"sv,
-             .address = "path_params",
-             .key_path = {"key"}}},
-            .highlights = {},
-            .operator_name = "is_xss",
-            .operator_value = ""}};
-
     ddwaf::action_mapper_builder builder;
     builder.set_action("monitor_request", "monitor_request", {});
-    auto actions = builder.build();
+    auto action_definitions = builder.build();
 
     ddwaf::match_obfuscator obfuscator;
-    ddwaf::event_serializer serializer(obfuscator, actions);
+    result_serializer serializer(obfuscator, action_definitions);
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
+    std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"}};
+    std::vector<std::string> actions{"block", "monitor_request"};
+    std::vector<rule_attribute> attributes;
 
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
+    rule_result result{
+        .event =
+            rule_event{
+                .rule{
+                    .id = "xasd1022",
+                    .name = "random rule",
+                    .tags = tags,
+                },
+                .matches = {{.args = {{.name = "input",
+                                 .resolved = "value"sv,
+                                 .address = "query",
+                                 .key_path = {"root", "key"}}},
+                                .highlights = {"val"sv},
+                                .operator_name = "random",
+                                .operator_value = "val"},
+                    {.args =
+                            {{.name = "input", .resolved = "string"sv, .address = "response.body"}},
+                        .highlights = {"string"sv},
+                        .operator_name = "match_regex",
+                        .operator_value = ".*"},
+                    {.args = {{.name = "input",
+                         .resolved = "192.168.0.1"sv,
+                         .address = "client.ip"}},
+                        .highlights = {"192.168.0.1"sv},
+                        .operator_name = "ip_match",
+                        .operator_value = ""},
+                    {.args = {{.name = "input",
+                         .resolved = "<script>"sv,
+                         .address = "path_params",
+                         .key_path = {"key"}}},
+                        .highlights = {},
+                        .operator_name = "is_xss",
+                        .operator_value = ""}},
+            },
+        .action_override = {},
+        .actions = actions,
+        .attributes = attributes,
+    };
 
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
+    std::vector<rule_result> results{result};
+    object_store store;
+    attribute_collector collector;
 
-    std::vector<ddwaf::event> events{event};
-    serializer.serialize(events, events_object, actions_object);
+    ddwaf::timer deadline{2s};
+    auto [result_object, output] = result_serializer::initialise_result_object();
+    serializer.serialize(store, results, collector, deadline, output);
 
-    EXPECT_EVENTS(output, {.id = "xasd1022",
-                              .name = "random rule",
-                              .tags = {{"type", "test"}, {"category", "none"}},
-                              .actions = {"block", "monitor_request"},
-                              .matches = {{.op = "random",
-                                              .op_value = "val",
-                                              .highlight = "val"sv,
-                                              .args = {{
-                                                  .name = "input",
-                                                  .value = "value"sv,
-                                                  .address = "query",
-                                                  .path = {"root", "key"},
-                                              }}},
-                                  {
-                                      .op = "match_regex",
-                                      .op_value = ".*",
-                                      .highlight = "string"sv,
-                                      .args = {{
-                                          .name = "input",
-                                          .value = "string"sv,
-                                          .address = "response.body",
-                                      }},
-                                  },
-                                  {.op = "ip_match",
-                                      .highlight = "192.168.0.1"sv,
-                                      .args = {{
-                                          .name = "input",
-                                          .value = "192.168.0.1"sv,
-                                          .address = "client.ip",
-                                      }}},
-                                  {.op = "is_xss",
-                                      .args = {{
-                                          .name = "input",
-                                          .value = "<script>"sv,
-                                          .address = "path_params",
-                                          .path = {"key"},
-                                      }}}}});
+    EXPECT_EVENTS(result_object, {.id = "xasd1022",
+                                     .name = "random rule",
+                                     .tags = {{"type", "test"}, {"category", "none"}},
+                                     .actions = {"block", "monitor_request"},
+                                     .matches = {{.op = "random",
+                                                     .op_value = "val",
+                                                     .highlight = "val"sv,
+                                                     .args = {{
+                                                         .name = "input",
+                                                         .value = "value"sv,
+                                                         .address = "query",
+                                                         .path = {"root", "key"},
+                                                     }}},
+                                         {
+                                             .op = "match_regex",
+                                             .op_value = ".*",
+                                             .highlight = "string"sv,
+                                             .args = {{
+                                                 .name = "input",
+                                                 .value = "string"sv,
+                                                 .address = "response.body",
+                                             }},
+                                         },
+                                         {.op = "ip_match",
+                                             .highlight = "192.168.0.1"sv,
+                                             .args = {{
+                                                 .name = "input",
+                                                 .value = "192.168.0.1"sv,
+                                                 .address = "client.ip",
+                                             }}},
+                                         {.op = "is_xss",
+                                             .args = {{
+                                                 .name = "input",
+                                                 .value = "<script>"sv,
+                                                 .address = "path_params",
+                                                 .path = {"key"},
+                                             }}}}});
 
-    EXPECT_ACTIONS(output,
+    EXPECT_ACTIONS(result_object,
         {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}},
             {"monitor_request", {}}});
 
-    ddwaf_object_free(&output);
+    ddwaf_object_free(&result_object);
 }
 
 TEST(TestEventSerializer, SerializeMultipleEvents)
@@ -218,66 +238,89 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     ddwaf::action_mapper_builder builder;
     builder.set_action("monitor_request", "monitor_request", {});
     builder.set_action("unblock", "unknown", {});
-    auto actions = builder.build();
+    auto action_definitions = builder.build();
 
     ddwaf::match_obfuscator obfuscator;
-    ddwaf::event_serializer serializer(obfuscator, actions);
+    result_serializer serializer(obfuscator, action_definitions);
 
-    core_rule rule1{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
-        std::make_shared<expression>(), {"block", "monitor_request"}};
-    core_rule rule2{"xasd1023", "pseudorandom rule", {{"type", "test"}, {"category", "none"}},
-        std::make_shared<expression>(), {"unblock"}};
-    std::vector<ddwaf::event> events;
-    {
-        ddwaf::event event;
-        event.rule = &rule1;
-        event.matches = {{.args = {{.name = "input",
-                              .resolved = "value"sv,
-                              .address = "query",
-                              .key_path = {"root", "key"}}},
-                             .highlights = {"val"sv},
-                             .operator_name = "random",
-                             .operator_value = "val"},
-            {.args = {{.name = "input", .resolved = "string"sv, .address = "response.body"}},
-                .highlights = {"string"sv},
-                .operator_name = "match_regex",
-                .operator_value = ".*"},
-            {.args = {{.name = "input",
-                 .resolved = "<script>"sv,
-                 .address = "path_params",
-                 .key_path = {"key"}}},
-                .highlights = {},
-                .operator_name = "is_xss",
-                .operator_value = ""}};
-        events.emplace_back(std::move(event));
-    }
+    std::vector<rule_attribute> attributes;
 
-    {
-        ddwaf::event event;
-        event.rule = &rule2;
-        event.matches = {
-            {.args = {{.name = "input", .resolved = "192.168.0.1"sv, .address = "client.ip"}},
-                .highlights = {"192.168.0.1"sv},
-                .operator_name = "ip_match",
-                .operator_value = ""},
-        };
-        events.emplace_back(std::move(event));
-    }
+    std::unordered_map<std::string, std::string> tags0{{"type", "test"}, {"category", "none"}};
+    std::vector<std::string> actions0{"block", "monitor_request"};
 
-    events.emplace_back(ddwaf::event{});
+    rule_result result0{
+        .event = rule_event{.rule{
+                                .id = "xasd1022",
+                                .name = "random rule",
+                                .tags = tags0,
+                            },
+            .matches = {{.args = {{.name = "input",
+                             .resolved = "value"sv,
+                             .address = "query",
+                             .key_path = {"root", "key"}}},
+                            .highlights = {"val"sv},
+                            .operator_name = "random",
+                            .operator_value = "val"},
+                {.args = {{.name = "input", .resolved = "string"sv, .address = "response.body"}},
+                    .highlights = {"string"sv},
+                    .operator_name = "match_regex",
+                    .operator_value = ".*"},
+                {.args = {{.name = "input",
+                     .resolved = "<script>"sv,
+                     .address = "path_params",
+                     .key_path = {"key"}}},
+                    .highlights = {},
+                    .operator_name = "is_xss",
+                    .operator_value = ""}}},
+        .action_override = {},
+        .actions = actions0,
+        .attributes = attributes,
+    };
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
+    std::vector<std::string> actions1{"unblock"};
 
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
+    rule_result result1{
+        .event =
+            rule_event{
+                .rule{
+                    .id = "xasd1023",
+                    .name = "pseudorandom rule",
+                    .tags = tags0,
+                },
+                .matches = {{.args = {{.name = "input",
+                                 .resolved = "192.168.0.1"sv,
+                                 .address = "client.ip"}},
+                    .highlights = {"192.168.0.1"sv},
+                    .operator_name = "ip_match",
+                    .operator_value = ""}},
+            },
+        .action_override = {},
+        .actions = actions1,
+        .attributes = attributes,
+    };
 
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
+    std::unordered_map<std::string, std::string> tags2{{"type", {}}, {"category", {}}};
+    std::vector<std::string> actions2{};
+    rule_result result2{
+        .event = rule_event{.rule{
+                                .id = {},
+                                .name = {},
+                                .tags = tags2,
+                            },
+            .matches = {}},
+        .action_override = {},
+        .actions = actions2,
+        .attributes = attributes,
+    };
 
-    serializer.serialize(events, events_object, actions_object);
-    EXPECT_EVENTS(output,
+    std::vector<rule_result> results{result0, result1, result2};
+    object_store store;
+    attribute_collector collector;
+
+    ddwaf::timer deadline{2s};
+    auto [result_object, output] = result_serializer::initialise_result_object();
+    serializer.serialize(store, results, collector, deadline, output);
+    EXPECT_EVENTS(result_object,
         {.id = "xasd1022",
             .name = "random rule",
             .tags = {{"type", "test"}, {"category", "none"}},
@@ -315,297 +358,323 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
                 }}}}},
         {});
 
-    EXPECT_ACTIONS(output,
+    EXPECT_ACTIONS(result_object,
         {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}},
             {"monitor_request", {}}, {"unknown", {}}});
 
-    ddwaf_object_free(&output);
+    ddwaf_object_free(&result_object);
 }
 
 TEST(TestEventSerializer, SerializeEventNoActions)
 {
-    core_rule rule{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
-        std::make_shared<expression>()};
+    ddwaf::action_mapper_builder builder;
+    builder.set_action("monitor_request", "monitor_request", {});
+    auto action_definitions = builder.build();
 
-    ddwaf::event event;
-    event.rule = &rule;
-    event.matches = {
-        {.args = {{.name = "input",
-             .resolved = "value"sv,
-             .address = "query",
-             .key_path = {"root", "key"}}},
-            .highlights = {"val"sv},
-            .operator_name = "random",
-            .operator_value = "val"},
+    ddwaf::match_obfuscator obfuscator;
+    result_serializer serializer(obfuscator, action_definitions);
+
+    std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"}};
+    std::vector<std::string> actions;
+    std::vector<rule_attribute> attributes;
+
+    rule_result result{
+        .event =
+            rule_event{
+                .rule{
+                    .id = "xasd1022",
+                    .name = "random rule",
+                    .tags = tags,
+                },
+                .matches = {{.args = {{.name = "input",
+                                 .resolved = "value"sv,
+                                 .address = "query",
+                                 .key_path = {"root", "key"}}},
+                    .highlights = {"val"sv},
+                    .operator_name = "random",
+                    .operator_value = "val"}},
+            },
+        .action_override = {},
+        .actions = actions,
+        .attributes = attributes,
     };
 
-    ddwaf::action_mapper actions;
-    ddwaf::match_obfuscator obfuscator;
-    ddwaf::event_serializer serializer(obfuscator, actions);
+    std::vector<rule_result> results{result};
+    object_store store;
+    attribute_collector collector;
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
+    ddwaf::timer deadline{2s};
+    auto [result_object, output] = result_serializer::initialise_result_object();
+    serializer.serialize(store, results, collector, deadline, output);
+    EXPECT_EVENTS(result_object, {.id = "xasd1022",
+                                     .name = "random rule",
+                                     .tags = {{"type", "test"}, {"category", "none"}},
+                                     .matches = {{.op = "random",
+                                         .op_value = "val",
+                                         .highlight = "val"sv,
+                                         .args = {{
+                                             .value = "value"sv,
+                                             .address = "query",
+                                             .path = {"root", "key"},
+                                         }}}}});
 
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
+    EXPECT_ACTIONS(result_object, {});
 
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
-
-    std::vector<ddwaf::event> events{event};
-    serializer.serialize(events, events_object, actions_object);
-
-    EXPECT_EVENTS(output, {.id = "xasd1022",
-                              .name = "random rule",
-                              .tags = {{"type", "test"}, {"category", "none"}},
-                              .matches = {{.op = "random",
-                                  .op_value = "val",
-                                  .highlight = "val"sv,
-                                  .args = {{
-                                      .value = "value"sv,
-                                      .address = "query",
-                                      .path = {"root", "key"},
-                                  }}}}});
-
-    EXPECT_ACTIONS(output, {});
-
-    ddwaf_object_free(&output);
+    ddwaf_object_free(&result_object);
 }
 
 TEST(TestEventSerializer, SerializeAllTags)
 {
-    core_rule rule{"xasd1022", "random rule",
-        {{"type", "test"}, {"category", "none"}, {"tag0", "value0"}, {"tag1", "value1"},
-            {"confidence", "none"}},
-        std::make_shared<expression>(), {"unblock"}};
-
-    ddwaf::event event;
-    event.rule = &rule;
-    event.matches = {
-        {.args = {{.name = "input",
-             .resolved = "value"sv,
-             .address = "query",
-             .key_path = {"root", "key"}}},
-            .highlights = {"val"sv},
-            .operator_name = "random",
-            .operator_value = "val"},
-    };
-
     ddwaf::action_mapper_builder builder;
     builder.set_action("unblock", "unknown", {});
-    auto actions = builder.build();
+    auto action_definitions = builder.build();
 
     ddwaf::match_obfuscator obfuscator;
-    ddwaf::event_serializer serializer(obfuscator, actions);
+    result_serializer serializer(obfuscator, action_definitions);
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
+    std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"},
+        {"tag0", "value0"}, {"tag1", "value1"}, {"confidence", "none"}};
+    std::vector<std::string> actions{"unblock"};
+    std::vector<rule_attribute> attributes;
 
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
+    rule_result result{
+        .event =
+            rule_event{
+                .rule{
+                    .id = "xasd1022",
+                    .name = "random rule",
+                    .tags = tags,
+                },
+                .matches = {{.args = {{.name = "input",
+                                 .resolved = "value"sv,
+                                 .address = "query",
+                                 .key_path = {"root", "key"}}},
+                    .highlights = {"val"sv},
+                    .operator_name = "random",
+                    .operator_value = "val"}},
+            },
+        .action_override = {},
+        .actions = actions,
+        .attributes = attributes,
+    };
 
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
+    std::vector<rule_result> results{result};
+    object_store store;
+    attribute_collector collector;
 
-    std::vector<ddwaf::event> events{event};
-    serializer.serialize(events, events_object, actions_object);
+    ddwaf::timer deadline{2s};
+    auto [result_object, output] = result_serializer::initialise_result_object();
+    serializer.serialize(store, results, collector, deadline, output);
+    EXPECT_EVENTS(
+        result_object, {.id = "xasd1022",
+                           .name = "random rule",
+                           .tags = {{"type", "test"}, {"category", "none"}, {"tag0", "value0"},
+                               {"tag1", "value1"}, {"confidence", "none"}},
+                           .actions = {"unblock"},
+                           .matches = {{.op = "random",
+                               .op_value = "val",
+                               .highlight = "val"sv,
+                               .args = {{
+                                   .value = "value"sv,
+                                   .address = "query",
+                                   .path = {"root", "key"},
+                               }}}}});
 
-    EXPECT_EVENTS(output, {.id = "xasd1022",
-                              .name = "random rule",
-                              .tags = {{"type", "test"}, {"category", "none"}, {"tag0", "value0"},
-                                  {"tag1", "value1"}, {"confidence", "none"}},
-                              .actions = {"unblock"},
-                              .matches = {{.op = "random",
-                                  .op_value = "val",
-                                  .highlight = "val"sv,
-                                  .args = {{
-                                      .value = "value"sv,
-                                      .address = "query",
-                                      .path = {"root", "key"},
-                                  }}}}});
+    EXPECT_ACTIONS(result_object, {{"unknown", {}}});
 
-    EXPECT_ACTIONS(output, {{"unknown", {}}});
-
-    ddwaf_object_free(&output);
+    ddwaf_object_free(&result_object);
 }
 
 TEST(TestEventSerializer, NoMonitorActions)
 {
-    core_rule rule{"xasd1022", "random rule",
-        {{"type", "test"}, {"category", "none"}, {"tag0", "value0"}, {"tag1", "value1"},
-            {"confidence", "none"}},
-        std::make_shared<expression>(), {"monitor"}};
+    auto action_definitions = action_mapper_builder().build();
 
-    ddwaf::event event;
-    event.rule = &rule;
-    event.matches = {
-        {.args = {{.name = "input",
-             .resolved = "value"sv,
-             .address = "query",
-             .key_path = {"root", "key"}}},
-            .highlights = {"val"sv},
-            .operator_name = "random",
-            .operator_value = "val"},
+    ddwaf::match_obfuscator obfuscator;
+    result_serializer serializer(obfuscator, action_definitions);
+
+    std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"},
+        {"tag0", "value0"}, {"tag1", "value1"}, {"confidence", "none"}};
+    std::vector<std::string> actions{"monitor"};
+    std::vector<rule_attribute> attributes;
+
+    rule_result result{
+        .event =
+            rule_event{
+                .rule{
+                    .id = "xasd1022",
+                    .name = "random rule",
+                    .tags = tags,
+                },
+                .matches = {{.args = {{.name = "input",
+                                 .resolved = "value"sv,
+                                 .address = "query",
+                                 .key_path = {"root", "key"}}},
+                    .highlights = {"val"sv},
+                    .operator_name = "random",
+                    .operator_value = "val"}},
+            },
+        .action_override = {},
+        .actions = actions,
+        .attributes = attributes,
     };
 
-    auto actions = action_mapper_builder().build();
-    ddwaf::match_obfuscator obfuscator;
-    ddwaf::event_serializer serializer(obfuscator, actions);
+    std::vector<rule_result> results{result};
+    object_store store;
+    attribute_collector collector;
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
-
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
-
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
-
-    std::vector<ddwaf::event> events{event};
-    serializer.serialize(events, events_object, actions_object);
-
-    EXPECT_EVENTS(output, {.id = "xasd1022",
-                              .name = "random rule",
-                              .tags = {{"type", "test"}, {"category", "none"}, {"tag0", "value0"},
-                                  {"tag1", "value1"}, {"confidence", "none"}},
-                              .actions = {"monitor"},
-                              .matches = {{.op = "random",
-                                  .op_value = "val",
-                                  .highlight = "val"sv,
-                                  .args = {{
-                                      .value = "value"sv,
-                                      .address = "query",
-                                      .path = {"root", "key"},
-                                  }}}}});
+    ddwaf::timer deadline{2s};
+    auto [result_object, output] = result_serializer::initialise_result_object();
+    serializer.serialize(store, results, collector, deadline, output);
+    EXPECT_EVENTS(
+        result_object, {.id = "xasd1022",
+                           .name = "random rule",
+                           .tags = {{"type", "test"}, {"category", "none"}, {"tag0", "value0"},
+                               {"tag1", "value1"}, {"confidence", "none"}},
+                           .actions = {"monitor"},
+                           .matches = {{.op = "random",
+                               .op_value = "val",
+                               .highlight = "val"sv,
+                               .args = {{
+                                   .value = "value"sv,
+                                   .address = "query",
+                                   .path = {"root", "key"},
+                               }}}}});
 
     // Monitor action should not be reported here
-    EXPECT_ACTIONS(output, {});
+    EXPECT_ACTIONS(result_object, {});
 
-    ddwaf_object_free(&output);
+    ddwaf_object_free(&result_object);
 }
 
 TEST(TestEventSerializer, UndefinedActions)
 {
-    core_rule rule{"xasd1022", "random rule",
-        {{"type", "test"}, {"category", "none"}, {"tag0", "value0"}, {"tag1", "value1"},
-            {"confidence", "none"}},
-        std::make_shared<expression>(), {"unblock_request"}};
+    auto action_definitions = action_mapper_builder().build();
 
-    ddwaf::event event;
-    event.rule = &rule;
-    event.matches = {
-        {.args = {{.name = "input",
-             .resolved = "value"sv,
-             .address = "query",
-             .key_path = {"root", "key"}}},
-            .highlights = {"val"sv},
-            .operator_name = "random",
-            .operator_value = "val"},
+    ddwaf::match_obfuscator obfuscator;
+    result_serializer serializer(obfuscator, action_definitions);
+
+    std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"},
+        {"tag0", "value0"}, {"tag1", "value1"}, {"confidence", "none"}};
+    std::vector<std::string> actions{"unblock_request"};
+    std::vector<rule_attribute> attributes;
+
+    rule_result result{
+        .event =
+            rule_event{
+                .rule{
+                    .id = "xasd1022",
+                    .name = "random rule",
+                    .tags = tags,
+                },
+                .matches = {{.args = {{.name = "input",
+                                 .resolved = "value"sv,
+                                 .address = "query",
+                                 .key_path = {"root", "key"}}},
+                    .highlights = {"val"sv},
+                    .operator_name = "random",
+                    .operator_value = "val"}},
+            },
+        .action_override = {},
+        .actions = actions,
+        .attributes = attributes,
     };
 
-    auto actions = action_mapper_builder().build();
-    ddwaf::match_obfuscator obfuscator;
-    ddwaf::event_serializer serializer(obfuscator, actions);
+    std::vector<rule_result> results{result};
+    object_store store;
+    attribute_collector collector;
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
-
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
-
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
-
-    std::vector<ddwaf::event> events{event};
-    serializer.serialize(events, events_object, actions_object);
-
-    EXPECT_EVENTS(output, {.id = "xasd1022",
-                              .name = "random rule",
-                              .tags = {{"type", "test"}, {"category", "none"}, {"tag0", "value0"},
-                                  {"tag1", "value1"}, {"confidence", "none"}},
-                              .actions = {"unblock_request"},
-                              .matches = {{.op = "random",
-                                  .op_value = "val",
-                                  .highlight = "val"sv,
-                                  .args = {{
-                                      .value = "value"sv,
-                                      .address = "query",
-                                      .path = {"root", "key"},
-                                  }}}}});
+    ddwaf::timer deadline{2s};
+    auto [result_object, output] = result_serializer::initialise_result_object();
+    serializer.serialize(store, results, collector, deadline, output);
+    EXPECT_EVENTS(
+        result_object, {.id = "xasd1022",
+                           .name = "random rule",
+                           .tags = {{"type", "test"}, {"category", "none"}, {"tag0", "value0"},
+                               {"tag1", "value1"}, {"confidence", "none"}},
+                           .actions = {"unblock_request"},
+                           .matches = {{.op = "random",
+                               .op_value = "val",
+                               .highlight = "val"sv,
+                               .args = {{
+                                   .value = "value"sv,
+                                   .address = "query",
+                                   .path = {"root", "key"},
+                               }}}}});
 
     // Monitor action should not be reported here
-    EXPECT_ACTIONS(output, {});
+    EXPECT_ACTIONS(result_object, {});
 
-    ddwaf_object_free(&output);
+    ddwaf_object_free(&result_object);
 }
 
 TEST(TestEventSerializer, StackTraceAction)
 {
-    core_rule rule{"xasd1022", "random rule",
-        {{"type", "test"}, {"category", "none"}, {"tag0", "value0"}, {"tag1", "value1"},
-            {"confidence", "none"}},
-        std::make_shared<expression>(), {"stack_trace"}};
+    auto action_definitions = action_mapper_builder().build();
 
-    ddwaf::event event;
-    event.rule = &rule;
-    event.matches = {
-        {.args = {{.name = "input",
-             .resolved = "value"sv,
-             .address = "query",
-             .key_path = {"root", "key"}}},
-            .highlights = {"val"sv},
-            .operator_name = "random",
-            .operator_value = "val"},
+    ddwaf::match_obfuscator obfuscator;
+    result_serializer serializer(obfuscator, action_definitions);
+
+    std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"},
+        {"tag0", "value0"}, {"tag1", "value1"}, {"confidence", "none"}};
+    std::vector<std::string> actions{"stack_trace"};
+    std::vector<rule_attribute> attributes;
+
+    rule_result result{
+        .event =
+            rule_event{
+                .rule{
+                    .id = "xasd1022",
+                    .name = "random rule",
+                    .tags = tags,
+                },
+                .matches = {{.args = {{.name = "input",
+                                 .resolved = "value"sv,
+                                 .address = "query",
+                                 .key_path = {"root", "key"}}},
+                    .highlights = {"val"sv},
+                    .operator_name = "random",
+                    .operator_value = "val"}},
+            },
+        .action_override = {},
+        .actions = actions,
+        .attributes = attributes,
     };
 
-    auto actions = action_mapper_builder().build();
-    ddwaf::match_obfuscator obfuscator;
-    ddwaf::event_serializer serializer(obfuscator, actions);
+    std::vector<rule_result> results{result};
+    object_store store;
+    attribute_collector collector;
 
-    ddwaf_object output;
-    ddwaf_object_map(&output);
-
-    ddwaf_object tmp;
-    ddwaf_object_map_addl(&output, STRL("events"), ddwaf_object_array(&tmp));
-    ddwaf_object_map_addl(&output, STRL("actions"), ddwaf_object_map(&tmp));
-
-    ddwaf_object &events_object = output.array[0];
-    ddwaf_object &actions_object = output.array[1];
-
-    std::vector<ddwaf::event> events{event};
-    serializer.serialize(events, events_object, actions_object);
-
-    EXPECT_EVENTS(output, {.id = "xasd1022",
-                              .name = "random rule",
-                              .stack_id = "*",
-                              .tags = {{"type", "test"}, {"category", "none"}, {"tag0", "value0"},
-                                  {"tag1", "value1"}, {"confidence", "none"}},
-                              .actions = {"stack_trace"},
-                              .matches = {{.op = "random",
-                                  .op_value = "val",
-                                  .highlight = "val"sv,
-                                  .args = {{
-                                      .value = "value"sv,
-                                      .address = "query",
-                                      .path = {"root", "key"},
-                                  }}}}});
+    ddwaf::timer deadline{2s};
+    auto [result_object, output] = result_serializer::initialise_result_object();
+    serializer.serialize(store, results, collector, deadline, output);
+    EXPECT_EVENTS(
+        result_object, {.id = "xasd1022",
+                           .name = "random rule",
+                           .stack_id = "*",
+                           .tags = {{"type", "test"}, {"category", "none"}, {"tag0", "value0"},
+                               {"tag1", "value1"}, {"confidence", "none"}},
+                           .actions = {"stack_trace"},
+                           .matches = {{.op = "random",
+                               .op_value = "val",
+                               .highlight = "val"sv,
+                               .args = {{
+                                   .value = "value"sv,
+                                   .address = "query",
+                                   .path = {"root", "key"},
+                               }}}}});
 
     std::string stack_id;
 
     {
-        auto data = ddwaf::test::object_to_json(events_object);
+        auto data = ddwaf::test::object_to_json(output.events);
         YAML::Node doc = YAML::Load(data.c_str());
-        auto events = doc.as<std::list<ddwaf::test::event>>();
-        ASSERT_EQ(events.size(), 1);
-        stack_id = events.begin()->stack_id;
+        auto results = doc.as<std::list<ddwaf::test::event>>();
+        ASSERT_EQ(results.size(), 1);
+        stack_id = results.begin()->stack_id;
     }
 
     {
-        auto data = ddwaf::test::object_to_json(actions_object);
+        auto data = ddwaf::test::object_to_json(output.actions);
         YAML::Node doc = YAML::Load(data.c_str());
         auto obtained = doc.as<ddwaf::test::action_map>();
         EXPECT_TRUE(obtained.contains("generate_stack"));
@@ -615,7 +684,7 @@ TEST(TestEventSerializer, StackTraceAction)
         EXPECT_EQ(it->second.at("stack_id"), stack_id);
     }
 
-    ddwaf_object_free(&output);
+    ddwaf_object_free(&result_object);
 }
 
 } // namespace

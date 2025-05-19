@@ -350,7 +350,7 @@ TEST(TestContextResultIntegration, ResultMatch)
     const auto *keep = ddwaf_object_find(&result, STRL("keep"));
     ASSERT_NE(keep, nullptr);
     EXPECT_EQ(ddwaf_object_type(keep), DDWAF_OBJ_BOOL);
-    EXPECT_FALSE(ddwaf_object_get_bool(keep));
+    EXPECT_TRUE(ddwaf_object_get_bool(keep));
 
     ddwaf_object_free(&result);
     ddwaf_context_destroy(context);
@@ -407,7 +407,7 @@ TEST(TestContextResultIntegration, ResultMatchWithTimeout)
     const auto *keep = ddwaf_object_find(&result, STRL("keep"));
     ASSERT_NE(keep, nullptr);
     EXPECT_EQ(ddwaf_object_type(keep), DDWAF_OBJ_BOOL);
-    EXPECT_FALSE(ddwaf_object_get_bool(keep));
+    EXPECT_TRUE(ddwaf_object_get_bool(keep));
 
     ddwaf_object_free(&result);
     ddwaf_context_destroy(context);
@@ -470,7 +470,7 @@ TEST(TestContextResultIntegration, ResultMatchWithTimeoutOnPreprocessor)
     const auto *keep = ddwaf_object_find(&result, STRL("keep"));
     ASSERT_NE(keep, nullptr);
     EXPECT_EQ(ddwaf_object_type(keep), DDWAF_OBJ_BOOL);
-    EXPECT_FALSE(ddwaf_object_get_bool(keep));
+    EXPECT_TRUE(ddwaf_object_get_bool(keep));
 
     ddwaf_object_free(&result);
     ddwaf_context_destroy(context);
