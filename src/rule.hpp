@@ -21,16 +21,6 @@
 
 namespace ddwaf {
 
-struct rule_attribute {
-    struct input_target {
-        std::string name;
-        target_index index;
-        std::vector<std::string> key_path;
-    };
-    std::variant<input_target, std::string, uint64_t, int64_t, double, bool> input;
-    std::string output;
-};
-
 /**
  * Flags that control rule behavior
  */
@@ -64,9 +54,19 @@ constexpr bool operator!=(ddwaf::rule_flags a, ddwaf::rule_flags b) noexcept
 constexpr bool contains(rule_flags set, rule_flags opt) { return (set & opt) != rule_flags::none; }
 
 enum class rule_verdict : uint8_t { none = 0, monitor = 1, block = 2 };
+enum class rule_source : uint8_t { base = 1, user = 2 };
+
+struct rule_attribute {
+    struct input_target {
+        std::string name;
+        target_index index;
+        std::vector<std::string> key_path;
+    };
+    std::variant<input_target, std::string, uint64_t, int64_t, double, bool> input;
+    std::string output;
+};
 
 struct rule_event {
-    // Event Data
     struct {
         std::string_view id;
         std::string_view name;
@@ -87,16 +87,21 @@ struct rule_result {
     std::reference_wrapper<const std::vector<rule_attribute>> attributes;
 };
 
+struct rule_cache {
+    bool attributes_generated{false};
+    expression::cache_type expr_cache;
+};
+
 // A core rule constitutes the most important type of entity within the
 // evaluation process. These rules are "request-bound", i.e. they are used to
 // specifically analyse request data, as opposed to other types of rules such
 // as threshold rules which analyse data across requests.
 class core_rule {
 public:
-    enum class source_type : uint8_t { base = 1, user = 2 };
+    using source_type = rule_source;
     using verdict_type = rule_verdict;
 
-    using cache_type = expression::cache_type;
+    using cache_type = rule_cache;
 
     core_rule(std::string id,                              // Required: Unique identifier
         std::string name,                                  // Required: Human-readable name

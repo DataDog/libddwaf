@@ -72,7 +72,7 @@ TEST(TestRule, Match)
         EXPECT_FALSE(result.has_value());
     }
 
-    EXPECT_TRUE(cache.result);
+    EXPECT_TRUE(cache.expr_cache.result);
 
     ddwaf_object_free(&root);
 }
@@ -116,7 +116,7 @@ TEST(TestRule, EphemeralMatch)
         EXPECT_TRUE(result->ephemeral);
     }
 
-    EXPECT_FALSE(cache.result);
+    EXPECT_FALSE(cache.expr_cache.result);
 
     ddwaf_object_free(&root);
 }
