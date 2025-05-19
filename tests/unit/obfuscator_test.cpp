@@ -29,45 +29,45 @@ TEST(TestObfuscator, ValidateValueRegex)
 
 TEST(TestObfuscator, IsSensitiveKeyValue)
 {
-    ddwaf::obfuscator event_obfuscator("^password$"sv, "value"sv);
+    ddwaf::match_obfuscator obfuscator("^password$"sv, "value"sv);
 
-    EXPECT_TRUE(event_obfuscator.is_sensitive_key("password"sv));
-    EXPECT_FALSE(event_obfuscator.is_sensitive_key("passworde"sv));
-    EXPECT_FALSE(event_obfuscator.is_sensitive_key("random"sv));
+    EXPECT_TRUE(obfuscator.is_sensitive_key("password"sv));
+    EXPECT_FALSE(obfuscator.is_sensitive_key("passworde"sv));
+    EXPECT_FALSE(obfuscator.is_sensitive_key("random"sv));
 
-    EXPECT_TRUE(event_obfuscator.is_sensitive_value("random value"sv));
-    EXPECT_TRUE(event_obfuscator.is_sensitive_value("value"sv));
-    EXPECT_FALSE(event_obfuscator.is_sensitive_value("random"sv));
+    EXPECT_TRUE(obfuscator.is_sensitive_value("random value"sv));
+    EXPECT_TRUE(obfuscator.is_sensitive_value("value"sv));
+    EXPECT_FALSE(obfuscator.is_sensitive_value("random"sv));
 }
 
 TEST(TestObfuscator, IsSensitiveKey)
 {
-    ddwaf::obfuscator event_obfuscator("^password$"sv);
+    ddwaf::match_obfuscator obfuscator("^password$"sv);
 
-    EXPECT_TRUE(event_obfuscator.is_sensitive_key("password"sv));
-    EXPECT_FALSE(event_obfuscator.is_sensitive_key("passworde"sv));
-    EXPECT_FALSE(event_obfuscator.is_sensitive_key("random"sv));
+    EXPECT_TRUE(obfuscator.is_sensitive_key("password"sv));
+    EXPECT_FALSE(obfuscator.is_sensitive_key("passworde"sv));
+    EXPECT_FALSE(obfuscator.is_sensitive_key("random"sv));
 
-    EXPECT_FALSE(event_obfuscator.is_sensitive_value("random value"sv));
+    EXPECT_FALSE(obfuscator.is_sensitive_value("random value"sv));
 }
 
 TEST(TestObfuscator, IsSensitiveValue)
 {
-    ddwaf::obfuscator event_obfuscator({}, "value"sv);
+    ddwaf::match_obfuscator obfuscator({}, "value"sv);
 
-    EXPECT_FALSE(event_obfuscator.is_sensitive_key("password"sv));
+    EXPECT_FALSE(obfuscator.is_sensitive_key("password"sv));
 
-    EXPECT_TRUE(event_obfuscator.is_sensitive_value("random value"sv));
-    EXPECT_TRUE(event_obfuscator.is_sensitive_value("value"sv));
-    EXPECT_FALSE(event_obfuscator.is_sensitive_value("random"sv));
+    EXPECT_TRUE(obfuscator.is_sensitive_value("random value"sv));
+    EXPECT_TRUE(obfuscator.is_sensitive_value("value"sv));
+    EXPECT_FALSE(obfuscator.is_sensitive_value("random"sv));
 }
 
 TEST(TestObfuscator, IsSensitiveKeyValueNoRegexes)
 {
-    ddwaf::obfuscator event_obfuscator;
+    ddwaf::match_obfuscator obfuscator;
 
-    EXPECT_FALSE(event_obfuscator.is_sensitive_key("password"sv));
-    EXPECT_FALSE(event_obfuscator.is_sensitive_value("value"sv));
+    EXPECT_FALSE(obfuscator.is_sensitive_key("password"sv));
+    EXPECT_FALSE(obfuscator.is_sensitive_value("value"sv));
 }
 
 TEST(TestObfuscator, IsSensitiveKeyDefaultRegex)
@@ -91,13 +91,13 @@ TEST(TestObfuscator, IsSensitiveKeyDefaultRegex)
         "CONSUMER_SECRET", "CONSUMERSECRET", "SIGNED", "SIGNATURE", "BEARER", "AUTHORIZATION",
         "JSESSIONID", "PHPSESSID", "ASP.NET_SESSIONID", "ASP.NET-SESSIONID", "SID", "JWT"};
 
-    ddwaf::obfuscator event_obfuscator{ddwaf::obfuscator::default_key_regex_str, {}};
-    for (auto &sample : samples) { EXPECT_TRUE(event_obfuscator.is_sensitive_key(sample)); }
+    ddwaf::match_obfuscator obfuscator{ddwaf::match_obfuscator::default_key_regex_str, {}};
+    for (auto &sample : samples) { EXPECT_TRUE(obfuscator.is_sensitive_key(sample)); }
 }
 
 TEST(TestObfuscator, MatchObfuscationCustomRegexes)
 {
-    ddwaf::obfuscator event_obfuscator("^password$"sv, "value"sv);
+    ddwaf::match_obfuscator obfuscator("^password$"sv, "value"sv);
     {
         // Verify that when the key matches, both value and highlight are redacted
         condition_match match{
@@ -106,7 +106,7 @@ TEST(TestObfuscator, MatchObfuscationCustomRegexes)
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
         EXPECT_STR(match.args[0].resolved, obfuscator::redaction_msg);
     }
@@ -120,7 +120,7 @@ TEST(TestObfuscator, MatchObfuscationCustomRegexes)
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
         EXPECT_STR(match.args[0].resolved, obfuscator::redaction_msg);
     }
@@ -134,7 +134,7 @@ TEST(TestObfuscator, MatchObfuscationCustomRegexes)
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
         EXPECT_STR(match.args[0].resolved, obfuscator::redaction_msg);
     }
@@ -149,7 +149,7 @@ TEST(TestObfuscator, MatchObfuscationCustomRegexes)
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], "not sensitive");
         EXPECT_STR(match.args[0].resolved, obfuscator::redaction_msg);
     }
@@ -162,7 +162,7 @@ TEST(TestObfuscator, MatchObfuscationCustomRegexes)
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], "value");
         EXPECT_STR(match.args[0].resolved, "not sensitive");
     }
@@ -176,7 +176,7 @@ TEST(TestObfuscator, MatchObfuscationCustomRegexes)
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], "random");
         EXPECT_STR(match.args[0].resolved, "random");
     }
@@ -184,7 +184,7 @@ TEST(TestObfuscator, MatchObfuscationCustomRegexes)
 
 TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
 {
-    ddwaf::obfuscator event_obfuscator{
+    ddwaf::match_obfuscator obfuscator{
         obfuscator::default_key_regex_str, obfuscator::default_value_regex_str};
 
     {
@@ -195,7 +195,7 @@ TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
         EXPECT_STR(match.args[0].resolved, obfuscator::redaction_msg);
     }
@@ -208,7 +208,7 @@ TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
         EXPECT_STR(match.args[0].resolved, "password=<Redacted>");
     }
@@ -223,7 +223,7 @@ TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
         EXPECT_STR(match.args[0].resolved, "token:<Redacted>");
     }
@@ -240,7 +240,7 @@ TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], "not sensitive");
         EXPECT_STR(match.args[0].resolved, "ssh-rsa <Redacted>");
     }
@@ -254,7 +254,7 @@ TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], "password=2020");
         EXPECT_STR(match.args[0].resolved, "not sensitive");
         EXPECT_STR(match.args[1].resolved, "password=<Redacted>");
@@ -269,7 +269,7 @@ TEST(TestObfuscator, MatchObfuscationDefaultRegexes)
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], "random");
         EXPECT_STR(match.args[0].resolved, "random");
     }
@@ -315,7 +315,7 @@ MIIEpAIBAAKCAQEAwKFIxQKIn8FJyX1TqV2QIDAQABAoIBAQC/UYHm6+NHmY6U
             R"(-----BEGIN RSA PRIVATE KEY-----<Redacted>-----END RSA PRIVATE KEY-----,ghp_<Redacted>)"},
     };
 
-    ddwaf::obfuscator event_obfuscator{
+    ddwaf::match_obfuscator obfuscator{
         obfuscator::default_key_regex_str, obfuscator::default_value_regex_str};
 
     for (const auto &[original, expected] : test_cases) {
@@ -324,7 +324,7 @@ MIIEpAIBAAKCAQEAwKFIxQKIn8FJyX1TqV2QIDAQABAoIBAQC/UYHm6+NHmY6U
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.args[0].resolved, expected);
     }
 }
@@ -333,7 +333,7 @@ TEST(TestObfuscator, FallbackToDefaultRegexes)
 {
     // Backreferences are not supported, therefore these regexes will cause the
     // obfuscator to revert to the default
-    ddwaf::obfuscator event_obfuscator{R"(^(a*)\1$)", R"(^(a*)\1$)"};
+    ddwaf::match_obfuscator obfuscator{R"(^(a*)\1$)", R"(^(a*)\1$)"};
 
     {
         // Verify that when the key matches, both value and highlight are redacted
@@ -343,7 +343,7 @@ TEST(TestObfuscator, FallbackToDefaultRegexes)
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
         EXPECT_STR(match.args[0].resolved, obfuscator::redaction_msg);
     }
@@ -356,7 +356,7 @@ TEST(TestObfuscator, FallbackToDefaultRegexes)
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
         EXPECT_STR(match.args[0].resolved, "password=<Redacted>");
     }
@@ -371,7 +371,7 @@ TEST(TestObfuscator, FallbackToDefaultRegexes)
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], obfuscator::redaction_msg);
         EXPECT_STR(match.args[0].resolved, "token:<Redacted>");
     }
@@ -388,7 +388,7 @@ TEST(TestObfuscator, FallbackToDefaultRegexes)
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], "not sensitive");
         EXPECT_STR(match.args[0].resolved, "ssh-rsa <Redacted>");
     }
@@ -401,7 +401,7 @@ TEST(TestObfuscator, FallbackToDefaultRegexes)
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], "password=2020");
         EXPECT_STR(match.args[0].resolved, "not sensitive");
     }
@@ -415,7 +415,7 @@ TEST(TestObfuscator, FallbackToDefaultRegexes)
             .operator_name = {},
             .operator_value = {}};
 
-        event_obfuscator.obfuscate_match(match);
+        obfuscator.obfuscate_match(match);
         EXPECT_STR(match.highlights[0], "random");
         EXPECT_STR(match.args[0].resolved, "random");
     }

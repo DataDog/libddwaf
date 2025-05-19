@@ -49,7 +49,7 @@ const char *log_level_to_str(DDWAF_LOG_LEVEL level)
     return "off";
 }
 
-std::shared_ptr<ddwaf::obfuscator> obfuscator_from_config(const ddwaf_config *config)
+std::shared_ptr<ddwaf::match_obfuscator> obfuscator_from_config(const ddwaf_config *config)
 {
     std::string_view key_regex;
     std::string_view value_regex;
@@ -64,7 +64,7 @@ std::shared_ptr<ddwaf::obfuscator> obfuscator_from_config(const ddwaf_config *co
         }
     }
 
-    return std::make_shared<ddwaf::obfuscator>(key_regex, value_regex);
+    return std::make_shared<ddwaf::match_obfuscator>(key_regex, value_regex);
 }
 
 ddwaf::object_limits limits_from_config(const ddwaf_config *config)

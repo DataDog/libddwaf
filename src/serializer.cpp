@@ -12,8 +12,8 @@
 #include "action_mapper.hpp"
 #include "condition/base.hpp"
 #include "ddwaf.h"
-#include "event.hpp"
 #include "rule.hpp"
+#include "serializer.hpp"
 #include "uuid.hpp"
 
 namespace ddwaf {
@@ -29,13 +29,11 @@ ddwaf_object *to_object(ddwaf_object &tmp, std::string_view str)
     return ddwaf_object_stringl(&tmp, str.data(), str.size());
 }
 
-void serialize_match(condition_match &match, ddwaf_object &match_map, auto &obfuscator)
+void serialize_match(condition_match &match, ddwaf_object &match_map)
 {
     ddwaf_object tmp;
     ddwaf_object param;
     ddwaf_object_map(&param);
-
-    obfuscator.obfuscate_match(match);
 
     ddwaf_object highlight_arr;
     ddwaf_object_array(&highlight_arr);
@@ -236,22 +234,22 @@ void consolidate_actions(std::string_view action_override,
     }
 }
 
-ddwaf_object serialize_event(rule_event &event, const ddwaf::obfuscator &obfuscator,
+void serialize_event(rule_event &event, const match_obfuscator &obfuscator,
     std::string_view action_override, const std::vector<std::string> &rule_actions,
-    action_tracker &actions)
+    action_tracker &actions, ddwaf_object &event_array)
 {
     ddwaf_object tmp;
 
     ddwaf_object tags_map;
     ddwaf_object_map(&tags_map);
-    for (const auto &[key, value] : event.tags.get()) {
+    for (const auto &[key, value] : event.rule.tags.get()) {
         ddwaf_object_map_addl(&tags_map, key.c_str(), key.size(), to_object(tmp, value));
     }
 
     ddwaf_object rule_map;
     ddwaf_object_map(&rule_map);
-    ddwaf_object_map_add(&rule_map, "id", to_object(tmp, event.id));
-    ddwaf_object_map_add(&rule_map, "name", to_object(tmp, event.name));
+    ddwaf_object_map_add(&rule_map, "id", to_object(tmp, event.rule.id));
+    ddwaf_object_map_add(&rule_map, "name", to_object(tmp, event.rule.name));
     ddwaf_object_map_add(&rule_map, "tags", &tags_map);
 
     auto [actions_array, has_stack_id] =
@@ -261,9 +259,11 @@ ddwaf_object serialize_event(rule_event &event, const ddwaf::obfuscator &obfusca
     ddwaf_object match_array;
     ddwaf_object_array(&match_array);
     for (auto &match : event.matches) {
+        obfuscator.obfuscate_match(match);
+
         ddwaf_object match_map;
         ddwaf_object_map(&match_map);
-        serialize_match(match, match_map, obfuscator);
+        serialize_match(match, match_map);
         ddwaf_object_array_add(&match_array, &match_map);
     }
 
@@ -275,7 +275,7 @@ ddwaf_object serialize_event(rule_event &event, const ddwaf::obfuscator &obfusca
         ddwaf_object_map_add(&root_map, "stack_id", to_object(tmp, actions.stack_id));
     }
 
-    return root_map;
+    ddwaf_object_array_add(&event_array, &root_map);
 }
 
 void serialize_action(std::string_view id, ddwaf_object &action_map, const action_tracker &actions)
@@ -318,54 +318,55 @@ void serialize_actions(ddwaf_object &action_map, const action_tracker &actions)
     }
 }
 
-void collect_attribute(
-    const object_store &store, const rule_attribute &attr, attribute_collector &collector)
+void collect_attributes(const object_store &store, const std::vector<rule_attribute> &attributes,
+    attribute_collector &collector)
 {
-    if (std::holds_alternative<rule_attribute::input_target>(attr.input)) {
-        auto input = std::get<rule_attribute::input_target>(attr.input);
-        collector.collect(store, input.index, input.key_path, attr.output);
-    } else if (std::holds_alternative<std::string>(attr.input)) {
-        collector.emplace(attr.output, std::get<std::string>(attr.input));
-    } else if (std::holds_alternative<uint64_t>(attr.input)) {
-        collector.emplace(attr.output, std::get<uint64_t>(attr.input));
-    } else if (std::holds_alternative<int64_t>(attr.input)) {
-        collector.emplace(attr.output, std::get<int64_t>(attr.input));
-    } else if (std::holds_alternative<double>(attr.input)) {
-        collector.emplace(attr.output, std::get<double>(attr.input));
-    } else if (std::holds_alternative<bool>(attr.input)) {
-        collector.emplace(attr.output, std::get<bool>(attr.input));
+    for (const auto &attr : attributes) {
+        if (std::holds_alternative<rule_attribute::input_target>(attr.input)) {
+            auto input = std::get<rule_attribute::input_target>(attr.input);
+            collector.collect(store, input.index, input.key_path, attr.output);
+        } else if (std::holds_alternative<std::string>(attr.input)) {
+            collector.emplace(attr.output, std::get<std::string>(attr.input));
+        } else if (std::holds_alternative<uint64_t>(attr.input)) {
+            collector.emplace(attr.output, std::get<uint64_t>(attr.input));
+        } else if (std::holds_alternative<int64_t>(attr.input)) {
+            collector.emplace(attr.output, std::get<int64_t>(attr.input));
+        } else if (std::holds_alternative<double>(attr.input)) {
+            collector.emplace(attr.output, std::get<double>(attr.input));
+        } else if (std::holds_alternative<bool>(attr.input)) {
+            collector.emplace(attr.output, std::get<bool>(attr.input));
+        }
     }
 }
 
 } // namespace
 
-void event_serializer::serialize(const object_store &store, std::vector<rule_result> &results,
-    attribute_collector &collector, result_components output) const
+void result_serializer::serialize(const object_store &store, std::vector<rule_result> &results,
+    attribute_collector &collector, const timer &deadline, result_components output) const
 {
     action_tracker actions{
         .blocking_action = {}, .stack_id = {}, .non_blocking_actions = {}, .mapper = actions_};
 
     bool final_keep = false;
-
     for (auto &result : results) {
         final_keep |= result.keep;
 
         if (result.event) {
-            auto event = serialize_event(
-                result.event.value(), obfuscator_, result.action_override, result.actions, actions);
-            ddwaf_object_array_add(&output.events, &event);
+            serialize_event(result.event.value(), obfuscator_, result.action_override,
+                result.actions, actions, output.events);
         } else {
             consolidate_actions(result.action_override, result.actions, actions);
         }
 
-        for (const auto &attribute : result.attributes.get()) {
-            collect_attribute(store, attribute, collector);
-        }
+        collect_attributes(store, result.attributes.get(), collector);
     }
 
-    ddwaf_object keep_obj;
-    ddwaf_object_bool(&keep_obj, final_keep);
-    object::assign(output.keep, keep_obj);
+    // Using the interface functions would replace the key contained within the
+    // object. This will not be an issue in v2.
+    output.duration.uintValue = deadline.elapsed().count();
+    output.timeout.boolean = deadline.expired_before();
+    output.keep.boolean = final_keep;
+
     object::assign(output.attributes, collector.collect_pending(store));
     serialize_actions(output.actions, actions);
 }

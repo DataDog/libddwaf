@@ -15,7 +15,6 @@
 #include "clock.hpp"
 #include "context.hpp"
 #include "ddwaf.h"
-#include "event.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "log.hpp"
@@ -23,6 +22,7 @@
 #include "object_store.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
+#include "serializer.hpp"
 #include "target_address.hpp"
 #include "utils.hpp"
 
@@ -122,7 +122,7 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
         return {DDWAF_OK, move_object(result_object)};
     }
 
-    const event_serializer serializer(event_obfuscator_, actions_);
+    const result_serializer serializer(obfuscator_, actions_);
 
     try {
         // Evaluate preprocessors first in their own try-catch, if there's a
@@ -160,12 +160,7 @@ std::pair<DDWAF_RET_CODE, ddwaf_object> context::run(
     // available (e.g. from a postprocessor) and return a map of all attributes
     // generated during this call.
     // object::assign(result.attributes, collector_.collect_pending(store_));
-    serializer.serialize(results, collector_, output);
-
-    // Using the interface functions would replace the key contained within the
-    // object. This will not be an issue in v2.
-    output.duration.uintValue = deadline.elapsed().count();
-    output.timeout.boolean = deadline.expired_before();
+    serializer.serialize(store_, results, collector_, deadline, output);
 
     return {results.empty() ? DDWAF_OK : DDWAF_MATCH, move_object(result_object)};
 }

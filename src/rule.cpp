@@ -37,28 +37,13 @@ std::pair<rule_verdict, std::optional<rule_result>> core_rule::match(const objec
         .actions = actions_,
         .attributes = attributes_};
 
-    /*for (const auto &attr : attributes_) {*/
-    /*if (std::holds_alternative<rule_attribute::input_target>(attr.input)) {*/
-    /*auto input = std::get<rule_attribute::input_target>(attr.input);*/
-    /*collector.collect(store, input.index, input.key_path, attr.output);*/
-    /*} else if (std::holds_alternative<std::string>(attr.input)) {*/
-    /*collector.emplace(attr.output, std::get<std::string>(attr.input));*/
-    /*} else if (std::holds_alternative<uint64_t>(attr.input)) {*/
-    /*collector.emplace(attr.output, std::get<uint64_t>(attr.input));*/
-    /*} else if (std::holds_alternative<int64_t>(attr.input)) {*/
-    /*collector.emplace(attr.output, std::get<int64_t>(attr.input));*/
-    /*} else if (std::holds_alternative<double>(attr.input)) {*/
-    /*collector.emplace(attr.output, std::get<double>(attr.input));*/
-    /*} else if (std::holds_alternative<bool>(attr.input)) {*/
-    /*collector.emplace(attr.output, std::get<bool>(attr.input));*/
-    /*}*/
-    /*}*/
-
     if (contains(flags_, rule_flags::generate_event)) {
         result.event = {rule_event{
-            .id = id_,
-            .name = name_,
-            .tags = tags_,
+            .rule{
+                .id = id_,
+                .name = name_,
+                .tags = tags_,
+            },
             .matches = expression::get_matches(cache),
         }};
     }

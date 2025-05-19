@@ -33,7 +33,7 @@ public:
           postprocessors_(*ruleset_->postprocessors), rule_filters_(*ruleset_->rule_filters),
           input_filters_(*ruleset_->input_filters), rule_matchers_(*ruleset_->rule_matchers),
           exclusion_matchers_(*ruleset_->exclusion_matchers), actions_(*ruleset_->actions),
-          limits_(ruleset_->limits), event_obfuscator_(*ruleset_->event_obfuscator)
+          limits_(ruleset_->limits), obfuscator_(*ruleset_->obfuscator)
     {
         processor_cache_.reserve(
             ruleset_->preprocessors->size() + ruleset_->postprocessors->size());
@@ -102,7 +102,7 @@ protected:
     const action_mapper &actions_;
 
     const object_limits &limits_;
-    const obfuscator &event_obfuscator_;
+    const match_obfuscator &obfuscator_;
     // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 
     using input_filter = exclusion::input_filter;

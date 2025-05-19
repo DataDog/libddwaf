@@ -7,7 +7,7 @@
 #include "common/gtest_utils.hpp"
 
 #include "builder/action_mapper_builder.hpp"
-#include "event.hpp"
+#include "serializer.hpp"
 #include "rule.hpp"
 #include "utils.hpp"
 
@@ -19,7 +19,7 @@ namespace {
 TEST(TestEventSerializer, SerializeNothing)
 {
     ddwaf::action_mapper actions;
-    ddwaf::obfuscator obfuscator;
+    ddwaf::match_obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
     ddwaf_object output;
@@ -43,7 +43,7 @@ TEST(TestEventSerializer, SerializeNothing)
 
 TEST(TestEventSerializer, SerializeEmptyEvent)
 {
-    ddwaf::obfuscator obfuscator;
+    ddwaf::match_obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, action_mapper_builder().build());
 
     ddwaf_object output;
@@ -84,7 +84,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     builder.set_action("monitor_request", "monitor_request", {});
     auto actions = builder.build();
 
-    ddwaf::obfuscator obfuscator;
+    ddwaf::match_obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
     ddwaf_object output;
@@ -152,7 +152,7 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     builder.set_action("monitor_request", "monitor_request", {});
     auto actions = builder.build();
 
-    ddwaf::obfuscator obfuscator;
+    ddwaf::match_obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
     ddwaf_object output;
@@ -220,7 +220,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     builder.set_action("unblock", "unknown", {});
     auto actions = builder.build();
 
-    ddwaf::obfuscator obfuscator;
+    ddwaf::match_obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
     core_rule rule1{"xasd1022", "random rule", {{"type", "test"}, {"category", "none"}},
@@ -340,7 +340,7 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     };
 
     ddwaf::action_mapper actions;
-    ddwaf::obfuscator obfuscator;
+    ddwaf::match_obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
     ddwaf_object output;
@@ -396,7 +396,7 @@ TEST(TestEventSerializer, SerializeAllTags)
     builder.set_action("unblock", "unknown", {});
     auto actions = builder.build();
 
-    ddwaf::obfuscator obfuscator;
+    ddwaf::match_obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
     ddwaf_object output;
@@ -451,7 +451,7 @@ TEST(TestEventSerializer, NoMonitorActions)
     };
 
     auto actions = action_mapper_builder().build();
-    ddwaf::obfuscator obfuscator;
+    ddwaf::match_obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
     ddwaf_object output;
@@ -507,7 +507,7 @@ TEST(TestEventSerializer, UndefinedActions)
     };
 
     auto actions = action_mapper_builder().build();
-    ddwaf::obfuscator obfuscator;
+    ddwaf::match_obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
     ddwaf_object output;
@@ -563,7 +563,7 @@ TEST(TestEventSerializer, StackTraceAction)
     };
 
     auto actions = action_mapper_builder().build();
-    ddwaf::obfuscator obfuscator;
+    ddwaf::match_obfuscator obfuscator;
     ddwaf::event_serializer serializer(obfuscator, actions);
 
     ddwaf_object output;

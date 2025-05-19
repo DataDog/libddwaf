@@ -67,9 +67,11 @@ enum class rule_verdict : uint8_t { none = 0, monitor = 1, block = 2 };
 
 struct rule_event {
     // Event Data
-    std::string_view id;
-    std::string_view name;
-    std::reference_wrapper<const std::unordered_map<std::string, std::string>> tags;
+    struct {
+        std::string_view id;
+        std::string_view name;
+        std::reference_wrapper<const std::unordered_map<std::string, std::string>> tags;
+    } rule;
     std::vector<condition_match> matches;
 };
 
@@ -145,6 +147,7 @@ public:
     [[nodiscard]] std::string_view get_name() const { return name_; }
     [[nodiscard]] std::string_view get_type() const { return type_; }
     [[nodiscard]] rule_module_category get_module() const { return mod_; }
+    [[nodiscard]] verdict_type get_verdict() const { return verdict_; }
 
     [[nodiscard]] source_type get_source() const { return source_; }
 

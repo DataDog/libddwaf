@@ -25,18 +25,19 @@ struct result_components {
 };
 // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 
-class event_serializer {
+class result_serializer {
 public:
-    explicit event_serializer(
-        const ddwaf::obfuscator &event_obfuscator, const action_mapper &actions)
-        : obfuscator_(event_obfuscator), actions_(actions)
+    explicit result_serializer(const match_obfuscator &obfuscator, const action_mapper &actions)
+        : obfuscator_(obfuscator), actions_(actions)
     {}
 
-    void serialize(std::vector<rule_result> &results, attribute_collector &collector,
-        result_components output) const;
+    void serialize(const object_store &store, std::vector<rule_result> &results,
+        attribute_collector &collector, const timer &deadline, result_components output) const;
 
 protected:
-    const ddwaf::obfuscator &obfuscator_;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
+    const match_obfuscator &obfuscator_;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const action_mapper &actions_;
 };
 
