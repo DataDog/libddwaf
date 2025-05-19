@@ -4,16 +4,25 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <cstdint>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <unordered_set>
+#include <utility>
+#include <variant>
 #include <vector>
 
 #include "action_mapper.hpp"
+#include "attribute_collector.hpp"
+#include "clock.hpp"
 #include "condition/base.hpp"
 #include "ddwaf.h"
+#include "obfuscator.hpp"
+#include "object_store.hpp"
 #include "rule.hpp"
 #include "serializer.hpp"
+#include "utils.hpp"
 #include "uuid.hpp"
 
 namespace ddwaf {
@@ -123,21 +132,6 @@ void add_action_to_tracker(action_tracker &actions, std::string_view id, action_
 
         actions.non_blocking_actions.emplace(id);
     }
-}
-
-void serialize_empty_rule(ddwaf_object &rule_map)
-{
-    ddwaf_object tmp;
-    ddwaf_object tags_map;
-
-    ddwaf_object_map(&tags_map);
-    ddwaf_object_map_add(&tags_map, "type", to_object(tmp, ""));
-    ddwaf_object_map_add(&tags_map, "category", to_object(tmp, ""));
-
-    ddwaf_object_map(&rule_map);
-    ddwaf_object_map_add(&rule_map, "id", to_object(tmp, ""));
-    ddwaf_object_map_add(&rule_map, "name", to_object(tmp, ""));
-    ddwaf_object_map_add(&rule_map, "tags", &tags_map);
 }
 
 std::pair<ddwaf_object, /*stack id*/ bool> serialize_and_consolidate_actions(
@@ -389,7 +383,7 @@ std::pair<ddwaf_object, result_components> result_serializer::initialise_result_
         throw std::runtime_error("failed to generate result object");
     }
 
-    result_components res{.events = object.array[0],
+    const result_components res{.events = object.array[0],
         .actions = object.array[1],
         .duration = object.array[2],
         .timeout = object.array[3],

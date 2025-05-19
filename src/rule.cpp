@@ -12,6 +12,7 @@
 #include "object_store.hpp"
 #include "utils.hpp"
 #include <optional>
+#include <utility>
 
 namespace ddwaf {
 
