@@ -13,6 +13,7 @@
 #include "utils.hpp"
 #include <optional>
 #include <utility>
+#include <vector>
 
 namespace ddwaf {
 namespace {

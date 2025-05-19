@@ -51,3 +51,26 @@ rules:
       attributes:
         result.rule3: 
           address: value3
+  - id: rule4
+    name: rule4
+    tags:
+      type: flow4
+      category: category4
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value4
+          regex: ^rule4
+    output:
+      event: false
+      keep: false
+      attributes:
+        rule4.int64: 
+          value: -200
+        rule4.uint64: 
+          value: 200
+        rule4.double: 
+          value: 200.22
+        rule4.bool:
+          value: true
