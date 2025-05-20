@@ -37,7 +37,7 @@ bool attribute_collector::collect(const object_store &store, target_index input_
     if (state == collection_state::unavailable) {
         pending_.emplace(output, target_type{input_target, input_key_path});
     }
-    return true;
+    return state != collection_state::failed;
 }
 
 void attribute_collector::collect_pending(const object_store &store)

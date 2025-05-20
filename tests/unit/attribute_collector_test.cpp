@@ -255,13 +255,53 @@ TEST(TestAttributeCollector, CollectUnavailableKeyPath)
 
     attribute_collector collector;
     std::vector<std::string> key_path{"first", "second"};
-    EXPECT_TRUE(
+    EXPECT_FALSE(
         collector.collect(store, get_target_index("input_address"), key_path, "output_address"));
     auto attributes = collector.get_available_attributes();
 
     EXPECT_FALSE(collector.has_pending_attributes());
 
     EXPECT_EQ(ddwaf_object_size(&attributes), 0);
+
+    ddwaf_object_free(&attributes);
+}
+
+TEST(TestAttributeCollector, CollectPendingKeyPathScalar)
+{
+    ddwaf_object tmp;
+    ddwaf_object second_map;
+    ddwaf_object_map(&second_map);
+    ddwaf_object_map_add(&second_map, "second", ddwaf_object_string(&tmp, "value"));
+
+    ddwaf_object first_map;
+    ddwaf_object_map(&first_map);
+    ddwaf_object_map_add(&first_map, "first", &second_map);
+
+    ddwaf_object input_map;
+    ddwaf_object_map(&input_map);
+    ddwaf_object_map_add(&input_map, "input_address", &first_map);
+
+    object_store store;
+
+    attribute_collector collector;
+    std::vector<std::string> key_path{"first", "second"};
+    EXPECT_TRUE(
+        collector.collect(store, get_target_index("input_address"), key_path, "output_address"));
+    auto attributes = collector.get_available_attributes();
+    EXPECT_EQ(ddwaf_object_size(&attributes), 0);
+    EXPECT_TRUE(collector.has_pending_attributes());
+
+    store.insert(input_map);
+    collector.collect_pending(store);
+    attributes = collector.get_available_attributes();
+    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+    EXPECT_FALSE(collector.has_pending_attributes());
+
+    const auto *expected = ddwaf_object_get_index(&second_map, 0);
+    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
+    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
+    EXPECT_NE(obtained->stringValue, expected->stringValue);
+    EXPECT_STREQ(obtained->stringValue, expected->stringValue);
 
     ddwaf_object_free(&attributes);
 }
@@ -286,7 +326,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathInvalidValue)
 
     attribute_collector collector;
     std::vector<std::string> key_path{"first", "second"};
-    EXPECT_TRUE(
+    EXPECT_FALSE(
         collector.collect(store, get_target_index("input_address"), key_path, "output_address"));
     auto attributes = collector.get_available_attributes();
 
@@ -404,7 +444,7 @@ TEST(TestAttributeCollector, CollectInvalidObjectFromArray)
     store.insert(input_map);
 
     attribute_collector collector;
-    EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
+    EXPECT_FALSE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
     auto attributes = collector.get_available_attributes();
 
     EXPECT_FALSE(collector.has_pending_attributes());
