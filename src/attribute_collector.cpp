@@ -19,7 +19,7 @@ namespace ddwaf {
 
 bool attribute_collector::emplace(std::string_view key, const ddwaf_object &value, bool copy)
 {
-    if (emplaced_attributes_.contains(key)) {
+    if (emplaced_or_pending_attributes_.contains(key)) {
         return false;
     }
 
@@ -29,7 +29,7 @@ bool attribute_collector::emplace(std::string_view key, const ddwaf_object &valu
 bool attribute_collector::collect(const object_store &store, target_index input_target,
     std::span<const std::string> input_key_path, std::string_view output)
 {
-    if (emplaced_attributes_.contains(output)) {
+    if (emplaced_or_pending_attributes_.contains(output)) {
         return false;
     }
 
@@ -97,7 +97,7 @@ bool attribute_collector::emplace_helper(std::string_view key, const ddwaf_objec
             ddwaf_object_free(&object);
         }
     } else {
-        emplaced_attributes_.emplace(key);
+        emplaced_or_pending_attributes_.emplace(key);
     }
     return res;
 }

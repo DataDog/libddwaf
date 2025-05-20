@@ -21,8 +21,8 @@ public:
     attribute_collector() { ddwaf_object_map(&attributes_); }
     attribute_collector(const attribute_collector &) = delete;
     attribute_collector &operator=(const attribute_collector &) = delete;
-    attribute_collector(attribute_collector &&) = default;
-    attribute_collector &operator=(attribute_collector &&) = delete;
+    attribute_collector(attribute_collector &&other) noexcept = delete;
+    attribute_collector &operator=(attribute_collector &&other) noexcept = delete;
     ~attribute_collector() { ddwaf_object_free(&attributes_); }
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
@@ -75,7 +75,7 @@ public:
         auto output_object = attributes_;
         // Reset attributes
         ddwaf_object_map(&attributes_);
-        emplaced_attributes_.clear();
+        emplaced_or_pending_attributes_.clear();
 
         return output_object;
     }
@@ -93,7 +93,7 @@ protected:
     using target_type = std::pair<target_index, std::span<const std::string>>;
     std::unordered_map<std::string_view, target_type> pending_;
 
-    std::unordered_set<std::string_view> emplaced_attributes_;
+    std::unordered_set<std::string_view> emplaced_or_pending_attributes_;
     ddwaf_object attributes_{};
 };
 
