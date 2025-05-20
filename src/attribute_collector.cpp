@@ -39,7 +39,7 @@ void attribute_collector::collect(const object_store &store, target_index input_
     }
 }
 
-ddwaf_object attribute_collector::collect_pending(const object_store &store)
+void attribute_collector::collect_pending(const object_store &store)
 {
     for (auto it = pending_.begin(); it != pending_.end();) {
         auto output = it->first;
@@ -55,13 +55,6 @@ ddwaf_object attribute_collector::collect_pending(const object_store &store)
             ++it;
         }
     }
-
-    auto output_object = attributes_;
-    // Reset attributes
-    ddwaf_object_map(&attributes_);
-    emplaced_attributes_.clear();
-
-    return output_object;
 }
 
 attribute_collector::collection_state attribute_collector::collect_helper(const object_store &store,

@@ -341,6 +341,9 @@ void result_serializer::serialize(const object_store &store, std::vector<rule_re
     action_tracker actions{
         .blocking_action = {}, .stack_id = {}, .non_blocking_actions = {}, .mapper = actions_};
 
+    // First collect any pending attributes from previous runs
+    collector.collect_pending(store);
+
     bool final_keep = false;
     for (auto &result : results) {
         final_keep |= result.keep;
@@ -361,7 +364,7 @@ void result_serializer::serialize(const object_store &store, std::vector<rule_re
     output.timeout.boolean = deadline.expired_before();
     output.keep.boolean = final_keep;
 
-    object::assign(output.attributes, collector.collect_pending(store));
+    object::assign(output.attributes, collector.get_available_attributes());
     serialize_actions(output.actions, actions);
 }
 

@@ -66,9 +66,19 @@ public:
     void collect(const object_store &store, target_index input_target,
         std::span<const std::string> input_key_path, std::string_view output);
 
-    ddwaf_object collect_pending(const object_store &store);
+    void collect_pending(const object_store &store);
 
     [[nodiscard]] bool has_pending_attributes() const { return !pending_.empty(); }
+
+    ddwaf_object get_available_attributes()
+    {
+        auto output_object = attributes_;
+        // Reset attributes
+        ddwaf_object_map(&attributes_);
+        emplaced_attributes_.clear();
+
+        return output_object;
+    }
 
 protected:
     enum class collection_state : uint8_t { success, unavailable, failed };

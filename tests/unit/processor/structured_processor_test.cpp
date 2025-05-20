@@ -60,11 +60,21 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{{{get_target_index("unary_address"), "unary_address", {}}}},
-             {{{get_target_index("optional_address"), "optional_address", {}}}},
-             {{{get_target_index("variadic_address_1"), "variadic_address_1", {}},
-                 {get_target_index("variadic_address_2"), "variadic_address_2", {}}}}},
-            {get_target_index("output_address"), "output_address", {}}}};
+        {.inputs = {{{{.index = get_target_index("unary_address"),
+                        .name = "unary_address",
+                        .key_path = {}}}},
+             {{{.index = get_target_index("optional_address"),
+                 .name = "optional_address",
+                 .key_path = {}}}},
+             {{{.index = get_target_index("variadic_address_1"),
+                   .name = "variadic_address_1",
+                   .key_path = {}},
+                 {.index = get_target_index("variadic_address_2"),
+                     .name = "variadic_address_2",
+                     .key_path = {}}}}},
+            .output = {.index = get_target_index("output_address"),
+                .name = "output_address",
+                .key_path = {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
@@ -80,7 +90,7 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
     attribute_collector collector;
     proc.eval(store, collector, cache, {}, deadline);
 
-    auto output_map = collector.collect_pending(store);
+    auto output_map = collector.get_available_attributes();
     EXPECT_EQ(ddwaf_object_size(&output_map), 1);
     const auto *obtained = ddwaf_object_get_index(&output_map, 0);
     EXPECT_STREQ(obtained->parameterName, "output_address");
@@ -106,11 +116,21 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{{{get_target_index("unary_address"), "unary_address", {}}}},
-             {{{get_target_index("optional_address"), "optional_address", {}}}},
-             {{{get_target_index("variadic_address_1"), "variadic_address_1", {}},
-                 {get_target_index("variadic_address_2"), "variadic_address_2", {}}}}},
-            {get_target_index("output_address"), "output_address", {}}}};
+        {.inputs = {{{{.index = get_target_index("unary_address"),
+                        .name = "unary_address",
+                        .key_path = {}}}},
+             {{{.index = get_target_index("optional_address"),
+                 .name = "optional_address",
+                 .key_path = {}}}},
+             {{{.index = get_target_index("variadic_address_1"),
+                   .name = "variadic_address_1",
+                   .key_path = {}},
+                 {.index = get_target_index("variadic_address_2"),
+                     .name = "variadic_address_2",
+                     .key_path = {}}}}},
+            .output = {.index = get_target_index("output_address"),
+                .name = "output_address",
+                .key_path = {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
@@ -126,7 +146,7 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
     attribute_collector collector;
     proc.eval(store, collector, cache, {}, deadline);
 
-    auto output_map = collector.collect_pending(store);
+    auto output_map = collector.get_available_attributes();
     const auto *obtained = ddwaf_object_get_index(&output_map, 0);
     EXPECT_STREQ(obtained->parameterName, "output_address");
     EXPECT_STREQ(obtained->stringValue, "output_string");
@@ -148,11 +168,21 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{{{get_target_index("unary_address"), "unary_address", {}}}},
-             {{{get_target_index("optional_address"), "optional_address", {}}}},
-             {{{get_target_index("variadic_address_1"), "variadic_address_1", {}},
-                 {get_target_index("variadic_address_2"), "variadic_address_2", {}}}}},
-            {get_target_index("output_address"), "output_address", {}}}};
+        {.inputs = {{{{.index = get_target_index("unary_address"),
+                        .name = "unary_address",
+                        .key_path = {}}}},
+             {{{.index = get_target_index("optional_address"),
+                 .name = "optional_address",
+                 .key_path = {}}}},
+             {{{.index = get_target_index("variadic_address_1"),
+                   .name = "variadic_address_1",
+                   .key_path = {}},
+                 {.index = get_target_index("variadic_address_2"),
+                     .name = "variadic_address_2",
+                     .key_path = {}}}}},
+            .output = {.index = get_target_index("output_address"),
+                .name = "output_address",
+                .key_path = {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
@@ -166,7 +196,7 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
     attribute_collector collector;
     proc.eval(store, collector, cache, {}, deadline);
 
-    auto output_map = collector.collect_pending(store);
+    auto output_map = collector.get_available_attributes();
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
 
     ddwaf_object_free(&output_map);
@@ -185,11 +215,21 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{{{get_target_index("unary_address"), "unary_address", {}}}},
-             {{{get_target_index("optional_address"), "optional_address", {}}}},
-             {{{get_target_index("variadic_address_1"), "variadic_address_1", {}},
-                 {get_target_index("variadic_address_2"), "variadic_address_2", {}}}}},
-            {get_target_index("output_address"), "output_address", {}}}};
+        {.inputs = {{{{.index = get_target_index("unary_address"),
+                        .name = "unary_address",
+                        .key_path = {}}}},
+             {{{.index = get_target_index("optional_address"),
+                 .name = "optional_address",
+                 .key_path = {}}}},
+             {{{.index = get_target_index("variadic_address_1"),
+                   .name = "variadic_address_1",
+                   .key_path = {}},
+                 {.index = get_target_index("variadic_address_2"),
+                     .name = "variadic_address_2",
+                     .key_path = {}}}}},
+            .output = {.index = get_target_index("output_address"),
+                .name = "output_address",
+                .key_path = {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
@@ -203,7 +243,7 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
     attribute_collector collector;
     proc.eval(store, collector, cache, {}, deadline);
 
-    auto output_map = collector.collect_pending(store);
+    auto output_map = collector.get_available_attributes();
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
 
     ddwaf_object_free(&output_map);
