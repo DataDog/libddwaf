@@ -151,7 +151,7 @@ void parse_rules(const raw_configuration::vector &rule_array, configuration_coll
             if (!contains(rule.flags, rule_flags::generate_event) && rule.attributes.empty()) {
                 DDWAF_WARN("Rule generates no events or attributes: {}", id);
                 info.add_failed(
-                    id, parser_error_severity::error, "rule generate no events or attributes");
+                    id, parser_error_severity::error, "rule generates no events or attributes");
                 continue;
             }
 

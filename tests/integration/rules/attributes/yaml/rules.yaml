@@ -74,3 +74,41 @@ rules:
           value: 200.22
         rule4.bool:
           value: true
+  - id: rule5
+    name: rule5
+    tags:
+      type: flow5
+      category: category5
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value5
+          regex: ^rule5
+    output:
+      event: false
+      keep: true
+      attributes:
+        result.rule5: 
+          address: value5
+    on_match: [ block ]
+  - id: rule6
+    name: rule6
+    tags:
+      type: flow6
+      category: category6
+      module: custom-acl
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value6
+          regex: ^rule6
+    output:
+      event: false
+      keep: false
+      attributes:
+        result.rule6: 
+          address: value6
+    on_match: [ stack_trace ]
+
