@@ -1,4 +1,13 @@
 version: '2.1'
+exclusions:
+  - id: 1
+    rules_target:
+      - rule_id: rule7
+    on_match: monitor
+  - id: 2
+    rules_target:
+      - rule_id: rule8
+    on_match: block
 rules:
   - id: rule1
     name: rule1
@@ -111,4 +120,38 @@ rules:
         result.rule6: 
           address: value6
     on_match: [ stack_trace ]
-
+  - id: rule7
+    name: rule7
+    tags:
+      type: flow7
+      category: category7
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value7
+          regex: ^rule7
+    output:
+      event: false
+      keep: true
+      attributes:
+        result.rule7: 
+          address: value7
+    on_match: [ block ]
+  - id: rule8
+    name: rule8
+    tags:
+      type: flow8
+      category: category8
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value8
+          regex: ^rule8
+    output:
+      event: false
+      keep: false
+      attributes:
+        result.rule8: 
+          address: value8

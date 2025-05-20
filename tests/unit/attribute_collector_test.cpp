@@ -18,7 +18,7 @@ TEST(TestAttributeCollector, EmplaceNoCopy)
     ddwaf_object_string(&expected, "value");
 
     attribute_collector collector;
-    collector.emplace("address", expected, false);
+    EXPECT_TRUE(collector.emplace("address", expected, false));
 
     object_store store;
     collector.collect_pending(store);
@@ -42,7 +42,33 @@ TEST(TestAttributeCollector, EmplaceCopy)
     ddwaf_object_string(&expected, "value");
 
     attribute_collector collector;
-    collector.emplace("address", expected, true);
+    EXPECT_TRUE(collector.emplace("address", expected, true));
+
+    object_store store;
+    collector.collect_pending(store);
+    auto attributes = collector.get_available_attributes();
+
+    EXPECT_FALSE(collector.has_pending_attributes());
+
+    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+
+    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
+    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
+    EXPECT_NE(obtained->stringValue, expected.stringValue);
+    EXPECT_STREQ(obtained->stringValue, expected.stringValue);
+
+    ddwaf_object_free(&expected);
+    ddwaf_object_free(&attributes);
+}
+
+TEST(TestAttributeCollector, EmplaceDuplicate)
+{
+    ddwaf_object expected;
+    ddwaf_object_string(&expected, "value");
+
+    attribute_collector collector;
+    EXPECT_TRUE(collector.emplace("address", expected, true));
+    EXPECT_FALSE(collector.emplace("address", expected, true));
 
     object_store store;
     collector.collect_pending(store);
@@ -72,7 +98,35 @@ TEST(TestAttributeCollector, CollectAvailableScalar)
     store.insert(input_map);
 
     attribute_collector collector;
-    collector.collect(store, get_target_index("input_address"), {}, "output_address");
+    EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
+    auto attributes = collector.get_available_attributes();
+
+    EXPECT_FALSE(collector.has_pending_attributes());
+
+    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+
+    const auto *expected = ddwaf_object_get_index(&input_map, 0);
+    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
+    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
+    EXPECT_NE(obtained->stringValue, expected->stringValue);
+    EXPECT_STREQ(obtained->stringValue, expected->stringValue);
+
+    ddwaf_object_free(&attributes);
+}
+
+TEST(TestAttributeCollector, CollectDuplicateScalar)
+{
+    ddwaf_object tmp;
+    ddwaf_object input_map;
+    ddwaf_object_map(&input_map);
+    ddwaf_object_map_add(&input_map, "input_address", ddwaf_object_string(&tmp, "value"));
+
+    object_store store;
+    store.insert(input_map);
+
+    attribute_collector collector;
+    EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
+    EXPECT_FALSE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
     auto attributes = collector.get_available_attributes();
 
     EXPECT_FALSE(collector.has_pending_attributes());
@@ -103,7 +157,7 @@ TEST(TestAttributeCollector, CollectAvailableScalarFromSingleValueArray)
     store.insert(input_map);
 
     attribute_collector collector;
-    collector.collect(store, get_target_index("input_address"), {}, "output_address");
+    EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
     auto attributes = collector.get_available_attributes();
 
     EXPECT_FALSE(collector.has_pending_attributes());
@@ -136,7 +190,7 @@ TEST(TestAttributeCollector, CollectAvailableScalarFromMultiValueArray)
     store.insert(input_map);
 
     attribute_collector collector;
-    collector.collect(store, get_target_index("input_address"), {}, "output_address");
+    EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
     auto attributes = collector.get_available_attributes();
 
     EXPECT_FALSE(collector.has_pending_attributes());
@@ -167,7 +221,7 @@ TEST(TestAttributeCollector, CollectInvalidObjectFromArray)
     store.insert(input_map);
 
     attribute_collector collector;
-    collector.collect(store, get_target_index("input_address"), {}, "output_address");
+    EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
     auto attributes = collector.get_available_attributes();
 
     EXPECT_FALSE(collector.has_pending_attributes());
@@ -183,7 +237,7 @@ TEST(TestAttributeCollector, CollectUnavailableScalar)
     attribute_collector collector;
 
     // The attribute should be in the pending queue
-    collector.collect(store, get_target_index("input_address"), {}, "output_address");
+    EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
     EXPECT_TRUE(collector.has_pending_attributes());
 
     collector.collect_pending(store);
@@ -221,7 +275,7 @@ TEST(TestAttributeCollector, CollectUnavailableScalarFromSingleValueArray)
     attribute_collector collector;
 
     // The attribute should be in the pending queue
-    collector.collect(store, get_target_index("input_address"), {}, "output_address");
+    EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
     EXPECT_TRUE(collector.has_pending_attributes());
 
     collector.collect_pending(store);
@@ -263,7 +317,7 @@ TEST(TestAttributeCollector, CollectUnavailableScalarFromMultiValueArray)
     attribute_collector collector;
 
     // The attribute should be in the pending queue
-    collector.collect(store, get_target_index("input_address"), {}, "output_address");
+    EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
     EXPECT_TRUE(collector.has_pending_attributes());
 
     collector.collect_pending(store);
@@ -307,7 +361,7 @@ TEST(TestAttributeCollector, CollectUnavailableInvalidObject)
     attribute_collector collector;
 
     // The attribute should be in the pending queue
-    collector.collect(store, get_target_index("input_address"), {}, "output_address");
+    EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
     EXPECT_TRUE(collector.has_pending_attributes());
 
     collector.collect_pending(store);
@@ -340,7 +394,8 @@ TEST(TestAttributeCollector, CollectMultipleUnavailableScalars)
 
     {
         // The attribute should be in the pending queue
-        collector.collect(store, get_target_index("input_address_0"), {}, "output_address_0");
+        EXPECT_TRUE(
+            collector.collect(store, get_target_index("input_address_0"), {}, "output_address_0"));
         EXPECT_TRUE(collector.has_pending_attributes());
 
         // Nothing to be collected
@@ -353,7 +408,8 @@ TEST(TestAttributeCollector, CollectMultipleUnavailableScalars)
 
     {
         // The attribute should be in the pending queue
-        collector.collect(store, get_target_index("input_address_1"), {}, "output_address_1");
+        EXPECT_TRUE(
+            collector.collect(store, get_target_index("input_address_1"), {}, "output_address_1"));
         EXPECT_TRUE(collector.has_pending_attributes());
 
         // Nothing to be collected
@@ -374,7 +430,8 @@ TEST(TestAttributeCollector, CollectMultipleUnavailableScalars)
 
         store.insert(input_map);
 
-        collector.collect(store, get_target_index("input_address_2"), {}, "output_address_2");
+        EXPECT_TRUE(
+            collector.collect(store, get_target_index("input_address_2"), {}, "output_address_2"));
 
         collector.collect_pending(store);
         EXPECT_TRUE(collector.has_pending_attributes());

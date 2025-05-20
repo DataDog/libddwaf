@@ -63,7 +63,7 @@ public:
 
     bool emplace(std::string_view key, const ddwaf_object &value, bool copy);
 
-    void collect(const object_store &store, target_index input_target,
+    bool collect(const object_store &store, target_index input_target,
         std::span<const std::string> input_key_path, std::string_view output);
 
     void collect_pending(const object_store &store);

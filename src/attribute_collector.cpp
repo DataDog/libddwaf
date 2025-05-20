@@ -26,17 +26,18 @@ bool attribute_collector::emplace(std::string_view key, const ddwaf_object &valu
     return emplace_helper(key, value, copy);
 }
 
-void attribute_collector::collect(const object_store &store, target_index input_target,
+bool attribute_collector::collect(const object_store &store, target_index input_target,
     std::span<const std::string> input_key_path, std::string_view output)
 {
     if (emplaced_attributes_.contains(output)) {
-        return;
+        return false;
     }
 
     auto state = collect_helper(store, input_target, input_key_path, output);
     if (state == collection_state::unavailable) {
         pending_.emplace(output, target_type{input_target, input_key_path});
     }
+    return true;
 }
 
 void attribute_collector::collect_pending(const object_store &store)
