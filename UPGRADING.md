@@ -35,58 +35,58 @@ In addition, the function `ddwaf_object_find` has been introduced to simplify th
 As an example, the following code using `ddwaf_result`
 
 ```c
-    ddwaf_result ret;
-    auto code = ddwaf_run(context, &root, nullptr, &ret, LONG_TIME);
-    if (code == DDWAF_MATCH) {
-        cout << object_to_yaml(&ret.events);
-    }
-    ddwaf_result_free(&ret);
+ddwaf_result ret;
+auto code = ddwaf_run(context, &root, nullptr, &ret, LONG_TIME);
+if (code == DDWAF_MATCH) {
+    cout << object_to_yaml(&ret.events);
+}
+ddwaf_result_free(&ret);
 ```
 
 
 Can be replaced as follows:
 
 ```c
-    ddwaf_object ret;
-    auto code = ddwaf_run(context, &root, nullptr, &ret, LONG_TIME);
-    if (code == DDWAF_MATCH) {
-        const ddwaf_object *events = ddwaf_object_find(&ret, "events", sizeof("events") - 1);
-        cout << object_to_yaml(events);
-    }
-    ddwaf_object_free(&ret);
+ddwaf_object ret;
+auto code = ddwaf_run(context, &root, nullptr, &ret, LONG_TIME);
+if (code == DDWAF_MATCH) {
+    const ddwaf_object *events = ddwaf_object_find(&ret, "events", sizeof("events") - 1);
+    cout << object_to_yaml(events);
+}
+ddwaf_object_free(&ret);
 ```
 
 Finally, extracting all relevant objects can be done efficiently through a loop as follows:
 
 ```c
-    const ddwaf_object *events = NULL, *actions = NULL, *attributes = NULL,
-                 *keep = NULL, *duration = NULL, *timeout = NULL;
-    for (size_t i = 0; i < ddwaf_object_size(&ret); ++i) {
-        const ddwaf_object *child = ddwaf_object_get_index(&ret, i);
-        if (child == NULL) { /* handle failure */ }
+const ddwaf_object *events = NULL, *actions = NULL, *attributes = NULL,
+             *keep = NULL, *duration = NULL, *timeout = NULL;
+for (size_t i = 0; i < ddwaf_object_size(&ret); ++i) {
+    const ddwaf_object *child = ddwaf_object_get_index(&ret, i);
+    if (child == NULL) { /* handle failure */ }
 
-        size_t length = 0;
-        const char *key = ddwaf_object_get_key(child, &length);
-        if (key == NULL) { /* handle failure */ }
+    size_t length = 0;
+    const char *key = ddwaf_object_get_key(child, &length);
+    if (key == NULL) { /* handle failure */ }
 
-        if (length == (sizeof("events") - 1) && memcmp(key, "events", length) == 0) {
-            events = child;
-        } else if (length == (sizeof("actions") - 1) && memcmp(key, "actions", length) == 0) {
-            actions = child;
-        } else if (length == (sizeof("attributes") - 1) && memcmp(key, "attributes", length) == 0) {
-            attributes = child;
-        } else if (length == (sizeof("keep") - 1) && memcmp(key, "keep", length) == 0) {
-            keep = child;
-        } else if (length == (sizeof("duration") - 1) && memcmp(key, "duration", length) == 0) {
-            duration = child;
-        } else if (length == (sizeof("timeout") - 1) && memcmp(key, "timeout", length) == 0) {
-            timeout = child;
-        }
+    if (length == (sizeof("events") - 1) && memcmp(key, "events", length) == 0) {
+        events = child;
+    } else if (length == (sizeof("actions") - 1) && memcmp(key, "actions", length) == 0) {
+        actions = child;
+    } else if (length == (sizeof("attributes") - 1) && memcmp(key, "attributes", length) == 0) {
+        attributes = child;
+    } else if (length == (sizeof("keep") - 1) && memcmp(key, "keep", length) == 0) {
+        keep = child;
+    } else if (length == (sizeof("duration") - 1) && memcmp(key, "duration", length) == 0) {
+        duration = child;
+    } else if (length == (sizeof("timeout") - 1) && memcmp(key, "timeout", length) == 0) {
+        timeout = child;
     }
+}
 
-    /* Perform any relevant operations with the extracted objects */
+/* Perform any relevant operations with the extracted objects */
 
-    ddwaf_object_free(&ret);
+ddwaf_object_free(&ret);
 ```
 ## Upgrading from `1.22.0` to `1.23.0`
 

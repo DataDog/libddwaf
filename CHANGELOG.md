@@ -36,7 +36,7 @@ The attributes object can follow two possible schemas, the first one defines an 
 ```
 
 While the second one defines an attribute containing a scalar value extracted from the data provided within the given context:
-
+```
 {
     ATTRIBUTE : {
         "address": ADDRESS,
@@ -44,7 +44,7 @@ While the second one defines an attribute containing a scalar value extracted fr
         "transformers": [ TRANSFORMER_ID, ... ]1
     }
 }
-
+```
 _Note that transformers are not supported in this iteration._
 
 
@@ -89,7 +89,7 @@ _Note that this feature requires the use of the default regular expression for v
 
 Last but not least, this release also introduces a new mechanism to override the default configuration of processors, specifically aimed at adding or removing the list of scanners which are used during the process of schema extraction. This can now be done through the `processor_override` top-level configuration key, which has the following schema:
 
-```json
+```
 {
   ( "processor_override": [
     {
@@ -103,9 +103,9 @@ Last but not least, this release also introduces a new mechanism to override the
 
 Where each `PROCESSOR_TARGET` is an object which specifies the processor to which this override should apply, with the following schema:
 
-```json
+```
 {
-   "id": PROCESSOR_ID, 
+   "id": PROCESSOR_ID,
 }
 ```
 
@@ -113,7 +113,7 @@ Note that in the future, `PROCESSOR_TARGET`, and consequently processors in gene
 
 Finally, `SCANNER_TARGET` is also an object which specifies the scanners which must be used by this processor, this can be done through their `id` or `tags`, as follows:
 
-```json
+```
 {
   ( "id": SCANNER_ID, )
   ( "tags": {
