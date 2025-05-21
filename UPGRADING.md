@@ -1,5 +1,93 @@
 # Upgrading libddwaf
 
+## Upgrading from `1.24.x` to `1.25.0`
+
+### Evaluation Result
+
+The main breaking change in this version of `libddwaf` is the deprecation of the `ddwaf_result` structure, which has been replaced by a `ddwaf_object`. Replacing C-structs with `ddwaf_object` furthers the objective of minimising the potential breaking changes that can be made, in this case to the ABI, as the dynamic nature of the `ddwaf_object` allows for adding or removing keys and values without the need for adjusting structure offsets or recompilation.
+
+With this change, the signature of `ddwaf_run` is as follows:
+```c
+DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data, ddwaf_object *ephemeral_data, ddwaf_object *result,  uint64_t timeout);
+```
+The schema of the result object can be seen below:
+```
+{
+  "timeout": <boolean>,
+  "keep": <boolean>,
+  "duration": <unsigned>, 
+  "events": <array>,
+  "actions": <map>,
+  "attributes": <map>
+}
+```
+
+Where each of the fields has the following description:
+- `timeout`: formerly `ddwaf_result::timeout`, specifies whether there has been a timeout during the current call to `ddwaf_run`.
+- `keep`: a new field which specifies whether the data provided must override sampling.
+- `duration`: formerly `ddwaf_result::total_runtime`, provides the duration in nanoseconds of the current call to `ddwaf_run`.
+- `events`: formerly `ddwaf_result::events`, consists in an array of events generated as a result of the rule evaluation process.
+- `actions`: formerly `ddwaf_result`::actions, consists in a map of the actions, and their parameters, generated as a result of the rule evaluation process.
+- `attributes`: formerly `ddwaf_result::derivatives`, consists in a map of all generated attributes, such as schemas, fingerprints or rule attributes.
+
+In addition, the function `ddwaf_object_find` has been introduced to simplify the process of finding keys from an object of type map, although since maps are simple key-value arrays the operation has O(n) complexity. As a consequence it's only recommended for testing purposes.
+
+As an example, the following code using `ddwaf_result`
+
+```c
+    ddwaf_result ret;
+    auto code = ddwaf_run(context, &root, nullptr, &ret, LONG_TIME);
+    if (code == DDWAF_MATCH) {
+        cout << object_to_yaml(&ret.events);
+    }
+    ddwaf_result_free(&ret);
+```
+
+
+Can be replaced as follows:
+
+```c
+    ddwaf_object ret;
+    auto code = ddwaf_run(context, &root, nullptr, &ret, LONG_TIME);
+    if (code == DDWAF_MATCH) {
+        const ddwaf_object *events = ddwaf_object_find(&ret, "events", sizeof("events") - 1);
+        cout << object_to_yaml(events);
+    }
+    ddwaf_object_free(&ret);
+```
+
+Finally, extracting all relevant objects can be done efficiently through a loop as follows:
+
+```c
+    const ddwaf_object *events = NULL, *actions = NULL, *attributes = NULL,
+                 *keep = NULL, *duration = NULL, *timeout = NULL;
+    for (size_t i = 0; i < ddwaf_object_size(&ret); ++i) {
+        const ddwaf_object *child = ddwaf_object_get_index(&ret, i);
+        if (child == NULL) { /* handle failure */ }
+
+        size_t length = 0;
+        const char *key = ddwaf_object_get_key(child, &length);
+        if (key == NULL) { /* handle failure */ }
+
+        if (length == (sizeof("events") - 1) && memcmp(key, "events", length) == 0) {
+            events = child;
+        } else if (length == (sizeof("actions") - 1) && memcmp(key, "actions", length) == 0) {
+            actions = child;
+        } else if (length == (sizeof("attributes") - 1) && memcmp(key, "attributes", length) == 0) {
+            attributes = child;
+        } else if (length == (sizeof("keep") - 1) && memcmp(key, "keep", length) == 0) {
+            keep = child;
+        } else if (length == (sizeof("duration") - 1) && memcmp(key, "duration", length) == 0) {
+            duration = child;
+        } else if (length == (sizeof("timeout") - 1) && memcmp(key, "timeout", length) == 0) {
+            timeout = child;
+        }
+    }
+
+    /* Perform any relevant operations with the extracted objects */
+
+    ddwaf_object_free(&ret);
+```
 ## Upgrading from `1.22.0` to `1.23.0`
 
 ### WAF Builder
