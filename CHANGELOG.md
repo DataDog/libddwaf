@@ -22,8 +22,8 @@ This version expands the mechanisms that rules can use to provide information to
 }
 ```
 Where:
-- `keep`: indicate whether the outcome of the rule must be prioritised, overriding any potential transport sampling (such as trace sampling). This new flag allows the rule writer to ensure that high-frequency / low-value information is only sent opportunistically rather than on every match.
-- `event`: enables (`true`) or disables (`false`) event generation, however a rule must always generate either an event or one or more attributes.
+- `keep`: indicates whether the outcome of the rule must be prioritised, overriding any potential transport sampling (such as trace sampling). This new flag allows the rule writer to ensure that high-frequency / low-value information is only sent opportunistically rather than on every match.
+- `event`: enables (`true`) or disables (`false`) event generation, however a rule must always generate either an event or one or more attributes, or both.
 - `attributes`: specifies the list of attributes which must be generated and included in the result upon matching the given rule.
 
 The attributes object can follow two possible schemas, the first one defines an attribute with a literal scalar value, as follows:
@@ -79,15 +79,15 @@ A new processor has been developed to decode and parse targeted JWT tokens. The 
 
 #### Partial Event Obfuscation
 
-To prevent accidental sensitive data leaks, generated events are obfuscated through the use of regular expressions. Until this version, sensitive values were completely replaced with `<Redacted>`, however this new version can perform partial obfuscation of only the relevant values of an unstructured payload. For example, a payload containing `"?token=sensitive-token"` will now be obfuscated as follows: `"?token=<Redacted>"`, preserving more of the semantics of the payload for the user to better understand the nature of the attack.
+To prevent accidental sensitive data leaks, generated events are obfuscated through the use of regular expressions. Until this version, sensitive values were completely replaced with `<Redacted>`, however this new version can perform partial obfuscation of only the relevant values of an unstructured payload. For example, a payload containing `"?token=sensitive-token"` will now be obfuscated as follows: `"?token=<Redacted>"`, preserving more of the semantics of the payload so that the user can better understand the nature of the attack.
 
 This feature provides significant benefit in the case of Exploit Prevention rules, as those tend to contain larger payloads of unstructured data and are often prone to being fully redacted.
 
-_Note that this feature requires the use of the default regular expression for values, overriding it disables partial event obfuscation.__
+_Note that this feature requires the use of the default regular expression for values, overriding it disables partial event obfuscation._
 
 #### Processor Overrides
 
-Last but not least, this release also introduces a new mechanism to override the default configuration of processors, specifically aimed at adding or removing the list of scanners which are used during the process of schema extraction. This can now be done through the `processor_override` top-level configuration key, which has the following schema:
+Last but not least, this release also introduces a new mechanism to override the default configuration of processors, specifically aimed at adding or removing scanners to be used during the process of schema extraction. This can now be done through the `processor_override` top-level configuration key, which has the following schema:
 
 ```
 {
@@ -126,15 +126,15 @@ Finally, `SCANNER_TARGET` is also an object which specifies the scanners which m
 ### Release changelog
 
 #### Changes
-- Support for basic processor overrides #397
-- JWT Decoding Processor #400
-- Replace `ddwaf_result` with `ddwaf_object` #402
-- Support for partial event obfuscation #403
-- Support for attribute generation from rules #404
+- Support for basic processor overrides ([#397](https://github.com/DataDog/libddwaf/pull/397))
+- JWT Decoding Processor ([#400](https://github.com/DataDog/libddwaf/pull/400))
+- Replace `ddwaf_result` with `ddwaf_object` ([#402](https://github.com/DataDog/libddwaf/pull/402))
+- Support for partial event obfuscation ([#403](https://github.com/DataDog/libddwaf/pull/403))
+- Support for attribute generation from rules ([#404](https://github.com/DataDog/libddwaf/pull/404))
 
 #### Fixes
-- Fix `ddwaf_builder_remove_config` example #398
-- Make SQL comment injection check stricter #399
+- Fix `ddwaf_builder_remove_config` example ([#398](https://github.com/DataDog/libddwaf/pull/398))
+- Make SQL comment injection check stricter ([#399](https://github.com/DataDog/libddwaf/pull/399))
 
 #### Miscellaneous
 - Enforce CMake 3.5 compatibility ([#395](https://github.com/DataDog/libddwaf/pull/395))
