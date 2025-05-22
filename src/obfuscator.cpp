@@ -58,7 +58,7 @@ bool find_and_consume(
 } // namespace
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-obfuscator::obfuscator(std::string_view key_regex_str, std::string_view value_regex_str)
+match_obfuscator::match_obfuscator(std::string_view key_regex_str, std::string_view value_regex_str)
 {
     if (!load_regex(key_regex_str, key_regex_)) {
         DDWAF_ERROR("invalid obfuscator key regex: {} - using default", key_regex_->error_arg());
@@ -82,7 +82,7 @@ obfuscator::obfuscator(std::string_view key_regex_str, std::string_view value_re
     }
 }
 
-void obfuscator::obfuscate_match(condition_match &match) const
+void match_obfuscator::obfuscate_match(condition_match &match) const
 {
     bool redact_highlight = false;
     for (auto &arg : match.args) {
@@ -114,17 +114,17 @@ void obfuscator::obfuscate_match(condition_match &match) const
     }
 }
 
-bool obfuscator::is_sensitive_key(std::string_view key) const
+bool match_obfuscator::is_sensitive_key(std::string_view key) const
 {
     return (key_regex_ && key_regex_->ok()) ? match(*key_regex_, key) : false;
 }
 
-bool obfuscator::is_sensitive_value(std::string_view value) const
+bool match_obfuscator::is_sensitive_value(std::string_view value) const
 {
     return (value_regex_ && value_regex_->ok()) ? match(*value_regex_, value) : false;
 }
 
-bool obfuscator::obfuscate_value(dynamic_string &value) const
+bool match_obfuscator::obfuscate_value(dynamic_string &value) const
 {
     if (!partial_value_obfuscation_) {
         if (is_sensitive_value(value)) {

@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "argument_retriever.hpp"
+#include "attribute_collector.hpp"
 #include "exception.hpp"
 #include "expression.hpp"
 #include "object_store.hpp"
@@ -79,7 +80,7 @@ public:
     base_processor &operator=(base_processor &&rhs) noexcept = default;
     virtual ~base_processor() = default;
 
-    virtual void eval(object_store &store, borrowed_object attributes, processor_cache &cache,
+    virtual void eval(object_store &store, attribute_collector &collector, processor_cache &cache,
         ddwaf::timer &deadline) const = 0;
 
     virtual void get_addresses(std::unordered_map<target_index, std::string> &addresses) const = 0;
@@ -102,15 +103,9 @@ public:
     structured_processor &operator=(structured_processor &&rhs) noexcept = default;
     ~structured_processor() override = default;
 
-    void eval(object_store &store, borrowed_object attributes, processor_cache &cache,
+    void eval(object_store &store, attribute_collector &collector, processor_cache &cache,
         ddwaf::timer &deadline) const override
     {
-        // No result structure, but this processor only produces attributes objects
-        // so it makes no sense to evaluate.
-        if (!attributes.is_map() && !evaluate_ && output_) {
-            return;
-        }
-
         DDWAF_DEBUG("Evaluating processor '{}'", id_);
 
         if (!expr_->eval(cache.expr_cache, store, {}, {}, deadline).outcome) {
@@ -187,9 +182,8 @@ public:
                 continue;
             }
 
-            bool should_output = output_ && attributes.is_map();
             if (evaluate_) {
-                if (!should_output) {
+                if (!output_) {
                     store.insert(
                         mapping.output.index, mapping.output.name, std::move(object), attr);
                 } else {
@@ -197,8 +191,9 @@ public:
                 }
             }
 
-            if (should_output) {
-                attributes.emplace(mapping.output.name, std::move(object));
+            if (output_) {
+                // The object is copied if we are also using it for evaluation
+                collector.insert(mapping.output.name, std::move(object));
             }
         }
     }

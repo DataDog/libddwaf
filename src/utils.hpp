@@ -15,6 +15,7 @@
 #include <limits>
 #include <optional>
 #include <ostream>
+#include <span>
 #include <sstream>
 #include <string>
 #include <string_view>

@@ -14,7 +14,6 @@
 #include "clock.hpp"
 #include "context.hpp"
 #include "ddwaf.h"
-#include "event.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "log.hpp"
@@ -23,6 +22,7 @@
 #include "object_store.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
+#include "serializer.hpp"
 #include "target_address.hpp"
 #include "utils.hpp"
 
@@ -49,31 +49,6 @@ void set_context_event_address(object_store &store)
     store.insert(event_addr_idx, event_addr, owned_object{true}, attribute::none);
 }
 
-struct result_components {
-    borrowed_object events;
-    borrowed_object actions;
-    borrowed_object duration;
-    borrowed_object timeout;
-    borrowed_object attributes;
-    borrowed_object keep;
-};
-
-std::pair<owned_object, result_components> initialise_result_object()
-{
-    auto object = owned_object::make_map({{"events", owned_object::make_array()},
-        {"actions", owned_object::make_map()}, {"duration", owned_object::make_unsigned(0)},
-        {"timeout", false}, {"attributes", owned_object::make_map()}, {"keep", false}});
-
-    const result_components res{.events = object.at(0),
-        .actions = object.at(1),
-        .duration = object.at(2),
-        .timeout = object.at(3),
-        .attributes = object.at(4),
-        .keep = object.at(5)};
-
-    return {std::move(object), res};
-}
-
 } // namespace
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
@@ -98,19 +73,25 @@ std::pair<DDWAF_RET_CODE, owned_object> context::run(
     }
 
     // Generate result object once relevant checks have been made
-    auto [result_object, result] = initialise_result_object();
-    ddwaf::timer deadline{std::chrono::microseconds(timeout)};
+    auto [result_object, output] = result_serializer::initialise_result_object();
 
     if (!store_.has_new_targets()) {
         return {DDWAF_OK, std::move(result_object)};
     }
 
-    const event_serializer serializer(event_obfuscator_, actions_);
+    const result_serializer serializer(obfuscator_, actions_);
+    ddwaf::timer deadline{std::chrono::microseconds(timeout)};
 
-    std::vector<ddwaf::event> events;
     try {
-        eval_preprocessors(result.attributes, deadline);
+        // Evaluate preprocessors first in their own try-catch, if there's a
+        // timeout we still need to evaluate rules unaffected by it.
+        eval_preprocessors(deadline);
+        // NOLINTNEXTLINE(bugprone-empty-catch)
+    } catch (const ddwaf::timeout_exception &) {}
 
+    std::vector<rule_result> results;
+
+    try {
         // If no rule targets are available, there is no point in evaluating them
         const bool should_eval_rules = check_new_rule_targets();
         const bool should_eval_filters = should_eval_rules || check_new_filter_targets();
@@ -122,29 +103,26 @@ std::pair<DDWAF_RET_CODE, owned_object> context::run(
             const auto &policy = eval_filters(deadline);
 
             if (should_eval_rules) {
-                eval_rules(policy, events, deadline);
-                if (!events.empty()) {
+                eval_rules(policy, results, deadline);
+                if (!results.empty()) {
                     set_context_event_address(store_);
                 }
             }
         }
 
-        eval_postprocessors(result.attributes, deadline);
+        eval_postprocessors(deadline);
         // NOLINTNEXTLINE(bugprone-empty-catch)
     } catch (const ddwaf::timeout_exception &) {}
 
-    serializer.serialize(events, result.events, result.actions);
-
-    // Replacing the object would remove their keys, this won't be an issue
-    // once keys and values have been split.
-    // TODO: Add helpers to fix this
-    result.duration.ref().via.u64 = deadline.elapsed().count();
-    result.timeout.ref().via.b8 = deadline.expired_before();
-
-    return {events.empty() ? DDWAF_OK : DDWAF_MATCH, std::move(result_object)};
+    // Collect pending attributes, this will check if any new attributes are
+    // available (e.g. from a postprocessor) and return a map of all attributes
+    // generated during this call.
+    // object::assign(result.attributes, collector_.collect_pending(store_));
+    serializer.serialize(store_, results, collector_, deadline, output);
+    return {results.empty() ? DDWAF_OK : DDWAF_MATCH, std::move(result_object)};
 }
 
-void context::eval_preprocessors(borrowed_object &attributes, ddwaf::timer &deadline)
+void context::eval_preprocessors(ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating preprocessors");
 
@@ -160,11 +138,11 @@ void context::eval_preprocessors(borrowed_object &attributes, ddwaf::timer &dead
             it = new_it;
         }
 
-        preproc->eval(store_, attributes, it->second, deadline);
+        preproc->eval(store_, collector_, it->second, deadline);
     }
 }
 
-void context::eval_postprocessors(borrowed_object &attributes, ddwaf::timer &deadline)
+void context::eval_postprocessors(ddwaf::timer &deadline)
 {
     DDWAF_DEBUG("Evaluating postprocessors");
 
@@ -180,7 +158,7 @@ void context::eval_postprocessors(borrowed_object &attributes, ddwaf::timer &dea
             it = new_it;
         }
 
-        postproc->eval(store_, attributes, it->second, deadline);
+        postproc->eval(store_, collector_, it->second, deadline);
     }
 }
 
@@ -236,14 +214,14 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
     return exclusion_policy_;
 }
 
-void context::eval_rules(const exclusion::context_policy &policy, std::vector<ddwaf::event> &events,
+void context::eval_rules(const exclusion::context_policy &policy, std::vector<rule_result> &results,
     ddwaf::timer &deadline)
 {
     for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
         const auto &mod = ruleset_->rule_modules[i];
         auto &cache = rule_module_cache_[i];
 
-        auto verdict = mod.eval(events, store_, cache, policy, rule_matchers_, deadline);
+        auto verdict = mod.eval(results, store_, cache, policy, rule_matchers_, deadline);
         if (verdict == rule_module::verdict_type::block) {
             break;
         }

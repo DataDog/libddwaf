@@ -1,0 +1,327 @@
+// Unless explicitly stated otherwise all files in this repository are
+// dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
+//
+// This product includes software developed at Datadog (https://www.datadoghq.com/).
+// Copyright 2021 Datadog, Inc.
+
+#include <cstdint>
+#include <string>
+#include <string_view>
+#include <unordered_set>
+#include <utility>
+#include <variant>
+#include <vector>
+
+#include "action_mapper.hpp"
+#include "attribute_collector.hpp"
+#include "clock.hpp"
+#include "condition/base.hpp"
+#include "obfuscator.hpp"
+#include "object.hpp"
+#include "object_store.hpp"
+#include "rule.hpp"
+#include "serializer.hpp"
+#include "uuid.hpp"
+
+namespace ddwaf {
+
+namespace {
+
+owned_object serialize_match(condition_match &match)
+{
+    auto match_map = owned_object::make_map();
+
+    match_map.emplace("operator", match.operator_name);
+    match_map.emplace("operator_value", match.operator_value);
+
+    auto parameters = match_map.emplace("parameters", owned_object::make_array());
+    auto param = parameters.emplace_back(owned_object::make_map());
+
+    auto highlight_arr = param.emplace("highlight", owned_object::make_array());
+    for (auto &highlight : match.highlights) { highlight_arr.emplace_back(highlight.to_object()); }
+
+    // Scalar case
+    if (match.args.size() == 1 && match.args[0].name == "input") {
+        auto &arg = match.args[0];
+
+        param.emplace("address", arg.address);
+        param.emplace("value", arg.resolved.to_object());
+
+        auto key_path = param.emplace("key_path", owned_object::make_array());
+        for (const auto &key : arg.key_path) { key_path.emplace_back(key); }
+    } else {
+        for (auto &arg : match.args) {
+            auto argument = param.emplace(arg.name, owned_object::make_map());
+
+            argument.emplace("address", arg.address);
+            argument.emplace("value", arg.resolved.to_object());
+
+            auto key_path = argument.emplace("key_path", owned_object::make_array());
+            for (const auto &key : arg.key_path) { key_path.emplace_back(key); }
+        }
+    }
+
+    return match_map;
+}
+
+// This structure is used to collect and deduplicate all actions, keep track of the
+// blocking action with the highest precedence and of the relevant stack trace ID
+struct action_tracker {
+    // The blocking action refers to either a block_request or redirect_request
+    // action, the latter having precedence over the former.
+    std::string_view blocking_action;
+    action_type blocking_action_type{action_type::none};
+
+    // Stack trace ID
+    std::string stack_id;
+
+    // This set contains all remaining actions other than the blocking action
+    std::unordered_set<std::string_view> non_blocking_actions;
+
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
+    const action_mapper &mapper;
+};
+
+void add_action_to_tracker(action_tracker &actions, std::string_view id, action_type type)
+{
+    if (is_blocking_action(type)) {
+        if (type > actions.blocking_action_type) {
+            // Only keep a single blocking action
+            actions.blocking_action_type = type;
+            actions.blocking_action = id;
+        }
+    } else {
+        if (type == action_type::generate_stack && actions.stack_id.empty()) {
+            // Stack trace actions require a dynamic stack ID, however we
+            // only provide a single stack ID per run
+            actions.stack_id = uuidv4_generate_pseudo();
+        }
+
+        actions.non_blocking_actions.emplace(id);
+    }
+}
+
+std::pair<owned_object, /*stack id*/ bool> serialize_and_consolidate_actions(
+    std::string_view action_override, const std::vector<std::string> &rule_actions,
+    action_tracker &actions)
+{
+    auto actions_array = owned_object::make_array();
+    if (rule_actions.empty() && action_override.empty()) {
+        return {std::move(actions_array), false};
+    }
+
+    if (!action_override.empty()) {
+        auto action_it = actions.mapper.find(action_override);
+        if (action_it != actions.mapper.end()) {
+            const auto &[type, type_str, parameters] = action_it->second;
+
+            // The action override must be either a blocking one or monitor
+            if (type == action_type::monitor || is_blocking_action(type)) {
+                add_action_to_tracker(actions, action_override, type);
+            } else {
+                // Clear the action override because it's not usable
+                action_override = {};
+            }
+        } else {
+            // Without a definition, the override can't be applied
+            action_override = {};
+        }
+
+        // Tha override might have been clear if no definition was found
+        if (!action_override.empty()) {
+            actions_array.emplace_back(action_override);
+        }
+    }
+
+    bool has_stack_id = false;
+    for (const auto &action_id : rule_actions) {
+        auto action_it = actions.mapper.find(action_id);
+        if (action_it != actions.mapper.end()) {
+            const auto &[type, type_str, parameters] = action_it->second;
+            if (!action_override.empty() &&
+                (type == action_type::monitor || is_blocking_action(type))) {
+                // If the rule was in monitor mode, ignore blocking and monitor actions
+                continue;
+            }
+
+            add_action_to_tracker(actions, action_id, type);
+
+            // The stack ID will be generated when adding the action to the tracker
+            if (type == action_type::generate_stack) {
+                has_stack_id = true;
+            }
+        }
+        // If an action is unspecified, add it and move on
+        actions_array.emplace_back(action_id);
+    }
+
+    return {std::move(actions_array), has_stack_id};
+}
+
+void consolidate_actions(std::string_view action_override,
+    const std::vector<std::string> &rule_actions, action_tracker &actions)
+{
+    if (rule_actions.empty() && action_override.empty()) {
+        return;
+    }
+
+    if (!action_override.empty()) {
+        auto action_it = actions.mapper.find(action_override);
+        if (action_it != actions.mapper.end()) {
+            const auto &[type, type_str, parameters] = action_it->second;
+
+            // The action override must be either a blocking one or monitor
+            if (type == action_type::monitor || is_blocking_action(type)) {
+                add_action_to_tracker(actions, action_override, type);
+            }
+        }
+    }
+
+    for (const auto &action_id : rule_actions) {
+        auto action_it = actions.mapper.find(action_id);
+        if (action_it != actions.mapper.end()) {
+            const auto &[type, type_str, parameters] = action_it->second;
+            if (!action_override.empty() &&
+                (type == action_type::monitor || is_blocking_action(type))) {
+                // If the rule was in monitor mode, ignore blocking and monitor actions
+                continue;
+            }
+
+            add_action_to_tracker(actions, action_id, type);
+        }
+    }
+}
+
+void serialize_event(rule_event &event, const match_obfuscator &obfuscator,
+    std::string_view action_override, const std::vector<std::string> &rule_actions,
+    action_tracker &actions, borrowed_object &event_array)
+{
+    auto root_map = event_array.emplace_back(owned_object::make_map());
+
+    auto rule_map = root_map.emplace("rule", owned_object::make_map());
+    rule_map.emplace("id", event.rule.id);
+    rule_map.emplace("name", event.rule.name);
+
+    auto tags_map = rule_map.emplace("tags", owned_object::make_map());
+    for (const auto &[key, value] : event.rule.tags.get()) { tags_map.emplace(key, value); }
+
+    auto [actions_array, has_stack_id] =
+        serialize_and_consolidate_actions(action_override, rule_actions, actions);
+    rule_map.emplace("on_match", std::move(actions_array));
+
+    auto match_array = root_map.emplace("rule_matches", owned_object::make_array());
+    for (auto &match : event.matches) {
+        obfuscator.obfuscate_match(match);
+        match_array.emplace_back(serialize_match(match));
+    }
+
+    if (has_stack_id) {
+        root_map.emplace("stack_id", actions.stack_id);
+    }
+}
+
+void serialize_action(
+    std::string_view id, const action_tracker &actions, borrowed_object action_map)
+{
+    auto action_it = actions.mapper.find(id);
+    if (action_it == actions.mapper.end()) {
+        // If the action has no spec, we don't report it
+        return;
+    }
+
+    const auto &[type, type_str, parameters] = action_it->second;
+    if (type == action_type::monitor) {
+        return;
+    }
+
+    auto param_map = action_map.emplace(type_str, owned_object::make_map());
+    if (type != action_type::generate_stack) {
+        for (const auto &[k, v] : parameters) { param_map.emplace(k, v); }
+    } else {
+        param_map.emplace("stack_id", actions.stack_id);
+    }
+}
+
+void serialize_actions(const action_tracker &actions, borrowed_object action_map)
+{
+    if (actions.blocking_action_type != action_type::none) {
+        serialize_action(actions.blocking_action, actions, action_map);
+    }
+
+    for (const auto &id : actions.non_blocking_actions) {
+        serialize_action(id, actions, action_map);
+    }
+}
+
+void collect_attributes(const object_store &store, const std::vector<rule_attribute> &attributes,
+    attribute_collector &collector)
+{
+    for (const auto &attr : attributes) {
+        if (std::holds_alternative<rule_attribute::input_target>(attr.value_or_target)) {
+            auto input = std::get<rule_attribute::input_target>(attr.value_or_target);
+            collector.collect(store, input.index, input.key_path, attr.key);
+        } else if (std::holds_alternative<std::string>(attr.value_or_target)) {
+            collector.insert(attr.key, std::get<std::string>(attr.value_or_target));
+        } else if (std::holds_alternative<uint64_t>(attr.value_or_target)) {
+            collector.insert(attr.key, std::get<uint64_t>(attr.value_or_target));
+        } else if (std::holds_alternative<int64_t>(attr.value_or_target)) {
+            collector.insert(attr.key, std::get<int64_t>(attr.value_or_target));
+        } else if (std::holds_alternative<double>(attr.value_or_target)) {
+            collector.insert(attr.key, std::get<double>(attr.value_or_target));
+        } else if (std::holds_alternative<bool>(attr.value_or_target)) {
+            collector.insert(attr.key, std::get<bool>(attr.value_or_target));
+        }
+    }
+}
+
+} // namespace
+
+void result_serializer::serialize(const object_store &store, std::vector<rule_result> &results,
+    attribute_collector &collector, const timer &deadline, result_components output) const
+{
+    action_tracker actions{
+        .blocking_action = {}, .stack_id = {}, .non_blocking_actions = {}, .mapper = actions_};
+
+    // First collect any pending attributes from previous runs
+    collector.collect_pending(store);
+
+    bool final_keep = false;
+    for (auto &result : results) {
+        final_keep |= result.keep;
+
+        if (result.event) {
+            serialize_event(result.event.value(), obfuscator_, result.action_override,
+                result.actions, actions, output.events);
+        } else {
+            consolidate_actions(result.action_override, result.actions, actions);
+        }
+
+        collect_attributes(store, result.attributes.get(), collector);
+    }
+
+    // Using the interface functions would replace the key contained within the
+    // object. This will not be an issue in v2.
+    output.duration = owned_object::make_unsigned(deadline.elapsed().count());
+    output.timeout = owned_object{deadline.expired_before()};
+    output.keep = owned_object{final_keep};
+    output.attributes = collector.get_available_attributes_and_reset();
+    serialize_actions(actions, output.actions);
+}
+
+std::pair<owned_object, result_components> result_serializer::initialise_result_object()
+{
+    auto object = owned_object::make_map({{"events", owned_object::make_array()},
+        {"actions", owned_object::make_map()}, {"duration", owned_object::make_unsigned(0)},
+        {"timeout", false}, {"attributes", owned_object::make_map()}, {"keep", false}});
+
+    const result_components res{.events = object.at(0),
+        .actions = object.at(1),
+        .duration = object.at(2),
+        .timeout = object.at(3),
+        .attributes = object.at(4),
+        .keep = object.at(5)};
+
+    return {std::move(object), res};
+}
+
+} // namespace ddwaf

@@ -4,8 +4,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "exception.hpp"
-#include "matcher/equals.hpp"
 #include "object.hpp"
 #include "processor/base.hpp"
 
@@ -53,11 +51,21 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{{{get_target_index("unary_address"), "unary_address", {}}}},
-             {{{get_target_index("optional_address"), "optional_address", {}}}},
-             {{{get_target_index("variadic_address_1"), "variadic_address_1", {}},
-                 {get_target_index("variadic_address_2"), "variadic_address_2", {}}}}},
-            {get_target_index("output_address"), "output_address", {}}}};
+        {.inputs = {{{{.index = get_target_index("unary_address"),
+                        .name = "unary_address",
+                        .key_path = {}}}},
+             {{{.index = get_target_index("optional_address"),
+                 .name = "optional_address",
+                 .key_path = {}}}},
+             {{{.index = get_target_index("variadic_address_1"),
+                   .name = "variadic_address_1",
+                   .key_path = {}},
+                 {.index = get_target_index("variadic_address_2"),
+                     .name = "variadic_address_2",
+                     .key_path = {}}}}},
+            .output = {.index = get_target_index("output_address"),
+                .name = "output_address",
+                .key_path = {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
@@ -69,11 +77,11 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
 
     processor_cache cache;
     timer deadline{2s};
-    auto attributes = owned_object::make_map();
 
-    EXPECT_EQ(attributes.size(), 0);
-    proc.eval(store, borrowed_object{attributes}, cache, deadline);
+    attribute_collector collector;
+    proc.eval(store, collector, cache, deadline);
 
+    auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 1);
     const auto [obtained_key, obtained_value] = object_view{attributes}.at(0);
     EXPECT_STRV(obtained_key.as<std::string_view>(), "output_address");
@@ -91,11 +99,21 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{{{get_target_index("unary_address"), "unary_address", {}}}},
-             {{{get_target_index("optional_address"), "optional_address", {}}}},
-             {{{get_target_index("variadic_address_1"), "variadic_address_1", {}},
-                 {get_target_index("variadic_address_2"), "variadic_address_2", {}}}}},
-            {get_target_index("output_address"), "output_address", {}}}};
+        {.inputs = {{{{.index = get_target_index("unary_address"),
+                        .name = "unary_address",
+                        .key_path = {}}}},
+             {{{.index = get_target_index("optional_address"),
+                 .name = "optional_address",
+                 .key_path = {}}}},
+             {{{.index = get_target_index("variadic_address_1"),
+                   .name = "variadic_address_1",
+                   .key_path = {}},
+                 {.index = get_target_index("variadic_address_2"),
+                     .name = "variadic_address_2",
+                     .key_path = {}}}}},
+            .output = {.index = get_target_index("output_address"),
+                .name = "output_address",
+                .key_path = {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
@@ -107,11 +125,11 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
 
     processor_cache cache;
     timer deadline{2s};
-    auto attributes = owned_object::make_map();
 
-    EXPECT_EQ(attributes.size(), 0);
-    proc.eval(store, borrowed_object{attributes}, cache, deadline);
+    attribute_collector collector;
+    proc.eval(store, collector, cache, deadline);
 
+    auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 1);
     const auto [obtained_key, obtained_value] = object_view{attributes}.at(0);
     EXPECT_STRV(obtained_key.as<std::string_view>(), "output_address");
@@ -127,11 +145,21 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{{{get_target_index("unary_address"), "unary_address", {}}}},
-             {{{get_target_index("optional_address"), "optional_address", {}}}},
-             {{{get_target_index("variadic_address_1"), "variadic_address_1", {}},
-                 {get_target_index("variadic_address_2"), "variadic_address_2", {}}}}},
-            {get_target_index("output_address"), "output_address", {}}}};
+        {.inputs = {{{{.index = get_target_index("unary_address"),
+                        .name = "unary_address",
+                        .key_path = {}}}},
+             {{{.index = get_target_index("optional_address"),
+                 .name = "optional_address",
+                 .key_path = {}}}},
+             {{{.index = get_target_index("variadic_address_1"),
+                   .name = "variadic_address_1",
+                   .key_path = {}},
+                 {.index = get_target_index("variadic_address_2"),
+                     .name = "variadic_address_2",
+                     .key_path = {}}}}},
+            .output = {.index = get_target_index("output_address"),
+                .name = "output_address",
+                .key_path = {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
@@ -141,10 +169,10 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
 
     processor_cache cache;
     timer deadline{2s};
-    auto attributes = owned_object::make_map();
 
-    EXPECT_EQ(attributes.size(), 0);
-    proc.eval(store, borrowed_object{attributes}, cache, deadline);
+    attribute_collector collector;
+    proc.eval(store, collector, cache, deadline);
+    auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 0);
 }
 
@@ -159,11 +187,21 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
-        {{{{{get_target_index("unary_address"), "unary_address", {}}}},
-             {{{get_target_index("optional_address"), "optional_address", {}}}},
-             {{{get_target_index("variadic_address_1"), "variadic_address_1", {}},
-                 {get_target_index("variadic_address_2"), "variadic_address_2", {}}}}},
-            {get_target_index("output_address"), "output_address", {}}}};
+        {.inputs = {{{{.index = get_target_index("unary_address"),
+                        .name = "unary_address",
+                        .key_path = {}}}},
+             {{{.index = get_target_index("optional_address"),
+                 .name = "optional_address",
+                 .key_path = {}}}},
+             {{{.index = get_target_index("variadic_address_1"),
+                   .name = "variadic_address_1",
+                   .key_path = {}},
+                 {.index = get_target_index("variadic_address_2"),
+                     .name = "variadic_address_2",
+                     .key_path = {}}}}},
+            .output = {.index = get_target_index("output_address"),
+                .name = "output_address",
+                .key_path = {}}}};
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
@@ -173,10 +211,10 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
 
     processor_cache cache;
     timer deadline{2s};
-    auto attributes = owned_object::make_map();
 
-    EXPECT_EQ(attributes.size(), 0);
-    proc.eval(store, borrowed_object{attributes}, cache, deadline);
+    attribute_collector collector;
+    proc.eval(store, collector, cache, deadline);
+    auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 0);
 }
 

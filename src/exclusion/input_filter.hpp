@@ -35,9 +35,9 @@ public:
     input_filter &operator=(const input_filter &) = delete;
     input_filter(input_filter &&) = default;
     input_filter &operator=(input_filter &&) = delete;
-    virtual ~input_filter() = default;
+    ~input_filter() = default;
 
-    virtual std::optional<excluded_set> match(const object_store &store, cache_type &cache,
+    std::optional<excluded_set> match(const object_store &store, cache_type &cache,
         const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const;
 
     std::string_view get_id() { return id_; }

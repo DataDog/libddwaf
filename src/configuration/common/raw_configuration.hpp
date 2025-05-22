@@ -47,6 +47,7 @@ public:
     explicit operator std::vector<std::string_view>() const;
     explicit operator std::unordered_map<std::string, std::string>() const;
     explicit operator semantic_version() const;
+    explicit operator object_view() const { return view_; }
 
     const object_view *operator->() const { return &view_; }
 

@@ -75,36 +75,11 @@ owned_object decode_and_parse(std::string_view source)
     return json_to_object(static_cast<std::string_view>(cstr));
 }
 
-// This could eventually be delegated to the argument retriever, albeit it would
-// need to be refactored to allow for key path retrieval or not
-object_view find_key_path(object_view root, std::span<const std::string> key_path)
-{
-    auto current = root;
-    for (auto it = key_path.begin(); current.has_value() && it != key_path.end(); ++it) {
-        root = current;
-        if (!root.is_map()) {
-            return {};
-        }
-
-        current = {};
-        for (std::size_t i = 0; i < root.size(); ++i) {
-            const auto &[key, child] = root.at(i);
-
-            auto child_key = key.as<std::string_view>();
-            if (*it == child_key) {
-                current = child;
-                break;
-            }
-        }
-    }
-    return current;
-}
-
 std::string_view find_token(object_view root, std::span<const std::string> key_path)
 {
     object_view object = root;
     if (!key_path.empty()) {
-        object = find_key_path(root, key_path);
+        object = root.find_key_path(key_path);
         if (!object.has_value()) {
             return {};
         }

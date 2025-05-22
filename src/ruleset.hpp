@@ -128,7 +128,7 @@ struct ruleset {
     }
 
     ddwaf_object_free_fn free_fn{ddwaf_object_free};
-    std::shared_ptr<const ddwaf::obfuscator> event_obfuscator;
+    std::shared_ptr<const match_obfuscator> obfuscator;
 
     std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> preprocessors;
     std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> postprocessors;

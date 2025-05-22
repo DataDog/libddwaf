@@ -1,0 +1,157 @@
+version: '2.1'
+exclusions:
+  - id: 1
+    rules_target:
+      - rule_id: rule7
+    on_match: monitor
+  - id: 2
+    rules_target:
+      - rule_id: rule8
+    on_match: block
+rules:
+  - id: rule1
+    name: rule1
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value1
+          regex: ^rule1
+    output:
+      event: false
+      keep: false
+      attributes:
+        result.rule1: 
+          value: something
+  - id: rule2
+    name: rule2
+    tags:
+      type: flow2
+      category: category2
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value2
+          regex: ^rule2
+    output:
+      event: true
+      keep: false
+      attributes:
+        result.rule2: 
+          value: something
+  - id: rule3
+    name: rule3
+    tags:
+      type: flow3
+      category: category3
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value3
+          regex: ^rule3
+    output:
+      event: false
+      keep: false
+      attributes:
+        result.rule3: 
+          address: value3
+  - id: rule4
+    name: rule4
+    tags:
+      type: flow4
+      category: category4
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value4
+          regex: ^rule4
+    output:
+      event: false
+      keep: false
+      attributes:
+        rule4.int64: 
+          value: -200
+        rule4.uint64: 
+          value: 200
+        rule4.double: 
+          value: 200.22
+        rule4.bool:
+          value: true
+  - id: rule5
+    name: rule5
+    tags:
+      type: flow5
+      category: category5
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value5
+          regex: ^rule5
+    output:
+      event: false
+      keep: true
+      attributes:
+        result.rule5: 
+          address: value5
+    on_match: [ block ]
+  - id: rule6
+    name: rule6
+    tags:
+      type: flow6
+      category: category6
+      module: custom-acl
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value6
+          regex: ^rule6
+    output:
+      event: false
+      keep: false
+      attributes:
+        result.rule6: 
+          address: value6
+    on_match: [ stack_trace ]
+  - id: rule7
+    name: rule7
+    tags:
+      type: flow7
+      category: category7
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value7
+          regex: ^rule7
+    output:
+      event: false
+      keep: true
+      attributes:
+        result.rule7: 
+          address: value7
+    on_match: [ block ]
+  - id: rule8
+    name: rule8
+    tags:
+      type: flow8
+      category: category8
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value8
+          regex: ^rule8
+    output:
+      event: false
+      keep: false
+      attributes:
+        result.rule8: 
+          address: value8

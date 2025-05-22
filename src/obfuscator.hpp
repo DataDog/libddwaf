@@ -19,9 +19,9 @@ namespace ddwaf {
 // the objective would be to directly pass events to the obfuscator and have it
 // obfuscate as required.
 
-class obfuscator {
+class match_obfuscator {
 public:
-    explicit obfuscator(std::string_view key_regex_str = std::string_view(),
+    explicit match_obfuscator(std::string_view key_regex_str = std::string_view(),
         std::string_view value_regex_str = std::string_view());
 
     void obfuscate_match(condition_match &match) const;

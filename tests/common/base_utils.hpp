@@ -147,7 +147,7 @@ struct ruleset_builder {
     [[nodiscard]] std::shared_ptr<ddwaf::ruleset> build() const
     {
         auto ruleset = std::make_shared<ddwaf::ruleset>();
-        ruleset->event_obfuscator = std::make_shared<ddwaf::obfuscator>();
+        ruleset->obfuscator = std::make_shared<ddwaf::match_obfuscator>();
 
         ruleset->free_fn = free_fn;
         ruleset->insert_preprocessors(preprocessors);
