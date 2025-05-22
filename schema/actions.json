@@ -1,7 +1,7 @@
 {
   "title": "WAF Actions Schema",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "schema/actions.json",
+  "$id": "/schema/actions",
   "type": "object",
   "description": "Map of unique actions",
   "properties": {
