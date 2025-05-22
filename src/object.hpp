@@ -375,6 +375,7 @@ public:
         }
         return current;
     }
+
 protected:
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const detail::object *obj_{nullptr};
