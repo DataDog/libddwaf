@@ -4,16 +4,25 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <cstdint>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <unordered_set>
+#include <utility>
+#include <variant>
 #include <vector>
 
 #include "action_mapper.hpp"
+#include "attribute_collector.hpp"
+#include "clock.hpp"
 #include "condition/base.hpp"
 #include "ddwaf.h"
-#include "event.hpp"
+#include "obfuscator.hpp"
+#include "object_store.hpp"
 #include "rule.hpp"
+#include "serializer.hpp"
+#include "utils.hpp"
 #include "uuid.hpp"
 
 namespace ddwaf {
@@ -29,13 +38,11 @@ ddwaf_object *to_object(ddwaf_object &tmp, std::string_view str)
     return ddwaf_object_stringl(&tmp, str.data(), str.size());
 }
 
-void serialize_match(condition_match &match, ddwaf_object &match_map, auto &obfuscator)
+void serialize_match(condition_match &match, ddwaf_object &match_map)
 {
     ddwaf_object tmp;
     ddwaf_object param;
     ddwaf_object_map(&param);
-
-    obfuscator.obfuscate_match(match);
 
     ddwaf_object highlight_arr;
     ddwaf_object_array(&highlight_arr);
@@ -127,49 +134,17 @@ void add_action_to_tracker(action_tracker &actions, std::string_view id, action_
     }
 }
 
-void serialize_rule(const core_rule &rule, ddwaf_object &rule_map)
+std::pair<ddwaf_object, /*stack id*/ bool> serialize_and_consolidate_actions(
+    std::string_view action_override, const std::vector<std::string> &rule_actions,
+    action_tracker &actions)
 {
-    ddwaf_object tmp;
-    ddwaf_object tags_map;
-
-    ddwaf_object_map(&rule_map);
-    ddwaf_object_map(&tags_map);
-
-    ddwaf_object_map_add(&rule_map, "id", to_object(tmp, rule.get_id()));
-    ddwaf_object_map_add(&rule_map, "name", to_object(tmp, rule.get_name()));
-
-    for (const auto &[key, value] : rule.get_tags()) {
-        ddwaf_object_map_addl(&tags_map, key.c_str(), key.size(), to_object(tmp, value));
-    }
-    ddwaf_object_map_add(&rule_map, "tags", &tags_map);
-}
-
-void serialize_empty_rule(ddwaf_object &rule_map)
-{
-    ddwaf_object tmp;
-    ddwaf_object tags_map;
-
-    ddwaf_object_map(&tags_map);
-    ddwaf_object_map_add(&tags_map, "type", to_object(tmp, ""));
-    ddwaf_object_map_add(&tags_map, "category", to_object(tmp, ""));
-
-    ddwaf_object_map(&rule_map);
-    ddwaf_object_map_add(&rule_map, "id", to_object(tmp, ""));
-    ddwaf_object_map_add(&rule_map, "name", to_object(tmp, ""));
-    ddwaf_object_map_add(&rule_map, "tags", &tags_map);
-}
-
-void serialize_and_consolidate_rule_actions(const core_rule &rule, ddwaf_object &rule_map,
-    std::string_view action_override, action_tracker &actions, ddwaf_object &stack_id)
-{
-    const auto &rule_actions = rule.get_actions();
-    if (rule_actions.empty() && action_override.empty()) {
-        return;
-    }
-
     ddwaf_object tmp;
     ddwaf_object actions_array;
     ddwaf_object_array(&actions_array);
+
+    if (rule_actions.empty() && action_override.empty()) {
+        return {actions_array, false};
+    }
 
     if (!action_override.empty()) {
         auto action_it = actions.mapper.find(action_override);
@@ -194,6 +169,7 @@ void serialize_and_consolidate_rule_actions(const core_rule &rule, ddwaf_object 
         }
     }
 
+    bool has_stack_id = false;
     for (const auto &action_id : rule_actions) {
         auto action_it = actions.mapper.find(action_id);
         if (action_it != actions.mapper.end()) {
@@ -207,15 +183,93 @@ void serialize_and_consolidate_rule_actions(const core_rule &rule, ddwaf_object 
             add_action_to_tracker(actions, action_id, type);
 
             // The stack ID will be generated when adding the action to the tracker
-            if (type == action_type::generate_stack && stack_id.type == DDWAF_OBJ_INVALID) {
-                to_object(stack_id, actions.stack_id);
+            if (type == action_type::generate_stack) {
+                has_stack_id = true;
             }
         }
         // If an action is unspecified, add it and move on
         ddwaf_object_array_add(&actions_array, to_object(tmp, action_id));
     }
 
+    return {actions_array, has_stack_id};
+}
+
+void consolidate_actions(std::string_view action_override,
+    const std::vector<std::string> &rule_actions, action_tracker &actions)
+{
+    if (rule_actions.empty() && action_override.empty()) {
+        return;
+    }
+
+    if (!action_override.empty()) {
+        auto action_it = actions.mapper.find(action_override);
+        if (action_it != actions.mapper.end()) {
+            const auto &[type, type_str, parameters] = action_it->second;
+
+            // The action override must be either a blocking one or monitor
+            if (type == action_type::monitor || is_blocking_action(type)) {
+                add_action_to_tracker(actions, action_override, type);
+            }
+        }
+    }
+
+    for (const auto &action_id : rule_actions) {
+        auto action_it = actions.mapper.find(action_id);
+        if (action_it != actions.mapper.end()) {
+            const auto &[type, type_str, parameters] = action_it->second;
+            if (!action_override.empty() &&
+                (type == action_type::monitor || is_blocking_action(type))) {
+                // If the rule was in monitor mode, ignore blocking and monitor actions
+                continue;
+            }
+
+            add_action_to_tracker(actions, action_id, type);
+        }
+    }
+}
+
+void serialize_event(rule_event &event, const match_obfuscator &obfuscator,
+    std::string_view action_override, const std::vector<std::string> &rule_actions,
+    action_tracker &actions, ddwaf_object &event_array)
+{
+    ddwaf_object tmp;
+
+    ddwaf_object tags_map;
+    ddwaf_object_map(&tags_map);
+    for (const auto &[key, value] : event.rule.tags.get()) {
+        ddwaf_object_map_addl(&tags_map, key.c_str(), key.size(), to_object(tmp, value));
+    }
+
+    ddwaf_object rule_map;
+    ddwaf_object_map(&rule_map);
+    ddwaf_object_map_add(&rule_map, "id", to_object(tmp, event.rule.id));
+    ddwaf_object_map_add(&rule_map, "name", to_object(tmp, event.rule.name));
+    ddwaf_object_map_add(&rule_map, "tags", &tags_map);
+
+    auto [actions_array, has_stack_id] =
+        serialize_and_consolidate_actions(action_override, rule_actions, actions);
     ddwaf_object_map_add(&rule_map, "on_match", &actions_array);
+
+    ddwaf_object match_array;
+    ddwaf_object_array(&match_array);
+    for (auto &match : event.matches) {
+        obfuscator.obfuscate_match(match);
+
+        ddwaf_object match_map;
+        ddwaf_object_map(&match_map);
+        serialize_match(match, match_map);
+        ddwaf_object_array_add(&match_array, &match_map);
+    }
+
+    ddwaf_object root_map;
+    ddwaf_object_map(&root_map);
+    ddwaf_object_map_add(&root_map, "rule", &rule_map);
+    ddwaf_object_map_add(&root_map, "rule_matches", &match_array);
+    if (has_stack_id) {
+        ddwaf_object_map_add(&root_map, "stack_id", to_object(tmp, actions.stack_id));
+    }
+
+    ddwaf_object_array_add(&event_array, &root_map);
 }
 
 void serialize_action(std::string_view id, ddwaf_object &action_map, const action_tracker &actions)
@@ -258,51 +312,88 @@ void serialize_actions(ddwaf_object &action_map, const action_tracker &actions)
     }
 }
 
+void collect_attributes(const object_store &store, const std::vector<rule_attribute> &attributes,
+    attribute_collector &collector)
+{
+    for (const auto &attr : attributes) {
+        if (std::holds_alternative<rule_attribute::input_target>(attr.value_or_target)) {
+            auto input = std::get<rule_attribute::input_target>(attr.value_or_target);
+            collector.collect(store, input.index, input.key_path, attr.key);
+        } else if (std::holds_alternative<std::string>(attr.value_or_target)) {
+            collector.insert(attr.key, std::get<std::string>(attr.value_or_target));
+        } else if (std::holds_alternative<uint64_t>(attr.value_or_target)) {
+            collector.insert(attr.key, std::get<uint64_t>(attr.value_or_target));
+        } else if (std::holds_alternative<int64_t>(attr.value_or_target)) {
+            collector.insert(attr.key, std::get<int64_t>(attr.value_or_target));
+        } else if (std::holds_alternative<double>(attr.value_or_target)) {
+            collector.insert(attr.key, std::get<double>(attr.value_or_target));
+        } else if (std::holds_alternative<bool>(attr.value_or_target)) {
+            collector.insert(attr.key, std::get<bool>(attr.value_or_target));
+        }
+    }
+}
+
 } // namespace
 
-void event_serializer::serialize(std::vector<event> &events,
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    ddwaf_object &output_events, ddwaf_object &output_actions) const
+void result_serializer::serialize(const object_store &store, std::vector<rule_result> &results,
+    attribute_collector &collector, const timer &deadline, result_components output) const
 {
     action_tracker actions{
         .blocking_action = {}, .stack_id = {}, .non_blocking_actions = {}, .mapper = actions_};
 
-    for (auto &event : events) {
-        ddwaf_object root_map;
-        ddwaf_object rule_map;
-        ddwaf_object match_array;
+    // First collect any pending attributes from previous runs
+    collector.collect_pending(store);
 
-        ddwaf_object_map(&root_map);
-        ddwaf_object_array(&match_array);
+    bool final_keep = false;
+    for (auto &result : results) {
+        final_keep |= result.keep;
 
-        ddwaf_object stack_id;
-        ddwaf_object_invalid(&stack_id);
-        if (event.rule != nullptr) {
-            serialize_rule(*event.rule, rule_map);
-            serialize_and_consolidate_rule_actions(
-                *event.rule, rule_map, event.action_override, actions, stack_id);
+        if (result.event) {
+            serialize_event(result.event.value(), obfuscator_, result.action_override,
+                result.actions, actions, output.events);
         } else {
-            // This will only be used for testing
-            serialize_empty_rule(rule_map);
+            consolidate_actions(result.action_override, result.actions, actions);
         }
 
-        for (auto &match : event.matches) {
-            ddwaf_object match_map;
-            ddwaf_object_map(&match_map);
-            serialize_match(match, match_map, obfuscator_);
-            ddwaf_object_array_add(&match_array, &match_map);
-        }
-
-        ddwaf_object_map_add(&root_map, "rule", &rule_map);
-        ddwaf_object_map_add(&root_map, "rule_matches", &match_array);
-        if (stack_id.type == DDWAF_OBJ_STRING) {
-            ddwaf_object_map_add(&root_map, "stack_id", &stack_id);
-        }
-
-        ddwaf_object_array_add(&output_events, &root_map);
+        collect_attributes(store, result.attributes.get(), collector);
     }
 
-    serialize_actions(output_actions, actions);
+    // Using the interface functions would replace the key contained within the
+    // object. This will not be an issue in v2.
+    output.duration.uintValue = deadline.elapsed().count();
+    output.timeout.boolean = deadline.expired_before();
+    output.keep.boolean = final_keep;
+
+    object::assign(output.attributes, collector.get_available_attributes_and_reset());
+    serialize_actions(output.actions, actions);
+}
+
+std::pair<ddwaf_object, result_components> result_serializer::initialise_result_object()
+{
+    ddwaf_object object;
+    ddwaf_object_map(&object);
+
+    bool add_res = true;
+    ddwaf_object tmp;
+    add_res &= ddwaf_object_map_addl(&object, STRL("events"), ddwaf_object_array(&tmp));
+    add_res &= ddwaf_object_map_addl(&object, STRL("actions"), ddwaf_object_map(&tmp));
+    add_res &= ddwaf_object_map_addl(&object, STRL("duration"), ddwaf_object_unsigned(&tmp, 0));
+    add_res &= ddwaf_object_map_addl(&object, STRL("timeout"), ddwaf_object_bool(&tmp, false));
+    add_res &= ddwaf_object_map_addl(&object, STRL("attributes"), ddwaf_object_map(&tmp));
+    add_res &= ddwaf_object_map_addl(&object, STRL("keep"), ddwaf_object_bool(&tmp, false));
+
+    if (!add_res) {
+        throw std::runtime_error("failed to generate result object");
+    }
+
+    const result_components res{.events = object.array[0],
+        .actions = object.array[1],
+        .duration = object.array[2],
+        .timeout = object.array[3],
+        .attributes = object.array[4],
+        .keep = object.array[5]};
+
+    return {object, res};
 }
 
 } // namespace ddwaf

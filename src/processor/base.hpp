@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "argument_retriever.hpp"
+#include "attribute_collector.hpp"
 #include "exception.hpp"
 #include "expression.hpp"
 #include "object_store.hpp"
@@ -79,8 +80,8 @@ public:
     base_processor &operator=(base_processor &&rhs) noexcept = default;
     virtual ~base_processor() = default;
 
-    virtual void eval(object_store &store, optional_ref<ddwaf_object> &derived,
-        processor_cache &cache, const object_limits &limits, ddwaf::timer &deadline) const = 0;
+    virtual void eval(object_store &store, attribute_collector &collector, processor_cache &cache,
+        const object_limits &limits, ddwaf::timer &deadline) const = 0;
 
     virtual void get_addresses(std::unordered_map<target_index, std::string> &addresses) const = 0;
 
@@ -102,15 +103,9 @@ public:
     structured_processor &operator=(structured_processor &&rhs) noexcept = default;
     ~structured_processor() override = default;
 
-    void eval(object_store &store, optional_ref<ddwaf_object> &derived, processor_cache &cache,
+    void eval(object_store &store, attribute_collector &collector, processor_cache &cache,
         const object_limits &limits, ddwaf::timer &deadline) const override
     {
-        // No result structure, but this processor only produces derived objects
-        // so it makes no sense to evaluate.
-        if (!derived.has_value() && !evaluate_ && output_) {
-            return;
-        }
-
         DDWAF_DEBUG("Evaluating processor '{}'", id_);
 
         if (!expr_->eval(cache.expr_cache, store, {}, {}, limits, deadline).outcome) {
@@ -191,14 +186,9 @@ public:
                 store.insert(mapping.output.index, mapping.output.name, object, attr);
             }
 
-            if (output_ && derived.has_value()) {
-                ddwaf_object &output = derived.value();
-                if (evaluate_) {
-                    auto copy = ddwaf::object::clone(&object);
-                    ddwaf_object_map_add(&output, mapping.output.name.c_str(), &copy);
-                } else {
-                    ddwaf_object_map_add(&output, mapping.output.name.c_str(), &object);
-                }
+            if (output_) {
+                // The object is copied if we are also using it for evaluation
+                collector.insert(mapping.output.name, object, /*copy*/ evaluate_);
             }
         }
     }

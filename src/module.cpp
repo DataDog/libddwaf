@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "clock.hpp"
-#include "event.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "log.hpp"
@@ -26,13 +25,12 @@ namespace ddwaf {
 namespace {
 using verdict_type = rule_module::verdict_type;
 
-std::pair<std::optional<event>, verdict_type> eval_rule(const core_rule &rule,
+std::pair<verdict_type, std::optional<rule_result>> eval_rule(const core_rule &rule,
     const object_store &store, core_rule::cache_type &cache,
     const exclusion::context_policy &policy, const matcher_mapper &dynamic_matchers,
     const object_limits &limits, ddwaf::timer &deadline)
 {
     const auto &id = rule.get_id();
-    auto verdict = rule.get_verdict();
 
     if (deadline.expired()) {
         DDWAF_INFO("Ran out of time while evaluating rule '{}'", id);
@@ -41,43 +39,48 @@ std::pair<std::optional<event>, verdict_type> eval_rule(const core_rule &rule,
 
     if (!rule.is_enabled()) {
         DDWAF_DEBUG("Rule '{}' is disabled", id);
-        return {std::nullopt, verdict_type::none};
+        return {verdict_type::none, std::nullopt};
     }
 
     std::string_view action_override;
     auto exclusion = policy.find(&rule);
     if (exclusion.mode == exclusion::filter_mode::bypass) {
         DDWAF_DEBUG("Bypassing rule '{}'", id);
-        return {std::nullopt, verdict_type::none};
+        return {verdict_type::none, std::nullopt};
     }
 
+    rule_verdict verdict_override = rule_verdict::none;
     if (exclusion.mode == exclusion::filter_mode::monitor) {
         action_override = "monitor";
-        verdict = verdict_type::monitor;
+        verdict_override = verdict_type::monitor;
         DDWAF_DEBUG("Monitoring rule '{}'", id);
     } else if (exclusion.mode == exclusion::filter_mode::custom) {
         action_override = exclusion.action_override;
-        verdict = verdict_type::block;
+        verdict_override = verdict_type::block;
         DDWAF_DEBUG("Evaluating rule '{}' with custom action '{}'", id, action_override);
     } else {
         DDWAF_DEBUG("Evaluating rule '{}'", id);
     }
 
     try {
-        std::optional<event> event;
-        event = rule.match(store, cache, exclusion.objects, dynamic_matchers, limits, deadline);
+        auto [verdict, outcome] =
+            rule.match(store, cache, exclusion.objects, dynamic_matchers, limits, deadline);
 
-        if (event.has_value()) {
-            event->action_override = action_override;
+        if (outcome.has_value()) {
+            outcome->action_override = action_override;
         }
 
-        return {event, verdict};
+        if (verdict_override != rule_verdict::none) {
+            verdict = verdict_override;
+        }
+
+        return {verdict, outcome};
     } catch (const ddwaf::timeout_exception &) {
         DDWAF_INFO("Ran out of time while evaluating rule '{}'", id);
         throw;
     }
 
-    return {std::nullopt, verdict_type::none};
+    return {verdict_type::none, std::nullopt};
 }
 
 } // namespace
@@ -88,8 +91,8 @@ ddwaf::timer &rule_module::get_deadline(ddwaf::timer &deadline) const
     return may_expire() ? deadline : no_deadline;
 }
 
-verdict_type rule_module::eval_with_collections(std::vector<event> &events, object_store &store,
-    cache_type &cache, const exclusion::context_policy &exclusion,
+verdict_type rule_module::eval_with_collections(std::vector<rule_result> &results,
+    object_store &store, cache_type &cache, const exclusion::context_policy &exclusion,
     const matcher_mapper &dynamic_matchers, const object_limits &limits,
     ddwaf::timer &deadline) const
 {
@@ -111,13 +114,13 @@ verdict_type rule_module::eval_with_collections(std::vector<event> &events, obje
 
         for (std::size_t i = collection.begin; i < collection.end; ++i) {
             const auto &rule = *rules_[i];
-            auto [event, verdict] = eval_rule(
+            auto [verdict, outcome] = eval_rule(
                 rule, store, cache.rules[i], exclusion, dynamic_matchers, limits, deadline);
-            if (event.has_value()) {
+            if (outcome.has_value()) {
                 collection_cache.type = verdict;
-                collection_cache.ephemeral = event->ephemeral;
+                collection_cache.ephemeral = outcome->ephemeral;
 
-                events.emplace_back(std::move(*event));
+                results.emplace_back(std::move(*outcome));
                 DDWAF_DEBUG("Found event on rule {}", rule.get_id());
 
                 if (verdict == verdict_type::block) {
@@ -132,9 +135,10 @@ verdict_type rule_module::eval_with_collections(std::vector<event> &events, obje
     return final_verdict;
 }
 
-verdict_type rule_module::eval(std::vector<event> &events, object_store &store, cache_type &cache,
-    const exclusion::context_policy &exclusion, const matcher_mapper &dynamic_matchers,
-    const object_limits &limits, ddwaf::timer &deadline) const
+verdict_type rule_module::eval(std::vector<rule_result> &results, object_store &store,
+    cache_type &cache, const exclusion::context_policy &exclusion,
+    const matcher_mapper &dynamic_matchers, const object_limits &limits,
+    ddwaf::timer &deadline) const
 {
     auto &apt_deadline = get_deadline(deadline);
 
@@ -144,10 +148,10 @@ verdict_type rule_module::eval(std::vector<event> &events, object_store &store, 
             const auto &rule = *rules_[i];
             auto &rule_cache = cache.rules[i];
 
-            auto [event, verdict] = eval_rule(
+            auto [verdict, outcome] = eval_rule(
                 rule, store, rule_cache, exclusion, dynamic_matchers, limits, apt_deadline);
-            if (event.has_value()) {
-                events.emplace_back(std::move(*event));
+            if (outcome.has_value()) {
+                results.emplace_back(std::move(*outcome));
                 DDWAF_DEBUG("Found event on rule {}", rule.get_id());
                 final_verdict = verdict;
                 if (final_verdict == verdict_type::block) {
@@ -159,6 +163,6 @@ verdict_type rule_module::eval(std::vector<event> &events, object_store &store, 
     }
 
     return eval_with_collections(
-        events, store, cache, exclusion, dynamic_matchers, limits, apt_deadline);
+        results, store, cache, exclusion, dynamic_matchers, limits, apt_deadline);
 }
 } // namespace ddwaf

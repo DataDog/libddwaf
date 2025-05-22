@@ -3,7 +3,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/interface.cpp
     ${libddwaf_SOURCE_DIR}/src/context.cpp
     ${libddwaf_SOURCE_DIR}/src/context_allocator.cpp
-    ${libddwaf_SOURCE_DIR}/src/event.cpp
+    ${libddwaf_SOURCE_DIR}/src/serializer.cpp
     ${libddwaf_SOURCE_DIR}/src/object.cpp
     ${libddwaf_SOURCE_DIR}/src/object_store.cpp
     ${libddwaf_SOURCE_DIR}/src/module.cpp
@@ -20,6 +20,8 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/sha256.cpp
     ${libddwaf_SOURCE_DIR}/src/uuid.cpp
     ${libddwaf_SOURCE_DIR}/src/action_mapper.cpp
+    ${libddwaf_SOURCE_DIR}/src/attribute_collector.cpp
+    ${libddwaf_SOURCE_DIR}/src/rule.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/action_mapper_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/matcher_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/module_builder.cpp

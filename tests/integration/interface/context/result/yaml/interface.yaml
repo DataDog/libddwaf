@@ -54,6 +54,6 @@ processors:
         - inputs:
             - address: server.request.body
           output: server.request.body.schema
-    evaluate: false
+    evaluate: true
     output: true
 

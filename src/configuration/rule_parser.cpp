@@ -3,8 +3,10 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <cstddef>
 #include <exception>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -18,9 +20,11 @@
 #include "configuration/common/raw_configuration.hpp"
 #include "configuration/common/transformer_parser.hpp"
 #include "configuration/rule_parser.hpp"
+#include "ddwaf.h"
 #include "log.hpp"
 #include "rule.hpp"
 #include "semver.hpp"
+#include "target_address.hpp"
 #include "transformer/base.hpp"
 #include "utils.hpp"
 #include "version.hpp"
@@ -60,12 +64,61 @@ rule_spec parse_rule(raw_configuration::map &rule, core_rule::source_type source
         throw ddwaf::parsing_error("missing key 'type'");
     }
 
+    auto output = at<raw_configuration::map>(rule, "output", {});
+    rule_flags flags = rule_flags::none;
+    if (at<bool>(output, "event", true)) {
+        flags = flags | rule_flags::generate_event;
+    }
+    if (at<bool>(output, "keep", true)) {
+        flags = flags | rule_flags::keep_outcome;
+    }
+
+    auto attr_map = at<raw_configuration::map>(output, "attributes", {});
+    std::vector<rule_attribute> attributes;
+    for (auto &[key, value_or_target] : attr_map) {
+        rule_attribute attr_spec;
+        attr_spec.key = key;
+
+        auto value_or_target_map = static_cast<raw_configuration::map>(value_or_target);
+        if (value_or_target_map.contains("value")) {
+            auto value = static_cast<ddwaf_object>(value_or_target_map["value"]);
+            switch (value.type) {
+            case DDWAF_OBJ_STRING:
+                attr_spec.value_or_target =
+                    std::string{value.stringValue, static_cast<std::size_t>(value.nbEntries)};
+                break;
+            case DDWAF_OBJ_UNSIGNED:
+                attr_spec.value_or_target = value.uintValue;
+                break;
+            case DDWAF_OBJ_SIGNED:
+                attr_spec.value_or_target = value.intValue;
+                break;
+            case DDWAF_OBJ_FLOAT:
+                attr_spec.value_or_target = value.f64;
+                break;
+            case DDWAF_OBJ_BOOL:
+                attr_spec.value_or_target = value.boolean;
+                break;
+            default:
+                throw parsing_error("invalid type for 'value', expected scalar");
+            }
+        } else {
+            auto address = at<std::string_view>(value_or_target_map, "address");
+            attr_spec.value_or_target = rule_attribute::input_target{.name = std::string{address},
+                .index = get_target_index(address),
+                .key_path = at<std::vector<std::string>>(value_or_target_map, "key_path", {})};
+        }
+        attributes.emplace_back(std::move(attr_spec));
+    }
+
     return {.enabled = at<bool>(rule, "enabled", true),
+        .flags = flags,
         .source = source,
         .name = at<std::string>(rule, "name"),
         .tags = std::move(tags),
         .expr = std::move(expr),
-        .actions = at<std::vector<std::string>>(rule, "on_match", {})};
+        .actions = at<std::vector<std::string>>(rule, "on_match", {}),
+        .attributes = std::move(attributes)};
 }
 
 void parse_rules(const raw_configuration::vector &rule_array, configuration_collector &cfg,
@@ -95,6 +148,12 @@ void parse_rules(const raw_configuration::vector &rule_array, configuration_coll
             }
 
             auto rule = parse_rule(node, source);
+            if (!contains(rule.flags, rule_flags::generate_event) && rule.attributes.empty()) {
+                DDWAF_WARN("Rule generates no events or attributes: {}", id);
+                info.add_failed(
+                    id, parser_error_severity::error, "rule generates no events or attributes");
+                continue;
+            }
 
             DDWAF_DEBUG("Parsed rule {}", id);
             info.add_loaded(id);

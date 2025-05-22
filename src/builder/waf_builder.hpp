@@ -18,8 +18,8 @@ namespace ddwaf {
 class waf_builder {
 public:
     waf_builder(object_limits limits, ddwaf_object_free_fn free_fn,
-        std::shared_ptr<ddwaf::obfuscator> event_obfuscator)
-        : rbuilder_(limits, free_fn, std::move(event_obfuscator))
+        std::shared_ptr<match_obfuscator> obfuscator)
+        : rbuilder_(limits, free_fn, std::move(obfuscator))
     {}
 
     ~waf_builder() = default;

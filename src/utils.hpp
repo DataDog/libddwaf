@@ -15,6 +15,7 @@
 #include <limits>
 #include <optional>
 #include <ostream>
+#include <span>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -111,7 +112,12 @@ inline bool is_invalid_or_null(const ddwaf_object *obj)
     return obj != nullptr && (obj->type == DDWAF_OBJ_INVALID || obj->type == DDWAF_OBJ_NULL);
 }
 
-ddwaf_object clone(ddwaf_object *input);
+ddwaf_object clone(const ddwaf_object *input);
+
+const ddwaf_object *find_key_path(const ddwaf_object &root, std::span<const std::string> key_path);
+
+// Assign source to dest without leaking keys
+void assign(ddwaf_object &dest, const ddwaf_object &source);
 } // namespace object
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)

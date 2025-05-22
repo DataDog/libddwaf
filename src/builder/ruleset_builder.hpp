@@ -20,8 +20,8 @@ class ruleset_builder {
 public:
     explicit ruleset_builder(object_limits limits = {},
         ddwaf_object_free_fn free_fn = ddwaf_object_free,
-        std::shared_ptr<ddwaf::obfuscator> event_obfuscator = std::make_shared<ddwaf::obfuscator>())
-        : limits_(limits), free_fn_(free_fn), event_obfuscator_(std::move(event_obfuscator))
+        std::shared_ptr<match_obfuscator> obfuscator = std::make_shared<match_obfuscator>())
+        : limits_(limits), free_fn_(free_fn), obfuscator_(std::move(obfuscator))
     {}
 
     ~ruleset_builder() = default;
@@ -38,7 +38,7 @@ protected:
     // all updates.
     object_limits limits_;
     ddwaf_object_free_fn free_fn_;
-    std::shared_ptr<ddwaf::obfuscator> event_obfuscator_;
+    std::shared_ptr<match_obfuscator> obfuscator_;
 
     // These contain the specification of each main component obtained directly
     // from the parser. These are only modified on update, if the relevant key

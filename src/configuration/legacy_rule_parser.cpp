@@ -178,11 +178,13 @@ void parse_legacy_rules(const raw_configuration::vector &rule_array, configurati
             }
 
             rule_spec spec{.enabled = true,
+                .flags = rule_flags::generate_event | rule_flags::keep_outcome,
                 .source = core_rule::source_type::base,
                 .name = at<std::string>(node, "name"),
                 .tags = std::move(tags),
                 .expr = std::move(expression),
-                .actions = {}};
+                .actions = {},
+                .attributes = {}};
 
             DDWAF_DEBUG("Parsed rule {}", id);
             info.add_loaded(id);

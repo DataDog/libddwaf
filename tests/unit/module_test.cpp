@@ -16,11 +16,13 @@ using namespace std::literals;
 
 namespace {
 
-bool contains(auto events, auto id)
+bool contains(auto results, auto id)
 {
-    for (const auto &event : events) {
-        if (event.rule->get_id() == id) {
-            return true;
+    for (const auto &result : results) {
+        if (result.event.has_value()) {
+            if (result.event->rule.id == id) {
+                return true;
+            }
         }
     }
     return false;
@@ -55,11 +57,11 @@ TEST(TestModuleUngrouped, SingleRuleMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
-        EXPECT_EQ(events.size(), 1);
+        EXPECT_EQ(results.size(), 1);
     }
 
     {
@@ -69,12 +71,12 @@ TEST(TestModuleUngrouped, SingleRuleMatch)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         store.insert(root);
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        mod.eval(events, store, cache, {}, {}, {}, deadline);
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::none);
-        EXPECT_EQ(events.size(), 0);
+        EXPECT_EQ(results.size(), 0);
     }
 }
 
@@ -126,13 +128,13 @@ TEST(TestModuleUngrouped, MultipleMonitoringRuleMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
-        EXPECT_EQ(events.size(), 2);
-        EXPECT_TRUE(contains(events, "id1"));
-        EXPECT_TRUE(contains(events, "id2"));
+        EXPECT_EQ(results.size(), 2);
+        EXPECT_TRUE(contains(results, "id1"));
+        EXPECT_TRUE(contains(results, "id2"));
     }
 
     {
@@ -142,12 +144,12 @@ TEST(TestModuleUngrouped, MultipleMonitoringRuleMatch)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         store.insert(root);
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        mod.eval(events, store, cache, {}, {}, {}, deadline);
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::none);
-        EXPECT_EQ(events.size(), 0);
+        EXPECT_EQ(results.size(), 0);
     }
 }
 
@@ -179,8 +181,8 @@ TEST(TestModuleUngrouped, BlockingRuleMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{base_rule_precedence, null_grouping_key};
@@ -200,12 +202,12 @@ TEST(TestModuleUngrouped, BlockingRuleMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(contains(events, "id2"));
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, "id2"));
     }
 
     // No further calls should happen after a blocking rule matches
@@ -239,8 +241,8 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{base_rule_precedence, null_grouping_key};
@@ -260,12 +262,12 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(contains(events, "id1"));
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, "id1"));
     }
 
     // Check that we can still match the blocking rule
@@ -277,11 +279,11 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
-        EXPECT_EQ(events.size(), 1);
+        EXPECT_EQ(results.size(), 1);
     }
 }
 
@@ -299,8 +301,8 @@ TEST(TestModuleUngrouped, BlockingRuleMatchBasePrecedence)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::user,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::user, core_rule::verdict_type::block));
         rules.emplace_back(
             std::make_shared<core_rule>("id", "name", std::move(tags), builder.build()));
     }
@@ -316,8 +318,8 @@ TEST(TestModuleUngrouped, BlockingRuleMatchBasePrecedence)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{base_rule_precedence, null_grouping_key};
@@ -337,12 +339,12 @@ TEST(TestModuleUngrouped, BlockingRuleMatchBasePrecedence)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(contains(events, "id2"));
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, "id2"));
     }
 
     // No further calls should happen after a blocking rule matches
@@ -362,8 +364,8 @@ TEST(TestModuleUngrouped, BlockingRuleMatchUserPrecedence)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::user,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::user, core_rule::verdict_type::block));
         rules.emplace_back(
             std::make_shared<core_rule>("id", "name", std::move(tags), builder.build()));
     }
@@ -379,8 +381,8 @@ TEST(TestModuleUngrouped, BlockingRuleMatchUserPrecedence)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, null_grouping_key};
@@ -400,12 +402,12 @@ TEST(TestModuleUngrouped, BlockingRuleMatchUserPrecedence)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(contains(events, "id1"));
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, "id1"));
     }
 
     // No further calls should happen after a blocking rule matches
@@ -442,12 +444,12 @@ TEST(TestModuleUngrouped, NonExpiringModule)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline{0s};
-        mod.eval(events, store, cache, {}, {}, {}, deadline);
+        mod.eval(results, store, cache, {}, {}, {}, deadline);
 
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(contains(events, "id"));
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, "id"));
     }
 }
 
@@ -482,10 +484,10 @@ TEST(TestModuleUngrouped, ExpiringModule)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline{0s};
         EXPECT_THROW(
-            mod.eval(events, store, cache, {}, {}, {}, deadline), ddwaf::timeout_exception);
+            mod.eval(results, store, cache, {}, {}, {}, deadline), ddwaf::timeout_exception);
     }
 }
 
@@ -502,8 +504,9 @@ TEST(TestModuleUngrouped, DisabledRules)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category"}};
 
-        rules.emplace_back(std::make_shared<core_rule>(
-            "id1", "name", std::move(tags), builder.build(), std::vector<std::string>{}, false));
+        rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::monitor, false));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, null_grouping_key};
@@ -523,9 +526,9 @@ TEST(TestModuleUngrouped, DisabledRules)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::none);
     }
 }
@@ -578,13 +581,13 @@ TEST(TestModuleGrouped, MultipleGroupsMonitoringRuleMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
-        EXPECT_EQ(events.size(), 2);
-        EXPECT_TRUE(contains(events, "id1"));
-        EXPECT_TRUE(contains(events, "id2"));
+        EXPECT_EQ(results.size(), 2);
+        EXPECT_TRUE(contains(results, "id1"));
+        EXPECT_TRUE(contains(results, "id2"));
     }
 }
 
@@ -616,8 +619,8 @@ TEST(TestModuleGrouped, MultipleGroupsBlockingRuleMatch)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{base_rule_precedence, type_grouping_key};
@@ -637,12 +640,12 @@ TEST(TestModuleGrouped, MultipleGroupsBlockingRuleMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(contains(events, "id2"));
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, "id2"));
     }
 }
 
@@ -674,8 +677,8 @@ TEST(TestModuleGrouped, SingleGroupBlockingRuleMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{base_rule_precedence, type_grouping_key};
@@ -695,12 +698,12 @@ TEST(TestModuleGrouped, SingleGroupBlockingRuleMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(contains(events, "id2"));
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, "id2"));
     }
 }
 
@@ -752,12 +755,12 @@ TEST(TestModuleGrouped, SingleGroupMonitoringRuleMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(contains(events, "id1"));
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, "id1"));
     }
 }
 
@@ -789,7 +792,8 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupMonitoringUserMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
@@ -809,12 +813,12 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupMonitoringUserMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(contains(events, "id2"));
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, "id2"));
     }
 }
 
@@ -846,7 +850,8 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupMonitoringBaseMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     rule_module_builder mod_builder{base_rule_precedence, type_grouping_key};
@@ -866,12 +871,12 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupMonitoringBaseMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(contains(events, "id1"));
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, "id1"));
     }
 }
 
@@ -889,8 +894,8 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingBaseMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     {
@@ -904,7 +909,8 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingBaseMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
@@ -924,12 +930,12 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingBaseMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(contains(events, "id1"));
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, "id1"));
     }
 }
 
@@ -947,8 +953,8 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingUserMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     {
@@ -962,8 +968,8 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingUserMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::user,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::user, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
@@ -983,12 +989,12 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingUserMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(contains(events, "id2"));
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, "id2"));
     }
 }
 
@@ -1006,8 +1012,8 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingBaseMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     {
@@ -1021,7 +1027,8 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingBaseMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     rule_module_builder mod_builder{base_rule_precedence, type_grouping_key};
@@ -1041,12 +1048,12 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingBaseMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(contains(events, "id1"));
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, "id1"));
     }
 }
 
@@ -1063,9 +1070,9 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingUserMatch)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
-        rules.emplace_back(
-            std::make_shared<core_rule>("id1", "name", std::move(tags), builder.build(),
-                std::vector<std::string>{"block"}, true, core_rule::source_type::base));
+        rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base));
     }
 
     {
@@ -1079,8 +1086,8 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingUserMatch)
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::user,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::user, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{base_rule_precedence, type_grouping_key};
@@ -1100,12 +1107,12 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingUserMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(contains(events, "id2"));
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, "id2"));
     }
 }
 
@@ -1137,7 +1144,8 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsMonitoringMatch)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
@@ -1157,13 +1165,13 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsMonitoringMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
-        EXPECT_EQ(events.size(), 2);
-        EXPECT_TRUE(contains(events, "id1"));
-        EXPECT_TRUE(contains(events, "id2"));
+        EXPECT_EQ(results.size(), 2);
+        EXPECT_TRUE(contains(results, "id1"));
+        EXPECT_TRUE(contains(results, "id2"));
     }
 }
 
@@ -1195,8 +1203,8 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsBlockingMatch)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::user,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::user, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
@@ -1216,12 +1224,12 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsBlockingMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(contains(events, "id2"));
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, "id2"));
     }
 }
 
@@ -1253,7 +1261,8 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsMonitoringMatch)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     rule_module_builder mod_builder{base_rule_precedence, type_grouping_key};
@@ -1273,13 +1282,13 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsMonitoringMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
-        EXPECT_EQ(events.size(), 2);
-        EXPECT_TRUE(contains(events, "id1"));
-        EXPECT_TRUE(contains(events, "id2"));
+        EXPECT_EQ(results.size(), 2);
+        EXPECT_TRUE(contains(results, "id1"));
+        EXPECT_TRUE(contains(results, "id2"));
     }
 }
 
@@ -1297,8 +1306,8 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsBlockingMatch)
             {"type", "type1"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     {
@@ -1332,12 +1341,12 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsBlockingMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(contains(events, "id1"));
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, "id1"));
     }
 }
 
@@ -1355,8 +1364,8 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
             {"type", "type1"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     {
@@ -1384,7 +1393,8 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id3", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     {
@@ -1398,8 +1408,8 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id4", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user, core_rule::verdict_type::block));
     }
 
     {
@@ -1413,7 +1423,8 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
             {"type", "type3"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id5", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     {
@@ -1441,8 +1452,8 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
             {"type", "type5"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id7", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user, core_rule::verdict_type::block));
     }
 
     {
@@ -1456,8 +1467,8 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
             {"type", "type6"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id8", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
@@ -1478,15 +1489,15 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
-        EXPECT_EQ(events.size(), 4);
-        EXPECT_TRUE(contains(events, "id2"));
-        EXPECT_TRUE(contains(events, "id3"));
-        EXPECT_TRUE(contains(events, "id5"));
-        EXPECT_TRUE(contains(events, "id6"));
+        EXPECT_EQ(results.size(), 4);
+        EXPECT_TRUE(contains(results, "id2"));
+        EXPECT_TRUE(contains(results, "id3"));
+        EXPECT_TRUE(contains(results, "id5"));
+        EXPECT_TRUE(contains(results, "id6"));
     }
 }
 
@@ -1532,7 +1543,8 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id3", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     {
@@ -1546,7 +1558,8 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id4", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     {
@@ -1560,7 +1573,8 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
             {"type", "type3"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id5", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
@@ -1581,15 +1595,15 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
-        EXPECT_EQ(events.size(), 3);
+        EXPECT_EQ(results.size(), 3);
 
-        EXPECT_TRUE(contains(events, "id1"));
-        EXPECT_TRUE(contains(events, "id3"));
-        EXPECT_TRUE(contains(events, "id5"));
+        EXPECT_TRUE(contains(results, "id1"));
+        EXPECT_TRUE(contains(results, "id3"));
+        EXPECT_TRUE(contains(results, "id5"));
     }
 }
 
@@ -1635,8 +1649,8 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id3", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user,
-            core_rule::verdict_type::block));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user, core_rule::verdict_type::block));
     }
 
     {
@@ -1650,7 +1664,8 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id4", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     {
@@ -1664,7 +1679,8 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
             {"type", "type3"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id5", "name", std::move(tags),
-            builder.build(), std::vector<std::string>{}, true, core_rule::source_type::user));
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::user));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
@@ -1685,12 +1701,12 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(contains(events, "id3"));
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, "id3"));
     }
 }
 
@@ -1707,8 +1723,9 @@ TEST(TestModuleGrouped, DisabledRules)
         std::unordered_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category"}};
 
-        rules.emplace_back(std::make_shared<core_rule>(
-            "id1", "name", std::move(tags), builder.build(), std::vector<std::string>{}, false));
+        rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
+            builder.build(), std::vector<std::string>{}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::monitor, false));
     }
 
     rule_module_builder mod_builder{user_rule_precedence, type_grouping_key};
@@ -1728,9 +1745,9 @@ TEST(TestModuleGrouped, DisabledRules)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(events, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::none);
     }
 }
@@ -1766,12 +1783,12 @@ TEST(TestModuleGrouped, NonExpiringModule)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline{0s};
-        mod.eval(events, store, cache, {}, {}, {}, deadline);
+        mod.eval(results, store, cache, {}, {}, {}, deadline);
 
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_TRUE(contains(events, "id"));
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, "id"));
     }
 }
 
@@ -1806,10 +1823,10 @@ TEST(TestModuleGrouped, ExpiringModule)
 
         store.insert(root);
 
-        std::vector<event> events;
+        std::vector<rule_result> results;
         ddwaf::timer deadline{0s};
         EXPECT_THROW(
-            mod.eval(events, store, cache, {}, {}, {}, deadline), ddwaf::timeout_exception);
+            mod.eval(results, store, cache, {}, {}, {}, deadline), ddwaf::timeout_exception);
     }
 }
 
