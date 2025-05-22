@@ -11,45 +11,49 @@
 
 #include "attribute_collector.hpp"
 #include "ddwaf.h"
+#include "log.hpp"
 #include "object_store.hpp"
 #include "target_address.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
 
-bool attribute_collector::emplace(std::string_view key, const ddwaf_object &value, bool copy)
+bool attribute_collector::insert(std::string_view key, const ddwaf_object &value, bool copy)
 {
-    if (emplaced_or_pending_attributes_.contains(key)) {
+    if (inserted_or_pending_attributes_.contains(key)) {
         return false;
     }
 
-    return emplace_helper(key, value, copy);
+    return insert_helper(key, value, copy);
 }
 
 bool attribute_collector::collect(const object_store &store, target_index input_target,
-    std::span<const std::string> input_key_path, std::string_view output)
+    std::span<const std::string> input_key_path, std::string_view attribute_key)
 {
-    if (emplaced_or_pending_attributes_.contains(output)) {
+    if (inserted_or_pending_attributes_.contains(attribute_key)) {
+        DDWAF_DEBUG("Not collecting duplicate attribute: {}", attribute_key);
         return false;
     }
 
-    auto state = collect_helper(store, input_target, input_key_path, output);
+    auto state = collect_helper(store, input_target, input_key_path, attribute_key);
     if (state == collection_state::unavailable) {
-        pending_.emplace(output, target_type{input_target, input_key_path});
+        pending_.emplace(attribute_key, target_type{input_target, input_key_path});
+        DDWAF_DEBUG("Attribute added to pending queue: {}", attribute_key);
     }
+
     return state != collection_state::failed;
 }
 
 void attribute_collector::collect_pending(const object_store &store)
 {
     for (auto it = pending_.begin(); it != pending_.end();) {
-        auto output = it->first;
+        auto attribute_key = it->first;
         // No need to check if the key is already present, as emplace and collect
         // already perform the check. As for items in the pending map, since the
-        // map key is the output key, duplicates aren't possible.
+        // map key is the attribute key, duplicates aren't possible.
         auto &[input_target, input_key_path] = it->second;
 
-        auto state = collect_helper(store, input_target, input_key_path, output);
+        auto state = collect_helper(store, input_target, input_key_path, attribute_key);
         if (state != collection_state::unavailable) {
             it = pending_.erase(it);
         } else {
@@ -59,7 +63,8 @@ void attribute_collector::collect_pending(const object_store &store)
 }
 
 attribute_collector::collection_state attribute_collector::collect_helper(const object_store &store,
-    target_index input_target, std::span<const std::string> input_key_path, std::string_view output)
+    target_index input_target, std::span<const std::string> input_key_path,
+    std::string_view attribute_key)
 {
     auto [object, attr] = store.get_target(input_target);
     if (object == nullptr) {
@@ -74,21 +79,21 @@ attribute_collector::collection_state attribute_collector::collect_helper(const 
     }
 
     if (object::is_scalar(resolved)) {
-        emplace_helper(output, *resolved, true);
+        insert_helper(attribute_key, *resolved, true);
         return collection_state::success;
     }
 
     if (resolved->type == DDWAF_OBJ_ARRAY && resolved->nbEntries > 0) {
         auto &candidate = resolved->array[0];
         if (object::is_scalar(&candidate)) {
-            emplace_helper(output, candidate, true);
+            insert_helper(attribute_key, candidate, true);
             return collection_state::success;
         }
     }
     return collection_state::failed;
 }
 
-bool attribute_collector::emplace_helper(std::string_view key, const ddwaf_object &value, bool copy)
+bool attribute_collector::insert_helper(std::string_view key, const ddwaf_object &value, bool copy)
 {
     auto object = copy ? object::clone(&value) : value;
     auto res = ddwaf_object_map_addl(&attributes_, key.data(), key.size(), &object);
@@ -97,7 +102,8 @@ bool attribute_collector::emplace_helper(std::string_view key, const ddwaf_objec
             ddwaf_object_free(&object);
         }
     } else {
-        emplaced_or_pending_attributes_.emplace(key);
+        DDWAF_DEBUG("Collected attribute: {}", key);
+        inserted_or_pending_attributes_.insert(key);
     }
     return res;
 }

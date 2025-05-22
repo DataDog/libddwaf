@@ -320,15 +320,15 @@ void collect_attributes(const object_store &store, const std::vector<rule_attrib
             auto input = std::get<rule_attribute::input_target>(attr.input);
             collector.collect(store, input.index, input.key_path, attr.output);
         } else if (std::holds_alternative<std::string>(attr.input)) {
-            collector.emplace(attr.output, std::get<std::string>(attr.input));
+            collector.insert(attr.output, std::get<std::string>(attr.input));
         } else if (std::holds_alternative<uint64_t>(attr.input)) {
-            collector.emplace(attr.output, std::get<uint64_t>(attr.input));
+            collector.insert(attr.output, std::get<uint64_t>(attr.input));
         } else if (std::holds_alternative<int64_t>(attr.input)) {
-            collector.emplace(attr.output, std::get<int64_t>(attr.input));
+            collector.insert(attr.output, std::get<int64_t>(attr.input));
         } else if (std::holds_alternative<double>(attr.input)) {
-            collector.emplace(attr.output, std::get<double>(attr.input));
+            collector.insert(attr.output, std::get<double>(attr.input));
         } else if (std::holds_alternative<bool>(attr.input)) {
-            collector.emplace(attr.output, std::get<bool>(attr.input));
+            collector.insert(attr.output, std::get<bool>(attr.input));
         }
     }
 }
@@ -364,7 +364,7 @@ void result_serializer::serialize(const object_store &store, std::vector<rule_re
     output.timeout.boolean = deadline.expired_before();
     output.keep.boolean = final_keep;
 
-    object::assign(output.attributes, collector.get_available_attributes());
+    object::assign(output.attributes, collector.get_available_attributes_and_reset());
     serialize_actions(output.actions, actions);
 }
 

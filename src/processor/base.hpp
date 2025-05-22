@@ -188,7 +188,7 @@ public:
 
             if (output_) {
                 // The object is copied if we are also using it for evaluation
-                collector.emplace(mapping.output.name, object, /*copy*/ evaluate_);
+                collector.insert(mapping.output.name, object, /*copy*/ evaluate_);
             }
         }
     }

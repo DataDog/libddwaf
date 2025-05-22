@@ -90,7 +90,7 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
     attribute_collector collector;
     proc.eval(store, collector, cache, {}, deadline);
 
-    auto output_map = collector.get_available_attributes();
+    auto output_map = collector.get_available_attributes_and_reset();
     EXPECT_EQ(ddwaf_object_size(&output_map), 1);
     const auto *obtained = ddwaf_object_get_index(&output_map, 0);
     EXPECT_STREQ(obtained->parameterName, "output_address");
@@ -146,7 +146,7 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
     attribute_collector collector;
     proc.eval(store, collector, cache, {}, deadline);
 
-    auto output_map = collector.get_available_attributes();
+    auto output_map = collector.get_available_attributes_and_reset();
     const auto *obtained = ddwaf_object_get_index(&output_map, 0);
     EXPECT_STREQ(obtained->parameterName, "output_address");
     EXPECT_STREQ(obtained->stringValue, "output_string");
@@ -196,7 +196,7 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
     attribute_collector collector;
     proc.eval(store, collector, cache, {}, deadline);
 
-    auto output_map = collector.get_available_attributes();
+    auto output_map = collector.get_available_attributes_and_reset();
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
 
     ddwaf_object_free(&output_map);
@@ -243,7 +243,7 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
     attribute_collector collector;
     proc.eval(store, collector, cache, {}, deadline);
 
-    auto output_map = collector.get_available_attributes();
+    auto output_map = collector.get_available_attributes_and_reset();
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
 
     ddwaf_object_free(&output_map);

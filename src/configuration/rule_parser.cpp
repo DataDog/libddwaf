@@ -75,9 +75,9 @@ rule_spec parse_rule(raw_configuration::map &rule, core_rule::source_type source
 
     auto attr_map = at<raw_configuration::map>(output, "attributes", {});
     std::vector<rule_attribute> attributes;
-    for (auto &[output, value_or_target] : attr_map) {
+    for (auto &[key, value_or_target] : attr_map) {
         rule_attribute attr_spec;
-        attr_spec.output = output;
+        attr_spec.output = key;
 
         auto value_or_target_map = static_cast<raw_configuration::map>(value_or_target);
         if (value_or_target_map.contains("value")) {

@@ -75,7 +75,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
     attribute_collector collector;
     proc.eval(store, collector, cache, {}, deadline);
 
-    auto output_map = collector.get_available_attributes();
+    auto output_map = collector.get_available_attributes_and_reset();
     EXPECT_EQ(ddwaf_object_size(&output_map), 1);
     const auto *obtained = ddwaf_object_get_index(&output_map, 0);
     EXPECT_STREQ(obtained->parameterName, "output_address");
@@ -133,7 +133,7 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
     attribute_collector collector;
     proc.eval(store, collector, cache, {}, deadline);
 
-    auto output_map = collector.get_available_attributes();
+    auto output_map = collector.get_available_attributes_and_reset();
     EXPECT_EQ(ddwaf_object_size(&output_map), 2);
     {
         const auto *obtained = ddwaf_object_get_index(&output_map, 0);
@@ -194,7 +194,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
     attribute_collector collector;
     proc.eval(store, collector, cache, {}, deadline);
 
-    auto output_map = collector.get_available_attributes();
+    auto output_map = collector.get_available_attributes_and_reset();
     EXPECT_EQ(ddwaf_object_size(&output_map), 1);
     const auto *obtained = ddwaf_object_get_index(&output_map, 0);
     EXPECT_STREQ(obtained->parameterName, "output_address");
@@ -243,7 +243,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     attribute_collector collector;
     proc.eval(store, collector, cache, {}, deadline);
 
-    auto output_map = collector.get_available_attributes();
+    auto output_map = collector.get_available_attributes_and_reset();
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
 
     ddwaf_object input;
@@ -256,7 +256,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
 
     proc.eval(store, collector, cache, {}, deadline);
 
-    output_map = collector.get_available_attributes();
+    output_map = collector.get_available_attributes_and_reset();
     EXPECT_EQ(ddwaf_object_size(&output_map), 1);
 
     const auto *obtained = ddwaf_object_get_index(&output_map, 0);
@@ -302,7 +302,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
     attribute_collector collector;
     proc.eval(store, collector, cache, {}, deadline);
 
-    auto output_map = collector.get_available_attributes();
+    auto output_map = collector.get_available_attributes_and_reset();
     EXPECT_EQ(ddwaf_object_size(&output_map), 0);
 
     ddwaf_object_free(&output_map);
@@ -562,7 +562,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
 
     attribute_collector collector;
     proc.eval(store, collector, cache, {}, deadline);
-    auto output_map = collector.get_available_attributes();
+    auto output_map = collector.get_available_attributes_and_reset();
 
     {
         auto *obtained = store.get_target(get_target_index("output_address")).first;
