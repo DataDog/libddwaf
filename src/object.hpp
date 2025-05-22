@@ -806,15 +806,7 @@ inline borrowed_object::borrowed_object(owned_object &obj) : obj_(obj.ptr()) {}
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 inline borrowed_object &borrowed_object::operator=(owned_object &&obj)
 {
-    // TODO remove this once keys and values are split
-    const auto *key = ref().parameterName;
-    auto key_len = ref().parameterNameLength;
-
     ref() = obj.move();
-
-    ref().parameterName = key;
-    ref().parameterNameLength = key_len;
-
     return *this;
 }
 
