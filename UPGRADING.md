@@ -4,7 +4,7 @@
 
 ### Evaluation Result
 
-The main breaking change in this version of `libddwaf` is the deprecation of the `ddwaf_result` structure, which has been replaced by a `ddwaf_object`. Replacing C-structs with `ddwaf_object` furthers the objective of minimising the potential breaking changes that can be made, in this case to the ABI, as the dynamic nature of the `ddwaf_object` allows for adding or removing keys and values without the need for adjusting structure offsets or recompilation.
+The main breaking change in this version of `libddwaf` is the removal of the `ddwaf_result` structure, which has been replaced by a `ddwaf_object`. Replacing C-structs with `ddwaf_object` furthers the objective of minimising the potential breaking changes that can be made, in this case to the ABI, as the dynamic nature of the `ddwaf_object` allows for adding or removing keys and values without the need for adjusting structure offsets or recompilation.
 
 With this change, the signature of `ddwaf_run` is as follows:
 ```c
