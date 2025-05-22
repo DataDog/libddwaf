@@ -393,6 +393,30 @@ public:
         return {};
     }
 
+    object_view find_key_path(std::span<const std::string> key_path)
+    {
+        auto root = *this;
+        auto current = root;
+        for (auto it = key_path.begin(); current.has_value() && it != key_path.end(); ++it) {
+            root = current;
+            if (!root.is_map()) {
+                return {};
+            }
+
+            current = {};
+            for (std::size_t i = 0; i < root.size(); ++i) {
+                const auto &[key, child] = root.at(i);
+
+                auto child_key = key.as<std::string_view>();
+                if (*it == child_key) {
+                    current = child;
+                    break;
+                }
+            }
+        }
+        return current;
+    }
+
     class iterator {
     public:
         ~iterator() = default;
@@ -535,6 +559,7 @@ public:
     explicit borrowed_object(detail::object &obj) : obj_(&obj) {}
 
     explicit borrowed_object(owned_object &obj);
+    borrowed_object &operator=(owned_object &&obj);
 
     [[nodiscard]] detail::object &ref() { return *obj_; }
     [[nodiscard]] const detail::object &ref() const { return *obj_; }
@@ -947,6 +972,21 @@ borrowed_object writable_object<Derived>::emplace(std::string_view key, T &&valu
 }
 
 inline borrowed_object::borrowed_object(owned_object &obj) : obj_(obj.ptr()) {}
+
+// NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
+inline borrowed_object &borrowed_object::operator=(owned_object &&obj)
+{
+    // TODO remove this once keys and values are split
+    const auto *key = ref().parameterName;
+    auto key_len = ref().parameterNameLength;
+
+    ref() = obj.move();
+
+    ref().parameterName = key;
+    ref().parameterNameLength = key_len;
+
+    return *this;
+}
 
 inline owned_object owned_object::make_array(
     std::initializer_list<detail::initializer::movable_object> list)

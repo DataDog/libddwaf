@@ -39,24 +39,25 @@ TEST(TestRule, Match)
         auto scope = store.get_eval_scope();
         store.insert(root.clone(), object_store::attribute::none);
 
-        auto event = rule.match(store, cache, {}, {}, deadline);
-        EXPECT_TRUE(event.has_value());
+        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        ASSERT_TRUE(result.has_value());
+        ASSERT_TRUE(result->event.has_value());
 
-        EXPECT_STREQ(event->rule->get_id().data(), "id");
-        EXPECT_STREQ(event->rule->get_name().data(), "name");
-        EXPECT_STREQ(event->rule->get_tag("type").data(), "type");
-        EXPECT_STREQ(event->rule->get_tag("category").data(), "category");
+        auto &event = result->event.value();
+        EXPECT_STR(event.rule.id, "id");
+        EXPECT_STR(event.rule.name, "name");
+        EXPECT_STR(event.rule.tags.get().at("type"), "type");
         std::vector<std::string> expected_actions{"update", "block", "passlist"};
-        EXPECT_EQ(event->rule->get_actions(), expected_actions);
-        EXPECT_EQ(event->matches.size(), 1);
-        EXPECT_FALSE(event->ephemeral);
+        EXPECT_EQ(result->actions.get(), expected_actions);
+        EXPECT_EQ(event.matches.size(), 1);
+        EXPECT_FALSE(result->ephemeral);
 
-        auto &match = event->matches[0];
+        auto &match = event.matches[0];
         EXPECT_STR(match.args[0].resolved, "192.168.0.1");
         EXPECT_STR(match.highlights[0], "192.168.0.1");
-        EXPECT_STREQ(match.operator_name.data(), "ip_match");
-        EXPECT_STREQ(match.operator_value.data(), "");
-        EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
+        EXPECT_STR(match.operator_name, "ip_match");
+        EXPECT_STR(match.operator_value, "");
+        EXPECT_STR(match.args[0].address, "http.client_ip");
         EXPECT_TRUE(match.args[0].key_path.empty());
         EXPECT_FALSE(match.ephemeral);
     }
@@ -65,11 +66,11 @@ TEST(TestRule, Match)
         auto scope = store.get_eval_scope();
         store.insert(std::move(root), object_store::attribute::none);
 
-        auto event = rule.match(store, cache, {}, {}, deadline);
-        EXPECT_FALSE(event.has_value());
+        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        EXPECT_FALSE(result.has_value());
     }
 
-    EXPECT_TRUE(cache.result);
+    EXPECT_TRUE(cache.expr_cache.result);
 }
 
 TEST(TestRule, EphemeralMatch)
@@ -94,21 +95,21 @@ TEST(TestRule, EphemeralMatch)
         auto scope = store.get_eval_scope();
         store.insert(root.clone(), object_store::attribute::ephemeral);
 
-        auto event = rule.match(store, cache, {}, {}, deadline);
-        ASSERT_TRUE(event.has_value());
-        EXPECT_TRUE(event->ephemeral);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        ASSERT_TRUE(result.has_value());
+        EXPECT_TRUE(result->ephemeral);
     }
 
     {
         auto scope = store.get_eval_scope();
         store.insert(std::move(root), object_store::attribute::ephemeral);
 
-        auto event = rule.match(store, cache, {}, {}, deadline);
-        ASSERT_TRUE(event.has_value());
-        EXPECT_TRUE(event->ephemeral);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        ASSERT_TRUE(result.has_value());
+        EXPECT_TRUE(result->ephemeral);
     }
 
-    EXPECT_FALSE(cache.result);
+    EXPECT_FALSE(cache.expr_cache.result);
 }
 
 TEST(TestRule, NoMatch)
@@ -130,8 +131,8 @@ TEST(TestRule, NoMatch)
     ddwaf::timer deadline{2s};
 
     core_rule::cache_type cache;
-    auto match = rule.match(store, cache, {}, {}, deadline);
-    EXPECT_FALSE(match.has_value());
+    auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+    EXPECT_FALSE(result.has_value());
 }
 
 TEST(TestRule, ValidateCachedMatch)
@@ -162,8 +163,8 @@ TEST(TestRule, ValidateCachedMatch)
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        auto event = rule.match(store, cache, {}, {}, deadline);
-        EXPECT_FALSE(event.has_value());
+        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        EXPECT_FALSE(result.has_value());
     }
 
     {
@@ -173,31 +174,34 @@ TEST(TestRule, ValidateCachedMatch)
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        auto event = rule.match(store, cache, {}, {}, deadline);
-        EXPECT_TRUE(event.has_value());
-        EXPECT_STREQ(event->rule->get_id().data(), "id");
-        EXPECT_STREQ(event->rule->get_name().data(), "name");
-        EXPECT_STREQ(event->rule->get_tag("type").data(), "type");
-        EXPECT_STREQ(event->rule->get_tag("category").data(), "category");
-        EXPECT_TRUE(event->rule->get_actions().empty());
-        EXPECT_EQ(event->matches.size(), 2);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        ASSERT_TRUE(result.has_value());
+        ASSERT_TRUE(result->event.has_value());
+
+        auto &event = result->event.value();
+        EXPECT_STR(event.rule.id, "id");
+        EXPECT_STR(event.rule.name, "name");
+        EXPECT_STR(event.rule.tags.get().at("type"), "type");
+        EXPECT_EQ(event.matches.size(), 2);
+
+        EXPECT_TRUE(result->actions.get().empty());
 
         {
-            auto &match = event->matches[0];
+            auto &match = event.matches[0];
             EXPECT_STR(match.args[0].resolved, "192.168.0.1");
             EXPECT_STR(match.highlights[0], "192.168.0.1");
-            EXPECT_STREQ(match.operator_name.data(), "ip_match");
-            EXPECT_STREQ(match.operator_value.data(), "");
-            EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
+            EXPECT_STR(match.operator_name, "ip_match");
+            EXPECT_STR(match.operator_value, "");
+            EXPECT_STR(match.args[0].address, "http.client_ip");
             EXPECT_TRUE(match.args[0].key_path.empty());
         }
         {
-            auto &match = event->matches[1];
+            auto &match = event.matches[1];
             EXPECT_STR(match.args[0].resolved, "admin");
             EXPECT_STR(match.highlights[0], "admin");
-            EXPECT_STREQ(match.operator_name.data(), "exact_match");
-            EXPECT_STREQ(match.operator_value.data(), "");
-            EXPECT_STREQ(match.args[0].address.data(), "usr.id");
+            EXPECT_STR(match.operator_name, "exact_match");
+            EXPECT_STR(match.operator_value, "");
+            EXPECT_STR(match.args[0].address, "usr.id");
             EXPECT_TRUE(match.args[0].key_path.empty());
         }
     }
@@ -230,8 +234,8 @@ TEST(TestRule, MatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
-        auto event = rule.match(store, cache, {}, {}, deadline);
-        EXPECT_FALSE(event.has_value());
+        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        EXPECT_FALSE(result.has_value());
     }
 
     {
@@ -241,25 +245,27 @@ TEST(TestRule, MatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
-        auto event = rule.match(store, cache, {}, {}, deadline);
-        EXPECT_TRUE(event.has_value());
+        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        ASSERT_TRUE(result.has_value());
+        ASSERT_TRUE(result->event.has_value());
 
+        auto &event = result->event.value();
         {
-            auto &match = event->matches[0];
+            auto &match = event.matches[0];
             EXPECT_STR(match.args[0].resolved, "192.168.0.1");
             EXPECT_STR(match.highlights[0], "192.168.0.1");
-            EXPECT_STREQ(match.operator_name.data(), "ip_match");
-            EXPECT_STREQ(match.operator_value.data(), "");
-            EXPECT_STREQ(match.args[0].address.data(), "http.client_ip");
+            EXPECT_STR(match.operator_name, "ip_match");
+            EXPECT_STR(match.operator_value, "");
+            EXPECT_STR(match.args[0].address, "http.client_ip");
             EXPECT_TRUE(match.args[0].key_path.empty());
         }
         {
-            auto &match = event->matches[1];
+            auto &match = event.matches[1];
             EXPECT_STR(match.args[0].resolved, "admin");
             EXPECT_STR(match.highlights[0], "admin");
-            EXPECT_STREQ(match.operator_name.data(), "exact_match");
-            EXPECT_STREQ(match.operator_value.data(), "");
-            EXPECT_STREQ(match.args[0].address.data(), "usr.id");
+            EXPECT_STR(match.operator_name, "exact_match");
+            EXPECT_STR(match.operator_value, "");
+            EXPECT_STR(match.args[0].address, "usr.id");
             EXPECT_TRUE(match.args[0].key_path.empty());
         }
     }
@@ -292,8 +298,8 @@ TEST(TestRule, NoMatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
-        auto event = rule.match(store, cache, {}, {}, deadline);
-        EXPECT_FALSE(event.has_value());
+        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        EXPECT_FALSE(result.has_value());
     }
 
     {
@@ -304,8 +310,8 @@ TEST(TestRule, NoMatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
-        auto event = rule.match(store, cache, {}, {}, deadline);
-        EXPECT_FALSE(event.has_value());
+        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        EXPECT_FALSE(result.has_value());
     }
 }
 
@@ -338,8 +344,9 @@ TEST(TestRule, FullCachedMatchSecondRun)
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        auto event = rule.match(store, cache, {}, {}, deadline);
-        EXPECT_TRUE(event.has_value());
+        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        EXPECT_TRUE(result.has_value());
+        ASSERT_TRUE(result->event.has_value());
     }
 
     {
@@ -350,8 +357,8 @@ TEST(TestRule, FullCachedMatchSecondRun)
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        auto event = rule.match(store, cache, {}, {}, deadline);
-        EXPECT_FALSE(event.has_value());
+        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        EXPECT_FALSE(result.has_value());
     }
 }
 
@@ -376,7 +383,8 @@ TEST(TestRule, ExcludeObject)
     ddwaf::timer deadline{2s};
 
     core_rule::cache_type cache;
-    auto event = rule.match(store, cache, {excluded_set, {}}, {}, deadline);
-    EXPECT_FALSE(event.has_value());
+    auto [verdict, result] =
+        rule.match(store, cache, {.persistent = excluded_set, .ephemeral = {}}, {}, deadline);
+    EXPECT_FALSE(result.has_value());
 }
 } // namespace

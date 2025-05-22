@@ -1,5 +1,145 @@
 # libddwaf release
 
+## v1.25.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+### New features
+
+This new version of `libddwaf` introduces a plethora of new features in order to support new use cases and expand or improve existing ones.
+
+Since this release introduces breaking changes, a new section has been added to the [upgrading guide](https://github.com/DataDog/libddwaf/blob/master/UPGRADING.md#upgrading-from-124x-to-1250).
+
+#### Rule Output Configuration & Attributes
+
+This version expands the mechanisms that rules can use to provide information to the user. Previous versions relied on the generation of events to ensure that the caller had a full picture of the rules, conditions and relevant input data which caused a match. However, this mechanism isn't always suitable as it provides too much information in cases where only a small amount is needed, such as when identifying or extracting request-adjacent metadata. For this reason, rules now have ability to produce attributes in addition to, or instead of, an event as a result of a match. As a consequence of the introduction of attributes, the configuration of rules has been extended with an `output` object, as can be seen below:
+
+
+```
+{
+    "output": {
+        "keep": (true | false),
+        "event": (true | false),
+        "attributes": { ... }
+    }
+}
+```
+Where:
+- `keep`: indicates whether the outcome of the rule must be prioritised, overriding any potential transport sampling (such as trace sampling). This new flag allows the rule writer to ensure that high-frequency / low-value information is only sent opportunistically rather than on every match.
+- `event`: enables (`true`) or disables (`false`) event generation, however a rule must always generate either an event or one or more attributes, or both.
+- `attributes`: specifies the list of attributes which must be generated and included in the result upon matching the given rule.
+
+The attributes object can follow two possible schemas, the first one defines an attribute with a literal scalar value, as follows:
+```
+{
+    ATTRIBUTE : {
+        "value": LITERAL_VALUE
+    }
+}
+```
+
+While the second one defines an attribute containing a scalar value extracted from the data provided within the given context:
+```
+{
+    ATTRIBUTE : {
+        "address": ADDRESS,
+        "key_path": [ PATH, ... ],
+        "transformers": [ TRANSFORMER_ID, ... ]
+    }
+}
+```
+_Note that transformers are not supported in this iteration._
+
+
+#### JWT Decoding Processor
+
+A new processor has been developed to decode and parse targeted JWT tokens. The main purpose of this processor is to generate a new address which can then be analysed by rules in order to identify malicious, invalid, expired or unsafe tokens. As an example, the following _preprocessor_ decodes and parses the `authorization` header into the `server.request.jwt` address:
+
+```json
+{
+  "id": "processor-001",
+  "generator": "jwt_decode",
+  "conditions": [],
+  "parameters": {
+    "mappings": [
+      {
+        "inputs": [
+          {
+            "address": "server.request.headers.no_cookies",
+            "key_path": [
+              "authorization"
+            ]
+          }
+        ],
+        "output": "server.request.jwt"
+      }
+    ]
+  },
+  "evaluate": true,
+  "output": false
+}
+```
+
+#### Partial Event Obfuscation
+
+To prevent accidental sensitive data leaks, generated events are obfuscated through the use of regular expressions. Until this version, sensitive values were completely replaced with `<Redacted>`, however this new version can perform partial obfuscation of only the relevant values of an unstructured payload. For example, a payload containing `"?token=sensitive-token"` will now be obfuscated as follows: `"?token=<Redacted>"`, preserving more of the semantics of the payload so that the user can better understand the nature of the attack.
+
+This feature provides significant benefit in the case of Exploit Prevention rules, as those tend to contain larger payloads of unstructured data and are often prone to being fully redacted.
+
+_Note that this feature requires the use of the default regular expression for values, overriding it disables partial event obfuscation._
+
+#### Processor Overrides
+
+Last but not least, this release also introduces a new mechanism to override the default configuration of processors, specifically aimed at adding or removing scanners to be used during the process of schema extraction. This can now be done through the `processor_override` top-level configuration key, which has the following schema:
+
+```
+{
+  ( "processor_override": [
+    {
+      ( "target": [ PROCESSOR TARGET, ... ], )
+      ( "scanners": [ SCANNER_TARGET, ...] )
+    },
+    ...
+  ] )
+}
+```
+
+Where each `PROCESSOR_TARGET` is an object which specifies the processor to which this override should apply, with the following schema:
+
+```
+{
+   "id": PROCESSOR_ID,
+}
+```
+
+Note that in the future, `PROCESSOR_TARGET`, and consequently processors in general, may support tags as well.
+
+Finally, `SCANNER_TARGET` is also an object which specifies the scanners which must be used by this processor, this can be done through their `id` or `tags`, as follows:
+
+```
+{
+  ( "id": SCANNER_ID, )
+  ( "tags": {
+    TAG: VALUE,
+    ...
+  } )
+}
+```
+
+### Release changelog
+
+#### Changes
+- Support for basic processor overrides ([#397](https://github.com/DataDog/libddwaf/pull/397))
+- JWT Decoding Processor ([#400](https://github.com/DataDog/libddwaf/pull/400))
+- Replace `ddwaf_result` with `ddwaf_object` ([#402](https://github.com/DataDog/libddwaf/pull/402))
+- Support for partial event obfuscation ([#403](https://github.com/DataDog/libddwaf/pull/403))
+- Support for attribute generation from rules ([#404](https://github.com/DataDog/libddwaf/pull/404))
+
+#### Fixes
+- Fix `ddwaf_builder_remove_config` example ([#398](https://github.com/DataDog/libddwaf/pull/398))
+- Make SQL comment injection check stricter ([#399](https://github.com/DataDog/libddwaf/pull/399))
+
+#### Miscellaneous
+- Enforce CMake 3.5 compatibility ([#395](https://github.com/DataDog/libddwaf/pull/395))
+- Update schemas and tests to include validation ([#396](https://github.com/DataDog/libddwaf/pull/396))
+
 ## v1.24.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 #### Fixes

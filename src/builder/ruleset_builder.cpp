@@ -257,7 +257,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     rs->scanners = scanners_;
     rs->actions = actions_;
     rs->free_fn = free_fn_;
-    rs->event_obfuscator = event_obfuscator_;
+    rs->obfuscator = obfuscator_;
 
     // An instance is valid if it contains primitives with side-effects, such as
     // rules or postprocessors.

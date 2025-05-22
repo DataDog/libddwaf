@@ -1,6 +1,7 @@
 {
   "title": "Serialized schema for API Security",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "/schema/schema",
   "definitions": {
     "type": {
       "oneOf": [

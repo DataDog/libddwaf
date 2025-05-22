@@ -11,7 +11,7 @@ using namespace ddwaf;
 using namespace std::literals;
 
 namespace {
-constexpr std::string_view base_dir = "integration/custom_rules/";
+constexpr std::string_view base_dir = "integration/rules/custom_rules/";
 
 // Custom rules can be used instead of base rules
 TEST(TestCustomRulesIntegration, InitWithoutBaseRules)

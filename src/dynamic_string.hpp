@@ -111,10 +111,10 @@ public:
     }
 
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-    operator std::string_view() const { return {buffer_.get(), size_}; }
+    operator std::string_view() const noexcept { return {buffer_.get(), size_}; }
     explicit operator std::string() const { return {buffer_.get(), size_}; }
 
-    bool operator==(const dynamic_string &other) const
+    bool operator==(const dynamic_string &other) const noexcept
     {
         return size_ == other.size_ && (memcmp(buffer_.get(), other.buffer_.get(), size_) == 0);
     }

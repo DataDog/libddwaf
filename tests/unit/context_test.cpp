@@ -65,8 +65,8 @@ TEST(TestContext, MatchTimeout)
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
     ctx.insert(std::move(root));
 
-    std::vector<ddwaf::event> events;
-    EXPECT_THROW(ctx.eval_rules({}, events, deadline), ddwaf::timeout_exception);
+    std::vector<rule_result> results;
+    EXPECT_THROW(ctx.eval_rules({}, results, deadline), ddwaf::timeout_exception);
 }
 
 TEST(TestContext, NoMatch)
@@ -88,9 +88,9 @@ TEST(TestContext, NoMatch)
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.2"}});
     ctx.insert(std::move(root));
 
-    std::vector<ddwaf::event> events;
-    ctx.eval_rules({}, events, deadline);
-    EXPECT_EQ(events.size(), 0);
+    std::vector<rule_result> results;
+    ctx.eval_rules({}, results, deadline);
+    EXPECT_EQ(results.size(), 0);
 }
 
 TEST(TestContext, Match)
@@ -112,9 +112,9 @@ TEST(TestContext, Match)
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
     ctx.insert(std::move(root));
 
-    std::vector<ddwaf::event> events;
-    ctx.eval_rules({}, events, deadline);
-    EXPECT_EQ(events.size(), 1);
+    std::vector<rule_result> results;
+    ctx.eval_rules({}, results, deadline);
+    EXPECT_EQ(results.size(), 1);
 }
 
 TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
@@ -152,17 +152,19 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
     ctx.insert(std::move(root));
 
-    std::vector<ddwaf::event> events;
-    ctx.eval_rules({}, events, deadline);
-    EXPECT_EQ(events.size(), 1);
+    std::vector<rule_result> results;
+    ctx.eval_rules({}, results, deadline);
+    EXPECT_EQ(results.size(), 1);
+    auto result = results[0];
+    ASSERT_TRUE(result.event.has_value());
 
-    auto &event = events[0];
-    EXPECT_STRV(event.rule->get_id(), "id1");
-    EXPECT_STRV(event.rule->get_name(), "name1");
-    EXPECT_STRV(event.rule->get_tag("type"), "type");
-    EXPECT_STRV(event.rule->get_tag("category"), "category1");
+    auto &event = result.event.value();
+    EXPECT_STRV(event.rule.id, "id1");
+    EXPECT_STRV(event.rule.name, "name1");
+    EXPECT_STRV(event.rule.tags.get().at("type"), "type");
+
     std::vector<std::string> expected_actions{};
-    EXPECT_EQ(event.rule->get_actions(), expected_actions);
+    EXPECT_EQ(result.actions.get(), expected_actions);
     EXPECT_EQ(event.matches.size(), 1);
 
     auto &match = event.matches[0];
@@ -202,8 +204,8 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
             {"type", "type"}, {"category", "category2"}};
 
         rbuilder.insert_base_rule(core_rule{"id2", "name2", std::move(tags), builder.build(),
-            std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block});
+            std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block});
     }
 
     auto ruleset = rbuilder.build();
@@ -215,14 +217,16 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
         ctx.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules({}, events, deadline);
-        EXPECT_EQ(events.size(), 1);
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        EXPECT_EQ(results.size(), 1);
+        auto result = results[0];
+        ASSERT_TRUE(result.event.has_value());
 
-        auto event = events[0];
-        EXPECT_STRV(event.rule->get_id(), "id2");
-        EXPECT_EQ(event.rule->get_actions().size(), 1);
-        EXPECT_STRV(event.rule->get_actions()[0], "block");
+        auto &event = result.event.value();
+        EXPECT_STRV(event.rule.id, "id2");
+        EXPECT_EQ(result.actions.get().size(), 1);
+        EXPECT_STRV(result.actions.get()[0], "block");
     }
 
     {
@@ -233,14 +237,17 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
         ctx.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules({}, events, deadline);
-        EXPECT_EQ(events.size(), 1);
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        EXPECT_EQ(results.size(), 1);
 
-        auto event = events[0];
-        EXPECT_STRV(event.rule->get_id(), "id2");
-        EXPECT_EQ(event.rule->get_actions().size(), 1);
-        EXPECT_STRV(event.rule->get_actions()[0], "block");
+        auto result = results[0];
+        ASSERT_TRUE(result.event.has_value());
+
+        auto &event = result.event.value();
+        EXPECT_STRV(event.rule.id, "id2");
+        EXPECT_EQ(result.actions.get().size(), 1);
+        EXPECT_STRV(result.actions.get()[0], "block");
     }
 }
 
@@ -281,17 +288,19 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules({}, events, deadline);
-        EXPECT_EQ(events.size(), 1);
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        EXPECT_EQ(results.size(), 1);
 
-        auto &event = events[0];
-        EXPECT_STRV(event.rule->get_id(), "id1");
-        EXPECT_STRV(event.rule->get_name(), "name1");
-        EXPECT_STRV(event.rule->get_tag("type"), "type");
-        EXPECT_STRV(event.rule->get_tag("category"), "category1");
+        auto result = results[0];
+        ASSERT_TRUE(result.event.has_value());
+
+        auto &event = result.event.value();
+        EXPECT_STRV(event.rule.id, "id1");
+        EXPECT_STRV(event.rule.name, "name1");
+        EXPECT_STRV(event.rule.tags.get().at("type"), "type");
         std::vector<std::string> expected_actions{};
-        EXPECT_EQ(event.rule->get_actions(), expected_actions);
+        EXPECT_EQ(result.actions.get(), expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
@@ -307,9 +316,9 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         auto root = owned_object::make_map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules({}, events, deadline);
-        EXPECT_EQ(events.size(), 0);
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        EXPECT_EQ(results.size(), 0);
     }
 }
 
@@ -340,8 +349,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
             {"type", "type"}, {"category", "category2"}};
 
         rbuilder.insert_base_rule(core_rule{"id2", "name2", std::move(tags), builder.build(),
-            std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block});
+            std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block});
     }
 
     ddwaf::timer deadline{2s};
@@ -351,17 +360,19 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules({}, events, deadline);
-        EXPECT_EQ(events.size(), 1);
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        EXPECT_EQ(results.size(), 1);
 
-        auto &event = events[0];
-        EXPECT_STRV(event.rule->get_id(), "id1");
-        EXPECT_STRV(event.rule->get_name(), "name1");
-        EXPECT_STRV(event.rule->get_tag("type"), "type");
-        EXPECT_STRV(event.rule->get_tag("category"), "category1");
+        auto result = results[0];
+        ASSERT_TRUE(result.event.has_value());
+
+        auto &event = result.event.value();
+        EXPECT_STRV(event.rule.id, "id1");
+        EXPECT_STRV(event.rule.name, "name1");
+        EXPECT_STRV(event.rule.tags.get().at("type"), "type");
         std::vector<std::string> expected_actions{};
-        EXPECT_EQ(event.rule->get_actions(), expected_actions);
+        EXPECT_EQ(result.actions.get(), expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
@@ -379,18 +390,20 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         auto root = owned_object::make_map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules({}, events, deadline);
-        EXPECT_EQ(events.size(), 1);
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        EXPECT_EQ(results.size(), 1);
 
-        auto &event = events[0];
-        EXPECT_EQ(events.size(), 1);
-        EXPECT_STRV(event.rule->get_id(), "id2");
-        EXPECT_STRV(event.rule->get_name(), "name2");
-        EXPECT_STRV(event.rule->get_tag("type"), "type");
-        EXPECT_STRV(event.rule->get_tag("category"), "category2");
+        auto result = results[0];
+        ASSERT_TRUE(result.event.has_value());
+
+        auto &event = result.event.value();
+        EXPECT_EQ(results.size(), 1);
+        EXPECT_STRV(event.rule.id, "id2");
+        EXPECT_STRV(event.rule.name, "name2");
+        EXPECT_STRV(event.rule.tags.get().at("type"), "type");
         std::vector<std::string> expected_actions{"block"};
-        EXPECT_EQ(event.rule->get_actions(), expected_actions);
+        EXPECT_EQ(result.actions.get(), expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
@@ -418,8 +431,8 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
             {"type", "type"}, {"category", "category1"}};
 
         rbuilder.insert_base_rule(core_rule{"id1", "name1", std::move(tags), builder.build(),
-            std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block});
+            std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block});
     }
 
     {
@@ -442,17 +455,19 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules({}, events, deadline);
-        EXPECT_EQ(events.size(), 1);
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        EXPECT_EQ(results.size(), 1);
 
-        auto &event = events[0];
-        EXPECT_STRV(event.rule->get_id(), "id1");
-        EXPECT_STRV(event.rule->get_name(), "name1");
-        EXPECT_STRV(event.rule->get_tag("type"), "type");
-        EXPECT_STRV(event.rule->get_tag("category"), "category1");
+        auto result = results[0];
+        ASSERT_TRUE(result.event.has_value());
+
+        auto &event = result.event.value();
+        EXPECT_STRV(event.rule.id, "id1");
+        EXPECT_STRV(event.rule.name, "name1");
+        EXPECT_STRV(event.rule.tags.get().at("type"), "type");
         std::vector<std::string> expected_actions{"block"};
-        EXPECT_EQ(event.rule->get_actions(), expected_actions);
+        EXPECT_EQ(result.actions.get(), expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
 
         auto &match = event.matches[0];
@@ -470,9 +485,9 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         auto root = owned_object::make_map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules({}, events, deadline);
-        EXPECT_EQ(events.size(), 0);
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        EXPECT_EQ(results.size(), 0);
     }
 }
 
@@ -512,9 +527,9 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
     ctx.insert(std::move(root));
 
-    std::vector<ddwaf::event> events;
-    ctx.eval_rules({}, events, deadline);
-    EXPECT_EQ(events.size(), 2);
+    std::vector<rule_result> results;
+    ctx.eval_rules({}, results, deadline);
+    EXPECT_EQ(results.size(), 2);
 }
 
 TEST(TestContext, MatchPriorityCollectionsSingleRun)
@@ -532,8 +547,8 @@ TEST(TestContext, MatchPriorityCollectionsSingleRun)
             {"type", "type1"}, {"category", "category1"}};
 
         rbuilder.insert_base_rule(core_rule{"id1", "name1", std::move(tags), builder.build(),
-            std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block});
+            std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block});
     }
 
     {
@@ -556,9 +571,9 @@ TEST(TestContext, MatchPriorityCollectionsSingleRun)
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
     ctx.insert(std::move(root));
 
-    std::vector<ddwaf::event> events;
-    ctx.eval_rules({}, events, deadline);
-    EXPECT_EQ(events.size(), 1);
+    std::vector<rule_result> results;
+    ctx.eval_rules({}, results, deadline);
+    EXPECT_EQ(results.size(), 1);
 }
 
 TEST(TestContext, MatchMultipleCollectionsDoubleRun)
@@ -598,18 +613,18 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
         auto root = owned_object::make_map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules({}, events, deadline);
-        EXPECT_EQ(events.size(), 1);
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        EXPECT_EQ(results.size(), 1);
     }
 
     {
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules({}, events, deadline);
-        EXPECT_EQ(events.size(), 1);
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        EXPECT_EQ(results.size(), 1);
     }
 }
 
@@ -628,8 +643,8 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
             {"type", "type1"}, {"category", "category1"}};
 
         rbuilder.insert_base_rule(core_rule{"id1", "name1", std::move(tags), builder.build(),
-            std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block});
+            std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block});
     }
 
     {
@@ -653,18 +668,18 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
         auto root = owned_object::make_map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules({}, events, deadline);
-        EXPECT_EQ(events.size(), 1);
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        EXPECT_EQ(results.size(), 1);
     }
 
     {
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules({}, events, deadline);
-        EXPECT_EQ(events.size(), 1);
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        EXPECT_EQ(results.size(), 1);
     }
 }
 
@@ -709,9 +724,9 @@ TEST(TestContext, RuleFilterWithCondition)
     EXPECT_EQ(rules_to_exclude.size(), 1);
     EXPECT_TRUE(rules_to_exclude.contains(rule));
 
-    std::vector<ddwaf::event> events;
-    ctx.eval_rules(rules_to_exclude, events, deadline);
-    EXPECT_EQ(events.size(), 0);
+    std::vector<rule_result> results;
+    ctx.eval_rules(rules_to_exclude, results, deadline);
+    EXPECT_EQ(results.size(), 0);
 }
 
 TEST(TestContext, RuleFilterWithEphemeralConditionMatch)
@@ -779,8 +794,8 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
             {"type", "type"}, {"category", "category"}};
 
         rule = rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build(),
-            std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block});
+            std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block});
     }
 
     // Generate filter
@@ -843,8 +858,8 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
             {"type", "type"}, {"category", "category"}};
 
         rule = rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build(),
-            std::vector<std::string>{"block"}, true, core_rule::source_type::base,
-            core_rule::verdict_type::block});
+            std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::base, core_rule::verdict_type::block});
     }
 
     // Generate filter
@@ -968,9 +983,9 @@ TEST(TestContext, NoRuleFilterWithCondition)
     auto rules_to_exclude = ctx.eval_filters(deadline);
     EXPECT_TRUE(rules_to_exclude.empty());
 
-    std::vector<ddwaf::event> events;
-    ctx.eval_rules(rules_to_exclude, events, deadline);
-    EXPECT_EQ(events.size(), 1);
+    std::vector<rule_result> results;
+    ctx.eval_rules(rules_to_exclude, results, deadline);
+    EXPECT_EQ(results.size(), 1);
 }
 
 TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
@@ -1333,9 +1348,9 @@ TEST(TestContext, InputFilterExclude)
     auto objects_to_exclude = ctx.eval_filters(deadline);
     EXPECT_EQ(objects_to_exclude.size(), 1);
 
-    std::vector<ddwaf::event> events;
-    ctx.eval_rules(objects_to_exclude, events, deadline);
-    EXPECT_EQ(events.size(), 0);
+    std::vector<rule_result> results;
+    ctx.eval_rules(objects_to_exclude, results, deadline);
+    EXPECT_EQ(results.size(), 0);
 }
 
 TEST(TestContext, InputFilterExcludeEphemeral)
@@ -1458,9 +1473,9 @@ TEST(TestContext, InputFilterExcludeRule)
     it->second.mode = filter_mode::none;
     EXPECT_TRUE(it->second.objects.empty());
 
-    std::vector<ddwaf::event> events;
-    ctx.eval_rules(objects_to_exclude, events, deadline);
-    EXPECT_EQ(events.size(), 1);
+    std::vector<rule_result> results;
+    ctx.eval_rules(objects_to_exclude, results, deadline);
+    EXPECT_EQ(results.size(), 1);
 }
 
 TEST(TestContext, InputFilterExcludeRuleEphemeral)
@@ -1676,9 +1691,9 @@ TEST(TestContext, InputFilterWithCondition)
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 0);
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules(objects_to_exclude, events, deadline);
-        EXPECT_EQ(events.size(), 1);
+        std::vector<rule_result> results;
+        ctx.eval_rules(objects_to_exclude, results, deadline);
+        EXPECT_EQ(results.size(), 1);
     }
 
     // With usr.id != admin, nothing should be excluded
@@ -1692,9 +1707,9 @@ TEST(TestContext, InputFilterWithCondition)
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 0);
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules(objects_to_exclude, events, deadline);
-        EXPECT_EQ(events.size(), 1);
+        std::vector<rule_result> results;
+        ctx.eval_rules(objects_to_exclude, results, deadline);
+        EXPECT_EQ(results.size(), 1);
     }
 
     // With usr.id == admin, there should be no matches
@@ -1708,9 +1723,9 @@ TEST(TestContext, InputFilterWithCondition)
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 1);
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules(objects_to_exclude, events, deadline);
-        EXPECT_EQ(events.size(), 0);
+        std::vector<rule_result> results;
+        ctx.eval_rules(objects_to_exclude, results, deadline);
+        EXPECT_EQ(results.size(), 0);
     }
 }
 
@@ -1818,9 +1833,9 @@ TEST(TestContext, InputFilterMultipleRules)
             EXPECT_EQ(policy.objects.size(), 1);
         }
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules(objects_to_exclude, events, deadline);
-        EXPECT_EQ(events.size(), 0);
+        std::vector<rule_result> results;
+        ctx.eval_rules(objects_to_exclude, results, deadline);
+        EXPECT_EQ(results.size(), 0);
     }
 
     // With usr.id != admin, nothing should be excluded
@@ -1838,9 +1853,9 @@ TEST(TestContext, InputFilterMultipleRules)
             EXPECT_EQ(policy.objects.size(), 2);
         }
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules(objects_to_exclude, events, deadline);
-        EXPECT_EQ(events.size(), 0);
+        std::vector<rule_result> results;
+        ctx.eval_rules(objects_to_exclude, results, deadline);
+        EXPECT_EQ(results.size(), 0);
     }
 
     // With usr.id == admin, there should be no matches
@@ -1858,9 +1873,9 @@ TEST(TestContext, InputFilterMultipleRules)
             EXPECT_EQ(policy.objects.size(), 2);
         }
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules(objects_to_exclude, events, deadline);
-        EXPECT_EQ(events.size(), 0);
+        std::vector<rule_result> results;
+        ctx.eval_rules(objects_to_exclude, results, deadline);
+        EXPECT_EQ(results.size(), 0);
     }
 }
 
@@ -1927,9 +1942,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
             EXPECT_EQ(objects.size(), 1);
         }
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules(objects_to_exclude, events, deadline);
-        EXPECT_EQ(events.size(), 0);
+        std::vector<rule_result> results;
+        ctx.eval_rules(objects_to_exclude, results, deadline);
+        EXPECT_EQ(results.size(), 0);
     }
 
     // With usr.id != admin, nothing should be excluded
@@ -1948,9 +1963,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
             EXPECT_EQ(objects.size(), 1);
         }
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules(objects_to_exclude, events, deadline);
-        EXPECT_EQ(events.size(), 0);
+        std::vector<rule_result> results;
+        ctx.eval_rules(objects_to_exclude, results, deadline);
+        EXPECT_EQ(results.size(), 0);
     }
 
     // With usr.id == admin, there should be no matches
@@ -1969,9 +1984,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
             EXPECT_EQ(objects.size(), 1);
         }
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules(objects_to_exclude, events, deadline);
-        EXPECT_EQ(events.size(), 0);
+        std::vector<rule_result> results;
+        ctx.eval_rules(objects_to_exclude, results, deadline);
+        EXPECT_EQ(results.size(), 0);
     }
 }
 
@@ -1979,7 +1994,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 {
     test::ruleset_builder rbuilder{};
 
-    core_rule *ip_rule, *usr_rule, *cookie_rule;
+    core_rule *ip_rule;
+    core_rule *usr_rule;
+    core_rule *cookie_rule;
     {
         test::expression_builder builder(1);
         builder.start_condition();
@@ -2067,9 +2084,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             EXPECT_TRUE(objects.contains(root.at(0)));
         }
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules(objects_to_exclude, events, deadline);
-        EXPECT_EQ(events.size(), 0);
+        std::vector<rule_result> results;
+        ctx.eval_rules(objects_to_exclude, results, deadline);
+        EXPECT_EQ(results.size(), 0);
     }
 
     {
@@ -2087,9 +2104,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             EXPECT_TRUE(objects.contains(root.at(0)));
         }
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules(objects_to_exclude, events, deadline);
-        EXPECT_EQ(events.size(), 0);
+        std::vector<rule_result> results;
+        ctx.eval_rules(objects_to_exclude, results, deadline);
+        EXPECT_EQ(results.size(), 0);
     }
 
     {
@@ -2108,9 +2125,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             EXPECT_TRUE(objects.contains(root.at(0)));
         }
 
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules(objects_to_exclude, events, deadline);
-        EXPECT_EQ(events.size(), 0);
+        std::vector<rule_result> results;
+        ctx.eval_rules(objects_to_exclude, results, deadline);
+        EXPECT_EQ(results.size(), 0);
     }
 
     {
@@ -2129,9 +2146,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             EXPECT_TRUE(objects.contains(root.at(0)));
             EXPECT_TRUE(objects.contains(root.at(1)));
         }
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules(objects_to_exclude, events, deadline);
-        EXPECT_EQ(events.size(), 0);
+        std::vector<rule_result> results;
+        ctx.eval_rules(objects_to_exclude, results, deadline);
+        EXPECT_EQ(results.size(), 0);
     }
 
     {
@@ -2151,9 +2168,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             EXPECT_TRUE(objects.contains(root.at(0)));
             EXPECT_TRUE(objects.contains(root.at(1)));
         }
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules(objects_to_exclude, events, deadline);
-        EXPECT_EQ(events.size(), 0);
+        std::vector<rule_result> results;
+        ctx.eval_rules(objects_to_exclude, results, deadline);
+        EXPECT_EQ(results.size(), 0);
     }
 
     {
@@ -2174,9 +2191,9 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
             EXPECT_TRUE(objects.contains(root.at(1)));
             EXPECT_TRUE(objects.contains(root.at(2)));
         }
-        std::vector<ddwaf::event> events;
-        ctx.eval_rules(objects_to_exclude, events, deadline);
-        EXPECT_EQ(events.size(), 0);
+        std::vector<rule_result> results;
+        ctx.eval_rules(objects_to_exclude, results, deadline);
+        EXPECT_EQ(results.size(), 0);
     }
 }
 

@@ -9,9 +9,9 @@
 #include <memory>
 #include <utility>
 
+#include "attribute_collector.hpp"
 #include "context_allocator.hpp"
 #include "ddwaf.h"
-#include "event.hpp"
 #include "exclusion/common.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
@@ -30,7 +30,7 @@ public:
           postprocessors_(*ruleset_->postprocessors), rule_filters_(*ruleset_->rule_filters),
           input_filters_(*ruleset_->input_filters), rule_matchers_(*ruleset_->rule_matchers),
           exclusion_matchers_(*ruleset_->exclusion_matchers), actions_(*ruleset_->actions),
-          event_obfuscator_(*ruleset_->event_obfuscator)
+          obfuscator_(*ruleset_->obfuscator)
     {
         processor_cache_.reserve(
             ruleset_->preprocessors->size() + ruleset_->postprocessors->size());
@@ -53,12 +53,12 @@ public:
 
     [[nodiscard]] ddwaf_object_free_fn get_free_fn() const noexcept { return ruleset_->free_fn; }
 
-    void eval_preprocessors(borrowed_object &attributes, ddwaf::timer &deadline);
-    void eval_postprocessors(borrowed_object &attributes, ddwaf::timer &deadline);
+    void eval_preprocessors(ddwaf::timer &deadline);
+    void eval_postprocessors(ddwaf::timer &deadline);
     // This function below returns a reference to an internal object,
     // however using them this way helps with testing
     exclusion::context_policy &eval_filters(ddwaf::timer &deadline);
-    void eval_rules(const exclusion::context_policy &policy, std::vector<event> &events,
+    void eval_rules(const exclusion::context_policy &policy, std::vector<rule_result> &results,
         ddwaf::timer &deadline);
 
 protected:
@@ -86,6 +86,7 @@ protected:
 
     std::shared_ptr<ruleset> ruleset_;
     ddwaf::object_store store_;
+    attribute_collector collector_;
 
     // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
     const std::vector<std::unique_ptr<base_processor>> &preprocessors_;
@@ -99,7 +100,7 @@ protected:
 
     const action_mapper &actions_;
 
-    const obfuscator &event_obfuscator_;
+    const match_obfuscator &obfuscator_;
     // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 
     using input_filter = exclusion::input_filter;

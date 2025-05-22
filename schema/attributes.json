@@ -1,0 +1,8 @@
+{
+  "title": "WAF Attributes Schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "/schema/attributes",
+  "type": "object",
+  "description": "Map of generated attributes from rules or processors",
+  "additionalProperties": true
+}

@@ -22,7 +22,8 @@ ddwaf::waf build_instance(std::string_view rule_file)
     }
 
     raw_configuration ruleset{object};
-    waf_builder builder{ddwaf_object_free, std::make_shared<obfuscator>()};
+    waf_builder builder{ddwaf_object_free, std::make_shared<match_obfuscator>()};
+
     ddwaf::null_ruleset_info info;
     auto res = builder.add_or_update("default", ruleset, info);
 
