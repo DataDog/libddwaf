@@ -77,34 +77,34 @@ rule_spec parse_rule(raw_configuration::map &rule, core_rule::source_type source
     std::vector<rule_attribute> attributes;
     for (auto &[key, value_or_target] : attr_map) {
         rule_attribute attr_spec;
-        attr_spec.output = key;
+        attr_spec.key = key;
 
         auto value_or_target_map = static_cast<raw_configuration::map>(value_or_target);
         if (value_or_target_map.contains("value")) {
             auto value = static_cast<ddwaf_object>(value_or_target_map["value"]);
             switch (value.type) {
             case DDWAF_OBJ_STRING:
-                attr_spec.input =
+                attr_spec.value_or_target =
                     std::string{value.stringValue, static_cast<std::size_t>(value.nbEntries)};
                 break;
             case DDWAF_OBJ_UNSIGNED:
-                attr_spec.input = value.uintValue;
+                attr_spec.value_or_target = value.uintValue;
                 break;
             case DDWAF_OBJ_SIGNED:
-                attr_spec.input = value.intValue;
+                attr_spec.value_or_target = value.intValue;
                 break;
             case DDWAF_OBJ_FLOAT:
-                attr_spec.input = value.f64;
+                attr_spec.value_or_target = value.f64;
                 break;
             case DDWAF_OBJ_BOOL:
-                attr_spec.input = value.boolean;
+                attr_spec.value_or_target = value.boolean;
                 break;
             default:
                 throw parsing_error("invalid type for 'value', expected scalar");
             }
         } else {
             auto address = at<std::string_view>(value_or_target_map, "address");
-            attr_spec.input = rule_attribute::input_target{.name = std::string{address},
+            attr_spec.value_or_target = rule_attribute::input_target{.name = std::string{address},
                 .index = get_target_index(address),
                 .key_path = at<std::vector<std::string>>(value_or_target_map, "key_path", {})};
         }

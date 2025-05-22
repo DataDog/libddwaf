@@ -62,8 +62,8 @@ struct rule_attribute {
         target_index index;
         std::vector<std::string> key_path;
     };
-    std::variant<input_target, std::string, uint64_t, int64_t, double, bool> input;
-    std::string output;
+    std::variant<input_target, std::string, uint64_t, int64_t, double, bool> value_or_target;
+    std::string key;
 };
 
 struct rule_event {

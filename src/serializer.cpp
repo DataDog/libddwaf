@@ -316,19 +316,19 @@ void collect_attributes(const object_store &store, const std::vector<rule_attrib
     attribute_collector &collector)
 {
     for (const auto &attr : attributes) {
-        if (std::holds_alternative<rule_attribute::input_target>(attr.input)) {
-            auto input = std::get<rule_attribute::input_target>(attr.input);
-            collector.collect(store, input.index, input.key_path, attr.output);
-        } else if (std::holds_alternative<std::string>(attr.input)) {
-            collector.insert(attr.output, std::get<std::string>(attr.input));
-        } else if (std::holds_alternative<uint64_t>(attr.input)) {
-            collector.insert(attr.output, std::get<uint64_t>(attr.input));
-        } else if (std::holds_alternative<int64_t>(attr.input)) {
-            collector.insert(attr.output, std::get<int64_t>(attr.input));
-        } else if (std::holds_alternative<double>(attr.input)) {
-            collector.insert(attr.output, std::get<double>(attr.input));
-        } else if (std::holds_alternative<bool>(attr.input)) {
-            collector.insert(attr.output, std::get<bool>(attr.input));
+        if (std::holds_alternative<rule_attribute::input_target>(attr.value_or_target)) {
+            auto input = std::get<rule_attribute::input_target>(attr.value_or_target);
+            collector.collect(store, input.index, input.key_path, attr.key);
+        } else if (std::holds_alternative<std::string>(attr.value_or_target)) {
+            collector.insert(attr.key, std::get<std::string>(attr.value_or_target));
+        } else if (std::holds_alternative<uint64_t>(attr.value_or_target)) {
+            collector.insert(attr.key, std::get<uint64_t>(attr.value_or_target));
+        } else if (std::holds_alternative<int64_t>(attr.value_or_target)) {
+            collector.insert(attr.key, std::get<int64_t>(attr.value_or_target));
+        } else if (std::holds_alternative<double>(attr.value_or_target)) {
+            collector.insert(attr.key, std::get<double>(attr.value_or_target));
+        } else if (std::holds_alternative<bool>(attr.value_or_target)) {
+            collector.insert(attr.key, std::get<bool>(attr.value_or_target));
         }
     }
 }
