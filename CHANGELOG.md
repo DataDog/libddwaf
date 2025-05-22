@@ -41,7 +41,7 @@ While the second one defines an attribute containing a scalar value extracted fr
     ATTRIBUTE : {
         "address": ADDRESS,
         "key_path": [ PATH, ... ],
-        "transformers": [ TRANSFORMER_ID, ... ]1
+        "transformers": [ TRANSFORMER_ID, ... ]
     }
 }
 ```
