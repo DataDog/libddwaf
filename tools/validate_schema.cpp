@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <iostream>
 #include <string_view>
 
@@ -8,6 +9,28 @@
 #include "rapidjson/schema.h"
 
 using namespace rapidjson;
+namespace fs = std::filesystem;
+
+class schema_doc_provider : public IRemoteSchemaDocumentProvider {
+public:
+    explicit schema_doc_provider(std::string parent_path): parent_path_(std::move(parent_path)) {}
+    const SchemaDocument* GetRemoteDocument(const char* uri, SizeType length) override {
+        // Resolve the uri and returns a pointer to that schema.
+        std::string uri_str = parent_path_ + '/' +  std::string{uri, length};
+        auto schema = read_file(uri_str);
+        Document sd;
+        if (sd.Parse(schema).HasParseError()) {
+            std::cout << "Failed to load " << uri_str << '\n';
+            std::abort();
+        }
+        docs_.emplace_back(sd);
+        return &docs_.back();
+    }
+
+protected:
+    std::string parent_path_;
+    std::vector<SchemaDocument> docs_;
+};
 
 int main(int argc, char* argv[])
 {
@@ -16,14 +39,17 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    auto schemaJson = read_file(argv[1]);
+    fs::path schema_file(argv[1]);
+
+    auto schema_json = read_file(schema_file.string());
     Document sd;
-    if (sd.Parse(schemaJson).HasParseError()) {
+    if (sd.Parse(schema_json).HasParseError()) {
         std::cout << "Failed to parse schema\n";
         return EXIT_FAILURE;
     }
 
-    SchemaDocument schema(sd);
+    schema_doc_provider provider{schema_file.parent_path()};
+    SchemaDocument schema(sd, "schema", sizeof("schema") - 1, &provider);
 
     auto inputJson = read_file(argv[2]);
     Document d;
