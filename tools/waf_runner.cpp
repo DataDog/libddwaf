@@ -22,6 +22,7 @@
 #include "common/utils.hpp"
 #include "ddwaf.h"
 
+namespace {
 // NOLINTNEXTLINE
 auto parse_args(int argc, char *argv[])
 {
@@ -54,11 +55,15 @@ const char *key_regex {
 
 const char *value_regex{R"((?i)(?:p(?:ass)?w(?:or)?d|pass(?:[_-]?phrase)?|secret(?:[_-]?key)?|(?:(?:api|private|public|access)[_-]?)key(?:[_-]?id)?|(?:(?:auth|access|id|refresh)[_-]?)?token|consumer[_-]?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?|jsessionid|phpsessid|asp\.net(?:[_-]|-)sessionid|sid|jwt)(?:\s*=([^;&]+)|"\s*:\s*("[^"]+"|\d+))|bearer\s+([a-z0-9\._\-]+)|token\s*:\s*([a-z0-9]{13})|gh[opsu]_([0-9a-zA-Z]{36})|ey[I-L][\w=-]+\.(ey[I-L][\w=-]+(?:\.[\w.+\/=-]+)?)|[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}([^\-]+)[\-]{5}END[a-z\s]+PRIVATE\sKEY|ssh-rsa\s*([a-z0-9\/\.+]{100,}))"};
 
+} // namespace
+
 int main(int argc, char *argv[])
 {
     auto args = parse_args(argc, argv);
 
+    bool verbose = false;
     if (args.contains("--verbose")) {
+        verbose = true;
         ddwaf_set_log_cb(log_cb, DDWAF_LOG_TRACE);
     } else {
         ddwaf_set_log_cb(log_cb, DDWAF_LOG_OFF);
@@ -102,8 +107,10 @@ int main(int argc, char *argv[])
     }
 
     for (const auto &json_str : inputs) {
+        if (verbose) {
+           std::cout << "---- Run with " << json_str << '\n';
+        }
 
-        std::cout << "---- Run with " << json_str << '\n';
         auto input = YAML::Load(json_str);
 
         ddwaf_object persistent;
@@ -132,44 +139,14 @@ int main(int argc, char *argv[])
         auto code =
             ddwaf_run(context, &persistent, &ephemeral, &ret, std::numeric_limits<uint64_t>::max());
 
-        const auto *events = ddwaf_object_find(&ret, "events", sizeof("events") - 1);
-        if (code == DDWAF_MATCH && ddwaf_object_size(events) > 0) {
-            std::stringstream ss;
-            YAML::Emitter out(ss);
+        if (code == DDWAF_MATCH) {
+            YAML::Emitter out(std::cout);
             out.SetIndent(2);
             out.SetMapFormat(YAML::Block);
             out.SetSeqFormat(YAML::Block);
-            out << object_to_yaml(*events);
-
-            std::cout << "Events:\n" << ss.str() << "\n\n";
+            out << object_to_yaml(ret);
+            std::cout << '\n';
         }
-
-        const auto *actions = ddwaf_object_find(&ret, "actions", sizeof("actions") - 1);
-        if (code == DDWAF_MATCH && ddwaf_object_size(actions) > 0) {
-            std::stringstream ss;
-            YAML::Emitter out(ss);
-            out.SetIndent(2);
-            out.SetMapFormat(YAML::Block);
-            out.SetSeqFormat(YAML::Block);
-            out << object_to_yaml(*actions);
-
-            std::cout << "Actions:\n" << ss.str() << "\n\n";
-        }
-
-        const auto *attributes = ddwaf_object_find(&ret, "attributes", sizeof("attributes") - 1);
-        if (ddwaf_object_size(attributes) > 0) {
-            std::stringstream ss;
-            YAML::Emitter out(ss);
-            out.SetIndent(2);
-            out.SetMapFormat(YAML::Block);
-            out.SetSeqFormat(YAML::Block);
-            out << object_to_yaml(*attributes);
-
-            std::cout << "Attributes:\n" << ss.str() << "\n\n";
-        }
-
-        const auto *duration = ddwaf_object_find(&ret, "duration", sizeof("duration") - 1);
-        std::cout << "Total time: " << ddwaf_object_get_unsigned(duration) << '\n';
         ddwaf_object_free(&ret);
     }
 
