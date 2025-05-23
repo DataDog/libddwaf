@@ -3,7 +3,7 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-#include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <string>
 #include <string_view>
@@ -20,13 +20,13 @@
 #include "configuration/common/raw_configuration.hpp"
 #include "configuration/common/transformer_parser.hpp"
 #include "configuration/rule_parser.hpp"
-#include "ddwaf.h"
 #include "log.hpp"
+#include "object.hpp"
+#include "object_type.hpp"
 #include "rule.hpp"
 #include "semver.hpp"
 #include "target_address.hpp"
 #include "transformer/base.hpp"
-#include "utils.hpp"
 #include "version.hpp"
 
 namespace ddwaf {
@@ -38,7 +38,7 @@ rule_spec parse_rule(raw_configuration::map &rule, core_rule::source_type source
     std::vector<transformer_id> rule_transformers;
     auto data_source = ddwaf::data_source::values;
     auto transformers = at<raw_configuration::vector>(rule, "transformers", {});
-    if (transformers.size() > object_limits::max_transformers_per_address) {
+    if (transformers.size() > max_transformers_per_address) {
         throw ddwaf::parsing_error("number of transformers beyond allowed limit");
     }
 
@@ -81,23 +81,22 @@ rule_spec parse_rule(raw_configuration::map &rule, core_rule::source_type source
 
         auto value_or_target_map = static_cast<raw_configuration::map>(value_or_target);
         if (value_or_target_map.contains("value")) {
-            auto value = static_cast<ddwaf_object>(value_or_target_map["value"]);
-            switch (value.type) {
-            case DDWAF_OBJ_STRING:
-                attr_spec.value_or_target =
-                    std::string{value.stringValue, static_cast<std::size_t>(value.nbEntries)};
+            auto value = static_cast<object_view>(value_or_target_map["value"]);
+            switch (value.type()) {
+            case object_type::string:
+                attr_spec.value_or_target = value.as<std::string>();
                 break;
-            case DDWAF_OBJ_UNSIGNED:
-                attr_spec.value_or_target = value.uintValue;
+            case object_type::uint64:
+                attr_spec.value_or_target = value.as<uint64_t>();
                 break;
-            case DDWAF_OBJ_SIGNED:
-                attr_spec.value_or_target = value.intValue;
+            case object_type::int64:
+                attr_spec.value_or_target = value.as<int64_t>();
                 break;
-            case DDWAF_OBJ_FLOAT:
-                attr_spec.value_or_target = value.f64;
+            case object_type::float64:
+                attr_spec.value_or_target = value.as<double>();
                 break;
-            case DDWAF_OBJ_BOOL:
-                attr_spec.value_or_target = value.boolean;
+            case object_type::boolean:
+                attr_spec.value_or_target = value.as<bool>();
                 break;
             default:
                 throw parsing_error("invalid type for 'value', expected scalar");

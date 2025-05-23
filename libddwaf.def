@@ -31,7 +31,6 @@ EXPORTS
   ddwaf_object_type
   ddwaf_object_size
   ddwaf_object_length
-  ddwaf_object_get_key
   ddwaf_object_get_string
   ddwaf_object_get_unsigned
   ddwaf_object_get_signed

@@ -31,7 +31,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
             cache, deadline);
 
     ddwaf_object_free(&headers);
-    ddwaf_object_free(&output);
 
     return 0;
 }

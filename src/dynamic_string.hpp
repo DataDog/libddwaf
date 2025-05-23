@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include "ddwaf.h"
-
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
@@ -17,6 +15,8 @@
 #include <string_view>
 
 namespace ddwaf {
+
+class owned_object;
 
 // This is a modifiable string type which allows transferring ownership  the
 // internal buffer. This is particularly useful for strings which ultimately
@@ -86,13 +86,7 @@ public:
     }
 
     // This method moves the contents of the string into the resulting object
-    ddwaf_object to_object()
-    {
-        ddwaf_object object;
-        ddwaf_object_stringl_nc(&object, buffer_.release(), size_);
-        size_ = capacity_ = 0;
-        return object; // NOLINT(clang-analyzer-unix.Malloc)
-    }
+    owned_object to_object();
 
     [[nodiscard]] std::size_t size() const noexcept { return size_; }
     [[nodiscard]] bool empty() const noexcept { return size_ == 0; }

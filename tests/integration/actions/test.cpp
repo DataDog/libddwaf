@@ -15,7 +15,7 @@ constexpr std::string_view base_dir = "integration/actions/";
 
 TEST(TestActionsIntegration, DefaultActions)
 {
-    auto rule = read_file("default_actions.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("default_actions.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -156,7 +156,7 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     {
-        auto rule = read_file("default_actions.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("default_actions.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
         ddwaf_object_free(&rule);
@@ -198,7 +198,7 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
     {
         ddwaf_destroy(handle);
 
-        auto actions = yaml_to_object(
+        auto actions = yaml_to_object<ddwaf_object>(
             R"({actions: [{id: block, type: redirect_request, parameters: {location: http://google.com, status_code: 303}}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("actions"), &actions, nullptr);
         ddwaf_object_free(&actions);
@@ -244,7 +244,7 @@ TEST(TestActionsIntegration, AddNewAction)
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     {
-        auto rule = read_file("default_actions.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("default_actions.yaml", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
         ddwaf_object_free(&rule);
@@ -285,7 +285,7 @@ TEST(TestActionsIntegration, AddNewAction)
     {
         ddwaf_destroy(handle);
 
-        auto actions = yaml_to_object(
+        auto actions = yaml_to_object<ddwaf_object>(
             R"({actions: [{id: unblock, type: unblock_request, parameters: {code: 303}}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("actions"), &actions, nullptr);
         ddwaf_object_free(&actions);
@@ -329,7 +329,7 @@ TEST(TestActionsIntegration, AddNewAction)
 
 TEST(TestActionsIntegration, EmptyOrInvalidActions)
 {
-    auto rule = read_file("invalid_actions.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("invalid_actions.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);

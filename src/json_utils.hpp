@@ -8,10 +8,10 @@
 
 #include <string_view>
 
-#include "ddwaf.h"
+#include "object.hpp"
 
 namespace ddwaf {
 
-ddwaf_object json_to_object(std::string_view json);
+owned_object json_to_object(std::string_view json);
 
 } // namespace ddwaf

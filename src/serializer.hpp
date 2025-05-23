@@ -8,20 +8,20 @@
 
 #include "action_mapper.hpp"
 #include "attribute_collector.hpp"
-#include "ddwaf.h"
 #include "obfuscator.hpp"
+#include "object.hpp"
 #include "rule.hpp"
 
 namespace ddwaf {
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
 struct result_components {
-    ddwaf_object &events;
-    ddwaf_object &actions;
-    ddwaf_object &duration;
-    ddwaf_object &timeout;
-    ddwaf_object &attributes;
-    ddwaf_object &keep;
+    borrowed_object events;
+    borrowed_object actions;
+    borrowed_object duration;
+    borrowed_object timeout;
+    borrowed_object attributes;
+    borrowed_object keep;
 };
 // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 
@@ -34,7 +34,7 @@ public:
     void serialize(const object_store &store, std::vector<rule_result> &results,
         attribute_collector &collector, const timer &deadline, result_components output) const;
 
-    static std::pair<ddwaf_object, result_components> initialise_result_object();
+    static std::pair<owned_object, result_components> initialise_result_object();
 
 protected:
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)

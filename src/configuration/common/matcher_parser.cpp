@@ -20,7 +20,6 @@
 #include "configuration/common/matcher_parser.hpp" // IWYU pragma: keep
 #include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
-#include "ddwaf.h"
 #include "matcher/base.hpp"
 #include "matcher/equals.hpp"
 #include "matcher/exact_match.hpp"
@@ -51,12 +50,12 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::ph
     lengths.reserve(list.size());
 
     for (auto &pattern : list) {
-        if (pattern.type != DDWAF_OBJ_STRING) {
-            throw ddwaf::parsing_error("phrase_match list item not a string");
+        if (!pattern->is_string() || pattern->empty()) {
+            throw ddwaf::parsing_error("phrase_match list item not a string or empty");
         }
 
-        patterns.push_back(pattern.stringValue);
-        lengths.push_back((uint32_t)pattern.nbEntries);
+        patterns.push_back(pattern->data());
+        lengths.push_back(static_cast<uint32_t>(pattern->size()));
     }
 
     return {

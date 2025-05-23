@@ -32,17 +32,22 @@ void run_fixture::warmup()
         object_stack.emplace(&object, 0);
         while (!object_stack.empty()) {
             auto &[current, i] = object_stack.top();
-            for (; i < current->nbEntries; ++i) {
-                const auto &next = current->array[i];
+            for (; i < current->size; ++i) {
+                const auto &next = current->type == DDWAF_OBJ_MAP ? current->via.map[i].val
+                                                                  : current->via.array[i];
                 if (object_stack.size() <= max_depth &&
                     (next.type == DDWAF_OBJ_ARRAY || next.type == DDWAF_OBJ_MAP)) {
                     break;
                 }
             }
-            if (i == current->nbEntries) {
+            if (i == current->size) {
                 object_stack.pop();
             } else {
-                object_stack.emplace(&current->array[i++], 0);
+                if (current->type == DDWAF_OBJ_MAP) {
+                    object_stack.emplace(&current->via.map[i++].val, 0);
+                } else {
+                    object_stack.emplace(&current->via.array[i++], 0);
+                }
             }
         }
     }

@@ -16,7 +16,6 @@
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
 #include "obfuscator.hpp"
-#include "rule.hpp"
 #include "ruleset.hpp"
 #include "utils.hpp"
 
@@ -26,14 +25,12 @@ using filter_mode = exclusion::filter_mode;
 
 class context {
 public:
-    using object_set = std::unordered_set<const ddwaf_object *>;
-
     explicit context(std::shared_ptr<ruleset> ruleset)
         : ruleset_(std::move(ruleset)), preprocessors_(*ruleset_->preprocessors),
           postprocessors_(*ruleset_->postprocessors), rule_filters_(*ruleset_->rule_filters),
           input_filters_(*ruleset_->input_filters), rule_matchers_(*ruleset_->rule_matchers),
           exclusion_matchers_(*ruleset_->exclusion_matchers), actions_(*ruleset_->actions),
-          limits_(ruleset_->limits), obfuscator_(*ruleset_->obfuscator)
+          obfuscator_(*ruleset_->obfuscator)
     {
         processor_cache_.reserve(
             ruleset_->preprocessors->size() + ruleset_->postprocessors->size());
@@ -51,8 +48,10 @@ public:
     context &operator=(context &&) = delete;
     ~context() = default;
 
-    std::pair<DDWAF_RET_CODE, ddwaf_object> run(
-        optional_ref<ddwaf_object>, optional_ref<ddwaf_object>, uint64_t);
+    std::pair<DDWAF_RET_CODE, owned_object> run(
+        owned_object persistent, owned_object ephemeral, uint64_t);
+
+    [[nodiscard]] ddwaf_object_free_fn get_free_fn() const noexcept { return ruleset_->free_fn; }
 
     void eval_preprocessors(ddwaf::timer &deadline);
     void eval_postprocessors(ddwaf::timer &deadline);
@@ -101,7 +100,6 @@ protected:
 
     const action_mapper &actions_;
 
-    const object_limits &limits_;
     const match_obfuscator &obfuscator_;
     // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 
@@ -140,12 +138,14 @@ public:
     context_wrapper &operator=(context_wrapper &&) noexcept = delete;
     context_wrapper &operator=(const context_wrapper &) = delete;
 
-    std::pair<DDWAF_RET_CODE, ddwaf_object> run(optional_ref<ddwaf_object> persistent,
-        optional_ref<ddwaf_object> ephemeral, uint64_t timeout)
+    std::pair<DDWAF_RET_CODE, owned_object> run(
+        owned_object persistent, owned_object ephemeral, uint64_t timeout)
     {
         memory::memory_resource_guard guard(&mr_);
-        return ctx_->run(persistent, ephemeral, timeout);
+        return ctx_->run(std::move(persistent), std::move(ephemeral), timeout);
     }
+
+    [[nodiscard]] ddwaf_object_free_fn get_free_fn() const noexcept { return ctx_->get_free_fn(); }
 
 protected:
     context *ctx_;

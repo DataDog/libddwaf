@@ -258,7 +258,6 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     rs->actions = actions_;
     rs->free_fn = free_fn_;
     rs->obfuscator = obfuscator_;
-    rs->limits = limits_;
 
     // An instance is valid if it contains primitives with side-effects, such as
     // rules or postprocessors.

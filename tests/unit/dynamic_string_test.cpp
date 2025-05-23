@@ -154,19 +154,15 @@ TEST(TestDynamicString, MoveToObject)
 
     auto object = str.to_object();
 
-    std::size_t length;
-    const char *cstr = ddwaf_object_get_string(&object, &length);
+    auto str_view = object.as<std::string_view>();
 
     EXPECT_EQ(str.capacity(), 0);
     EXPECT_EQ(str.size(), 0);
     EXPECT_TRUE(str.empty());
     EXPECT_EQ(str.data(), nullptr);
 
-    EXPECT_NE(cstr, nullptr);
-    EXPECT_STREQ(cstr, "thisisastring");
-    EXPECT_EQ(length, 13);
-
-    ddwaf_object_free(&object);
+    EXPECT_NE(str_view.data(), nullptr);
+    EXPECT_STR(str_view, "thisisastring");
 }
 
 TEST(TestDynamicString, AppendDefaultString)
