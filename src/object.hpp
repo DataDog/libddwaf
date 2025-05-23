@@ -24,53 +24,65 @@ namespace ddwaf {
 namespace detail {
 
 using object = ddwaf_object;
+using object_kv = ddwaf_object_kv;
+using size_type = decltype(ddwaf_object::size);
 
-inline char *copy_string(const char *str, std::size_t len)
+template <typename T> constexpr std::size_t maxof_v = std::numeric_limits<T>::max();
+
+static_assert(maxof_v<size_type> <= maxof_v<std::size_t> / sizeof(object));
+static_assert(maxof_v<size_type> <= maxof_v<std::size_t> / sizeof(object_kv));
+
+inline char *copy_string(const char *str, size_type length)
 {
-    // TODO new char[len];
-    if (len == SIZE_MAX) {
+    // TODO new char[size];
+    if (length == maxof_v<size_type>) {
         throw std::bad_alloc();
     }
 
     // NOLINTNEXTLINE(hicpp-no-malloc)
-    char *copy = static_cast<char *>(malloc(len + 1));
+    char *copy = static_cast<char *>(malloc(length + 1));
     if (copy == nullptr) [[unlikely]] {
         throw std::bad_alloc();
     }
 
-    memcpy(copy, str, len);
-    copy[len] = '\0';
+    memcpy(copy, str, length);
+    copy[length] = '\0';
 
     return copy;
 }
 
-inline void realloc_array(object &obj)
+template <typename T> T *alloc_helper(size_type size)
 {
-    static constexpr std::size_t array_increment = 8;
-
-    const auto size = static_cast<std::size_t>(obj.nbEntries) + array_increment;
-    if (size > SIZE_MAX / sizeof(object)) [[unlikely]] {
+    // NOLINTNEXTLINE(hicpp-no-malloc)
+    auto *data = static_cast<T *>(calloc(size, sizeof(T)));
+    if (size > 0 && data == nullptr) [[unlikely]] {
         throw std::bad_alloc();
     }
-
-    auto *new_array = static_cast<object *>(
-        // NOLINTNEXTLINE(hicpp-no-malloc)
-        realloc(static_cast<void *>(obj.array), size * sizeof(object)));
-    if (new_array == nullptr) [[unlikely]] {
-        throw std::bad_alloc();
-    }
-
-    obj.array = new_array;
+    return data;
 }
 
-inline void alloc_array(object &obj)
+template <typename T> inline std::pair<T *, size_type> realloc_helper(T *data, size_type size)
 {
-    static constexpr std::size_t array_start_size = 8;
+    // Since allocators have no realloc interface, we're just using calloc
+    // as it'll be equivalent once allocators are supported
+    size_type new_size;
+    if (size > maxof_v<size_type> / 2) [[unlikely]] {
+        new_size = maxof_v<size_type>;
+    } else {
+        new_size = size * 2;
+    }
+
     // NOLINTNEXTLINE(hicpp-no-malloc)
-    obj.array = static_cast<object *>(malloc(array_start_size * sizeof(object)));
-    if (obj.array == nullptr) [[unlikely]] {
+    auto *new_data = static_cast<T *>(calloc(new_size, sizeof(T)));
+    if (new_data == nullptr) [[unlikely]] {
         throw std::bad_alloc();
     }
+
+    memcpy(new_data, data, sizeof(T) * size);
+    // NOLINTNEXTLINE(hicpp-no-malloc)
+    free(data);
+
+    return {new_data, new_size};
 }
 
 namespace initializer {
@@ -85,7 +97,6 @@ using key_value = std::pair<std::string_view, movable_object>;
 class owned_object;
 class borrowed_object;
 class object_view;
-class object_key;
 
 template <typename T> struct object_converter;
 
@@ -97,7 +108,8 @@ public:
 
     [[nodiscard]] std::size_t size() const noexcept
     {
-        return static_cast<std::size_t>(static_cast<const Derived *>(this)->ref().nbEntries);
+        // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
+        return static_cast<std::size_t>(static_cast<const Derived *>(this)->ref().size);
     }
 
     [[nodiscard]] bool empty() const noexcept { return size() == 0; }
@@ -109,7 +121,7 @@ public:
 
     [[nodiscard]] const char *data() const noexcept
     {
-        return static_cast<const Derived *>(this)->ref().stringValue;
+        return static_cast<const Derived *>(this)->ref().via.str;
     }
     // The is_* methods can be used to check for collections of types
     [[nodiscard]] bool is_container() const noexcept
@@ -138,7 +150,7 @@ public:
         requires std::is_same_v<T, bool>
     {
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return obj.boolean;
+        return obj.via.b8;
     }
 
     template <typename T>
@@ -146,7 +158,7 @@ public:
         requires std::is_integral_v<T> && std::is_signed_v<T>
     {
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return static_cast<T>(obj.intValue);
+        return static_cast<T>(obj.via.i64);
     }
 
     template <typename T>
@@ -154,7 +166,7 @@ public:
         requires std::is_integral_v<T> && std::is_unsigned_v<T> && (!std::is_same_v<T, bool>)
     {
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return static_cast<T>(obj.uintValue);
+        return static_cast<T>(obj.via.u64);
     }
 
     template <typename T>
@@ -162,7 +174,7 @@ public:
         requires std::is_same_v<T, double>
     {
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return static_cast<T>(obj.f64);
+        return static_cast<T>(obj.via.f64);
     }
 
     template <typename T>
@@ -170,7 +182,7 @@ public:
         requires std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>
     {
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return {obj.stringValue, size()};
+        return {obj.via.str, size()};
     }
 
     template <typename T>
@@ -178,7 +190,7 @@ public:
         requires std::is_same_v<T, const char *>
     {
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return obj.stringValue;
+        return obj.via.str;
     }
 
     // Access the underlying value based on the required type or return a default
@@ -212,7 +224,7 @@ public:
     {
         using limits = std::numeric_limits<T>;
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return is_compatible_type<uint64_t>(type()) && obj.uintValue <= limits::max();
+        return is_compatible_type<uint64_t>(type()) && obj.via.u64 <= limits::max();
     }
 
     // Overload for other signed integer types
@@ -222,8 +234,8 @@ public:
     {
         using limits = std::numeric_limits<T>;
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return is_compatible_type<int64_t>(type()) && obj.intValue >= limits::min() &&
-               obj.intValue <= limits::max();
+        return is_compatible_type<int64_t>(type()) && obj.via.i64 >= limits::min() &&
+               obj.via.i64 <= limits::max();
     }
 
     // Convert the underlying type to the requested type
@@ -235,60 +247,6 @@ private:
     readable_object() = default;
 
     friend Derived;
-};
-
-// Temporary abstraction, this will be removed once the keys and values are
-// split within ddwaf_object.
-class object_key {
-public:
-    // The default constructor results in a key without value
-    object_key() = default;
-    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-    object_key(detail::object *underlying_object) : obj_(underlying_object) {}
-    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-    object_key(const detail::object *underlying_object) : obj_(underlying_object) {}
-
-    ~object_key() = default;
-    object_key(const object_key &) = default;
-    object_key(object_key &&) = default;
-    object_key &operator=(const object_key &) = default;
-    object_key &operator=(object_key &&) = default;
-
-    [[nodiscard]] const char *data() const noexcept
-    {
-        return obj_ != nullptr ? obj_->parameterName : nullptr;
-    }
-
-    [[nodiscard]] std::size_t size() const noexcept
-    {
-        if (obj_ == nullptr || obj_->parameterName == nullptr) {
-            [[unlikely]] return 0;
-        }
-        return static_cast<std::size_t>(obj_->parameterNameLength);
-    }
-
-    [[nodiscard]] bool empty() const noexcept { return size() == 0; }
-
-    template <typename T>
-    [[nodiscard]] T as() const noexcept
-        requires std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>
-    {
-        if (obj_ == nullptr || obj_->parameterName == nullptr) {
-            [[unlikely]] return {};
-        }
-        return {obj_->parameterName, static_cast<std::size_t>(obj_->parameterNameLength)};
-    }
-
-    template <typename T>
-    bool operator==(const T &other) const
-        requires(std::is_same_v<T, std::string_view> || std::is_same_v<T, object_key>)
-    {
-        auto s = size();
-        return s == other.size() && memcmp(data(), other.data(), s) == 0;
-    }
-
-protected:
-    const detail::object *obj_{nullptr};
 };
 
 class object_view final : public readable_object<object_view> {
@@ -344,50 +302,51 @@ public:
 
     // Access the key and value at index. If the container is an array, the key
     // will be an empty string.
-    [[nodiscard]] std::pair<object_key, object_view> at(std::size_t index) const noexcept
+    [[nodiscard]] std::pair<object_view, object_view> at(std::size_t index) const noexcept
     {
-        assert(obj_ != nullptr && index < size() && obj_->array != nullptr);
-
-        const auto &slot = obj_->array[index];
+        assert(obj_ != nullptr && index < size());
         if (type() == object_type::map) {
-            return {&slot, slot};
+            assert(obj_->via.map != nullptr);
+            const auto &slot = obj_->via.map[index];
+            return {slot.key, slot.val};
         }
-        return {{}, slot};
+        assert(obj_->via.array != nullptr);
+        return {{}, obj_->via.array[index]};
     }
 
     // Access the key at index. If the container is an array, the key will be an empty string.
-    [[nodiscard]] object_key at_key(std::size_t index) const noexcept
+    [[nodiscard]] object_view at_key(std::size_t index) const noexcept
     {
-        assert(obj_ != nullptr && index < size() && obj_->array != nullptr);
-
+        assert(obj_ != nullptr && index < size());
         if (type() == object_type::map) {
-            return &obj_->array[index];
+            assert(obj_->via.map != nullptr);
+            return obj_->via.map[index].key;
         }
+        assert(obj_->via.array != nullptr);
         return {};
     }
 
     // Access the value at index.
     [[nodiscard]] object_view at_value(std::size_t index) const noexcept
     {
-        assert(obj_ != nullptr && index < size() && obj_->array != nullptr);
-        return obj_->array[index];
+        assert(obj_ != nullptr && index < size());
+        if (type() == object_type::map) {
+            assert(obj_->via.map != nullptr);
+            return obj_->via.map[index].val;
+        }
+        assert(obj_->via.array != nullptr);
+        return obj_->via.array[index];
     }
 
-    [[nodiscard]] object_view find(std::string_view key) const noexcept
+    [[nodiscard]] object_view find(std::string_view expected_key) const noexcept
     {
-        assert(obj_ != nullptr && obj_->array != nullptr);
+        assert(obj_ != nullptr && type() == object_type::map && obj_->via.map != nullptr);
 
-        for (uint64_t i = 0; i < obj_->nbEntries; ++i) {
-            const auto &child = obj_->array[i];
+        for (std::size_t i = 0; i < size(); ++i) {
+            auto [key, value] = at(i);
 
-            if (child.parameterName == nullptr || child.parameterNameLength == 0) {
-                continue;
-            }
-
-            const std::string_view child_key{
-                child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
-            if (child_key == key) {
-                return &child;
+            if (expected_key == key.as<std::string_view>()) {
+                return value;
             }
         }
         return {};
@@ -415,107 +374,6 @@ public:
             }
         }
         return current;
-    }
-
-    class iterator {
-    public:
-        ~iterator() = default;
-        iterator(const iterator &) = default;
-        iterator(iterator &&) = default;
-        iterator &operator=(const iterator &) = default;
-        iterator &operator=(iterator &&) = default;
-
-        [[nodiscard]] object_type container_type() const noexcept { return type_; }
-
-        // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-        operator bool() const noexcept { return index_ < size_; }
-
-        bool operator!=(const iterator &rhs) const noexcept
-        {
-            return obj_ != rhs.obj_ || index_ != rhs.index_;
-        }
-
-        [[nodiscard]] object_key key() const
-        {
-            assert(obj_ != nullptr && index_ < size_);
-            if (type_ == object_type::map) {
-                return &obj_[index_];
-            }
-            return {};
-        }
-
-        [[nodiscard]] object_view value() const
-        {
-            assert(obj_ != nullptr && index_ < size_);
-            return obj_[index_];
-        }
-
-        std::pair<object_key, object_view> operator*() const
-        {
-            assert(obj_ != nullptr && index_ < size_);
-            const auto &slot = obj_[index_];
-            if (type_ == object_type::map) {
-                return {&slot, slot};
-            }
-            return {{}, slot};
-        }
-
-        [[nodiscard]] std::size_t index() const { return static_cast<std::size_t>(index_); }
-
-        iterator &operator++() noexcept
-        {
-            // Saturated increment (to size)
-            index_ += static_cast<uint32_t>(index_ < size_);
-            return *this;
-        }
-
-        [[nodiscard]] iterator prev() const noexcept
-        {
-            // Saturated decrement (to 0)
-            auto new_index = static_cast<uint16_t>(index_ - static_cast<uint16_t>(index_ > 0));
-            return {obj_, size_, new_index, type_};
-        }
-
-    protected:
-        iterator() = default;
-
-        explicit iterator(const detail::object *obj, uint16_t idx = 0)
-            : obj_(obj->array), size_(static_cast<uint16_t>(obj->nbEntries)), index_(idx),
-              type_(static_cast<object_type>(obj->type))
-        {}
-
-        iterator(
-            // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-            const detail::object *obj, std::uint16_t size, std::uint16_t index, object_type type)
-            : obj_(obj), size_(size), index_(index), type_(type)
-        {}
-
-        const detail::object *obj_{nullptr};
-        std::uint16_t size_{0};
-        std::uint16_t index_{0};
-        object_type type_{object_type::invalid};
-
-        friend class object_view;
-    };
-
-    [[nodiscard]] iterator begin() const
-    {
-        assert(obj_ != nullptr);
-        // This check guarantees that the object is a container and not null
-        if (!is_container()) {
-            [[unlikely]] return {};
-        }
-        return iterator{obj_};
-    }
-
-    [[nodiscard]] iterator end() const
-    {
-        assert(obj_ != nullptr);
-        // This check guarantees that the object is a container and not null
-        if (!is_container()) {
-            [[unlikely]] return {};
-        }
-        return iterator{obj_, static_cast<uint16_t>(obj_->nbEntries)};
     }
 
 protected:
@@ -577,8 +435,8 @@ protected:
 class owned_object final : public readable_object<owned_object>,
                            public writable_object<owned_object> {
 public:
-    using size_type = decltype(detail::object::nbEntries);
-    using length_type = decltype(detail::object::nbEntries);
+    using size_type = decltype(detail::object::size);
+    using length_type = decltype(detail::object::size);
 
     owned_object() = default;
     explicit owned_object(detail::object obj, ddwaf_object_free_fn free_fn = ddwaf_object_free)
@@ -653,68 +511,47 @@ public:
 
     static owned_object make_null()
     {
-        return owned_object{{.parameterName = nullptr,
-                                .parameterNameLength = 0,
-                                .stringValue = nullptr,
-                                .nbEntries = 0,
-                                .type = DDWAF_OBJ_NULL},
-            nullptr};
+        return owned_object{
+            {.via{.str = nullptr}, .type = DDWAF_OBJ_NULL, .size = 0, .capacity = 0}, nullptr};
     }
 
     static owned_object make_boolean(bool value)
     {
-        return owned_object{{.parameterName = nullptr,
-                                .parameterNameLength = 0,
-                                .boolean = value,
-                                .nbEntries = 0,
-                                .type = DDWAF_OBJ_BOOL},
-            nullptr};
+        return owned_object{
+            {.via{.b8 = value}, .type = DDWAF_OBJ_BOOL, .size = 0, .capacity = 0}, nullptr};
     }
 
     static owned_object make_signed(int64_t value)
     {
-        return owned_object{{.parameterName = nullptr,
-                                .parameterNameLength = 0,
-                                .intValue = value,
-                                .nbEntries = 0,
-                                .type = DDWAF_OBJ_SIGNED},
-            nullptr};
+        return owned_object{
+            {.via{.i64 = value}, .type = DDWAF_OBJ_SIGNED, .size = 0, .capacity = 0}, nullptr};
     }
 
     static owned_object make_unsigned(uint64_t value)
     {
-        return owned_object{{.parameterName = nullptr,
-                                .parameterNameLength = 0,
-                                .uintValue = value,
-                                .nbEntries = 0,
-                                .type = DDWAF_OBJ_UNSIGNED},
-            nullptr};
+        return owned_object{
+            {.via{.u64 = value}, .type = DDWAF_OBJ_UNSIGNED, .size = 0, .capacity = 0}, nullptr};
     }
 
     static owned_object make_float(double value)
     {
-        return owned_object{{.parameterName = nullptr,
-                                .parameterNameLength = 0,
-                                .f64 = value,
-                                .nbEntries = 0,
-                                .type = DDWAF_OBJ_FLOAT},
-            nullptr};
+        return owned_object{
+            {.via{.f64 = value}, .type = DDWAF_OBJ_FLOAT, .size = 0, .capacity = 0}, nullptr};
     }
 
     static owned_object make_string_nocopy(
         const char *str, std::size_t len, ddwaf_object_free_fn free_fn = ddwaf_object_free)
     {
-        return owned_object{{.parameterName = nullptr,
-                                .parameterNameLength = 0,
-                                .stringValue = str,
-                                .nbEntries = static_cast<uint64_t>(len),
-                                .type = DDWAF_OBJ_STRING},
+        return owned_object{{.via{.cstr = str},
+                                .type = DDWAF_OBJ_STRING,
+                                .size = static_cast<uint16_t>(len),
+                                .capacity = static_cast<uint16_t>(len)},
             free_fn};
     }
 
     template <typename T>
     static owned_object make_string_nocopy(T str, ddwaf_object_free_fn free_fn = ddwaf_object_free)
-        requires std::is_same_v<T, std::string_view> || std::is_same_v<T, object_key>
+        requires std::is_same_v<T, std::string_view> || std::is_same_v<T, object_view>
     {
         return make_string_nocopy(str.data(), str.size(), free_fn);
     }
@@ -722,11 +559,11 @@ public:
     static owned_object make_string(const char *str, std::size_t len)
     {
         // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
-        return owned_object{{.parameterName = nullptr,
-            .parameterNameLength = 0,
-            .stringValue = detail::copy_string(str, len),
-            .nbEntries = static_cast<uint64_t>(len),
-            .type = DDWAF_OBJ_STRING}};
+        return owned_object{{.via{.str = detail::copy_string(str, len)},
+                                .type = DDWAF_OBJ_STRING,
+                                .size = static_cast<uint16_t>(len),
+                                .capacity = static_cast<uint16_t>(len)},
+            ddwaf_object_free};
     }
 
     static owned_object make_string(std::string_view str)
@@ -739,20 +576,15 @@ public:
 
     static owned_object make_array()
     {
-        return owned_object{{.parameterName = nullptr,
-            .parameterNameLength = 0,
-            .array = nullptr,
-            .nbEntries = 0,
-            .type = DDWAF_OBJ_ARRAY}};
+        return owned_object{
+            {.via{.array = nullptr}, .type = DDWAF_OBJ_ARRAY, .size = 0, .capacity = 0},
+            ddwaf_object_free};
     }
 
     static owned_object make_map()
     {
-        return owned_object{{.parameterName = nullptr,
-            .parameterNameLength = 0,
-            .array = nullptr,
-            .nbEntries = 0,
-            .type = DDWAF_OBJ_MAP}};
+        return owned_object{{.via{.map = nullptr}, .type = DDWAF_OBJ_MAP, .size = 0, .capacity = 0},
+            ddwaf_object_free};
     }
 
     static owned_object make_array(std::initializer_list<detail::initializer::movable_object> list);
@@ -850,7 +682,6 @@ template <typename Derived> [[nodiscard]] owned_object readable_object<Derived>:
                 queue.emplace_back(child, destination.at(i));
             }
         }
-
         queue.pop_front();
     }
 
@@ -886,9 +717,12 @@ template <typename Derived>
     auto &container = static_cast<const Derived *>(this)->ref();
 
     assert((static_cast<object_type>(container.type) & container_object_type) != 0);
-    assert(idx < static_cast<std::size_t>(container.nbEntries));
+    assert(idx < static_cast<std::size_t>(container.size));
 
-    return borrowed_object{&container.array[idx]};
+    if (container.type == object_type::map) {
+        return borrowed_object{&container.via.map[idx].val};
+    }
+    return borrowed_object{&container.via.array[idx]};
 }
 
 template <typename Derived>
@@ -900,20 +734,21 @@ borrowed_object writable_object<Derived>::emplace_back(owned_object &&value)
     assert(static_cast<object_type>(container.type) == object_type::array);
 
     // We preallocate 8 entries
-    if (container.nbEntries == 0) {
-        [[unlikely]] detail::alloc_array(container);
-    }
-    // If we're exceeding our preallocation, add 8 more
-    else if ((container.nbEntries & 0x7) == 0) {
-        detail::realloc_array(container);
+    if (container.size == 0) {
+        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
+        container.via.array = detail::alloc_helper<detail::object>(8);
+        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
+        container.capacity = 8;
+    } else if (container.capacity == container.size) {
+        auto [new_array, new_capacity] =
+            // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
+            detail::realloc_helper(container.via.array, container.capacity);
+        container.via.array = new_array;
+        container.capacity = new_capacity;
     }
 
-    auto *slot = &container.array[container.nbEntries++];
-    memcpy(slot, value.ptr(), sizeof(detail::object));
-
-    // The object has to be explicitly moved, otherwise the contents will be freed
-    // on return, causing the inserted object to be invalid
-    value.move();
+    auto &slot = container.via.array[container.size++];
+    slot = value.move();
 
     return borrowed_object{slot};
 }
@@ -933,28 +768,24 @@ borrowed_object writable_object<Derived>::emplace(owned_object &&key, owned_obje
     assert(static_cast<object_type>(container.type) == object_type::map);
 
     // We preallocate 8 entries
-    if (container.nbEntries == 0) {
-        [[unlikely]] detail::alloc_array(container);
+    if (container.size == 0) {
+        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
+        container.via.map = detail::alloc_helper<detail::object_kv>(8);
+        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
+        container.capacity = 8;
+    } else if (container.capacity == container.size) {
+        auto [new_map, new_capacity] =
+            // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
+            detail::realloc_helper(container.via.map, container.capacity);
+        container.via.map = new_map;
+        container.capacity = new_capacity;
     }
-    // If we're exceeding our preallocation, add 8 more
-    else if ((container.nbEntries & 0x7) == 0) {
-        detail::realloc_array(container);
-    }
 
-    auto key_obj = key.move();
+    auto &slot = container.via.map[container.size++];
+    slot.key = key.move();
+    slot.val = value.move();
 
-    auto *value_ptr = value.ptr();
-    value_ptr->parameterName = key_obj.stringValue;
-    value_ptr->parameterNameLength = key_obj.nbEntries;
-
-    auto *slot = &container.array[container.nbEntries++];
-    memcpy(slot, value.ptr(), sizeof(detail::object));
-
-    // The object has to be explicitly moved, otherwise the contents will be freed
-    // on return, causing the inserted object to be invalid
-    value.move();
-
-    return borrowed_object{slot};
+    return borrowed_object{slot.val};
 }
 
 template <typename Derived>
@@ -976,15 +807,7 @@ inline borrowed_object::borrowed_object(owned_object &obj) : obj_(obj.ptr()) {}
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 inline borrowed_object &borrowed_object::operator=(owned_object &&obj)
 {
-    // TODO remove this once keys and values are split
-    const auto *key = ref().parameterName;
-    auto key_len = ref().parameterNameLength;
-
     ref() = obj.move();
-
-    ref().parameterName = key;
-    ref().parameterNameLength = key_len;
-
     return *this;
 }
 

@@ -70,9 +70,9 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
 
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 1);
-    const auto *obtained = attributes.at(0).ptr();
-    EXPECT_STREQ(obtained->parameterName, "output_address");
-    EXPECT_STREQ(obtained->stringValue, "output_string");
+    const auto [obtained_key, obtained_value] = object_view{attributes}.at(0);
+    EXPECT_STRV(obtained_key.as<std::string_view>(), "output_address");
+    EXPECT_STRV(obtained_value.as<std::string_view>(), "output_string");
 }
 
 TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
@@ -118,15 +118,15 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 2);
     {
-        const auto *obtained = attributes.at(0).ptr();
-        EXPECT_STREQ(obtained->parameterName, "output_address.first");
-        EXPECT_STREQ(obtained->stringValue, "first_output_string");
+        const auto [obtained_key, obtained_value] = object_view{attributes}.at(0);
+        EXPECT_STRV(obtained_key.as<std::string_view>(), "output_address.first");
+        EXPECT_STRV(obtained_value.as<std::string_view>(), "first_output_string");
     }
 
     {
-        const auto *obtained = attributes.at(1).ptr();
-        EXPECT_STREQ(obtained->parameterName, "output_address.second");
-        EXPECT_STREQ(obtained->stringValue, "second_output_string");
+        const auto [obtained_key, obtained_value] = object_view{attributes}.at(1);
+        EXPECT_STRV(obtained_key.as<std::string_view>(), "output_address.second");
+        EXPECT_STRV(obtained_value.as<std::string_view>(), "second_output_string");
     }
 }
 
@@ -169,9 +169,9 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
 
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 1);
-    const auto *obtained = attributes.at(0).ptr();
-    EXPECT_STREQ(obtained->parameterName, "output_address");
-    EXPECT_STREQ(obtained->stringValue, "output_string");
+    const auto [obtained_key, obtained_value] = object_view{attributes}.at(0);
+    EXPECT_STRV(obtained_key.as<std::string_view>(), "output_address");
+    EXPECT_STRV(obtained_value.as<std::string_view>(), "output_string");
 }
 
 TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
@@ -223,9 +223,9 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 1);
 
-    const auto *obtained = attributes.at(0).ptr();
-    EXPECT_STREQ(obtained->parameterName, "output_address");
-    EXPECT_STREQ(obtained->stringValue, "output_string");
+    const auto [obtained_key, obtained_value] = object_view{attributes}.at(0);
+    EXPECT_STRV(obtained_key.as<std::string_view>(), "output_address");
+    EXPECT_STRV(obtained_value.as<std::string_view>(), "output_string");
 }
 
 TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
@@ -501,9 +501,9 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     {
         auto attributes = collector.get_available_attributes_and_reset();
         EXPECT_EQ(attributes.size(), 1);
-        const auto *obtained = attributes.at(0).ptr();
-        EXPECT_STREQ(obtained->parameterName, "output_address");
-        EXPECT_STREQ(obtained->stringValue, "output_string");
+        const auto [obtained_key, obtained_value] = object_view{attributes}.at(0);
+        EXPECT_STRV(obtained_key.as<std::string_view>(), "output_address");
+        EXPECT_STRV(obtained_value.as<std::string_view>(), "output_string");
     }
 }
 

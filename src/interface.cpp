@@ -566,15 +566,25 @@ void ddwaf_object_free(ddwaf_object *object)
         return;
     }
 
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast,hicpp-no-malloc)
-    free((void *)object->parameterName);
-
     switch (object->type) {
-    case DDWAF_OBJ_MAP:
-    case DDWAF_OBJ_ARRAY: {
-        auto *value = object->array;
+    case DDWAF_OBJ_MAP: {
+        auto *value = object->via.map;
         if (value != nullptr) {
-            for (uint64_t i = 0; i < object->nbEntries; ++i) { ddwaf_object_free(&value[i]); }
+            for (uint64_t i = 0; i < object->size; ++i) {
+                ddwaf_object_free(&value[i].key);
+                ddwaf_object_free(&value[i].val);
+            }
+
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast,hicpp-no-malloc)
+            free(value);
+        }
+        break;
+    }
+
+    case DDWAF_OBJ_ARRAY: {
+        auto *value = object->via.array;
+        if (value != nullptr) {
+            for (uint64_t i = 0; i < object->size; ++i) { ddwaf_object_free(&value[i]); }
 
             // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast,hicpp-no-malloc)
             free(value);
@@ -583,7 +593,7 @@ void ddwaf_object_free(ddwaf_object *object)
     }
     case DDWAF_OBJ_STRING:
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast,hicpp-no-malloc)
-        free((void *)object->stringValue);
+        free((void *)object->via.str);
         break;
     default:
         break;
@@ -620,20 +630,6 @@ size_t ddwaf_object_length(const ddwaf_object *object)
     }
 
     return view.size();
-}
-
-// TODO deprecate
-const char *ddwaf_object_get_key(const ddwaf_object *object, size_t *length)
-{
-    if (object == nullptr || object->parameterName == nullptr) {
-        return nullptr;
-    }
-
-    if (length != nullptr) {
-        *length = object->parameterNameLength;
-    }
-
-    return object->parameterName;
 }
 
 const char *ddwaf_object_get_string(const ddwaf_object *object, size_t *length)

@@ -31,7 +31,6 @@ public:
     bool operator++();
 
     [[nodiscard]] explicit operator bool() const { return current_.second.has_value(); }
-    [[nodiscard]] size_t depth() { return stack_.size() + path_.size(); }
     [[nodiscard]] std::vector<std::string> get_current_path() const;
 
 protected:
@@ -44,7 +43,7 @@ protected:
     std::vector<std::string> path_;
 
     std::vector<std::pair<object_view, std::size_t>> stack_;
-    std::pair<object_key, object_view> current_;
+    std::pair<object_view, object_view> current_;
 
     const exclusion::object_set_ref &excluded_;
 
@@ -98,20 +97,15 @@ public:
 
     [[nodiscard]] object_type type() const
     {
-        return !current_.first.empty() ? object_type::string : object_type::invalid;
+        return current_.first.has_value() ? object_type::string : object_type::invalid;
     }
 
     [[nodiscard]] object_view operator*()
     {
-        static thread_local detail::object key;
-        if (current_.first.empty()) {
+        if (!current_.first.has_value()) {
             return {};
         }
-        return (key = {.parameterName = nullptr,
-                    .parameterNameLength = 0,
-                    .stringValue = current_.first.data(),
-                    .nbEntries = current_.first.size(),
-                    .type = DDWAF_OBJ_STRING});
+        return current_.first;
     }
 
 protected:
@@ -143,7 +137,7 @@ public:
                 return current_.second.type();
             }
 
-            if (!current_.first.empty()) {
+            if (current_.first.has_value()) {
                 return object_type::string;
             }
         }
@@ -152,18 +146,13 @@ public:
 
     [[nodiscard]] object_view operator*()
     {
-        static thread_local detail::object key;
         if (current_.second.has_value()) {
             if (scalar_value_) {
                 return current_.second;
             }
 
-            if (!current_.first.empty()) {
-                return (key = {.parameterName = nullptr,
-                            .parameterNameLength = 0,
-                            .stringValue = current_.first.data(),
-                            .nbEntries = current_.first.size(),
-                            .type = DDWAF_OBJ_STRING});
+            if (current_.first.has_value()) {
+                return current_.first;
             }
         }
         return {};

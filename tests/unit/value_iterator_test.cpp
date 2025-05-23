@@ -25,6 +25,8 @@ TEST(TestValueIterator, TestInvalidIterator)
     EXPECT_EQ(path.size(), 0);
 
     EXPECT_FALSE(++it);
+
+    EXPECT_FALSE((*it).has_value());
 }
 
 TEST(TestValueIterator, TestStringScalar)
@@ -41,6 +43,8 @@ TEST(TestValueIterator, TestStringScalar)
     EXPECT_EQ(path.size(), 0);
 
     EXPECT_FALSE(++it);
+
+    EXPECT_FALSE((*it).has_value());
 }
 
 TEST(TestValueIterator, TestUnsignedScalar)
@@ -196,7 +200,6 @@ TEST(TestValueIterator, TestMapSingleItem)
 
     EXPECT_TRUE(it);
     EXPECT_STREQ((*it).as<const char *>(), "value");
-    EXPECT_STREQ((*it).ptr()->parameterName, "key");
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 1);
@@ -225,7 +228,6 @@ TEST(TestValueIterator, TestMapMultipleItems)
 
         EXPECT_TRUE(it);
         EXPECT_STREQ((*it).as<const char *>(), value.c_str());
-        EXPECT_STREQ((*it).ptr()->parameterName, key.c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -268,7 +270,6 @@ TEST(TestValueIterator, TestMapMultipleMultipleNullAndInvalid)
 
         EXPECT_TRUE(it);
         EXPECT_STREQ((*it).as<const char *>(), value.c_str());
-        EXPECT_STREQ((*it).ptr()->parameterName, key.c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -296,7 +297,6 @@ TEST(TestValueIterator, TestDeepMap)
     for (unsigned i = 0; i < 10; i++) {
         auto index = std::to_string(i);
 
-        EXPECT_STREQ((*it).ptr()->parameterName, ("str" + index).c_str());
         EXPECT_STREQ((*it).as<const char *>(), ("val" + index).c_str());
 
         auto path = it.get_current_path();

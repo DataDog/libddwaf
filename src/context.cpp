@@ -119,7 +119,6 @@ std::pair<DDWAF_RET_CODE, owned_object> context::run(
     // generated during this call.
     // object::assign(result.attributes, collector_.collect_pending(store_));
     serializer.serialize(store_, results, collector_, deadline, output);
-
     return {results.empty() ? DDWAF_OK : DDWAF_MATCH, std::move(result_object)};
 }
 

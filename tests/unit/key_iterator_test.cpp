@@ -23,6 +23,8 @@ TEST(TestKeyIterator, TestInvalidIterator)
     EXPECT_EQ(path.size(), 0);
 
     EXPECT_FALSE(++it);
+
+    EXPECT_FALSE((*it).has_value());
 }
 
 TEST(TestKeyIterator, TestStringScalar)
@@ -37,6 +39,8 @@ TEST(TestKeyIterator, TestStringScalar)
     EXPECT_EQ(path.size(), 0);
 
     EXPECT_FALSE(++it);
+
+    EXPECT_FALSE((*it).has_value());
 }
 
 TEST(TestKeyIterator, TestUnsignedScalar)
@@ -131,7 +135,6 @@ TEST(TestKeyIterator, TestMapSingleItem)
     exclusion::object_set_ref exclude;
     ddwaf::key_iterator it(object, {}, exclude);
     EXPECT_TRUE((bool)it);
-    EXPECT_EQ((*it).ptr()->parameterName, nullptr);
     EXPECT_STREQ((*it).as<const char *>(), "key");
 
     auto path = it.get_current_path();
@@ -254,7 +257,6 @@ TEST(TestKeyIterator, TestDeepMap)
     for (unsigned i = 0; i < 10; i++) {
         auto index = std::to_string(i);
 
-        EXPECT_EQ((*it).ptr()->parameterName, nullptr);
         EXPECT_STREQ((*it).as<const char *>(), ("str" + index).c_str());
 
         {
@@ -268,7 +270,6 @@ TEST(TestKeyIterator, TestDeepMap)
         }
 
         EXPECT_TRUE(++it);
-        EXPECT_EQ((*it).ptr()->parameterName, nullptr);
         EXPECT_STREQ((*it).as<const char *>(), ("map" + index).c_str());
 
         {
@@ -297,7 +298,6 @@ TEST(TestKeyIterator, TestNoRootKey)
     exclusion::object_set_ref exclude;
     ddwaf::key_iterator it(object.at(0), {}, exclude);
     EXPECT_TRUE((bool)it);
-    EXPECT_EQ((*it).ptr()->parameterName, nullptr);
     EXPECT_STREQ((*it).as<const char *>(), "key");
 
     auto path = it.get_current_path();

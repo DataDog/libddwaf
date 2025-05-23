@@ -222,7 +222,7 @@ TEST(TestContextIntegration, InvalidUTF8Input)
 
     const auto *events = ddwaf_object_find(&ret, STRL("events"));
     auto data = ddwaf::test::object_to_json(*events);
-    auto pos = data.find(mapItem.stringValue);
+    auto pos = data.find(std::string_view{mapItem.via.str, mapItem.size});
     EXPECT_TRUE(pos != std::string::npos);
 
     ddwaf_object_free(&ret);

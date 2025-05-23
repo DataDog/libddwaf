@@ -1,10 +1,10 @@
 {
-  name: "Keypath exclusion with condition",
+  name: "Keypath with array exclusion",
   runs: [
     {
       persistent-input: {
         rule12-input1: {
-          a: {b: {c: {e: rule12}}}
+          a: [{c: {e: rule12}}]
         }
       },
       code: ok

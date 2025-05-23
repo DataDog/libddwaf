@@ -135,12 +135,21 @@ void generate_objects(ddwaf_object &root, const object_specification &s)
             auto next_level = generate_horizontal_distribution(
                 intermediate_nodes_in_current, next_intermediate, next_terminal);
 
-            for (unsigned i = 0, j = 0; i < object->nbEntries; ++i) {
-                auto type = object->array[i].type;
-                if (type == DDWAF_OBJ_MAP || type == DDWAF_OBJ_ARRAY) {
-                    object_queue.emplace_back(&object->array[i], level + 1,
-                        next_level[j].intermediate, next_level[j].terminal);
-                    ++j;
+            for (unsigned i = 0, j = 0; i < object->size; ++i) {
+                if (object->type == DDWAF_OBJ_MAP) {
+                    auto type = object->via.map[i].val.type;
+                    if (type == DDWAF_OBJ_MAP || type == DDWAF_OBJ_ARRAY) {
+                        object_queue.emplace_back(&object->via.map[i].val, level + 1,
+                            next_level[j].intermediate, next_level[j].terminal);
+                        ++j;
+                    }
+                } else if (object->type == DDWAF_OBJ_ARRAY) {
+                    auto type = object->via.array[i].type;
+                    if (type == DDWAF_OBJ_MAP || type == DDWAF_OBJ_ARRAY) {
+                        object_queue.emplace_back(&object->via.array[i], level + 1,
+                            next_level[j].intermediate, next_level[j].terminal);
+                        ++j;
+                    }
                 }
             }
         }

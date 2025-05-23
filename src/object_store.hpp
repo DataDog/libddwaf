@@ -87,9 +87,9 @@ protected:
         attribute attr = attribute::none);
 
     memory::list<owned_object> input_objects_;
-    memory::list<owned_object> ephemeral_objects_;
+    std::list<owned_object> ephemeral_objects_;
 
-    memory::unordered_set<target_index> ephemeral_targets_;
+    std::unordered_set<target_index> ephemeral_targets_;
 
     memory::unordered_set<target_index> latest_batch_;
     memory::unordered_map<target_index, std::pair<object_view, attribute>> objects_;
