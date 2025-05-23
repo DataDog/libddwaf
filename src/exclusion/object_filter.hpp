@@ -83,7 +83,7 @@ class path_trie {
 public:
     class traverser {
     public:
-        enum class state { not_found, found, intermediate_node };
+        enum class state : uint8_t { not_found, found, intermediate_node };
 
         explicit traverser(const trie_node *root)
         {

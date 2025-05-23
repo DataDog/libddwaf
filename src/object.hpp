@@ -27,26 +27,26 @@ using object = ddwaf_object;
 using object_kv = ddwaf_object_kv;
 using size_type = decltype(ddwaf_object::size);
 
-template <typename T> constexpr std::size_t maxof() { return std::numeric_limits<T>::max(); }
+template <typename T> constexpr std::size_t maxof_v = std::numeric_limits<T>::max();
 
-static_assert(maxof<size_type>() <= maxof<std::size_t>() / sizeof(object));
-static_assert(maxof<size_type>() <= maxof<std::size_t>() / sizeof(object_kv));
+static_assert(maxof_v<size_type> <= maxof_v<std::size_t> / sizeof(object));
+static_assert(maxof_v<size_type> <= maxof_v<std::size_t> / sizeof(object_kv));
 
-inline char *copy_string(const char *str, size_type size)
+inline char *copy_string(const char *str, size_type length)
 {
     // TODO new char[size];
-    if (size == maxof<size_type>()) {
+    if (length == maxof_v<size_type>) {
         throw std::bad_alloc();
     }
 
     // NOLINTNEXTLINE(hicpp-no-malloc)
-    char *copy = static_cast<char *>(malloc(size + 1));
+    char *copy = static_cast<char *>(malloc(length + 1));
     if (copy == nullptr) [[unlikely]] {
         throw std::bad_alloc();
     }
 
-    memcpy(copy, str, size);
-    copy[size] = '\0';
+    memcpy(copy, str, length);
+    copy[length] = '\0';
 
     return copy;
 }
@@ -66,8 +66,8 @@ template <typename T> inline std::pair<T *, size_type> realloc_helper(T *data, s
     // Since allocators have no realloc interface, we're just using calloc
     // as it'll be equivalent once allocators are supported
     size_type new_size;
-    if (size > maxof<size_type>() / 2) [[unlikely]] {
-        new_size = maxof<size_type>();
+    if (size > maxof_v<size_type> / 2) [[unlikely]] {
+        new_size = maxof_v<size_type>;
     } else {
         new_size = size * 2;
     }
