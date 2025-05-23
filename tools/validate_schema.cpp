@@ -13,29 +13,29 @@ namespace fs = std::filesystem;
 
 class schema_doc_provider : public IRemoteSchemaDocumentProvider {
 public:
-    explicit schema_doc_provider(std::string parent_path): parent_path_(std::move(parent_path)) {}
+    explicit schema_doc_provider(fs::path parent_path): parent_path_(std::move(parent_path)) {}
     const SchemaDocument* GetRemoteDocument(const char* uri, SizeType length) override {
         // Resolve the uri and returns a pointer to that schema.
-        std::string uri_str = parent_path_ + '/' +  std::string{uri, length};
-        auto schema = read_file(uri_str);
+        std::filesystem::path file_path = fs::path(parent_path_) / std::string{uri, length};
+        auto schema = read_file(file_path.string());
         Document sd;
         if (sd.Parse(schema).HasParseError()) {
-            std::cout << "Failed to load " << uri_str << '\n';
-            std::abort();
+            std::cerr << "Failed to parse schema: " << file_path << '\n';
+            std::exit(EXIT_FAILURE); // NOLINT(concurrency-mt-unsafe)
         }
         docs_.emplace_back(sd);
         return &docs_.back();
     }
 
 protected:
-    std::string parent_path_;
+    fs::path parent_path_;
     std::vector<SchemaDocument> docs_;
 };
 
 int main(int argc, char* argv[])
 {
     if (argc < 3) {
-        std::cerr << "Usage " << argv[0] << " <schema> <json>\n";
+        std::cerr << "Usage " << argv[0] << " <schema file> <json file>\n";
         return EXIT_FAILURE;
     }
 
@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
     auto schema_json = read_file(schema_file.string());
     Document sd;
     if (sd.Parse(schema_json).HasParseError()) {
-        std::cout << "Failed to parse schema\n";
+        std::cerr << "Failed to parse schema: " << schema_file << '\n';
         return EXIT_FAILURE;
     }
 
@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
     auto inputJson = read_file(argv[2]);
     Document d;
     if (d.Parse(inputJson).HasParseError()) {
-        std::cout << "Failed to parse input json\n";
+        std::cerr << "Failed to parse input json\n";
         return EXIT_FAILURE;
     }
 
@@ -63,21 +63,20 @@ int main(int argc, char* argv[])
     if (!d.Accept(validator)) {
         StringBuffer sb;
         validator.GetInvalidSchemaPointer().StringifyUriFragment(sb);
-        std::cout << "Invalid schema: " << sb.GetString() << '\n';
-        std::cout << "Invalid keyword: " << validator.GetInvalidSchemaKeyword() << '\n';
+        std::cerr << "Invalid schema: " << sb.GetString() << '\n';
+        std::cerr << "Invalid keyword: " << validator.GetInvalidSchemaKeyword() << '\n';
 
         sb.Clear();
         validator.GetInvalidDocumentPointer().StringifyUriFragment(sb);
-        std::cout << "Invalid document: " << sb.GetString() << '\n';
+        std::cerr << "Invalid document: " << sb.GetString() << '\n';
 
 
         sb.Clear();
         PrettyWriter<StringBuffer> w(sb);
         validator.GetError().Accept(w);
-        std::cout << "Validation error: " << sb.GetString() << '\n';
+        std::cerr << "Validation error: " << sb.GetString() << '\n';
         return EXIT_FAILURE;
     }
 
-    std::cout << "Validation success\n";
     return EXIT_SUCCESS;
 }
