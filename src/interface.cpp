@@ -26,6 +26,7 @@
 #include "log.hpp"
 #include "obfuscator.hpp"
 #include "object.hpp"
+#include "object_store.hpp"
 #include "re2.h"
 #include "ruleset_info.hpp"
 #include "utils.hpp"
@@ -194,14 +195,14 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
     try {
         auto free_fn = context->get_free_fn();
 
-        owned_object persistent;
-        if (persistent_data != nullptr) {
-            persistent = owned_object{*persistent_data, free_fn};
+        if (persistent_data != nullptr &&
+            !context->insert(owned_object{*persistent_data, free_fn})) {
+            return DDWAF_ERR_INVALID_OBJECT;
         }
 
-        owned_object ephemeral;
-        if (ephemeral_data != nullptr) {
-            ephemeral = owned_object{*ephemeral_data, free_fn};
+        if (ephemeral_data != nullptr && !context->insert(owned_object{*ephemeral_data, free_fn},
+                                             context::attribute::ephemeral)) {
+            return DDWAF_ERR_INVALID_OBJECT;
         }
 
         // The timers will actually count nanoseconds, std::chrono doesn't
@@ -209,11 +210,11 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
         constexpr uint64_t max_timeout_ms = std::chrono::nanoseconds::max().count() / 1000;
         timeout = std::min(timeout, max_timeout_ms);
 
-        auto [code, res] = context->run(std::move(persistent), std::move(ephemeral), timeout);
+        auto [code, res] = context->run(timeout);
         if (result != nullptr) {
             *result = res.move();
         }
-        return code;
+        return code ? DDWAF_MATCH : DDWAF_OK;
     } catch (const std::exception &e) {
         // catch-all to avoid std::terminate
         DDWAF_ERROR("{}", e.what());
