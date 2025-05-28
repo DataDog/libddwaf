@@ -2648,7 +2648,7 @@ std::unordered_set<std::string_view> object_to_string_set(const ddwaf_object *ar
 {
     std::unordered_set<std::string_view> set;
     for (std::size_t i = 0; i < ddwaf_object_size(array); ++i) {
-        const ddwaf_object *child = ddwaf_object_get_index(array, i);
+        const ddwaf_object *child = ddwaf_object_at_value(array, i);
         EXPECT_EQ(ddwaf_object_type(child), DDWAF_OBJ_STRING);
 
         std::size_t length;

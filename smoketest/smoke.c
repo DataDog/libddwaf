@@ -148,7 +148,7 @@ static void _hstring_write_pwargs(hstring *str, size_t depth,
         HSTRING_APPEND_CONST(str, "<SIGNED> ");
         char scratch[sizeof("-9223372036854775808")];
         int len = snprintf(scratch, sizeof(scratch), "%" PRId64,
-                           pwargs->via.i64);
+                           ddwaf_object_get_signed(pwargs));
         if ((size_t) len < sizeof scratch) {
             _hstring_append(str, scratch, (size_t) len);
         } // else should never happen
@@ -159,31 +159,36 @@ static void _hstring_write_pwargs(hstring *str, size_t depth,
         HSTRING_APPEND_CONST(str, "<UNSIGNED> ");
         char scratch[sizeof("18446744073709551615")];
         int len = snprintf(scratch, sizeof(scratch), "%" PRIu64,
-                           pwargs->via.u64);
+                           ddwaf_object_get_unsigned(pwargs));
         if ((size_t) len < sizeof scratch) {
             _hstring_append(str, scratch, (size_t) len);
         } // else should never happen
         HSTRING_APPEND_CONST(str, "\n");
         break;
     }
-    case DDWAF_OBJ_STRING:
+    case DDWAF_OBJ_STRING: {
         HSTRING_APPEND_CONST(str, "<STRING> ");
-        _hstring_append(str, pwargs->via.str, pwargs->size);
+        size_t len;
+        const char *data = ddwaf_object_get_string(pwargs, &len);
+        _hstring_append(str, data, len);
         HSTRING_APPEND_CONST(str, "\n");
         break;
+    }
     case DDWAF_OBJ_ARRAY: {
         HSTRING_APPEND_CONST(str, "<ARRAY>\n");
-        for (size_t i = 0; i < pwargs->size; i++) {
-            _hstring_write_pwargs(str, depth + 1, pwargs->via.array + i);
+        for (size_t i = 0; i < ddwaf_object_size(pwargs); i++) {
+            _hstring_write_pwargs(str, depth + 1, ddwaf_object_at_value(pwargs, i));
         }
         break;
     case DDWAF_OBJ_MAP: {
         HSTRING_APPEND_CONST(str, "<MAP>\n");
-        for (size_t i = 0; i < pwargs->size; i++) {
-            const ddwaf_object *key = &pwargs->via.map[i].key;
-            _hstring_append(str, key->via.str, key->size);
+        for (size_t i = 0; i < ddwaf_object_size(pwargs); i++) {
+            const ddwaf_object *key = ddwaf_object_at_key(pwargs, i);
+            size_t key_len;
+            const char *key_data = ddwaf_object_get_string(key, &key_len);
+            _hstring_append(str, key_data, key_len);
             HSTRING_APPEND_CONST(str, ": ");
-            _hstring_write_pwargs(str, depth + 1, &pwargs->via.map[i].val);
+            _hstring_write_pwargs(str, depth + 1, ddwaf_object_at_value(pwargs, i));
         }
         break;
     }

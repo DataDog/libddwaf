@@ -88,64 +88,64 @@ typedef struct _ddwaf_builder* ddwaf_builder;
 
 typedef struct _ddwaf_config ddwaf_config;
 
-union ddwaf_object;
-struct ddwaf_object_kv;
+typedef union _ddwaf_object ddwaf_object;
+typedef struct _ddwaf_object_kv ddwaf_object_kv;
 
-struct ddwaf_object_bool {
+struct _ddwaf_object_bool {
     uint8_t type;
     bool val;
 };
 
-struct ddwaf_object_signed {
+struct _ddwaf_object_signed {
     uint8_t type;
     int64_t val;
 };
 
-struct ddwaf_object_unsigned {
+struct _ddwaf_object_unsigned {
     uint8_t type;
     uint64_t val;
 };
 
-struct ddwaf_object_float {
+struct _ddwaf_object_float {
     uint8_t type;
     double val;
 };
 
-struct ddwaf_object_string {
+struct _ddwaf_object_string {
     uint8_t type;
     uint16_t size;
     uint16_t capacity;
     char *ptr;
 };
 
-struct ddwaf_object_array {
+struct _ddwaf_object_array {
     uint8_t type;
     uint16_t size;
     uint16_t capacity;
     ddwaf_object *ptr;
 };
 
-struct ddwaf_object_map {
+struct _ddwaf_object_map {
     uint8_t type;
     uint16_t size;
     uint16_t capacity;
     ddwaf_object_kv *ptr;
 };
 
-union __attribute((__may_alias__)) ddwaf_object {
+union __attribute((__may_alias__)) _ddwaf_object {
     uint8_t type;
     union {
-        ddwaf_object_bool b8;
-        ddwaf_object_signed i64;
-        ddwaf_object_unsigned u64;
-        ddwaf_object_float f64;
-        ddwaf_object_string str;
-        ddwaf_object_array array;
-        ddwaf_object_map map;
+        struct _ddwaf_object_bool b8;
+        struct _ddwaf_object_signed i64;
+        struct _ddwaf_object_unsigned u64;
+        struct _ddwaf_object_float f64;
+        struct _ddwaf_object_string str;
+        struct _ddwaf_object_array array;
+        struct _ddwaf_object_map map;
     } via;
 };
 
-struct ddwaf_object_kv {
+struct _ddwaf_object_kv {
     ddwaf_object key;
     ddwaf_object val;
 };
@@ -805,7 +805,21 @@ double ddwaf_object_get_float(const ddwaf_object *object);
 bool ddwaf_object_get_bool(const ddwaf_object *object);
 
 /**
- * ddwaf_object_get_index
+ * ddwaf_object_at_key
+ *
+ * Returns the key contained in the container at the given index.
+ *
+ * @param object The container from which to extract the object.
+ * @param index The position of the required object within the container.
+ *
+ * @return The requested object or NULL if the index is out of bounds or the
+ *         object is not a container.
+ **/
+const ddwaf_object* ddwaf_object_at_key(const ddwaf_object *object, size_t index);
+
+
+/**
+ * ddwaf_object_at_value
  *
  * Returns the object contained in the container at the given index.
  *
@@ -815,7 +829,7 @@ bool ddwaf_object_get_bool(const ddwaf_object *object);
  * @return The requested object or NULL if the index is out of bounds or the
  *         object is not a container.
  **/
-const ddwaf_object* ddwaf_object_get_index(const ddwaf_object *object, size_t index);
+const ddwaf_object* ddwaf_object_at_value(const ddwaf_object *object, size_t index);
 
 /**
  * ddwaf_object_find

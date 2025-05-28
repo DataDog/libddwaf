@@ -35,7 +35,8 @@ EXPORTS
   ddwaf_object_get_unsigned
   ddwaf_object_get_signed
   ddwaf_object_get_float
-  ddwaf_object_get_index
+  ddwaf_object_at_key
+  ddwaf_object_at_value
   ddwaf_object_get_bool
   ddwaf_object_free
   ddwaf_get_version

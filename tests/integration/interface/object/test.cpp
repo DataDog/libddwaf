@@ -211,7 +211,7 @@ TEST(TestObjectIntegration, TestCreateArray)
     EXPECT_EQ(ddwaf_object_type(&container), DDWAF_OBJ_ARRAY);
     EXPECT_EQ(ddwaf_object_length(&container), 0);
     EXPECT_EQ(ddwaf_object_size(&container), 0);
-    EXPECT_EQ(ddwaf_object_get_index(&container, 0), nullptr);
+    EXPECT_EQ(ddwaf_object_at_value(&container, 0), nullptr);
 
     ddwaf_object_free(&container);
 }
@@ -228,7 +228,7 @@ TEST(TestObjectIntegration, TestCreateMap)
     EXPECT_EQ(ddwaf_object_type(&container), DDWAF_OBJ_MAP);
     EXPECT_EQ(ddwaf_object_length(&container), 0);
     EXPECT_EQ(ddwaf_object_size(&container), 0);
-    EXPECT_EQ(ddwaf_object_get_index(&container, 0), nullptr);
+    EXPECT_EQ(ddwaf_object_at_value(&container, 0), nullptr);
 
     ddwaf_object_free(&container);
 }
@@ -251,31 +251,31 @@ TEST(TestObjectIntegration, TestAddArray)
     EXPECT_EQ(container.type, DDWAF_OBJ_ARRAY);
     EXPECT_EQ(ddwaf_object_size(&container), 3);
 
-    EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&container, 0)), DDWAF_OBJ_INVALID);
+    EXPECT_EQ(ddwaf_object_type(ddwaf_object_at_value(&container, 0)), DDWAF_OBJ_INVALID);
 
-    EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&container, 1)), DDWAF_OBJ_STRING);
-    EXPECT_STREQ(ddwaf_object_get_string(ddwaf_object_get_index(&container, 1), nullptr), "42");
+    EXPECT_EQ(ddwaf_object_type(ddwaf_object_at_value(&container, 1)), DDWAF_OBJ_STRING);
+    EXPECT_STREQ(ddwaf_object_get_string(ddwaf_object_at_value(&container, 1), nullptr), "42");
 
-    EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&container, 2)), DDWAF_OBJ_STRING);
-    EXPECT_STREQ(ddwaf_object_get_string(ddwaf_object_get_index(&container, 2), nullptr), "43");
+    EXPECT_EQ(ddwaf_object_type(ddwaf_object_at_value(&container, 2)), DDWAF_OBJ_STRING);
+    EXPECT_STREQ(ddwaf_object_get_string(ddwaf_object_at_value(&container, 2), nullptr), "43");
 
     // Getters
     EXPECT_EQ(ddwaf_object_type(&container), DDWAF_OBJ_ARRAY);
     EXPECT_EQ(ddwaf_object_length(&container), 0);
     EXPECT_EQ(ddwaf_object_size(&container), 3);
 
-    const auto *internal = ddwaf_object_get_index(&container, 0);
+    const auto *internal = ddwaf_object_at_value(&container, 0);
     EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_INVALID);
 
-    internal = ddwaf_object_get_index(&container, 1);
+    internal = ddwaf_object_at_value(&container, 1);
     EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_STRING);
     EXPECT_STREQ(ddwaf_object_get_string(internal, nullptr), "42");
 
-    internal = ddwaf_object_get_index(&container, 2);
+    internal = ddwaf_object_at_value(&container, 2);
     EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_STRING);
     EXPECT_STREQ(ddwaf_object_get_string(internal, nullptr), "43");
 
-    EXPECT_EQ(ddwaf_object_get_index(&container, 3), nullptr);
+    EXPECT_EQ(ddwaf_object_at_value(&container, 3), nullptr);
 
     ddwaf_object_free(&container);
 }
@@ -317,29 +317,29 @@ TEST(TestObjectIntegration, TestAddMap)
     EXPECT_EQ(ddwaf_object_size(&map), 4);
 
     // size_t length;
-    const auto *internal = ddwaf_object_get_index(&map, 0);
+    const auto *internal = ddwaf_object_at_value(&map, 0);
     EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_INVALID);
     // EXPECT_STREQ(ddwaf_object_get_key(internal, &length), "key");
 
-    internal = ddwaf_object_get_index(&map, 1);
+    internal = ddwaf_object_at_value(&map, 1);
     EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_STRING);
     EXPECT_STREQ(ddwaf_object_get_string(internal, nullptr), "42");
     // EXPECT_STREQ(ddwaf_object_get_key(internal, &length), "key");
     // EXPECT_EQ(length, 3);
 
-    internal = ddwaf_object_get_index(&map, 2);
+    internal = ddwaf_object_at_value(&map, 2);
     EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_STRING);
     EXPECT_STREQ(ddwaf_object_get_string(internal, nullptr), "43");
     ////EXPECT_STREQ(ddwaf_object_get_key(internal, &length), "key2");
     // EXPECT_EQ(length, 4);
 
-    internal = ddwaf_object_get_index(&map, 3);
+    internal = ddwaf_object_at_value(&map, 3);
     EXPECT_EQ(ddwaf_object_type(internal), DDWAF_OBJ_STRING);
     EXPECT_STREQ(ddwaf_object_get_string(internal, nullptr), "44");
     // EXPECT_STREQ(ddwaf_object_get_key(internal, &length), "key3");
     // EXPECT_EQ(length, 4);
 
-    EXPECT_EQ(ddwaf_object_get_index(&map, 4), nullptr);
+    EXPECT_EQ(ddwaf_object_at_value(&map, 4), nullptr);
 
     ddwaf_object_free(&map);
     ddwaf_object_free(&array);

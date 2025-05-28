@@ -28,7 +28,7 @@ namespace {
 
 /*EXPECT_EQ(ddwaf_object_size(&attributes), 1);*/
 
-/*const auto *obtained = ddwaf_object_get_index(&attributes, 0);*/
+/*const auto *obtained = ddwaf_object_at_value(&attributes, 0);*/
 /*EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);*/
 /*EXPECT_EQ(obtained->stringValue, expected.stringValue);*/
 /*EXPECT_STREQ(obtained->stringValue, expected.stringValue);*/
@@ -52,7 +52,7 @@ namespace {
 
 /*EXPECT_EQ(ddwaf_object_size(&attributes), 1);*/
 
-/*const auto *obtained = ddwaf_object_get_index(&attributes, 0);*/
+/*const auto *obtained = ddwaf_object_at_value(&attributes, 0);*/
 /*EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);*/
 /*EXPECT_NE(obtained->stringValue, expected.stringValue);*/
 /*EXPECT_STREQ(obtained->stringValue, expected.stringValue);*/
@@ -78,7 +78,7 @@ namespace {
 
 /*EXPECT_EQ(ddwaf_object_size(&attributes), 1);*/
 
-/*const auto *obtained = ddwaf_object_get_index(&attributes, 0);*/
+/*const auto *obtained = ddwaf_object_at_value(&attributes, 0);*/
 /*EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);*/
 /*EXPECT_NE(obtained->stringValue, expected.stringValue);*/
 /*EXPECT_STREQ(obtained->stringValue, expected.stringValue);*/
@@ -105,8 +105,8 @@ namespace {
 
 /*EXPECT_EQ(ddwaf_object_size(&attributes), 1);*/
 
-/*const auto *expected = ddwaf_object_get_index(&input_map, 0);*/
-/*const auto *obtained = ddwaf_object_get_index(&attributes, 0);*/
+/*const auto *expected = ddwaf_object_at_value(&input_map, 0);*/
+/*const auto *obtained = ddwaf_object_at_value(&attributes, 0);*/
 /*EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);*/
 /*EXPECT_NE(obtained->stringValue, expected->stringValue);*/
 /*EXPECT_STREQ(obtained->stringValue, expected->stringValue);*/
@@ -142,8 +142,8 @@ namespace {
 
 /*EXPECT_EQ(ddwaf_object_size(&attributes), 1);*/
 
-/*const auto *expected = ddwaf_object_get_index(&second_map, 0);*/
-/*const auto *obtained = ddwaf_object_get_index(&attributes, 0);*/
+/*const auto *expected = ddwaf_object_at_value(&second_map, 0);*/
+/*const auto *obtained = ddwaf_object_at_value(&attributes, 0);*/
 /*EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);*/
 /*EXPECT_NE(obtained->stringValue, expected->stringValue);*/
 /*EXPECT_STREQ(obtained->stringValue, expected->stringValue);*/
@@ -183,8 +183,8 @@ namespace {
 
 /*EXPECT_EQ(ddwaf_object_size(&attributes), 1);*/
 
-/*const auto *expected = ddwaf_object_get_index(&third_array, 0);*/
-/*const auto *obtained = ddwaf_object_get_index(&attributes, 0);*/
+/*const auto *expected = ddwaf_object_at_value(&third_array, 0);*/
+/*const auto *obtained = ddwaf_object_at_value(&attributes, 0);*/
 /*EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);*/
 /*EXPECT_NE(obtained->stringValue, expected->stringValue);*/
 /*EXPECT_STREQ(obtained->stringValue, expected->stringValue);*/
@@ -226,8 +226,8 @@ namespace {
 
 /*EXPECT_EQ(ddwaf_object_size(&attributes), 1);*/
 
-/*const auto *expected = ddwaf_object_get_index(&third_array, 0);*/
-/*const auto *obtained = ddwaf_object_get_index(&attributes, 0);*/
+/*const auto *expected = ddwaf_object_at_value(&third_array, 0);*/
+/*const auto *obtained = ddwaf_object_at_value(&attributes, 0);*/
 /*EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);*/
 /*EXPECT_NE(obtained->stringValue, expected->stringValue);*/
 /*EXPECT_STREQ(obtained->stringValue, expected->stringValue);*/
@@ -297,8 +297,8 @@ namespace {
 /*EXPECT_EQ(ddwaf_object_size(&attributes), 1);*/
 /*EXPECT_FALSE(collector.has_pending_attributes());*/
 
-/*const auto *expected = ddwaf_object_get_index(&second_map, 0);*/
-/*const auto *obtained = ddwaf_object_get_index(&attributes, 0);*/
+/*const auto *expected = ddwaf_object_at_value(&second_map, 0);*/
+/*const auto *obtained = ddwaf_object_at_value(&attributes, 0);*/
 /*EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);*/
 /*EXPECT_NE(obtained->stringValue, expected->stringValue);*/
 /*EXPECT_STREQ(obtained->stringValue, expected->stringValue);*/
@@ -356,8 +356,8 @@ namespace {
 
 /*EXPECT_EQ(ddwaf_object_size(&attributes), 1);*/
 
-/*const auto *expected = ddwaf_object_get_index(&input_map, 0);*/
-/*const auto *obtained = ddwaf_object_get_index(&attributes, 0);*/
+/*const auto *expected = ddwaf_object_at_value(&input_map, 0);*/
+/*const auto *obtained = ddwaf_object_at_value(&attributes, 0);*/
 /*EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);*/
 /*EXPECT_NE(obtained->stringValue, expected->stringValue);*/
 /*EXPECT_STREQ(obtained->stringValue, expected->stringValue);*/
@@ -387,8 +387,8 @@ namespace {
 
 /*EXPECT_EQ(ddwaf_object_size(&attributes), 1);*/
 
-/*const auto *expected = ddwaf_object_get_index(ddwaf_object_get_index(&input_map, 0), 0);*/
-/*const auto *obtained = ddwaf_object_get_index(&attributes, 0);*/
+/*const auto *expected = ddwaf_object_at_value(ddwaf_object_at_value(&input_map, 0), 0);*/
+/*const auto *obtained = ddwaf_object_at_value(&attributes, 0);*/
 /*EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);*/
 /*EXPECT_NE(obtained->stringValue, expected->stringValue);*/
 /*EXPECT_STREQ(obtained->stringValue, expected->stringValue);*/
@@ -420,8 +420,8 @@ namespace {
 
 /*EXPECT_EQ(ddwaf_object_size(&attributes), 1);*/
 
-/*const auto *expected = ddwaf_object_get_index(ddwaf_object_get_index(&input_map, 0), 0);*/
-/*const auto *obtained = ddwaf_object_get_index(&attributes, 0);*/
+/*const auto *expected = ddwaf_object_at_value(ddwaf_object_at_value(&input_map, 0), 0);*/
+/*const auto *obtained = ddwaf_object_at_value(&attributes, 0);*/
 /*EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);*/
 /*EXPECT_NE(obtained->stringValue, expected->stringValue);*/
 /*EXPECT_STREQ(obtained->stringValue, expected->stringValue);*/
@@ -483,8 +483,8 @@ namespace {
 /*attributes = collector.get_available_attributes_and_reset();*/
 /*EXPECT_EQ(ddwaf_object_size(&attributes), 1);*/
 
-/*const auto *expected = ddwaf_object_get_index(&input_map, 0);*/
-/*const auto *obtained = ddwaf_object_get_index(&attributes, 0);*/
+/*const auto *expected = ddwaf_object_at_value(&input_map, 0);*/
+/*const auto *obtained = ddwaf_object_at_value(&attributes, 0);*/
 /*EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);*/
 /*EXPECT_NE(obtained->stringValue, expected->stringValue);*/
 /*EXPECT_STREQ(obtained->stringValue, expected->stringValue);*/
@@ -525,8 +525,8 @@ namespace {
 /*attributes = collector.get_available_attributes_and_reset();*/
 /*EXPECT_EQ(ddwaf_object_size(&attributes), 1);*/
 
-/*const auto *expected = ddwaf_object_get_index(ddwaf_object_get_index(&input_map, 0), 0);*/
-/*const auto *obtained = ddwaf_object_get_index(&attributes, 0);*/
+/*const auto *expected = ddwaf_object_at_value(ddwaf_object_at_value(&input_map, 0), 0);*/
+/*const auto *obtained = ddwaf_object_at_value(&attributes, 0);*/
 /*EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);*/
 /*EXPECT_NE(obtained->stringValue, expected->stringValue);*/
 /*EXPECT_STREQ(obtained->stringValue, expected->stringValue);*/
@@ -569,8 +569,8 @@ namespace {
 /*attributes = collector.get_available_attributes_and_reset();*/
 /*EXPECT_EQ(ddwaf_object_size(&attributes), 1);*/
 
-/*const auto *expected = ddwaf_object_get_index(ddwaf_object_get_index(&input_map, 0), 0);*/
-/*const auto *obtained = ddwaf_object_get_index(&attributes, 0);*/
+/*const auto *expected = ddwaf_object_at_value(ddwaf_object_at_value(&input_map, 0), 0);*/
+/*const auto *obtained = ddwaf_object_at_value(&attributes, 0);*/
 /*EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);*/
 /*EXPECT_NE(obtained->stringValue, expected->stringValue);*/
 /*EXPECT_STREQ(obtained->stringValue, expected->stringValue);*/
@@ -662,8 +662,8 @@ namespace {
 /*auto attributes = collector.get_available_attributes_and_reset();*/
 /*EXPECT_EQ(ddwaf_object_size(&attributes), 1);*/
 
-/*const auto *expected = ddwaf_object_get_index(&input_map, 0);*/
-/*const auto *obtained = ddwaf_object_get_index(&attributes, 0);*/
+/*const auto *expected = ddwaf_object_at_value(&input_map, 0);*/
+/*const auto *obtained = ddwaf_object_at_value(&attributes, 0);*/
 /*EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);*/
 /*EXPECT_NE(obtained->stringValue, expected->stringValue);*/
 /*EXPECT_STREQ(obtained->stringValue, expected->stringValue);*/
@@ -687,8 +687,8 @@ namespace {
 /*auto attributes = collector.get_available_attributes_and_reset();*/
 /*EXPECT_EQ(ddwaf_object_size(&attributes), 1);*/
 
-/*const auto *expected = ddwaf_object_get_index(&input_map, 0);*/
-/*const auto *obtained = ddwaf_object_get_index(&attributes, 0);*/
+/*const auto *expected = ddwaf_object_at_value(&input_map, 0);*/
+/*const auto *obtained = ddwaf_object_at_value(&attributes, 0);*/
 /*EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);*/
 /*EXPECT_NE(obtained->stringValue, expected->stringValue);*/
 /*EXPECT_STREQ(obtained->stringValue, expected->stringValue);*/
@@ -712,8 +712,8 @@ namespace {
 /*auto attributes = collector.get_available_attributes_and_reset();*/
 /*EXPECT_EQ(ddwaf_object_size(&attributes), 1);*/
 
-/*const auto *expected = ddwaf_object_get_index(&input_map, 0);*/
-/*const auto *obtained = ddwaf_object_get_index(&attributes, 0);*/
+/*const auto *expected = ddwaf_object_at_value(&input_map, 0);*/
+/*const auto *obtained = ddwaf_object_at_value(&attributes, 0);*/
 /*EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);*/
 /*EXPECT_NE(obtained->stringValue, expected->stringValue);*/
 /*EXPECT_STREQ(obtained->stringValue, expected->stringValue);*/

@@ -16,7 +16,7 @@ ddwaf_object node_to_arg(const Node &node)
 {
     switch (node.Type()) {
     case NodeType::Sequence: {
-        ddwaf_object arg;
+        ddwaf_object arg{};
         ddwaf_object_array(&arg);
         for (auto it = node.begin(); it != node.end(); ++it) {
             ddwaf_object child = node_to_arg(*it);
@@ -25,7 +25,7 @@ ddwaf_object node_to_arg(const Node &node)
         return arg;
     }
     case NodeType::Map: {
-        ddwaf_object arg;
+        ddwaf_object arg{};
         ddwaf_object_map(&arg);
         for (auto it = node.begin(); it != node.end(); ++it) {
             auto key = it->first.as<std::string>();
@@ -35,7 +35,7 @@ ddwaf_object node_to_arg(const Node &node)
         return arg;
     }
     case NodeType::Scalar: {
-        ddwaf_object arg;
+        ddwaf_object arg{};
         if (node.Tag() == "?") {
             try {
                 ddwaf_object_unsigned(&arg, node.as<uint64_t>());
@@ -64,7 +64,7 @@ ddwaf_object node_to_arg(const Node &node)
     }
     case NodeType::Null:
     case NodeType::Undefined:
-        ddwaf_object arg;
+        ddwaf_object arg{};
         ddwaf_object_invalid(&arg);
         return arg;
     }
@@ -84,30 +84,33 @@ YAML::Emitter &operator<<(YAML::Emitter &out, const ddwaf_object &o)
 
     switch (o.type) {
     case DDWAF_OBJ_BOOL:
-        out << o.via.b8;
+        out << o.via.b8.val;
         break;
     case DDWAF_OBJ_SIGNED:
-        out << o.via.i64;
+        out << o.via.i64.val;
         break;
     case DDWAF_OBJ_UNSIGNED:
-        out << o.via.u64;
+        out << o.via.u64.val;
         break;
     case DDWAF_OBJ_FLOAT:
-        out << o.via.f64;
+        out << o.via.f64.val;
         break;
     case DDWAF_OBJ_STRING:
-        out << o.via.str;
+        out << std::string{o.via.str.ptr, o.via.str.size};
         break;
     case DDWAF_OBJ_ARRAY:
         out << YAML::BeginSeq;
-        for (decltype(o.size) i = 0; i < o.size; i++) { out << o.via.array[i]; }
+        for (decltype(o.via.array.size) i = 0; i < o.via.array.size; i++) {
+            out << o.via.array.ptr[i];
+        }
         out << YAML::EndSeq;
         break;
     case DDWAF_OBJ_MAP:
         out << YAML::BeginMap;
-        for (decltype(o.size) i = 0; i < o.size; i++) {
-            out << YAML::Key << o.via.map[i].key.via.str;
-            out << YAML::Value << o.via.map[i].val;
+        for (decltype(o.via.map.size) i = 0; i < o.via.map.size; i++) {
+            auto kv = o.via.map.ptr[i];
+            out << YAML::Key << std::string{kv.key.via.str.ptr, kv.key.via.str.size};
+            out << YAML::Value << kv.val;
         }
         out << YAML::EndMap;
         break;

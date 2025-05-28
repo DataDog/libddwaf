@@ -671,7 +671,18 @@ bool ddwaf_object_get_bool(const ddwaf_object *object)
     return view.as<bool>();
 }
 
-const ddwaf_object *ddwaf_object_get_index(const ddwaf_object *object, size_t index)
+const ddwaf_object *ddwaf_object_at_key(const ddwaf_object *object, size_t index)
+{
+    const object_view view{to_ptr(object)};
+    if (!view.has_value() || !view.is_map() || index >= view.size()) {
+        return nullptr;
+    }
+
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    return reinterpret_cast<const ddwaf_object *>(view.at_key(index).ptr());
+}
+
+const ddwaf_object *ddwaf_object_at_value(const ddwaf_object *object, size_t index)
 {
     const object_view view{to_ptr(object)};
     if (!view.has_value() || !view.is_container() || index >= view.size()) {

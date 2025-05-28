@@ -112,7 +112,7 @@ void generate_objects(ddwaf_object &root, const object_specification &s)
         unsigned intermediate_nodes_in_current = intermediate;
 
         while ((terminal + intermediate) > 0) {
-            ddwaf_object next;
+            ddwaf_object next{};
 
             if ((random::get_bool() && terminal > 0) || intermediate == 0) {
                 generate_string_object(next, s.string_length);
@@ -135,18 +135,18 @@ void generate_objects(ddwaf_object &root, const object_specification &s)
             auto next_level = generate_horizontal_distribution(
                 intermediate_nodes_in_current, next_intermediate, next_terminal);
 
-            for (unsigned i = 0, j = 0; i < object->size; ++i) {
+            for (unsigned i = 0, j = 0; i < object->via.map.size; ++i) {
                 if (object->type == DDWAF_OBJ_MAP) {
-                    auto type = object->via.map[i].val.type;
+                    auto type = object->via.map.ptr[i].val.type;
                     if (type == DDWAF_OBJ_MAP || type == DDWAF_OBJ_ARRAY) {
-                        object_queue.emplace_back(&object->via.map[i].val, level + 1,
+                        object_queue.emplace_back(&object->via.map.ptr[i].val, level + 1,
                             next_level[j].intermediate, next_level[j].terminal);
                         ++j;
                     }
                 } else if (object->type == DDWAF_OBJ_ARRAY) {
-                    auto type = object->via.array[i].type;
+                    auto type = object->via.array.ptr[i].type;
                     if (type == DDWAF_OBJ_MAP || type == DDWAF_OBJ_ARRAY) {
-                        object_queue.emplace_back(&object->via.array[i], level + 1,
+                        object_queue.emplace_back(&object->via.array.ptr[i], level + 1,
                             next_level[j].intermediate, next_level[j].terminal);
                         ++j;
                     }
@@ -162,11 +162,11 @@ std::vector<ddwaf_object> object_generator::operator()(unsigned n, object_specif
 {
     std::vector<ddwaf_object> objects;
     while (n-- > 0) {
-        ddwaf_object root;
+        ddwaf_object root{};
         ddwaf_object_map(&root);
 
         for (const auto addr : addresses_) {
-            ddwaf_object value;
+            ddwaf_object value{};
             if (spec.depth == 0) {
                 generate_string_object(value, spec.string_length);
             } else {

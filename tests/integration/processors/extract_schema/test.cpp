@@ -213,7 +213,7 @@ TEST(TestExtractSchemaIntegration, ProcessorWithScannerByTags)
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
     EXPECT_EQ(ddwaf_object_size(attributes), 1);
-    EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0),
+    EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0),
         R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
     ddwaf_object_free(&out);
@@ -263,7 +263,7 @@ TEST(TestExtractSchemaIntegration, ProcessorWithScannerByID)
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
     EXPECT_EQ(ddwaf_object_size(attributes), 1);
-    EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0),
+    EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0),
         R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
     ddwaf_object_free(&out);
@@ -318,7 +318,7 @@ TEST(TestExtractSchemaIntegration, ProcessorUpdate)
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
         EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0),
+        EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0),
             R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
         ddwaf_object_free(&out);
@@ -360,7 +360,7 @@ TEST(TestExtractSchemaIntegration, ProcessorUpdate)
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
         EXPECT_EQ(ddwaf_object_size(attributes), 1);
-        EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0), R"([{"email":[8]}])");
+        EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0), R"([{"email":[8]}])");
 
         ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
@@ -416,7 +416,7 @@ TEST(TestExtractSchemaIntegration, ScannerUpdate)
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
         EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0),
+        EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0),
             R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
         ddwaf_object_free(&out);
@@ -460,7 +460,7 @@ TEST(TestExtractSchemaIntegration, ScannerUpdate)
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
         EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0),
+        EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0),
             R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
         ddwaf_object_free(&out);
@@ -517,7 +517,7 @@ TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
         EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0),
+        EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0),
             R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
         ddwaf_object_free(&out);
@@ -560,7 +560,7 @@ TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
         EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0),
+        EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0),
             R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
         ddwaf_object_free(&out);
@@ -616,7 +616,7 @@ TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
         EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0),
+        EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0),
             R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
         ddwaf_object_free(&out);
@@ -651,7 +651,7 @@ TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
         EXPECT_EQ(ddwaf_object_size(attributes), 1);
-        EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0), R"([{"email":[8]}])");
+        EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0), R"([{"email":[8]}])");
 
         ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
@@ -706,7 +706,7 @@ TEST(TestExtractSchemaIntegration, EmptyProcessorUpdate)
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
         EXPECT_EQ(ddwaf_object_size(attributes), 1);
 
-        EXPECT_SCHEMA_EQ(*ddwaf_object_get_index(attributes, 0),
+        EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0),
             R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
         ddwaf_object_free(&out);
