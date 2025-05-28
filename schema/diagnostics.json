@@ -19,6 +19,9 @@
     "rules": {
       "$ref": "#/definitions/feature"
     },
+    "rules_compat": {
+      "$ref": "#/definitions/feature"
+    },
     "custom_rules": {
       "$ref": "#/definitions/feature"
     },
