@@ -1,0 +1,27 @@
+version: '2.1'
+rules:
+  - id: rule1
+    name: rule1
+    tags:
+      type: flow1
+      category: category1
+      confidence: 1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value1
+          regex: ^rule1
+rules_compat:
+  - id: rule1
+    name: rule1
+    tags:
+      type: flow1
+      category: category1
+      confidence: 1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value1
+          regex: ^rule1

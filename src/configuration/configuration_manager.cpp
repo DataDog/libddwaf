@@ -97,6 +97,21 @@ void configuration_manager::load(
         }
     }
 
+    it = root.find("rules_compat");
+    if (it != root.end()) {
+        DDWAF_DEBUG("Parsing base backwards-incompatible rules");
+        auto &section = info.add_section("rules_compat");
+        try {
+            auto rules = static_cast<raw_configuration::vector>(it->second);
+            if (!rules.empty()) {
+                parse_base_rules(rules, collector, section);
+            }
+        } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse backwards-incompatible rules: {}", e.what());
+            section.set_error(e.what());
+        }
+    }
+
     it = root.find("custom_rules");
     if (it != root.end()) {
         DDWAF_DEBUG("Parsing custom rules");
