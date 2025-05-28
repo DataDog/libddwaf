@@ -308,7 +308,7 @@ public:
         requires std::is_same_v<T, const char *>
     {
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return obj.via.str;
+        return obj.via.str.ptr;
     }
 
     // Access the underlying value based on the required type or return a default
@@ -342,7 +342,7 @@ public:
     {
         using limits = std::numeric_limits<T>;
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return is_compatible_type<uint64_t>(type()) && obj.via.u64 <= limits::max();
+        return is_compatible_type<uint64_t>(type()) && obj.via.u64.val <= limits::max();
     }
 
     // Overload for other signed integer types
@@ -352,8 +352,8 @@ public:
     {
         using limits = std::numeric_limits<T>;
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return is_compatible_type<int64_t>(type()) && obj.via.i64 >= limits::min() &&
-               obj.via.i64 <= limits::max();
+        return is_compatible_type<int64_t>(type()) && obj.via.i64.val >= limits::min() &&
+               obj.via.i64.val <= limits::max();
     }
 
     // Convert the underlying type to the requested type

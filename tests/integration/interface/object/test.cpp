@@ -15,32 +15,32 @@ using namespace ddwaf;
 
 namespace {
 
-TEST(TestObject, TestCreateInvalid)
+TEST(TestObjectIntegration, TestCreateInvalid)
 {
     ddwaf_object object;
     ddwaf_object_invalid(&object);
-    EXPECT_EQ(object.type, DDWAF_OBJ_INVALID);
+    EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_INVALID);
 
     // Getters
     EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_INVALID);
 }
 
-TEST(TestObject, TestInvalidString)
+TEST(TestObjectIntegration, TestInvalidString)
 {
     ddwaf_object object;
     EXPECT_EQ(ddwaf_object_string(&object, nullptr), nullptr);
     EXPECT_EQ(ddwaf_object_stringl(&object, nullptr, 0), nullptr);
 }
 
-TEST(TestObject, TestString)
+TEST(TestObjectIntegration, TestString)
 {
 
     ddwaf_object object;
     ddwaf_object_string(&object, "Sqreen");
 
-    EXPECT_EQ(object.type, DDWAF_OBJ_STRING);
-    EXPECT_EQ(object.size, 6);
-    EXPECT_STREQ(object.via.str, "Sqreen");
+    EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_STRING);
+    EXPECT_EQ(ddwaf_object_length(&object), 6);
+    EXPECT_STREQ(ddwaf_object_get_string(&object, nullptr), "Sqreen");
 
     // Getters
     size_t length;
@@ -53,14 +53,14 @@ TEST(TestObject, TestString)
     ddwaf_object_free(&object);
 }
 
-TEST(TestObject, TestCreateStringl)
+TEST(TestObjectIntegration, TestCreateStringl)
 {
     ddwaf_object object;
     ddwaf_object_stringl(&object, "Sqreen", sizeof("Sqreen") - 1);
 
-    EXPECT_EQ(object.type, DDWAF_OBJ_STRING);
-    EXPECT_EQ(object.size, 6);
-    EXPECT_STREQ((const char *)object.via.str, "Sqreen");
+    EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_STRING);
+    EXPECT_EQ(ddwaf_object_length(&object), 6);
+    EXPECT_STREQ((const char *)ddwaf_object_get_string(&object, nullptr), "Sqreen");
 
     // Getters
     size_t length;
@@ -73,15 +73,15 @@ TEST(TestObject, TestCreateStringl)
     ddwaf_object_free(&object);
 }
 
-TEST(TestObject, TestCreateInt)
+TEST(TestObjectIntegration, TestCreateInt)
 {
     {
         ddwaf_object object;
         ddwaf_object_string_from_signed(&object, INT64_MIN);
 
-        EXPECT_EQ(object.type, DDWAF_OBJ_STRING);
-        EXPECT_EQ(object.size, 20);
-        EXPECT_STREQ(object.via.str, "-9223372036854775808");
+        EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_STRING);
+        EXPECT_EQ(ddwaf_object_length(&object), 20);
+        EXPECT_STREQ(ddwaf_object_get_string(&object, nullptr), "-9223372036854775808");
 
         // Getters
         EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_STRING);
@@ -98,9 +98,9 @@ TEST(TestObject, TestCreateInt)
         ddwaf_object object;
         ddwaf_object_string_from_signed(&object, INT64_MAX);
 
-        EXPECT_EQ(object.type, DDWAF_OBJ_STRING);
-        EXPECT_EQ(object.size, 19);
-        EXPECT_STREQ(object.via.str, "9223372036854775807");
+        EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_STRING);
+        EXPECT_EQ(ddwaf_object_length(&object), 19);
+        EXPECT_STREQ(ddwaf_object_get_string(&object, nullptr), "9223372036854775807");
 
         // Getters
         EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_STRING);
@@ -114,13 +114,12 @@ TEST(TestObject, TestCreateInt)
     }
 }
 
-TEST(TestObject, TestCreateIntForce)
+TEST(TestObjectIntegration, TestCreateIntForce)
 {
     ddwaf_object object;
     ddwaf_object_signed(&object, INT64_MIN);
 
-    EXPECT_EQ(object.type, DDWAF_OBJ_SIGNED);
-    EXPECT_EQ(object.via.i64, INT64_MIN);
+    EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_SIGNED);
 
     // Getters
     EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_SIGNED);
@@ -131,14 +130,14 @@ TEST(TestObject, TestCreateIntForce)
     ddwaf_object_free(&object);
 }
 
-TEST(TestObject, TestCreateUint)
+TEST(TestObjectIntegration, TestCreateUint)
 {
     ddwaf_object object;
     ddwaf_object_string_from_unsigned(&object, UINT64_MAX);
 
-    EXPECT_EQ(object.type, DDWAF_OBJ_STRING);
-    EXPECT_EQ(object.size, 20);
-    EXPECT_STREQ(object.via.str, "18446744073709551615");
+    EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_STRING);
+    EXPECT_EQ(ddwaf_object_length(&object), 20);
+    EXPECT_STREQ(ddwaf_object_get_string(&object, nullptr), "18446744073709551615");
 
     // Getters
     EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_STRING);
@@ -151,13 +150,12 @@ TEST(TestObject, TestCreateUint)
     ddwaf_object_free(&object);
 }
 
-TEST(TestObject, TestCreateUintForce)
+TEST(TestObjectIntegration, TestCreateUintForce)
 {
     ddwaf_object object;
     ddwaf_object_unsigned(&object, UINT64_MAX);
 
-    EXPECT_EQ(object.type, DDWAF_OBJ_UNSIGNED);
-    EXPECT_EQ(object.via.u64, UINT64_MAX);
+    EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_UNSIGNED);
 
     // Getters
     EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_UNSIGNED);
@@ -168,14 +166,13 @@ TEST(TestObject, TestCreateUintForce)
     ddwaf_object_free(&object);
 }
 
-TEST(TestObject, TestCreateBool)
+TEST(TestObjectIntegration, TestCreateBool)
 {
     {
         ddwaf_object object;
         ddwaf_object_bool(&object, true);
 
-        EXPECT_EQ(object.type, DDWAF_OBJ_BOOL);
-        EXPECT_EQ(object.via.b8, true);
+        EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_BOOL);
 
         // Getters
         EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_BOOL);
@@ -190,8 +187,7 @@ TEST(TestObject, TestCreateBool)
         ddwaf_object object;
         ddwaf_object_bool(&object, false);
 
-        EXPECT_EQ(object.type, DDWAF_OBJ_BOOL);
-        EXPECT_EQ(object.via.b8, false);
+        EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_BOOL);
 
         // Getters
         EXPECT_EQ(ddwaf_object_type(&object), DDWAF_OBJ_BOOL);
@@ -203,14 +199,13 @@ TEST(TestObject, TestCreateBool)
     }
 }
 
-TEST(TestObject, TestCreateArray)
+TEST(TestObjectIntegration, TestCreateArray)
 {
     ddwaf_object container;
     ddwaf_object_array(&container);
 
     EXPECT_EQ(container.type, DDWAF_OBJ_ARRAY);
-    EXPECT_EQ(container.size, 0);
-    EXPECT_EQ(container.via.array, nullptr);
+    EXPECT_EQ(ddwaf_object_size(&container), 0);
 
     // Getters
     EXPECT_EQ(ddwaf_object_type(&container), DDWAF_OBJ_ARRAY);
@@ -221,14 +216,13 @@ TEST(TestObject, TestCreateArray)
     ddwaf_object_free(&container);
 }
 
-TEST(TestObject, TestCreateMap)
+TEST(TestObjectIntegration, TestCreateMap)
 {
     ddwaf_object container;
     ddwaf_object_map(&container);
 
     EXPECT_EQ(container.type, DDWAF_OBJ_MAP);
-    EXPECT_EQ(container.size, 0);
-    EXPECT_EQ(container.via.map, nullptr);
+    EXPECT_EQ(ddwaf_object_size(&container), 0);
 
     // Getters
     EXPECT_EQ(ddwaf_object_type(&container), DDWAF_OBJ_MAP);
@@ -239,7 +233,7 @@ TEST(TestObject, TestCreateMap)
     ddwaf_object_free(&container);
 }
 
-TEST(TestObject, TestAddArray)
+TEST(TestObjectIntegration, TestAddArray)
 {
     ddwaf_object container;
     ddwaf_object_array(&container);
@@ -255,15 +249,15 @@ TEST(TestObject, TestAddArray)
     EXPECT_TRUE(ddwaf_object_array_add(&container, ddwaf_object_string_from_unsigned(&object, 43)));
 
     EXPECT_EQ(container.type, DDWAF_OBJ_ARRAY);
-    EXPECT_EQ(container.size, 3);
+    EXPECT_EQ(ddwaf_object_size(&container), 3);
 
-    EXPECT_EQ(container.via.array[0].type, DDWAF_OBJ_INVALID);
+    EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&container, 0)), DDWAF_OBJ_INVALID);
 
-    EXPECT_EQ(container.via.array[1].type, DDWAF_OBJ_STRING);
-    EXPECT_STREQ(container.via.array[1].via.str, "42");
+    EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&container, 1)), DDWAF_OBJ_STRING);
+    EXPECT_STREQ(ddwaf_object_get_string(ddwaf_object_get_index(&container, 1), nullptr), "42");
 
-    EXPECT_EQ(container.via.array[1].type, DDWAF_OBJ_STRING);
-    EXPECT_STREQ(container.via.array[2].via.str, "43");
+    EXPECT_EQ(ddwaf_object_type(ddwaf_object_get_index(&container, 2)), DDWAF_OBJ_STRING);
+    EXPECT_STREQ(ddwaf_object_get_string(ddwaf_object_get_index(&container, 2), nullptr), "43");
 
     // Getters
     EXPECT_EQ(ddwaf_object_type(&container), DDWAF_OBJ_ARRAY);
@@ -286,7 +280,7 @@ TEST(TestObject, TestAddArray)
     ddwaf_object_free(&container);
 }
 
-TEST(TestObject, TestAddMap)
+TEST(TestObjectIntegration, TestAddMap)
 {
     ddwaf_object map;
     ddwaf_object array;
@@ -305,17 +299,17 @@ TEST(TestObject, TestAddMap)
     EXPECT_FALSE(ddwaf_object_map_add(&map, "key", nullptr));
 
     EXPECT_TRUE(ddwaf_object_map_add(&map, "key", ddwaf_object_invalid(&tmp)));
-    EXPECT_STREQ(map.via.map[0].key.via.str, "key");
+    EXPECT_STREQ(ddwaf_object_get_string(&map.via.map.ptr[0].key, nullptr), "key");
 
     ASSERT_TRUE(ddwaf_object_map_add(&map, "key", ddwaf_object_string_from_signed(&tmp, 42)));
-    EXPECT_STREQ(map.via.map[1].key.via.str, "key");
+    EXPECT_STREQ(ddwaf_object_get_string(&map.via.map.ptr[1].key, nullptr), "key");
 
     ASSERT_TRUE(ddwaf_object_map_addl(&map, "key2", 4, ddwaf_object_string_from_signed(&tmp, 43)));
-    EXPECT_STREQ(map.via.map[2].key.via.str, "key2");
+    EXPECT_STREQ(ddwaf_object_get_string(&map.via.map.ptr[2].key, nullptr), "key2");
 
     char *str = strdup("key3");
     ASSERT_TRUE(ddwaf_object_map_addl_nc(&map, str, 4, ddwaf_object_string_from_signed(&tmp, 44)));
-    EXPECT_EQ(map.via.map[3].key.via.str, str);
+    EXPECT_EQ(ddwaf_object_get_string(&map.via.map.ptr[3].key, nullptr), str);
 
     // Getters
     EXPECT_EQ(ddwaf_object_type(&map), DDWAF_OBJ_MAP);
@@ -351,11 +345,14 @@ TEST(TestObject, TestAddMap)
     ddwaf_object_free(&array);
 }
 
-TEST(TestObject, NullFree) { ddwaf_object_free(nullptr); }
+TEST(TestObjectIntegration, NullFree) { ddwaf_object_free(nullptr); }
 
-TEST(TestObject, FindNullObject) { EXPECT_EQ(ddwaf_object_find(nullptr, STRL("key")), nullptr); }
+TEST(TestObjectIntegration, FindNullObject)
+{
+    EXPECT_EQ(ddwaf_object_find(nullptr, STRL("key")), nullptr);
+}
 
-TEST(TestObject, FindInvalidKey)
+TEST(TestObjectIntegration, FindInvalidKey)
 {
     ddwaf_object tmp;
     ddwaf_object map;
@@ -368,7 +365,7 @@ TEST(TestObject, FindInvalidKey)
     ddwaf_object_free(&map);
 }
 
-TEST(TestObject, FindNotMap)
+TEST(TestObjectIntegration, FindNotMap)
 {
     ddwaf_object tmp;
     ddwaf_object array;
@@ -380,7 +377,7 @@ TEST(TestObject, FindNotMap)
     ddwaf_object_free(&array);
 }
 
-TEST(TestObject, FindEmptyMap)
+TEST(TestObjectIntegration, FindEmptyMap)
 {
     ddwaf_object tmp;
     ddwaf_object map;

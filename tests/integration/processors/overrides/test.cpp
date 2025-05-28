@@ -666,7 +666,8 @@ TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
         EXPECT_EQ(ddwaf_object_size(attributes), 2);
-        ddwaf::raw_configuration derivatives_object(*attributes);
+        ddwaf::raw_configuration derivatives_object(
+            *reinterpret_cast<const detail::object *>(attributes));
         auto derivatives = static_cast<ddwaf::raw_configuration::map>(derivatives_object);
 
         auto headers_schema =
@@ -715,7 +716,8 @@ TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
         EXPECT_EQ(ddwaf_object_size(attributes), 2);
 
         EXPECT_EQ(ddwaf_object_size(attributes), 2);
-        ddwaf::raw_configuration derivatives_object(*attributes);
+        ddwaf::raw_configuration derivatives_object(
+            *reinterpret_cast<const detail::object *>(attributes));
         auto derivatives = static_cast<ddwaf::raw_configuration::map>(derivatives_object);
 
         auto headers_schema =

@@ -17,17 +17,22 @@
 
 #define DDWAF_OBJECT_INVALID                                                                       \
     {                                                                                              \
-        {.str = NULL}, DDWAF_OBJ_INVALID, 0, 0                                                     \
+        .type = DDWAF_OBJ_INVALID                                                                  \
     }
 #define DDWAF_OBJECT_MAP                                                                           \
     {                                                                                              \
-        {.str = NULL}, DDWAF_OBJ_MAP, 0, 0                                                         \
+        .via                                                                                       \
+        {                                                                                          \
+            .map { .type = DDWAF_OBJ_MAP, .size = 0, .capacity = 0, .ptr = NULL }                  \
+        }                                                                                          \
     }
 #define DDWAF_OBJECT_ARRAY                                                                         \
     {                                                                                              \
-        {.str = NULL}, DDWAF_OBJ_ARRAY, 0, 0                                                       \
+        .via                                                                                       \
+        {                                                                                          \
+            .array { .type = DDWAF_OBJ_ARRAY, .size = 0, .capacity = 0, .ptr = NULL }              \
+        }                                                                                          \
     }
-
 #define LSTRARG(value) value, sizeof(value) - 1
 
 namespace ddwaf::test {

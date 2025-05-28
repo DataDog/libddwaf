@@ -176,10 +176,20 @@ inline ::testing::PolymorphicMatcher<MatchMatcher> WithMatches(
 std::list<ddwaf::test::event::match> from_matches(
     const std::vector<ddwaf::condition_match> &matches);
 
+template <typename T> ddwaf::object_view to_view(T &value)
+{
+    if constexpr (std::is_same_v<std::decay_t<T>, ddwaf_object>) {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        return ddwaf::object_view{reinterpret_cast<const ddwaf::detail::object &>(value)};
+    } else {
+        return ddwaf::object_view{value};
+    }
+}
+
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define EXPECT_EVENTS(result, ...)                                                                 \
     {                                                                                              \
-        auto data = ddwaf::test::object_to_json(ddwaf::object_view{result}.find("events").ref());  \
+        auto data = ddwaf::test::object_to_json(to_view(result).find("events").ref());             \
         EXPECT_TRUE(ValidateEventSchema(data));                                                    \
         YAML::Node doc = YAML::Load(data.c_str());                                                 \
         auto events = doc.as<std::list<ddwaf::test::event>>();                                     \
@@ -200,7 +210,7 @@ std::list<ddwaf::test::event::match> from_matches(
 
 #define EXPECT_ACTIONS(result, ...)                                                                \
     {                                                                                              \
-        auto data = ddwaf::test::object_to_json(ddwaf::object_view{result}.find("actions").ref()); \
+        auto data = ddwaf::test::object_to_json(to_view(result).find("actions").ref());            \
         EXPECT_TRUE(ValidateActionsSchema(data));                                                  \
         YAML::Node doc = YAML::Load(data.c_str());                                                 \
         auto obtained = doc.as<ddwaf::test::action_map>();                                         \

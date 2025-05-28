@@ -82,14 +82,16 @@ std::shared_ptr<ddwaf::match_obfuscator> obfuscator_from_config(const ddwaf_conf
 // Maximum number of characters required to represent a 64 bit integer as a string
 // 20 bytes for UINT64_MAX or INT64_MIN + null byte
 constexpr size_t UINT64_CHARS = 21;
-
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-detail::object &to_ref(ddwaf_object *ptr) { return *reinterpret_cast<detail::object *>(ptr); }
-// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-const detail::object &to_ref(const ddwaf_object *ptr)
+detail::object *to_ptr(ddwaf_object *ptr) { return reinterpret_cast<detail::object *>(ptr); }
+const detail::object *to_ptr(const ddwaf_object *ptr)
 {
-    return *reinterpret_cast<const detail::object *>(ptr);
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    return reinterpret_cast<const detail::object *>(ptr);
 }
+
+detail::object &to_ref(ddwaf_object *ptr) { return *to_ptr(ptr); }
+const detail::object &to_ref(const ddwaf_object *ptr) { return *to_ptr(ptr); }
 
 borrowed_object to_borrowed(ddwaf_object *ptr)
 {
@@ -207,15 +209,15 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
         auto free_fn = context->get_free_fn();
 
         if (persistent_data != nullptr &&
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-            !context->insert(owned_object{
-                to_ref(persistent_data), reinterpret_cast<detail::object_free_fn>(free_fn)})) {
+            !context->insert(
+                owned_object{// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+                    to_ref(persistent_data), reinterpret_cast<detail::object_free_fn>(free_fn)})) {
             return DDWAF_ERR_INVALID_OBJECT;
         }
 
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
         if (ephemeral_data != nullptr &&
             !context->insert(owned_object{to_ref(ephemeral_data),
+                                 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
                                  reinterpret_cast<detail::object_free_fn>(free_fn)},
                 context::attribute::ephemeral)) {
             return DDWAF_ERR_INVALID_OBJECT;
@@ -365,7 +367,7 @@ uint32_t ddwaf_builder_get_config_paths(
             ddwaf_object_array(paths);
             // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
             for (const auto &value : config_paths) {
-                ddwaf_object tmp;
+                ddwaf_object tmp{};
                 ddwaf_object_array_add(
                     paths, ddwaf_object_stringl(&tmp, value.data(), value.size()));
             }
@@ -591,7 +593,7 @@ void ddwaf_object_free(ddwaf_object *object)
 
 DDWAF_OBJ_TYPE ddwaf_object_type(const ddwaf_object *object)
 {
-    const object_view view{to_ref(object)};
+    const object_view view{to_ptr(object)};
     if (!view.has_value()) {
         return DDWAF_OBJ_INVALID;
     }
@@ -601,7 +603,7 @@ DDWAF_OBJ_TYPE ddwaf_object_type(const ddwaf_object *object)
 
 size_t ddwaf_object_size(const ddwaf_object *object)
 {
-    const object_view view{to_ref(object)};
+    const object_view view{to_ptr(object)};
     if (!view.has_value() || !view.is_container()) {
         return 0;
     }
@@ -611,7 +613,7 @@ size_t ddwaf_object_size(const ddwaf_object *object)
 
 size_t ddwaf_object_length(const ddwaf_object *object)
 {
-    const object_view view{to_ref(object)};
+    const object_view view{to_ptr(object)};
     if (!view.has_value() || !view.is_string()) {
         return 0;
     }
@@ -621,7 +623,7 @@ size_t ddwaf_object_length(const ddwaf_object *object)
 
 const char *ddwaf_object_get_string(const ddwaf_object *object, size_t *length)
 {
-    const object_view view{to_ref(object)};
+    const object_view view{to_ptr(object)};
     if (!view.has_value() || !view.is_string()) {
         return nullptr;
     }
@@ -635,7 +637,7 @@ const char *ddwaf_object_get_string(const ddwaf_object *object, size_t *length)
 
 uint64_t ddwaf_object_get_unsigned(const ddwaf_object *object)
 {
-    const object_view view{to_ref(object)};
+    const object_view view{to_ptr(object)};
     if (!view.has_value() || !view.is<uint64_t>()) {
         return 0;
     }
@@ -644,7 +646,7 @@ uint64_t ddwaf_object_get_unsigned(const ddwaf_object *object)
 
 int64_t ddwaf_object_get_signed(const ddwaf_object *object)
 {
-    const object_view view{to_ref(object)};
+    const object_view view{to_ptr(object)};
     if (!view.has_value() || !view.is<int64_t>()) {
         return 0;
     }
@@ -653,7 +655,7 @@ int64_t ddwaf_object_get_signed(const ddwaf_object *object)
 
 double ddwaf_object_get_float(const ddwaf_object *object)
 {
-    const object_view view{to_ref(object)};
+    const object_view view{to_ptr(object)};
     if (!view.has_value() || !view.is<double>()) {
         return 0;
     }
@@ -662,7 +664,7 @@ double ddwaf_object_get_float(const ddwaf_object *object)
 
 bool ddwaf_object_get_bool(const ddwaf_object *object)
 {
-    const object_view view{to_ref(object)};
+    const object_view view{to_ptr(object)};
     if (!view.has_value() || !view.is<bool>()) {
         return false;
     }
@@ -671,7 +673,7 @@ bool ddwaf_object_get_bool(const ddwaf_object *object)
 
 const ddwaf_object *ddwaf_object_get_index(const ddwaf_object *object, size_t index)
 {
-    const object_view view{to_ref(object)};
+    const object_view view{to_ptr(object)};
     if (!view.has_value() || !view.is_container() || index >= view.size()) {
         return nullptr;
     }
@@ -682,7 +684,7 @@ const ddwaf_object *ddwaf_object_get_index(const ddwaf_object *object, size_t in
 
 const ddwaf_object *ddwaf_object_find(const ddwaf_object *object, const char *key, size_t length)
 {
-    const object_view view{to_ref(object)};
+    const object_view view{to_ptr(object)};
     if (!view.has_value() || !view.is_map() || view.empty() || key == nullptr || length == 0) {
         return nullptr;
     }

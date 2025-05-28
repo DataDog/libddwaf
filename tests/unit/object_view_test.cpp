@@ -28,8 +28,6 @@ TEST(TestObjectView, InvalidObject)
 
     EXPECT_EQ(view.ptr(), original.ptr());
 
-    EXPECT_EQ(view.size(), 0);
-    EXPECT_TRUE(view.empty());
     EXPECT_FALSE(view.is_container());
     EXPECT_FALSE(view.is_scalar());
     EXPECT_FALSE(view.is_map());
@@ -54,8 +52,6 @@ TEST(TestObjectView, NullObject)
     ASSERT_TRUE(view.has_value());
     EXPECT_EQ(view.type(), object_type::null);
 
-    EXPECT_EQ(view.size(), 0);
-    EXPECT_TRUE(view.empty());
     EXPECT_FALSE(view.is_container());
     EXPECT_FALSE(view.is_scalar());
     EXPECT_FALSE(view.is_map());
@@ -80,8 +76,6 @@ TEST(TestObjectView, BooleanObject)
     ASSERT_TRUE(view.has_value());
     EXPECT_EQ(view.type(), object_type::boolean);
 
-    EXPECT_EQ(view.size(), 0);
-    EXPECT_TRUE(view.empty());
     EXPECT_FALSE(view.is_container());
     EXPECT_TRUE(view.is_scalar());
     EXPECT_FALSE(view.is_map());
@@ -108,8 +102,6 @@ TEST(TestObjectView, SignedObject)
     ASSERT_TRUE(view.has_value());
     EXPECT_EQ(view.type(), object_type::int64);
 
-    EXPECT_EQ(view.size(), 0);
-    EXPECT_TRUE(view.empty());
     EXPECT_FALSE(view.is_container());
     EXPECT_TRUE(view.is_scalar());
     EXPECT_FALSE(view.is_map());
@@ -208,8 +200,6 @@ TEST(TestObjectView, UnsignedObject)
     ASSERT_TRUE(view.has_value());
     EXPECT_EQ(view.type(), object_type::uint64);
 
-    EXPECT_EQ(view.size(), 0);
-    EXPECT_TRUE(view.empty());
     EXPECT_FALSE(view.is_container());
     EXPECT_TRUE(view.is_scalar());
     EXPECT_FALSE(view.is_map());
@@ -277,8 +267,6 @@ TEST(TestObjectView, FloatObject)
     ASSERT_TRUE(view.has_value());
     EXPECT_EQ(view.type(), object_type::float64);
 
-    EXPECT_EQ(view.size(), 0);
-    EXPECT_TRUE(view.empty());
     EXPECT_FALSE(view.is_container());
     EXPECT_TRUE(view.is_scalar());
     EXPECT_FALSE(view.is_map());

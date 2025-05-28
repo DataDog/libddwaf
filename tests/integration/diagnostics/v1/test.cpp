@@ -78,7 +78,7 @@ TEST(TestDiagnosticsV1Integration, Basic)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto version = ddwaf::at<std::string>(root_map, "ruleset_version", "");
@@ -113,7 +113,7 @@ TEST(TestDiagnosticsV1Integration, TestInvalidRule)
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto version = ddwaf::at<std::string>(root_map, "ruleset_version", "");
@@ -151,7 +151,7 @@ TEST(TestDiagnosticsV1Integration, TestMultipleSameInvalidRules)
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto version = ddwaf::at<std::string>(root_map, "ruleset_version", "");
@@ -190,7 +190,7 @@ TEST(TestDiagnosticsV1Integration, TestMultipleDiffInvalidRules)
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto version = ddwaf::at<std::string>(root_map, "ruleset_version", "");
@@ -239,7 +239,7 @@ TEST(TestDiagnosticsV1Integration, TestMultipleMixInvalidRules)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto version = ddwaf::at<std::string>(root_map, "ruleset_version", "");
@@ -299,7 +299,7 @@ TEST(TestDiagnosticsV1Integration, TestInvalidDuplicate)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto version = ddwaf::at<std::string>(root_map, "ruleset_version", "");
@@ -338,7 +338,7 @@ TEST(TestDiagnosticsV1Integration, TestInvalidTooManyTransformers)
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto version = ddwaf::at<std::string>(root_map, "ruleset_version", "");
@@ -376,7 +376,7 @@ TEST(TestDiagnosticsV1Integration, InvalidRulesContainer)
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto version = ddwaf::at<std::string>(root_map, "ruleset_version", "");
