@@ -87,7 +87,6 @@ typedef struct _ddwaf_builder* ddwaf_builder;
 #endif
 
 typedef struct _ddwaf_config ddwaf_config;
-
 typedef union _ddwaf_object ddwaf_object;
 typedef struct _ddwaf_object_kv ddwaf_object_kv;
 
@@ -118,6 +117,25 @@ struct _ddwaf_object_string {
     char *ptr;
 };
 
+struct _ddwaf_object_small_string {
+#define DDWAF_OBJ_SSTR_SIZE 14
+    uint8_t type;
+    uint8_t size;
+    char ptr[DDWAF_OBJ_SSTR_SIZE];
+};
+
+struct _ddwaf_object_long_string {
+    uint8_t type;
+    uint32_t size;
+    char *ptr;
+};
+
+struct _ddwaf_object_literal_string {
+    uint8_t type;
+    uint32_t size;
+    const char *ptr;
+};
+
 struct _ddwaf_object_array {
     uint8_t type;
     uint16_t size;
@@ -132,7 +150,7 @@ struct _ddwaf_object_map {
     ddwaf_object_kv *ptr;
 };
 
-union __attribute((__may_alias__)) _ddwaf_object {
+union _ddwaf_object {
     uint8_t type;
     union {
         struct _ddwaf_object_bool b8;
@@ -140,6 +158,9 @@ union __attribute((__may_alias__)) _ddwaf_object {
         struct _ddwaf_object_unsigned u64;
         struct _ddwaf_object_float f64;
         struct _ddwaf_object_string str;
+        struct _ddwaf_object_small_string;
+        struct _ddwaf_object_long_string;
+        struct _ddwaf_object_literal_string;
         struct _ddwaf_object_array array;
         struct _ddwaf_object_map map;
     } via;
