@@ -766,13 +766,17 @@ TEST(TestContext, RuleFilterWithEphemeralConditionMatch)
         auto persistent = owned_object::make_map({{"usr.id", "admin"}});
         auto ephemeral = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        auto [code, res] = ctx.run(std::move(persistent), std::move(ephemeral), LONG_TIME);
+        EXPECT_TRUE(ctx.insert(std::move(persistent)));
+        EXPECT_TRUE(ctx.insert(std::move(ephemeral), context::attribute::ephemeral));
+
+        auto [code, res] = ctx.run(LONG_TIME);
         EXPECT_EQ(code, DDWAF_OK);
     }
 
     {
         auto root = owned_object::make_map({{"usr.id", "admin"}});
-        auto [code, res] = ctx.run(std::move(root), {}, LONG_TIME);
+        EXPECT_TRUE(ctx.insert(std::move(root)));
+        auto [code, res] = ctx.run(LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
     }
 }
@@ -827,14 +831,18 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
         auto persistent = owned_object::make_map({{"usr.id", "admin"}, {"http.route", "unrouted"}});
         auto ephemeral = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        auto [code, res] = ctx.run(std::move(persistent), std::move(ephemeral), LONG_TIME);
+        EXPECT_TRUE(ctx.insert(std::move(persistent)));
+        EXPECT_TRUE(ctx.insert(std::move(ephemeral), context::attribute::ephemeral));
+
+        auto [code, res] = ctx.run(LONG_TIME);
         EXPECT_EQ(code, DDWAF_OK);
     }
 
     {
         auto root = owned_object::make_map({{"usr.id", "admin"}});
+        EXPECT_TRUE(ctx.insert(std::move(root)));
 
-        auto [code, res] = ctx.run(std::move(root), {}, LONG_TIME);
+        auto [code, res] = ctx.run(LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
 
         EXPECT_TRUE(object_view{res}.find("actions").empty());
@@ -891,14 +899,18 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
         auto persistent = owned_object::make_map({{"usr.id", "admin"}, {"http.route", "unrouted"}});
         auto ephemeral = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
 
-        auto [code, res] = ctx.run(std::move(persistent), std::move(ephemeral), LONG_TIME);
+        EXPECT_TRUE(ctx.insert(std::move(persistent)));
+        EXPECT_TRUE(ctx.insert(std::move(ephemeral), context::attribute::ephemeral));
+
+        auto [code, res] = ctx.run(LONG_TIME);
         EXPECT_EQ(code, DDWAF_OK);
     }
 
     {
         auto root = owned_object::make_map({{"usr.id", "admin"}});
+        EXPECT_TRUE(ctx.insert(std::move(root)));
 
-        auto [code, res] = ctx.run(std::move(root), {}, LONG_TIME);
+        auto [code, res] = ctx.run(LONG_TIME);
         EXPECT_EQ(code, DDWAF_OK);
     }
 }
@@ -1378,19 +1390,22 @@ TEST(TestContext, InputFilterExcludeEphemeral)
 
     {
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        auto [code, res] = ctx.run({}, std::move(root), LONG_TIME);
+        EXPECT_TRUE(ctx.insert(std::move(root)));
+        auto [code, res] = ctx.run(LONG_TIME);
         EXPECT_EQ(code, DDWAF_OK);
     }
 
     {
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        auto [code, res] = ctx.run({}, std::move(root), LONG_TIME);
+        EXPECT_TRUE(ctx.insert(std::move(root)));
+        auto [code, res] = ctx.run(LONG_TIME);
         EXPECT_EQ(code, DDWAF_OK);
     }
 
     {
         auto root = owned_object::make_map({{"http.peer_ip", "192.168.0.1"}});
-        auto [code, res] = ctx.run({}, std::move(root), LONG_TIME);
+        EXPECT_TRUE(ctx.insert(std::move(root)));
+        auto [code, res] = ctx.run(LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
     }
 }
@@ -1767,13 +1782,16 @@ TEST(TestContext, InputFilterWithEphemeralCondition)
         auto persistent = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
         auto ephemeral = owned_object::make_map({{"usr.id", "admin"}});
 
-        auto [code, res] = ctx.run(std::move(persistent), std::move(ephemeral), LONG_TIME);
+        EXPECT_TRUE(ctx.insert(std::move(persistent)));
+        EXPECT_TRUE(ctx.insert(std::move(ephemeral), context::attribute::ephemeral));
+        auto [code, res] = ctx.run(LONG_TIME);
         EXPECT_EQ(code, DDWAF_OK);
     }
 
     {
         auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
-        auto [code, res] = ctx.run(std::move(root), {}, LONG_TIME);
+        EXPECT_TRUE(ctx.insert(std::move(root)));
+        auto [code, res] = ctx.run(LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
     }
 }

@@ -13,7 +13,6 @@
 
 #include "clock.hpp"
 #include "context.hpp"
-#include "ddwaf.h"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "log.hpp"
@@ -52,31 +51,18 @@ void set_context_event_address(object_store &store)
 } // namespace
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-std::pair<DDWAF_RET_CODE, owned_object> context::run(
-    owned_object persistent, owned_object ephemeral, uint64_t timeout)
+std::pair<bool, owned_object> context::run(uint64_t timeout)
 {
     // This scope ensures that all ephemeral and cached objects are removed
     // from the store at the end of the evaluation
     auto store_cleanup_scope = store_.get_eval_scope();
     auto on_exit = scope_exit([this]() { this->exclusion_policy_.ephemeral.clear(); });
 
-    // TODO these checks should be moved to the interface through something along the
-    // lines of ctx.insert(...) -> bool
-    if (persistent.is_valid() && !store_.insert(std::move(persistent), attribute::none)) {
-        DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
-        return {DDWAF_ERR_INVALID_OBJECT, owned_object{}};
-    }
-
-    if (ephemeral.is_valid() && !store_.insert(std::move(ephemeral), attribute::ephemeral)) {
-        DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
-        return {DDWAF_ERR_INVALID_OBJECT, owned_object{}};
-    }
-
     // Generate result object once relevant checks have been made
     auto [result_object, output] = result_serializer::initialise_result_object();
 
     if (!store_.has_new_targets()) {
-        return {DDWAF_OK, std::move(result_object)};
+        return {false, std::move(result_object)};
     }
 
     const result_serializer serializer(obfuscator_, actions_);
@@ -119,7 +105,7 @@ std::pair<DDWAF_RET_CODE, owned_object> context::run(
     // generated during this call.
     // object::assign(result.attributes, collector_.collect_pending(store_));
     serializer.serialize(store_, results, collector_, deadline, output);
-    return {results.empty() ? DDWAF_OK : DDWAF_MATCH, std::move(result_object)};
+    return {!results.empty(), std::move(result_object)};
 }
 
 void context::eval_preprocessors(ddwaf::timer &deadline)

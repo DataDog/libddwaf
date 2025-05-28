@@ -17,7 +17,6 @@
 #include "exclusion/rule_filter.hpp"
 #include "obfuscator.hpp"
 #include "ruleset.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -25,6 +24,8 @@ using filter_mode = exclusion::filter_mode;
 
 class context {
 public:
+    using attribute = object_store::attribute;
+
     explicit context(std::shared_ptr<ruleset> ruleset)
         : ruleset_(std::move(ruleset)), preprocessors_(*ruleset_->preprocessors),
           postprocessors_(*ruleset_->postprocessors), rule_filters_(*ruleset_->rule_filters),
@@ -44,12 +45,20 @@ public:
 
     context(const context &) = delete;
     context &operator=(const context &) = delete;
-    context(context &&) = default;
+    context(context &&) = delete;
     context &operator=(context &&) = delete;
     ~context() = default;
 
-    std::pair<DDWAF_RET_CODE, owned_object> run(
-        owned_object persistent, owned_object ephemeral, uint64_t);
+    bool insert(owned_object data, attribute attr = attribute::none) noexcept
+    {
+        if (!store_.insert(std::move(data), attr)) {
+            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+            return false;
+        }
+        return true;
+    }
+
+    std::pair<bool, owned_object> run(uint64_t);
 
     [[nodiscard]] ddwaf_object_free_fn get_free_fn() const noexcept { return ruleset_->free_fn; }
 
@@ -138,11 +147,16 @@ public:
     context_wrapper &operator=(context_wrapper &&) noexcept = delete;
     context_wrapper &operator=(const context_wrapper &) = delete;
 
-    std::pair<DDWAF_RET_CODE, owned_object> run(
-        owned_object persistent, owned_object ephemeral, uint64_t timeout)
+    bool insert(owned_object data, context::attribute attr = context::attribute::none) noexcept
     {
         memory::memory_resource_guard guard(&mr_);
-        return ctx_->run(std::move(persistent), std::move(ephemeral), timeout);
+        return ctx_->insert(std::forward<owned_object>(data), attr);
+    }
+
+    std::pair<bool, owned_object> run(uint64_t timeout)
+    {
+        memory::memory_resource_guard guard(&mr_);
+        return ctx_->run(timeout);
     }
 
     [[nodiscard]] ddwaf_object_free_fn get_free_fn() const noexcept { return ctx_->get_free_fn(); }
