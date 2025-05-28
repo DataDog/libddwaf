@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "ddwaf.h"
 #include "dynamic_string.hpp"
 #include "object_type.hpp"
 #include "traits.hpp"
@@ -23,19 +22,113 @@ namespace ddwaf {
 
 namespace detail {
 
-using object = ddwaf_object;
-using object_kv = ddwaf_object_kv;
-using size_type = decltype(ddwaf_object::size);
+union object;
+struct object_kv;
+
+struct object_bool {
+    object_type type;
+    bool val;
+};
+static_assert(sizeof(object_bool) <= 16);
+
+struct object_signed {
+    object_type type;
+    int64_t val;
+};
+static_assert(sizeof(object_signed) <= 16);
+
+struct object_unsigned {
+    object_type type;
+    uint64_t val;
+};
+static_assert(sizeof(object_unsigned) <= 16);
+
+struct object_float {
+    object_type type;
+    double val;
+};
+static_assert(sizeof(object_float) <= 16);
+
+struct object_string {
+    object_type type;
+    uint16_t size;
+    uint16_t capacity;
+    char *ptr;
+};
+static_assert(sizeof(object_string) <= 16);
+
+struct object_small_string {
+    object_type type;
+    uint8_t size;
+    std::array<char, 14> data;
+};
+static_assert(sizeof(object_small_string) == 16);
+
+struct object_const_string {
+    object_type type;
+    uint32_t size;
+    const char *ptr;
+};
+static_assert(sizeof(object_const_string) <= 16);
+
+struct object_long_string {
+    object_type type;
+    uint32_t size;
+    char *ptr;
+};
+static_assert(sizeof(object_long_string) <= 16);
+
+struct object_array {
+    object_type type;
+    uint16_t size;
+    uint16_t capacity;
+    object *ptr;
+};
+static_assert(sizeof(object_array) <= 16);
+
+struct object_map {
+    object_type type;
+    uint16_t size;
+    uint16_t capacity;
+    object_kv *ptr;
+};
+static_assert(sizeof(object_map) <= 16);
+
+union [[gnu::may_alias]] object {
+    object_type type;
+    union {
+        object_bool b8;
+        object_signed i64;
+        object_unsigned u64;
+        object_float f64;
+        object_string str;
+        object_array array;
+        object_map map;
+    } via;
+};
+
+struct object_kv {
+    object key;
+    object val;
+};
+
+static_assert(sizeof(object) == 16);
+static_assert(sizeof(object_kv) == 32);
+
+static_assert(std::is_standard_layout_v<object>);
+static_assert(std::is_standard_layout_v<object_kv>);
+
+static_assert(std::is_trivial_v<object>);
+static_assert(std::is_trivial_v<object_kv>);
+
+using object_free_fn = void (*)(object *object);
 
 template <typename T> constexpr std::size_t maxof_v = std::numeric_limits<T>::max();
 
-static_assert(maxof_v<size_type> <= maxof_v<std::size_t> / sizeof(object));
-static_assert(maxof_v<size_type> <= maxof_v<std::size_t> / sizeof(object_kv));
-
-inline char *copy_string(const char *str, size_type length)
+template <typename SizeType> inline char *copy_string(const char *str, SizeType length)
 {
     // TODO new char[size];
-    if (length == maxof_v<size_type>) {
+    if (length == maxof_v<SizeType>) {
         throw std::bad_alloc();
     }
 
@@ -51,7 +144,7 @@ inline char *copy_string(const char *str, size_type length)
     return copy;
 }
 
-template <typename T> T *alloc_helper(size_type size)
+template <typename T, typename SizeType> T *alloc_helper(SizeType size)
 {
     // NOLINTNEXTLINE(hicpp-no-malloc)
     auto *data = static_cast<T *>(calloc(size, sizeof(T)));
@@ -61,13 +154,14 @@ template <typename T> T *alloc_helper(size_type size)
     return data;
 }
 
-template <typename T> inline std::pair<T *, size_type> realloc_helper(T *data, size_type size)
+template <typename T, typename SizeType>
+inline std::pair<T *, SizeType> realloc_helper(T *data, SizeType size)
 {
     // Since allocators have no realloc interface, we're just using calloc
     // as it'll be equivalent once allocators are supported
-    size_type new_size;
-    if (size > maxof_v<size_type> / 2) [[unlikely]] {
-        new_size = maxof_v<size_type>;
+    SizeType new_size;
+    if (size > maxof_v<SizeType> / 2) [[unlikely]] {
+        new_size = maxof_v<SizeType>;
     } else {
         new_size = size * 2;
     }
@@ -84,6 +178,30 @@ template <typename T> inline std::pair<T *, size_type> realloc_helper(T *data, s
 
     return {new_data, new_size};
 }
+
+// NOLINTNEXTLINE(misc-no-recursion)
+inline void object_destroy(object &obj)
+{
+    if (obj.type == object_type::array) {
+        for (std::size_t i = 0; i < obj.via.array.size; ++i) {
+            object_destroy(obj.via.array.ptr[i]);
+        }
+        // NOLINTNEXTLINE(hicpp-no-malloc)
+        free(obj.via.array.ptr);
+    } else if (obj.type == object_type::map) {
+        for (std::size_t i = 0; i < obj.via.map.size; ++i) {
+            object_destroy(obj.via.map.ptr[i].key);
+            object_destroy(obj.via.map.ptr[i].val);
+        }
+        // NOLINTNEXTLINE(hicpp-no-malloc)
+        free(obj.via.map.ptr);
+    } else if (obj.type == object_type::string) {
+        // NOLINTNEXTLINE(hicpp-no-malloc)
+        free(obj.via.str.ptr);
+    }
+}
+
+inline void object_free(detail::object *ptr) { object_destroy(*ptr); }
 
 namespace initializer {
 
@@ -109,7 +227,7 @@ public:
     [[nodiscard]] std::size_t size() const noexcept
     {
         // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
-        return static_cast<std::size_t>(static_cast<const Derived *>(this)->ref().size);
+        return static_cast<std::size_t>(static_cast<const Derived *>(this)->ref().via.str.size);
     }
 
     [[nodiscard]] bool empty() const noexcept { return size() == 0; }
@@ -121,7 +239,7 @@ public:
 
     [[nodiscard]] const char *data() const noexcept
     {
-        return static_cast<const Derived *>(this)->ref().via.str;
+        return static_cast<const Derived *>(this)->ref().via.str.ptr;
     }
     // The is_* methods can be used to check for collections of types
     [[nodiscard]] bool is_container() const noexcept
@@ -150,7 +268,7 @@ public:
         requires std::is_same_v<T, bool>
     {
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return obj.via.b8;
+        return obj.via.b8.val;
     }
 
     template <typename T>
@@ -158,7 +276,7 @@ public:
         requires std::is_integral_v<T> && std::is_signed_v<T>
     {
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return static_cast<T>(obj.via.i64);
+        return static_cast<T>(obj.via.i64.val);
     }
 
     template <typename T>
@@ -166,7 +284,7 @@ public:
         requires std::is_integral_v<T> && std::is_unsigned_v<T> && (!std::is_same_v<T, bool>)
     {
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return static_cast<T>(obj.via.u64);
+        return static_cast<T>(obj.via.u64.val);
     }
 
     template <typename T>
@@ -174,7 +292,7 @@ public:
         requires std::is_same_v<T, double>
     {
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return static_cast<T>(obj.via.f64);
+        return static_cast<T>(obj.via.f64.val);
     }
 
     template <typename T>
@@ -182,7 +300,7 @@ public:
         requires std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>
     {
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return {obj.via.str, size()};
+        return {obj.via.str.ptr, size()};
     }
 
     template <typename T>
@@ -306,12 +424,12 @@ public:
     {
         assert(obj_ != nullptr && index < size());
         if (type() == object_type::map) {
-            assert(obj_->via.map != nullptr);
-            const auto &slot = obj_->via.map[index];
+            assert(obj_->via.map.ptr != nullptr);
+            const auto &slot = obj_->via.map.ptr[index];
             return {slot.key, slot.val};
         }
-        assert(obj_->via.array != nullptr);
-        return {{}, obj_->via.array[index]};
+        assert(obj_->via.array.ptr != nullptr);
+        return {{}, obj_->via.array.ptr[index]};
     }
 
     // Access the key at index. If the container is an array, the key will be an empty string.
@@ -319,10 +437,10 @@ public:
     {
         assert(obj_ != nullptr && index < size());
         if (type() == object_type::map) {
-            assert(obj_->via.map != nullptr);
-            return obj_->via.map[index].key;
+            assert(obj_->via.map.ptr != nullptr);
+            return obj_->via.map.ptr[index].key;
         }
-        assert(obj_->via.array != nullptr);
+        assert(obj_->via.array.ptr != nullptr);
         return {};
     }
 
@@ -331,16 +449,16 @@ public:
     {
         assert(obj_ != nullptr && index < size());
         if (type() == object_type::map) {
-            assert(obj_->via.map != nullptr);
-            return obj_->via.map[index].val;
+            assert(obj_->via.map.ptr != nullptr);
+            return obj_->via.map.ptr[index].val;
         }
-        assert(obj_->via.array != nullptr);
-        return obj_->via.array[index];
+        assert(obj_->via.array.ptr != nullptr);
+        return obj_->via.array.ptr[index];
     }
 
     [[nodiscard]] object_view find(std::string_view expected_key) const noexcept
     {
-        assert(obj_ != nullptr && type() == object_type::map && obj_->via.map != nullptr);
+        assert(obj_ != nullptr && type() == object_type::map && obj_->via.map.ptr != nullptr);
 
         for (std::size_t i = 0; i < size(); ++i) {
             auto [key, value] = at(i);
@@ -435,11 +553,8 @@ protected:
 class owned_object final : public readable_object<owned_object>,
                            public writable_object<owned_object> {
 public:
-    using size_type = decltype(detail::object::size);
-    using length_type = decltype(detail::object::size);
-
     owned_object() = default;
-    explicit owned_object(detail::object obj, ddwaf_object_free_fn free_fn = ddwaf_object_free)
+    explicit owned_object(detail::object obj, detail::object_free_fn free_fn = detail::object_free)
         : obj_(obj), free_fn_(free_fn)
     {}
 
@@ -509,48 +624,42 @@ public:
     [[nodiscard]] detail::object *ptr() { return &obj_; }
     [[nodiscard]] const detail::object *ptr() const { return &obj_; }
 
-    static owned_object make_null()
-    {
-        return owned_object{
-            {.via{.str = nullptr}, .type = DDWAF_OBJ_NULL, .size = 0, .capacity = 0}, nullptr};
-    }
+    static owned_object make_null() { return owned_object{{.type = object_type::null}}; }
 
     static owned_object make_boolean(bool value)
     {
-        return owned_object{
-            {.via{.b8 = value}, .type = DDWAF_OBJ_BOOL, .size = 0, .capacity = 0}, nullptr};
+        return owned_object{{.via{.b8{.type = object_type::boolean, .val = value}}}};
     }
 
     static owned_object make_signed(int64_t value)
     {
-        return owned_object{
-            {.via{.i64 = value}, .type = DDWAF_OBJ_SIGNED, .size = 0, .capacity = 0}, nullptr};
+        return owned_object{{.via{.i64{.type = object_type::int64, .val = value}}}};
     }
 
     static owned_object make_unsigned(uint64_t value)
     {
-        return owned_object{
-            {.via{.u64 = value}, .type = DDWAF_OBJ_UNSIGNED, .size = 0, .capacity = 0}, nullptr};
+        return owned_object{{.via{.u64{.type = object_type::uint64, .val = value}}}};
     }
 
     static owned_object make_float(double value)
     {
-        return owned_object{
-            {.via{.f64 = value}, .type = DDWAF_OBJ_FLOAT, .size = 0, .capacity = 0}, nullptr};
+        return owned_object{{.via{.f64{.type = object_type::float64, .val = value}}}};
     }
 
     static owned_object make_string_nocopy(
-        const char *str, std::size_t len, ddwaf_object_free_fn free_fn = ddwaf_object_free)
+        const char *str, std::size_t len, detail::object_free_fn free_fn = detail::object_free)
     {
-        return owned_object{{.via{.cstr = str},
-                                .type = DDWAF_OBJ_STRING,
+        return owned_object{{.via{.str{.type = object_type::string,
                                 .size = static_cast<uint16_t>(len),
-                                .capacity = static_cast<uint16_t>(len)},
+                                .capacity = static_cast<uint16_t>(len),
+                                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+                                .ptr = const_cast<char *>(str)}}},
             free_fn};
     }
 
     template <typename T>
-    static owned_object make_string_nocopy(T str, ddwaf_object_free_fn free_fn = ddwaf_object_free)
+    static owned_object make_string_nocopy(
+        T str, detail::object_free_fn free_fn = detail::object_free)
         requires std::is_same_v<T, std::string_view> || std::is_same_v<T, object_view>
     {
         return make_string_nocopy(str.data(), str.size(), free_fn);
@@ -559,11 +668,11 @@ public:
     static owned_object make_string(const char *str, std::size_t len)
     {
         // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
-        return owned_object{{.via{.str = detail::copy_string(str, len)},
-                                .type = DDWAF_OBJ_STRING,
+        return owned_object{{.via{.str{.type = object_type::string,
                                 .size = static_cast<uint16_t>(len),
-                                .capacity = static_cast<uint16_t>(len)},
-            ddwaf_object_free};
+                                .capacity = static_cast<uint16_t>(len),
+                                .ptr = detail::copy_string(str, len)}}},
+            detail::object_free};
     }
 
     static owned_object make_string(std::string_view str)
@@ -577,14 +686,15 @@ public:
     static owned_object make_array()
     {
         return owned_object{
-            {.via{.array = nullptr}, .type = DDWAF_OBJ_ARRAY, .size = 0, .capacity = 0},
-            ddwaf_object_free};
+            {.via{.array{.type = object_type::array, .size = 0, .capacity = 0, .ptr = nullptr}}},
+            detail::object_free};
     }
 
     static owned_object make_map()
     {
-        return owned_object{{.via{.map = nullptr}, .type = DDWAF_OBJ_MAP, .size = 0, .capacity = 0},
-            ddwaf_object_free};
+        return owned_object{
+            {.via{.map{.type = object_type::map, .size = 0, .capacity = 0, .ptr = nullptr}}},
+            detail::object_free};
     }
 
     static owned_object make_array(std::initializer_list<detail::initializer::movable_object> list);
@@ -599,8 +709,8 @@ public:
     }
 
 protected:
-    detail::object obj_{};
-    ddwaf_object_free_fn free_fn_{nullptr};
+    detail::object obj_{.type = object_type::invalid};
+    detail::object_free_fn free_fn_{nullptr};
 
     friend class borrowed_object;
     friend class object_view;
@@ -717,12 +827,14 @@ template <typename Derived>
     auto &container = static_cast<const Derived *>(this)->ref();
 
     assert((static_cast<object_type>(container.type) & container_object_type) != 0);
-    assert(idx < static_cast<std::size_t>(container.size));
 
     if (container.type == object_type::map) {
-        return borrowed_object{&container.via.map[idx].val};
+        assert(idx < static_cast<std::size_t>(container.via.map.size));
+        return borrowed_object{&container.via.map.ptr[idx].val};
     }
-    return borrowed_object{&container.via.array[idx]};
+
+    assert(idx < static_cast<std::size_t>(container.via.array.size));
+    return borrowed_object{&container.via.array.ptr[idx]};
 }
 
 template <typename Derived>
@@ -734,20 +846,20 @@ borrowed_object writable_object<Derived>::emplace_back(owned_object &&value)
     assert(static_cast<object_type>(container.type) == object_type::array);
 
     // We preallocate 8 entries
-    if (container.size == 0) {
+    if (container.via.array.size == 0) {
         // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
-        container.via.array = detail::alloc_helper<detail::object>(8);
+        container.via.array.ptr = detail::alloc_helper<detail::object>(8);
         // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
-        container.capacity = 8;
-    } else if (container.capacity == container.size) {
+        container.via.array.capacity = 8;
+    } else if (container.via.array.capacity == container.via.array.size) {
         auto [new_array, new_capacity] =
             // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
-            detail::realloc_helper(container.via.array, container.capacity);
-        container.via.array = new_array;
-        container.capacity = new_capacity;
+            detail::realloc_helper(container.via.array.ptr, container.via.array.capacity);
+        container.via.array.ptr = new_array;
+        container.via.array.capacity = new_capacity;
     }
 
-    auto &slot = container.via.array[container.size++];
+    auto &slot = container.via.array.ptr[container.via.array.size++];
     slot = value.move();
 
     return borrowed_object{slot};
@@ -768,20 +880,20 @@ borrowed_object writable_object<Derived>::emplace(owned_object &&key, owned_obje
     assert(static_cast<object_type>(container.type) == object_type::map);
 
     // We preallocate 8 entries
-    if (container.size == 0) {
+    if (container.via.map.size == 0) {
         // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
-        container.via.map = detail::alloc_helper<detail::object_kv>(8);
+        container.via.map.ptr = detail::alloc_helper<detail::object_kv>(8);
         // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
-        container.capacity = 8;
-    } else if (container.capacity == container.size) {
+        container.via.map.capacity = 8;
+    } else if (container.via.map.capacity == container.via.map.size) {
         auto [new_map, new_capacity] =
             // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
-            detail::realloc_helper(container.via.map, container.capacity);
-        container.via.map = new_map;
-        container.capacity = new_capacity;
+            detail::realloc_helper(container.via.map.ptr, container.via.map.capacity);
+        container.via.map.ptr = new_map;
+        container.via.map.capacity = new_capacity;
     }
 
-    auto &slot = container.via.map[container.size++];
+    auto &slot = container.via.map.ptr[container.via.map.size++];
     slot.key = key.move();
     slot.val = value.move();
 

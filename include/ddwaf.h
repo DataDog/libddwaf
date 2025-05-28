@@ -86,11 +86,69 @@ typedef struct _ddwaf_context* ddwaf_context;
 typedef struct _ddwaf_builder* ddwaf_builder;
 #endif
 
-typedef struct _ddwaf_object ddwaf_object;
-typedef struct _ddwaf_object_kv ddwaf_object_kv;
 typedef struct _ddwaf_config ddwaf_config;
 
-#define DDWAF_OBJ_SSTR_SIZE 11
+union ddwaf_object;
+struct ddwaf_object_kv;
+
+struct ddwaf_object_bool {
+    uint8_t type;
+    bool val;
+};
+
+struct ddwaf_object_signed {
+    uint8_t type;
+    int64_t val;
+};
+
+struct ddwaf_object_unsigned {
+    uint8_t type;
+    uint64_t val;
+};
+
+struct ddwaf_object_float {
+    uint8_t type;
+    double val;
+};
+
+struct ddwaf_object_string {
+    uint8_t type;
+    uint16_t size;
+    uint16_t capacity;
+    char *ptr;
+};
+
+struct ddwaf_object_array {
+    uint8_t type;
+    uint16_t size;
+    uint16_t capacity;
+    ddwaf_object *ptr;
+};
+
+struct ddwaf_object_map {
+    uint8_t type;
+    uint16_t size;
+    uint16_t capacity;
+    ddwaf_object_kv *ptr;
+};
+
+union __attribute((__may_alias__)) ddwaf_object {
+    uint8_t type;
+    union {
+        ddwaf_object_bool b8;
+        ddwaf_object_signed i64;
+        ddwaf_object_unsigned u64;
+        ddwaf_object_float f64;
+        ddwaf_object_string str;
+        ddwaf_object_array array;
+        ddwaf_object_map map;
+    } via;
+};
+
+struct ddwaf_object_kv {
+    ddwaf_object key;
+    ddwaf_object val;
+};
 
 /**
  * @struct ddwaf_object
@@ -98,41 +156,41 @@ typedef struct _ddwaf_config ddwaf_config;
  * Generic object used to pass data and rules to the WAF.
  **/
 
-#ifdef _MSC_VER
-#pragma pack(push,1)
-struct _ddwaf_object {
-    union {
-#else
-struct __attribute__((packed)) _ddwaf_object {
-    union __attribute__((packed)) {
-#endif
-        bool b8;
-        uint64_t u64;
-        int64_t i64;
-        double f64;
-        ddwaf_object_kv *map;
-        ddwaf_object *array;
-        char *str;
-        char sstr[DDWAF_OBJ_SSTR_SIZE];
-        const char *cstr;
-        ddwaf_object *ref;
-    } via;
-    uint8_t type;
-    uint16_t size;
-    uint16_t capacity;
-};
+/*#ifdef _MSC_VER*/
+/*#pragma pack(push,1)*/
+/*struct _ddwaf_object {*/
+    /*union {*/
+/*#else*/
+/*struct __attribute__((packed)) _ddwaf_object {*/
+    /*union __attribute__((packed)) {*/
+/*#endif*/
+        /*bool b8;*/
+        /*uint64_t u64;*/
+        /*int64_t i64;*/
+        /*double f64;*/
+        /*ddwaf_object_kv *map;*/
+        /*ddwaf_object *array;*/
+        /*char *str;*/
+        /*char sstr[DDWAF_OBJ_SSTR_SIZE];*/
+        /*const char *cstr;*/
+        /*ddwaf_object *ref;*/
+    /*} via;*/
+    /*uint8_t type;*/
+    /*uint16_t size;*/
+    /*uint16_t capacity;*/
+/*};*/
 
-#ifdef _MSC_VER
-struct _ddwaf_object_kv {
-#else
-struct __attribute__((packed)) _ddwaf_object_kv {
-#endif
-    ddwaf_object key;
-    ddwaf_object val;
-};
-#ifdef _MSC_VER
-#pragma pack(pop)
-#endif
+/*#ifdef _MSC_VER*/
+/*struct _ddwaf_object_kv {*/
+/*#else*/
+/*struct __attribute__((packed)) _ddwaf_object_kv {*/
+/*#endif*/
+    /*ddwaf_object key;*/
+    /*ddwaf_object val;*/
+/*};*/
+/*#ifdef _MSC_VER*/
+/*#pragma pack(pop)*/
+/*#endif*/
 
 /**
  * @typedef ddwaf_object_free_fn

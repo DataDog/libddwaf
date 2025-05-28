@@ -17,7 +17,7 @@ ddwaf_object node_to_arg(const Node &node)
 {
     switch (node.Type()) {
     case NodeType::Sequence: {
-        ddwaf_object arg;
+        ddwaf_object arg{};
         ddwaf_object_array(&arg);
         for (auto it = node.begin(); it != node.end(); ++it) {
             ddwaf_object child = node_to_arg(*it);
@@ -26,7 +26,7 @@ ddwaf_object node_to_arg(const Node &node)
         return arg;
     }
     case NodeType::Map: {
-        ddwaf_object arg;
+        ddwaf_object arg{};
         ddwaf_object_map(&arg);
         for (auto it = node.begin(); it != node.end(); ++it) {
             auto key = it->first.as<std::string>();
@@ -36,7 +36,7 @@ ddwaf_object node_to_arg(const Node &node)
         return arg;
     }
     case NodeType::Scalar: {
-        ddwaf_object arg;
+        ddwaf_object arg{};
         if (node.Tag() == "?") {
             try {
                 ddwaf_object_unsigned(&arg, node.as<uint64_t>());
@@ -65,7 +65,7 @@ ddwaf_object node_to_arg(const Node &node)
     }
     case NodeType::Null:
     case NodeType::Undefined:
-        ddwaf_object arg;
+        ddwaf_object arg{};
         ddwaf_object_invalid(&arg);
         return arg;
     }
@@ -142,25 +142,25 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
 {
     switch (obj.type) {
     case DDWAF_OBJ_BOOL:
-        output = obj.via.b8;
+        output = obj.via.b8.val;
         break;
     case DDWAF_OBJ_SIGNED:
-        output = obj.via.i64;
+        output = obj.via.i64.val;
         break;
     case DDWAF_OBJ_UNSIGNED:
-        output = obj.via.u64;
+        output = obj.via.u64.val;
         break;
     case DDWAF_OBJ_FLOAT:
-        output = obj.via.f64;
+        output = obj.via.f64.val;
         break;
     case DDWAF_OBJ_STRING:
-        output = std::string{obj.via.str, obj.size};
+        output = std::string{obj.via.str.ptr, obj.via.str.size};
         break;
     case DDWAF_OBJ_MAP:
         output = YAML::Load("{}");
-        for (unsigned i = 0; i < obj.size; i++) {
-            auto child = obj.via.map[i];
-            std::string key{child.key.via.str, child.key.size};
+        for (unsigned i = 0; i < obj.via.map.size; i++) {
+            auto child = obj.via.map.ptr[i];
+            std::string key{child.key.via.str.ptr, child.key.via.str.size};
 
             YAML::Node value;
             object_to_yaml_helper(child.val, value);
@@ -169,8 +169,8 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
         break;
     case DDWAF_OBJ_ARRAY:
         output = YAML::Load("[]");
-        for (unsigned i = 0; i < obj.size; i++) {
-            auto child = obj.via.array[i];
+        for (unsigned i = 0; i < obj.via.array.size; i++) {
+            auto child = obj.via.array.ptr[i];
 
             YAML::Node value;
             object_to_yaml_helper(child, value);
