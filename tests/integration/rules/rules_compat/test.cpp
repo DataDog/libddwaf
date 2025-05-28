@@ -17,7 +17,7 @@ constexpr std::string_view base_dir = "integration/rules/rules_compat";
 
 TEST(TestRulesCompatIntegration, VerifyBothBaseAndCompat)
 {
-    auto rule = read_file("rules.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -84,7 +84,7 @@ TEST(TestRulesCompatIntegration, VerifyBothBaseAndCompat)
 
 TEST(TestRulesCompatIntegration, DuplicateRules)
 {
-    auto rule = read_file("duplicate_rules.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("duplicate_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -180,8 +180,8 @@ TEST(TestRulesCompatIntegration, InvalidConfigType)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule =
-        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules_compat: {}})");
+    auto rule = yaml_to_object<ddwaf_object>(
+        R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules_compat: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
