@@ -87,7 +87,7 @@ TEST(TestRulesCompatIntegration, DuplicateRules)
     auto rule = read_file<ddwaf_object>("duplicate_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_object diagnostics;
+    ddwaf_object diagnostics{};
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_NE(handle, nullptr);
@@ -95,7 +95,7 @@ TEST(TestRulesCompatIntegration, DuplicateRules)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     {
@@ -184,14 +184,14 @@ TEST(TestRulesCompatIntegration, InvalidConfigType)
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules_compat: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_object diagnostics;
+    ddwaf_object diagnostics{};
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules_compat"), &rule, &diagnostics);
     ddwaf_object_free(&rule);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
