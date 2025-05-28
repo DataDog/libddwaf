@@ -1,5 +1,9 @@
 # libddwaf release
 
+## v1.25.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Fixes
+- Support backwards-incompatible rules through the `rules_compat` key ([#409](https://github.com/DataDog/libddwaf/pull/409))
+
 ## v1.25.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 ### New features
 
