@@ -15,7 +15,7 @@ using namespace std::literals;
 namespace {
 constexpr std::string_view base_dir = "integration/rules/rules_compat";
 
-TEST(TestRuleCompatIntegration, VerifyBothBaseAndCompat)
+TEST(TestRulesCompatIntegration, VerifyBothBaseAndCompat)
 {
     auto rule = read_file("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -82,7 +82,7 @@ TEST(TestRuleCompatIntegration, VerifyBothBaseAndCompat)
     ddwaf_context_destroy(context);
 }
 
-TEST(TestRuleCompatIntegration, DuplicateRules)
+TEST(TestRulesCompatIntegration, DuplicateRules)
 {
     auto rule = read_file("duplicate_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -174,6 +174,38 @@ TEST(TestRuleCompatIntegration, DuplicateRules)
         ddwaf_object_free(&result);
     }
     ddwaf_context_destroy(context);
+}
+
+TEST(TestRulesCompatIntegration, InvalidConfigType)
+{
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+
+    auto rule =
+        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules_compat: {}})");
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_object diagnostics;
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("rules_compat"), &rule, &diagnostics);
+    ddwaf_object_free(&rule);
+
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
+    {
+        ddwaf::raw_configuration root(diagnostics);
+        auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
+
+        auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
+        EXPECT_STREQ(version.c_str(), "1.2.7");
+
+        auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules_compat");
+
+        auto errors = ddwaf::at<std::string>(rules, "error");
+        EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
+
+        ddwaf_object_free(&diagnostics);
+    }
+
+    ddwaf_builder_destroy(builder);
 }
 
 } // namespace
