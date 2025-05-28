@@ -23,7 +23,7 @@ class owned_object;
 // result in an output object, as it prevents copying unnecessary strings.
 class dynamic_string {
 public:
-    dynamic_string() : dynamic_string(static_cast<std::size_t>(0)){};
+    dynamic_string() : dynamic_string(static_cast<std::size_t>(0)) {};
 
     explicit dynamic_string(std::size_t capacity)
     {

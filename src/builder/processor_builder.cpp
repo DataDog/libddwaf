@@ -96,9 +96,7 @@ template <> struct typed_processor_builder<jwt_decode> {
 template <typename T, typename Id, typename Spec, typename Scanners>
 concept has_build_with_scanners =
     requires(typed_processor_builder<T> b, Id id, Spec spec, Scanners scanners) {
-        {
-            b.build(id, spec, scanners)
-        } -> std::same_as<std::unique_ptr<base_processor>>;
+        { b.build(id, spec, scanners) } -> std::same_as<std::unique_ptr<base_processor>>;
     };
 
 template <typename T>

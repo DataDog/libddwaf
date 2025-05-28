@@ -15,10 +15,7 @@
 #define LONG_TIME 1000000
 #define SHORT_TIME 1
 
-#define DDWAF_OBJECT_INVALID                                                                       \
-    {                                                                                              \
-        .type = DDWAF_OBJ_INVALID                                                                  \
-    }
+#define DDWAF_OBJECT_INVALID {.type = DDWAF_OBJ_INVALID}
 #define DDWAF_OBJECT_MAP                                                                           \
     {                                                                                              \
         .via                                                                                       \

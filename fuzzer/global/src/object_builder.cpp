@@ -73,7 +73,8 @@ void pop_string(Data *data, ddwaf_object *object)
 
     // sometimes, send NULL
     if (popBoolean(data)) {
-        *object = {{.str = nullptr}, DDWAF_OBJ_STRING, size, size};
+        *object = {
+            .via{.str{.type = DDWAF_OBJ_STRING, .size = size, .capacity = size, .ptr = nullptr}}};
     }
 
     ddwaf_object_stringl(object, result, size);
@@ -145,19 +146,19 @@ void build_map(Data *data, ddwaf_object *object, size_t deep)
         if (!null_key) {
             pop_string(data, &key);
 
-            if (!ddwaf_object_map_addl_nc(object, key.via.str, key.size, &item)) {
+            if (!ddwaf_object_map_addl_nc(object, key.via.str.ptr, key.via.str.size, &item)) {
                 ddwaf_object_free(&item);
             }
         } else {
             if (!ddwaf_object_map_addl(object, "", 0, &item)) {
                 ddwaf_object_free(&item);
             } else {
-                auto index = static_cast<std::size_t>(object->size - 1);
-                auto &key = object->via.map[index].key;
-                free((void *)key.via.str);
+                auto index = static_cast<std::size_t>(ddwaf_object_size(object) - 1);
+                auto &key = object->via.map.ptr[index].key;
+                free((void *)key.via.str.ptr);
                 // Null but not malformed
-                key.via.str = nullptr;
-                key.size = 0;
+                key.via.str.ptr = nullptr;
+                key.via.str.size = 0;
             }
         }
     }
