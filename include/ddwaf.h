@@ -130,7 +130,7 @@ struct _ddwaf_object_long_string {
     char *ptr;
 };
 
-struct _ddwaf_object_literal_string {
+struct _ddwaf_object_const_string {
     uint8_t type;
     uint32_t size;
     const char *ptr;
@@ -158,9 +158,9 @@ union _ddwaf_object {
         struct _ddwaf_object_unsigned u64;
         struct _ddwaf_object_float f64;
         struct _ddwaf_object_string str;
-        struct _ddwaf_object_small_string;
-        struct _ddwaf_object_long_string;
-        struct _ddwaf_object_literal_string;
+        struct _ddwaf_object_small_string sstr;
+        struct _ddwaf_object_long_string lstr;
+        struct _ddwaf_object_const_string cstr;
         struct _ddwaf_object_array array;
         struct _ddwaf_object_map map;
     } via;

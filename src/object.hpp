@@ -102,6 +102,9 @@ union [[gnu::may_alias]] object {
         object_unsigned u64;
         object_float f64;
         object_string str;
+        object_small_string sstr;
+        object_long_string lstr;
+        object_const_string cstr;
         object_array array;
         object_map map;
     } via;
