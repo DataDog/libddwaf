@@ -117,7 +117,7 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
         break;
     case DDWAF_OBJ_STRING:
     case DDWAF_OBJ_SMALL_STRING:
-    case DDWAF_OBJ_LONG_STRING:
+    case DDWAF_OBJ_LARGE_STRING:
     case DDWAF_OBJ_CONST_STRING:
         output = std::string{ddwaf_object_get_string(&obj, nullptr), ddwaf_object_length(&obj)};
         break;

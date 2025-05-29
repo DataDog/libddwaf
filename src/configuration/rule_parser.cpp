@@ -85,7 +85,7 @@ rule_spec parse_rule(raw_configuration::map &rule, core_rule::source_type source
             switch (value.type()) {
             case object_type::string:
             case object_type::small_string:
-            case object_type::long_string:
+            case object_type::large_string:
             case object_type::const_string:
                 attr_spec.value_or_target = value.as<std::string>();
                 break;

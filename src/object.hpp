@@ -202,7 +202,7 @@ inline void object_destroy(object &obj)
     } else if (obj.type == object_type::string) {
         // NOLINTNEXTLINE(hicpp-no-malloc)
         free(obj.via.str.ptr);
-    } else if (obj.type == object_type::long_string) {
+    } else if (obj.type == object_type::large_string) {
         // NOLINTNEXTLINE(hicpp-no-malloc)
         free(obj.via.lstr.ptr);
     }
@@ -238,7 +238,7 @@ public:
             return static_cast<std::size_t>(
                 static_cast<const Derived *>(this)->ref().via.sstr.size);
         }
-        if (t == object_type::const_string || t == object_type::long_string) {
+        if (t == object_type::const_string || t == object_type::large_string) {
             return static_cast<std::size_t>(
                 static_cast<const Derived *>(this)->ref().via.cstr.size);
         }
@@ -666,7 +666,7 @@ public:
     static owned_object make_string_nocopy(
         const char *str, std::size_t len, detail::object_free_fn free_fn = detail::object_free)
     {
-        return owned_object{{.via{.lstr{.type = object_type::long_string,
+        return owned_object{{.via{.lstr{.type = object_type::large_string,
                                 .size = static_cast<uint16_t>(len),
                                 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
                                 .ptr = const_cast<char *>(str)}}},
@@ -697,7 +697,7 @@ public:
 
         if (len >= detail::maxof_v<decltype(detail::object_string::size)>) {
             // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
-            return owned_object{{.via{.lstr{.type = object_type::long_string,
+            return owned_object{{.via{.lstr{.type = object_type::large_string,
                                     .size = static_cast<uint16_t>(len),
                                     .ptr = detail::copy_string(str, len)}}},
                 detail::object_free};
@@ -784,7 +784,7 @@ template <typename Derived> [[nodiscard]] owned_object readable_object<Derived>:
             return owned_object::make_boolean(source.as<bool>());
         case object_type::string:
         case object_type::small_string:
-        case object_type::long_string:
+        case object_type::large_string:
             return owned_object::make_string(source.as<std::string_view>());
         case object_type::const_string:
             return owned_object::make_string_nocopy(source.data(), source.size());
@@ -846,7 +846,7 @@ template <> struct object_converter<std::string> {
         case object_type::string:
         case object_type::const_string:
         case object_type::small_string:
-        case object_type::long_string:
+        case object_type::large_string:
             return view.as<std::string>();
         case object_type::boolean:
             return ddwaf::to_string<std::string>(view.as<bool>());

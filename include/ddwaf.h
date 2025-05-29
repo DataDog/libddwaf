@@ -50,7 +50,7 @@ typedef enum
     // UTF-8 string of up to 14 bytes in length
     DDWAF_OBJ_SMALL_STRING   = 0x14,
     // Static UTF-8 string of up to max(uint32) length, where size == capacity
-    DDWAF_OBJ_LONG_STRING   = 0x16,
+    DDWAF_OBJ_LARGE_STRING   = 0x16,
     // Array of ddwaf_object of length nbEntries, each item having no parameterName
     DDWAF_OBJ_ARRAY    = 0x20,
     // Array of ddwaf_object of length nbEntries, each item having a parameterName

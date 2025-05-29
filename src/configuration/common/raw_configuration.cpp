@@ -32,7 +32,7 @@ std::string strtype(object_type type)
     case object_type::string:
     case object_type::const_string:
     case object_type::small_string:
-    case object_type::long_string:
+    case object_type::large_string:
         return "string";
     case object_type::boolean:
         return "bool";

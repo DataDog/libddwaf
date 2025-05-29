@@ -26,12 +26,12 @@ enum class object_type : uint8_t {
     string = 0x10,       // 0b00010000
     const_string = 0x12, // 0b00010010
     small_string = 0x14, // 0b00010100
-    long_string = 0x16,  // 0b00010110
+    large_string = 0x16, // 0b00010110
     scalar = 0x1E,       // 0b00011110
     // Containers
     array = 0x20,    // 0b00100000
     map = 0x40,      // 0b01000000
-    hash_map = 0x60, // 0b01000000
+    hash_map = 0x60, // 0b01100000
     container = 0xE0 // 0b11100000
 };
 
@@ -113,7 +113,7 @@ T object_type_to_string(object_type type)
     case object_type::string:
     case object_type::small_string:
     case object_type::const_string:
-    case object_type::long_string:
+    case object_type::large_string:
         return "string";
     case object_type::boolean:
         return "bool";

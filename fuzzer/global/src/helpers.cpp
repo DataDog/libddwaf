@@ -111,7 +111,7 @@ void _print_object(ddwaf_object entry, uint8_t depth)
         break;
     case DDWAF_OBJ_STRING:
     case DDWAF_OBJ_CONST_STRING:
-    case DDWAF_OBJ_LONG_STRING:
+    case DDWAF_OBJ_LARGE_STRING:
     case DDWAF_OBJ_SMALL_STRING: {
         size_t len;
         const char *data = ddwaf_object_get_string(&entry, &len);
