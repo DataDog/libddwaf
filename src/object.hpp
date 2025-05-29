@@ -688,8 +688,9 @@ public:
     static owned_object make_string(const char *str, std::size_t len)
     {
         if (len < detail::small_string_size) {
-            owned_object obj{
-                {.via{.sstr{.type = object_type::small_string, .size = len, .data = {}}}},
+            owned_object obj{{.via{.sstr{.type = object_type::small_string,
+                                 .size = static_cast<uint8_t>(len),
+                                 .data = {}}}},
                 detail::object_free};
             memcpy(obj.obj_.via.sstr.data.data(), str, len);
             // TODO avoid nul terminator
