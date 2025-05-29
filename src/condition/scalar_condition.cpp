@@ -19,7 +19,6 @@
 #include "matcher/base.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
-#include "object_type.hpp"
 #include "scalar_condition.hpp"
 #include "transformer/base.hpp"
 #include "transformer/manager.hpp"

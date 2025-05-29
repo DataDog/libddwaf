@@ -31,25 +31,21 @@ struct object_bool {
     object_type type;
     bool val;
 };
-static_assert(sizeof(object_bool) <= 16);
 
 struct object_signed {
     object_type type;
     int64_t val;
 };
-static_assert(sizeof(object_signed) <= 16);
 
 struct object_unsigned {
     object_type type;
     uint64_t val;
 };
-static_assert(sizeof(object_unsigned) <= 16);
 
 struct object_float {
     object_type type;
     double val;
 };
-static_assert(sizeof(object_float) <= 16);
 
 struct object_string {
     object_type type;
@@ -57,28 +53,24 @@ struct object_string {
     uint16_t capacity;
     char *ptr;
 };
-static_assert(sizeof(object_string) <= 16);
 
 struct object_small_string {
     object_type type;
     uint8_t size;
     std::array<char, small_string_size> data;
 };
-static_assert(sizeof(object_small_string) == 16);
 
 struct object_const_string {
     object_type type;
     uint32_t size;
     const char *ptr;
 };
-static_assert(sizeof(object_const_string) <= 16);
 
 struct object_long_string {
     object_type type;
     uint32_t size;
     char *ptr;
 };
-static_assert(sizeof(object_long_string) <= 16);
 
 struct object_array {
     object_type type;
@@ -86,7 +78,6 @@ struct object_array {
     uint16_t capacity;
     object *ptr;
 };
-static_assert(sizeof(object_array) <= 16);
 
 struct object_map {
     object_type type;
@@ -94,7 +85,6 @@ struct object_map {
     uint16_t capacity;
     object_kv *ptr;
 };
-static_assert(sizeof(object_map) <= 16);
 
 union [[gnu::may_alias]] object {
     object_type type;
@@ -117,9 +107,6 @@ struct object_kv {
     object val;
 };
 
-static_assert(offsetof(object_string, ptr) == offsetof(object_long_string, ptr));
-static_assert(offsetof(object_string, ptr) == offsetof(object_const_string, ptr));
-
 static_assert(sizeof(object) == 16);
 static_assert(sizeof(object_kv) == 32);
 
@@ -128,6 +115,15 @@ static_assert(std::is_standard_layout_v<object_kv>);
 
 static_assert(std::is_trivial_v<object>);
 static_assert(std::is_trivial_v<object_kv>);
+
+static_assert(offsetof(object_string, ptr) == offsetof(object_long_string, ptr));
+static_assert(offsetof(object_string, ptr) == offsetof(object_const_string, ptr));
+
+static_assert(offsetof(object_string, size) == offsetof(object_map, size));
+static_assert(offsetof(object_string, size) == offsetof(object_array, size));
+
+static_assert(offsetof(object_string, capacity) == offsetof(object_map, capacity));
+static_assert(offsetof(object_string, capacity) == offsetof(object_array, capacity));
 
 using object_free_fn = void (*)(object *object);
 
@@ -688,6 +684,7 @@ public:
     static owned_object make_string(const char *str, std::size_t len)
     {
         if (len < detail::small_string_size) {
+            // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
             owned_object obj{{.via{.sstr{.type = object_type::small_string,
                                  .size = static_cast<uint8_t>(len),
                                  .data = {}}}},
@@ -699,6 +696,7 @@ public:
         }
 
         if (len >= detail::maxof_v<decltype(detail::object_string::size)>) {
+            // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
             return owned_object{{.via{.lstr{.type = object_type::long_string,
                                     .size = static_cast<uint16_t>(len),
                                     .ptr = detail::copy_string(str, len)}}},
