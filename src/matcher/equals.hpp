@@ -42,7 +42,7 @@ protected:
         }
 
         if constexpr (std::is_same_v<T, std::string>) {
-            return type == object_type::string;
+            return (type & object_type::string) != 0;
         }
     }
 

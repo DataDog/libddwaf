@@ -63,7 +63,7 @@ TEST(TestJsonUtils, Double)
 TEST(TestJsonUtils, String)
 {
     auto object = ddwaf::json_to_object("\"this is a string\"");
-    EXPECT_EQ(object.type(), object_type::string);
+    EXPECT_TRUE(object.is_string());
 
     EXPECT_STRV(object.as<std::string_view>(), "this is a string");
 }
@@ -95,7 +95,7 @@ TEST(TestJsonUtils, ArrayOfScalars)
     EXPECT_EQ(object.at(4).type(), object_type::float64);
     EXPECT_EQ(object.at(4).as<double>(), 1.2);
 
-    EXPECT_EQ(object.at(5).type(), object_type::string);
+    EXPECT_TRUE(object.at(5).is_string());
     EXPECT_STRV(object.at(5).as<std::string_view>(), "string");
 }
 
@@ -174,7 +174,7 @@ TEST(TestJsonUtils, MapOfScalars)
 
     {
         auto [key, child] = view.at(5);
-        EXPECT_EQ(child.type(), object_type::string);
+        EXPECT_TRUE(child.is_string());
         EXPECT_STRV(child.as<std::string_view>(), "string");
 
         EXPECT_STRV(key.as<std::string_view>(), "string");

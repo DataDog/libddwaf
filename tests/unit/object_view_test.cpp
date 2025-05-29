@@ -291,7 +291,7 @@ TEST(TestObjectView, StringObject)
     object_view view(original);
 
     ASSERT_TRUE(view.has_value());
-    EXPECT_EQ(view.type(), object_type::string);
+    EXPECT_EQ(view.type(), object_type::small_string);
 
     EXPECT_EQ(view.size(), sizeof("string_value") - 1);
     EXPECT_FALSE(view.empty());
@@ -575,7 +575,7 @@ TEST(TestObjectView, CloneString)
     object_view input{input_data};
 
     auto output = input.clone();
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(input.as<std::string_view>(), output.as<std::string_view>());
     EXPECT_EQ(input.size(), output.size());
 }

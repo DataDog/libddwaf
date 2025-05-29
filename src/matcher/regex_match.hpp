@@ -30,7 +30,7 @@ protected:
     [[nodiscard]] std::string_view to_string_impl() const { return regex->pattern(); }
     static constexpr bool is_supported_type_impl(object_type type)
     {
-        return type == object_type::string;
+        return (type & object_type::string) != 0;
     }
 
     [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view pattern) const;

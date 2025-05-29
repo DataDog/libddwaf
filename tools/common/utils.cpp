@@ -116,16 +116,19 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
         output = obj.via.f64.val;
         break;
     case DDWAF_OBJ_STRING:
-        output = std::string{obj.via.str.ptr, obj.via.str.size};
+    case DDWAF_OBJ_SMALL_STRING:
+    case DDWAF_OBJ_LONG_STRING:
+    case DDWAF_OBJ_CONST_STRING:
+        output = std::string{ddwaf_object_get_string(&obj, nullptr), ddwaf_object_length(&obj)};
         break;
     case DDWAF_OBJ_MAP:
         output = YAML::Load("{}");
         for (unsigned i = 0; i < obj.via.map.size; i++) {
-            auto child = obj.via.map.ptr[i];
-            std::string key{child.key.via.str.ptr, child.key.via.str.size};
+            const auto *child = ddwaf_object_at_key(&obj, i);
+            std::string key{ddwaf_object_get_string(child, nullptr), ddwaf_object_length(child)};
 
             YAML::Node value;
-            object_to_yaml_helper(child.val, value);
+            object_to_yaml_helper(*ddwaf_object_at_value(&obj, i), value);
             output[key] = value;
         }
         break;

@@ -65,7 +65,7 @@ TEST(TestRulesCompatIntegration, VerifyBothBaseAndCompat)
 
         const auto *tag = ddwaf_object_find(attributes, STRL("result.rule2"));
         EXPECT_NE(tag, nullptr);
-        EXPECT_EQ(ddwaf_object_type(tag), DDWAF_OBJ_STRING);
+        EXPECT_TRUE((ddwaf_object_type(tag) & DDWAF_OBJ_STRING) != 0);
 
         std::size_t length;
         const auto *str = ddwaf_object_get_string(tag, &length);

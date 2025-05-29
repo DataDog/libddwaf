@@ -25,6 +25,8 @@ namespace detail {
 union object;
 struct object_kv;
 
+constexpr std::size_t small_string_size = 14;
+
 struct object_bool {
     object_type type;
     bool val;
@@ -60,7 +62,7 @@ static_assert(sizeof(object_string) <= 16);
 struct object_small_string {
     object_type type;
     uint8_t size;
-    std::array<char, 14> data;
+    std::array<char, small_string_size> data;
 };
 static_assert(sizeof(object_small_string) == 16);
 
@@ -114,6 +116,9 @@ struct object_kv {
     object key;
     object val;
 };
+
+static_assert(offsetof(object_string, ptr) == offsetof(object_long_string, ptr));
+static_assert(offsetof(object_string, ptr) == offsetof(object_const_string, ptr));
 
 static_assert(sizeof(object) == 16);
 static_assert(sizeof(object_kv) == 32);
@@ -201,6 +206,9 @@ inline void object_destroy(object &obj)
     } else if (obj.type == object_type::string) {
         // NOLINTNEXTLINE(hicpp-no-malloc)
         free(obj.via.str.ptr);
+    } else if (obj.type == object_type::long_string) {
+        // NOLINTNEXTLINE(hicpp-no-malloc)
+        free(obj.via.lstr.ptr);
     }
 }
 
@@ -229,6 +237,15 @@ public:
 
     [[nodiscard]] std::size_t size() const noexcept
     {
+        const auto t = type();
+        if (t == object_type::small_string) {
+            return static_cast<std::size_t>(
+                static_cast<const Derived *>(this)->ref().via.sstr.size);
+        }
+        if (t == object_type::const_string || t == object_type::long_string) {
+            return static_cast<std::size_t>(
+                static_cast<const Derived *>(this)->ref().via.cstr.size);
+        }
         // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
         return static_cast<std::size_t>(static_cast<const Derived *>(this)->ref().via.str.size);
     }
@@ -242,6 +259,9 @@ public:
 
     [[nodiscard]] const char *data() const noexcept
     {
+        if (type() == object_type::small_string) {
+            return static_cast<const Derived *>(this)->ref().via.sstr.data.data();
+        }
         return static_cast<const Derived *>(this)->ref().via.str.ptr;
     }
     // The is_* methods can be used to check for collections of types
@@ -253,7 +273,7 @@ public:
 
     [[nodiscard]] bool is_map() const noexcept { return type() == object_type::map; }
     [[nodiscard]] bool is_array() const noexcept { return type() == object_type::array; }
-    [[nodiscard]] bool is_string() const noexcept { return type() == object_type::string; }
+    [[nodiscard]] bool is_string() const noexcept { return (type() & object_type::string) != 0; }
 
     [[nodiscard]] bool is_valid() const noexcept { return type() != object_type::invalid; }
     [[nodiscard]] bool is_invalid() const noexcept { return type() == object_type::invalid; }
@@ -302,16 +322,14 @@ public:
     [[nodiscard]] T as() const noexcept
         requires std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>
     {
-        const auto &obj = static_cast<const Derived *>(this)->ref();
-        return {obj.via.str.ptr, size()};
+        return {data(), size()};
     }
 
     template <typename T>
     [[nodiscard]] T as() const noexcept
         requires std::is_same_v<T, const char *>
     {
-        const auto &obj = static_cast<const Derived *>(this)->ref();
-        return obj.via.str.ptr;
+        return data();
     }
 
     // Access the underlying value based on the required type or return a default
@@ -652,9 +670,8 @@ public:
     static owned_object make_string_nocopy(
         const char *str, std::size_t len, detail::object_free_fn free_fn = detail::object_free)
     {
-        return owned_object{{.via{.str{.type = object_type::string,
+        return owned_object{{.via{.lstr{.type = object_type::long_string,
                                 .size = static_cast<uint16_t>(len),
-                                .capacity = static_cast<uint16_t>(len),
                                 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
                                 .ptr = const_cast<char *>(str)}}},
             free_fn};
@@ -670,6 +687,22 @@ public:
 
     static owned_object make_string(const char *str, std::size_t len)
     {
+        if (len < detail::small_string_size) {
+            owned_object obj{
+                {.via{.sstr{.type = object_type::small_string, .size = len, .data = {}}}},
+                detail::object_free};
+            memcpy(obj.obj_.via.sstr.data.data(), str, len);
+            // TODO avoid nul terminator
+            obj.obj_.via.sstr.data[len] = '\0';
+            return obj;
+        }
+
+        if (len >= detail::maxof_v<decltype(detail::object_string::size)>) {
+            return owned_object{{.via{.lstr{.type = object_type::long_string,
+                                    .size = static_cast<uint16_t>(len),
+                                    .ptr = detail::copy_string(str, len)}}},
+                detail::object_free};
+        }
         // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
         return owned_object{{.via{.str{.type = object_type::string,
                                 .size = static_cast<uint16_t>(len),
@@ -812,6 +845,9 @@ template <> struct object_converter<std::string> {
     {
         switch (view.type()) {
         case object_type::string:
+        case object_type::const_string:
+        case object_type::small_string:
+        case object_type::long_string:
             return view.as<std::string>();
         case object_type::boolean:
             return ddwaf::to_string<std::string>(view.as<bool>());

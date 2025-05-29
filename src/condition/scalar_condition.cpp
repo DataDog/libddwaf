@@ -40,7 +40,7 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
     // The iterator is guaranteed to be valid at this point, which means the
     // object pointer should not be nullptr
     const object_view src = *it;
-    if (src.type() == object_type::string) {
+    if (src.is_string()) {
         if (!transformers.empty()) {
             owned_object dst{};
 
