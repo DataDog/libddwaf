@@ -184,11 +184,12 @@ std::unordered_map<std::string_view, std::string_view> object_to_map(const ddwaf
 {
     std::unordered_map<std::string_view, std::string_view> map;
     for (unsigned i = 0; i < obj.via.map.size; ++i) {
-        const ddwaf_object_kv &child = obj.via.map.ptr[i];
-        map.emplace(std::string_view{child.key.via.str.ptr,
-                        static_cast<std::size_t>(child.key.via.str.size)},
-            std::string_view{
-                child.val.via.str.ptr, static_cast<std::size_t>(child.val.via.str.size)});
+        const auto *key = ddwaf_object_at_key(&obj, i);
+        const auto *value = ddwaf_object_at_value(&obj, i);
+
+        map.emplace(
+            std::string_view{ddwaf_object_get_string(key, nullptr), ddwaf_object_length(key)},
+            std::string_view{ddwaf_object_get_string(value, nullptr), ddwaf_object_length(value)});
     }
     return map;
 }

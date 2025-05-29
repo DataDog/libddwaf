@@ -34,7 +34,7 @@
 #include "waf.hpp"
 
 static_assert(sizeof(ddwaf::detail::object) == sizeof(ddwaf_object));
-static_assert(sizeof(ddwaf::detail::object_kv) == sizeof(ddwaf_object_kv));
+static_assert(sizeof(ddwaf::detail::object_kv) == sizeof(struct _ddwaf_object_kv));
 static_assert(offsetof(ddwaf::detail::object, type) == offsetof(ddwaf_object, type));
 static_assert(offsetof(ddwaf::detail::object, via) == offsetof(ddwaf_object, via));
 using namespace ddwaf;

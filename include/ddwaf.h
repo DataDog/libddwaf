@@ -88,7 +88,8 @@ typedef struct _ddwaf_builder* ddwaf_builder;
 
 typedef struct _ddwaf_config ddwaf_config;
 typedef union _ddwaf_object ddwaf_object;
-typedef struct _ddwaf_object_kv ddwaf_object_kv;
+
+struct _ddwaf_object_kv;
 
 struct _ddwaf_object_bool {
     uint8_t type;
@@ -140,17 +141,26 @@ struct _ddwaf_object_array {
     uint8_t type;
     uint16_t size;
     uint16_t capacity;
-    ddwaf_object *ptr;
+    union _ddwaf_object *ptr;
 };
 
 struct _ddwaf_object_map {
     uint8_t type;
     uint16_t size;
     uint16_t capacity;
-    ddwaf_object_kv *ptr;
+    struct _ddwaf_object_kv *ptr;
 };
 
+/**
+ * @struct ddwaf_object
+ *
+ * Generic object used to pass data and rules to the WAF.
+ **/
+#ifdef _MSC_VER
 union _ddwaf_object {
+#else
+union __attribute__((may_alias)) _ddwaf_object {
+#endif
     uint8_t type;
     union {
         struct _ddwaf_object_bool b8;
@@ -167,51 +177,18 @@ union _ddwaf_object {
 };
 
 struct _ddwaf_object_kv {
-    ddwaf_object key;
-    ddwaf_object val;
+    union _ddwaf_object key;
+    union _ddwaf_object val;
 };
 
-/**
- * @struct ddwaf_object
- *
- * Generic object used to pass data and rules to the WAF.
- **/
+#if defined(_Static_assert) || defined(static_assert)
+#ifndef static_assert
+#define static_assert _Static_assert
+#endif
 
-/*#ifdef _MSC_VER*/
-/*#pragma pack(push,1)*/
-/*struct _ddwaf_object {*/
-    /*union {*/
-/*#else*/
-/*struct __attribute__((packed)) _ddwaf_object {*/
-    /*union __attribute__((packed)) {*/
-/*#endif*/
-        /*bool b8;*/
-        /*uint64_t u64;*/
-        /*int64_t i64;*/
-        /*double f64;*/
-        /*ddwaf_object_kv *map;*/
-        /*ddwaf_object *array;*/
-        /*char *str;*/
-        /*char sstr[DDWAF_OBJ_SSTR_SIZE];*/
-        /*const char *cstr;*/
-        /*ddwaf_object *ref;*/
-    /*} via;*/
-    /*uint8_t type;*/
-    /*uint16_t size;*/
-    /*uint16_t capacity;*/
-/*};*/
-
-/*#ifdef _MSC_VER*/
-/*struct _ddwaf_object_kv {*/
-/*#else*/
-/*struct __attribute__((packed)) _ddwaf_object_kv {*/
-/*#endif*/
-    /*ddwaf_object key;*/
-    /*ddwaf_object val;*/
-/*};*/
-/*#ifdef _MSC_VER*/
-/*#pragma pack(pop)*/
-/*#endif*/
+static_assert(sizeof(union _ddwaf_object) == 16);
+static_assert(sizeof(struct _ddwaf_object_kv) == 32);
+#endif
 
 /**
  * @typedef ddwaf_object_free_fn
