@@ -16,28 +16,20 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 {
     random_buffer buffer{bytes, size};
 
-    ddwaf_object tmp;
-
-    ddwaf_object query;
-    ddwaf_object_map(&query);
+    auto query = owned_object::make_map();
     auto query_size = buffer.get<uint8_t>();
     for (uint8_t i = 0; i < query_size; ++i) {
         auto key = buffer.get<std::string_view>();
         auto value = buffer.get<std::string_view>();
-
-        ddwaf_object_map_addl(
-            &query, key.data(), key.size(), ddwaf_object_stringl(&tmp, value.data(), value.size()));
+        query.emplace(key, value);
     }
 
-    ddwaf_object body;
-    ddwaf_object_map(&body);
+    auto body = owned_object::make_map();
     auto body_size = buffer.get<uint8_t>();
     for (uint8_t i = 0; i < body_size; ++i) {
         auto key = buffer.get<std::string_view>();
         auto value = buffer.get<std::string_view>();
-
-        ddwaf_object_map_addl(
-            &body, key.data(), key.size(), ddwaf_object_stringl(&tmp, value.data(), value.size()));
+        body.emplace(key, value);
     }
 
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
@@ -52,11 +44,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
             .key_path = {},
             .ephemeral = false,
             .value = buffer.get<std::string_view>()},
-        {{.address = {}, .key_path = {}, .ephemeral = false, .value = &query}},
-        {{.address = {}, .key_path = {}, .ephemeral = false, .value = &body}}, cache, deadline);
-
-    ddwaf_object_free(&query);
-    ddwaf_object_free(&body);
+        {{.address = {}, .key_path = {}, .ephemeral = false, .value = query}},
+        {{.address = {}, .key_path = {}, .ephemeral = false, .value = body}}, cache, deadline);
 
     return 0;
 }

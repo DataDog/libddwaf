@@ -16,25 +16,22 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 {
     random_buffer buffer{bytes, size};
 
-    ddwaf_object tmp;
-
-    ddwaf_object cookies;
-    ddwaf_object_map(&cookies);
+    auto cookies = owned_object::make_map();
     auto cookies_size = buffer.get<uint8_t>();
     for (uint8_t i = 0; i < cookies_size; ++i) {
         auto key = buffer.get<std::string_view>();
         auto value = buffer.get<std::string_view>();
 
-        ddwaf_object_map_addl(&cookies, key.data(), key.size(),
-            ddwaf_object_stringl(&tmp, value.data(), value.size()));
+        cookies.emplace(key, value);
     }
 
     session_fingerprint gen{"id", {}, {}, false, true};
 
     processor_cache cache;
     ddwaf::timer deadline{2s};
+
     auto [output, attr] =
-        gen.eval_impl({{.address = {}, .key_path = {}, .ephemeral = false, .value = &cookies}},
+        gen.eval_impl({{.address = {}, .key_path = {}, .ephemeral = false, .value = cookies}},
             {{.address = {},
                 .key_path = {},
                 .ephemeral = false,
@@ -44,8 +41,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
                 .ephemeral = false,
                 .value = buffer.get<std::string_view>()}},
             cache, deadline);
-
-    ddwaf_object_free(&cookies);
 
     return 0;
 }
