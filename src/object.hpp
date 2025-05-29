@@ -247,9 +247,9 @@ public:
     // The is_* methods can be used to check for collections of types
     [[nodiscard]] bool is_container() const noexcept
     {
-        return (type() & container_object_type) != 0;
+        return (type() & object_type::container) != 0;
     }
-    [[nodiscard]] bool is_scalar() const noexcept { return (type() & scalar_object_type) != 0; }
+    [[nodiscard]] bool is_scalar() const noexcept { return (type() & object_type::scalar) != 0; }
 
     [[nodiscard]] bool is_map() const noexcept { return type() == object_type::map; }
     [[nodiscard]] bool is_array() const noexcept { return type() == object_type::array; }
@@ -751,7 +751,11 @@ template <typename Derived> [[nodiscard]] owned_object readable_object<Derived>:
         case object_type::boolean:
             return owned_object::make_boolean(source.as<bool>());
         case object_type::string:
+        case object_type::small_string:
+        case object_type::long_string:
             return owned_object::make_string(source.as<std::string_view>());
+        case object_type::const_string:
+            return owned_object::make_string_nocopy(source.data(), source.size());
         case object_type::int64:
             return owned_object::make_signed(source.as<int64_t>());
         case object_type::uint64:
@@ -765,6 +769,7 @@ template <typename Derived> [[nodiscard]] owned_object readable_object<Derived>:
         case object_type::array:
             return owned_object::make_array();
         case object_type::invalid:
+        default:
             break;
         }
         return {};
@@ -829,7 +834,7 @@ template <typename Derived>
 {
     auto &container = static_cast<const Derived *>(this)->ref();
 
-    assert((static_cast<object_type>(container.type) & container_object_type) != 0);
+    assert((static_cast<object_type>(container.type) & object_type::container) != 0);
 
     if (container.type == object_type::map) {
         assert(idx < static_cast<std::size_t>(container.via.map.size));

@@ -32,23 +32,29 @@ extern "C"
  **/
 typedef enum
 {
-    DDWAF_OBJ_INVALID     = 0,
-    // 64-bit signed integer type
-    DDWAF_OBJ_SIGNED   = 1 << 0,
-    // 64-bit unsigned integer type
-    DDWAF_OBJ_UNSIGNED = 1 << 1,
-    // UTF-8 string of length nbEntries
-    DDWAF_OBJ_STRING   = 1 << 2,
-    // Array of ddwaf_object of length nbEntries, each item having no parameterName
-    DDWAF_OBJ_ARRAY    = 1 << 3,
-    // Array of ddwaf_object of length nbEntries, each item having a parameterName
-    DDWAF_OBJ_MAP      = 1 << 4,
-    // Boolean type
-    DDWAF_OBJ_BOOL     = 1 << 5,
-    // 64-bit float (or double) type
-    DDWAF_OBJ_FLOAT    = 1 << 6,
+    DDWAF_OBJ_INVALID  = 0,
     // Null type, only used for its semantical value
-    DDWAF_OBJ_NULL    = 1 << 7,
+    DDWAF_OBJ_NULL     = 0x01,
+    // Boolean type
+    DDWAF_OBJ_BOOL     = 0x02,
+    // 64-bit signed integer type
+    DDWAF_OBJ_SIGNED   = 0x04,
+    // 64-bit unsigned integer type
+    DDWAF_OBJ_UNSIGNED = 0x06,
+    // 64-bit float (or double) type
+    DDWAF_OBJ_FLOAT    = 0x08,
+    // Dynamic UTF-8 string of up to max(uint16) length
+    DDWAF_OBJ_STRING   = 0x10,
+    // Literal UTF-8 string of up to max(uint32) length, these are never freed
+    DDWAF_OBJ_CONST_STRING   = 0x12,
+    // UTF-8 string of up to 14 bytes in length
+    DDWAF_OBJ_SMALL_STRING   = 0x14,
+    // Static UTF-8 string of up to max(uint32) length, where size == capacity
+    DDWAF_OBJ_LONG_STRING   = 0x16,
+    // Array of ddwaf_object of length nbEntries, each item having no parameterName
+    DDWAF_OBJ_ARRAY    = 0x20,
+    // Array of ddwaf_object of length nbEntries, each item having a parameterName
+    DDWAF_OBJ_MAP      = 0x40,
 } DDWAF_OBJ_TYPE;
 
 /**
