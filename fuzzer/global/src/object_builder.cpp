@@ -73,11 +73,10 @@ void pop_string(Data *data, ddwaf_object *object)
 
     // sometimes, send NULL
     if (popBoolean(data)) {
-        *object = {
-            .via{.str{.type = DDWAF_OBJ_STRING, .size = size, .capacity = size, .ptr = nullptr}}};
+        *object = {.via{.str{.type = DDWAF_OBJ_STRING, .size = 0, .capacity = 0, .ptr = nullptr}}};
+    } else {
+        ddwaf_object_stringl(object, result, size);
     }
-
-    ddwaf_object_stringl(object, result, size);
 }
 
 uint64_t popUnsignedInteger(Data *data)
@@ -145,9 +144,17 @@ void build_map(Data *data, ddwaf_object *object, size_t deep)
 
         if (!null_key) {
             pop_string(data, &key);
+            std::size_t key_len;
+            const char *key_ptr = ddwaf_object_get_string(&key, &key_len);
 
-            if (!ddwaf_object_map_addl_nc(object, key.via.str.ptr, key.via.str.size, &item)) {
-                ddwaf_object_free(&item);
+            if (key.type == DDWAF_OBJ_STRING || key.type == DDWAF_OBJ_LONG_STRING) {
+                if (!ddwaf_object_map_addl_nc(object, key_ptr, key_len, &item)) {
+                    ddwaf_object_free(&item);
+                }
+            } else if (key.type == DDWAF_OBJ_SMALL_STRING) {
+                if (!ddwaf_object_map_addl(object, key_ptr, key_len, &item)) {
+                    ddwaf_object_free(&item);
+                }
             }
         } else {
             if (!ddwaf_object_map_addl(object, "", 0, &item)) {
@@ -155,10 +162,20 @@ void build_map(Data *data, ddwaf_object *object, size_t deep)
             } else {
                 auto index = static_cast<std::size_t>(ddwaf_object_size(object) - 1);
                 auto &key = object->via.map.ptr[index].key;
-                free((void *)key.via.str.ptr);
-                // Null but not malformed
-                key.via.str.ptr = nullptr;
-                key.via.str.size = 0;
+                if (key.type == DDWAF_OBJ_STRING) {
+                    // NOLINTNEXTLINE(hicpp-no-malloc)
+                    free((void *)key.via.str.ptr);
+                    // Null but not malformed
+                    key.via.str.ptr = nullptr;
+                    key.via.str.size = 0;
+                    key.via.str.capacity = 0;
+                } else if (key.type == DDWAF_OBJ_LONG_STRING) {
+                    // NOLINTNEXTLINE(hicpp-no-malloc)
+                    free((void *)key.via.lstr.ptr);
+                    // Null but not malformed
+                    key.via.lstr.ptr = nullptr;
+                    key.via.lstr.size = 0;
+                }
             }
         }
     }
