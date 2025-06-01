@@ -141,10 +141,10 @@ struct DDWAF_PACKED DDWAF_MAY_ALIAS _ddwaf_object {
         int64_t i64;
         uint64_t u64;
         double f64;
-        _ddwaf_object_string str;
-        _ddwaf_object_small_string sstr;
-        _ddwaf_object_array array;
-        _ddwaf_object_map map;
+        struct _ddwaf_object_string str;
+        struct _ddwaf_object_small_string sstr;
+        struct _ddwaf_object_array array;
+        struct _ddwaf_object_map map;
     } via;
 };
 
