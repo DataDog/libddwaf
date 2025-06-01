@@ -26,20 +26,78 @@
 #include "log.hpp"
 #include "obfuscator.hpp"
 #include "object.hpp"
-#include "object_store.hpp"
 #include "re2.h"
 #include "ruleset_info.hpp"
 #include "utils.hpp"
 #include "version.hpp"
 #include "waf.hpp"
 
-static_assert(sizeof(ddwaf::detail::object) == sizeof(ddwaf_object));
-static_assert(sizeof(ddwaf::detail::object_kv) == sizeof(struct _ddwaf_object_kv));
-static_assert(offsetof(ddwaf::detail::object, type) == offsetof(ddwaf_object, type));
-static_assert(offsetof(ddwaf::detail::object, via) == offsetof(ddwaf_object, via));
 using namespace ddwaf;
 
-#if DDWAF_COMPILE_LOG_LEVEL <= DDWAF_COMPILE_LOG_INFO
+// Object compatibility
+
+// detail::object == ddwaf_object
+static_assert(sizeof(detail::object) == sizeof(ddwaf_object));
+static_assert(offsetof(detail::object, type) == offsetof(ddwaf_object, type));
+static_assert(offsetof(detail::object, via) == offsetof(ddwaf_object, via));
+
+// detail::object_kv == _ddwaf_object_kv
+static_assert(sizeof(detail::object_kv) == sizeof(struct _ddwaf_object_kv));
+static_assert(offsetof(detail::object_kv, key) == offsetof(_ddwaf_object_kv, key));
+static_assert(offsetof(detail::object_kv, val) == offsetof(_ddwaf_object_kv, val));
+
+// detail::object_scalar<bool> == _ddwaf_object_bool
+static_assert(sizeof(detail::object_scalar<bool>) == sizeof(_ddwaf_object_bool));
+static_assert(offsetof(detail::object_scalar<bool>, type) == offsetof(_ddwaf_object_bool, type));
+static_assert(offsetof(detail::object_scalar<bool>, val) == offsetof(_ddwaf_object_bool, val));
+
+// detail::object_scalar<int64_t> == _ddwaf_object_signed
+static_assert(sizeof(detail::object_scalar<int64_t>) == sizeof(_ddwaf_object_signed));
+static_assert(
+    offsetof(detail::object_scalar<int64_t>, type) == offsetof(_ddwaf_object_signed, type));
+static_assert(offsetof(detail::object_scalar<int64_t>, val) == offsetof(_ddwaf_object_signed, val));
+
+// detail::object_scalar<uint64_t> == _ddwaf_object_unsigned
+static_assert(sizeof(detail::object_scalar<uint64_t>) == sizeof(_ddwaf_object_unsigned));
+static_assert(
+    offsetof(detail::object_scalar<uint64_t>, type) == offsetof(_ddwaf_object_unsigned, type));
+static_assert(
+    offsetof(detail::object_scalar<uint64_t>, val) == offsetof(_ddwaf_object_unsigned, val));
+
+// detail::object_scalar<double> == _ddwaf_object_float
+static_assert(sizeof(detail::object_scalar<double>) == sizeof(_ddwaf_object_float));
+static_assert(offsetof(detail::object_scalar<double>, type) == offsetof(_ddwaf_object_float, type));
+static_assert(offsetof(detail::object_scalar<double>, val) == offsetof(_ddwaf_object_float, val));
+
+// detail::object_string == _ddwaf_object_string
+static_assert(sizeof(detail::object_string) == sizeof(_ddwaf_object_string));
+static_assert(offsetof(detail::object_string, type) == offsetof(_ddwaf_object_string, type));
+static_assert(offsetof(detail::object_string, size) == offsetof(_ddwaf_object_string, size));
+static_assert(offsetof(detail::object_string, ptr) == offsetof(_ddwaf_object_string, ptr));
+
+// detail::object_small_string == _ddwaf_object_small_string
+static_assert(sizeof(detail::object_small_string) == sizeof(_ddwaf_object_small_string));
+static_assert(
+    offsetof(detail::object_small_string, type) == offsetof(_ddwaf_object_small_string, type));
+static_assert(
+    offsetof(detail::object_small_string, size) == offsetof(_ddwaf_object_small_string, size));
+static_assert(
+    offsetof(detail::object_small_string, data) == offsetof(_ddwaf_object_small_string, data));
+
+// detail::object_array == _ddwaf_object_array
+static_assert(sizeof(detail::object_array) == sizeof(_ddwaf_object_array));
+static_assert(offsetof(detail::object_array, type) == offsetof(_ddwaf_object_array, type));
+static_assert(offsetof(detail::object_array, size) == offsetof(_ddwaf_object_array, size));
+static_assert(offsetof(detail::object_array, capacity) == offsetof(_ddwaf_object_array, capacity));
+static_assert(offsetof(detail::object_array, ptr) == offsetof(_ddwaf_object_array, ptr));
+
+// detail::object_map == _ddwaf_object_map
+static_assert(sizeof(detail::object_map) == sizeof(_ddwaf_object_map));
+static_assert(offsetof(detail::object_map, type) == offsetof(_ddwaf_object_map, type));
+static_assert(offsetof(detail::object_map, size) == offsetof(_ddwaf_object_map, size));
+static_assert(offsetof(detail::object_map, capacity) == offsetof(_ddwaf_object_map, capacity));
+static_assert(offsetof(detail::object_map, ptr) == offsetof(_ddwaf_object_map, ptr));
+
 namespace {
 const char *log_level_to_str(DDWAF_LOG_LEVEL level)
 {
@@ -100,7 +158,6 @@ borrowed_object to_borrowed(ddwaf_object *ptr)
 }
 } // namespace
 
-#endif
 // explicit instantiation declaration to suppress warning
 extern "C" {
 ddwaf::waf *ddwaf_init(

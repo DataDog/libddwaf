@@ -125,7 +125,7 @@ struct _ddwaf_object_small_string {
 #define DDWAF_OBJ_SSTR_SIZE 14
     uint8_t type;
     uint8_t size;
-    char ptr[DDWAF_OBJ_SSTR_SIZE];
+    char data[DDWAF_OBJ_SSTR_SIZE];
 };
 
 struct _ddwaf_object_array {
