@@ -26,6 +26,7 @@
 #include "log.hpp"
 #include "obfuscator.hpp"
 #include "object.hpp"
+#include "object_store.hpp"
 #include "re2.h"
 #include "ruleset_info.hpp"
 #include "utils.hpp"
