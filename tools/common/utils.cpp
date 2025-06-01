@@ -104,21 +104,21 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
 {
     switch (obj.type) {
     case DDWAF_OBJ_BOOL:
-        output = obj.via.b8.val;
+        output = ddwaf_object_get_bool(&obj);
         break;
     case DDWAF_OBJ_SIGNED:
-        output = obj.via.i64.val;
+        output = ddwaf_object_get_signed(&obj);
         break;
     case DDWAF_OBJ_UNSIGNED:
-        output = obj.via.u64.val;
+        output = ddwaf_object_get_unsigned(&obj);
         break;
     case DDWAF_OBJ_FLOAT:
-        output = obj.via.f64.val;
+        output = ddwaf_object_get_float(&obj);
         break;
     case DDWAF_OBJ_STRING:
     case DDWAF_OBJ_SMALL_STRING:
     case DDWAF_OBJ_LARGE_STRING:
-    case DDWAF_OBJ_CONST_STRING:
+    case DDWAF_OBJ_LITERAL_STRING:
         output = std::string{ddwaf_object_get_string(&obj, nullptr), ddwaf_object_length(&obj)};
         break;
     case DDWAF_OBJ_MAP:
@@ -264,16 +264,16 @@ void object_to_json_helper(
 {
     switch (obj.type) {
     case DDWAF_OBJ_BOOL:
-        output.SetBool(obj.via.b8.val);
+        output.SetBool(ddwaf_object_get_bool(&obj));
         break;
     case DDWAF_OBJ_SIGNED:
-        output.SetInt64(obj.via.i64.val);
+        output.SetInt64(ddwaf_object_get_signed(&obj));
         break;
     case DDWAF_OBJ_UNSIGNED:
-        output.SetUint64(obj.via.u64.val);
+        output.SetUint64(ddwaf_object_get_unsigned(&obj));
         break;
     case DDWAF_OBJ_FLOAT:
-        output.SetDouble(obj.via.f64.val);
+        output.SetDouble(ddwaf_object_get_float(&obj));
         break;
     case DDWAF_OBJ_STRING: {
         auto sv = std::string_view(obj.via.str.ptr, obj.via.str.size);

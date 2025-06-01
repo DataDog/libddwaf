@@ -84,33 +84,35 @@ YAML::Emitter &operator<<(YAML::Emitter &out, const ddwaf_object &o)
 
     switch (o.type) {
     case DDWAF_OBJ_BOOL:
-        out << o.via.b8.val;
+        out << ddwaf_object_get_bool(&o);
         break;
     case DDWAF_OBJ_SIGNED:
-        out << o.via.i64.val;
+        out << ddwaf_object_get_signed(&o);
         break;
     case DDWAF_OBJ_UNSIGNED:
-        out << o.via.u64.val;
+        out << ddwaf_object_get_unsigned(&o);
         break;
     case DDWAF_OBJ_FLOAT:
-        out << o.via.f64.val;
+        out << ddwaf_object_get_float(&o);
         break;
     case DDWAF_OBJ_STRING:
-        out << std::string{o.via.str.ptr, o.via.str.size};
+    case DDWAF_OBJ_SMALL_STRING:
+    case DDWAF_OBJ_LITERAL_STRING:
+        out << std::string{ddwaf_object_get_string(&o, nullptr), ddwaf_object_length(&o)};
         break;
     case DDWAF_OBJ_ARRAY:
         out << YAML::BeginSeq;
-        for (decltype(o.via.array.size) i = 0; i < o.via.array.size; i++) {
-            out << o.via.array.ptr[i];
+        for (std::size_t i = 0; i < ddwaf_object_size(&o); i++) {
+            out << *ddwaf_object_at_value(&o, i);
         }
         out << YAML::EndSeq;
         break;
     case DDWAF_OBJ_MAP:
         out << YAML::BeginMap;
-        for (decltype(o.via.map.size) i = 0; i < o.via.map.size; i++) {
-            auto kv = o.via.map.ptr[i];
-            out << YAML::Key << std::string{kv.key.via.str.ptr, kv.key.via.str.size};
-            out << YAML::Value << kv.val;
+        for (std::size_t i = 0; i < ddwaf_object_size(&o); i++) {
+            out << YAML::Key << *ddwaf_object_at_key(&o, i);
+            out << YAML::Value << *ddwaf_object_at_value(&o, i);
+            ;
         }
         out << YAML::EndMap;
         break;

@@ -73,7 +73,7 @@ void pop_string(Data *data, ddwaf_object *object)
 
     // sometimes, send NULL
     if (popBoolean(data)) {
-        *object = {.via{.str{.type = DDWAF_OBJ_STRING, .size = 0, .capacity = 0, .ptr = nullptr}}};
+        *object = {.type = DDWAF_OBJ_STRING, .via{.str{.size = 0, .ptr = nullptr}}};
     } else {
         ddwaf_object_stringl(object, result, size);
     }
@@ -168,13 +168,6 @@ void build_map(Data *data, ddwaf_object *object, size_t deep)
                     // Null but not malformed
                     key.via.str.ptr = nullptr;
                     key.via.str.size = 0;
-                    key.via.str.capacity = 0;
-                } else if (key.type == DDWAF_OBJ_LARGE_STRING) {
-                    // NOLINTNEXTLINE(hicpp-no-malloc)
-                    free((void *)key.via.lstr.ptr);
-                    // Null but not malformed
-                    key.via.lstr.ptr = nullptr;
-                    key.via.lstr.size = 0;
                 }
             }
         }

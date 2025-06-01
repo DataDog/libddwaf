@@ -22,87 +22,48 @@ namespace ddwaf {
 
 namespace detail {
 
-union object;
+struct object;
 struct object_kv;
 
 constexpr std::size_t small_string_size = 14;
 
-struct object_bool {
-    object_type type;
-    bool val;
-};
-
-struct object_signed {
-    object_type type;
-    int64_t val;
-};
-
-struct object_unsigned {
-    object_type type;
-    uint64_t val;
-};
-
-struct object_float {
-    object_type type;
-    double val;
-};
-
-struct object_string {
-    object_type type;
-    uint16_t size;
-    uint16_t capacity;
+struct [[gnu::packed]] object_string {
+    uint32_t size;
     char *ptr;
 };
 
-struct object_small_string {
-    object_type type;
+struct [[gnu::packed]] object_small_string {
     uint8_t size;
     std::array<char, small_string_size> data;
 };
 
-struct object_const_string {
-    object_type type;
-    uint32_t size;
-    const char *ptr;
-};
-
-struct object_long_string {
-    object_type type;
-    uint32_t size;
-    char *ptr;
-};
-
-struct object_array {
-    object_type type;
+struct [[gnu::packed]] object_array {
     uint16_t size;
     uint16_t capacity;
     object *ptr;
 };
 
-struct object_map {
-    object_type type;
+struct [[gnu::packed]] object_map {
     uint16_t size;
     uint16_t capacity;
     object_kv *ptr;
 };
 
-union [[gnu::may_alias]] object {
+struct [[gnu::packed]] [[gnu::may_alias]] object {
     object_type type;
-    union {
-        object_bool b8;
-        object_signed i64;
-        object_unsigned u64;
-        object_float f64;
+    union [[gnu::packed]] {
+        bool b8;
+        int64_t i64;
+        uint64_t u64;
+        double f64;
         object_string str;
         object_small_string sstr;
-        object_long_string lstr;
-        object_const_string cstr;
         object_array array;
         object_map map;
     } via;
 };
 
-struct object_kv {
+struct [[gnu::packed]] object_kv {
     object key;
     object val;
 };
@@ -115,15 +76,6 @@ static_assert(std::is_standard_layout_v<object_kv>);
 
 static_assert(std::is_trivial_v<object>);
 static_assert(std::is_trivial_v<object_kv>);
-
-static_assert(offsetof(object_string, ptr) == offsetof(object_long_string, ptr));
-static_assert(offsetof(object_string, ptr) == offsetof(object_const_string, ptr));
-
-static_assert(offsetof(object_string, size) == offsetof(object_map, size));
-static_assert(offsetof(object_string, size) == offsetof(object_array, size));
-
-static_assert(offsetof(object_string, capacity) == offsetof(object_map, capacity));
-static_assert(offsetof(object_string, capacity) == offsetof(object_array, capacity));
 
 using object_free_fn = void (*)(object *object);
 
@@ -202,9 +154,6 @@ inline void object_destroy(object &obj)
     } else if (obj.type == object_type::string) {
         // NOLINTNEXTLINE(hicpp-no-malloc)
         free(obj.via.str.ptr);
-    } else if (obj.type == object_type::large_string) {
-        // NOLINTNEXTLINE(hicpp-no-malloc)
-        free(obj.via.lstr.ptr);
     }
 }
 
@@ -238,12 +187,12 @@ public:
             return static_cast<std::size_t>(
                 static_cast<const Derived *>(this)->ref().via.sstr.size);
         }
-        if (t == object_type::const_string || t == object_type::large_string) {
-            return static_cast<std::size_t>(
-                static_cast<const Derived *>(this)->ref().via.cstr.size);
+
+        if (t == object_type::string || t == object_type::literal_string) {
+            return static_cast<std::size_t>(static_cast<const Derived *>(this)->ref().via.str.size);
         }
         // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
-        return static_cast<std::size_t>(static_cast<const Derived *>(this)->ref().via.str.size);
+        return static_cast<std::size_t>(static_cast<const Derived *>(this)->ref().via.array.size);
     }
 
     [[nodiscard]] bool empty() const noexcept { return size() == 0; }
@@ -287,7 +236,7 @@ public:
         requires std::is_same_v<T, bool>
     {
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return obj.via.b8.val;
+        return obj.via.b8;
     }
 
     template <typename T>
@@ -295,7 +244,7 @@ public:
         requires std::is_integral_v<T> && std::is_signed_v<T>
     {
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return static_cast<T>(obj.via.i64.val);
+        return static_cast<T>(obj.via.i64);
     }
 
     template <typename T>
@@ -303,7 +252,7 @@ public:
         requires std::is_integral_v<T> && std::is_unsigned_v<T> && (!std::is_same_v<T, bool>)
     {
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return static_cast<T>(obj.via.u64.val);
+        return static_cast<T>(obj.via.u64);
     }
 
     template <typename T>
@@ -311,7 +260,7 @@ public:
         requires std::is_same_v<T, double>
     {
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return static_cast<T>(obj.via.f64.val);
+        return static_cast<T>(obj.via.f64);
     }
 
     template <typename T>
@@ -359,7 +308,7 @@ public:
     {
         using limits = std::numeric_limits<T>;
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return is_compatible_type<uint64_t>(type()) && obj.via.u64.val <= limits::max();
+        return is_compatible_type<uint64_t>(type()) && obj.via.u64 <= limits::max();
     }
 
     // Overload for other signed integer types
@@ -369,8 +318,8 @@ public:
     {
         using limits = std::numeric_limits<T>;
         const auto &obj = static_cast<const Derived *>(this)->ref();
-        return is_compatible_type<int64_t>(type()) && obj.via.i64.val >= limits::min() &&
-               obj.via.i64.val <= limits::max();
+        return is_compatible_type<int64_t>(type()) && obj.via.i64 >= limits::min() &&
+               obj.via.i64 <= limits::max();
     }
 
     // Convert the underlying type to the requested type
@@ -641,35 +590,35 @@ public:
     [[nodiscard]] detail::object *ptr() { return &obj_; }
     [[nodiscard]] const detail::object *ptr() const { return &obj_; }
 
-    static owned_object make_null() { return owned_object{{.type = object_type::null}}; }
+    static owned_object make_null() { return owned_object{{.type = object_type::null, .via{}}}; }
 
     static owned_object make_boolean(bool value)
     {
-        return owned_object{{.via{.b8{.type = object_type::boolean, .val = value}}}};
+        return owned_object{{.type = object_type::boolean, .via{.b8 = value}}};
     }
 
     static owned_object make_signed(int64_t value)
     {
-        return owned_object{{.via{.i64{.type = object_type::int64, .val = value}}}};
+        return owned_object{{.type = object_type::int64, .via{.i64 = value}}};
     }
 
     static owned_object make_unsigned(uint64_t value)
     {
-        return owned_object{{.via{.u64{.type = object_type::uint64, .val = value}}}};
+        return owned_object{{.type = object_type::uint64, .via{.u64 = value}}};
     }
 
     static owned_object make_float(double value)
     {
-        return owned_object{{.via{.f64{.type = object_type::float64, .val = value}}}};
+        return owned_object{{.type = object_type::float64, .via{.f64 = value}}};
     }
 
     static owned_object make_string_nocopy(
         const char *str, std::size_t len, detail::object_free_fn free_fn = detail::object_free)
     {
-        return owned_object{{.via{.lstr{.type = object_type::large_string,
-                                .size = static_cast<uint16_t>(len),
-                                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-                                .ptr = const_cast<char *>(str)}}},
+        return owned_object{{.type = object_type::string,
+                                .via{.str{.size = static_cast<uint32_t>(len),
+                                    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+                                    .ptr = const_cast<char *>(str)}}},
             free_fn};
     }
 
@@ -685,9 +634,8 @@ public:
     {
         if (len < detail::small_string_size) {
             // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
-            owned_object obj{{.via{.sstr{.type = object_type::small_string,
-                                 .size = static_cast<uint8_t>(len),
-                                 .data = {}}}},
+            owned_object obj{{.type = object_type::small_string,
+                                 .via{.sstr{.size = static_cast<uint8_t>(len), .data = {}}}},
                 detail::object_free};
             memcpy(obj.obj_.via.sstr.data.data(), str, len);
             // TODO avoid nul terminator
@@ -695,18 +643,10 @@ public:
             return obj;
         }
 
-        if (len >= detail::maxof_v<decltype(detail::object_string::size)>) {
-            // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
-            return owned_object{{.via{.lstr{.type = object_type::large_string,
-                                    .size = static_cast<uint16_t>(len),
-                                    .ptr = detail::copy_string(str, len)}}},
-                detail::object_free};
-        }
         // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
-        return owned_object{{.via{.str{.type = object_type::string,
-                                .size = static_cast<uint16_t>(len),
-                                .capacity = static_cast<uint16_t>(len),
-                                .ptr = detail::copy_string(str, len)}}},
+        return owned_object{{.type = object_type::string,
+                                .via{.str{.size = static_cast<uint32_t>(len),
+                                    .ptr = detail::copy_string(str, len)}}},
             detail::object_free};
     }
 
@@ -721,14 +661,14 @@ public:
     static owned_object make_array()
     {
         return owned_object{
-            {.via{.array{.type = object_type::array, .size = 0, .capacity = 0, .ptr = nullptr}}},
+            {.type = object_type::array, .via{.array{.size = 0, .capacity = 0, .ptr = nullptr}}},
             detail::object_free};
     }
 
     static owned_object make_map()
     {
         return owned_object{
-            {.via{.map{.type = object_type::map, .size = 0, .capacity = 0, .ptr = nullptr}}},
+            {.type = object_type::map, .via{.map{.size = 0, .capacity = 0, .ptr = nullptr}}},
             detail::object_free};
     }
 
@@ -744,7 +684,7 @@ public:
     }
 
 protected:
-    detail::object obj_{.type = object_type::invalid};
+    detail::object obj_{.type = object_type::invalid, .via = {}};
     detail::object_free_fn free_fn_{nullptr};
 
     friend class borrowed_object;
@@ -784,9 +724,8 @@ template <typename Derived> [[nodiscard]] owned_object readable_object<Derived>:
             return owned_object::make_boolean(source.as<bool>());
         case object_type::string:
         case object_type::small_string:
-        case object_type::large_string:
             return owned_object::make_string(source.as<std::string_view>());
-        case object_type::const_string:
+        case object_type::literal_string:
             return owned_object::make_string_nocopy(source.data(), source.size());
         case object_type::int64:
             return owned_object::make_signed(source.as<int64_t>());
@@ -844,9 +783,8 @@ template <> struct object_converter<std::string> {
     {
         switch (view.type()) {
         case object_type::string:
-        case object_type::const_string:
+        case object_type::literal_string:
         case object_type::small_string:
-        case object_type::large_string:
             return view.as<std::string>();
         case object_type::boolean:
             return ddwaf::to_string<std::string>(view.as<bool>());

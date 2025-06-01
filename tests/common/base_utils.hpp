@@ -21,16 +21,16 @@
     }
 #define DDWAF_OBJECT_MAP                                                                           \
     {                                                                                              \
-        .via                                                                                       \
+        .type = DDWAF_OBJ_MAP, .via                                                                \
         {                                                                                          \
-            .map { .type = DDWAF_OBJ_MAP, .size = 0, .capacity = 0, .ptr = NULL }                  \
+            .map { .size = 0, .capacity = 0, .ptr = NULL }                                         \
         }                                                                                          \
     }
 #define DDWAF_OBJECT_ARRAY                                                                         \
     {                                                                                              \
-        .via                                                                                       \
+        .type = DDWAF_OBJ_ARRAY, .via                                                              \
         {                                                                                          \
-            .array { .type = DDWAF_OBJ_ARRAY, .size = 0, .capacity = 0, .ptr = NULL }              \
+            .array { .size = 0, .capacity = 0, .ptr = NULL }                                       \
         }                                                                                          \
     }
 #define LSTRARG(value) value, sizeof(value) - 1

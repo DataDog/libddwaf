@@ -19,15 +19,14 @@ enum class object_type : uint8_t {
     // Null value
     null = 0x01, // 0b00000001
     // Scalars
-    boolean = 0x02,      // 0b00000010
-    int64 = 0x04,        // 0b00000100
-    uint64 = 0x06,       // 0b00000110
-    float64 = 0x08,      // 0b00001000
-    string = 0x10,       // 0b00010000
-    const_string = 0x12, // 0b00010010
-    small_string = 0x14, // 0b00010100
-    large_string = 0x16, // 0b00010110
-    scalar = 0x1E,       // 0b00011110
+    boolean = 0x02,        // 0b00000010
+    int64 = 0x04,          // 0b00000100
+    uint64 = 0x06,         // 0b00000110
+    float64 = 0x08,        // 0b00001000
+    string = 0x10,         // 0b00010000
+    literal_string = 0x12, // 0b00010010
+    small_string = 0x14,   // 0b00010100
+    scalar = 0x1E,         // 0b00011110
     // Containers
     array = 0x20,    // 0b00100000
     map = 0x40,      // 0b01000000
@@ -111,9 +110,8 @@ T object_type_to_string(object_type type)
     case object_type::array:
         return "array";
     case object_type::string:
+    case object_type::literal_string:
     case object_type::small_string:
-    case object_type::const_string:
-    case object_type::large_string:
         return "string";
     case object_type::boolean:
         return "bool";

@@ -47,22 +47,22 @@ template <typename T>
 void object_to_json_helper(
     const ddwaf_object &obj, T &output, rapidjson::Document::AllocatorType &alloc)
 {
-    switch (obj.type) {
+    switch (ddwaf_object_type(&obj)) {
     case DDWAF_OBJ_BOOL:
-        output.SetBool(obj.via.b8.val);
+        output.SetBool(ddwaf_object_get_bool(&obj));
         break;
     case DDWAF_OBJ_SIGNED:
-        output.SetInt64(obj.via.i64.val);
+        output.SetInt64(ddwaf_object_get_signed(&obj));
         break;
     case DDWAF_OBJ_UNSIGNED:
-        output.SetUint64(obj.via.u64.val);
+        output.SetUint64(ddwaf_object_get_unsigned(&obj));
         break;
     case DDWAF_OBJ_FLOAT:
-        output.SetDouble(obj.via.f64.val);
+        output.SetDouble(ddwaf_object_get_float(&obj));
         break;
     case DDWAF_OBJ_STRING:
     case DDWAF_OBJ_SMALL_STRING:
-    case DDWAF_OBJ_CONST_STRING:
+    case DDWAF_OBJ_LITERAL_STRING:
     case DDWAF_OBJ_LARGE_STRING: {
         output.SetString(ddwaf_object_get_string(&obj, nullptr), ddwaf_object_length(&obj), alloc);
     } break;
