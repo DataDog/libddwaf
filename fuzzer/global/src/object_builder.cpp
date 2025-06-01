@@ -73,7 +73,7 @@ void pop_string(Data *data, ddwaf_object *object)
 
     // sometimes, send NULL
     if (popBoolean(data)) {
-        *object = {.type = DDWAF_OBJ_STRING, .via{.str{.size = 0, .ptr = nullptr}}};
+        *object = {.via{.str{.type = DDWAF_OBJ_STRING, .size = 0, .ptr = nullptr}}};
     } else {
         ddwaf_object_stringl(object, result, size);
     }
@@ -147,7 +147,7 @@ void build_map(Data *data, ddwaf_object *object, size_t deep)
             std::size_t key_len;
             const char *key_ptr = ddwaf_object_get_string(&key, &key_len);
 
-            if (key.type == DDWAF_OBJ_STRING || key.type == DDWAF_OBJ_LARGE_STRING) {
+            if (key.type == DDWAF_OBJ_STRING) {
                 if (!ddwaf_object_map_addl_nc(object, key_ptr, key_len, &item)) {
                     ddwaf_object_free(&item);
                 }

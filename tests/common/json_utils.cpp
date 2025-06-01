@@ -62,8 +62,7 @@ void object_to_json_helper(
         break;
     case DDWAF_OBJ_STRING:
     case DDWAF_OBJ_SMALL_STRING:
-    case DDWAF_OBJ_LITERAL_STRING:
-    case DDWAF_OBJ_LARGE_STRING: {
+    case DDWAF_OBJ_LITERAL_STRING: {
         output.SetString(ddwaf_object_get_string(&obj, nullptr), ddwaf_object_length(&obj), alloc);
     } break;
     case DDWAF_OBJ_MAP:

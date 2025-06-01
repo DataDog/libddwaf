@@ -49,8 +49,6 @@ typedef enum
     DDWAF_OBJ_LITERAL_STRING   = 0x12,
     // UTF-8 string of up to 14 bytes in length
     DDWAF_OBJ_SMALL_STRING   = 0x14,
-    // Static UTF-8 string of up to max(uint32) length, where size == capacity
-    DDWAF_OBJ_LARGE_STRING   = 0x16,
     // Array of ddwaf_object of length nbEntries, each item having no parameterName
     DDWAF_OBJ_ARRAY    = 0x20,
     // Array of ddwaf_object of length nbEntries, each item having a parameterName
@@ -93,37 +91,52 @@ typedef struct _ddwaf_builder* ddwaf_builder;
 #endif
 
 typedef struct _ddwaf_config ddwaf_config;
-typedef struct _ddwaf_object ddwaf_object;
+typedef union _ddwaf_object ddwaf_object;
 
 struct _ddwaf_object_kv;
 
-#ifdef _MSC_VER
-#pragma pack(push,1)
-#define DDWAF_PACKED
-#define DDWAF_MAY_ALIAS
-#else
-#define DDWAF_PACKED __attribute__((packed))
-#define DDWAF_MAY_ALIAS __attribute__((may_alias))
-#endif
+struct _ddwaf_object_bool {
+    uint8_t type;
+    bool val;
+};
 
-struct DDWAF_PACKED  _ddwaf_object_string {
+struct _ddwaf_object_signed {
+    uint8_t type;
+    int64_t val;
+};
+
+struct _ddwaf_object_unsigned {
+    uint8_t type;
+    uint64_t val;
+};
+
+struct _ddwaf_object_float {
+    uint8_t type;
+    double val;
+};
+
+struct _ddwaf_object_string {
+    uint8_t type;
     uint32_t size;
     char *ptr;
 };
 
-struct  DDWAF_PACKED _ddwaf_object_small_string {
+struct _ddwaf_object_small_string {
 #define DDWAF_OBJ_SSTR_SIZE 14
+    uint8_t type;
     uint8_t size;
-    char data[DDWAF_OBJ_SSTR_SIZE];
+    char ptr[DDWAF_OBJ_SSTR_SIZE];
 };
 
-struct  DDWAF_PACKED _ddwaf_object_array {
+struct _ddwaf_object_array {
+    uint8_t type;
     uint16_t size;
     uint16_t capacity;
-    struct _ddwaf_object *ptr;
+    union _ddwaf_object *ptr;
 };
 
-struct  DDWAF_PACKED _ddwaf_object_map {
+struct _ddwaf_object_map {
+    uint8_t type;
     uint16_t size;
     uint16_t capacity;
     struct _ddwaf_object_kv *ptr;
@@ -134,13 +147,17 @@ struct  DDWAF_PACKED _ddwaf_object_map {
  *
  * Generic object used to pass data and rules to the WAF.
  **/
-struct DDWAF_PACKED DDWAF_MAY_ALIAS _ddwaf_object {
+#ifdef _MSC_VER
+union _ddwaf_object {
+#else
+union __attribute__((may_alias)) _ddwaf_object {
+#endif
     uint8_t type;
-    union  DDWAF_PACKED {
-        bool b8;
-        int64_t i64;
-        uint64_t u64;
-        double f64;
+    union {
+        struct _ddwaf_object_bool b8;
+        struct _ddwaf_object_signed i64;
+        struct _ddwaf_object_unsigned u64;
+        struct _ddwaf_object_float f64;
         struct _ddwaf_object_string str;
         struct _ddwaf_object_small_string sstr;
         struct _ddwaf_object_array array;
@@ -149,14 +166,9 @@ struct DDWAF_PACKED DDWAF_MAY_ALIAS _ddwaf_object {
 };
 
 struct _ddwaf_object_kv {
-    struct _ddwaf_object key;
-    struct _ddwaf_object val;
+    union _ddwaf_object key;
+    union _ddwaf_object val;
 };
-
-#ifdef _MSC_VER
-#pragma pack(pop)
-#endif
-
 
 #if defined(_Static_assert) || defined(static_assert)
 #ifndef static_assert
