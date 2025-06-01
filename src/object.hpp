@@ -81,10 +81,27 @@ static_assert(sizeof(object) == 16);
 static_assert(sizeof(object_kv) == 32);
 
 static_assert(std::is_standard_layout_v<object>);
-static_assert(std::is_standard_layout_v<object_kv>);
+static_assert(std::is_trivially_copyable_v<object>);
+static_assert(std::is_trivially_default_constructible_v<object>);
 
-static_assert(std::is_trivial_v<object>);
-static_assert(std::is_trivial_v<object_kv>);
+static_assert(std::is_standard_layout_v<object_kv>);
+static_assert(std::is_trivially_copyable_v<object_kv>);
+static_assert(std::is_trivially_default_constructible_v<object_kv>);
+
+static_assert(offsetof(object, type) == offsetof(object_scalar<bool>, type));
+static_assert(offsetof(object, type) == offsetof(object_scalar<int64_t>, type));
+static_assert(offsetof(object, type) == offsetof(object_scalar<uint64_t>, type));
+static_assert(offsetof(object, type) == offsetof(object_scalar<double>, type));
+
+static_assert(offsetof(object, type) == offsetof(object_string, type));
+static_assert(offsetof(object, type) == offsetof(object_small_string, type));
+
+static_assert(offsetof(object, type) == offsetof(object_array, type));
+static_assert(offsetof(object, type) == offsetof(object_map, type));
+
+static_assert(offsetof(object_map, size) == offsetof(object_array, size));
+static_assert(offsetof(object_map, capacity) == offsetof(object_array, capacity));
+static_assert(offsetof(object_map, ptr) == offsetof(object_array, ptr));
 
 using object_free_fn = void (*)(object *object);
 
@@ -621,6 +638,14 @@ public:
         return owned_object{{.via{.f64{.type = object_type::float64, .val = value}}}};
     }
 
+    static owned_object make_string_literal(const char *str, std::size_t len)
+    {
+        return owned_object{{.via{.str{.type = object_type::literal_string,
+            .size = static_cast<uint32_t>(len),
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+            .ptr = const_cast<char *>(str)}}}};
+    }
+
     static owned_object make_string_nocopy(
         const char *str, std::size_t len, detail::object_free_fn free_fn = detail::object_free)
     {
@@ -736,7 +761,7 @@ template <typename Derived> [[nodiscard]] owned_object readable_object<Derived>:
         case object_type::small_string:
             return owned_object::make_string(source.as<std::string_view>());
         case object_type::literal_string:
-            return owned_object::make_string_nocopy(source.data(), source.size());
+            return owned_object::make_string_literal(source.data(), source.size());
         case object_type::int64:
             return owned_object::make_signed(source.as<int64_t>());
         case object_type::uint64:

@@ -63,8 +63,7 @@ void object_to_json_helper(
         output.SetDouble(ddwaf_object_get_float(&obj));
         break;
     case DDWAF_OBJ_STRING: {
-        auto sv = std::string_view(obj.via.str.ptr, obj.via.str.size);
-        output.SetString(sv.data(), sv.size(), alloc);
+        output.SetString(ddwaf_object_get_string(&obj, nullptr), ddwaf_object_length(&obj), alloc);
     } break;
     case DDWAF_OBJ_MAP:
         output.SetObject();
@@ -83,7 +82,7 @@ void object_to_json_helper(
         break;
     case DDWAF_OBJ_ARRAY:
         output.SetArray();
-        for (unsigned i = 0; i < obj.via.array.size; i++) {
+        for (unsigned i = 0; i < ddwaf_object_size(&obj); i++) {
             rapidjson::Value value;
             const auto *child_val = ddwaf_object_at_value(&obj, i);
             object_to_json_helper(*child_val, value, alloc);
@@ -140,12 +139,12 @@ ddwaf_object object_dup(const ddwaf_object &o) noexcept
         ddwaf_object_float(&copy, ddwaf_object_get_float(&o));
         break;
     case DDWAF_OBJ_STRING:
-        ddwaf_object_stringl(&copy, o.via.str.ptr, o.via.str.size);
+        ddwaf_object_stringl(&copy, ddwaf_object_get_string(&o, nullptr), ddwaf_object_length(&o));
         break;
     case DDWAF_OBJ_ARRAY:
         ddwaf_object_array(&copy);
-        for (decltype(o.via.array.size) i = 0; i < o.via.array.size; i++) {
-            ddwaf_object child_copy = object_dup(o.via.array.ptr[i]);
+        for (std::size_t i = 0; i < ddwaf_object_size(&o); i++) {
+            ddwaf_object child_copy = object_dup(*ddwaf_object_at_value(&o, i));
             ddwaf_object_array_add(&copy, &child_copy);
         }
         break;
