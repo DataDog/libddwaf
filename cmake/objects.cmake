@@ -22,6 +22,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/action_mapper.cpp
     ${libddwaf_SOURCE_DIR}/src/attribute_collector.cpp
     ${libddwaf_SOURCE_DIR}/src/rule.cpp
+    ${libddwaf_SOURCE_DIR}/src/utf8.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/action_mapper_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/matcher_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/module_builder.cpp
@@ -85,7 +86,6 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/transformer/css_decode.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/html_entity_decode.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/js_decode.cpp
-    ${libddwaf_SOURCE_DIR}/src/transformer/common/utf8.cpp
     ${libddwaf_SOURCE_DIR}/src/libcxx-compat/monotonic_buffer_resource.cpp
     ${libddwaf_SOURCE_DIR}/src/vendor/fmt/format.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/radixlib/radixlib.c

@@ -13,8 +13,8 @@ extern "C" {
 #include <utf8proc.h>
 }
 
-#include "transformer/common/cow_string.hpp"
-#include "transformer/common/utf8.hpp"
+#include "cow_string.hpp"
+#include "utf8.hpp"
 
 namespace ddwaf::utf8 {
 
