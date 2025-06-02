@@ -35,6 +35,19 @@
 
 using namespace ddwaf;
 
+// Object type compatibility
+static_assert(static_cast<uint8_t>(object_type::invalid) == DDWAF_OBJ_INVALID);
+static_assert(static_cast<uint8_t>(object_type::null) == DDWAF_OBJ_NULL);
+static_assert(static_cast<uint8_t>(object_type::boolean) == DDWAF_OBJ_BOOL);
+static_assert(static_cast<uint8_t>(object_type::int64) == DDWAF_OBJ_SIGNED);
+static_assert(static_cast<uint8_t>(object_type::uint64) == DDWAF_OBJ_UNSIGNED);
+static_assert(static_cast<uint8_t>(object_type::float64) == DDWAF_OBJ_FLOAT);
+static_assert(static_cast<uint8_t>(object_type::string) == DDWAF_OBJ_STRING);
+static_assert(static_cast<uint8_t>(object_type::small_string) == DDWAF_OBJ_SMALL_STRING);
+static_assert(static_cast<uint8_t>(object_type::literal_string) == DDWAF_OBJ_LITERAL_STRING);
+static_assert(static_cast<uint8_t>(object_type::array) == DDWAF_OBJ_ARRAY);
+static_assert(static_cast<uint8_t>(object_type::map) == DDWAF_OBJ_MAP);
+
 // Object compatibility
 
 // detail::object == ddwaf_object
