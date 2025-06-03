@@ -243,6 +243,15 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
         return 1;
     }
 
+    // Hidden ASCII range (plane 14) https://en.wikipedia.org/wiki/Tags_(Unicode_block)
+    // [U+E0000, U+E0019] (excluding U+E0001) has been deprecated and is unassigned
+    if (codepoint == 0xE0001 || (codepoint >= 0xE0020 && codepoint <= 0xE007F)) {
+        if (wbBufferLength > 0) {
+            wbBuffer[0] = static_cast<int32_t>(codepoint - 0xE0000);
+        }
+        return 1;
+    }
+
     const auto decomposedLength = (size_t)utf8proc_decompose_char((int32_t)codepoint, wbBuffer,
         (utf8proc_ssize_t)wbBufferLength,
         // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)

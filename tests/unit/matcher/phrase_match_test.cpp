@@ -19,15 +19,15 @@ TEST(TestPhraseMatch, TestBasic)
 
     phrase_match matcher(strings, lengths);
 
-    EXPECT_STREQ(matcher.name().data(), "phrase_match");
-    EXPECT_STREQ(matcher.to_string().data(), "");
+    EXPECT_STR(matcher.name(), "phrase_match");
+    EXPECT_STR(matcher.to_string(), "");
 
     ddwaf_object param;
     ddwaf_object_string(&param, "bbbb");
 
     auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
-    EXPECT_STREQ(highlight.c_str(), "bbbb");
+    EXPECT_STR(highlight, "bbbb");
 
     ddwaf_object param2;
     ddwaf_object_string(&param2, "dddd");
@@ -44,7 +44,7 @@ TEST(TestPhraseMatch, TestEmptyArrays)
     std::vector<uint32_t> lengths;
     phrase_match matcher(strings, lengths);
 
-    EXPECT_STREQ(matcher.name().data(), "phrase_match");
+    EXPECT_STR(matcher.name(), "phrase_match");
 
     ddwaf_object param;
     ddwaf_object_string(&param, "bbbb");
@@ -76,7 +76,7 @@ TEST(TestPhraseMatch, TestComplex)
         if (expect != nullptr) {
             auto [res, highlight] = matcher.match(param);
             EXPECT_TRUE(res);
-            EXPECT_STREQ(highlight.c_str(), expect);
+            EXPECT_STR(highlight, expect);
         } else {
             EXPECT_FALSE(matcher.match(param).first);
         }
@@ -111,7 +111,7 @@ TEST(TestPhraseMatch, TestWordBoundary)
         if (expect != nullptr) {
             auto [res, highlight] = matcher.match(param);
             EXPECT_TRUE(res);
-            EXPECT_STREQ(highlight.c_str(), expect);
+            EXPECT_STR(highlight, expect);
         } else {
             EXPECT_FALSE(matcher.match(param).first);
         }
