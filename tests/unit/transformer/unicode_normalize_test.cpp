@@ -57,6 +57,8 @@ TEST(TestUnicodeNormalize, ValidTransform)
 
 TEST(TestUnicodeNormalize, HiddenASCIIRangeTransform)
 {
+    EXPECT_TRANSFORM(unicode_normalize, "\xF3\xA0\x80\x81", "\x01");
+
     EXPECT_TRANSFORM(unicode_normalize, "\xF3\xA0\x80\xA0", " ");
     EXPECT_TRANSFORM(unicode_normalize, "\xF3\xA0\x80\xA1", "!");
     EXPECT_TRANSFORM(unicode_normalize, "\xF3\xA0\x80\xA2", "\"");

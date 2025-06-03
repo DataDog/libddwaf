@@ -38,10 +38,8 @@ std::pair<bool, dynamic_string> hidden_ascii_match::match_impl(std::string_view 
     }
 
     cow_string str{pattern};
-    if (!transformer::unicode_normalize::transform(str)) {
-        return {true, {}};
-    }
-
+    // The transformation shouldn't fail
+    transformer::unicode_normalize::transform(str);
     return {true, dynamic_string::from_movable_string(str)};
 }
 
