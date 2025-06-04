@@ -45,7 +45,7 @@ public:
         std::vector<std::string_view> paths;
         paths.reserve(configs_.size());
         for (const auto &[path, _] : configs_) {
-            const re2::StringPiece ref(path.data(), path.size());
+            const std::string_view ref(path.data(), path.size());
             if (!filter.Match(ref, 0, path.size(), re2::RE2::UNANCHORED, nullptr, 0)) {
                 continue;
             }

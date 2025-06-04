@@ -64,7 +64,7 @@
 #include "re2/pod_array.h"
 #include "re2/prog.h"
 #include "re2/sparse_set.h"
-#include "re2/stringpiece.h"
+#include <string_view>
 
 // Silence "zero-sized array in struct/union" warning for OneState::action.
 #ifdef _MSC_VER
@@ -189,7 +189,7 @@ void OnePass_Checks() {
                 "kMaxCap disagrees with kMaxOnePassCapture");
 }
 
-static bool Satisfy(uint32_t cond, const StringPiece& context, const char* p) {
+static bool Satisfy(uint32_t cond, std::string_view context, const char* p) {
   uint32_t satisfied = Prog::EmptyFlags(context, p);
   if (cond & kEmptyAllFlags & ~satisfied)
     return false;
@@ -211,10 +211,10 @@ static inline OneState* IndexToNode(uint8_t* nodes, int statesize,
   return reinterpret_cast<OneState*>(nodes + statesize*nodeindex);
 }
 
-bool Prog::SearchOnePass(const StringPiece& text,
-                         const StringPiece& const_context,
+bool Prog::SearchOnePass(std::string_view text,
+                         std::string_view const_context,
                          Anchor anchor, MatchKind kind,
-                         StringPiece* match, int nmatch) {
+                         std::string_view* match, int nmatch) {
   if (anchor != kAnchored && kind != kFullMatch) {
     LOG(DFATAL) << "Cannot use SearchOnePass for unanchored matches.";
     return false;
@@ -234,7 +234,7 @@ bool Prog::SearchOnePass(const StringPiece& text,
   for (int i = 0; i < ncap; i++)
     matchcap[i] = NULL;
 
-  StringPiece context = const_context;
+  std::string_view context = const_context;
   if (context.data() == NULL)
     context = text;
   if (anchor_start() && BeginPtr(context) != BeginPtr(text))
@@ -340,7 +340,7 @@ done:
     return false;
   for (int i = 0; i < nmatch; i++)
     match[i] =
-        StringPiece(matchcap[2 * i],
+        std::string_view(matchcap[2 * i],
                     static_cast<size_t>(matchcap[2 * i + 1] - matchcap[2 * i]));
   return true;
 }

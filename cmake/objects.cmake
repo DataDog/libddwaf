@@ -108,7 +108,6 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/re2.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/regexp.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/simplify.cc
-    ${libddwaf_SOURCE_DIR}/src/vendor/re2/stringpiece.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/tostring.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/unicode_casefold.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/unicode_groups.cc

@@ -12,7 +12,6 @@
 
 #include "log.hpp"
 #include "re2.h"
-#include "stringpiece.h"
 #include "tokenizer/mysql.hpp"
 #include "tokenizer/sql_base.hpp"
 #include "utils.hpp"
@@ -73,8 +72,8 @@ re2::RE2 number_or_identifier_regex(
 
 std::string_view partial_match_regex(re2::RE2 &regex, std::string_view str)
 {
-    re2::StringPiece match;
-    const re2::StringPiece ref(str.data(), str.size());
+    std::string_view match;
+    const std::string_view ref(str.data(), str.size());
     if (re2::RE2::PartialMatch(ref, regex, &match)) {
         if (!match.empty()) {
             return {match.data(), match.size()};
@@ -132,11 +131,11 @@ void mysql_tokenizer::tokenize_string_keyword_operator_or_identifier()
 
     auto remaining_str = substr(index());
 
-    re2::StringPiece binary_op;
-    re2::StringPiece keyword;
-    re2::StringPiece ident;
+    std::string_view binary_op;
+    std::string_view keyword;
+    std::string_view ident;
 
-    const re2::StringPiece ref(remaining_str.data(), remaining_str.size());
+    const std::string_view ref(remaining_str.data(), remaining_str.size());
     if (re2::RE2::PartialMatch(ref, identifier_regex, &keyword, &binary_op, &ident)) {
         // At least one of the strings will contain a match
         if (!binary_op.empty()) {
@@ -193,10 +192,10 @@ void mysql_tokenizer::tokenize_number_or_identifier()
 
     auto remaining_str = substr(index());
 
-    re2::StringPiece number;
-    re2::StringPiece ident;
+    std::string_view number;
+    std::string_view ident;
 
-    const re2::StringPiece ref(remaining_str.data(), remaining_str.size());
+    const std::string_view ref(remaining_str.data(), remaining_str.size());
     if (re2::RE2::PartialMatch(ref, number_or_identifier_regex, &number, &ident)) {
         // At least one of the strings will contain a match
         if (!number.empty()) {

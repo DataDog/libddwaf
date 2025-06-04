@@ -11,7 +11,6 @@
 
 #include "log.hpp"
 #include "re2.h"
-#include "stringpiece.h"
 #include "tokenizer/sql_base.hpp"
 #include "tokenizer/sqlite.hpp"
 #include "utils.hpp"
@@ -44,11 +43,11 @@ void sqlite_tokenizer::tokenize_keyword_operator_or_identifier()
 
     auto remaining_str = substr(index());
 
-    re2::StringPiece binary_op;
-    re2::StringPiece keyword;
-    re2::StringPiece ident;
+    std::string_view binary_op;
+    std::string_view keyword;
+    std::string_view ident;
 
-    const re2::StringPiece ref(remaining_str.data(), remaining_str.size());
+    const std::string_view ref(remaining_str.data(), remaining_str.size());
     if (re2::RE2::PartialMatch(ref, identifier_regex, &keyword, &binary_op, &ident)) {
         // At least one of the strings will contain a match
         if (!binary_op.empty()) {

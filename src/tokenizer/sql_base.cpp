@@ -10,7 +10,6 @@
 #include <utility>
 
 #include "re2.h"
-#include "stringpiece.h"
 #include "tokenizer/base.hpp"
 #include "tokenizer/generic_sql.hpp"
 #include "tokenizer/mysql.hpp"
@@ -219,8 +218,8 @@ template <typename T> std::string_view sql_tokenizer<T>::extract_escaped_string(
 template <typename T> std::string_view sql_tokenizer<T>::extract_number()
 {
     auto str = substr();
-    re2::StringPiece number;
-    const re2::StringPiece ref(str.data(), str.size());
+    std::string_view number;
+    const std::string_view ref(str.data(), str.size());
     if (re2::RE2::PartialMatch(ref, number_regex, &number)) {
         if (!number.empty()) {
             return {number.data(), number.size()};

@@ -20,7 +20,7 @@ TEST(TestObfuscator, ValidateValueRegex)
     options.set_log_errors(false);
     options.set_case_sensitive(false);
 
-    const re2::StringPiece sp(match_obfuscator::default_value_regex_str.data(),
+    const std::string_view sp(match_obfuscator::default_value_regex_str.data(),
         match_obfuscator::default_value_regex_str.size());
     re2::RE2 regex{sp, options};
     EXPECT_TRUE(regex.ok());

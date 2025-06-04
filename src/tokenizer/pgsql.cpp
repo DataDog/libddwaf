@@ -12,7 +12,6 @@
 
 #include "log.hpp"
 #include "re2.h"
-#include "stringpiece.h"
 #include "tokenizer/pgsql.hpp"
 #include "tokenizer/sql_base.hpp"
 #include "utils.hpp"
@@ -96,11 +95,11 @@ void pgsql_tokenizer::tokenize_string_keyword_operator_or_identifier()
 
     auto remaining_str = substr();
 
-    re2::StringPiece binary_op;
-    re2::StringPiece keyword;
-    re2::StringPiece ident;
+    std::string_view binary_op;
+    std::string_view keyword;
+    std::string_view ident;
 
-    const re2::StringPiece ref(remaining_str.data(), remaining_str.size());
+    const std::string_view ref(remaining_str.data(), remaining_str.size());
     if (re2::RE2::PartialMatch(ref, identifier_regex, &keyword, &binary_op, &ident)) {
         // At least one of the strings will contain a match
         if (!binary_op.empty()) {
@@ -230,8 +229,8 @@ void pgsql_tokenizer::tokenize_dollar_string_or_identifier()
     } else {
         auto str = substr();
 
-        re2::StringPiece parameter;
-        const re2::StringPiece ref(str.data(), str.size());
+        std::string_view parameter;
+        const std::string_view ref(str.data(), str.size());
         if (re2::RE2::PartialMatch(ref, parameter_regex, &parameter)) {
             if (!parameter.empty()) {
                 add_token(sql_token_type::identifier, parameter.size());
