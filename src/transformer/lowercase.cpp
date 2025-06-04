@@ -13,7 +13,7 @@
 #  include <immintrin.h>
 #endif
 
-#include "transformer/common/cow_string.hpp"
+#include "cow_string.hpp"
 #include "transformer/lowercase.hpp"
 
 namespace ddwaf::transformer {

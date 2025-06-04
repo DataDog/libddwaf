@@ -24,7 +24,7 @@ TEST(TestIsSQLi, TestBasic)
 
     auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
-    EXPECT_STREQ(highlight.c_str(), "s&1c");
+    EXPECT_STR(highlight, "s&1c");
 }
 
 TEST(TestIsSQLi, TestMatch)

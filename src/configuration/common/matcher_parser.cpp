@@ -24,6 +24,7 @@
 #include "matcher/equals.hpp"
 #include "matcher/exact_match.hpp"
 #include "matcher/greater_than.hpp"
+#include "matcher/hidden_ascii_match.hpp"
 #include "matcher/ip_match.hpp"
 #include "matcher/is_sqli.hpp"
 #include "matcher/is_xss.hpp"
@@ -200,6 +201,15 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::gr
     } else {
         throw ddwaf::parsing_error("invalid type for matcher greater_than " + value_type);
     }
+
+    return {std::string{}, std::move(matcher)};
+}
+
+template <>
+std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::hidden_ascii_match>(
+    const raw_configuration::map & /*params*/)
+{
+    std::unique_ptr<matcher::base> matcher = std::make_unique<matcher::hidden_ascii_match>();
 
     return {std::string{}, std::move(matcher)};
 }

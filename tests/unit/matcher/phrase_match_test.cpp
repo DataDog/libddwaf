@@ -27,7 +27,7 @@ TEST(TestPhraseMatch, TestBasic)
 
     auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
-    EXPECT_STREQ(highlight.c_str(), "bbbb");
+    EXPECT_STR(highlight, "bbbb");
 
     owned_object param2{"dddd"};
 
@@ -68,7 +68,7 @@ TEST(TestPhraseMatch, TestComplex)
         if (expect != nullptr) {
             auto [res, highlight] = matcher.match(ddwaf::object_view{param});
             EXPECT_TRUE(res);
-            EXPECT_STREQ(highlight.c_str(), expect);
+            EXPECT_STR(highlight, expect);
         } else {
             EXPECT_FALSE(matcher.match(ddwaf::object_view{param}).first);
         }
@@ -101,7 +101,7 @@ TEST(TestPhraseMatch, TestWordBoundary)
         if (expect != nullptr) {
             auto [res, highlight] = matcher.match(ddwaf::object_view{param});
             EXPECT_TRUE(res);
-            EXPECT_STREQ(highlight.c_str(), expect);
+            EXPECT_STR(highlight, expect);
         } else {
             EXPECT_FALSE(matcher.match(ddwaf::object_view{param}).first);
         }

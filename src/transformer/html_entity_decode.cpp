@@ -6,9 +6,9 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "transformer/common/cow_string.hpp"
-#include "transformer/common/utf8.hpp"
+#include "cow_string.hpp"
 #include "transformer/html_entity_decode.hpp"
+#include "utf8.hpp"
 #include "utils.hpp"
 
 namespace ddwaf::transformer {

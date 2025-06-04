@@ -21,7 +21,7 @@ TEST(TestIsXSS, TestBasic)
     owned_object param{"<script>alert(1);</script>"};
     auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
-    EXPECT_STREQ(highlight.c_str(), "");
+    EXPECT_STR(highlight, "");
 }
 
 TEST(TestIsXSS, TestNoMatch)

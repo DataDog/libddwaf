@@ -47,19 +47,19 @@ protected:
     }
 
     template <typename U>
-    [[nodiscard]] std::pair<bool, std::string> match_impl(const U &obtained) const
+    [[nodiscard]] std::pair<bool, dynamic_string> match_impl(const U &obtained) const
         requires(std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t>) && std::is_integral_v<U>
     {
         return {std::cmp_equal(expected_, obtained), {}};
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match_impl(bool obtained) const
+    [[nodiscard]] std::pair<bool, dynamic_string> match_impl(bool obtained) const
         requires std::is_same_v<T, bool>
     {
         return {expected_ == obtained, {}};
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view obtained) const
+    [[nodiscard]] std::pair<bool, dynamic_string> match_impl(std::string_view obtained) const
         requires std::is_same_v<T, std::string>
     {
         return {expected_ == obtained, {}};
@@ -90,7 +90,7 @@ protected:
         return type == object_type::float64;
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match_impl(double obtained) const
+    [[nodiscard]] std::pair<bool, dynamic_string> match_impl(double obtained) const
     {
         return {std::abs(expected_ - obtained) < delta_, {}};
     }
@@ -118,7 +118,7 @@ protected:
 
     static constexpr std::string_view to_string_impl() { return ""; }
     static constexpr bool is_supported_type_impl(object_type /*type*/) { return false; }
-    [[nodiscard]] static std::pair<bool, std::string> match_impl() { return {}; }
+    [[nodiscard]] static std::pair<bool, dynamic_string> match_impl() { return {}; }
 
     friend class base_impl<equals<void>>;
 };

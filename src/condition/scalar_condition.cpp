@@ -56,7 +56,6 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
                 if constexpr (std::is_same_v<ResultType, bool>) {
                     return true;
                 } else {
-                    // TODO Fix the conversion to dynamic string
                     return {
                         {{{"input"sv, dst.convert<std::string>(), address, it.get_current_path()}},
                             {std::move(highlight)}, matcher.name(), matcher.to_string(),
@@ -76,7 +75,6 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
     if constexpr (std::is_same_v<ResultType, bool>) {
         return true;
     } else {
-        // TODO Fix the conversion to dynamic string
         return {{{{"input"sv, src.convert<std::string>(), address, it.get_current_path()}},
             {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
     }

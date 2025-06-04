@@ -12,6 +12,7 @@
 #include <unordered_map>
 
 #include "object.hpp"
+#include "dynamic_string.hpp"
 
 namespace ddwaf {
 namespace matcher {
@@ -39,8 +40,8 @@ public:
     // Scalar matcher methods
     [[nodiscard]] virtual bool is_supported_type(object_type type) const = 0;
 
-    [[nodiscard]] virtual std::pair<bool, std::string> match(std::string_view str) const = 0;
-    [[nodiscard]] virtual std::pair<bool, std::string> match(object_view obj) const = 0;
+    [[nodiscard]] virtual std::pair<bool, dynamic_string> match(std::string_view str) const = 0;
+    [[nodiscard]] virtual std::pair<bool, dynamic_string> match(object_view obj) const = 0;
 };
 
 template <typename T> class base_impl : public base {
@@ -66,7 +67,7 @@ public:
     }
 
     // Helper used for testing purposes
-    template <typename U> [[nodiscard]] std::pair<bool, std::string> match(const U &data) const
+    template <typename U> [[nodiscard]] std::pair<bool, dynamic_string> match(const U &data) const
     {
         if constexpr (is_type_in_set_v<U, owned_object, borrowed_object>) {
             return match(object_view{data});
@@ -75,7 +76,7 @@ public:
         }
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match(std::string_view str) const override
+    [[nodiscard]] std::pair<bool, dynamic_string> match(std::string_view str) const override
     {
         const auto *ptr = static_cast<const T *>(this);
         if constexpr (T::is_supported_type_impl(object_type::string)) {
@@ -84,7 +85,7 @@ public:
         return {false, {}};
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match(object_view obj) const override
+    [[nodiscard]] std::pair<bool, dynamic_string> match(object_view obj) const override
     {
         const auto *ptr = static_cast<const T *>(this);
         if constexpr (T::is_supported_type_impl(object_type::string)) {

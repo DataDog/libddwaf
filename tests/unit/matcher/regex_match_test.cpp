@@ -22,7 +22,7 @@ TEST(TestRegexMatch, TestBasicCaseInsensitive)
 
     auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
-    EXPECT_STREQ(highlight.c_str(), "regex");
+    EXPECT_STR(highlight, "regex");
 }
 
 TEST(TestRegexMatch, TestBasicCaseSensitive)
@@ -37,7 +37,7 @@ TEST(TestRegexMatch, TestBasicCaseSensitive)
 
     auto [res, highlight] = matcher.match(param2);
     EXPECT_TRUE(res);
-    EXPECT_STREQ(highlight.c_str(), "rEgEx");
+    EXPECT_STR(highlight, "rEgEx");
 }
 
 TEST(TestRegexMatch, TestMinLength)
@@ -51,7 +51,7 @@ TEST(TestRegexMatch, TestMinLength)
 
     auto [res, highlight] = matcher.match(param2);
     EXPECT_TRUE(res);
-    EXPECT_STREQ(highlight.c_str(), "rEgExe");
+    EXPECT_STR(highlight, "rEgExe");
 }
 
 TEST(TestRegexMatch, TestInvalidInput)

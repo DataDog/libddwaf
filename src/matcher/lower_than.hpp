@@ -40,13 +40,13 @@ protected:
     }
 
     template <typename U>
-    [[nodiscard]] std::pair<bool, std::string> match_impl(const U &obtained) const
+    [[nodiscard]] std::pair<bool, dynamic_string> match_impl(const U &obtained) const
         requires(!std::is_floating_point_v<T>)
     {
         return {std::cmp_less(obtained, maximum_), {}};
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match_impl(double obtained) const
+    [[nodiscard]] std::pair<bool, dynamic_string> match_impl(double obtained) const
     {
         return {obtained < maximum_, {}};
     }
@@ -73,7 +73,7 @@ protected:
     static constexpr std::string_view to_string_impl() { return ""; }
     static constexpr bool is_supported_type_impl(object_type /*type*/) { return false; }
 
-    [[nodiscard]] static std::pair<bool, std::string> match_impl() { return {}; }
+    [[nodiscard]] static std::pair<bool, dynamic_string> match_impl() { return {}; }
 
     friend class base_impl<lower_than<void>>;
 };
