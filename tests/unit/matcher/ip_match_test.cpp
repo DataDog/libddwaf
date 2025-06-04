@@ -22,8 +22,8 @@ TEST(TestIPMatch, Basic)
         "1234:0:0:0:0:0:0:5678", "::1", "abcd::1234:5678:1234:5678", "abcd::1234:0:0:0",
         "abcd::1234:ffff:ffff:ffff", "42", "bad ip", "other"});
 
-    EXPECT_STREQ(matcher.to_string().data(), "");
-    EXPECT_STREQ(matcher.name().data(), "ip_match");
+    EXPECT_STR(matcher.to_string(), "");
+    EXPECT_STR(matcher.name(), "ip_match");
 
     EXPECT_TRUE(match(matcher, "1.2.3.4"));
     EXPECT_TRUE(match(matcher, "5.6.7.254"));
@@ -117,8 +117,8 @@ TEST(TestIPMatch, Expiration)
         {"abcd::1234:5678:1234:5678", now + 100}, {"abcd::1234:0:0:0", now - 1},
         {"abcd::1234:ffff:ffff:ffff", now + 100}});
 
-    EXPECT_STREQ(matcher.to_string().data(), "");
-    EXPECT_STREQ(matcher.name().data(), "ip_match");
+    EXPECT_STR(matcher.to_string(), "");
+    EXPECT_STR(matcher.name(), "ip_match");
 
     EXPECT_FALSE(match(matcher, "1.2.3.4"));
     EXPECT_TRUE(match(matcher, "5.6.7.254"));
@@ -141,8 +141,8 @@ TEST(TestIPMatch, OverlappingExpiration)
         {"1.2.3.4", now + 100}, {"2.2.0.0/16", now + 100}, {"2.2.7.8", now - 100},
         {"2.3.0.0/16", 0}, {"2.3.9.1", now - 100}, {"2.4.0.0/16", now - 1}, {"2.4.3.4", 0}});
 
-    EXPECT_STREQ(matcher.to_string().data(), "");
-    EXPECT_STREQ(matcher.name().data(), "ip_match");
+    EXPECT_STR(matcher.to_string(), "");
+    EXPECT_STR(matcher.name(), "ip_match");
 
     EXPECT_TRUE(match(matcher, "4.4.4.4"));
     EXPECT_TRUE(match(matcher, "5.5.5.5"));
@@ -169,8 +169,8 @@ TEST(TestIPMatch, MultivectorConstructor)
     ivec.emplace("vec3", {{"abcd::1234:0:0:0", 0}, {"abcd::1234:ffff:ffff:ffff", 0}});
     ip_match matcher(ivec);
 
-    EXPECT_STREQ(matcher.to_string().data(), "");
-    EXPECT_STREQ(matcher.name().data(), "ip_match");
+    EXPECT_STR(matcher.to_string(), "");
+    EXPECT_STR(matcher.name(), "ip_match");
 
     EXPECT_TRUE(match(matcher, "1.2.3.4"));
     EXPECT_TRUE(match(matcher, "5.6.7.254"));
@@ -196,8 +196,8 @@ TEST(TestIPMatch, MultivectorConstructorExpiration)
     ivec.emplace("vec3", {{"abcd::1234:0:0:0", now - 1}, {"abcd::1234:ffff:ffff:ffff", now + 100}});
     ip_match matcher(ivec);
 
-    EXPECT_STREQ(matcher.to_string().data(), "");
-    EXPECT_STREQ(matcher.name().data(), "ip_match");
+    EXPECT_STR(matcher.to_string(), "");
+    EXPECT_STR(matcher.name(), "ip_match");
 
     EXPECT_FALSE(match(matcher, "1.2.3.4"));
     EXPECT_TRUE(match(matcher, "5.6.7.254"));

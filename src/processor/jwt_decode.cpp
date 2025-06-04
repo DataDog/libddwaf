@@ -8,12 +8,12 @@
 
 #include "argument_retriever.hpp"
 #include "clock.hpp"
+#include "cow_string.hpp"
 #include "ddwaf.h"
 #include "json_utils.hpp"
 #include "object_store.hpp"
 #include "processor/base.hpp"
 #include "transformer/base64_decode.hpp"
-#include "transformer/common/cow_string.hpp"
 #include "utils.hpp"
 
 #include <cstddef>

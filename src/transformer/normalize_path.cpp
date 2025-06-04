@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <cstddef>
 
-#include "transformer/common/cow_string.hpp"
+#include "cow_string.hpp"
 #include "transformer/normalize_path.hpp"
 
 namespace ddwaf::transformer {

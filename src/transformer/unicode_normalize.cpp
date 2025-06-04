@@ -7,9 +7,9 @@
 #include <cstdint>
 #include <string_view>
 
-#include "transformer/common/cow_string.hpp"
-#include "transformer/common/utf8.hpp"
+#include "cow_string.hpp"
 #include "transformer/unicode_normalize.hpp"
+#include "utf8.hpp"
 
 using namespace ddwaf::utf8;
 

@@ -40,7 +40,7 @@ protected:
         return type == DDWAF_OBJ_STRING;
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view str) const;
+    [[nodiscard]] std::pair<bool, dynamic_string> match_impl(std::string_view str) const;
 
     std::vector<std::string> data_;
     std::unordered_map<std::string_view, uint64_t> values_;

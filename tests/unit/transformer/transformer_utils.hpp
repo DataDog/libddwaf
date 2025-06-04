@@ -8,8 +8,8 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <cow_string.hpp>
 #include <string_view>
-#include <transformer/common/cow_string.hpp>
 
 // NOLINTBEGIN(hicpp-avoid-c-arrays,modernize-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays)
 //

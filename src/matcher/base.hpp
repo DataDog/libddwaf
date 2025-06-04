@@ -12,6 +12,7 @@
 #include <unordered_map>
 
 #include "ddwaf.h"
+#include "dynamic_string.hpp"
 
 namespace ddwaf {
 namespace matcher {
@@ -39,7 +40,7 @@ public:
     // Scalar matcher methods
     [[nodiscard]] virtual bool is_supported_type(DDWAF_OBJ_TYPE type) const = 0;
 
-    [[nodiscard]] virtual std::pair<bool, std::string> match(const ddwaf_object &obj) const = 0;
+    [[nodiscard]] virtual std::pair<bool, dynamic_string> match(const ddwaf_object &obj) const = 0;
 };
 
 template <typename T> class base_impl : public base {
@@ -65,12 +66,12 @@ public:
     }
 
     // Helper used for testing purposes
-    template <typename U> [[nodiscard]] std::pair<bool, std::string> match(const U &data) const
+    template <typename U> [[nodiscard]] std::pair<bool, dynamic_string> match(const U &data) const
     {
         return static_cast<const T *>(this)->match_impl(data);
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match(const ddwaf_object &obj) const override
+    [[nodiscard]] std::pair<bool, dynamic_string> match(const ddwaf_object &obj) const override
     {
         const auto *ptr = static_cast<const T *>(this);
         if constexpr (T::is_supported_type_impl(DDWAF_OBJ_STRING)) {

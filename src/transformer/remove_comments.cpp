@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <utility>
 
-#include "transformer/common/cow_string.hpp"
+#include "cow_string.hpp"
 #include "transformer/remove_comments.hpp"
 
 namespace ddwaf::transformer {

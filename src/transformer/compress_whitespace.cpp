@@ -6,7 +6,7 @@
 
 #include <cstddef>
 
-#include "transformer/common/cow_string.hpp"
+#include "cow_string.hpp"
 #include "transformer/compress_whitespace.hpp"
 
 namespace ddwaf::transformer {

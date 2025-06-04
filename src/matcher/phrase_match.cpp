@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "ac.h"
+#include "dynamic_string.hpp"
 #include "matcher/phrase_match.hpp"
 #include "utils.hpp"
 
@@ -45,7 +46,7 @@ phrase_match::phrase_match(
     ac = std::unique_ptr<ac_t, void (*)(void *)>(ac_, ac_free);
 }
 
-std::pair<bool, std::string> phrase_match::match_impl(std::string_view pattern) const
+std::pair<bool, dynamic_string> phrase_match::match_impl(std::string_view pattern) const
 {
     ac_t *acStructure = ac.get();
     if (pattern.empty() || pattern.data() == nullptr || acStructure == nullptr) {
