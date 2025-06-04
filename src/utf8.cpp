@@ -154,8 +154,8 @@ uint8_t write_codepoint(uint32_t codepoint, char *utf8Buffer, uint64_t lengthLef
 
 uint32_t fetch_next_codepoint(const char *utf8Buffer, uint64_t &position, uint64_t length)
 {
-    if (position > length) {
-        return UTF8_INVALID;
+    if (position >= length) {
+        return UTF8_EOF;
     }
 
     const int8_t nextGlyphLength = findNextGlyphLength(&utf8Buffer[position], length - position);

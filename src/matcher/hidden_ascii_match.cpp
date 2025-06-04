@@ -23,6 +23,11 @@ std::pair<bool, dynamic_string> hidden_ascii_match::match_impl(std::string_view 
     uint32_t codepoint;
     uint64_t position = 0;
 
+    // Find the first unicode character
+    while (position < pattern.length() && static_cast<uint8_t>(pattern[position]) <= 0x7F) {
+        ++position;
+    }
+
     bool hidden_ascii_found = false;
     while ((codepoint = fetch_next_codepoint(pattern.data(), position, pattern.length())) !=
            UTF8_EOF) {
