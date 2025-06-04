@@ -14,15 +14,15 @@ namespace {
 TEST(TestRegexMatch, TestBasicCaseInsensitive)
 {
     regex_match matcher("^rEgEx$", 0, false);
-    EXPECT_STREQ(matcher.to_string().data(), "^rEgEx$");
-    EXPECT_STREQ(matcher.name().data(), "match_regex");
+    EXPECT_STR(matcher.to_string(), "^rEgEx$");
+    EXPECT_STR(matcher.name(), "match_regex");
 
     ddwaf_object param;
     ddwaf_object_string(&param, "regex");
 
     auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
-    EXPECT_STREQ(highlight.c_str(), "regex");
+    EXPECT_STR(highlight, "regex");
 
     ddwaf_object_free(&param);
 }
@@ -41,7 +41,7 @@ TEST(TestRegexMatch, TestBasicCaseSensitive)
 
     auto [res, highlight] = matcher.match(param2);
     EXPECT_TRUE(res);
-    EXPECT_STREQ(highlight.c_str(), "rEgEx");
+    EXPECT_STR(highlight, "rEgEx");
 
     ddwaf_object_free(&param);
     ddwaf_object_free(&param2);
@@ -60,7 +60,7 @@ TEST(TestRegexMatch, TestMinLength)
 
     auto [res, highlight] = matcher.match(param2);
     EXPECT_TRUE(res);
-    EXPECT_STREQ(highlight.c_str(), "rEgExe");
+    EXPECT_STR(highlight, "rEgExe");
 
     ddwaf_object_free(&param);
     ddwaf_object_free(&param2);

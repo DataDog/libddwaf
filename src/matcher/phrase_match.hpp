@@ -34,7 +34,7 @@ protected:
         return type == DDWAF_OBJ_STRING;
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view pattern) const;
+    [[nodiscard]] std::pair<bool, dynamic_string> match_impl(std::string_view pattern) const;
 
     bool enforce_word_boundary_{false};
     std::unique_ptr<ac_t, void (*)(void *)> ac{nullptr, nullptr};

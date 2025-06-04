@@ -6,7 +6,7 @@
 
 #include <cstdint>
 
-#include "transformer/common/cow_string.hpp"
+#include "cow_string.hpp"
 #include "transformer/shell_unescape.hpp"
 #include "utils.hpp"
 

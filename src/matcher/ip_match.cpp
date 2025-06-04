@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "dynamic_string.hpp"
 #include "indexed_multivector.hpp"
 #include "ip_utils.hpp"
 #include "matcher/ip_match.hpp"
@@ -93,7 +94,7 @@ ip_match::ip_match(const std::vector<std::pair<std::string, uint64_t>> &ip_list)
     return true;
 }
 
-std::pair<bool, std::string> ip_match::match_impl(std::string_view str) const
+std::pair<bool, dynamic_string> ip_match::match_impl(std::string_view str) const
 {
     if (!rtree_ || str.empty() || str.data() == nullptr) {
         return {false, {}};

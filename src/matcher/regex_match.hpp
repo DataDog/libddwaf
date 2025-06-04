@@ -33,7 +33,7 @@ protected:
         return type == DDWAF_OBJ_STRING;
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view pattern) const;
+    [[nodiscard]] std::pair<bool, dynamic_string> match_impl(std::string_view pattern) const;
 
     static constexpr int max_match_count = 16;
     std::unique_ptr<re2::RE2> regex{nullptr};

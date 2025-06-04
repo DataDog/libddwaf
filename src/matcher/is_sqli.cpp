@@ -6,15 +6,15 @@
 
 #include <array>
 #include <libinjection.h>
-#include <string>
 #include <string_view>
 #include <utility>
 
+#include "dynamic_string.hpp"
 #include "matcher/is_sqli.hpp"
 
 namespace ddwaf::matcher {
 
-std::pair<bool, std::string> is_sqli::match_impl(std::string_view pattern)
+std::pair<bool, dynamic_string> is_sqli::match_impl(std::string_view pattern)
 {
     if (pattern.empty() || pattern.data() == nullptr) {
         return {false, {}};

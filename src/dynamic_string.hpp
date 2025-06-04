@@ -11,6 +11,8 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <fmt/core.h>
+#include <fmt/format.h>
 #include <limits>
 #include <memory>
 #include <string>
@@ -125,6 +127,15 @@ public:
         return size_ == other.size_ && (memcmp(buffer_.get(), other.buffer_.get(), size_) == 0);
     }
 
+    template <typename T> static dynamic_string from_movable_string(T &str)
+    {
+        dynamic_string dynstr;
+        auto [ptr, size] = str.move();
+        dynstr.buffer_.reset(ptr);
+        dynstr.size_ = size;
+        return dynstr;
+    }
+
 protected:
     void ensure_spare_capacity(std::size_t at_least)
     {
@@ -155,6 +166,14 @@ protected:
     // as if refers to the total memory allocated.
     std::size_t size_{0};
     std::size_t capacity_{0};
+};
+
+template <> struct fmt::formatter<dynamic_string> : fmt::formatter<std::string_view> {
+    // Use the parse method from the base class formatter
+    template <typename FormatContext> auto format(const dynamic_string &d, FormatContext &ctx)
+    {
+        return fmt::formatter<std::string_view>::format(std::string_view{d.data(), d.size()}, ctx);
+    }
 };
 
 } // namespace ddwaf

@@ -21,6 +21,7 @@
 
 #include "argument_retriever.hpp"
 #include "clock.hpp"
+#include "cow_string.hpp"
 #include "ddwaf.h"
 #include "exception.hpp"
 #include "log.hpp"
@@ -28,7 +29,6 @@
 #include "processor/base.hpp"
 #include "processor/fingerprint.hpp"
 #include "sha256.hpp"
-#include "transformer/common/cow_string.hpp"
 #include "transformer/lowercase.hpp"
 #include "utils.hpp"
 

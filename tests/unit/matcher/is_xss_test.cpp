@@ -14,15 +14,15 @@ namespace {
 TEST(TestIsXSS, TestBasic)
 {
     is_xss matcher;
-    EXPECT_STREQ(matcher.to_string().data(), "");
-    EXPECT_STREQ(matcher.name().data(), "is_xss");
+    EXPECT_STR(matcher.to_string(), "");
+    EXPECT_STR(matcher.name(), "is_xss");
 
     ddwaf_object param;
     ddwaf_object_string(&param, "<script>alert(1);</script>");
 
     auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
-    EXPECT_STREQ(highlight.c_str(), "");
+    EXPECT_STR(highlight, "");
 
     ddwaf_object_free(&param);
 }

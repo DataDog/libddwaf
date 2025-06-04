@@ -6,11 +6,11 @@
 #include <cstddef>
 #include <span>
 
+#include "cow_string.hpp"
 #include "ddwaf.h"
 #include "transformer/base.hpp"
 #include "transformer/base64_decode.hpp"
 #include "transformer/base64_encode.hpp"
-#include "transformer/common/cow_string.hpp"
 #include "transformer/compress_whitespace.hpp"
 #include "transformer/css_decode.hpp"
 #include "transformer/html_entity_decode.hpp"

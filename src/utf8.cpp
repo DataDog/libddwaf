@@ -6,6 +6,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <new>
 #include <vector>
 
 extern "C" {
@@ -13,14 +14,14 @@ extern "C" {
 #include <utf8proc.h>
 }
 
-#include "transformer/common/cow_string.hpp"
-#include "transformer/common/utf8.hpp"
+#include "cow_string.hpp"
+#include "utf8.hpp"
 
 namespace ddwaf::utf8 {
 
 namespace {
 
-int8_t findNextGlyphLength(const char *utf8Buffer, uint64_t lengthLeft)
+int8_t find_next_code_unit_sequence_length(const char *utf8Buffer, uint64_t lengthLeft)
 {
     if (lengthLeft == 0) {
         return 0;
@@ -154,46 +155,52 @@ uint8_t write_codepoint(uint32_t codepoint, char *utf8Buffer, uint64_t lengthLef
 
 uint32_t fetch_next_codepoint(const char *utf8Buffer, uint64_t &position, uint64_t length)
 {
-    if (position > length) {
-        return UTF8_INVALID;
+    if (position >= length) {
+        return UTF8_EOF;
     }
 
-    const int8_t nextGlyphLength = findNextGlyphLength(&utf8Buffer[position], length - position);
-    if (nextGlyphLength <= 0) {
-        if (nextGlyphLength == 0) {
+    const int8_t next_length =
+        find_next_code_unit_sequence_length(&utf8Buffer[position], length - position);
+    if (next_length <= 0) {
+        if (next_length == 0) {
             return UTF8_EOF;
         }
-        if (nextGlyphLength < 0) {
+        if (next_length < 0) {
             position += 1;
             return UTF8_INVALID;
         }
-    } else if (nextGlyphLength == 1) {
+    } else if (next_length == 1) {
         // Return one byte and move the position forward
         return (uint32_t)utf8Buffer[position++];
     }
 
     // Alright, we need to read multiple byte. The first one as a variable length so we need to deal
-    // with it :( To illustrate, here is the matcher with trying to perform based on
-    // nextGlyphLength
+    // with it :( To illustrate, here is the matcher with trying to perform based on next_length
     //
     //  NGL = 2, buf = 110xxxxx -> buf & 00011111
     //  NGL = 3, buf = 1110xxxx -> buf & 00001111
     //  NGL = 4, buf = 11110xxx -> buf & 00000111
+    uint32_t codepoint = (static_cast<uint8_t>(utf8Buffer[position])) & (0xFF >> (next_length + 1));
 
-    uint32_t codepoint = ((uint8_t)utf8Buffer[position]) & (0xFF >> (nextGlyphLength + 1));
-
-    // Once we parsed the header, we parse the following bytes
-    for (uint8_t byteIndex = 1; byteIndex < nextGlyphLength; ++byteIndex) {
-        // We first shift the codepoint we already loaded by 6 bits to make room for the 6 new bits
-        // we're about to add
+    // We first shift the codepoint we already loaded by 6*next_length bits to make room for
+    // the 6*next_length new bits we're about to add.
+    // The bytes after the header are formatted like 10xxxxxx, we thus mask by 00111111 to only
+    // keep xxxxxx and append it at the end of codepoint
+    if (next_length == 2) {
         codepoint <<= 6;
-
-        // The bytes after the header are formatted like 10xxxxxx, we thus mask by 00111111 to only
-        // keep xxxxxx and append it at the end of codepoint
-        codepoint |= utf8Buffer[position + byteIndex] & 0x3F;
+        codepoint |= utf8Buffer[position + 1] & 0x3F;
+    } else if (next_length == 3) {
+        codepoint <<= 12;
+        codepoint |= (utf8Buffer[position + 1] & 0x3F) << 6;
+        codepoint |= utf8Buffer[position + 2] & 0x3F;
+    } else if (next_length == 4) {
+        codepoint <<= 18;
+        codepoint |= (utf8Buffer[position + 1] & 0x3F) << 12;
+        codepoint |= (utf8Buffer[position + 2] & 0x3F) << 6;
+        codepoint |= (utf8Buffer[position + 3] & 0x3F);
     }
 
-    position += (uint8_t)nextGlyphLength;
+    position += (uint8_t)next_length;
     return codepoint;
 }
 
@@ -206,6 +213,9 @@ struct ScratchpadChunk {
         // Allow for potential \0
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-no-malloc,hicpp-no-malloc)
         scratchpad = reinterpret_cast<char *>(malloc(length + 1));
+        if (scratchpad == nullptr) {
+            throw std::bad_alloc();
+        }
     }
 
     // NOLINTNEXTLINE(cppcoreguidelines-no-malloc,hicpp-no-malloc)
@@ -239,6 +249,15 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
     if (codepoint <= 0x7F || codepoint == 0x200D) {
         if (wbBufferLength > 0) {
             wbBuffer[0] = (int32_t)codepoint;
+        }
+        return 1;
+    }
+
+    // Hidden ASCII range (plane 14) https://en.wikipedia.org/wiki/Tags_(Unicode_block)
+    // [U+E0000, U+E0019] (excluding U+E0001) has been deprecated and is unassigned
+    if (codepoint == 0xE0001 || (codepoint >= 0xE0020 && codepoint <= 0xE007F)) {
+        if (wbBufferLength > 0) {
+            wbBuffer[0] = static_cast<int32_t>(codepoint - 0xE0000);
         }
         return 1;
     }
@@ -297,84 +316,88 @@ size_t normalize_codepoint(uint32_t codepoint, int32_t *wbBuffer, size_t wbBuffe
 // We empirically measured that no codepoint decomposition exceeded 18 codepoints.
 bool normalize_string(cow_string &str)
 {
-    static constexpr std::size_t inflight_buffer_size = 24;
+    try {
+        static constexpr std::size_t inflight_buffer_size = 24;
 
-    // NOLINTNEXTLINE(modernize-avoid-c-arrays)
-    int32_t inFlightBuffer[inflight_buffer_size];
-    std::vector<ScratchpadChunk> scratchPad;
+        // NOLINTNEXTLINE(modernize-avoid-c-arrays)
+        int32_t inFlightBuffer[inflight_buffer_size];
+        std::vector<ScratchpadChunk> scratchPad;
 
-    // A tricky part of this conversion is that the output size is totally unknown, but we want to
-    // be efficient with our allocations. We're going to write the glyph we're normalising in a
-    // static buffer (if possible) and write the filtered, normalized results in a bunch of
-    // semi-fixed buffer (the scratchpad) Only when the conversion is over will we allocate the
-    // final buffer and copy everything in there.
-    scratchPad.reserve(8);
-    scratchPad.emplace_back(str.length() > 1024 ? str.length() : 1024);
+        // A tricky part of this conversion is that the output size is totally unknown, but we want
+        // to be efficient with our allocations. We're going to write the glyph we're normalising in
+        // a static buffer (if possible) and write the filtered, normalized results in a bunch of
+        // semi-fixed buffer (the scratchpad) Only when the conversion is over will we allocate the
+        // final buffer and copy everything in there.
+        scratchPad.reserve(8);
+        scratchPad.emplace_back(str.length() > 1024 ? str.length() : 1024);
 
-    uint32_t codepoint;
-    uint64_t position = 0;
-    while ((codepoint = fetch_next_codepoint(str.data(), position, str.length())) != UTF8_EOF) {
-        // Ignore invalid glyphs
-        if (codepoint == UTF8_INVALID) {
-            continue;
-        }
-
-        const size_t decomposedLength =
-            normalize_codepoint(codepoint, inFlightBuffer, inflight_buffer_size);
-
-        // No codepoint can generate more than 18 codepoints, that's extremely odd
-        //  Let's drop this codepoint
-        if (decomposedLength > inflight_buffer_size) {
-            continue;
-        }
-
-        // Write the codepoints to the scratchpad
-        for (size_t inflightBufferIndex = 0; inflightBufferIndex < decomposedLength;
-             ++inflightBufferIndex) {
-            // NOLINTNEXTLINE(modernize-avoid-c-arrays)
-            char utf8Write[4];
-            const uint8_t lengthWritten =
-                write_codepoint((uint32_t)inFlightBuffer[inflightBufferIndex], utf8Write, 4);
-
-            if (scratchPad.back().used + lengthWritten >= scratchPad.back().length) {
-                scratchPad.emplace_back(scratchPad.back().length);
+        uint32_t codepoint;
+        uint64_t position = 0;
+        while ((codepoint = fetch_next_codepoint(str.data(), position, str.length())) != UTF8_EOF) {
+            // Ignore invalid glyphs
+            if (codepoint == UTF8_INVALID) {
+                continue;
             }
 
-            ScratchpadChunk &last = scratchPad.back();
-            memcpy(&last.scratchpad[last.used], utf8Write, lengthWritten);
-            last.used += lengthWritten;
+            const size_t decomposedLength =
+                normalize_codepoint(codepoint, inFlightBuffer, inflight_buffer_size);
+
+            // No codepoint can generate more than 18 codepoints, that's extremely odd
+            //  Let's drop this codepoint
+            if (decomposedLength > inflight_buffer_size) {
+                continue;
+            }
+
+            // Write the codepoints to the scratchpad
+            for (size_t inflightBufferIndex = 0; inflightBufferIndex < decomposedLength;
+                 ++inflightBufferIndex) {
+                // NOLINTNEXTLINE(modernize-avoid-c-arrays)
+                char utf8Write[4];
+                const uint8_t lengthWritten =
+                    write_codepoint((uint32_t)inFlightBuffer[inflightBufferIndex], utf8Write, 4);
+
+                if (scratchPad.back().used + lengthWritten >= scratchPad.back().length) {
+                    scratchPad.emplace_back(scratchPad.back().length);
+                }
+
+                ScratchpadChunk &last = scratchPad.back();
+                memcpy(&last.scratchpad[last.used], utf8Write, lengthWritten);
+                last.used += lengthWritten;
+            }
         }
-    }
 
-    std::size_t new_length = 0;
-    char *new_buffer = nullptr;
-    if (scratchPad.size() == 1) {
-        // We have a single scratchpad, we can simply swap the pointers :D
-        new_buffer = scratchPad.front().scratchpad;
-        new_length = scratchPad.front().used;
-        // Prevent the destructor from freeing the pointer we're now using.
-        scratchPad.front().scratchpad = nullptr;
-    } else {
-        // Compile the scratch pads into the final normalized string
-        for (const ScratchpadChunk &chunk : scratchPad) { new_length += chunk.used; }
+        std::size_t new_length = 0;
+        char *new_buffer = nullptr;
+        if (scratchPad.size() == 1) {
+            // We have a single scratchpad, we can simply swap the pointers :D
+            new_buffer = scratchPad.front().scratchpad;
+            new_length = scratchPad.front().used;
+            // Prevent the destructor from freeing the pointer we're now using.
+            scratchPad.front().scratchpad = nullptr;
+        } else {
+            // Compile the scratch pads into the final normalized string
+            for (const ScratchpadChunk &chunk : scratchPad) { new_length += chunk.used; }
 
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-no-malloc,hicpp-no-malloc)
-        new_buffer = reinterpret_cast<char *>(malloc(new_length + 1));
-        if (new_buffer == nullptr) {
-            return false;
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-no-malloc,hicpp-no-malloc)
+            new_buffer = reinterpret_cast<char *>(malloc(new_length + 1));
+            if (new_buffer == nullptr) {
+                return false;
+            }
+
+            uint64_t writeIndex = 0;
+            for (const ScratchpadChunk &chunk : scratchPad) {
+                memcpy(&new_buffer[writeIndex], chunk.scratchpad, chunk.used);
+                writeIndex += chunk.used;
+            }
         }
 
-        uint64_t writeIndex = 0;
-        for (const ScratchpadChunk &chunk : scratchPad) {
-            memcpy(&new_buffer[writeIndex], chunk.scratchpad, chunk.used);
-            writeIndex += chunk.used;
-        }
-    }
+        new_buffer[new_length] = '\0';
+        str.replace_buffer(new_buffer, new_length);
 
-    new_buffer[new_length] = '\0';
-    str.replace_buffer(new_buffer, new_length);
+        return true;
+    } catch (const std::bad_alloc & /*unused*/) {} // NOLINT(bugprone-empty-catch)
 
-    return true;
+    return false;
 }
 
 } // namespace ddwaf::utf8

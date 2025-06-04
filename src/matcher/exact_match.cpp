@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "dynamic_string.hpp"
 #include "indexed_multivector.hpp"
 #include "matcher/exact_match.hpp"
 
@@ -55,7 +56,7 @@ exact_match::exact_match(
     }
 }
 
-std::pair<bool, std::string> exact_match::match_impl(std::string_view str) const
+std::pair<bool, dynamic_string> exact_match::match_impl(std::string_view str) const
 {
     if (values_.empty() || str.empty() || str.data() == nullptr) {
         return {false, {}};
