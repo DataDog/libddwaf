@@ -11,8 +11,8 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "object.hpp"
 #include "dynamic_string.hpp"
+#include "object.hpp"
 
 namespace ddwaf {
 namespace matcher {
