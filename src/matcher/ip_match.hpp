@@ -54,7 +54,7 @@ protected:
         return (type & object_type::string) != 0;
     }
 
-    [[nodiscard]] std::pair<bool, std::string> match_impl(std::string_view str) const;
+    [[nodiscard]] std::pair<bool, dynamic_string> match_impl(std::string_view str) const;
 
     template <typename T> void init_tree(const T &ip_list)
     {

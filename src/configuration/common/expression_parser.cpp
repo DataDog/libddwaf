@@ -29,6 +29,7 @@
 #include "matcher/equals.hpp"
 #include "matcher/exact_match.hpp"
 #include "matcher/greater_than.hpp"
+#include "matcher/hidden_ascii_match.hpp"
 #include "matcher/ip_match.hpp"
 #include "matcher/is_sqli.hpp"
 #include "matcher/is_xss.hpp"
@@ -188,11 +189,10 @@ std::shared_ptr<expression> parse_expression(const raw_configuration::vector &co
                     matcher::regex_match, matcher::phrase_match, matcher::equals<>>(
                     operator_name.substr(1), params, source, transformers));
         } else {
-            conditions.emplace_back(
-                build_condition<scalar_condition, matcher::equals<>, matcher::exact_match,
-                    matcher::greater_than<>, matcher::ip_match, matcher::is_sqli, matcher::is_xss,
-                    matcher::lower_than<>, matcher::phrase_match, matcher::regex_match>(
-                    operator_name, params, source, transformers));
+            conditions.emplace_back(build_condition<scalar_condition, matcher::equals<>,
+                matcher::exact_match, matcher::greater_than<>, matcher::ip_match, matcher::is_sqli,
+                matcher::is_xss, matcher::lower_than<>, matcher::phrase_match, matcher::regex_match,
+                matcher::hidden_ascii_match>(operator_name, params, source, transformers));
         }
     }
 

@@ -10,8 +10,8 @@
 #include <cstdlib>
 #include <limits>
 
+#include "cow_string.hpp"
 #include "transformer/base64_encode.hpp"
-#include "transformer/common/cow_string.hpp"
 
 namespace ddwaf::transformer {
 

@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "transformer/common/cow_string.hpp"
+#include "cow_string.hpp"
 
 namespace ddwaf::utf8 {
 

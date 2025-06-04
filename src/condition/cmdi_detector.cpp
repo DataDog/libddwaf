@@ -21,6 +21,7 @@
 #include "condition/cmdi_detector.hpp"
 #include "condition/shi_common.hpp"
 #include "condition/structured_condition.hpp"
+#include "cow_string.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
@@ -29,7 +30,6 @@
 #include "object_type.hpp"
 #include "platform.hpp"
 #include "tokenizer/shell.hpp"
-#include "transformer/common/cow_string.hpp"
 #include "transformer/lowercase.hpp"
 #include "utils.hpp"
 

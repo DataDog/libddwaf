@@ -18,28 +18,28 @@ TEST(TestExactMatch, Basic)
 {
     exact_match matcher({"aaaa", "bbbb", "cccc"});
 
-    EXPECT_STREQ(matcher.name().data(), "exact_match");
-    EXPECT_STREQ(matcher.to_string().data(), "");
+    EXPECT_STR(matcher.name(), "exact_match");
+    EXPECT_STR(matcher.to_string(), "");
 
     {
         std::string_view input{"aaaa"};
         auto [res, highlight] = matcher.match(input);
         EXPECT_TRUE(res);
-        EXPECT_STREQ(highlight.c_str(), input.data());
+        EXPECT_STR(highlight, input);
     }
 
     {
         std::string_view input{"bbbb"};
         auto [res, highlight] = matcher.match(input);
         EXPECT_TRUE(res);
-        EXPECT_STREQ(highlight.c_str(), input.data());
+        EXPECT_STR(highlight, input);
     }
 
     {
         std::string_view input{"cccc"};
         auto [res, highlight] = matcher.match(input);
         EXPECT_TRUE(res);
-        EXPECT_STREQ(highlight.c_str(), input.data());
+        EXPECT_STR(highlight, input);
     }
 
     {
@@ -71,8 +71,8 @@ TEST(TestExactMatch, Expiration)
         {"bbbb", now + 100}, {"cccc", now - 1}, {"dddd", 0}, {"dddd", now - 1}, {"eeee", now - 1},
         {"eeee", 0}, {"ffff", now + 100}, {"ffff", now}});
 
-    EXPECT_STREQ(matcher.name().data(), "exact_match");
-    EXPECT_STREQ(matcher.to_string().data(), "");
+    EXPECT_STR(matcher.name(), "exact_match");
+    EXPECT_STR(matcher.to_string(), "");
 
     EXPECT_FALSE(matcher.match("aaaa").first);
     EXPECT_FALSE(matcher.match("cccc").first);
@@ -80,7 +80,7 @@ TEST(TestExactMatch, Expiration)
     std::string_view input{"bbbb"};
     auto [res, highlight] = matcher.match(input);
     EXPECT_TRUE(res);
-    EXPECT_STREQ(highlight.c_str(), input.data());
+    EXPECT_STR(highlight, input);
 
     EXPECT_TRUE(matcher.match("dddd").first);
     EXPECT_TRUE(matcher.match("eeee").first);
@@ -94,8 +94,8 @@ TEST(TestExactMatch, MultivectorConstructor)
     ivec.emplace("vec2", {{"eeee", 0}, {"ffff", 0}});
     exact_match matcher(ivec);
 
-    EXPECT_STREQ(matcher.name().data(), "exact_match");
-    EXPECT_STREQ(matcher.to_string().data(), "");
+    EXPECT_STR(matcher.name(), "exact_match");
+    EXPECT_STR(matcher.to_string(), "");
 
     EXPECT_TRUE(matcher.match("aaaa").first);
     EXPECT_TRUE(matcher.match("cccc").first);
@@ -103,7 +103,7 @@ TEST(TestExactMatch, MultivectorConstructor)
     std::string_view input{"bbbb"};
     auto [res, highlight] = matcher.match(input);
     EXPECT_TRUE(res);
-    EXPECT_STREQ(highlight.c_str(), input.data());
+    EXPECT_STR(highlight, input);
 
     EXPECT_TRUE(matcher.match("dddd").first);
     EXPECT_TRUE(matcher.match("eeee").first);
@@ -123,8 +123,8 @@ TEST(TestExactMatch, MultivectorConstructorExpiration)
     ivec.emplace("vec3", {{"eeee", 0}, {"ffff", now + 100}, {"ffff", now}});
     exact_match matcher(ivec);
 
-    EXPECT_STREQ(matcher.name().data(), "exact_match");
-    EXPECT_STREQ(matcher.to_string().data(), "");
+    EXPECT_STR(matcher.name(), "exact_match");
+    EXPECT_STR(matcher.to_string(), "");
 
     EXPECT_FALSE(matcher.match("aaaa").first);
     EXPECT_FALSE(matcher.match("cccc").first);
@@ -132,7 +132,7 @@ TEST(TestExactMatch, MultivectorConstructorExpiration)
     std::string_view input{"bbbb"};
     auto [res, highlight] = matcher.match(input);
     EXPECT_TRUE(res);
-    EXPECT_STREQ(highlight.c_str(), input.data());
+    EXPECT_STR(highlight, input);
 
     EXPECT_TRUE(matcher.match("dddd").first);
     EXPECT_TRUE(matcher.match("eeee").first);

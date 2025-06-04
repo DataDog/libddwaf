@@ -31,7 +31,7 @@ protected:
         return (type & object_type::string) != 0;
     }
 
-    static std::pair<bool, std::string> match_impl(std::string_view pattern);
+    static std::pair<bool, dynamic_string> match_impl(std::string_view pattern);
 
     friend class base_impl<is_xss>;
 };

@@ -10,7 +10,7 @@
 #include <cstring>
 #include <string_view>
 
-#include "transformer/common/cow_string.hpp"
+#include "cow_string.hpp"
 
 namespace ddwaf {
 
