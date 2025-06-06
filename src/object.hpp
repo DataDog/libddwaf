@@ -205,7 +205,7 @@ using key_value = std::pair<std::string_view, movable_object>;
 
 } // namespace detail
 
-template <typename Derived, typename Accessor = Derived> class readable_object {
+template <typename Derived> class readable_object {
 public:
     // The API assumes that the caller has already verified that the method preconditions are met:
     //   - When using at, the accessed indexed is within bounds (using size*())
@@ -350,18 +350,12 @@ public:
     }
 
     // Access the value at index.
-    [[nodiscard]] Accessor at_value(std::size_t index) const noexcept
-         requires requires(const detail::object &a) { { Accessor(a) }; }
-    {
-        const auto &obj = object_ref();
-        assert(index < size());
-        if (type() == object_type::map) {
-            assert(obj.via.map.ptr != nullptr);
-            return obj.via.map.ptr[index].val;
-        }
-        assert(obj.via.array.ptr != nullptr);
-        return obj.via.array.ptr[index];
-    }
+    [[nodiscard]] Derived at_value(std::size_t index) const noexcept
+        requires requires(const detail::object &a) {
+            {
+                Derived(a)
+            };
+        };
 
     // Convert the underlying type to the requested type
     template <typename T> T convert() const;
@@ -454,18 +448,6 @@ public:
         assert(obj_->via.array.ptr != nullptr);
         return {};
     }
-
-    // Access the value at index.
-/*    [[nodiscard]] object_view at_value(std::size_t index) const noexcept*/
-    /*{*/
-        /*assert(obj_ != nullptr && index < size());*/
-        /*if (type() == object_type::map) {*/
-            /*assert(obj_->via.map.ptr != nullptr);*/
-            /*return obj_->via.map.ptr[index].val;*/
-        /*}*/
-        /*assert(obj_->via.array.ptr != nullptr);*/
-        /*return obj_->via.array.ptr[index];*/
-    /*}*/
 
     [[nodiscard]] object_view find(std::string_view expected_key) const noexcept
     {
@@ -764,14 +746,32 @@ struct movable_object {
 inline object_view::object_view(const owned_object &ow) : obj_(&ow.obj_) {}
 inline object_view::object_view(const borrowed_object &ow) : obj_(ow.obj_) {}
 
+template <typename Derived>
+[[nodiscard]] Derived readable_object<Derived>::at_value(std::size_t index) const noexcept
+    requires requires(const detail::object &a) {
+        {
+            Derived(a)
+        };
+    }
+{
+    const auto &obj = object_ref();
+    assert(index < size());
+    if (type() == object_type::map) {
+        assert(obj.via.map.ptr != nullptr);
+        return obj.via.map.ptr[index].val;
+    }
+    assert(obj.via.array.ptr != nullptr);
+    return obj.via.array.ptr[index];
+}
+
 // Convert the underlying type to the requested type, converters are defined
 // in the object_converter header
-template <typename Derived, typename Accessor> template <typename T> T readable_object<Derived, Accessor>::convert() const
+template <typename Derived> template <typename T> T readable_object<Derived>::convert() const
 {
     return object_converter<T>{static_cast<const Derived *>(this)->ref()}();
 }
 
-template <typename Derived, typename Accessor> [[nodiscard]] owned_object readable_object<Derived, Accessor>::clone() const
+template <typename Derived> [[nodiscard]] owned_object readable_object<Derived>::clone() const
 {
     auto clone_helper = [](object_view source) -> owned_object {
         switch (source.type()) {
