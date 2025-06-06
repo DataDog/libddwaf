@@ -44,7 +44,7 @@
 #include "re2/prog.h"
 #include "re2/re2.h"
 #include "re2/sparse_set.h"
-#include "re2/stringpiece.h"
+#include <string_view>
 
 // Silence "zero-sized array in struct/union" warning for DFA::State::next_.
 #ifdef _MSC_VER
@@ -88,7 +88,7 @@ class DFA {
   //   returning the leftmost end of the match instead of the rightmost one.
   // If the DFA cannot complete the search (for example, if it is out of
   //   memory), it sets *failed and returns false.
-  bool Search(const StringPiece& text, const StringPiece& context,
+  bool Search(std::string_view text, std::string_view context,
               bool anchored, bool want_earliest_match, bool run_forward,
               bool* failed, const char** ep, SparseSet* matches);
 
@@ -238,7 +238,7 @@ class DFA {
 
   // Search parameters
   struct SearchParams {
-    SearchParams(const StringPiece& text, const StringPiece& context,
+    SearchParams(std::string_view text, std::string_view context,
                  RWLocker* cache_lock)
       : text(text),
         context(context),
@@ -252,8 +252,8 @@ class DFA {
         ep(NULL),
         matches(NULL) {}
 
-    StringPiece text;
-    StringPiece context;
+    std::string_view text;
+    std::string_view context;
     bool anchored;
     bool can_prefix_accel;
     bool want_earliest_match;
@@ -1623,8 +1623,8 @@ bool DFA::FastSearchLoop(SearchParams* params) {
 // state for the DFA search loop.  Fills in params and returns true on success.
 // Returns false on failure.
 bool DFA::AnalyzeSearch(SearchParams* params) {
-  const StringPiece& text = params->text;
-  const StringPiece& context = params->context;
+  std::string_view text = params->text;
+  std::string_view context = params->context;
 
   // Sanity check: make sure that text lies within context.
   if (BeginPtr(text) < BeginPtr(context) || EndPtr(text) > EndPtr(context)) {
@@ -1728,8 +1728,8 @@ bool DFA::AnalyzeSearchHelper(SearchParams* params, StartInfo* info,
 }
 
 // The actual DFA search: calls AnalyzeSearch and then FastSearchLoop.
-bool DFA::Search(const StringPiece& text,
-                 const StringPiece& context,
+bool DFA::Search(std::string_view text,
+                 std::string_view context,
                  bool anchored,
                  bool want_earliest_match,
                  bool run_forward,
@@ -1823,12 +1823,12 @@ void Prog::DeleteDFA(DFA* dfa) {
 //
 // This is the only external interface (class DFA only exists in this file).
 //
-bool Prog::SearchDFA(const StringPiece& text, const StringPiece& const_context,
-                     Anchor anchor, MatchKind kind, StringPiece* match0,
+bool Prog::SearchDFA(std::string_view text, std::string_view const_context,
+                     Anchor anchor, MatchKind kind, std::string_view* match0,
                      bool* failed, SparseSet* matches) {
   *failed = false;
 
-  StringPiece context = const_context;
+  std::string_view context = const_context;
   if (context.data() == NULL)
     context = text;
   bool caret = anchor_start();
@@ -1889,10 +1889,10 @@ bool Prog::SearchDFA(const StringPiece& text, const StringPiece& const_context,
   if (match0) {
     if (reversed_)
       *match0 =
-          StringPiece(ep, static_cast<size_t>(text.data() + text.size() - ep));
+          std::string_view(ep, static_cast<size_t>(text.data() + text.size() - ep));
     else
       *match0 =
-          StringPiece(text.data(), static_cast<size_t>(ep - text.data()));
+          std::string_view(text.data(), static_cast<size_t>(ep - text.data()));
   }
   return true;
 }
@@ -1905,7 +1905,7 @@ int DFA::BuildAllStates(const Prog::DFAStateCallback& cb) {
   // Pick out start state for unanchored search
   // at beginning of text.
   RWLocker l(&cache_mutex_);
-  SearchParams params(StringPiece(), StringPiece(), &l);
+  SearchParams params(std::string_view(), std::string_view(), &l);
   params.anchored = false;
   if (!AnalyzeSearch(&params) ||
       params.start == NULL ||
@@ -1993,7 +1993,7 @@ bool DFA::PossibleMatchRange(std::string* min, std::string* max, int maxlen) {
 
   // Pick out start state for anchored search at beginning of text.
   RWLocker l(&cache_mutex_);
-  SearchParams params(StringPiece(), StringPiece(), &l);
+  SearchParams params(std::string_view(), std::string_view(), &l);
   params.anchored = true;
   if (!AnalyzeSearch(&params))
     return false;

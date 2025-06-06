@@ -15,7 +15,6 @@
 #include "dynamic_string.hpp"
 #include "matcher/regex_match.hpp"
 #include "re2.h"
-#include "stringpiece.h"
 
 namespace ddwaf::matcher {
 
@@ -42,8 +41,8 @@ std::pair<bool, dynamic_string> regex_match::match_impl(std::string_view pattern
         return {false, {}};
     }
 
-    const re2::StringPiece ref(pattern.data(), pattern.size());
-    std::array<re2::StringPiece, max_match_count> match;
+    const std::string_view ref(pattern.data(), pattern.size());
+    std::array<std::string_view, max_match_count> match;
     const bool res = regex->Match(ref, 0, pattern.size(), re2::RE2::UNANCHORED, match.data(), 1);
 
     if (!res) {

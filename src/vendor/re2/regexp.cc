@@ -21,7 +21,7 @@
 #include "re2/util/mutex.h"
 #include "re2/util/utf.h"
 #include "re2/pod_array.h"
-#include "re2/stringpiece.h"
+#include <string_view>
 #include "re2/walker-inl.h"
 
 namespace re2 {

@@ -9,12 +9,13 @@
 // See regexp.h for the Regexp class, which represents a regular
 // expression symbolically.
 
-#include <stdint.h>
+#include <cstdint>
 #include <functional>
 #include <mutex>
 #include <string>
 #include <vector>
 #include <type_traits>
+#include <cstring>
 
 #include "re2/util/util.h"
 #include "re2/util/logging.h"
@@ -249,7 +250,7 @@ class Prog {
 
   // Returns the set of kEmpty flags that are in effect at
   // position p within context.
-  static uint32_t EmptyFlags(const StringPiece& context, const char* p);
+  static uint32_t EmptyFlags(std::string_view context, const char* p);
 
   // Returns whether byte c is a word character: ASCII only.
   // Used by the implementation of \b and \B.
@@ -274,15 +275,15 @@ class Prog {
   // If a particular submatch is not matched during the regexp match,
   // it is set to NULL.
   //
-  // Matching text == StringPiece(NULL, 0) is treated as any other empty
+  // Matching text == std::string_view(NULL, 0) is treated as any other empty
   // string, but note that on return, it will not be possible to distinguish
   // submatches that matched that empty string from submatches that didn't
   // match anything.  Either way, match[i] == NULL.
 
   // Search using NFA: can find submatches but kind of slow.
-  bool SearchNFA(const StringPiece& text, const StringPiece& context,
+  bool SearchNFA(std::string_view text, std::string_view context,
                  Anchor anchor, MatchKind kind,
-                 StringPiece* match, int nmatch);
+                 std::string_view* match, int nmatch);
 
   // Search using DFA: much faster than NFA but only finds
   // end of match and can use a lot more memory.
@@ -290,8 +291,8 @@ class Prog {
   // If the DFA runs out of memory, sets *failed to true and returns false.
   // If matches != NULL and kind == kManyMatch and there is a match,
   // SearchDFA fills matches with the match IDs of the final matching state.
-  bool SearchDFA(const StringPiece& text, const StringPiece& context,
-                 Anchor anchor, MatchKind kind, StringPiece* match0,
+  bool SearchDFA(std::string_view text, std::string_view context,
+                 Anchor anchor, MatchKind kind, std::string_view* match0,
                  bool* failed, SparseSet* matches);
 
   // The callback issued after building each DFA state with BuildEntireDFA().
@@ -321,16 +322,16 @@ class Prog {
   // but much faster than NFA (competitive with PCRE)
   // for those expressions.
   bool IsOnePass();
-  bool SearchOnePass(const StringPiece& text, const StringPiece& context,
+  bool SearchOnePass(std::string_view text, std::string_view context,
                      Anchor anchor, MatchKind kind,
-                     StringPiece* match, int nmatch);
+                     std::string_view* match, int nmatch);
 
   // Bit-state backtracking.  Fast on small cases but uses memory
   // proportional to the product of the list count and the text size.
   bool CanBitState() { return list_heads_.data() != NULL; }
-  bool SearchBitState(const StringPiece& text, const StringPiece& context,
+  bool SearchBitState(std::string_view text, std::string_view context,
                       Anchor anchor, MatchKind kind,
-                      StringPiece* match, int nmatch);
+                      std::string_view* match, int nmatch);
 
   static const int kMaxOnePassCapture = 5;  // $0 through $4
 
@@ -340,10 +341,10 @@ class Prog {
   // It is also recursive, so can't use in production (will overflow stacks).
   // The name "Unsafe" here is supposed to be a flag that
   // you should not be using this function.
-  bool UnsafeSearchBacktrack(const StringPiece& text,
-                             const StringPiece& context,
+  bool UnsafeSearchBacktrack(std::string_view text,
+                             std::string_view context,
                              Anchor anchor, MatchKind kind,
-                             StringPiece* match, int nmatch);
+                             std::string_view* match, int nmatch);
 
   // Computes range for any strings matching regexp. The min and max can in
   // some cases be arbitrarily precise, so the caller gets to specify the
@@ -456,10 +457,10 @@ class Prog {
 // that don't allow comparisons between different objects - not even if
 // those objects are views into the same string! Thus, we provide these
 // conversion functions for convenience.
-static inline const char* BeginPtr(const StringPiece& s) {
+static inline const char* BeginPtr(std::string_view s) {
   return s.data();
 }
-static inline const char* EndPtr(const StringPiece& s) {
+static inline const char* EndPtr(std::string_view s) {
   return s.data() + s.size();
 }
 
