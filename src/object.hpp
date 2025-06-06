@@ -203,20 +203,6 @@ using key_value = std::pair<std::string_view, movable_object>;
 
 } // namespace initializer
 
-template <typename T>
-concept provides_const_object_ref = requires(const T &d) {
-    {
-        d.ref()
-    } -> std::same_as<const detail::object &>;
-};
-
-template <typename T>
-concept provides_object_ref = requires(T &d) {
-    {
-        d.ref()
-    } -> std::same_as<detail::object &>;
-};
-
 } // namespace detail
 
 template <typename Derived> class readable_object {
@@ -371,7 +357,6 @@ public:
 private:
     readable_object() = default;
     [[nodiscard]] const detail::object &object_ref() const
-        requires detail::provides_const_object_ref<Derived>
     {
         return static_cast<const Derived *>(this)->ref();
     }
@@ -529,11 +514,7 @@ public:
 
 private:
     writable_object() = default;
-    detail::object &object_ref()
-        requires detail::provides_object_ref<Derived>
-    {
-        return static_cast<Derived *>(this)->ref();
-    }
+    detail::object &object_ref() { return static_cast<Derived *>(this)->ref(); }
 
     friend Derived;
 };
