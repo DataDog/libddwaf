@@ -26,13 +26,19 @@ enum class object_type : uint8_t {
     string = 0x10,         // 0b00010000
     literal_string = 0x12, // 0b00010010
     small_string = 0x14,   // 0b00010100
-    scalar = 0x1E,         // 0b00011110
     // Containers
     array = 0x20,    // 0b00100000
     map = 0x40,      // 0b01000000
     hash_map = 0x60, // 0b01100000
-    container = 0xE0 // 0b11100000
 };
+
+template <typename T>
+constexpr object_type operator|(object_type left, T right)
+    requires std::is_same_v<T, object_type> || std::is_integral_v<T>
+{
+    using utype = std::underlying_type_t<object_type>;
+    return static_cast<object_type>(static_cast<utype>(left) | static_cast<utype>(right));
+}
 
 template <typename T>
 constexpr object_type operator&(object_type left, T right)
@@ -58,9 +64,17 @@ constexpr bool operator==(object_type left, T right)
     return static_cast<utype>(left) == static_cast<utype>(right);
 }
 
-inline bool is_scalar(object_type type) { return (type & object_type::scalar) != 0; }
+inline bool is_scalar(object_type type)
+{
+    return (type & (object_type::boolean | object_type::int64 | object_type::uint64 |
+                       object_type::float64 | object_type::string | object_type::literal_string |
+                       object_type::small_string)) != 0;
+}
 
-inline bool is_container(object_type type) { return (type & object_type::container) != 0; }
+inline bool is_container(object_type type)
+{
+    return (type & (object_type::array | object_type::map)) != 0;
+}
 
 template <typename T> inline bool is_compatible_type(object_type /*type*/) { return false; }
 

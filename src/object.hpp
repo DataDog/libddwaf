@@ -20,6 +20,11 @@
 
 namespace ddwaf {
 
+class owned_object;
+class borrowed_object;
+
+template <typename T> struct object_converter;
+
 namespace detail {
 
 union object;
@@ -70,6 +75,8 @@ union [[gnu::may_alias]] object {
         object_array array;
         object_map map;
     } via;
+
+    object &operator=(owned_object &&o) noexcept;
 };
 
 struct object_kv {
@@ -126,7 +133,10 @@ template <typename SizeType> inline char *copy_string(const char *str, SizeType 
     return copy;
 }
 
-template <typename T, typename SizeType> T *alloc_helper(SizeType size)
+template <typename T, typename SizeType>
+T *alloc_helper(SizeType size)
+    requires(std::is_unsigned_v<SizeType> && sizeof(SizeType) <= sizeof(std::size_t))
+
 {
     // NOLINTNEXTLINE(hicpp-no-malloc)
     auto *data = static_cast<T *>(calloc(size, sizeof(T)));
@@ -138,6 +148,7 @@ template <typename T, typename SizeType> T *alloc_helper(SizeType size)
 
 template <typename T, typename SizeType>
 inline std::pair<T *, SizeType> realloc_helper(T *data, SizeType size)
+    requires(std::is_unsigned_v<SizeType> && sizeof(SizeType) <= sizeof(std::size_t))
 {
     // Since allocators have no realloc interface, we're just using calloc
     // as it'll be equivalent once allocators are supported
@@ -192,13 +203,21 @@ using key_value = std::pair<std::string_view, movable_object>;
 
 } // namespace initializer
 
+template <typename T>
+concept provides_const_object_ref = requires(const T &d) {
+    {
+        d.ref()
+    } -> std::same_as<const detail::object &>;
+};
+
+template <typename T>
+concept provides_object_ref = requires(T &d) {
+    {
+        d.ref()
+    } -> std::same_as<detail::object &>;
+};
+
 } // namespace detail
-
-class owned_object;
-class borrowed_object;
-class object_view;
-
-template <typename T> struct object_converter;
 
 template <typename Derived> class readable_object {
 public:
@@ -210,37 +229,33 @@ public:
     {
         const auto t = type();
         if (t == object_type::small_string) {
-            return static_cast<std::size_t>(
-                static_cast<const Derived *>(this)->ref().via.sstr.size);
+            return static_cast<std::size_t>(object_ref().via.sstr.size);
         }
 
         if (t == object_type::string || t == object_type::literal_string) {
-            return static_cast<std::size_t>(static_cast<const Derived *>(this)->ref().via.str.size);
+            return static_cast<std::size_t>(object_ref().via.str.size);
         }
         // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
-        return static_cast<std::size_t>(static_cast<const Derived *>(this)->ref().via.array.size);
+        return static_cast<std::size_t>(object_ref().via.array.size);
     }
 
     [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
     [[nodiscard]] object_type type() const noexcept
     {
-        return static_cast<object_type>(static_cast<const Derived *>(this)->ref().type);
+        return static_cast<object_type>(object_ref().type);
     }
 
     [[nodiscard]] const char *data() const noexcept
     {
         if (type() == object_type::small_string) {
-            return static_cast<const Derived *>(this)->ref().via.sstr.data.data();
+            return object_ref().via.sstr.data.data();
         }
-        return static_cast<const Derived *>(this)->ref().via.str.ptr;
+        return object_ref().via.str.ptr;
     }
     // The is_* methods can be used to check for collections of types
-    [[nodiscard]] bool is_container() const noexcept
-    {
-        return (type() & object_type::container) != 0;
-    }
-    [[nodiscard]] bool is_scalar() const noexcept { return (type() & object_type::scalar) != 0; }
+    [[nodiscard]] bool is_container() const noexcept { return ddwaf::is_container(type()); }
+    [[nodiscard]] bool is_scalar() const noexcept { return ddwaf::is_scalar(type()); }
 
     [[nodiscard]] bool is_map() const noexcept { return type() == object_type::map; }
     [[nodiscard]] bool is_array() const noexcept { return type() == object_type::array; }
@@ -261,7 +276,7 @@ public:
     [[nodiscard]] T as() const noexcept
         requires std::is_same_v<T, bool>
     {
-        const auto &obj = static_cast<const Derived *>(this)->ref();
+        const auto &obj = object_ref();
         return obj.via.b8.val;
     }
 
@@ -269,7 +284,7 @@ public:
     [[nodiscard]] T as() const noexcept
         requires std::is_integral_v<T> && std::is_signed_v<T>
     {
-        const auto &obj = static_cast<const Derived *>(this)->ref();
+        const auto &obj = object_ref();
         return static_cast<T>(obj.via.i64.val);
     }
 
@@ -277,7 +292,7 @@ public:
     [[nodiscard]] T as() const noexcept
         requires std::is_integral_v<T> && std::is_unsigned_v<T> && (!std::is_same_v<T, bool>)
     {
-        const auto &obj = static_cast<const Derived *>(this)->ref();
+        const auto &obj = object_ref();
         return static_cast<T>(obj.via.u64.val);
     }
 
@@ -285,7 +300,7 @@ public:
     [[nodiscard]] T as() const noexcept
         requires std::is_same_v<T, double>
     {
-        const auto &obj = static_cast<const Derived *>(this)->ref();
+        const auto &obj = object_ref();
         return static_cast<T>(obj.via.f64.val);
     }
 
@@ -307,7 +322,7 @@ public:
     // value otherwise.
     template <typename T> [[nodiscard]] T as_or_default(T default_value) const noexcept
     {
-        const auto &obj = static_cast<const Derived *>(this)->ref();
+        const auto &obj = object_ref();
         if (!is_compatible_type<T>(static_cast<object_type>(obj.type))) {
             [[unlikely]] return default_value;
         }
@@ -333,7 +348,7 @@ public:
                 (!std::is_same_v<T, bool>)
     {
         using limits = std::numeric_limits<T>;
-        const auto &obj = static_cast<const Derived *>(this)->ref();
+        const auto &obj = object_ref();
         return is_compatible_type<uint64_t>(type()) && obj.via.u64.val <= limits::max();
     }
 
@@ -343,7 +358,7 @@ public:
         requires(!std::is_same_v<T, int64_t>) && std::is_integral_v<T> && std::is_signed_v<T>
     {
         using limits = std::numeric_limits<T>;
-        const auto &obj = static_cast<const Derived *>(this)->ref();
+        const auto &obj = object_ref();
         return is_compatible_type<int64_t>(type()) && obj.via.i64.val >= limits::min() &&
                obj.via.i64.val <= limits::max();
     }
@@ -355,6 +370,11 @@ public:
 
 private:
     readable_object() = default;
+    [[nodiscard]] const detail::object &object_ref() const
+        requires detail::provides_const_object_ref<Derived>
+    {
+        return static_cast<const Derived *>(this)->ref();
+    }
 
     friend Derived;
 };
@@ -509,6 +529,11 @@ public:
 
 private:
     writable_object() = default;
+    detail::object &object_ref()
+        requires detail::provides_object_ref<Derived>
+    {
+        return static_cast<Derived *>(this)->ref();
+    }
 
     friend Derived;
 };
@@ -529,8 +554,8 @@ public:
     explicit borrowed_object(owned_object &obj);
     borrowed_object &operator=(owned_object &&obj);
 
-    [[nodiscard]] detail::object &ref() { return *obj_; }
-    [[nodiscard]] const detail::object &ref() const { return *obj_; }
+    [[nodiscard]] detail::object &ref() noexcept { return *obj_; }
+    [[nodiscard]] const detail::object &ref() const noexcept { return *obj_; }
     [[nodiscard]] detail::object *ptr() { return obj_; }
     [[nodiscard]] const detail::object *ptr() const { return obj_; }
 
@@ -611,8 +636,8 @@ public:
         return *this;
     }
 
-    [[nodiscard]] detail::object &ref() { return obj_; }
-    [[nodiscard]] const detail::object &ref() const { return obj_; }
+    [[nodiscard]] detail::object &ref() noexcept { return obj_; }
+    [[nodiscard]] const detail::object &ref() const noexcept { return obj_; }
     [[nodiscard]] detail::object *ptr() { return &obj_; }
     [[nodiscard]] const detail::object *ptr() const { return &obj_; }
 
@@ -842,7 +867,7 @@ template <typename Derived>
 {
     auto &container = static_cast<const Derived *>(this)->ref();
 
-    assert((static_cast<object_type>(container.type) & object_type::container) != 0);
+    assert(is_container(static_cast<object_type>(container.type)));
 
     if (container.type == object_type::map) {
         assert(idx < static_cast<std::size_t>(container.via.map.size));
@@ -857,14 +882,14 @@ template <typename Derived>
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 borrowed_object writable_object<Derived>::emplace_back(owned_object &&value)
 {
-    auto &container = static_cast<Derived *>(this)->ref();
+    auto &container = object_ref();
 
     assert(static_cast<object_type>(container.type) == object_type::array);
 
     // We preallocate 8 entries
     if (container.via.array.size == 0) {
         // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
-        container.via.array.ptr = detail::alloc_helper<detail::object>(8);
+        container.via.array.ptr = detail::alloc_helper<detail::object>(8U);
         // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
         container.via.array.capacity = 8;
     } else if (container.via.array.capacity == container.via.array.size) {
@@ -875,10 +900,9 @@ borrowed_object writable_object<Derived>::emplace_back(owned_object &&value)
         container.via.array.capacity = new_capacity;
     }
 
-    auto &slot = container.via.array.ptr[container.via.array.size++];
-    slot = value.move();
-
-    return borrowed_object{slot};
+    borrowed_object slot{&container.via.array.ptr[container.via.array.size++]};
+    slot = std::move(value);
+    return slot;
 }
 
 template <typename Derived>
@@ -892,13 +916,13 @@ template <typename Derived>
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved,bugprone-easily-swappable-parameters)
 borrowed_object writable_object<Derived>::emplace(owned_object &&key, owned_object &&value)
 {
-    auto &container = static_cast<Derived *>(this)->ref();
+    auto &container = object_ref();
     assert(static_cast<object_type>(container.type) == object_type::map);
 
     // We preallocate 8 entries
     if (container.via.map.size == 0) {
         // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
-        container.via.map.ptr = detail::alloc_helper<detail::object_kv>(8);
+        container.via.map.ptr = detail::alloc_helper<detail::object_kv>(8U);
         // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
         container.via.map.capacity = 8;
     } else if (container.via.map.capacity == container.via.map.size) {
@@ -909,11 +933,14 @@ borrowed_object writable_object<Derived>::emplace(owned_object &&key, owned_obje
         container.via.map.capacity = new_capacity;
     }
 
-    auto &slot = container.via.map.ptr[container.via.map.size++];
-    slot.key = key.move();
-    slot.val = value.move();
+    borrowed_object key_slot{container.via.map.ptr[container.via.map.size].key};
+    borrowed_object val_slot{container.via.map.ptr[container.via.map.size].val};
+    ++container.via.map.size;
 
-    return borrowed_object{slot.val};
+    key_slot = std::move(key);
+    val_slot = std::move(value);
+
+    return val_slot;
 }
 
 template <typename Derived>
