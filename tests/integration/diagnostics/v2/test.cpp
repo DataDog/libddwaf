@@ -29,7 +29,7 @@ TEST(TestDiagnosticsV2Integration, InvalidConfigType)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto error = ddwaf::at<std::string>(root_map, "error");
@@ -54,7 +54,7 @@ TEST(TestDiagnosticsV2Integration, UnsupportedSchema)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto error = ddwaf::at<std::string>(root_map, "error");
@@ -79,7 +79,7 @@ TEST(TestDiagnosticsV2Integration, NoSchema)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -116,7 +116,7 @@ TEST(TestDiagnosticsV2Integration, BasicRule)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -153,7 +153,7 @@ TEST(TestDiagnosticsV2Integration, BasicRuleWithUpdate)
     {
         EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -179,7 +179,7 @@ TEST(TestDiagnosticsV2Integration, BasicRuleWithUpdate)
     {
         EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -227,7 +227,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRule)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
@@ -265,7 +265,7 @@ TEST(TestDiagnosticsV2Integration, MultipleSameInvalidRules)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
@@ -305,7 +305,7 @@ TEST(TestDiagnosticsV2Integration, MultipleDiffInvalidRules)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
@@ -357,7 +357,7 @@ TEST(TestDiagnosticsV2Integration, MultipleMixInvalidRules)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
@@ -423,7 +423,7 @@ TEST(TestDiagnosticsV2Integration, InvalidDuplicate)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
@@ -464,7 +464,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleset)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
@@ -509,7 +509,7 @@ TEST(TestDiagnosticsV2Integration, MultipleRules)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root{diagnostics};
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -555,7 +555,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root{diagnostics};
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -599,7 +599,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root{diagnostics};
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -643,7 +643,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root{diagnostics};
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -688,7 +688,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root{diagnostics};
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -773,7 +773,7 @@ TEST(TestDiagnosticsV2Integration, CustomRules)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root{diagnostics};
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -819,7 +819,7 @@ TEST(TestDiagnosticsV2Integration, InputFilter)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root{diagnostics};
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto exclusions = ddwaf::at<raw_configuration::map>(root_map, "exclusions");
@@ -859,7 +859,7 @@ TEST(TestDiagnosticsV2Integration, RuleData)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root{diagnostics};
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto rule_data = ddwaf::at<raw_configuration::map>(root_map, "rules_data");
@@ -900,7 +900,7 @@ TEST(TestDiagnosticsV2Integration, Processor)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root{diagnostics};
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto processor = ddwaf::at<raw_configuration::map>(root_map, "processors");
@@ -940,7 +940,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRulesContainer)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -972,7 +972,7 @@ TEST(TestDiagnosticsV2Integration, InvalidCustomRulesContainer)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -1004,7 +1004,7 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionsContainer)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -1036,7 +1036,7 @@ TEST(TestDiagnosticsV2Integration, InvalidOverridesContainer)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -1068,7 +1068,7 @@ TEST(TestDiagnosticsV2Integration, InvalidScannersContainer)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -1100,7 +1100,7 @@ TEST(TestDiagnosticsV2Integration, InvalidProcessorsContainer)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -1132,7 +1132,7 @@ TEST(TestDiagnosticsV2Integration, InvalidActionsContainer)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -1164,7 +1164,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleDataContainer)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -1196,7 +1196,7 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionDataContainer)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");

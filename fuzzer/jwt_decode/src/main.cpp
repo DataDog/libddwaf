@@ -14,12 +14,10 @@ using namespace std::literals;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 {
-    ddwaf_object tmp;
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    std::string_view value{reinterpret_cast<const char *>(bytes), size};
 
-    ddwaf_object headers;
-    ddwaf_object_map(&headers);
-    ddwaf_object_map_add(&headers, "authorization",
-        ddwaf_object_stringl(&tmp, reinterpret_cast<const char *>(bytes), size));
+    auto headers = owned_object::make_map({{"authorization", value}});
 
     jwt_decode gen{"id", {}, {}, false, true};
 
@@ -27,10 +25,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     ddwaf::timer deadline{2s};
     static const std::vector<std::string> key_path{"authorization"};
     auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = &headers},
+        gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
             cache, deadline);
-
-    ddwaf_object_free(&headers);
 
     return 0;
 }

@@ -236,7 +236,7 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
 
         auto object = store.get_target(query).first;
         EXPECT_TRUE(object.has_value());
-        EXPECT_EQ(object.type(), object_type::string);
+        EXPECT_TRUE(object.is_string());
         EXPECT_STRV(object.as<std::string_view>(), "hello");
     }
 
@@ -257,14 +257,14 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
         {
             auto object = store.get_target(url).first;
             EXPECT_TRUE(object.has_value());
-            EXPECT_EQ(object.type(), object_type::string);
+            EXPECT_TRUE(object.is_string());
             EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
 
         {
             auto object = store.get_target(query).first;
             EXPECT_TRUE(object.has_value());
-            EXPECT_EQ(object.type(), object_type::string);
+            EXPECT_TRUE(object.is_string());
             EXPECT_STRV(object.as<std::string_view>(), "bye");
         }
     }
@@ -284,7 +284,7 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
 
         auto object = store.get_target(url).first;
         EXPECT_TRUE(object.has_value());
-        EXPECT_EQ(object.type(), object_type::string);
+        EXPECT_TRUE(object.is_string());
         EXPECT_STRV(object.as<std::string_view>(), "bye");
     }
 }

@@ -113,16 +113,45 @@ TEST(TestObject, StringObject)
     {
         auto ow = owned_object::make_string("this is a string");
         EXPECT_EQ(ow.type(), object_type::string);
+        EXPECT_TRUE(ow.is_string());
         EXPECT_TRUE(ow.is_valid());
         EXPECT_EQ(ow.as<std::string_view>(), "this is a string");
     }
 
     {
         owned_object ow{"this is a string"};
-        EXPECT_EQ(ow.type(), object_type::string);
+        EXPECT_TRUE(ow.is_string());
         EXPECT_TRUE(ow.is_valid());
         EXPECT_EQ(ow.as<std::string_view>(), "this is a string");
     }
+}
+
+TEST(TestObject, SmallStringObject)
+{
+    {
+        auto ow = owned_object::make_string("string");
+        EXPECT_EQ(ow.type(), object_type::small_string);
+        EXPECT_TRUE(ow.is_string());
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_EQ(ow.as<std::string_view>(), "string");
+    }
+
+    {
+        owned_object ow{"string"};
+        EXPECT_EQ(ow.type(), object_type::small_string);
+        EXPECT_TRUE(ow.is_string());
+        EXPECT_TRUE(ow.is_valid());
+        EXPECT_EQ(ow.as<std::string_view>(), "string");
+    }
+}
+
+TEST(TestObject, StringLiteralObject)
+{
+    auto ow = owned_object::make_string_literal(STRL("this is a string"));
+    EXPECT_EQ(ow.type(), object_type::literal_string);
+    EXPECT_TRUE(ow.is_string());
+    EXPECT_TRUE(ow.is_valid());
+    EXPECT_EQ(ow.as<std::string_view>(), "this is a string");
 }
 
 TEST(TestObject, ArrayObjectInitializer)
@@ -273,7 +302,7 @@ TEST(TestObject, CloneString)
 {
     auto input = owned_object::make_string("this is a string");
     auto output = input.clone();
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(input.as<std::string_view>(), output.as<std::string_view>());
     EXPECT_EQ(input.size(), output.size());
 }

@@ -32,23 +32,27 @@ extern "C"
  **/
 typedef enum
 {
-    DDWAF_OBJ_INVALID     = 0,
-    // 64-bit signed integer type
-    DDWAF_OBJ_SIGNED   = 1 << 0,
-    // 64-bit unsigned integer type
-    DDWAF_OBJ_UNSIGNED = 1 << 1,
-    // UTF-8 string of length nbEntries
-    DDWAF_OBJ_STRING   = 1 << 2,
-    // Array of ddwaf_object of length nbEntries, each item having no parameterName
-    DDWAF_OBJ_ARRAY    = 1 << 3,
-    // Array of ddwaf_object of length nbEntries, each item having a parameterName
-    DDWAF_OBJ_MAP      = 1 << 4,
-    // Boolean type
-    DDWAF_OBJ_BOOL     = 1 << 5,
-    // 64-bit float (or double) type
-    DDWAF_OBJ_FLOAT    = 1 << 6,
+    DDWAF_OBJ_INVALID  = 0,
     // Null type, only used for its semantical value
-    DDWAF_OBJ_NULL    = 1 << 7,
+    DDWAF_OBJ_NULL     = 0x01,
+    // Boolean type
+    DDWAF_OBJ_BOOL     = 0x02,
+    // 64-bit signed integer type
+    DDWAF_OBJ_SIGNED   = 0x04,
+    // 64-bit unsigned integer type
+    DDWAF_OBJ_UNSIGNED = 0x06,
+    // 64-bit float (or double) type
+    DDWAF_OBJ_FLOAT    = 0x08,
+    // Dynamic UTF-8 string of up to max(uint16) length
+    DDWAF_OBJ_STRING   = 0x10,
+    // Literal UTF-8 string of up to max(uint32) length, these are never freed
+    DDWAF_OBJ_LITERAL_STRING   = 0x12,
+    // UTF-8 string of up to 14 bytes in length
+    DDWAF_OBJ_SMALL_STRING   = 0x14,
+    // Array of ddwaf_object of length nbEntries, each item having no parameterName
+    DDWAF_OBJ_ARRAY    = 0x20,
+    // Array of ddwaf_object of length nbEntries, each item having a parameterName
+    DDWAF_OBJ_MAP      = 0x40,
 } DDWAF_OBJ_TYPE;
 
 /**
@@ -86,52 +90,93 @@ typedef struct _ddwaf_context* ddwaf_context;
 typedef struct _ddwaf_builder* ddwaf_builder;
 #endif
 
-typedef struct _ddwaf_object ddwaf_object;
-typedef struct _ddwaf_object_kv ddwaf_object_kv;
 typedef struct _ddwaf_config ddwaf_config;
+typedef union _ddwaf_object ddwaf_object;
 
-#define DDWAF_OBJ_SSTR_SIZE 11
+struct _ddwaf_object_kv;
+
+struct _ddwaf_object_bool {
+    uint8_t type;
+    bool val;
+};
+
+struct _ddwaf_object_signed {
+    uint8_t type;
+    int64_t val;
+};
+
+struct _ddwaf_object_unsigned {
+    uint8_t type;
+    uint64_t val;
+};
+
+struct _ddwaf_object_float {
+    uint8_t type;
+    double val;
+};
+
+struct _ddwaf_object_string {
+    uint8_t type;
+    uint32_t size;
+    char *ptr;
+};
+
+struct _ddwaf_object_small_string {
+#define DDWAF_OBJ_SSTR_SIZE 14
+    uint8_t type;
+    uint8_t size;
+    char data[DDWAF_OBJ_SSTR_SIZE];
+};
+
+struct _ddwaf_object_array {
+    uint8_t type;
+    uint16_t size;
+    uint16_t capacity;
+    union _ddwaf_object *ptr;
+};
+
+struct _ddwaf_object_map {
+    uint8_t type;
+    uint16_t size;
+    uint16_t capacity;
+    struct _ddwaf_object_kv *ptr;
+};
 
 /**
  * @struct ddwaf_object
  *
  * Generic object used to pass data and rules to the WAF.
  **/
-
 #ifdef _MSC_VER
-#pragma pack(push,1)
-struct _ddwaf_object {
-    union {
+union _ddwaf_object {
 #else
-struct __attribute__((packed)) _ddwaf_object {
-    union __attribute__((packed)) {
+union __attribute__((may_alias)) _ddwaf_object {
 #endif
-        bool b8;
-        uint64_t u64;
-        int64_t i64;
-        double f64;
-        ddwaf_object_kv *map;
-        ddwaf_object *array;
-        char *str;
-        char sstr[DDWAF_OBJ_SSTR_SIZE];
-        const char *cstr;
-        ddwaf_object *ref;
-    } via;
     uint8_t type;
-    uint16_t size;
-    uint16_t capacity;
+    union {
+        struct _ddwaf_object_bool b8;
+        struct _ddwaf_object_signed i64;
+        struct _ddwaf_object_unsigned u64;
+        struct _ddwaf_object_float f64;
+        struct _ddwaf_object_string str;
+        struct _ddwaf_object_small_string sstr;
+        struct _ddwaf_object_array array;
+        struct _ddwaf_object_map map;
+    } via;
 };
 
-#ifdef _MSC_VER
 struct _ddwaf_object_kv {
-#else
-struct __attribute__((packed)) _ddwaf_object_kv {
-#endif
-    ddwaf_object key;
-    ddwaf_object val;
+    union _ddwaf_object key;
+    union _ddwaf_object val;
 };
-#ifdef _MSC_VER
-#pragma pack(pop)
+
+#if defined(_Static_assert) || defined(static_assert)
+#ifndef static_assert
+#define static_assert _Static_assert
+#endif
+
+static_assert(sizeof(union _ddwaf_object) == 16);
+static_assert(sizeof(struct _ddwaf_object_kv) == 32);
 #endif
 
 /**
@@ -747,7 +792,21 @@ double ddwaf_object_get_float(const ddwaf_object *object);
 bool ddwaf_object_get_bool(const ddwaf_object *object);
 
 /**
- * ddwaf_object_get_index
+ * ddwaf_object_at_key
+ *
+ * Returns the key contained in the container at the given index.
+ *
+ * @param object The container from which to extract the object.
+ * @param index The position of the required object within the container.
+ *
+ * @return The requested object or NULL if the index is out of bounds or the
+ *         object is not a container.
+ **/
+const ddwaf_object* ddwaf_object_at_key(const ddwaf_object *object, size_t index);
+
+
+/**
+ * ddwaf_object_at_value
  *
  * Returns the object contained in the container at the given index.
  *
@@ -757,7 +816,7 @@ bool ddwaf_object_get_bool(const ddwaf_object *object);
  * @return The requested object or NULL if the index is out of bounds or the
  *         object is not a container.
  **/
-const ddwaf_object* ddwaf_object_get_index(const ddwaf_object *object, size_t index);
+const ddwaf_object* ddwaf_object_at_value(const ddwaf_object *object, size_t index);
 
 /**
  * ddwaf_object_find

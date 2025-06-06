@@ -38,6 +38,7 @@ TEST(TestContextIntegration, Basic)
 
     const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
+
     EXPECT_EVENTS(ret, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -222,7 +223,10 @@ TEST(TestContextIntegration, InvalidUTF8Input)
 
     const auto *events = ddwaf_object_find(&ret, STRL("events"));
     auto data = ddwaf::test::object_to_json(*events);
-    auto pos = data.find(std::string_view{mapItem.via.str, mapItem.size});
+
+    std::size_t length;
+    const char *str = ddwaf_object_get_string(&mapItem, &length);
+    auto pos = data.find(std::string_view{str, length});
     EXPECT_TRUE(pos != std::string::npos);
 
     ddwaf_object_free(&ret);

@@ -47,47 +47,50 @@ template <typename T>
 void object_to_json_helper(
     const ddwaf_object &obj, T &output, rapidjson::Document::AllocatorType &alloc)
 {
-    switch (obj.type) {
+    switch (ddwaf_object_type(&obj)) {
     case DDWAF_OBJ_BOOL:
-        output.SetBool(obj.via.b8);
+        output.SetBool(ddwaf_object_get_bool(&obj));
         break;
     case DDWAF_OBJ_SIGNED:
-        output.SetInt64(obj.via.i64);
+        output.SetInt64(ddwaf_object_get_signed(&obj));
         break;
     case DDWAF_OBJ_UNSIGNED:
-        output.SetUint64(obj.via.u64);
+        output.SetUint64(ddwaf_object_get_unsigned(&obj));
         break;
     case DDWAF_OBJ_FLOAT:
-        output.SetDouble(obj.via.f64);
+        output.SetDouble(ddwaf_object_get_float(&obj));
         break;
-    case DDWAF_OBJ_STRING: {
-        auto sv = std::string_view(obj.via.str, obj.size);
-        output.SetString(sv.data(), sv.size(), alloc);
+    case DDWAF_OBJ_STRING:
+    case DDWAF_OBJ_SMALL_STRING:
+    case DDWAF_OBJ_LITERAL_STRING: {
+        output.SetString(ddwaf_object_get_string(&obj, nullptr), ddwaf_object_length(&obj), alloc);
     } break;
     case DDWAF_OBJ_MAP:
         output.SetObject();
-        for (unsigned i = 0; i < obj.size; i++) {
+        for (unsigned i = 0; i < obj.via.map.size; i++) {
             rapidjson::Value key;
             rapidjson::Value value;
 
-            auto child = obj.via.map[i];
-            object_to_json_helper(child.val, value, alloc);
+            object_to_json_helper(*ddwaf_object_at_value(&obj, i), value, alloc);
 
-            key.SetString(child.key.via.str, child.key.size, alloc);
+            const auto *child_key = ddwaf_object_at_key(&obj, i);
+            key.SetString(
+                ddwaf_object_get_string(child_key, nullptr), ddwaf_object_length(child_key), alloc);
             output.AddMember(key, value, alloc);
         }
         break;
     case DDWAF_OBJ_ARRAY:
         output.SetArray();
-        for (unsigned i = 0; i < obj.size; i++) {
+        for (unsigned i = 0; i < obj.via.array.size; i++) {
             rapidjson::Value value;
-            auto child = obj.via.array[i];
-            object_to_json_helper(child, value, alloc);
+            const auto *child = ddwaf_object_at_value(&obj, i);
+            object_to_json_helper(*child, value, alloc);
             output.PushBack(value, alloc);
         }
         break;
     case DDWAF_OBJ_NULL:
     case DDWAF_OBJ_INVALID:
+    default:
         output.SetNull();
         break;
     };
@@ -108,7 +111,7 @@ void json_to_object_helper(ddwaf_object *object, T &doc)
     case rapidjson::kObjectType: {
         ddwaf_object_map(object);
         for (auto &kv : doc.GetObject()) {
-            ddwaf_object element;
+            ddwaf_object element{};
             json_to_object_helper(&element, kv.value);
 
             const std::string_view key = kv.name.GetString();
@@ -119,7 +122,7 @@ void json_to_object_helper(ddwaf_object *object, T &doc)
     case rapidjson::kArrayType: {
         ddwaf_object_array(object);
         for (auto &v : doc.GetArray()) {
-            ddwaf_object element;
+            ddwaf_object element{};
             json_to_object_helper(&element, v);
 
             ddwaf_object_array_add(object, &element);
@@ -182,10 +185,13 @@ rapidjson::Document object_to_rapidjson(const ddwaf_object &obj)
 std::unordered_map<std::string_view, std::string_view> object_to_map(const ddwaf_object &obj)
 {
     std::unordered_map<std::string_view, std::string_view> map;
-    for (unsigned i = 0; i < obj.size; ++i) {
-        const ddwaf_object_kv &child = obj.via.map[i];
-        map.emplace(std::string_view{child.key.via.str, static_cast<std::size_t>(child.key.size)},
-            std::string_view{child.val.via.str, static_cast<std::size_t>(child.val.size)});
+    for (unsigned i = 0; i < obj.via.map.size; ++i) {
+        const auto *key = ddwaf_object_at_key(&obj, i);
+        const auto *value = ddwaf_object_at_value(&obj, i);
+
+        map.emplace(
+            std::string_view{ddwaf_object_get_string(key, nullptr), ddwaf_object_length(key)},
+            std::string_view{ddwaf_object_get_string(value, nullptr), ddwaf_object_length(value)});
     }
     return map;
 }
@@ -201,7 +207,7 @@ ddwaf_object json_to_object(const std::string &json)
             "invalid json object: "s + rapidjson::GetParseError_En(result.Code()));
     }
 
-    ddwaf_object output;
+    ddwaf_object output{};
     ddwaf::test::json_to_object_helper(&output, doc);
     return output;
 }

@@ -21,10 +21,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 
     random_buffer buffer{bytes, size};
 
-    ddwaf_object tmp;
-
-    ddwaf_object header;
-    ddwaf_object_map(&header);
+    auto header = owned_object::make_map();
     auto header_size = buffer.get<uint8_t>();
     for (uint8_t i = 0; i < header_size; ++i) {
         auto value = buffer.get<std::string_view>();
@@ -35,8 +32,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
         } else {
             key = buffer.get<std::string_view>();
         }
-        ddwaf_object_map_addl(&header, key.data(), key.size(),
-            ddwaf_object_stringl(&tmp, value.data(), value.size()));
+        header.emplace(key, value);
     }
 
     http_header_fingerprint gen{"id", {}, {}, false, true};
@@ -44,9 +40,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     processor_cache cache;
     ddwaf::timer deadline{2s};
     auto [output, attr] = gen.eval_impl(
-        {.address = {}, .key_path = {}, .ephemeral = false, .value = &header}, cache, deadline);
-
-    ddwaf_object_free(&header);
+        {.address = {}, .key_path = {}, .ephemeral = false, .value = header}, cache, deadline);
 
     return 0;
 }

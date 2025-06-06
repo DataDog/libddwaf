@@ -36,7 +36,7 @@ TEST(TestHttpEndpointFingerprint, Basic)
             .value = "/path/to/whatever?param=hello"},
         {{.address = {}, .key_path = {}, .ephemeral = false, .value = {query}}},
         {{.address = {}, .key_path = {}, .ephemeral = false, .value = {body}}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -61,7 +61,7 @@ TEST(TestHttpEndpointFingerprint, EmptyQuery)
     auto [output, attr] =
         gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
             {{{}, {}, false, {query}}}, {{{}, {}, false, {body}}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -85,7 +85,7 @@ TEST(TestHttpEndpointFingerprint, EmptyBody)
     auto [output, attr] =
         gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
             {{{}, {}, false, {query}}}, {{{}, {}, false, {body}}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -102,7 +102,7 @@ TEST(TestHttpEndpointFingerprint, EmptyEverything)
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, ""}, {{}, {}, false, ""},
         {{{}, {}, false, {query}}}, {{{}, {}, false, {body}}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -131,7 +131,7 @@ TEST(TestHttpEndpointFingerprint, KeyConsistency)
     auto [output, attr] =
         gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
             {{{}, {}, false, {query}}}, {{{}, {}, false, {body}}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -159,7 +159,7 @@ TEST(TestHttpEndpointFingerprint, InvalidQueryType)
     auto [output, attr] =
         gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
             {{{}, {}, false, {query}}}, {{{}, {}, false, {body}}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -182,7 +182,7 @@ TEST(TestHttpEndpointFingerprint, InvalidBodyType)
     auto [output, attr] =
         gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
             {{{}, {}, false, {query}}}, {{{}, {}, false, {body}}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -201,7 +201,7 @@ TEST(TestHttpEndpointFingerprint, InvalidQueryAndBodyType)
     auto [output, attr] =
         gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
             {{{}, {}, false, {query}}}, {{{}, {}, false, {body}}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -230,7 +230,7 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
         auto [output, attr] =
             gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
                 {{{}, {}, false, {query}}}, {{{}, {}, false, {body}}}, cache, deadline);
-        EXPECT_EQ(output.type(), object_type::string);
+        EXPECT_TRUE(output.is_string());
         EXPECT_EQ(attr, object_store::attribute::none);
 
         auto output_sv = output.as<std::string_view>();
@@ -243,7 +243,7 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
         auto [output, attr] =
             gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever#fragment"},
                 {{{}, {}, false, {query}}}, {{{}, {}, false, {body}}}, cache, deadline);
-        EXPECT_EQ(output.type(), object_type::string);
+        EXPECT_TRUE(output.is_string());
         EXPECT_EQ(attr, object_store::attribute::none);
 
         auto output_sv = output.as<std::string_view>();
@@ -256,7 +256,7 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
         auto [output, attr] = gen.eval_impl({{}, {}, false, "GET"},
             {{}, {}, false, "/path/to/whatever?param=hello#fragment"}, {{{}, {}, false, {query}}},
             {{{}, {}, false, {body}}}, cache, deadline);
-        EXPECT_EQ(output.type(), object_type::string);
+        EXPECT_TRUE(output.is_string());
         EXPECT_EQ(attr, object_store::attribute::none);
 
         auto output_sv = output.as<std::string_view>();
@@ -269,7 +269,7 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
         auto [output, attr] =
             gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever"},
                 {{{}, {}, false, {query}}}, {{{}, {}, false, {body}}}, cache, deadline);
-        EXPECT_EQ(output.type(), object_type::string);
+        EXPECT_TRUE(output.is_string());
         EXPECT_EQ(attr, object_store::attribute::none);
 
         auto output_sv = output.as<std::string_view>();
@@ -282,7 +282,7 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
         auto [output, attr] =
             gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/PaTh/To/WhAtEVER"},
                 {{{}, {}, false, {query}}}, {{{}, {}, false, {body}}}, cache, deadline);
-        EXPECT_EQ(output.type(), object_type::string);
+        EXPECT_TRUE(output.is_string());
         EXPECT_EQ(attr, object_store::attribute::none);
 
         auto output_sv = output.as<std::string_view>();
@@ -306,7 +306,7 @@ TEST(TestHttpEndpointFingerprint, Regeneration)
         auto [output, attr] =
             gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
                 {{{}, {}, false, {query}}}, std::nullopt, cache, deadline);
-        EXPECT_EQ(output.type(), object_type::string);
+        EXPECT_TRUE(output.is_string());
         EXPECT_EQ(attr, object_store::attribute::none);
 
         auto output_sv = output.as<std::string_view>();
@@ -325,7 +325,7 @@ TEST(TestHttpEndpointFingerprint, Regeneration)
         auto [output, attr] =
             gen.eval_impl({{}, {}, false, "GET"}, {{}, {}, false, "/path/to/whatever?param=hello"},
                 {{{}, {}, false, {query}}}, {{{}, {}, false, {body}}}, cache, deadline);
-        EXPECT_EQ(output.type(), object_type::string);
+        EXPECT_TRUE(output.is_string());
         EXPECT_EQ(attr, object_store::attribute::none);
 
         auto output_sv = output.as<std::string_view>();
@@ -353,7 +353,7 @@ TEST(TestHttpHeaderFingerprint, AllKnownHeaders)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -368,7 +368,7 @@ TEST(TestHttpHeaderFingerprint, NoHeaders)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -391,7 +391,7 @@ TEST(TestHttpHeaderFingerprint, SomeKnownHeaders)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -419,7 +419,7 @@ TEST(TestHttpHeaderFingerprint, UserAgent)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -447,7 +447,7 @@ TEST(TestHttpHeaderFingerprint, UserAgentAsArray)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -474,7 +474,7 @@ TEST(TestHttpHeaderFingerprint, UserAgentAsArrayInvalidType)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -501,7 +501,7 @@ TEST(TestHttpHeaderFingerprint, MultipleUserAgents)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -542,7 +542,7 @@ TEST(TestHttpHeaderFingerprint, ExcludedUnknownHeaders)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -587,7 +587,7 @@ TEST(TestHttpHeaderFingerprint, UnknownHeaders)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -626,7 +626,7 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeaders)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -640,7 +640,7 @@ TEST(TestHttpNetworkFingerprint, NoHeaders)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -667,7 +667,7 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPs)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -693,7 +693,7 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPsAsArray)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -720,7 +720,7 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPsAsArrayInvalidTyp
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -747,7 +747,7 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPsDuplicateXFF)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -774,7 +774,7 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersRandomChosenHeader)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -806,7 +806,7 @@ TEST(TestHttpNetworkFingerprint, HeaderPrecedence)
         ddwaf::timer deadline{2s};
         processor_cache cache;
         auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-        EXPECT_EQ(output.type(), object_type::string);
+        EXPECT_TRUE(output.is_string());
         EXPECT_EQ(attr, object_store::attribute::none);
 
         auto output_sv = output.as<std::string_view>();
@@ -848,7 +848,7 @@ TEST(TestSessionFingerprint, UserOnly)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, {cookies}}}, {{{}, {}, false, {}}},
         {{{}, {}, false, "admin"}}, cache, deadline);
 
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -865,7 +865,7 @@ TEST(TestSessionFingerprint, SessionOnly)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, {cookies}}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, {}}}, cache, deadline);
 
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -891,7 +891,7 @@ TEST(TestSessionFingerprint, CookiesOnly)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, {cookies}}}, {{{}, {}, false, {}}},
         {{{}, {}, false, {}}}, cache, deadline);
 
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -917,7 +917,7 @@ TEST(TestSessionFingerprint, UserCookieAndSession)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, {cookies}}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -943,7 +943,7 @@ TEST(TestSessionFingerprint, CookieKeysNormalization)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, {cookies}}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -969,7 +969,7 @@ TEST(TestSessionFingerprint, CookieValuesNormalization)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, {cookies}}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -995,7 +995,7 @@ TEST(TestSessionFingerprint, CookieValuesAsArray)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, {cookies}}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -1021,7 +1021,7 @@ TEST(TestSessionFingerprint, CookieValuesAsArrayInvalidType)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, {cookies}}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -1047,7 +1047,7 @@ TEST(TestSessionFingerprint, CookieValuesArrayMultiples)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, {cookies}}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -1073,7 +1073,7 @@ TEST(TestSessionFingerprint, CookieEmptyValues)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, {cookies}}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -1099,7 +1099,7 @@ TEST(TestSessionFingerprint, CookieEmptyKeys)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, {cookies}}},
         {{{}, {}, false, "ansd0182u2n"}}, {{{}, {}, false, "admin"}}, cache, deadline);
 
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -1116,7 +1116,7 @@ TEST(TestSessionFingerprint, EmptyEverything)
     auto [output, attr] = gen.eval_impl({{{}, {}, false, {cookies}}}, {{{}, {}, false, {}}},
         {{{}, {}, false, {}}}, cache, deadline);
 
-    EXPECT_EQ(output.type(), object_type::string);
+    EXPECT_TRUE(output.is_string());
     EXPECT_EQ(attr, object_store::attribute::none);
 
     auto output_sv = output.as<std::string_view>();
@@ -1132,7 +1132,7 @@ TEST(TestSessionFingerprint, Regeneration)
         ddwaf::timer deadline{2s};
         auto [output, attr] =
             gen.eval_impl(std::nullopt, std::nullopt, std::nullopt, cache, deadline);
-        EXPECT_EQ(output.type(), object_type::string);
+        EXPECT_TRUE(output.is_string());
         EXPECT_EQ(attr, object_store::attribute::none);
 
         auto output_sv = output.as<std::string_view>();
@@ -1154,7 +1154,7 @@ TEST(TestSessionFingerprint, Regeneration)
 
         auto [output, attr] = gen.eval_impl(
             {{{}, {}, false, {cookies}}}, std::nullopt, std::nullopt, cache, deadline);
-        EXPECT_EQ(output.type(), object_type::string);
+        EXPECT_TRUE(output.is_string());
         EXPECT_EQ(attr, object_store::attribute::none);
 
         auto output_sv = output.as<std::string_view>();
@@ -1166,7 +1166,7 @@ TEST(TestSessionFingerprint, Regeneration)
 
         auto [output, attr] = gen.eval_impl(
             std::nullopt, {{{}, {}, false, "ansd0182u2n"}}, std::nullopt, cache, deadline);
-        EXPECT_EQ(output.type(), object_type::string);
+        EXPECT_TRUE(output.is_string());
         EXPECT_EQ(attr, object_store::attribute::none);
 
         auto output_sv = output.as<std::string_view>();
@@ -1178,7 +1178,7 @@ TEST(TestSessionFingerprint, Regeneration)
 
         auto [output, attr] =
             gen.eval_impl(std::nullopt, std::nullopt, {{{}, {}, false, "user"}}, cache, deadline);
-        EXPECT_EQ(output.type(), object_type::string);
+        EXPECT_TRUE(output.is_string());
         EXPECT_EQ(attr, object_store::attribute::none);
 
         auto output_sv = output.as<std::string_view>();

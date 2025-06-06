@@ -265,6 +265,8 @@ base_node generate_helper(object_view object, std::string_view key,
     case object_type::boolean:
         return node_scalar{.type = scalar_type::boolean};
     case object_type::string:
+    case object_type::small_string:
+    case object_type::literal_string:
         for (const auto *scanner : scanners) {
             if (scanner->eval(key, object)) {
                 return node_scalar{.type = scalar_type::string, .tags = scanner->get_tags()};
@@ -311,6 +313,7 @@ base_node generate_helper(object_view object, std::string_view key,
         return array;
     }
     case object_type::invalid:
+    default:
         break;
     }
     return {};

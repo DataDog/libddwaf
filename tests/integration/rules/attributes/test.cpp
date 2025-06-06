@@ -50,7 +50,7 @@ TEST(TestRuleAttributesIntegration, SingleValueOutputNoEvent)
 
         const auto *tag = ddwaf_object_find(attributes, STRL("result.rule1"));
         EXPECT_NE(tag, nullptr);
-        EXPECT_EQ(ddwaf_object_type(tag), DDWAF_OBJ_STRING);
+        EXPECT_TRUE((ddwaf_object_type(tag) & DDWAF_OBJ_STRING) != 0);
 
         std::size_t length;
         const auto *str = ddwaf_object_get_string(tag, &length);
@@ -108,7 +108,7 @@ TEST(TestRuleAttributesIntegration, SingleValueOutputAndEvent)
 
         const auto *tag = ddwaf_object_find(attributes, STRL("result.rule2"));
         EXPECT_NE(tag, nullptr);
-        EXPECT_EQ(ddwaf_object_type(tag), DDWAF_OBJ_STRING);
+        EXPECT_TRUE((ddwaf_object_type(tag) & DDWAF_OBJ_STRING) != 0);
 
         std::size_t length;
         const auto *str = ddwaf_object_get_string(tag, &length);
@@ -163,7 +163,7 @@ TEST(TestRuleAttributesIntegration, SingleTargetOutputNoEvent)
 
         const auto *tag = ddwaf_object_find(attributes, STRL("result.rule3"));
         EXPECT_NE(tag, nullptr);
-        EXPECT_EQ(ddwaf_object_type(tag), DDWAF_OBJ_STRING);
+        EXPECT_TRUE((ddwaf_object_type(tag) & DDWAF_OBJ_STRING) != 0);
 
         std::size_t length;
         const auto *str = ddwaf_object_get_string(tag, &length);
@@ -291,7 +291,7 @@ TEST(TestRuleAttributesIntegration, AttributesWithActions)
 
         const auto *tag = ddwaf_object_find(attributes, STRL("result.rule5"));
         EXPECT_NE(tag, nullptr);
-        EXPECT_EQ(ddwaf_object_type(tag), DDWAF_OBJ_STRING);
+        EXPECT_TRUE((ddwaf_object_type(tag) & DDWAF_OBJ_STRING) != 0);
 
         std::size_t length;
         const auto *str = ddwaf_object_get_string(tag, &length);
@@ -356,7 +356,7 @@ TEST(TestRuleAttributesIntegration, MultipleAttributesAndActions)
         {
             const auto *tag = ddwaf_object_find(attributes, STRL("result.rule5"));
             EXPECT_NE(tag, nullptr);
-            EXPECT_EQ(ddwaf_object_type(tag), DDWAF_OBJ_STRING);
+            EXPECT_TRUE((ddwaf_object_type(tag) & DDWAF_OBJ_STRING) != 0);
 
             std::size_t length;
             const auto *str = ddwaf_object_get_string(tag, &length);
@@ -368,7 +368,7 @@ TEST(TestRuleAttributesIntegration, MultipleAttributesAndActions)
         {
             const auto *tag = ddwaf_object_find(attributes, STRL("result.rule6"));
             EXPECT_NE(tag, nullptr);
-            EXPECT_EQ(ddwaf_object_type(tag), DDWAF_OBJ_STRING);
+            EXPECT_TRUE((ddwaf_object_type(tag) & DDWAF_OBJ_STRING) != 0);
 
             std::size_t length;
             const auto *str = ddwaf_object_get_string(tag, &length);
@@ -438,7 +438,7 @@ TEST(TestRuleAttributesIntegration, AttributesAndMonitorRuleFilter)
 
         const auto *tag = ddwaf_object_find(attributes, STRL("result.rule7"));
         EXPECT_NE(tag, nullptr);
-        EXPECT_EQ(ddwaf_object_type(tag), DDWAF_OBJ_STRING);
+        EXPECT_TRUE((ddwaf_object_type(tag) & DDWAF_OBJ_STRING) != 0);
 
         std::size_t length;
         const auto *str = ddwaf_object_get_string(tag, &length);
@@ -498,7 +498,7 @@ TEST(TestRuleAttributesIntegration, AttributesAndBlockingRuleFilter)
 
         const auto *tag = ddwaf_object_find(attributes, STRL("result.rule8"));
         EXPECT_NE(tag, nullptr);
-        EXPECT_EQ(ddwaf_object_type(tag), DDWAF_OBJ_STRING);
+        EXPECT_TRUE((ddwaf_object_type(tag) & DDWAF_OBJ_STRING) != 0);
 
         std::size_t length;
         const auto *str = ddwaf_object_get_string(tag, &length);

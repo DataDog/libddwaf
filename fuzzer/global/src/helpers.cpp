@@ -49,13 +49,13 @@ void _print_object(ddwaf_object entry, uint8_t depth)
 
     switch (entry.type) {
     case DDWAF_OBJ_MAP:
-        if (entry.size == 0) {
+        if (ddwaf_object_size(&entry) == 0) {
             std::cerr << "{}";
         } else {
 
             std::cerr << "{";
 
-            for (uint64_t i = 0; i < entry.size; i++) {
+            for (uint64_t i = 0; i < ddwaf_object_size(&entry); i++) {
                 if (first) {
                     first = false;
                 } else {
@@ -63,9 +63,14 @@ void _print_object(ddwaf_object entry, uint8_t depth)
                 }
 
                 indent(depth + 1);
-                print_string(entry.via.map[i].key.via.str, entry.via.map[i].key.size);
+                const ddwaf_object *key = ddwaf_object_at_key(&entry, i);
+                size_t key_len;
+                const char *key_data = ddwaf_object_get_string(key, &key_len);
+                print_string(key_data, key_len);
                 std::cerr << ": ";
-                _print_object(entry.via.map[i].val, depth + 1);
+
+                const ddwaf_object *val = ddwaf_object_at_value(&entry, i);
+                _print_object(*val, depth + 1);
             }
 
             indent(depth);
@@ -74,20 +79,20 @@ void _print_object(ddwaf_object entry, uint8_t depth)
         break;
 
     case DDWAF_OBJ_ARRAY:
-        if (entry.size == 0) {
+        if (ddwaf_object_size(&entry) == 0) {
             indent(depth);
             std::cerr << "[]";
         } else {
             std::cerr << "[";
 
-            for (uint64_t i = 0; i < entry.size; i++) {
+            for (uint64_t i = 0; i < ddwaf_object_size(&entry); i++) {
                 if (first) {
                     first = false;
                 } else {
                     std::cerr << ",";
                 }
                 indent(depth + 1);
-                _print_object(entry.via.array[i], depth + 1);
+                _print_object(*ddwaf_object_at_value(&entry, i), depth + 1);
             }
 
             indent(depth);
@@ -96,19 +101,24 @@ void _print_object(ddwaf_object entry, uint8_t depth)
 
         break;
     case DDWAF_OBJ_FLOAT:
-        std::cerr << entry.via.f64;
+        std::cerr << ddwaf_object_get_float(&entry);
         break;
     case DDWAF_OBJ_SIGNED:
-        std::cerr << entry.via.i64;
+        std::cerr << ddwaf_object_get_signed(&entry);
         break;
     case DDWAF_OBJ_UNSIGNED:
-        std::cerr << entry.via.u64;
+        std::cerr << ddwaf_object_get_unsigned(&entry);
         break;
     case DDWAF_OBJ_STRING:
-        print_string(entry.via.str, entry.size);
+    case DDWAF_OBJ_LITERAL_STRING:
+    case DDWAF_OBJ_SMALL_STRING: {
+        size_t len;
+        const char *data = ddwaf_object_get_string(&entry, &len);
+        print_string(data, len);
         break;
+    }
     case DDWAF_OBJ_BOOL:
-        std::cerr << std::boolalpha << entry.via.b8;
+        std::cerr << std::boolalpha << ddwaf_object_get_bool(&entry);
         break;
     case DDWAF_OBJ_NULL:
         std::cerr << "(null)";
