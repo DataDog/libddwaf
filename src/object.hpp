@@ -355,7 +355,17 @@ public:
             {
                 Derived(a)
             };
-        };
+        }
+    {
+        const auto &obj = object_ref();
+        assert(index < size());
+        if (type() == object_type::map) {
+            assert(obj.via.map.ptr != nullptr);
+            return obj.via.map.ptr[index].val;
+        }
+        assert(obj.via.array.ptr != nullptr);
+        return obj.via.array.ptr[index];
+    }
 
     // Convert the underlying type to the requested type
     template <typename T> T convert() const;
@@ -745,24 +755,6 @@ struct movable_object {
 
 inline object_view::object_view(const owned_object &ow) : obj_(&ow.obj_) {}
 inline object_view::object_view(const borrowed_object &ow) : obj_(ow.obj_) {}
-
-template <typename Derived>
-[[nodiscard]] Derived readable_object<Derived>::at_value(std::size_t index) const noexcept
-    requires requires(const detail::object &a) {
-        {
-            Derived(a)
-        };
-    }
-{
-    const auto &obj = object_ref();
-    assert(index < size());
-    if (type() == object_type::map) {
-        assert(obj.via.map.ptr != nullptr);
-        return obj.via.map.ptr[index].val;
-    }
-    assert(obj.via.array.ptr != nullptr);
-    return obj.via.array.ptr[index];
-}
 
 // Convert the underlying type to the requested type, converters are defined
 // in the object_converter header
