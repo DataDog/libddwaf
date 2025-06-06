@@ -15,7 +15,6 @@
 #include "log.hpp"
 #include "obfuscator.hpp"
 #include "re2.h"
-#include "stringpiece.h"
 
 namespace ddwaf {
 
@@ -23,7 +22,7 @@ namespace {
 
 bool match(re2::RE2 &regex, std::string_view value)
 {
-    const re2::StringPiece key_ref(value.data(), value.size());
+    const std::string_view key_ref(value.data(), value.size());
     return regex.Match(key_ref, 0, value.size(), re2::RE2::UNANCHORED, nullptr, 0);
 }
 
@@ -39,7 +38,7 @@ bool load_regex(std::string_view regex_str, std::unique_ptr<re2::RE2> &regex)
     options.set_log_errors(false);
     options.set_case_sensitive(false);
 
-    const re2::StringPiece sp(regex_str.data(), regex_str.size());
+    const std::string_view sp(regex_str.data(), regex_str.size());
     regex = std::make_unique<re2::RE2>(sp, options);
 
     return regex->ok();
@@ -47,7 +46,7 @@ bool load_regex(std::string_view regex_str, std::unique_ptr<re2::RE2> &regex)
 
 template <std::size_t N>
 bool find_and_consume(
-    re2::StringPiece *input, re2::RE2 &regex, std::array<re2::StringPiece, N> &array)
+    std::string_view *input, re2::RE2 &regex, std::array<std::string_view, N> &array)
 {
     return std::apply(
         [input, &regex](
@@ -140,11 +139,11 @@ bool match_obfuscator::obfuscate_value(dynamic_string &value) const
     assert(value_regex_->NumberOfCapturingGroups() == capturing_groups);
 
     dynamic_string output{value.size()};
-    re2::StringPiece input{value.data(), value.size()};
+    std::string_view input{value.data(), value.size()};
 
     const auto *read = input.data();
     while (!input.empty()) {
-        std::array<re2::StringPiece, capturing_groups> matches;
+        std::array<std::string_view, capturing_groups> matches;
         if (!find_and_consume(&input, *value_regex_, matches)) {
             break;
         }

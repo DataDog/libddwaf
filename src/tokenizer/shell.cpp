@@ -13,7 +13,6 @@
 #include <vector>
 
 #include "re2.h"
-#include "stringpiece.h"
 #include "tokenizer/base.hpp"
 #include "tokenizer/shell.hpp"
 #include "utils.hpp"
@@ -412,8 +411,8 @@ void shell_tokenizer::tokenize_redirection()
 
     auto remaining_str = substr(index());
 
-    re2::StringPiece redirection;
-    const re2::StringPiece ref(remaining_str.data(), remaining_str.size());
+    std::string_view redirection;
+    const std::string_view ref(remaining_str.data(), remaining_str.size());
     if (re2::RE2::PartialMatch(ref, redirection_regex, &redirection)) {
         // At least one of the strings will contain a match
         if (!redirection.empty()) {
@@ -439,8 +438,8 @@ void shell_tokenizer::tokenize_redirection_or_field()
         advance(); // Skip the current digit
         auto remaining_str = substr(index());
 
-        re2::StringPiece redirection;
-        const re2::StringPiece ref(remaining_str.data(), remaining_str.size());
+        std::string_view redirection;
+        const std::string_view ref(remaining_str.data(), remaining_str.size());
         if (re2::RE2::PartialMatch(ref, redirection_regex, &redirection)) {
             // At least one of the strings will contain a match
             if (!redirection.empty()) {

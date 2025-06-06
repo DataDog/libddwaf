@@ -23,7 +23,7 @@
 #include "re2/util/logging.h"
 #include "re2/util/strutil.h"
 #include "re2/bitmap256.h"
-#include "re2/stringpiece.h"
+#include <string_view>
 
 namespace re2 {
 
@@ -284,7 +284,7 @@ void Prog::Optimize() {
   }
 }
 
-uint32_t Prog::EmptyFlags(const StringPiece& text, const char* p) {
+uint32_t Prog::EmptyFlags(std::string_view text, const char* p) {
   int flags = 0;
 
   // ^ and \A
