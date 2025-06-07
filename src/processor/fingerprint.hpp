@@ -41,7 +41,7 @@ public:
     {}
 
     std::pair<owned_object, object_store::attribute> eval_impl(
-        const unary_argument<object_view> &headers, processor_cache &cache,
+        const unary_argument<map_view> &headers, processor_cache &cache,
         ddwaf::timer &deadline) const;
 };
 
@@ -56,7 +56,7 @@ public:
     {}
 
     std::pair<owned_object, object_store::attribute> eval_impl(
-        const unary_argument<object_view> &headers, processor_cache &cache,
+        const unary_argument<map_view> &headers, processor_cache &cache,
         ddwaf::timer &deadline) const;
 };
 
@@ -72,7 +72,7 @@ public:
     {}
 
     std::pair<owned_object, object_store::attribute> eval_impl(
-        const optional_argument<object_view> &cookies,
+        const optional_argument<map_view> &cookies,
         const optional_argument<std::string_view> &session_id,
         const optional_argument<std::string_view> &user_id, processor_cache &cache,
         ddwaf::timer &deadline) const;

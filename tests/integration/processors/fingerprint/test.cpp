@@ -1227,4 +1227,111 @@ TEST(TestFingerprintIntegration, InvalidQueryAndBodyType)
     ddwaf_destroy(handle);
 }
 
+TEST(TestFingerprintIntegration, InvalidHeader)
+{
+    auto rule = read_json_file("postprocessor.json", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object tmp;
+
+    ddwaf_object headers;
+    ddwaf_object_array(&headers);
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "referer"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "connection"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "accept-encoding"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "content-encoding"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "cache-control"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "te"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "accept-charset"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "content-type"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "accept"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "accept-language"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "user-agent"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "x-forwarded-for"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "x-real-ip"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "true-client-ip"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "x-client-ip"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "x-forwarded"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "forwarded-for"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "x-cluster-client-ip"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "fastly-client-ip"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "cf-connecting-ip"));
+    ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "cf-connecting-ipv6"));
+
+    ddwaf_object settings = DDWAF_OBJECT_MAP;
+    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+    ddwaf_object_map_add(&map, "server.request.headers.no_cookies", &headers);
+
+    ddwaf_object out;
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
+
+    const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+    EXPECT_EQ(ddwaf_object_size(attributes), 0);
+
+    // auto derivatives = test::object_to_map(*attributes);
+
+    ddwaf_object_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestFingerprintIntegration, InvalidCookies)
+{
+    auto rule = read_json_file("postprocessor.json", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object tmp;
+
+    ddwaf_object settings = DDWAF_OBJECT_MAP;
+    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
+
+    ddwaf_object cookies;
+    ddwaf_object_array(&cookies);
+    ddwaf_object_array_add(&cookies, ddwaf_object_string(&tmp, "name"));
+    ddwaf_object_array_add(&cookies, ddwaf_object_string(&tmp, "theme"));
+    ddwaf_object_array_add(&cookies, ddwaf_object_string(&tmp, "language"));
+    ddwaf_object_array_add(&cookies, ddwaf_object_string(&tmp, "tracking_id"));
+    ddwaf_object_array_add(&cookies, ddwaf_object_string(&tmp, "gdpr_consent"));
+    ddwaf_object_array_add(&cookies, ddwaf_object_string(&tmp, "session_id"));
+    ddwaf_object_array_add(&cookies, ddwaf_object_string(&tmp, "last_visit"));
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object_map_add(&map, "server.request.cookies", &cookies);
+    ddwaf_object_map_add(&map, "usr.id", ddwaf_object_string(&tmp, "admin"));
+    ddwaf_object_map_add(&map, "usr.session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
+    ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+
+    ddwaf_object out;
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
+
+    const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+
+    auto derivatives = test::object_to_map(*attributes);
+    EXPECT_STRV(derivatives["_dd.appsec.fp.session"], "ssn-8c6976e5---269500d3");
+
+    ddwaf_object_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
 } // namespace

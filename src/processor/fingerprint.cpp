@@ -324,12 +324,12 @@ struct vector_hash_field : field_generator<vector_hash_field> {
 // when both have to be processed together. This generator also includes the
 // relevant separator, whether the map is empty or not.
 struct kv_hash_fields : field_generator<kv_hash_fields, std::pair<std::string, std::string>> {
-    explicit kv_hash_fields(object_view input) : value(input) {}
+    explicit kv_hash_fields(map_view input) : value(input) {}
 
     // NOLINTNEXTLINE(readability-make-member-function-const)
     [[nodiscard]] std::pair<std::string, std::string> generate()
     {
-        if (!value.has_value() || value.type() != object_type::map || value.empty()) {
+        if (value.empty()) {
             return {};
         }
 
@@ -372,7 +372,7 @@ struct kv_hash_fields : field_generator<kv_hash_fields, std::pair<std::string, s
         return {key_hasher.digest<8>(), val_hasher.digest<8>()};
     }
 
-    object_view value;
+    map_view value;
 };
 
 template <typename Generator> struct optional_generator {
@@ -590,25 +590,20 @@ std::pair<owned_object, object_store::attribute> http_endpoint_fingerprint::eval
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<owned_object, object_store::attribute> http_header_fingerprint::eval_impl(
-    const unary_argument<object_view> &headers, processor_cache & /*cache*/,
+    const unary_argument<map_view> &headers, processor_cache & /*cache*/,
     ddwaf::timer &deadline) const
 {
-    if (headers.value.type() != object_type::map) {
-        return {owned_object{}, object_store::attribute::none};
-    }
-
     std::string known_header_bitset;
     known_header_bitset.resize(standard_headers_length, '0');
 
     std::string_view user_agent;
     std::vector<std::string> unknown_headers;
     std::string normalized_header;
-    for (std::size_t i = 0; i < headers.value.size(); ++i) {
+    for (const auto [key, child] : headers.value) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const auto [key, child] = headers.value.at(i);
         const auto header = key.as<std::string_view>();
 
         normalize_header(header, normalized_header);
@@ -638,25 +633,20 @@ std::pair<owned_object, object_store::attribute> http_header_fingerprint::eval_i
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<owned_object, object_store::attribute> http_network_fingerprint::eval_impl(
-    const unary_argument<object_view> &headers, processor_cache & /*cache*/,
+    const unary_argument<map_view> &headers, processor_cache & /*cache*/,
     ddwaf::timer &deadline) const
 {
-    if (headers.value.type() != object_type::map) {
-        return {owned_object{}, object_store::attribute::none};
-    }
-
     std::string ip_origin_bitset;
     ip_origin_bitset.resize(ip_origin_headers_length, '0');
 
     unsigned chosen_header = ip_origin_headers_length;
     std::string_view chosen_header_value;
     std::string normalized_header;
-    for (std::size_t i = 0; i < headers.value.size(); ++i) {
+    for (const auto [key, child] : headers.value) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const auto [key, child] = headers.value.at(i);
         const auto header = key.as<std::string_view>();
 
         normalize_header(header, normalized_header);
@@ -694,7 +684,7 @@ std::pair<owned_object, object_store::attribute> http_network_fingerprint::eval_
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<owned_object, object_store::attribute> session_fingerprint::eval_impl(
-    const optional_argument<object_view> &cookies,
+    const optional_argument<map_view> &cookies,
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     const optional_argument<std::string_view> &session_id,
     const optional_argument<std::string_view> &user_id, processor_cache &cache,

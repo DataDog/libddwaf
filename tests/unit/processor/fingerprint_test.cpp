@@ -524,18 +524,6 @@ TEST(TestHttpHeaderFingerprint, UnknownHeaders)
     EXPECT_STRV(output_sv, "hdr-1111111111-a441b15f-4-47280082");
 }
 
-TEST(TestHttpHeaderFingerprint, InvalidHeaderType)
-{
-    owned_object headers{"value"};
-    http_header_fingerprint gen{"id", {}, {}, false, true};
-
-    ddwaf::timer deadline{2s};
-    processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::invalid);
-    EXPECT_EQ(attr, object_store::attribute::none);
-}
-
 TEST(TestHttpNetworkFingerprint, AllXFFHeaders)
 {
     auto headers = owned_object::make_map({
@@ -740,7 +728,7 @@ TEST(TestHttpNetworkFingerprint, HeaderPrecedence)
         EXPECT_EQ(attr, object_store::attribute::none);
 
         auto output_sv = output.as<std::string_view>();
-        EXPECT_STRV(output_sv, expected.c_str());
+        EXPECT_STRV(output_sv, expected);
     };
 
     match_frag(get_headers(0), "net-1-1111111111");
@@ -753,19 +741,6 @@ TEST(TestHttpNetworkFingerprint, HeaderPrecedence)
     match_frag(get_headers(7), "net-8-0000000111");
     match_frag(get_headers(8), "net-9-0000000011");
     match_frag(get_headers(9), "net-10-0000000001");
-}
-
-TEST(TestNetworkHeaderFingerprint, InvalidHeaderType)
-{
-    owned_object headers{"value"};
-
-    http_network_fingerprint gen{"id", {}, {}, false, true};
-
-    ddwaf::timer deadline{2s};
-    processor_cache cache;
-    auto [output, attr] = gen.eval_impl({{}, {}, false, {headers}}, cache, deadline);
-    EXPECT_EQ(output.type(), object_type::invalid);
-    EXPECT_EQ(attr, object_store::attribute::none);
 }
 
 TEST(TestSessionFingerprint, UserOnly)
