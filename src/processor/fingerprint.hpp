@@ -25,9 +25,9 @@ public:
 
     std::pair<owned_object, object_store::attribute> eval_impl(
         const unary_argument<std::string_view> &method,
-        const unary_argument<std::string_view> &uri_raw,
-        const optional_argument<object_view> &query, const optional_argument<object_view> &body,
-        processor_cache &cache, ddwaf::timer &deadline) const;
+        const unary_argument<std::string_view> &uri_raw, const optional_argument<map_view> &query,
+        const optional_argument<map_view> &body, processor_cache &cache,
+        ddwaf::timer &deadline) const;
 };
 
 class http_header_fingerprint : public structured_processor<http_header_fingerprint> {

@@ -257,12 +257,12 @@ struct string_hash_field : field_generator<string_hash_field> {
 };
 
 struct key_hash_field : field_generator<key_hash_field> {
-    explicit key_hash_field(object_view input) : value(input) {}
+    explicit key_hash_field(map_view input) : value(input) {}
 
     // NOLINTNEXTLINE(readability-make-member-function-const)
     [[nodiscard]] std::string generate()
     {
-        if (!value.has_value() || value.type() != object_type::map || value.empty()) {
+        if (value.empty()) {
             return {};
         }
 
@@ -293,7 +293,7 @@ struct key_hash_field : field_generator<key_hash_field> {
         return hasher.digest<8>();
     }
 
-    object_view value;
+    map_view value;
 };
 
 struct vector_hash_field : field_generator<vector_hash_field> {
@@ -562,7 +562,7 @@ std::pair<header_type, unsigned> get_header_type_and_index(std::string_view head
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<owned_object, object_store::attribute> http_endpoint_fingerprint::eval_impl(
     const unary_argument<std::string_view> &method, const unary_argument<std::string_view> &uri_raw,
-    const optional_argument<object_view> &query, const optional_argument<object_view> &body,
+    const optional_argument<map_view> &query, const optional_argument<map_view> &body,
     processor_cache &cache, ddwaf::timer &deadline) const
 {
     if (deadline.expired()) {

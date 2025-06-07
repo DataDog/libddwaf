@@ -3,14 +3,12 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-#include <cstddef>
 #include <string_view>
 #include <utility>
 
 #include "log.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
-#include "object_type.hpp"
 #include "target_address.hpp"
 
 namespace ddwaf {
@@ -29,26 +27,25 @@ bool object_store::insert(owned_object &&input, attribute attr)
 
 bool object_store::insert(object_view input, attribute attr)
 {
-    if (input.type() != object_type::map) {
+    if (!input.is_map()) {
         return false;
     }
 
-    const auto size = input.size();
-    if (size == 0) {
+    const map_view mv{input};
+    if (mv.empty()) {
         // Objects with no addresses are considered valid as they are harmless
         return true;
     }
 
-    objects_.reserve(objects_.size() + size);
+    objects_.reserve(objects_.size() + mv.size());
 
-    latest_batch_.reserve(latest_batch_.size() + size);
+    latest_batch_.reserve(latest_batch_.size() + mv.size());
 
     if (attr == attribute::ephemeral) {
-        ephemeral_targets_.reserve(size);
+        ephemeral_targets_.reserve(mv.size());
     }
 
-    for (std::size_t i = 0; i < input.size(); ++i) {
-        auto [key_obj, value] = input.at(i);
+    for (auto [key_obj, value] : mv) {
         if (key_obj.empty()) {
             continue;
         }

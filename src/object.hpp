@@ -20,6 +20,10 @@
 
 namespace ddwaf {
 
+class object_view;
+class map_view;
+class array_view;
+
 class owned_object;
 class borrowed_object;
 
@@ -304,6 +308,14 @@ public:
         return data();
     }
 
+    template <typename T>
+    [[nodiscard]] T as() const noexcept
+        requires std::is_same_v<T, array_view>;
+
+    template <typename T>
+    [[nodiscard]] T as() const noexcept
+        requires std::is_same_v<T, map_view>;
+
     // Access the underlying value based on the required type or return a default
     // value otherwise.
     template <typename T> [[nodiscard]] T as_or_default(T default_value) const noexcept
@@ -347,6 +359,20 @@ public:
         const auto &obj = object_ref();
         return is_compatible_type<int64_t>(type()) && obj.via.i64.val >= limits::min() &&
                obj.via.i64.val <= limits::max();
+    }
+
+    template <typename T>
+    [[nodiscard]] bool is() const noexcept
+        requires std::is_same_v<T, array_view>
+    {
+        return is_array();
+    }
+
+    template <typename T>
+    [[nodiscard]] bool is() const noexcept
+        requires std::is_same_v<T, map_view>
+    {
+        return is_map();
     }
 
     // Convert the underlying type to the requested type
@@ -501,6 +527,15 @@ static_assert(sizeof(object_view) == sizeof(void *));
 class array_view {
 public:
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    array_view(const detail::object *o) : obj_(o)
+    {
+        if (obj_ == nullptr || obj_->type != object_type::array) {
+            throw std::invalid_argument("array_view initialised with null or incompatible type");
+        }
+    }
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    array_view(const detail::object &o) : array_view(&o) {}
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     array_view(object_view o) : array_view(o.ptr()) {}
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     array_view(const owned_object &ow);
@@ -583,14 +618,6 @@ public:
     }
 
 protected:
-    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-    array_view(const detail::object *o) : obj_(o)
-    {
-        if (obj_ == nullptr || obj_->type != object_type::array) {
-            throw std::invalid_argument("array_view initialised with null or incompatible type");
-        }
-    }
-
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const detail::object *obj_{nullptr};
 };
@@ -600,6 +627,15 @@ static_assert(sizeof(array_view::iterator) <= 16);
 
 class map_view {
 public:
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    map_view(const detail::object *o) : obj_(o)
+    {
+        if (obj_ == nullptr || obj_->type != object_type::map) {
+            throw std::invalid_argument("map_view initialised with null or incompatible type");
+        }
+    }
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    map_view(const detail::object &o) : map_view(&o) {}
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     map_view(object_view o) : map_view(o.ptr()) {}
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
@@ -713,14 +749,6 @@ public:
     }
 
 protected:
-    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-    map_view(const detail::object *o) : obj_(o)
-    {
-        if (obj_ == nullptr || obj_->type != object_type::map) {
-            throw std::invalid_argument("map_view initialised with null or incompatible type");
-        }
-    }
-
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const detail::object *obj_{nullptr};
 };
@@ -986,11 +1014,27 @@ inline array_view::array_view(const borrowed_object &ow) : array_view(ow.ptr()) 
 inline map_view::map_view(const owned_object &ow) : map_view(ow.ptr()) {}
 inline map_view::map_view(const borrowed_object &ow) : map_view(ow.ptr()) {}
 
+template <typename Derived>
+template <typename T>
+[[nodiscard]] T readable_object<Derived>::as() const noexcept
+    requires std::is_same_v<T, array_view>
+{
+    return array_view{object_ref()};
+}
+
+template <typename Derived>
+template <typename T>
+[[nodiscard]] T readable_object<Derived>::as() const noexcept
+    requires std::is_same_v<T, map_view>
+{
+    return map_view{object_ref()};
+}
+
 // Convert the underlying type to the requested type, converters are defined
 // in the object_converter header
 template <typename Derived> template <typename T> T readable_object<Derived>::convert() const
 {
-    return object_converter<T>{static_cast<const Derived *>(this)->ref()}();
+    return object_converter<T>{object_ref()}();
 }
 
 template <typename Derived> [[nodiscard]] owned_object readable_object<Derived>::clone() const
@@ -1025,7 +1069,7 @@ template <typename Derived> [[nodiscard]] owned_object readable_object<Derived>:
 
     std::deque<std::pair<object_view, borrowed_object>> queue;
 
-    const object_view input = static_cast<const Derived *>(this)->ref();
+    const object_view input = object_ref();
     auto copy = clone_helper(input);
     if (copy.is_container()) {
         queue.emplace_front(input, copy);
@@ -1082,7 +1126,7 @@ template <> struct object_converter<std::string> {
 template <typename Derived>
 [[nodiscard]] borrowed_object writable_object<Derived>::at(std::size_t idx)
 {
-    auto &container = static_cast<const Derived *>(this)->ref();
+    auto &container = object_ref();
 
     assert(is_container(static_cast<object_type>(container.type)));
 

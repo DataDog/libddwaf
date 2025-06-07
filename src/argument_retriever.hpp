@@ -49,7 +49,7 @@ template <typename T> std::optional<T> convert(object_view obj)
     if constexpr (std::is_same_v<std::decay_t<T>, object_view>) {
         return obj;
     } else if constexpr (is_type_in_set_v<T, uint64_t, unsigned, int64_t, int, bool, std::string,
-                             std::string_view>) {
+                             std::string_view, array_view, map_view>) {
         if (obj.is<T>()) {
             return obj.as<T>();
         }

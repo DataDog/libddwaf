@@ -1086,4 +1086,145 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
     ddwaf_destroy(handle);
 }
 
+TEST(TestFingerprintIntegration, InvalidBodyType)
+{
+    auto rule = read_json_file("postprocessor.json", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object tmp;
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object settings = DDWAF_OBJECT_MAP;
+
+    ddwaf_object body = DDWAF_OBJECT_ARRAY;
+    ddwaf_object_array_add(&body, ddwaf_object_string(&tmp, "key"));
+    ddwaf_object_map_add(&map, "server.request.body", &body);
+
+    ddwaf_object query = DDWAF_OBJECT_MAP;
+    ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&map, "server.request.query", &query);
+
+    ddwaf_object_map_add(
+        &map, "server.request.uri.raw", ddwaf_object_string(&tmp, "/path/to/resource/?key="));
+    ddwaf_object_map_add(&map, "server.request.method", ddwaf_object_string(&tmp, "PuT"));
+
+    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
+    ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+
+    ddwaf_object out;
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
+
+    const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+
+    auto derivatives = test::object_to_map(*attributes);
+    EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3-2c70e12b-");
+
+    ddwaf_object_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestFingerprintIntegration, InvalidQueryType)
+{
+    auto rule = read_json_file("postprocessor.json", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object tmp;
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object settings = DDWAF_OBJECT_MAP;
+
+    ddwaf_object body = DDWAF_OBJECT_MAP;
+    ddwaf_object_map_add(&body, "key", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&map, "server.request.body", &body);
+
+    ddwaf_object query = DDWAF_OBJECT_ARRAY;
+    ddwaf_object_array_add(&query, ddwaf_object_string(&tmp, "key"));
+    ddwaf_object_map_add(&map, "server.request.query", &query);
+
+    ddwaf_object_map_add(
+        &map, "server.request.uri.raw", ddwaf_object_string(&tmp, "/path/to/resource/?key="));
+    ddwaf_object_map_add(&map, "server.request.method", ddwaf_object_string(&tmp, "PuT"));
+
+    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
+    ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+
+    ddwaf_object out;
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
+
+    const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+
+    auto derivatives = test::object_to_map(*attributes);
+    EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3--2c70e12b");
+
+    ddwaf_object_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestFingerprintIntegration, InvalidQueryAndBodyType)
+{
+    auto rule = read_json_file("postprocessor.json", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context = ddwaf_context_init(handle);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object tmp;
+
+    ddwaf_object map = DDWAF_OBJECT_MAP;
+    ddwaf_object settings = DDWAF_OBJECT_MAP;
+
+    ddwaf_object body = DDWAF_OBJECT_ARRAY;
+    ddwaf_object_array_add(&body, ddwaf_object_string(&tmp, "key"));
+    ddwaf_object_map_add(&map, "server.request.body", &body);
+
+    ddwaf_object query = DDWAF_OBJECT_ARRAY;
+    ddwaf_object_array_add(&query, ddwaf_object_string(&tmp, "key"));
+    ddwaf_object_map_add(&map, "server.request.query", &query);
+
+    ddwaf_object_map_add(
+        &map, "server.request.uri.raw", ddwaf_object_string(&tmp, "/path/to/resource/?key="));
+    ddwaf_object_map_add(&map, "server.request.method", ddwaf_object_string(&tmp, "PuT"));
+
+    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
+    ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+
+    ddwaf_object out;
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
+    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
+
+    const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
+    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+
+    auto derivatives = test::object_to_map(*attributes);
+    EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3--");
+
+    ddwaf_object_free(&out);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
 } // namespace
