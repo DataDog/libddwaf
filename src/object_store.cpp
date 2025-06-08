@@ -3,6 +3,7 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <cstddef>
 #include <string_view>
 #include <utility>
 
@@ -22,31 +23,30 @@ bool object_store::insert(owned_object &&input, attribute attr)
         view = input_objects_.emplace_back(std::move(input));
     }
 
-    return insert(view, attr);
-}
-
-bool object_store::insert(object_view input, attribute attr)
-{
-    if (!input.is_map()) {
+    if (!view.is_map()) {
         return false;
     }
 
-    const map_view mv{input};
-    if (mv.empty()) {
+    return insert(view, attr);
+}
+
+bool object_store::insert(map_view input, attribute attr)
+{
+    if (input.empty()) {
         // Objects with no addresses are considered valid as they are harmless
         return true;
     }
 
-    objects_.reserve(objects_.size() + mv.size());
+    objects_.reserve(objects_.size() + input.size());
 
-    latest_batch_.reserve(latest_batch_.size() + mv.size());
+    latest_batch_.reserve(latest_batch_.size() + input.size());
 
     if (attr == attribute::ephemeral) {
-        ephemeral_targets_.reserve(mv.size());
+        ephemeral_targets_.reserve(input.size());
     }
 
-    for (std::size_t i = 0; i < mv.size(); ++i) {
-        auto [key_obj, value] = mv.at(i);
+    for (std::size_t i = 0; i < input.size(); ++i) {
+        auto [key_obj, value] = input.at(i);
         if (key_obj.empty()) {
             continue;
         }

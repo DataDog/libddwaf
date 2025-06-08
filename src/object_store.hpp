@@ -6,16 +6,11 @@
 
 #pragma once
 
-#include <string>
-#include <unordered_map>
 #include <unordered_set>
-#include <vector>
 
 #include "context_allocator.hpp"
-#include "ddwaf.h"
 #include "object.hpp"
 #include "target_address.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -50,7 +45,7 @@ public:
         attribute attr = attribute::none);
 
     // Used for testing
-    bool insert(object_view input, attribute attr = attribute::none);
+    bool insert(map_view input, attribute attr = attribute::none);
 
     std::pair<object_view, attribute> get_target(target_index target) const
     {

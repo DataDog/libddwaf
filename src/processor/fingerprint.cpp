@@ -599,11 +599,11 @@ std::pair<owned_object, object_store::attribute> http_header_fingerprint::eval_i
     std::vector<std::string> unknown_headers;
     std::string normalized_header;
     for (std::size_t i = 0; i < headers.value.size(); ++i) {
-        const auto [key, child] = headers.value.at(i);
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
+        const auto [key, child] = headers.value.at(i);
         const auto header = key.as<std::string_view>();
 
         normalize_header(header, normalized_header);
@@ -643,11 +643,11 @@ std::pair<owned_object, object_store::attribute> http_network_fingerprint::eval_
     std::string_view chosen_header_value;
     std::string normalized_header;
     for (std::size_t i = 0; i < headers.value.size(); ++i) {
-        const auto [key, child] = headers.value.at(i);
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
+        const auto [key, child] = headers.value.at(i);
         const auto header = key.as<std::string_view>();
 
         normalize_header(header, normalized_header);
