@@ -32,20 +32,21 @@ bool object_store::insert(owned_object &&input, attribute attr)
 
 bool object_store::insert(map_view input, attribute attr)
 {
-    if (input.empty()) {
+    const auto size = input.size();
+    if (size == 0) {
         // Objects with no addresses are considered valid as they are harmless
         return true;
     }
 
-    objects_.reserve(objects_.size() + input.size());
+    objects_.reserve(objects_.size() + size);
 
-    latest_batch_.reserve(latest_batch_.size() + input.size());
+    latest_batch_.reserve(latest_batch_.size() + size);
 
     if (attr == attribute::ephemeral) {
-        ephemeral_targets_.reserve(input.size());
+        ephemeral_targets_.reserve(size);
     }
 
-    for (std::size_t i = 0; i < input.size(); ++i) {
+    for (std::size_t i = 0; i < size; ++i) {
         auto [key_obj, value] = input.at(i);
         if (key_obj.empty()) {
             continue;
