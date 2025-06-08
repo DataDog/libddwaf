@@ -529,11 +529,13 @@ public:
     array_view() = default;
 
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-    array_view(const detail::object *o) : obj_(o)
+    array_view(const detail::object *o)
     {
         if (o == nullptr || o->type != object_type::array) {
             throw std::invalid_argument("array_view initialised with null or incompatible type");
         }
+        data_ = o->via.array.ptr;
+        size_ = o->via.array.size;
     }
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     array_view(const detail::object &o) : array_view(&o) {}
@@ -554,28 +556,17 @@ public:
 
     [[nodiscard]] std::size_t size() const noexcept
     {
-        if (obj_ == nullptr) [[unlikely]] {
-            return 0;
-        }
         // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
-        return static_cast<std::size_t>(obj_->via.array.size);
+        return static_cast<std::size_t>(size_);
     }
 
     [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
-    [[nodiscard]] const detail::object *data() const noexcept
-    {
-        if (obj_ == nullptr) [[unlikely]] {
-            return nullptr;
-        }
-        return obj_->via.array.ptr;
-    }
-
     // Access the value at index.
     [[nodiscard]] object_view at(std::size_t index) const noexcept
     {
-        assert(obj_ != nullptr && index < size() && obj_->via.array.ptr != nullptr);
-        return obj_->via.array.ptr[index];
+        assert(index < size() && data_ != nullptr);
+        return data_[index];
     }
 
     class iterator {
@@ -586,19 +577,11 @@ public:
         iterator &operator=(const iterator &) = default;
         iterator &operator=(iterator &&) = default;
 
-        bool operator!=(const iterator &rhs) const noexcept
-        {
-            return data_ != rhs.data_ || index_ != rhs.index_;
-        }
-        object_view operator*() const
-        {
-            assert(index_ < size_);
-            return data_[index_];
-        }
+        bool operator!=(const iterator &rhs) const noexcept { return current_ != rhs.current_; }
+        object_view operator*() const { return current_; }
         iterator &operator++() noexcept
         {
-            // Saturated increment (to size)
-            index_ += static_cast<uint16_t>(index_ < size_);
+            ++current_;
             return *this;
         }
 
@@ -606,30 +589,24 @@ public:
         iterator() = default;
 
         // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-        explicit iterator(const detail::object *data, uint16_t size, std::uint16_t index)
-            : data_(data), size_(size), index_(index)
+        explicit iterator(const detail::object *start, const detail::object *end)
+            : current_(start), end_(end)
         {}
 
-        const detail::object *data_{nullptr};
-        uint16_t size_{0};
-        uint16_t index_{0};
+        const detail::object *current_{nullptr};
+        const detail::object *end_{nullptr};
 
         friend class array_view;
     };
 
-    [[nodiscard]] iterator begin() const
-    {
-        return iterator{data(), static_cast<uint16_t>(size()), 0};
-    }
+    [[nodiscard]] iterator begin() const { return iterator{data_, data_ + size_}; }
 
-    [[nodiscard]] iterator end() const
-    {
-        return iterator{data(), static_cast<uint16_t>(size()), static_cast<uint16_t>(size())};
-    }
+    [[nodiscard]] iterator end() const { return iterator{data_ + size_, data_ + size_}; }
 
 protected:
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
-    const detail::object *obj_{nullptr};
+    const detail::object *data_{nullptr};
+    uint16_t size_{0};
 };
 
 static_assert(sizeof(array_view) <= 16);
@@ -639,11 +616,14 @@ class map_view {
 public:
     map_view() = default;
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-    map_view(const detail::object *o) : obj_(o)
+    map_view(const detail::object *o)
     {
         if (o == nullptr || o->type != object_type::map) {
             throw std::invalid_argument("map_view initialised with null or incompatible type");
         }
+
+        data_ = o->via.map.ptr;
+        size_ = o->via.map.size;
     }
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     map_view(const detail::object &o) : map_view(&o) {}
@@ -664,41 +644,30 @@ public:
 
     [[nodiscard]] std::size_t size() const noexcept
     {
-        if (obj_ == nullptr) [[unlikely]] {
-            return 0;
-        }
         // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
-        return static_cast<std::size_t>(obj_->via.map.size);
+        return static_cast<std::size_t>(size_);
     }
 
     [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
-    [[nodiscard]] const detail::object_kv *data() const noexcept
-    {
-        if (obj_ == nullptr) [[unlikely]] {
-            return nullptr;
-        }
-        return obj_->via.map.ptr;
-    }
-
     // Access the value at index.
     [[nodiscard]] std::pair<object_view, object_view> at(std::size_t index) const noexcept
     {
-        assert(obj_ != nullptr && index < size() && obj_->via.map.ptr != nullptr);
-        const auto &kv = obj_->via.map.ptr[index];
+        assert(index < size() && data_ != nullptr);
+        const auto &kv = data_[index];
         return {kv.key, kv.val};
     }
 
     [[nodiscard]] object_view at_value(std::size_t index) const noexcept
     {
-        assert(obj_ != nullptr && index < size() && obj_->via.map.ptr != nullptr);
-        return obj_->via.map.ptr[index].val;
+        assert(index < size() && data_ != nullptr);
+        return data_[index].val;
     }
 
     [[nodiscard]] object_view at_key(std::size_t index) const noexcept
     {
-        assert(obj_ != nullptr && index < size() && obj_->via.map.ptr != nullptr);
-        return obj_->via.map.ptr[index].key;
+        assert(index < size() && data_ != nullptr);
+        return data_[index].key;
     }
 
     [[nodiscard]] object_view find(std::string_view expected_key) const noexcept
@@ -713,7 +682,7 @@ public:
         return {};
     }
 
-    [[nodiscard]] object_view find_key_path(std::span<const std::string> key_path) const noexcept
+    object_view find_key_path(std::span<const std::string> key_path)
     {
         auto root = *this;
         for (auto it = key_path.begin(); it != key_path.end(); ++it) {
@@ -739,22 +708,16 @@ public:
         iterator &operator=(const iterator &) = default;
         iterator &operator=(iterator &&) = default;
 
-        bool operator!=(const iterator &rhs) const noexcept
-        {
-            return data_ != rhs.data_ || index_ != rhs.index_;
-        }
+        bool operator!=(const iterator &rhs) const noexcept { return current_ != rhs.current_; }
 
         std::pair<object_view, object_view> operator*() const
         {
-            assert(index_ < size_);
-            const auto &kv = data_[index_];
-            return {kv.key, kv.val};
+            return {current_->key, current_->val};
         }
 
         iterator &operator++() noexcept
         {
-            // Saturated increment (to size)
-            index_ += static_cast<uint16_t>(index_ < size_);
+            ++current_;
             return *this;
         }
 
@@ -762,30 +725,23 @@ public:
         iterator() = default;
 
         // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-        explicit iterator(const detail::object_kv *data, std::uint16_t size, std::uint16_t index)
-            : data_(data), size_(size), index_(index)
+        explicit iterator(const detail::object_kv *start, const detail::object_kv *end)
+            : current_(start), end_(end)
         {}
 
-        const detail::object_kv *data_{nullptr};
-        std::uint16_t size_{0};
-        std::uint16_t index_{0};
+        const detail::object_kv *current_{nullptr};
+        const detail::object_kv *end_{nullptr};
 
         friend class map_view;
     };
 
-    [[nodiscard]] iterator begin() const
-    {
-        return iterator{data(), static_cast<uint16_t>(size()), 0};
-    }
-
-    [[nodiscard]] iterator end() const
-    {
-        return iterator{data(), static_cast<uint16_t>(size()), static_cast<uint16_t>(size())};
-    }
+    [[nodiscard]] iterator begin() const { return iterator{data_, data_ + size_}; }
+    [[nodiscard]] iterator end() const { return iterator{data_ + size_, data_ + size_}; }
 
 protected:
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
-    const detail::object *obj_{nullptr};
+    const detail::object_kv *data_{nullptr};
+    std::uint16_t size_{0};
 };
 
 static_assert(sizeof(map_view) <= 16);
