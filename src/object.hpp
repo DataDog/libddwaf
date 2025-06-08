@@ -691,6 +691,24 @@ public:
         return {};
     }
 
+    object_view find_key_path(std::span<const std::string> key_path)
+    {
+        auto root = *this;
+        for (auto it = key_path.begin(); it != key_path.end(); ++it) {
+            object_view child = root.find(*it);
+            if ((it + 1) == key_path.end()) {
+                return child;
+            }
+
+            if (!child.has_value() || !child.is_map()) {
+                break;
+            }
+
+            root = child;
+        }
+        return {};
+    }
+
     class iterator {
     public:
         ~iterator() = default;
