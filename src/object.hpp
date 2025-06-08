@@ -529,13 +529,11 @@ public:
     array_view() = default;
 
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-    array_view(const detail::object *o)
+    array_view(const detail::object *o) : obj_(o)
     {
         if (o == nullptr || o->type != object_type::array) {
             throw std::invalid_argument("array_view initialised with null or incompatible type");
         }
-        data_ = o->via.array.ptr;
-        size_ = o->via.array.size;
     }
     // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
     array_view(const detail::object &o) : array_view(&o) {}
@@ -556,17 +554,28 @@ public:
 
     [[nodiscard]] std::size_t size() const noexcept
     {
+        if (obj_ == nullptr) [[unlikely]] {
+            return 0;
+        }
         // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
-        return static_cast<std::size_t>(size_);
+        return static_cast<std::size_t>(obj_->via.array.size);
     }
 
     [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
+    [[nodiscard]] const detail::object *data() const noexcept
+    {
+        if (obj_ == nullptr) [[unlikely]] {
+            return nullptr;
+        }
+        return obj_->via.array.ptr;
+    }
+
     // Access the value at index.
     [[nodiscard]] object_view at(std::size_t index) const noexcept
     {
-        assert(index < size() && data_ != nullptr);
-        return data_[index];
+        assert(obj_ != nullptr && index < size() && obj_->via.array.ptr != nullptr);
+        return obj_->via.array.ptr[index];
     }
 
     class iterator {
@@ -608,14 +617,19 @@ public:
         friend class array_view;
     };
 
-    [[nodiscard]] iterator begin() const { return iterator{data_, size_, 0}; }
+    [[nodiscard]] iterator begin() const
+    {
+        return iterator{data(), static_cast<uint16_t>(size()), 0};
+    }
 
-    [[nodiscard]] iterator end() const { return iterator{data_, size_, size_}; }
+    [[nodiscard]] iterator end() const
+    {
+        return iterator{data(), static_cast<uint16_t>(size()), static_cast<uint16_t>(size())};
+    }
 
 protected:
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
-    const detail::object *data_{nullptr};
-    uint16_t size_{0};
+    const detail::object *obj_{nullptr};
 };
 
 static_assert(sizeof(array_view) <= 16);
@@ -650,11 +664,22 @@ public:
 
     [[nodiscard]] std::size_t size() const noexcept
     {
+        if (obj_ == nullptr) [[unlikely]] {
+            return 0;
+        }
         // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
-        return obj_ != nullptr ? static_cast<std::size_t>(obj_->via.map.size) : 0;
+        return static_cast<std::size_t>(obj_->via.map.size);
     }
 
     [[nodiscard]] bool empty() const noexcept { return size() == 0; }
+
+    [[nodiscard]] const detail::object_kv *data() const noexcept
+    {
+        if (obj_ == nullptr) [[unlikely]] {
+            return nullptr;
+        }
+        return obj_->via.map.ptr;
+    }
 
     // Access the value at index.
     [[nodiscard]] std::pair<object_view, object_view> at(std::size_t index) const noexcept
@@ -750,15 +775,12 @@ public:
 
     [[nodiscard]] iterator begin() const
     {
-        return iterator{obj_ != nullptr ? obj_->via.map.ptr : nullptr, size(), 0};
+        return iterator{data(), static_cast<uint16_t>(size()), 0};
     }
 
     [[nodiscard]] iterator end() const
     {
-        if (obj_ == nullptr) {
-            return iterator{nullptr, 0, 0};
-        }
-        return iterator{obj_ != nullptr ? obj_->via.map.ptr : nullptr, size(), size()};
+        return iterator{data(), static_cast<uint16_t>(size()), static_cast<uint16_t>(size())};
     }
 
 protected:
