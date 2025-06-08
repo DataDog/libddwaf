@@ -737,6 +737,12 @@ TEST(TestObjectView, CloneMap)
     }
 }
 
+TEST(TestArrayView, InvalidArray)
+{
+    auto root = owned_object::make_map();
+    EXPECT_THROW(array_view view{root}, std::invalid_argument);
+}
+
 TEST(TestArrayView, Default)
 {
     array_view view;
@@ -776,6 +782,12 @@ TEST(TestArrayView, IteratorAccess)
         auto expected_value = std::to_string(100 + i++);
         EXPECT_EQ(value.as<std::string>(), expected_value);
     }
+}
+
+TEST(TestMapView, InvalidMap)
+{
+    auto root = owned_object::make_array();
+    EXPECT_THROW(map_view view{root}, std::invalid_argument);
 }
 
 TEST(TestMapView, Default)
@@ -835,6 +847,11 @@ TEST(TestMapView, FindAccess)
 
         auto value = view.find(expected_key);
         EXPECT_EQ(value.as<std::string_view>(), expected_value);
+    }
+
+    {
+        auto value = view.find("random");
+        EXPECT_FALSE(value.has_value());
     }
 }
 
@@ -898,6 +915,11 @@ TEST(TestMapView, KeyPathAccess)
     {
         std::vector<std::string> key_path{"2", "2.1", "2.1.1"};
         EXPECT_EQ(view.find_key_path(key_path).as<int64_t>(), 9);
+    }
+
+    {
+        std::vector<std::string> key_path{"random", "key"};
+        EXPECT_FALSE(view.find_key_path(key_path).has_value());
     }
 }
 
