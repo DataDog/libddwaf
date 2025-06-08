@@ -45,7 +45,8 @@ bool object_store::insert(object_view input, attribute attr)
         ephemeral_targets_.reserve(mv.size());
     }
 
-    for (auto [key_obj, value] : mv) {
+    for (std::size_t i = 0; i < mv.size(); ++i) {
+        auto [key_obj, value] = mv.at(i);
         if (key_obj.empty()) {
             continue;
         }
