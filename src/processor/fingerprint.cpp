@@ -269,10 +269,8 @@ struct key_hash_field : field_generator<key_hash_field> {
         keys.reserve(value.size());
 
         std::size_t max_string_size = 0;
-        for (std::size_t i = 0; i < value.size(); ++i) {
-            const auto key = value.at_key(i);
+        for (const auto [key, _] : value) {
             max_string_size = std::max(max_string_size, key.size());
-
             keys.emplace_back(key.as<std::string_view>());
         }
 
@@ -336,9 +334,7 @@ struct kv_hash_fields : field_generator<kv_hash_fields, std::pair<std::string, s
         kv_sorted.reserve(value.size());
 
         std::size_t max_string_size = 0;
-        for (std::size_t i = 0; i < value.size(); ++i) {
-            const auto [key, child] = value.at(i);
-
+        for (const auto [key, child] : value) {
             auto val = value_object_to_string(child);
 
             auto larger_size = std::max(key.size(), val.size());
@@ -598,12 +594,11 @@ std::pair<owned_object, object_store::attribute> http_header_fingerprint::eval_i
     std::string_view user_agent;
     std::vector<std::string> unknown_headers;
     std::string normalized_header;
-    for (std::size_t i = 0; i < headers.value.size(); ++i) {
+    for (const auto [key, child] : headers.value) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const auto [key, child] = headers.value.at(i);
         const auto header = key.as<std::string_view>();
 
         normalize_header(header, normalized_header);
@@ -642,12 +637,11 @@ std::pair<owned_object, object_store::attribute> http_network_fingerprint::eval_
     unsigned chosen_header = ip_origin_headers_length;
     std::string_view chosen_header_value;
     std::string normalized_header;
-    for (std::size_t i = 0; i < headers.value.size(); ++i) {
+    for (const auto [key, child] : headers.value) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const auto [key, child] = headers.value.at(i);
         const auto header = key.as<std::string_view>();
 
         normalize_header(header, normalized_header);
