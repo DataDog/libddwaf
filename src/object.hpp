@@ -382,7 +382,7 @@ public:
 
 private:
     readable_object() = default;
-    [[nodiscard]] const detail::object &object_ref() const
+    [[nodiscard, gnu::always_inline]] const detail::object &object_ref() const
     {
         return static_cast<const Derived *>(this)->ref();
     }

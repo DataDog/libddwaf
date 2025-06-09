@@ -1279,8 +1279,6 @@ TEST(TestFingerprintIntegration, InvalidHeader)
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
     EXPECT_EQ(ddwaf_object_size(attributes), 0);
 
-    // auto derivatives = test::object_to_map(*attributes);
-
     ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
