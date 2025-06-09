@@ -10,6 +10,7 @@
 #include "log.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
+#include "object_type.hpp"
 #include "target_address.hpp"
 
 namespace ddwaf {
@@ -28,7 +29,7 @@ bool object_store::insert(owned_object &&input, attribute attr)
 
 bool object_store::insert(object_view input, attribute attr)
 {
-    if (!input.is_map()) {
+    if (input.type() != object_type::map) {
         return false;
     }
 
