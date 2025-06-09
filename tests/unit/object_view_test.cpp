@@ -517,10 +517,12 @@ TEST(TestObjectView, KeyPathAccess)
     auto root = owned_object::make_map({
         {"1", owned_object::make_map({{"1.2", 111}, {"1.3", 123}})},
         {"2", owned_object::make_map({{"2.1", owned_object::make_map({{"2.1.1", 9}})}})},
+        {"3", owned_object::make_array({"3.1"})},
     });
 
     object_view view(root);
-    EXPECT_EQ(view.size(), 2);
+    EXPECT_EQ(view.size(), 3);
+    EXPECT_FALSE(view.empty());
 
     {
         std::vector<std::string> key_path{"1"};
@@ -549,6 +551,16 @@ TEST(TestObjectView, KeyPathAccess)
     {
         std::vector<std::string> key_path{"2", "2.1", "2.1.1"};
         EXPECT_EQ(view.find_key_path(key_path).as<int64_t>(), 9);
+    }
+
+    {
+        std::vector<std::string> key_path{"3", "3.1"};
+        EXPECT_FALSE(view.find_key_path(key_path).has_value());
+    }
+
+    {
+        std::vector<std::string> key_path{"1", "key"};
+        EXPECT_FALSE(view.find_key_path(key_path).has_value());
     }
 }
 
@@ -741,6 +753,7 @@ TEST(TestArrayView, InvalidArray)
 {
     auto root = owned_object::make_map();
     EXPECT_THROW(array_view view{root}, std::invalid_argument);
+    EXPECT_THROW(array_view view{nullptr}, std::invalid_argument);
 }
 
 TEST(TestArrayView, Default)
@@ -788,6 +801,7 @@ TEST(TestMapView, InvalidMap)
 {
     auto root = owned_object::make_array();
     EXPECT_THROW(map_view view{root}, std::invalid_argument);
+    EXPECT_THROW(map_view view{nullptr}, std::invalid_argument);
 }
 
 TEST(TestMapView, Default)
@@ -882,10 +896,11 @@ TEST(TestMapView, KeyPathAccess)
     auto root = owned_object::make_map({
         {"1", owned_object::make_map({{"1.2", 111}, {"1.3", 123}})},
         {"2", owned_object::make_map({{"2.1", owned_object::make_map({{"2.1.1", 9}})}})},
+        {"3", owned_object::make_array({"3.1"})},
     });
 
     map_view view(root);
-    EXPECT_EQ(view.size(), 2);
+    EXPECT_EQ(view.size(), 3);
     EXPECT_FALSE(view.empty());
 
     {
@@ -918,7 +933,12 @@ TEST(TestMapView, KeyPathAccess)
     }
 
     {
-        std::vector<std::string> key_path{"random", "key"};
+        std::vector<std::string> key_path{"3", "3.1"};
+        EXPECT_FALSE(view.find_key_path(key_path).has_value());
+    }
+
+    {
+        std::vector<std::string> key_path{"1", "key"};
         EXPECT_FALSE(view.find_key_path(key_path).has_value());
     }
 }
