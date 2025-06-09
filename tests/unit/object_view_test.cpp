@@ -512,6 +512,46 @@ TEST(TestObjectView, AsOrDefault)
     EXPECT_EQ(view.as_or_default<bool>(false), false);
 }
 
+TEST(TestObjectView, KeyPathAccess)
+{
+    auto root = owned_object::make_map({
+        {"1", owned_object::make_map({{"1.2", 111}, {"1.3", 123}})},
+        {"2", owned_object::make_map({{"2.1", owned_object::make_map({{"2.1.1", 9}})}})},
+    });
+
+    object_view view(root);
+    EXPECT_EQ(view.size(), 2);
+
+    {
+        std::vector<std::string> key_path{"1"};
+        EXPECT_TRUE(view.find_key_path(key_path).is_map());
+    }
+
+    {
+        std::vector<std::string> key_path{"1", "1.2"};
+        EXPECT_EQ(view.find_key_path(key_path).as<int64_t>(), 111);
+    }
+
+    {
+        std::vector<std::string> key_path{"1", "1.3"};
+        EXPECT_EQ(view.find_key_path(key_path).as<int64_t>(), 123);
+    }
+
+    {
+        std::vector<std::string> key_path{"2"};
+        EXPECT_TRUE(view.find_key_path(key_path).is_map());
+    }
+
+    {
+        std::vector<std::string> key_path{"2", "2.1"};
+        EXPECT_TRUE(view.find_key_path(key_path).is_map());
+    }
+    {
+        std::vector<std::string> key_path{"2", "2.1", "2.1.1"};
+        EXPECT_EQ(view.find_key_path(key_path).as<int64_t>(), 9);
+    }
+}
+
 TEST(TestObjectView, CloneInvalid)
 {
     owned_object input_data;

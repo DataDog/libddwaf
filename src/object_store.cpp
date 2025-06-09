@@ -10,7 +10,6 @@
 #include "log.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
-#include "object_type.hpp"
 #include "target_address.hpp"
 
 namespace ddwaf {
@@ -29,7 +28,7 @@ bool object_store::insert(owned_object &&input, attribute attr)
 
 bool object_store::insert(object_view input, attribute attr)
 {
-    if (input.type() != object_type::map) {
+    if (!input.is_map()) {
         return false;
     }
 
@@ -47,7 +46,7 @@ bool object_store::insert(object_view input, attribute attr)
         ephemeral_targets_.reserve(size);
     }
 
-    for (std::size_t i = 0; i < input.size(); ++i) {
+    for (std::size_t i = 0; i < size; ++i) {
         auto [key_obj, value] = input.at(i);
         if (key_obj.empty()) {
             continue;
