@@ -356,7 +356,7 @@ public:
 
 private:
     readable_object() = default;
-    [[nodiscard]] const detail::object &object_ref() const
+    [[nodiscard, gnu::always_inline]] const detail::object &object_ref() const
     {
         return static_cast<const Derived *>(this)->ref();
     }
@@ -754,7 +754,7 @@ inline object_view::object_view(const borrowed_object &ow) : obj_(ow.obj_) {}
 // in the object_converter header
 template <typename Derived> template <typename T> T readable_object<Derived>::convert() const
 {
-    return object_converter<T>{static_cast<const Derived *>(this)->ref()}();
+    return object_converter<T>{object_ref()}();
 }
 
 template <typename Derived> [[nodiscard]] owned_object readable_object<Derived>::clone() const
@@ -789,7 +789,7 @@ template <typename Derived> [[nodiscard]] owned_object readable_object<Derived>:
 
     std::deque<std::pair<object_view, borrowed_object>> queue;
 
-    const object_view input = static_cast<const Derived *>(this)->ref();
+    const object_view input = object_ref();
     auto copy = clone_helper(input);
     if (copy.is_container()) {
         queue.emplace_front(input, copy);
@@ -846,7 +846,7 @@ template <> struct object_converter<std::string> {
 template <typename Derived>
 [[nodiscard]] borrowed_object writable_object<Derived>::at(std::size_t idx)
 {
-    auto &container = static_cast<const Derived *>(this)->ref();
+    auto &container = object_ref();
 
     assert(is_container(static_cast<object_type>(container.type)));
 
