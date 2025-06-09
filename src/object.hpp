@@ -20,6 +20,10 @@
 
 namespace ddwaf {
 
+class object_view;
+class map_view;
+class array_view;
+
 class owned_object;
 class borrowed_object;
 
@@ -304,6 +308,14 @@ public:
         return data();
     }
 
+    template <typename T>
+    [[nodiscard]] T as() const noexcept
+        requires std::is_same_v<T, array_view>;
+
+    template <typename T>
+    [[nodiscard]] T as() const noexcept
+        requires std::is_same_v<T, map_view>;
+
     // Access the underlying value based on the required type or return a default
     // value otherwise.
     template <typename T> [[nodiscard]] T as_or_default(T default_value) const noexcept
@@ -347,6 +359,20 @@ public:
         const auto &obj = object_ref();
         return is_compatible_type<int64_t>(type()) && obj.via.i64.val >= limits::min() &&
                obj.via.i64.val <= limits::max();
+    }
+
+    template <typename T>
+    [[nodiscard]] bool is() const noexcept
+        requires std::is_same_v<T, array_view>
+    {
+        return is_array();
+    }
+
+    template <typename T>
+    [[nodiscard]] bool is() const noexcept
+        requires std::is_same_v<T, map_view>
+    {
+        return is_map();
     }
 
     // Convert the underlying type to the requested type
@@ -497,6 +523,229 @@ protected:
 };
 
 static_assert(sizeof(object_view) == sizeof(void *));
+
+class array_view {
+public:
+    array_view() = default;
+
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    array_view(const detail::object *o)
+    {
+        if (o == nullptr || o->type != object_type::array) {
+            throw std::invalid_argument("array_view initialised with null or incompatible type");
+        }
+        data_ = o->via.array.ptr;
+        size_ = o->via.array.size;
+    }
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    array_view(const detail::object &o) : array_view(&o) {}
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    array_view(object_view o) : array_view(o.ptr()) {}
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    array_view(const owned_object &ow);
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    array_view(const borrowed_object &ow);
+
+    array_view(owned_object &&ow) = delete;
+
+    ~array_view() = default;
+    array_view(const array_view &) = default;
+    array_view(array_view &&) = default;
+    array_view &operator=(const array_view &) = default;
+    array_view &operator=(array_view &&) = default;
+
+    [[nodiscard]] std::size_t size() const noexcept
+    {
+        // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
+        return static_cast<std::size_t>(size_);
+    }
+
+    [[nodiscard]] bool empty() const noexcept { return size() == 0; }
+
+    // Access the value at index.
+    [[nodiscard]] object_view at(std::size_t index) const noexcept
+    {
+        assert(index < size() && data_ != nullptr);
+        return data_[index];
+    }
+
+    class iterator {
+    public:
+        ~iterator() = default;
+        iterator(const iterator &) = default;
+        iterator(iterator &&) = default;
+        iterator &operator=(const iterator &) = default;
+        iterator &operator=(iterator &&) = default;
+
+        bool operator!=(const iterator &rhs) const noexcept { return current_ != rhs.current_; }
+        object_view operator*() const { return current_; }
+        iterator &operator++() noexcept
+        {
+            ++current_;
+            return *this;
+        }
+
+    protected:
+        iterator() = default;
+
+        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+        explicit iterator(const detail::object *start, const detail::object *end)
+            : current_(start), end_(end)
+        {}
+
+        const detail::object *current_{nullptr};
+        const detail::object *end_{nullptr};
+
+        friend class array_view;
+    };
+
+    [[nodiscard]] iterator begin() const { return iterator{data_, data_ + size_}; }
+
+    [[nodiscard]] iterator end() const { return iterator{data_ + size_, data_ + size_}; }
+
+protected:
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
+    const detail::object *data_{nullptr};
+    uint16_t size_{0};
+};
+
+static_assert(sizeof(array_view) <= 16);
+static_assert(sizeof(array_view::iterator) <= 16);
+
+class map_view {
+public:
+    map_view() = default;
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    map_view(const detail::object *o)
+    {
+        if (o == nullptr || o->type != object_type::map) {
+            throw std::invalid_argument("map_view initialised with null or incompatible type");
+        }
+
+        data_ = o->via.map.ptr;
+        size_ = o->via.map.size;
+    }
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    map_view(const detail::object &o) : map_view(&o) {}
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    map_view(object_view o) : map_view(o.ptr()) {}
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    map_view(const owned_object &ow);
+    // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+    map_view(const borrowed_object &ow);
+
+    map_view(owned_object &&ow) = delete;
+
+    ~map_view() = default;
+    map_view(const map_view &) = default;
+    map_view(map_view &&) = default;
+    map_view &operator=(const map_view &) = default;
+    map_view &operator=(map_view &&) = default;
+
+    [[nodiscard]] std::size_t size() const noexcept
+    {
+        // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
+        return static_cast<std::size_t>(size_);
+    }
+
+    [[nodiscard]] bool empty() const noexcept { return size() == 0; }
+
+    // Access the value at index.
+    [[nodiscard]] std::pair<object_view, object_view> at(std::size_t index) const noexcept
+    {
+        assert(index < size() && data_ != nullptr);
+        const auto &kv = data_[index];
+        return {kv.key, kv.val};
+    }
+
+    [[nodiscard]] object_view at_value(std::size_t index) const noexcept
+    {
+        assert(index < size() && data_ != nullptr);
+        return data_[index].val;
+    }
+
+    [[nodiscard]] object_view at_key(std::size_t index) const noexcept
+    {
+        assert(index < size() && data_ != nullptr);
+        return data_[index].key;
+    }
+
+    [[nodiscard]] object_view find(std::string_view expected_key) const noexcept
+    {
+        for (std::size_t i = 0; i < size(); ++i) {
+            auto [key, value] = at(i);
+
+            if (expected_key == key.as<std::string_view>()) {
+                return value;
+            }
+        }
+        return {};
+    }
+
+    object_view find_key_path(std::span<const std::string> key_path)
+    {
+        auto root = *this;
+        for (auto it = key_path.begin(); it != key_path.end(); ++it) {
+            object_view child = root.find(*it);
+            if ((it + 1) == key_path.end()) {
+                return child;
+            }
+
+            if (!child.has_value() || !child.is_map()) {
+                break;
+            }
+
+            root = child;
+        }
+        return {};
+    }
+
+    class iterator {
+    public:
+        ~iterator() = default;
+        iterator(const iterator &) = default;
+        iterator(iterator &&) = default;
+        iterator &operator=(const iterator &) = default;
+        iterator &operator=(iterator &&) = default;
+
+        bool operator!=(const iterator &rhs) const noexcept { return current_ != rhs.current_; }
+
+        std::pair<object_view, object_view> operator*() const
+        {
+            return {current_->key, current_->val};
+        }
+
+        iterator &operator++() noexcept
+        {
+            ++current_;
+            return *this;
+        }
+
+    protected:
+        iterator() = default;
+
+        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+        explicit iterator(const detail::object_kv *start, const detail::object_kv *end)
+            : current_(start), end_(end)
+        {}
+
+        const detail::object_kv *current_{nullptr};
+        const detail::object_kv *end_{nullptr};
+
+        friend class map_view;
+    };
+
+    [[nodiscard]] iterator begin() const { return iterator{data_, data_ + size_}; }
+    [[nodiscard]] iterator end() const { return iterator{data_ + size_, data_ + size_}; }
+
+protected:
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
+    const detail::object_kv *data_{nullptr};
+    std::uint16_t size_{0};
+};
+
+static_assert(sizeof(map_view) <= 16);
+static_assert(sizeof(map_view::iterator) <= 16);
 
 template <typename Derived> class writable_object {
 public:
@@ -749,6 +998,28 @@ struct movable_object {
 
 inline object_view::object_view(const owned_object &ow) : obj_(&ow.obj_) {}
 inline object_view::object_view(const borrowed_object &ow) : obj_(ow.obj_) {}
+
+inline array_view::array_view(const owned_object &ow) : array_view(ow.ptr()) {}
+inline array_view::array_view(const borrowed_object &ow) : array_view(ow.ptr()) {}
+
+inline map_view::map_view(const owned_object &ow) : map_view(ow.ptr()) {}
+inline map_view::map_view(const borrowed_object &ow) : map_view(ow.ptr()) {}
+
+template <typename Derived>
+template <typename T>
+[[nodiscard]] T readable_object<Derived>::as() const noexcept
+    requires std::is_same_v<T, array_view>
+{
+    return array_view{object_ref()};
+}
+
+template <typename Derived>
+template <typename T>
+[[nodiscard]] T readable_object<Derived>::as() const noexcept
+    requires std::is_same_v<T, map_view>
+{
+    return map_view{object_ref()};
+}
 
 // Convert the underlying type to the requested type, converters are defined
 // in the object_converter header

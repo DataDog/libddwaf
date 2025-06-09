@@ -45,7 +45,7 @@ public:
         attribute attr = attribute::none);
 
     // Used for testing
-    bool insert(object_view input, attribute attr = attribute::none);
+    bool insert(map_view input, attribute attr = attribute::none);
 
     std::pair<object_view, attribute> get_target(target_index target) const
     {

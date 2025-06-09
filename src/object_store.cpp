@@ -23,15 +23,15 @@ bool object_store::insert(owned_object &&input, attribute attr)
         view = input_objects_.emplace_back(std::move(input));
     }
 
-    return insert(view, attr);
-}
-
-bool object_store::insert(object_view input, attribute attr)
-{
-    if (!input.is_map()) {
+    if (!view.is_map()) {
         return false;
     }
 
+    return insert(view, attr);
+}
+
+bool object_store::insert(map_view input, attribute attr)
+{
     const auto size = input.size();
     if (size == 0) {
         // Objects with no addresses are considered valid as they are harmless

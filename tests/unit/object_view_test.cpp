@@ -517,10 +517,12 @@ TEST(TestObjectView, KeyPathAccess)
     auto root = owned_object::make_map({
         {"1", owned_object::make_map({{"1.2", 111}, {"1.3", 123}})},
         {"2", owned_object::make_map({{"2.1", owned_object::make_map({{"2.1.1", 9}})}})},
+        {"3", owned_object::make_array({"3.1"})},
     });
 
     object_view view(root);
-    EXPECT_EQ(view.size(), 2);
+    EXPECT_EQ(view.size(), 3);
+    EXPECT_FALSE(view.empty());
 
     {
         std::vector<std::string> key_path{"1"};
@@ -549,6 +551,16 @@ TEST(TestObjectView, KeyPathAccess)
     {
         std::vector<std::string> key_path{"2", "2.1", "2.1.1"};
         EXPECT_EQ(view.find_key_path(key_path).as<int64_t>(), 9);
+    }
+
+    {
+        std::vector<std::string> key_path{"3", "3.1"};
+        EXPECT_FALSE(view.find_key_path(key_path).has_value());
+    }
+
+    {
+        std::vector<std::string> key_path{"1", "key"};
+        EXPECT_FALSE(view.find_key_path(key_path).has_value());
     }
 }
 
@@ -734,6 +746,200 @@ TEST(TestObjectView, CloneMap)
 
         EXPECT_EQ(output_child.type(), input_child.type());
         EXPECT_EQ(output_child.as<int64_t>(), input_child.as<int64_t>());
+    }
+}
+
+TEST(TestArrayView, InvalidArray)
+{
+    auto root = owned_object::make_map();
+    EXPECT_THROW(array_view view{root}, std::invalid_argument);
+    EXPECT_THROW(array_view view{nullptr}, std::invalid_argument);
+}
+
+TEST(TestArrayView, Default)
+{
+    array_view view;
+    EXPECT_EQ(view.size(), 0);
+    EXPECT_TRUE(view.empty());
+
+    for (auto value : view) { EXPECT_FALSE(value.has_value()); }
+}
+
+TEST(TestArrayView, AtAccess)
+{
+    auto root = owned_object::make_array();
+    for (unsigned i = 0; i < 20; i++) { root.emplace_back(std::to_string(i + 100)); }
+
+    array_view view(root);
+    EXPECT_EQ(view.size(), 20);
+    EXPECT_FALSE(view.empty());
+
+    for (unsigned i = 0; i < 20; i++) {
+        auto expected_value = std::to_string(100 + i);
+        auto value = view.at(i);
+        EXPECT_EQ(value.as<std::string>(), expected_value);
+    }
+}
+
+TEST(TestArrayView, IteratorAccess)
+{
+    auto root = owned_object::make_array();
+    for (unsigned i = 0; i < 20; i++) { root.emplace_back(std::to_string(i + 100)); }
+
+    array_view view(root);
+    EXPECT_EQ(view.size(), 20);
+    EXPECT_FALSE(view.empty());
+
+    unsigned i = 0;
+    for (auto value : view) {
+        auto expected_value = std::to_string(100 + i++);
+        EXPECT_EQ(value.as<std::string>(), expected_value);
+    }
+}
+
+TEST(TestMapView, InvalidMap)
+{
+    auto root = owned_object::make_array();
+    EXPECT_THROW(map_view view{root}, std::invalid_argument);
+    EXPECT_THROW(map_view view{nullptr}, std::invalid_argument);
+}
+
+TEST(TestMapView, Default)
+{
+    map_view view;
+    EXPECT_EQ(view.size(), 0);
+    EXPECT_TRUE(view.empty());
+
+    for (auto [key, value] : view) {
+        EXPECT_FALSE(key.has_value());
+        EXPECT_FALSE(value.has_value());
+    }
+}
+
+TEST(TestMapView, AtAccess)
+{
+    auto root = owned_object::make_map();
+    for (unsigned i = 0; i < 20; i++) { root.emplace(std::to_string(i), std::to_string(i + 100)); }
+
+    map_view view(root);
+    EXPECT_EQ(view.size(), 20);
+    EXPECT_FALSE(view.empty());
+
+    for (unsigned i = 0; i < 20; i++) {
+        auto expected_key = std::to_string(i);
+        auto expected_value = std::to_string(100 + i);
+        {
+            auto [key, value] = view.at(i);
+            EXPECT_EQ(key.as<std::string_view>(), expected_key);
+            EXPECT_EQ(value.as<std::string_view>(), expected_value);
+        }
+
+        {
+            auto value = view.at_value(i);
+            EXPECT_EQ(value.as<std::string>(), expected_value);
+        }
+
+        {
+            auto key = view.at_key(i);
+            EXPECT_EQ(key.as<std::string_view>(), expected_key);
+        }
+    }
+}
+
+TEST(TestMapView, FindAccess)
+{
+    auto root = owned_object::make_map();
+    for (unsigned i = 0; i < 20; i++) { root.emplace(std::to_string(i), std::to_string(i + 100)); }
+
+    map_view view(root);
+    EXPECT_EQ(view.size(), 20);
+    EXPECT_FALSE(view.empty());
+
+    for (unsigned i = 0; i < 20; i++) {
+        auto expected_key = std::to_string(i);
+        auto expected_value = std::to_string(100 + i);
+
+        auto value = view.find(expected_key);
+        EXPECT_EQ(value.as<std::string_view>(), expected_value);
+    }
+
+    {
+        auto value = view.find("random");
+        EXPECT_FALSE(value.has_value());
+    }
+}
+
+TEST(TestMapView, IteratorAccess)
+{
+    auto root = owned_object::make_map();
+    for (unsigned i = 0; i < 20; i++) { root.emplace(std::to_string(i), std::to_string(i + 100)); }
+
+    map_view view(root);
+    EXPECT_EQ(view.size(), 20);
+    EXPECT_FALSE(view.empty());
+
+    unsigned i = 0;
+    for (auto [key, value] : view) {
+        auto expected_key = std::to_string(i);
+        auto expected_value = std::to_string(100 + i);
+        ++i;
+
+        {
+            EXPECT_EQ(key.as<std::string_view>(), expected_key);
+            EXPECT_EQ(value.as<std::string_view>(), expected_value);
+        }
+    }
+}
+
+TEST(TestMapView, KeyPathAccess)
+{
+    auto root = owned_object::make_map({
+        {"1", owned_object::make_map({{"1.2", 111}, {"1.3", 123}})},
+        {"2", owned_object::make_map({{"2.1", owned_object::make_map({{"2.1.1", 9}})}})},
+        {"3", owned_object::make_array({"3.1"})},
+    });
+
+    map_view view(root);
+    EXPECT_EQ(view.size(), 3);
+    EXPECT_FALSE(view.empty());
+
+    {
+        std::vector<std::string> key_path{"1"};
+        EXPECT_TRUE(view.find_key_path(key_path).is_map());
+    }
+
+    {
+        std::vector<std::string> key_path{"1", "1.2"};
+        EXPECT_EQ(view.find_key_path(key_path).as<int64_t>(), 111);
+    }
+
+    {
+        std::vector<std::string> key_path{"1", "1.3"};
+        EXPECT_EQ(view.find_key_path(key_path).as<int64_t>(), 123);
+    }
+
+    {
+        std::vector<std::string> key_path{"2"};
+        EXPECT_TRUE(view.find_key_path(key_path).is_map());
+    }
+
+    {
+        std::vector<std::string> key_path{"2", "2.1"};
+        EXPECT_TRUE(view.find_key_path(key_path).is_map());
+    }
+    {
+        std::vector<std::string> key_path{"2", "2.1", "2.1.1"};
+        EXPECT_EQ(view.find_key_path(key_path).as<int64_t>(), 9);
+    }
+
+    {
+        std::vector<std::string> key_path{"3", "3.1"};
+        EXPECT_FALSE(view.find_key_path(key_path).has_value());
+    }
+
+    {
+        std::vector<std::string> key_path{"1", "key"};
+        EXPECT_FALSE(view.find_key_path(key_path).has_value());
     }
 }
 
