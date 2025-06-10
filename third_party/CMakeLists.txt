@@ -139,8 +139,8 @@ set_target_properties(proj_event_rules PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 FetchContent_Declare(
   boost_unordered
-  GIT_REPOSITORY https://github.com/MikePopoloski/boost_unordered
-  GIT_TAG v1.87.1
+  GIT_REPOSITORY https://github.com/Anilm3/boost_unordered
+  GIT_TAG origin/master
   GIT_SHALLOW ON)
 
 FetchContent_MakeAvailable(boost_unordered)

@@ -25,6 +25,6 @@ foreach(dir ${subdirs})
         LINK_FLAGS ${LINK_COMPILE_FLAGS})
 
     target_include_directories(${FUZZER_NAME} PRIVATE ${LIBDDWAF_PUBLIC_INCLUDES} ${LIBDDWAF_PRIVATE_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/common/)
-    target_link_libraries(${FUZZER_NAME} PRIVATE fuzzer-common lib_yamlcpp)
+    target_link_libraries(${FUZZER_NAME} PRIVATE fuzzer-common lib_yamlcpp boost_unordered)
 endforeach()
 
