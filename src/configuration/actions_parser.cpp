@@ -6,10 +6,10 @@
 
 #include <exception>
 #include <string>
-#include <unordered_map>
 #include <utility>
 
 #include "action_mapper.hpp"
+#include "boost/unordered/unordered_flat_map_fwd.hpp"
 #include "builder/action_mapper_builder.hpp"
 #include "configuration/actions_parser.hpp"
 #include "configuration/common/common.hpp"
@@ -103,7 +103,8 @@ void parse_actions(const raw_configuration::vector &actions_array, configuration
             }
 
             auto type = at<std::string>(node, "type");
-            auto parameters = at<std::unordered_map<std::string, std::string>>(node, "parameters");
+            auto parameters =
+                at<boost::unordered_flat_map<std::string, std::string>>(node, "parameters");
 
             DDWAF_DEBUG("Parsed action {} of type {}", id, type);
 

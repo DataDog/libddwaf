@@ -24,7 +24,7 @@ protected:
         const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const;
 
     std::unique_ptr<matcher::ip_match> dangerous_ip_matcher_;
-    std::unordered_set<std::string_view> authorised_schemes_;
+    boost::unordered_flat_set<std::string_view> authorised_schemes_;
 
     friend class base_impl<ssrf_detector>;
 };

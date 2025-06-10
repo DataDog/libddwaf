@@ -26,7 +26,7 @@ struct rule_spec {
     rule_flags flags;
     core_rule::source_type source;
     std::string name;
-    std::unordered_map<std::string, std::string> tags;
+    boost::unordered_flat_map<std::string, std::string> tags;
     std::shared_ptr<expression> expr;
     std::vector<std::string> actions;
     std::vector<rule_attribute> attributes;
@@ -37,7 +37,7 @@ enum class reference_type : uint8_t { none, id, tags };
 struct reference_spec {
     reference_type type;
     std::string ref_id;
-    std::unordered_map<std::string, std::string> tags;
+    boost::unordered_flat_map<std::string, std::string> tags;
 };
 
 struct rule_override_spec {
@@ -45,7 +45,7 @@ struct rule_override_spec {
     std::optional<bool> enabled;
     std::optional<std::vector<std::string>> actions;
     std::vector<reference_spec> targets;
-    std::unordered_map<std::string, std::string> tags;
+    boost::unordered_flat_map<std::string, std::string> tags;
 };
 
 struct rule_filter_spec {
@@ -95,7 +95,7 @@ struct data_spec {
 struct action_spec {
     action_type type;
     std::string type_str;
-    std::unordered_map<std::string, std::string> parameters;
+    boost::unordered_flat_map<std::string, std::string> parameters;
 };
 
 enum class change_set : uint16_t {
@@ -141,28 +141,28 @@ struct configuration_change_spec {
     // Specifies the contents of the configuration
     change_set content{change_set::none};
     // Rule IDs
-    std::unordered_set<std::string> base_rules;
-    std::unordered_set<std::string> user_rules;
+    boost::unordered_flat_set<std::string> base_rules;
+    boost::unordered_flat_set<std::string> user_rules;
     // Rule data IDs consist of a pair containing the data ID and a given unique
     // ID for the given data spec.
     std::vector<std::pair<std::string, std::string>> rule_data;
     // Rule override IDs consisting of a unique ID auto-generated for each override
-    std::unordered_set<std::string> rule_overrides_by_id;
-    std::unordered_set<std::string> rule_overrides_by_tags;
+    boost::unordered_flat_set<std::string> rule_overrides_by_id;
+    boost::unordered_flat_set<std::string> rule_overrides_by_tags;
     // Filter IDs
-    std::unordered_set<std::string> rule_filters;
-    std::unordered_set<std::string> input_filters;
+    boost::unordered_flat_set<std::string> rule_filters;
+    boost::unordered_flat_set<std::string> input_filters;
     // Exclusion data IDs consist of a pair containing the data ID and a given
     // unique ID for the given data spec.
     std::vector<std::pair<std::string, std::string>> exclusion_data;
     // Processor IDs
-    std::unordered_set<std::string> processors;
+    boost::unordered_flat_set<std::string> processors;
     // Processor  override IDs consisting of a unique ID auto-generated for each override
-    std::unordered_set<std::string> processor_overrides;
+    boost::unordered_flat_set<std::string> processor_overrides;
     // Scanner IDs
-    std::unordered_set<std::string> scanners;
+    boost::unordered_flat_set<std::string> scanners;
     // Action IDs
-    std::unordered_set<std::string> actions;
+    boost::unordered_flat_set<std::string> actions;
 };
 
 // The configuration spec is a global configuration structure which is generated
@@ -171,30 +171,30 @@ struct configuration_change_spec {
 // be later removed as needed.
 struct configuration_spec {
     // Obtained from 'rules'
-    std::unordered_map<std::string, rule_spec> base_rules;
+    boost::unordered_flat_map<std::string, rule_spec> base_rules;
     // Obtained from 'custom_rules'
-    std::unordered_map<std::string, rule_spec> user_rules;
+    boost::unordered_flat_map<std::string, rule_spec> user_rules;
     // Obtained from 'rules_data', depends on base_rules_
-    std::unordered_map<std::string, data_spec> rule_data;
+    boost::unordered_flat_map<std::string, data_spec> rule_data;
     // Obtained from 'rules_override'
     // The distinction is only necessary due to the restriction that
     // overrides by ID are to be considered a priority over overrides by tags
-    std::unordered_map<std::string, rule_override_spec> rule_overrides_by_id;
-    std::unordered_map<std::string, rule_override_spec> rule_overrides_by_tags;
+    boost::unordered_flat_map<std::string, rule_override_spec> rule_overrides_by_id;
+    boost::unordered_flat_map<std::string, rule_override_spec> rule_overrides_by_tags;
     // Obtained from 'exclusions'
-    std::unordered_map<std::string, rule_filter_spec> rule_filters;
-    std::unordered_map<std::string, input_filter_spec> input_filters;
+    boost::unordered_flat_map<std::string, rule_filter_spec> rule_filters;
+    boost::unordered_flat_map<std::string, input_filter_spec> input_filters;
     // Obtained from 'exclusion_data', depends on exclusions_
-    std::unordered_map<std::string, data_spec> exclusion_data;
+    boost::unordered_flat_map<std::string, data_spec> exclusion_data;
     // Obtained from 'processors'
-    std::unordered_map<std::string, processor_spec> processors;
+    boost::unordered_flat_map<std::string, processor_spec> processors;
     // Obtained from 'processor_override'
-    std::unordered_map<std::string, processor_override_spec> processor_overrides;
+    boost::unordered_flat_map<std::string, processor_override_spec> processor_overrides;
     // Obtained from 'scanners'
     // Scanners are stored directly in an indexer to simplify their use
-    std::unordered_map<std::string, scanner> scanners;
+    boost::unordered_flat_map<std::string, scanner> scanners;
     // Obtained from 'actions'
-    std::unordered_map<std::string, action_spec> actions;
+    boost::unordered_flat_map<std::string, action_spec> actions;
 };
 
 } // namespace ddwaf

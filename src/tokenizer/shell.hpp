@@ -7,11 +7,11 @@
 #pragma once
 
 #include "tokenizer/base.hpp"
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <fmt/format.h>
 #include <ostream>
 #include <re2/re2.h>
 #include <string_view>
-#include <unordered_set>
 #include <vector>
 
 namespace ddwaf {
@@ -63,7 +63,7 @@ std::ostream &operator<<(std::ostream &os, shell_token_type type);
 class shell_tokenizer : protected base_tokenizer<shell_token_type> {
 public:
     explicit shell_tokenizer(
-        std::string_view str, std::unordered_set<shell_token_type> skip_tokens = {});
+        std::string_view str, boost::unordered_flat_set<shell_token_type> skip_tokens = {});
 
     std::vector<shell_token> tokenize();
 

@@ -6,9 +6,9 @@
 #include <iostream>
 #include <stdexcept>
 #include <string_view>
-#include <unordered_set>
 #include <utility>
 
+#include "boost/unordered/unordered_flat_set_fwd.hpp"
 #include "re2.h"
 #include "tokenizer/base.hpp"
 #include "tokenizer/generic_sql.hpp"
@@ -164,7 +164,7 @@ std::ostream &operator<<(std::ostream &os, sql_token_type type)
 
 template <typename T>
 sql_tokenizer<T>::sql_tokenizer(
-    std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
+    std::string_view str, boost::unordered_flat_set<sql_token_type> skip_tokens)
     : base_tokenizer(str, std::move(skip_tokens))
 {
     if (!number_regex.ok()) {

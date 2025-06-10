@@ -182,9 +182,9 @@ rapidjson::Document object_to_rapidjson(const ddwaf_object &obj)
     return document;
 }
 
-std::unordered_map<std::string_view, std::string_view> object_to_map(const ddwaf_object &obj)
+boost::unordered_flat_map<std::string_view, std::string_view> object_to_map(const ddwaf_object &obj)
 {
-    std::unordered_map<std::string_view, std::string_view> map;
+    boost::unordered_flat_map<std::string_view, std::string_view> map;
     for (unsigned i = 0; i < obj.via.map.size; ++i) {
         const auto *key = ddwaf_object_at_key(&obj, i);
         const auto *value = ddwaf_object_at_value(&obj, i);

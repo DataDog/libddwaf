@@ -6,11 +6,11 @@
 
 #pragma once
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <map>
 #include <memory>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 
 namespace ddwaf {
 
@@ -35,7 +35,7 @@ inline bool is_blocking_action(action_type type)
 struct action_parameters {
     action_type type;
     std::string type_str;
-    std::unordered_map<std::string, std::string> parameters;
+    boost::unordered_flat_map<std::string, std::string> parameters;
 };
 
 using action_mapper = std::map<std::string, action_parameters, std::less<>>;

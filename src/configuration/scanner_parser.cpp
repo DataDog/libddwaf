@@ -4,13 +4,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <exception>
 #include <memory>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <utility>
 
+#include "boost/unordered/unordered_flat_map_fwd.hpp"
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration_collector.hpp"
 #include "configuration/common/matcher_parser.hpp"
@@ -68,7 +69,7 @@ void parse_scanners(const raw_configuration::vector &scanner_array, configuratio
                 continue;
             }
 
-            std::unordered_map<std::string, std::string> tags;
+            boost::unordered_flat_map<std::string, std::string> tags;
             for (auto &[key, value] : at<raw_configuration::map>(node, "tags")) {
                 try {
                     tags.emplace(key, std::string(value));

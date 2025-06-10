@@ -17,7 +17,7 @@ namespace ddwaf {
 class mysql_tokenizer : public sql_tokenizer<mysql_tokenizer> {
 public:
     explicit mysql_tokenizer(
-        std::string_view str, std::unordered_set<sql_token_type> skip_tokens = {});
+        std::string_view str, boost::unordered_flat_set<sql_token_type> skip_tokens = {});
 
 protected:
     std::vector<sql_token> tokenize_impl();

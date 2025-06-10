@@ -51,7 +51,8 @@ TEST(TestScannerParser, ParseKeyOnlyScanner)
 
     const auto &scnr = cfg.scanners.at("ecd");
     EXPECT_STRV(scnr.get_id(), "ecd");
-    std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "email"}, {"category", "pii"}};
     EXPECT_EQ(scnr.get_tags(), tags);
 
     owned_object value{"dog@datadoghq.com"};
@@ -99,7 +100,8 @@ TEST(TestScannerParser, ParseValueOnlyScanner)
 
     const auto &scnr = cfg.scanners.at("ecd");
     EXPECT_STRV(scnr.get_id(), "ecd");
-    std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "email"}, {"category", "pii"}};
     EXPECT_EQ(scnr.get_tags(), tags);
 
     owned_object value{"dog@datadoghq.com"};
@@ -147,7 +149,8 @@ TEST(TestScannerParser, ParseKeyValueScanner)
 
     const auto &scnr = cfg.scanners.at("ecd");
     EXPECT_STRV(scnr.get_id(), "ecd");
-    std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "email"}, {"category", "pii"}};
     EXPECT_EQ(scnr.get_tags(), tags);
 
     owned_object value{"dog@datadoghq.com"};

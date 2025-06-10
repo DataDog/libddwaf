@@ -7,9 +7,9 @@
 #pragma once
 
 #include <algorithm>
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <iterator>
 #include <set>
-#include <unordered_map>
 
 #include "traits.hpp"
 
@@ -126,7 +126,7 @@ public:
     [[nodiscard]] bool empty() const { return data_.empty(); }
 
 protected:
-    std::unordered_map<Key, std::unordered_map<Key, std::set<T>>> data_;
+    boost::unordered_flat_map<Key, boost::unordered_flat_map<Key, std::set<T>>> data_;
 };
 
 } // namespace ddwaf

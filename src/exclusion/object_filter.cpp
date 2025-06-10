@@ -6,8 +6,8 @@
 #include <stack>
 #include <string_view>
 #include <tuple>
-#include <unordered_set>
 
+#include "boost/unordered/unordered_flat_set_fwd.hpp"
 #include "clock.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
@@ -21,7 +21,7 @@ namespace ddwaf::exclusion {
 namespace {
 // Add requires
 void iterate_object(const path_trie::traverser &filter, object_view object,
-    std::unordered_set<object_view> &objects_to_exclude)
+    boost::unordered_flat_set<object_view> &objects_to_exclude)
 {
     using state = path_trie::traverser::state;
     if (!object.has_value()) {

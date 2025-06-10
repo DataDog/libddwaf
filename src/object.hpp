@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "boost/container_hash/hash.hpp"
 #include "dynamic_string.hpp"
 #include "object_type.hpp"
 #include "traits.hpp"
@@ -1234,6 +1235,7 @@ inline owned_object owned_object::make_map(
     return container;
 }
 
+inline std::size_t hash_value(const ddwaf::object_view &v) { return boost::hash_value(v.ptr()); }
 } // namespace ddwaf
 
 namespace std {
@@ -1244,4 +1246,5 @@ template <> struct hash<ddwaf::object_view> {
         return std::hash<const void *>{}(static_cast<const void *>(obj.ptr()));
     }
 };
+
 } // namespace std

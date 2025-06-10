@@ -6,10 +6,10 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string_view>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "boost/unordered/unordered_flat_set_fwd.hpp"
 #include "log.hpp"
 #include "re2.h"
 #include "tokenizer/mysql.hpp"
@@ -90,7 +90,7 @@ std::string_view extract_variable(std::string_view str)
 } // namespace
 
 mysql_tokenizer::mysql_tokenizer(
-    std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
+    std::string_view str, boost::unordered_flat_set<sql_token_type> skip_tokens)
     : sql_tokenizer(str, std::move(skip_tokens))
 {
     if (!identifier_regex.ok()) {

@@ -54,7 +54,8 @@ TEST(TestContext, MatchTimeout)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     test::ruleset_builder rbuilder;
     rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build()});
@@ -77,7 +78,8 @@ TEST(TestContext, NoMatch)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     test::ruleset_builder rbuilder;
     rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build()});
@@ -101,7 +103,8 @@ TEST(TestContext, Match)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     test::ruleset_builder rbuilder;
     rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build()});
@@ -127,7 +130,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
         rbuilder.insert_base_rule(core_rule{"id1", "name1", std::move(tags), builder.build()});
@@ -140,7 +143,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
         rbuilder.insert_base_rule(core_rule{"id2", "name2", std::move(tags), builder.build()});
@@ -187,7 +190,7 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
         rbuilder.insert_base_rule(core_rule{"id1", "name1", std::move(tags), builder.build()});
@@ -200,7 +203,7 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
         rbuilder.insert_base_rule(core_rule{"id2", "name2", std::move(tags), builder.build(),
@@ -262,7 +265,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
         rbuilder.insert_base_rule(core_rule{"id1", "name1", std::move(tags), builder.build()});
@@ -275,7 +278,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
         rbuilder.insert_base_rule(core_rule{"id2", "name2", std::move(tags), builder.build()});
@@ -332,7 +335,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
         rbuilder.insert_base_rule(core_rule{"id1", "name1", std::move(tags), builder.build()});
@@ -345,7 +348,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
         rbuilder.insert_base_rule(core_rule{"id2", "name2", std::move(tags), builder.build(),
@@ -427,7 +430,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category1"}};
 
         rbuilder.insert_base_rule(core_rule{"id1", "name1", std::move(tags), builder.build(),
@@ -442,7 +445,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category2"}};
 
         rbuilder.insert_base_rule(core_rule{"id2", "name2", std::move(tags), builder.build()});
@@ -502,7 +505,7 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category1"}};
 
         rbuilder.insert_base_rule(core_rule{"id1", "name1", std::move(tags), builder.build()});
@@ -515,7 +518,7 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category2"}};
 
         rbuilder.insert_base_rule(core_rule{"id2", "name2", std::move(tags), builder.build()});
@@ -543,7 +546,7 @@ TEST(TestContext, MatchPriorityCollectionsSingleRun)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category1"}};
 
         rbuilder.insert_base_rule(core_rule{"id1", "name1", std::move(tags), builder.build(),
@@ -558,7 +561,7 @@ TEST(TestContext, MatchPriorityCollectionsSingleRun)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category2"}};
 
         rbuilder.insert_base_rule(core_rule{"id2", "name2", std::move(tags), builder.build(),
@@ -587,7 +590,7 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category1"}};
 
         rbuilder.insert_base_rule(core_rule{"id1", "name1", std::move(tags), builder.build()});
@@ -600,7 +603,7 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category2"}};
 
         rbuilder.insert_base_rule(core_rule{"id2", "name2", std::move(tags), builder.build()});
@@ -639,7 +642,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category1"}};
 
         rbuilder.insert_base_rule(core_rule{"id1", "name1", std::move(tags), builder.build(),
@@ -654,7 +657,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category2"}};
 
         rbuilder.insert_base_rule(core_rule{"id2", "name2", std::move(tags), builder.build(),
@@ -696,7 +699,7 @@ TEST(TestContext, RuleFilterWithCondition)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rule = rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build()});
@@ -742,7 +745,7 @@ TEST(TestContext, RuleFilterWithEphemeralConditionMatch)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rule = rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build()});
@@ -794,7 +797,7 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rule = rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build(),
@@ -862,7 +865,7 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rule = rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build(),
@@ -928,7 +931,7 @@ TEST(TestContext, RuleFilterTimeout)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rule = rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build()});
@@ -968,7 +971,7 @@ TEST(TestContext, NoRuleFilterWithCondition)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rule = rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build()});
@@ -1010,7 +1013,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
     rules.resize(num_rules);
     for (unsigned i = 0; i < num_rules; i++) {
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules[i] = rbuilder.insert_base_rule(core_rule{"id" + std::to_string(i), "name",
@@ -1082,7 +1085,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     for (unsigned i = 0; i < num_rules; i++) {
         std::string id = "id" + std::to_string(i);
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules[i] = rbuilder.insert_base_rule(core_rule{id, "name", std::move(tags),
@@ -1189,7 +1192,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
     for (unsigned i = 0; i < num_rules; i++) {
         std::string id = "id" + std::to_string(i);
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules[i] = rbuilder.insert_base_rule(core_rule{std::string(id), "name", std::move(tags),
@@ -1263,7 +1266,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
     for (unsigned i = 0; i < num_rules; i++) {
         std::string id = "id" + std::to_string(i);
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules[i] = rbuilder.insert_base_rule(core_rule{std::string(id), "name", std::move(tags),
@@ -1339,7 +1342,8 @@ TEST(TestContext, InputFilterExclude)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     test::ruleset_builder rbuilder;
     auto *rule =
@@ -1374,7 +1378,8 @@ TEST(TestContext, InputFilterExcludeEphemeral)
     builder.add_target("http.peer_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     test::ruleset_builder rbuilder;
     auto *rule =
@@ -1420,7 +1425,8 @@ TEST(TestContext, InputFilterExcludeEphemeral)
 /*builder.add_target("http.peer_ip");*/
 /*builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});*/
 
-/*std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};*/
+/*boost::unordered_flat_map<std::string, std::string> tags{{"type", "type"}, {"category",
+ * "category"}};*/
 
 /*test::ruleset_builder rbuilder{nullptr};*/
 /*auto *rule =*/
@@ -1459,7 +1465,8 @@ TEST(TestContext, InputFilterExcludeRule)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     test::ruleset_builder rbuilder{};
     auto *rule =
@@ -1501,7 +1508,8 @@ TEST(TestContext, InputFilterExcludeRuleEphemeral)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     test::ruleset_builder rbuilder{};
     auto *rule =
@@ -1537,7 +1545,8 @@ TEST(TestContext, InputFilterMonitorRuleEphemeral)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     test::ruleset_builder rbuilder{};
     auto *rule =
@@ -1578,7 +1587,8 @@ TEST(TestContext, InputFilterExcluderRuleEphemeralAndPersistent)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     test::ruleset_builder rbuilder{};
     auto *rule =
@@ -1622,7 +1632,8 @@ TEST(TestContext, InputFilterMonitorRuleEphemeralAndPersistent)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     test::ruleset_builder rbuilder{};
     auto *rule =
@@ -1675,7 +1686,7 @@ TEST(TestContext, InputFilterWithCondition)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rule = rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build()});
@@ -1756,7 +1767,7 @@ TEST(TestContext, InputFilterWithEphemeralCondition)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rule = rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build()});
@@ -1807,7 +1818,7 @@ TEST(TestContext, InputFilterMultipleRules)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "ip_type"}, {"category", "category"}};
 
         rules.emplace_back(rbuilder.insert_base_rule(
@@ -1821,7 +1832,7 @@ TEST(TestContext, InputFilterMultipleRules)
         builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "usr_type"}, {"category", "category"}};
 
         rules.emplace_back(rbuilder.insert_base_rule(
@@ -1908,7 +1919,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "ip_type"}, {"category", "category"}};
 
         rules.emplace_back(rbuilder.insert_base_rule(
@@ -1922,7 +1933,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
         builder.add_target("usr_id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "usr_type"}, {"category", "category"}};
 
         rules.emplace_back(rbuilder.insert_base_rule(
@@ -2022,7 +2033,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "ip_type"}, {"category", "category"}};
 
         ip_rule =
@@ -2036,7 +2047,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         builder.add_target("usr_id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "usr_type"}, {"category", "category"}};
 
         usr_rule = rbuilder.insert_base_rule(
@@ -2050,7 +2061,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         builder.add_target("server.request.headers", {"cookie"});
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"mycookie"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "cookie_type"}, {"category", "category"}};
 
         cookie_rule = rbuilder.insert_base_rule(

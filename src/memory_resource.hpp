@@ -11,10 +11,10 @@
 #if defined(__cpp_lib_memory_resource)
 #  include <memory_resource>
 #else
+#  include <boost/unordered/unordered_flat_map.hpp>
+#  include <boost/unordered/unordered_flat_set.hpp>
 #  include <experimental/memory_resource>
 #  include <string>
-#  include <unordered_map>
-#  include <unordered_set>
 #  include <vector>
 
 #  if !defined(__cpp_lib_experimental_memory_resources)

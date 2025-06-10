@@ -855,7 +855,7 @@ TEST(TestInputFilter, MatchWithDynamicMatcher)
 
         store.insert(objects[1]);
 
-        std::unordered_map<std::string, std::unique_ptr<matcher::base>> matchers;
+        boost::unordered_flat_map<std::string, std::unique_ptr<matcher::base>> matchers;
         matchers["ip_data"] =
             std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 

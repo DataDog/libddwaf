@@ -6,11 +6,11 @@
 
 #pragma once
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <map>
 #include <memory>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 
 #include "action_mapper.hpp"
 
@@ -26,7 +26,7 @@ public:
     action_mapper_builder &operator=(action_mapper_builder &&) = delete;
 
     void set_action(const std::string &id, std::string type,
-        std::unordered_map<std::string, std::string> parameters);
+        boost::unordered_flat_map<std::string, std::string> parameters);
 
     [[nodiscard]] static const action_parameters &get_default_action(std::string_view id);
 

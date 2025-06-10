@@ -200,7 +200,7 @@ jobs:
         run: |
           source ../.venv/bin/activate
           gcovr --version
-          gcovr --gcov-executable gcov-12 --exclude-lines-by-pattern '.*assert.*' --exclude-throw-branches -v -f '.*src.*' -e ".*src/vendor/.*" --json  -o coverage-${{ matrix.suffix }}-${{ matrix.arch }}.json
+          gcovr --gcov-executable gcov-12 --exclude-lines-by-pattern '.*assert.*' --exclude-throw-branches -v -f '.*src.*' -e ".*src/vendor/.*" -e ".*/boost_unordered/.*" --json  -o coverage-${{ matrix.suffix }}-${{ matrix.arch }}.json
         working-directory: Debug
 
       - uses: actions/upload-artifact@v4

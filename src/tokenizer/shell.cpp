@@ -8,10 +8,10 @@
 #include <ostream>
 #include <stdexcept>
 #include <string_view>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "boost/unordered/unordered_flat_set_fwd.hpp"
 #include "re2.h"
 #include "tokenizer/base.hpp"
 #include "tokenizer/shell.hpp"
@@ -278,7 +278,7 @@ std::ostream &operator<<(std::ostream &os, shell_token_type type)
 }
 
 shell_tokenizer::shell_tokenizer(
-    std::string_view str, std::unordered_set<shell_token_type> skip_tokens)
+    std::string_view str, boost::unordered_flat_set<shell_token_type> skip_tokens)
     : base_tokenizer(str, std::move(skip_tokens))
 {
     shell_scope_stack_.reserve(8);

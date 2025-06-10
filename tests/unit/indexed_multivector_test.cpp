@@ -42,7 +42,7 @@ TEST(TestIndexedMultivector, MultipleElements)
     ASSERT_FALSE(ivec.empty());
 
     {
-        std::unordered_set<std::string> all_items{"a", "e", "g", "else"};
+        boost::unordered_flat_set<std::string> all_items{"a", "e", "g", "else"};
         for (const auto &v : ivec) {
             EXPECT_TRUE(all_items.contains(v));
             all_items.erase(v);
@@ -54,7 +54,7 @@ TEST(TestIndexedMultivector, MultipleElements)
     ASSERT_FALSE(ivec.empty());
 
     {
-        std::unordered_set<std::string> all_items{
+        boost::unordered_flat_set<std::string> all_items{
             "a", "c", "d", "e", "g", "long", "something", "else"};
         for (const auto &v : ivec) {
             EXPECT_TRUE(all_items.contains(v));
@@ -67,7 +67,7 @@ TEST(TestIndexedMultivector, MultipleElements)
     ASSERT_FALSE(ivec.empty());
 
     {
-        std::unordered_set<std::string> all_items{
+        boost::unordered_flat_set<std::string> all_items{
             "a", "b", "c", "d", "e", "f", "g", "long", "string", "something", "else"};
         for (const auto &v : ivec) {
             EXPECT_TRUE(all_items.contains(v));
@@ -80,7 +80,7 @@ TEST(TestIndexedMultivector, MultipleElements)
     ASSERT_FALSE(ivec.empty());
 
     {
-        std::unordered_set<std::string> all_items{
+        boost::unordered_flat_set<std::string> all_items{
             "b", "c", "d", "f", "long", "string", "something"};
         for (const auto &v : ivec) {
             EXPECT_TRUE(all_items.contains(v));
@@ -93,7 +93,7 @@ TEST(TestIndexedMultivector, MultipleElements)
     ASSERT_FALSE(ivec.empty());
 
     {
-        std::unordered_set<std::string> all_items{"c", "d", "long", "something"};
+        boost::unordered_flat_set<std::string> all_items{"c", "d", "long", "something"};
         for (const auto &v : ivec) {
             EXPECT_TRUE(all_items.contains(v));
             all_items.erase(v);

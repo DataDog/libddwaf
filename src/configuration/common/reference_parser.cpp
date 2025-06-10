@@ -4,10 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <string>
-#include <unordered_map>
 #include <utility>
 
+#include "boost/unordered/unordered_flat_map_fwd.hpp"
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/raw_configuration.hpp"
@@ -29,7 +30,7 @@ reference_spec parse_reference(const raw_configuration::map &target)
 
     auto tag_map = at<raw_configuration::map>(target, "tags", {});
     if (!tag_map.empty()) {
-        std::unordered_map<std::string, std::string> tags;
+        boost::unordered_flat_map<std::string, std::string> tags;
         for (auto &[key, value] : tag_map) { tags.emplace(key, value); }
 
         return {.type = reference_type::tags, .ref_id = {}, .tags = std::move(tags)};

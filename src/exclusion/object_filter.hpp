@@ -7,6 +7,7 @@
 #pragma once
 
 #include <algorithm>
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <functional>
 #include <map>
 #include <ostream>
@@ -14,7 +15,6 @@
 #include <stack>
 #include <tuple>
 #include <type_traits>
-#include <unordered_set>
 #include <vector>
 
 #include "clock.hpp"
@@ -71,7 +71,7 @@ class path_trie {
         // because trie_node is an incomplete type at this point
         template <typename K, typename V> using MapType = std::map<K, V>;
 #else
-        template <typename K, typename V> using MapType = std::unordered_map<K, V>;
+        template <typename K, typename V> using MapType = boost::unordered_flat_map<K, V>;
 #endif
         MapType<std::string_view, trie_node> children_{};
     };
@@ -253,14 +253,14 @@ public:
     object_set match(
         const object_store &store, cache_type &cache, bool ephemeral, ddwaf::timer &deadline) const;
 
-    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
+    void get_addresses(boost::unordered_flat_map<target_index, std::string> &addresses) const
     {
         for (const auto &[index, str] : targets_) { addresses.emplace(index, str); }
     }
 
 protected:
-    std::unordered_map<target_index, path_trie> target_paths_;
-    std::unordered_map<target_index, std::string> targets_;
+    boost::unordered_flat_map<target_index, path_trie> target_paths_;
+    boost::unordered_flat_map<target_index, std::string> targets_;
 };
 
 } // namespace ddwaf::exclusion

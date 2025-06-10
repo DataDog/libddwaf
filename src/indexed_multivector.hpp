@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <unordered_map>
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <vector>
 
 namespace ddwaf {
@@ -38,7 +38,7 @@ public:
     class const_iterator {
     public:
         using index_iterator_type =
-            typename std::unordered_map<Key, std::vector<T>>::const_iterator;
+            typename boost::unordered_flat_map<Key, std::vector<T>>::const_iterator;
         using item_iterator_type = typename std::vector<T>::const_iterator;
         const_iterator(
             // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
@@ -91,7 +91,7 @@ public:
     const_iterator end() const { return {data_.end(), data_.end(), {}}; }
 
 protected:
-    std::unordered_map<Key, std::vector<T>> data_;
+    boost::unordered_flat_map<Key, std::vector<T>> data_;
     std::size_t total_size_{0};
 };
 } // namespace ddwaf

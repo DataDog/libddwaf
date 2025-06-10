@@ -41,7 +41,7 @@ struct resolved_argument_count {
 
 struct processor_cache {
     expression::cache_type expr_cache;
-    std::unordered_set<target_index> generated;
+    boost::unordered_flat_set<target_index> generated;
 
     std::vector<resolved_argument_count> evaluated;
 
@@ -83,7 +83,8 @@ public:
     virtual void eval(object_store &store, attribute_collector &collector, processor_cache &cache,
         ddwaf::timer &deadline) const = 0;
 
-    virtual void get_addresses(std::unordered_map<target_index, std::string> &addresses) const = 0;
+    virtual void get_addresses(
+        boost::unordered_flat_map<target_index, std::string> &addresses) const = 0;
 
     [[nodiscard]] virtual const std::string &get_id() const = 0;
 };
@@ -199,7 +200,8 @@ public:
     }
     [[nodiscard]] const std::string &get_id() const override { return id_; }
 
-    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const override
+    void get_addresses(
+        boost::unordered_flat_map<target_index, std::string> &addresses) const override
     {
         expr_->get_addresses(addresses);
         for (const auto &mapping : mappings_) {

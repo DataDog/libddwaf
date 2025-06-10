@@ -8,11 +8,11 @@
 
 #include "tokenizer/base.hpp"
 #include "utils.hpp"
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <fmt/format.h>
 #include <ostream>
 #include <re2/re2.h>
 #include <string_view>
-#include <unordered_set>
 #include <vector>
 
 namespace ddwaf {
@@ -67,7 +67,7 @@ std::ostream &operator<<(std::ostream &os, sql_token_type type);
 template <typename T> class sql_tokenizer : protected base_tokenizer<sql_token_type> {
 public:
     explicit sql_tokenizer(
-        std::string_view str, std::unordered_set<sql_token_type> skip_tokens = {});
+        std::string_view str, boost::unordered_flat_set<sql_token_type> skip_tokens = {});
 
     std::vector<sql_token> tokenize() { return static_cast<T *>(this)->tokenize_impl(); }
 

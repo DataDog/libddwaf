@@ -24,7 +24,8 @@ TEST(TestRule, Match)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
     core_rule rule("id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
 
     auto root = owned_object::make_map();
@@ -81,7 +82,8 @@ TEST(TestRule, EphemeralMatch)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
     core_rule rule("id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
 
     ddwaf::object_store store;
@@ -120,7 +122,8 @@ TEST(TestRule, NoMatch)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
     core_rule rule("id", "name", std::move(tags), builder.build());
 
     auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
@@ -148,7 +151,8 @@ TEST(TestRule, ValidateCachedMatch)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     core_rule rule("id", "name", std::move(tags), builder.build());
     core_rule::cache_type cache;
@@ -220,7 +224,8 @@ TEST(TestRule, MatchWithoutCache)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     core_rule rule("id", "name", std::move(tags), builder.build());
 
@@ -284,7 +289,8 @@ TEST(TestRule, NoMatchWithoutCache)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     core_rule rule("id", "name", std::move(tags), builder.build());
 
@@ -328,7 +334,8 @@ TEST(TestRule, FullCachedMatchSecondRun)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     core_rule rule("id", "name", std::move(tags), builder.build());
 
@@ -370,7 +377,8 @@ TEST(TestRule, ExcludeObject)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     core_rule rule("id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
 
@@ -378,7 +386,7 @@ TEST(TestRule, ExcludeObject)
     ddwaf::object_store store;
     store.insert(std::move(root));
 
-    std::unordered_set<object_view> excluded_set{store.get_target("http.client_ip").first};
+    boost::unordered_flat_set<object_view> excluded_set{store.get_target("http.client_ip").first};
 
     ddwaf::timer deadline{2s};
 

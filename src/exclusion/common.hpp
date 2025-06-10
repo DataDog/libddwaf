@@ -6,10 +6,9 @@
 
 #pragma once
 
-#include <unordered_set>
+#include <boost/unordered/unordered_flat_set.hpp>
 
 #include "context_allocator.hpp"
-#include "ddwaf.h"
 #include "log.hpp"
 #include "object.hpp"
 #include "utils.hpp"
@@ -23,8 +22,8 @@ namespace exclusion {
 enum class filter_mode : uint8_t { none = 0, custom = 1, monitor = 2, bypass = 3 };
 
 struct object_set {
-    std::unordered_set<object_view> persistent;
-    std::unordered_set<object_view> ephemeral;
+    boost::unordered_flat_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> ephemeral;
     bool empty() const { return persistent.empty() && ephemeral.empty(); }
     [[nodiscard]] std::size_t size() const { return persistent.size() + ephemeral.size(); }
 
@@ -37,12 +36,12 @@ struct object_set {
 struct rule_policy {
     filter_mode mode{filter_mode::none};
     std::string_view action_override;
-    std::unordered_set<object_view> objects;
+    boost::unordered_flat_set<object_view> objects;
 };
 
 struct object_set_ref {
-    optional_ref<const std::unordered_set<object_view>> persistent{std::nullopt};
-    optional_ref<const std::unordered_set<object_view>> ephemeral{std::nullopt};
+    optional_ref<const boost::unordered_flat_set<object_view>> persistent{std::nullopt};
+    optional_ref<const boost::unordered_flat_set<object_view>> ephemeral{std::nullopt};
 
     [[nodiscard]] bool empty() const
     {
@@ -70,8 +69,8 @@ struct rule_policy_ref {
 };
 
 struct context_policy {
-    std::unordered_map<const core_rule *, rule_policy> persistent;
-    std::unordered_map<const core_rule *, rule_policy> ephemeral;
+    boost::unordered_flat_map<const core_rule *, rule_policy> persistent;
+    boost::unordered_flat_map<const core_rule *, rule_policy> ephemeral;
 
     [[nodiscard]] bool empty() const { return persistent.empty() && ephemeral.empty(); }
 

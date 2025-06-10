@@ -10,12 +10,12 @@
 #include <string>
 #include <string_view>
 #include <tuple>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "argument_retriever.hpp"
+#include "boost/unordered/unordered_flat_map_fwd.hpp"
+#include "boost/unordered/unordered_flat_set_fwd.hpp"
 #include "clock.hpp"
 #include "condition/base.hpp"
 #include "condition/cmdi_detector.hpp"
@@ -82,14 +82,14 @@ struct opt_spec {
     platform shell_platform;
     // The possible options hich can be used to indicate that a command is
     // present in the call
-    std::unordered_set<std::string_view> command_opt;
+    boost::unordered_flat_set<std::string_view> command_opt;
     // The options which require and argument
-    std::unordered_set<std::string_view> opts_with_arg;
+    boost::unordered_flat_set<std::string_view> opts_with_arg;
 };
 
 // Most shells support -c as a way to specify a shell command, however some
 // shells such as ksh allow for the first argument to be a shell command
-std::unordered_map<std::string_view, opt_spec> known_shells{
+boost::unordered_flat_map<std::string_view, opt_spec> known_shells{
     // sh could be bash (red-hat) or dash (debian) so we cast a wide net
     {"sh", {.requires_command_opt = true,
                .command_after_opt = false,

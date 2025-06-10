@@ -15,11 +15,11 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "argument_retriever.hpp"
+#include "boost/unordered/unordered_flat_map_fwd.hpp"
 #include "clock.hpp"
 #include "cow_string.hpp"
 #include "exception.hpp"
@@ -523,7 +523,7 @@ constexpr std::size_t ip_origin_headers_length = 10;
 
 std::pair<header_type, unsigned> get_header_type_and_index(std::string_view header)
 {
-    static std::unordered_map<std::string_view, std::pair<header_type, unsigned>> headers{
+    static boost::unordered_flat_map<std::string_view, std::pair<header_type, unsigned>> headers{
         {"referer", {header_type::standard, 0}}, {"connection", {header_type::standard, 1}},
         {"accept-encoding", {header_type::standard, 2}},
         {"content-encoding", {header_type::standard, 3}},

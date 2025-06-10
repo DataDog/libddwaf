@@ -295,7 +295,7 @@ TEST(TestLFIDetector, NoMatchExcludedPath)
     auto params_map = root.emplace(
         "server.request.query", owned_object::make_map({{"endpoint", "../../../etc/passwd"}}));
 
-    std::unordered_set<object_view> persistent{params_map.at(0)};
+    boost::unordered_flat_set<object_view> persistent{params_map.at(0)};
     exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
 
     object_store store;
@@ -316,7 +316,7 @@ TEST(TestLFIDetector, NoMatchExcludedAddress)
     auto root = owned_object::make_map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
         {"server.request.query", owned_object::make_map({{"endpoint", "../../../etc/passwd"}})}});
 
-    std::unordered_set<object_view> persistent{root.at(1)};
+    boost::unordered_flat_set<object_view> persistent{root.at(1)};
     exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
 
     object_store store;
@@ -337,7 +337,7 @@ TEST(TestLFIDetector, Timeout)
     auto root = owned_object::make_map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
         {"server.request.query", owned_object::make_map({{"endpoint", "../../../etc/passwd"}})}});
 
-    std::unordered_set<object_view> persistent{root.at(1)};
+    boost::unordered_flat_set<object_view> persistent{root.at(1)};
     exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
 
     object_store store;

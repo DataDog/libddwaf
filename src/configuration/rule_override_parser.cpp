@@ -3,12 +3,13 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <exception>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include "boost/unordered/unordered_flat_map_fwd.hpp"
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
@@ -43,7 +44,7 @@ rule_override_spec parse_override(const raw_configuration::map &node)
 
     it = node.find("tags");
     if (it != node.end()) {
-        auto tags = static_cast<std::unordered_map<std::string, std::string>>(it->second);
+        auto tags = static_cast<boost::unordered_flat_map<std::string, std::string>>(it->second);
         current.tags = std::move(tags);
     }
 

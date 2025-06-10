@@ -8,10 +8,10 @@
 #include <limits>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include "boost/unordered/unordered_flat_map_fwd.hpp"
 #include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
 #include "object.hpp"
@@ -62,7 +62,7 @@ raw_configuration::operator raw_configuration::map() const
         return {};
     }
 
-    std::unordered_map<std::string_view, raw_configuration> map;
+    boost::unordered_flat_map<std::string_view, raw_configuration> map;
     map.reserve(view_.size());
     for (auto [key, value] : mv) {
         if (key.empty()) {
@@ -286,7 +286,7 @@ raw_configuration::operator std::vector<std::string_view>() const
     return vec;
 }
 
-raw_configuration::operator std::unordered_map<std::string, std::string>() const
+raw_configuration::operator boost::unordered_flat_map<std::string, std::string>() const
 {
     if (!view_.is_map()) {
         throw bad_cast("map", strtype(view_.type()));
@@ -297,7 +297,7 @@ raw_configuration::operator std::unordered_map<std::string, std::string>() const
         return {};
     }
 
-    std::unordered_map<std::string, std::string> map;
+    boost::unordered_flat_map<std::string, std::string> map;
     map.reserve(mv.size());
     for (auto [key, value] : mv) {
         if (key.empty()) {

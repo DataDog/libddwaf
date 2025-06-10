@@ -4,10 +4,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2025 Datadog, Inc.
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <span>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <utility>
 
 #include "attribute_collector.hpp"

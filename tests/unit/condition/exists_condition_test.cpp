@@ -95,7 +95,7 @@ TEST(TestExistsCondition, KeyPathAvailableButExcluded)
             {{"path", owned_object::make_map(
                           {{"to", owned_object::make_map({{"object", owned_object{}}})}})}})}});
 
-    std::unordered_set<object_view> excluded = {root.at(0)};
+    boost::unordered_flat_set<object_view> excluded = {root.at(0)};
     object_store store;
     store.insert(std::move(root));
 
@@ -218,7 +218,7 @@ TEST(TestExistsNegatedCondition, KeyPathAvailableButExcluded)
             {{"path", owned_object::make_map(
                           {{"to", owned_object::make_map({{"object", owned_object{}}})}})}})}});
 
-    std::unordered_set<object_view> excluded = {root.at(0)};
+    boost::unordered_flat_set<object_view> excluded = {root.at(0)};
 
     object_store store;
     store.insert(std::move(root));

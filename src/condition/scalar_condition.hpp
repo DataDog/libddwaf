@@ -31,7 +31,8 @@ public:
         const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
         ddwaf::timer &deadline) const override;
 
-    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const override
+    void get_addresses(
+        boost::unordered_flat_map<target_index, std::string> &addresses) const override
     {
         for (const auto &target : targets_) { addresses.emplace(target.index, target.name); }
     }
@@ -73,7 +74,8 @@ public:
         const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
         ddwaf::timer &deadline) const override;
 
-    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const override
+    void get_addresses(
+        boost::unordered_flat_map<target_index, std::string> &addresses) const override
     {
         addresses.emplace(target_.index, target_.name);
     }

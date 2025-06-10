@@ -23,7 +23,7 @@ TEST(TestJwtDecoderIntegration, Preprocessor)
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
     EXPECT_EQ(size, 2);
-    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    boost::unordered_flat_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.headers.no_cookies"));
     EXPECT_TRUE(address_set.contains("server.request.jwt"));
 
@@ -84,7 +84,7 @@ TEST(TestJwtDecoderIntegration, Postprocessor)
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
     EXPECT_EQ(size, 1);
-    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    boost::unordered_flat_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.headers.no_cookies"));
 
     ddwaf_context context = ddwaf_context_init(handle);
@@ -137,7 +137,7 @@ TEST(TestJwtDecoderIntegration, Processor)
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
     EXPECT_EQ(size, 2);
-    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    boost::unordered_flat_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.headers.no_cookies"));
     EXPECT_TRUE(address_set.contains("server.request.jwt"));
 

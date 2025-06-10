@@ -17,7 +17,7 @@ namespace ddwaf {
 class pgsql_tokenizer : public sql_tokenizer<pgsql_tokenizer> {
 public:
     explicit pgsql_tokenizer(
-        std::string_view str, std::unordered_set<sql_token_type> skip_tokens = {});
+        std::string_view str, boost::unordered_flat_set<sql_token_type> skip_tokens = {});
 
 protected:
     std::vector<sql_token> tokenize_impl();

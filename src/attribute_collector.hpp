@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <span>
 #include <string_view>
-#include <unordered_map>
 
 #include "object_store.hpp"
 #include "target_address.hpp"
@@ -79,9 +79,9 @@ protected:
     // In this pair, the target_index represents the required address and the
     // string span represents the key path.
     using target_type = std::pair<target_index, std::span<const std::string>>;
-    std::unordered_map<std::string_view, target_type> pending_;
+    boost::unordered_flat_map<std::string_view, target_type> pending_;
 
-    std::unordered_set<std::string_view> inserted_or_pending_attributes_;
+    boost::unordered_flat_set<std::string_view> inserted_or_pending_attributes_;
     owned_object attributes_;
 };
 

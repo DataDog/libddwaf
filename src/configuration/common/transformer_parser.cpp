@@ -5,9 +5,9 @@
 // (https://www.datadoghq.com/). Copyright 2021 Datadog, Inc.
 #include <optional>
 #include <string_view>
-#include <unordered_map>
 #include <vector>
 
+#include "boost/unordered/unordered_flat_map_fwd.hpp"
 #include "condition/base.hpp"
 #include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
@@ -18,7 +18,7 @@ namespace ddwaf {
 
 std::optional<transformer_id> transformer_from_string(std::string_view str)
 {
-    static const std::unordered_map<std::string_view, transformer_id> transformer_mapping{
+    static const boost::unordered_flat_map<std::string_view, transformer_id> transformer_mapping{
         {"lowercase", transformer_id::lowercase},
         {"remove_nulls", transformer_id::remove_nulls},
         {"compress_whitespace", transformer_id::compress_whitespace},

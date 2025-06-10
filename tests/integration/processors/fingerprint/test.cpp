@@ -23,7 +23,7 @@ TEST(TestFingerprintIntegration, Postprocessor)
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
     EXPECT_EQ(size, 9);
-    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    boost::unordered_flat_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("server.request.uri.raw"));
     EXPECT_TRUE(address_set.contains("server.request.method"));
@@ -127,7 +127,7 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
     EXPECT_EQ(size, 9);
-    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    boost::unordered_flat_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("server.request.uri.raw"));
     EXPECT_TRUE(address_set.contains("server.request.method"));
@@ -331,7 +331,7 @@ TEST(TestFingerprintIntegration, Preprocessor)
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
     EXPECT_EQ(size, 13);
-    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    boost::unordered_flat_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("server.request.uri.raw"));
     EXPECT_TRUE(address_set.contains("server.request.method"));
@@ -479,7 +479,7 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
     EXPECT_EQ(size, 13);
-    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    boost::unordered_flat_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("server.request.uri.raw"));
     EXPECT_TRUE(address_set.contains("server.request.method"));
@@ -700,7 +700,7 @@ TEST(TestFingerprintIntegration, Processor)
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
 
     EXPECT_EQ(size, 13);
-    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    boost::unordered_flat_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("server.request.uri.raw"));
     EXPECT_TRUE(address_set.contains("server.request.method"));
@@ -855,7 +855,7 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
 
     EXPECT_EQ(size, 13);
-    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    boost::unordered_flat_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("server.request.uri.raw"));
     EXPECT_TRUE(address_set.contains("server.request.method"));

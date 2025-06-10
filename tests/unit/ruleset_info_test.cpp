@@ -52,7 +52,7 @@ TEST(TestRulesetInfo, ValidRulesetInfo)
     auto version = at<std::string>(root_map, "ruleset_version");
     EXPECT_STREQ(version.c_str(), "2.3.4");
 
-    std::unordered_map<std::string, std::string> kv{
+    boost::unordered_flat_map<std::string, std::string> kv{
         {"rules", "first"}, {"exclusions", "second"}, {"rules_override", "index:10"}};
     for (auto &[key, value] : kv) {
         auto section = at<raw_configuration::map>(root_map, key);

@@ -23,7 +23,7 @@ TEST(TestExtractSchemaIntegration, Postprocessor)
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
     EXPECT_EQ(size, 2);
-    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    boost::unordered_flat_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("waf.context.processor"));
 
@@ -69,7 +69,7 @@ TEST(TestExtractSchemaIntegration, Preprocessor)
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
     EXPECT_EQ(size, 3);
-    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    boost::unordered_flat_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("server.request.body.schema"));
     EXPECT_TRUE(address_set.contains("waf.context.processor"));
@@ -124,7 +124,7 @@ TEST(TestExtractSchemaIntegration, Processor)
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
     EXPECT_EQ(size, 4);
-    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    boost::unordered_flat_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("server.request.body.schema"));
     EXPECT_TRUE(address_set.contains("server.request.query"));
@@ -768,7 +768,7 @@ TEST(TestExtractSchemaIntegration, PostprocessorWithEphemeralMapping)
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
     EXPECT_EQ(size, 2);
-    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    boost::unordered_flat_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("waf.context.processor"));
 
@@ -839,7 +839,7 @@ TEST(TestExtractSchemaIntegration, PreprocessorWithEphemeralMapping)
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
     EXPECT_EQ(size, 3);
-    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    boost::unordered_flat_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("server.request.body.schema"));
     EXPECT_TRUE(address_set.contains("waf.context.processor"));
@@ -926,7 +926,7 @@ TEST(TestExtractSchemaIntegration, ProcessorEphemeralExpression)
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
     EXPECT_EQ(size, 4);
-    std::unordered_set<std::string_view> address_set(addresses, addresses + size);
+    boost::unordered_flat_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("server.request.body.schema"));
     EXPECT_TRUE(address_set.contains("server.request.query"));

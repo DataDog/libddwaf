@@ -799,7 +799,7 @@ TEST(TestExpression, ExcludeInput)
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
-    std::unordered_set<object_view> excluded_objects{
+    boost::unordered_flat_set<object_view> excluded_objects{
         store.get_target("server.request.query").first};
 
     expression::cache_type cache;
@@ -822,7 +822,7 @@ TEST(TestExpression, ExcludeKeyPath)
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
-    std::unordered_set<object_view> excluded_objects{
+    boost::unordered_flat_set<object_view> excluded_objects{
         store.get_target("server.request.query").first};
 
     expression::cache_type cache;

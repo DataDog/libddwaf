@@ -12,15 +12,15 @@ using namespace ddwaf;
 namespace {
 
 struct test_object {
-    test_object(std::string id_, std::unordered_map<std::string, std::string> tags_)
+    test_object(std::string id_, boost::unordered_flat_map<std::string, std::string> tags_)
         : id(std::move(id_)), tags(std::move(tags_))
     {}
 
     std::string_view get_id() const { return id; }
-    const std::unordered_map<std::string, std::string> &get_tags() const { return tags; }
+    const boost::unordered_flat_map<std::string, std::string> &get_tags() const { return tags; }
 
     std::string id;
-    std::unordered_map<std::string, std::string> tags;
+    boost::unordered_flat_map<std::string, std::string> tags;
 };
 
 TEST(TestIndexer, FindSingleElement)
@@ -108,7 +108,7 @@ TEST(TestIndexer, IterateSingleElement)
 TEST(TestIndexer, FindMultipleElements)
 {
     indexer<test_object> index;
-    std::unordered_map<std::string, std::shared_ptr<test_object>> objects{
+    boost::unordered_flat_map<std::string, std::shared_ptr<test_object>> objects{
         {"id0", std::make_shared<test_object>(
                     "id0", decltype(test_object::tags){{"tag", "value1"}, {"common", "value"}})},
         {"id1", std::make_shared<test_object>(
@@ -167,7 +167,7 @@ TEST(TestIndexer, FindMultipleElements)
 /*TEST(TestIndexer, EraseMultipleElementsById)*/
 /*{*/
 /*indexer<test_object> index;*/
-/*std::unordered_map<std::string, std::shared_ptr<test_object>> objects{*/
+/*boost::unordered_flat_map<std::string, std::shared_ptr<test_object>> objects{*/
 /*{"id0", std::make_shared<test_object>(*/
 /*"id0", decltype(test_object::tags){{"tag", "value1"}, {"common", "value"}})},*/
 /*{"id1", std::make_shared<test_object>(*/
@@ -290,7 +290,7 @@ TEST(TestIndexer, FindMultipleElements)
 /*TEST(TestIndexer, EraseMultipleElementsByIterator)*/
 /*{*/
 /*indexer<test_object> index;*/
-/*std::unordered_map<std::string, std::shared_ptr<test_object>> objects{*/
+/*boost::unordered_flat_map<std::string, std::shared_ptr<test_object>> objects{*/
 /*{"id0", std::make_shared<test_object>(*/
 /*"id0", decltype(test_object::tags){{"tag", "value1"}, {"common", "value"}})},*/
 /*{"id1", std::make_shared<test_object>(*/
@@ -434,7 +434,7 @@ TEST(TestIndexer, FindMultipleElements)
 TEST(TestIndexer, ClearMultipleElements)
 {
     indexer<test_object> index;
-    std::unordered_map<std::string, std::shared_ptr<test_object>> objects{
+    boost::unordered_flat_map<std::string, std::shared_ptr<test_object>> objects{
         {"id0", std::make_shared<test_object>(
                     "id0", decltype(test_object::tags){{"tag", "value1"}, {"common", "value"}})},
         {"id1", std::make_shared<test_object>(
@@ -477,7 +477,7 @@ TEST(TestIndexer, ClearMultipleElements)
 TEST(TestIndexer, IterateMultipleElements)
 {
     indexer<test_object> index;
-    std::unordered_map<std::string, std::shared_ptr<test_object>> objects{
+    boost::unordered_flat_map<std::string, std::shared_ptr<test_object>> objects{
         {"id0", std::make_shared<test_object>(
                     "id0", decltype(test_object::tags){{"tag", "value1"}, {"common", "value"}})},
         {"id1", std::make_shared<test_object>(

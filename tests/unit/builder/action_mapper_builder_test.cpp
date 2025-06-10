@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <unordered_map>
+#include <boost/unordered/unordered_flat_map.hpp>
 
 #include "action_mapper.hpp"
 #include "builder/action_mapper_builder.hpp"

@@ -20,7 +20,7 @@ namespace ddwaf::exclusion {
 class rule_filter {
 public:
     struct excluded_set {
-        const std::unordered_set<const core_rule *> &rules;
+        const boost::unordered_flat_set<const core_rule *> &rules;
         bool ephemeral{false};
         filter_mode mode{filter_mode::none};
         std::string_view action;
@@ -42,7 +42,7 @@ public:
 
     std::string_view get_id() const { return id_; }
 
-    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
+    void get_addresses(boost::unordered_flat_map<target_index, std::string> &addresses) const
     {
         expr_->get_addresses(addresses);
     }
@@ -52,7 +52,7 @@ public:
 protected:
     std::string id_;
     std::shared_ptr<expression> expr_;
-    std::unordered_set<const core_rule *> rule_targets_;
+    boost::unordered_flat_set<const core_rule *> rule_targets_;
     filter_mode mode_;
     std::string action_;
 };

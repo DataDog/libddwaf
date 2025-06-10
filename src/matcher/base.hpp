@@ -6,10 +6,10 @@
 
 #pragma once
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <memory>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 
 #include "dynamic_string.hpp"
 #include "object.hpp"
@@ -124,6 +124,6 @@ public:
 
 } // namespace matcher
 
-using matcher_mapper = std::unordered_map<std::string, std::unique_ptr<matcher::base>>;
+using matcher_mapper = boost::unordered_flat_map<std::string, std::unique_ptr<matcher::base>>;
 
 } // namespace ddwaf

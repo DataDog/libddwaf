@@ -4,16 +4,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <memory>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include "boost/unordered/unordered_flat_map_fwd.hpp"
 #include "condition/base.hpp"
 #include "condition/scalar_condition.hpp"
 #include "configuration/common/common.hpp"
@@ -162,7 +163,7 @@ void parse_legacy_rules(const raw_configuration::vector &rule_array, configurati
             auto conditions_array = at<raw_configuration::vector>(node, "conditions");
             auto expression = parse_expression(conditions_array, rule_transformers);
 
-            std::unordered_map<std::string, std::string> tags;
+            boost::unordered_flat_map<std::string, std::string> tags;
             for (auto &[key, value] : at<raw_configuration::map>(node, "tags")) {
                 try {
                     tags.emplace(key, std::string(value));

@@ -8,11 +8,11 @@
 
 #include "utils.hpp"
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <compare>
 #include <string>
 #include <string_view>
 #include <type_traits>
-#include <unordered_map>
 
 namespace ddwaf {
 

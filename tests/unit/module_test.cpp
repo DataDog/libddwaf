@@ -36,7 +36,8 @@ TEST(TestModuleUngrouped, SingleRuleMatch)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     auto rule = std::make_shared<core_rule>("id", "name", std::move(tags), builder.build());
 
@@ -84,7 +85,7 @@ TEST(TestModuleUngrouped, MultipleMonitoringRuleMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -98,7 +99,7 @@ TEST(TestModuleUngrouped, MultipleMonitoringRuleMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -151,7 +152,7 @@ TEST(TestModuleUngrouped, BlockingRuleMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -165,7 +166,7 @@ TEST(TestModuleUngrouped, BlockingRuleMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
@@ -208,7 +209,7 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -222,7 +223,7 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.2"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
@@ -275,7 +276,7 @@ TEST(TestModuleUngrouped, BlockingRuleMatchBasePrecedence)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
@@ -292,7 +293,7 @@ TEST(TestModuleUngrouped, BlockingRuleMatchBasePrecedence)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
@@ -335,7 +336,7 @@ TEST(TestModuleUngrouped, BlockingRuleMatchUserPrecedence)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
@@ -352,7 +353,7 @@ TEST(TestModuleUngrouped, BlockingRuleMatchUserPrecedence)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
@@ -393,7 +394,8 @@ TEST(TestModuleUngrouped, NonExpiringModule)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     auto rule = std::make_shared<core_rule>("id", "name", std::move(tags), builder.build());
 
@@ -430,7 +432,8 @@ TEST(TestModuleUngrouped, ExpiringModule)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     auto rule = std::make_shared<core_rule>("id", "name", std::move(tags), builder.build());
 
@@ -466,7 +469,7 @@ TEST(TestModuleUngrouped, DisabledRules)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
@@ -505,7 +508,7 @@ TEST(TestModuleGrouped, MultipleGroupsMonitoringRuleMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -519,7 +522,7 @@ TEST(TestModuleGrouped, MultipleGroupsMonitoringRuleMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -560,7 +563,7 @@ TEST(TestModuleGrouped, MultipleGroupsBlockingRuleMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -574,7 +577,7 @@ TEST(TestModuleGrouped, MultipleGroupsBlockingRuleMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
@@ -615,7 +618,7 @@ TEST(TestModuleGrouped, SingleGroupBlockingRuleMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -629,7 +632,7 @@ TEST(TestModuleGrouped, SingleGroupBlockingRuleMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
@@ -670,7 +673,7 @@ TEST(TestModuleGrouped, SingleGroupMonitoringRuleMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -684,7 +687,7 @@ TEST(TestModuleGrouped, SingleGroupMonitoringRuleMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -724,7 +727,7 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupMonitoringUserMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -738,7 +741,7 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupMonitoringUserMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
@@ -779,7 +782,7 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupMonitoringBaseMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -793,7 +796,7 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupMonitoringBaseMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
@@ -834,7 +837,7 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingBaseMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
@@ -849,7 +852,7 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingBaseMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
@@ -890,7 +893,7 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingUserMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
@@ -905,7 +908,7 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingUserMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
@@ -946,7 +949,7 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingBaseMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
@@ -961,7 +964,7 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingBaseMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
@@ -1002,7 +1005,7 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingUserMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
@@ -1017,7 +1020,7 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingUserMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
@@ -1058,7 +1061,7 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsMonitoringMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -1072,7 +1075,7 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsMonitoringMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
@@ -1114,7 +1117,7 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsBlockingMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -1128,7 +1131,7 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsBlockingMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
@@ -1169,7 +1172,7 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsMonitoringMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -1183,7 +1186,7 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsMonitoringMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id2", "name", std::move(tags),
@@ -1225,7 +1228,7 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsBlockingMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
@@ -1240,7 +1243,7 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsBlockingMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -1280,7 +1283,7 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
@@ -1295,7 +1298,7 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.2"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -1309,7 +1312,7 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.2"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id3", "name", std::move(tags),
@@ -1324,7 +1327,7 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id4", "name", std::move(tags),
@@ -1339,7 +1342,7 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.2"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type3"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id5", "name", std::move(tags),
@@ -1354,7 +1357,7 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.2"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type4"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -1368,7 +1371,7 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type5"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id7", "name", std::move(tags),
@@ -1383,7 +1386,7 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type6"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id8", "name", std::move(tags),
@@ -1427,7 +1430,7 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -1441,7 +1444,7 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -1455,7 +1458,7 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id3", "name", std::move(tags),
@@ -1470,7 +1473,7 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id4", "name", std::move(tags),
@@ -1485,7 +1488,7 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type3"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id5", "name", std::move(tags),
@@ -1530,7 +1533,7 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -1544,7 +1547,7 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category"}};
 
         rules.emplace_back(
@@ -1558,7 +1561,7 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id3", "name", std::move(tags),
@@ -1573,7 +1576,7 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type2"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id4", "name", std::move(tags),
@@ -1588,7 +1591,7 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type3"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id5", "name", std::move(tags),
@@ -1630,7 +1633,7 @@ TEST(TestModuleGrouped, DisabledRules)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        std::unordered_map<std::string, std::string> tags{
+        boost::unordered_flat_map<std::string, std::string> tags{
             {"type", "type1"}, {"category", "category"}};
 
         rules.emplace_back(std::make_shared<core_rule>("id1", "name", std::move(tags),
@@ -1667,7 +1670,8 @@ TEST(TestModuleGrouped, NonExpiringModule)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     auto rule = std::make_shared<core_rule>("id", "name", std::move(tags), builder.build());
 
@@ -1704,7 +1708,8 @@ TEST(TestModuleGrouped, ExpiringModule)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "type"}, {"category", "category"}};
 
     auto rule = std::make_shared<core_rule>("id", "name", std::move(tags), builder.build());
 

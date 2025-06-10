@@ -8,10 +8,10 @@
 #include <set>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include "boost/unordered/unordered_flat_map_fwd.hpp"
 #include "builder/action_mapper_builder.hpp"
 #include "builder/matcher_builder.hpp"
 #include "builder/processor_builder.hpp"
@@ -190,7 +190,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(
         }
 
         // Since processors don't have tags, we can use a hash table instead
-        std::unordered_map<std::string_view, processor_builder *> proc_builder_index;
+        boost::unordered_flat_map<std::string_view, processor_builder *> proc_builder_index;
         proc_builder_index.reserve(preproc_builders.size() + postproc_builders.size());
         for (auto &builder : preproc_builders) {
             proc_builder_index.emplace(builder.get_id(), &builder);

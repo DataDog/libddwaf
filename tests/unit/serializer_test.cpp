@@ -44,7 +44,7 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
     ddwaf::timer deadline{2s};
     auto [result_object, output] = result_serializer::initialise_result_object();
 
-    std::unordered_map<std::string, std::string> tags{{"type", {}}, {"category", {}}};
+    boost::unordered_flat_map<std::string, std::string> tags{{"type", {}}, {"category", {}}};
     std::vector<std::string> actions;
     std::vector<rule_attribute> attributes;
 
@@ -76,7 +76,8 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     ddwaf::match_obfuscator obfuscator;
     result_serializer serializer(obfuscator, action_definitions);
 
-    std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "test"}, {"category", "none"}};
     std::vector<std::string> actions{"block", "monitor_request"};
     std::vector<rule_attribute> attributes;
 
@@ -131,7 +132,8 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     ddwaf::match_obfuscator obfuscator;
     result_serializer serializer(obfuscator, action_definitions);
 
-    std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "test"}, {"category", "none"}};
     std::vector<std::string> actions{"block", "monitor_request"};
     std::vector<rule_attribute> attributes;
 
@@ -237,7 +239,8 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
 
     std::vector<rule_attribute> attributes;
 
-    std::unordered_map<std::string, std::string> tags0{{"type", "test"}, {"category", "none"}};
+    boost::unordered_flat_map<std::string, std::string> tags0{
+        {"type", "test"}, {"category", "none"}};
     std::vector<std::string> actions0{"block", "monitor_request"};
 
     rule_result result0{
@@ -291,7 +294,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
         .attributes = attributes,
     };
 
-    std::unordered_map<std::string, std::string> tags2{{"type", {}}, {"category", {}}};
+    boost::unordered_flat_map<std::string, std::string> tags2{{"type", {}}, {"category", {}}};
     std::vector<std::string> actions2{};
     rule_result result2{
         .event = rule_event{.rule{
@@ -364,7 +367,8 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     ddwaf::match_obfuscator obfuscator;
     result_serializer serializer(obfuscator, action_definitions);
 
-    std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"}};
+    boost::unordered_flat_map<std::string, std::string> tags{
+        {"type", "test"}, {"category", "none"}};
     std::vector<std::string> actions;
     std::vector<rule_attribute> attributes;
 
@@ -420,7 +424,7 @@ TEST(TestEventSerializer, SerializeAllTags)
     ddwaf::match_obfuscator obfuscator;
     result_serializer serializer(obfuscator, action_definitions);
 
-    std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"},
+    boost::unordered_flat_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"},
         {"tag0", "value0"}, {"tag1", "value1"}, {"confidence", "none"}};
     std::vector<std::string> actions{"unblock"};
     std::vector<rule_attribute> attributes;
@@ -478,7 +482,7 @@ TEST(TestEventSerializer, NoMonitorActions)
     ddwaf::match_obfuscator obfuscator;
     result_serializer serializer(obfuscator, action_definitions);
 
-    std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"},
+    boost::unordered_flat_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"},
         {"tag0", "value0"}, {"tag1", "value1"}, {"confidence", "none"}};
     std::vector<std::string> actions{"monitor"};
     std::vector<rule_attribute> attributes;
@@ -537,7 +541,7 @@ TEST(TestEventSerializer, UndefinedActions)
     ddwaf::match_obfuscator obfuscator;
     result_serializer serializer(obfuscator, action_definitions);
 
-    std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"},
+    boost::unordered_flat_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"},
         {"tag0", "value0"}, {"tag1", "value1"}, {"confidence", "none"}};
     std::vector<std::string> actions{"unblock_request"};
     std::vector<rule_attribute> attributes;
@@ -596,7 +600,7 @@ TEST(TestEventSerializer, StackTraceAction)
     ddwaf::match_obfuscator obfuscator;
     result_serializer serializer(obfuscator, action_definitions);
 
-    std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"},
+    boost::unordered_flat_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"},
         {"tag0", "value0"}, {"tag1", "value1"}, {"confidence", "none"}};
     std::vector<std::string> actions{"stack_trace"};
     std::vector<rule_attribute> attributes;

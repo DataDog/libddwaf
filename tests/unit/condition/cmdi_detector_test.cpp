@@ -677,7 +677,7 @@ TEST(TestCmdiDetector, ExecutableInjectionMultipleArguments)
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
     std::vector<std::string> resource{"/usr/bin/halt", "-h"};
-    std::unordered_map<std::string, std::string> params{
+    boost::unordered_flat_map<std::string, std::string> params{
         {"halt", "bin"}, {"-h", "usr"}, {"executable", "/usr/bin/halt"}};
     std::string resource_str = generate_resource_string(resource);
 
@@ -715,7 +715,7 @@ TEST(TestCmdiDetector, EmptyExecutable)
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
     std::vector<std::string> resource{"", "-h"};
-    std::unordered_map<std::string, std::string> params{
+    boost::unordered_flat_map<std::string, std::string> params{
         {"halt", "bin"}, {"-h", "usr"}, {"executable", "/usr/bin/halt"}};
 
     std::string resource_str = generate_resource_string(resource);
@@ -743,7 +743,7 @@ TEST(TestCmdiDetector, ShellInjectionMultipleArguments)
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
     std::vector<std::string> resource{"/usr/bin/sh", "-c", "ls -l $file; $(cat /etc/passwd)"};
-    std::unordered_map<std::string, std::string> params{
+    boost::unordered_flat_map<std::string, std::string> params{
         {"-l $file", "bin"}, {"-h", "usr"}, {"shell", "; $(cat /etc/passwd)"}};
 
     std::string resource_str = generate_resource_string(resource);

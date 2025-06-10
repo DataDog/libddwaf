@@ -2644,9 +2644,9 @@ TEST(TestWafIntegration, KnownActionsNullHandle)
     EXPECT_EQ(actions, nullptr);
 }
 
-std::unordered_set<std::string_view> object_to_string_set(const ddwaf_object *array)
+boost::unordered_flat_set<std::string_view> object_to_string_set(const ddwaf_object *array)
 {
-    std::unordered_set<std::string_view> set;
+    boost::unordered_flat_set<std::string_view> set;
     for (std::size_t i = 0; i < ddwaf_object_size(array); ++i) {
         const ddwaf_object *child = ddwaf_object_at_value(array, i);
         EXPECT_TRUE((ddwaf_object_type(child) & DDWAF_OBJ_STRING) != 0);

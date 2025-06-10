@@ -7,11 +7,11 @@
 #pragma once
 
 #include "utils.hpp"
+#include <boost/unordered/unordered_flat_set.hpp>
 #include <fmt/format.h>
 #include <ostream>
 #include <re2/re2.h>
 #include <string_view>
-#include <unordered_set>
 #include <vector>
 
 namespace ddwaf {
@@ -24,7 +24,7 @@ template <typename T> struct base_token {
 
 template <typename T> class base_tokenizer {
 public:
-    explicit base_tokenizer(std::string_view str, std::unordered_set<T> skip_tokens = {})
+    explicit base_tokenizer(std::string_view str, boost::unordered_flat_set<T> skip_tokens = {})
         : buffer_(str), skip_tokens_(std::move(skip_tokens))
     {}
 
@@ -97,7 +97,7 @@ protected:
 
     std::string_view buffer_;
     std::size_t idx_{0};
-    std::unordered_set<T> skip_tokens_{};
+    boost::unordered_flat_set<T> skip_tokens_{};
     std::vector<base_token<T>> tokens_{};
 };
 

@@ -26,7 +26,7 @@ TEST(TestRuleFilter, Match)
     auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
-    std::unordered_map<target_index, std::string> addresses;
+    boost::unordered_flat_map<target_index, std::string> addresses;
     filter.get_addresses(addresses);
     EXPECT_EQ(addresses.size(), 1);
     EXPECT_STREQ(addresses.begin()->second.c_str(), "http.client_ip");
@@ -58,7 +58,7 @@ TEST(TestRuleFilter, MatchWithDynamicMatcher)
     auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
-    std::unordered_map<target_index, std::string> addresses;
+    boost::unordered_flat_map<target_index, std::string> addresses;
     filter.get_addresses(addresses);
     EXPECT_EQ(addresses.size(), 1);
     EXPECT_STREQ(addresses.begin()->second.c_str(), "http.client_ip");
@@ -84,7 +84,7 @@ TEST(TestRuleFilter, MatchWithDynamicMatcher)
 
         ddwaf::timer deadline{2s};
 
-        std::unordered_map<std::string, std::unique_ptr<matcher::base>> matchers;
+        boost::unordered_flat_map<std::string, std::unique_ptr<matcher::base>> matchers;
         matchers["ip_data"] =
             std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
@@ -110,7 +110,7 @@ TEST(TestRuleFilter, EphemeralMatch)
     auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     ddwaf::exclusion::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
-    std::unordered_map<target_index, std::string> addresses;
+    boost::unordered_flat_map<target_index, std::string> addresses;
     filter.get_addresses(addresses);
     EXPECT_EQ(addresses.size(), 1);
     EXPECT_STREQ(addresses.begin()->second.c_str(), "http.client_ip");

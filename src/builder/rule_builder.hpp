@@ -23,7 +23,10 @@ public:
     {}
 
     std::string_view get_id() const { return id_; }
-    const std::unordered_map<std::string, std::string> &get_tags() const { return spec_.tags; }
+    const boost::unordered_flat_map<std::string, std::string> &get_tags() const
+    {
+        return spec_.tags;
+    }
     [[nodiscard]] bool is_enabled() const { return spec_.enabled; }
 
     bool apply_override(const rule_override_spec &ovrd)
@@ -73,7 +76,7 @@ public:
 protected:
     std::string id_;
     rule_spec spec_;
-    std::unordered_map<std::string, std::string> ancillary_tags_;
+    boost::unordered_flat_map<std::string, std::string> ancillary_tags_;
 };
 
 } // namespace ddwaf

@@ -6,8 +6,8 @@
 
 #pragma once
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <string>
-#include <unordered_map>
 
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
@@ -60,7 +60,7 @@ protected:
     static void load(
         raw_configuration::map &root, configuration_collector &collector, base_ruleset_info &info);
 
-    std::unordered_map<std::string, configuration_change_spec> configs_;
+    boost::unordered_flat_map<std::string, configuration_change_spec> configs_;
     configuration_spec global_config_;
     change_set changes_{change_set::none};
 };

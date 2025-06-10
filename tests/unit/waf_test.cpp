@@ -75,7 +75,7 @@ TEST(TestWaf, AddressUniqueness)
         "_dd.appsec.s.res.body", "_dd.appsec.s.graphql.all_resolvers",
         "_dd.appsec.s.graphql.resolver", "_dd.appsec.s.req.headers", "_dd.appsec.s.res.headers"};
 
-    std::unordered_set<std::size_t> indices;
+    boost::unordered_flat_set<std::size_t> indices;
     for (auto addr : addresses) {
         std::size_t hash = std::hash<std::string_view>()(addr);
         EXPECT_EQ(indices.find(hash), indices.end());

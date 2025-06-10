@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <memory>
 #include <string>
-#include <unordered_map>
 
 #include "clock.hpp"
 #include "context_allocator.hpp"
@@ -84,7 +84,8 @@ public:
         const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
         ddwaf::timer &deadline) const = 0;
 
-    virtual void get_addresses(std::unordered_map<target_index, std::string> &addresses) const = 0;
+    virtual void get_addresses(
+        boost::unordered_flat_map<target_index, std::string> &addresses) const = 0;
 };
 
 } // namespace ddwaf

@@ -6,8 +6,8 @@
 
 #pragma once
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <memory>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -67,7 +67,7 @@ struct ruleset {
     [[nodiscard]] const std::vector<const char *> &get_root_addresses()
     {
         if (root_addresses.empty()) {
-            std::unordered_set<target_index> known_targets;
+            boost::unordered_flat_set<target_index> known_targets;
             for (const auto &[index, str] : rule_addresses) {
                 const auto &[it, res] = known_targets.emplace(index);
                 if (res) {
@@ -99,7 +99,7 @@ struct ruleset {
     [[nodiscard]] const std::vector<const char *> &get_available_action_types()
     {
         if (available_action_types.empty()) {
-            std::unordered_set<std::string_view> all_types;
+            boost::unordered_flat_set<std::string_view> all_types;
             // We preallocate at least the total available actions in the mapper
             all_types.reserve(actions->size());
 
@@ -148,10 +148,10 @@ struct ruleset {
     // Rule modules
     std::array<rule_module, rule_module_count> rule_modules;
 
-    std::unordered_map<target_index, std::string> rule_addresses;
-    std::unordered_map<target_index, std::string> filter_addresses;
-    std::unordered_map<target_index, std::string> preprocessor_addresses;
-    std::unordered_map<target_index, std::string> postprocessor_addresses;
+    boost::unordered_flat_map<target_index, std::string> rule_addresses;
+    boost::unordered_flat_map<target_index, std::string> filter_addresses;
+    boost::unordered_flat_map<target_index, std::string> preprocessor_addresses;
+    boost::unordered_flat_map<target_index, std::string> postprocessor_addresses;
 
     // The following two members are computed only when required; they are
     // provided to the caller of ddwaf_known_* and are only cached for the

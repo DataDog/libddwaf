@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -70,7 +70,7 @@ struct rule_event {
     struct {
         std::string_view id;
         std::string_view name;
-        std::reference_wrapper<const std::unordered_map<std::string, std::string>> tags;
+        std::reference_wrapper<const boost::unordered_flat_map<std::string, std::string>> tags;
     } rule;
     std::vector<condition_match> matches;
 };
@@ -103,13 +103,13 @@ public:
 
     using cache_type = rule_cache;
 
-    core_rule(std::string id,                              // Required: Unique identifier
-        std::string name,                                  // Required: Human-readable name
-        std::unordered_map<std::string, std::string> tags, // Required: Rule metadata
-        std::shared_ptr<expression> expr,                  // Required: Rule expression
-        std::vector<std::string> actions = {},             // Optional: Rule actions, default: none
-        std::vector<rule_attribute> attributes = {},       // Optional: Attributes, default: none
-        source_type source = source_type::base,            // Optional: Rule source, default: base
+    core_rule(std::string id,                                     // Required: Unique identifier
+        std::string name,                                         // Required: Human-readable name
+        boost::unordered_flat_map<std::string, std::string> tags, // Required: Rule metadata
+        std::shared_ptr<expression> expr,                         // Required: Rule expression
+        std::vector<std::string> actions = {},        // Optional: Rule actions, default: none
+        std::vector<rule_attribute> attributes = {},  // Optional: Attributes, default: none
+        source_type source = source_type::base,       // Optional: Rule source, default: base
         verdict_type verdict = verdict_type::monitor, // Optional: Rule verdict: default: monitor
         bool enabled = true,                          // Optional: Enabled by default
         rule_flags flags = rule_flags::generate_event |
@@ -155,13 +155,13 @@ public:
 
     [[nodiscard]] source_type get_source() const { return source_; }
 
-    [[nodiscard]] const std::unordered_map<std::string, std::string> &get_tags() const
+    [[nodiscard]] const boost::unordered_flat_map<std::string, std::string> &get_tags() const
     {
         return tags_;
     }
     [[nodiscard]] const std::vector<std::string> &get_actions() const { return actions_; }
 
-    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
+    void get_addresses(boost::unordered_flat_map<target_index, std::string> &addresses) const
     {
         expr_->get_addresses(addresses);
     }
@@ -174,7 +174,7 @@ protected:
     verdict_type verdict_{verdict_type::monitor};
     std::string id_;
     std::string name_;
-    std::unordered_map<std::string, std::string> tags_;
+    boost::unordered_flat_map<std::string, std::string> tags_;
     std::vector<std::string> actions_;
     std::vector<rule_attribute> attributes_;
 

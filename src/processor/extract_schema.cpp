@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -12,12 +13,12 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <variant>
 
 #include "argument_retriever.hpp"
+#include "boost/unordered/unordered_flat_map_fwd.hpp"
+#include "boost/unordered/unordered_flat_set_fwd.hpp"
 #include "clock.hpp"
 #include "exception.hpp"
 #include "object.hpp"
@@ -41,7 +42,7 @@ enum class scalar_type : uint8_t { null = 1, boolean = 2, integer = 4, string = 
 struct node_scalar {
     scalar_type type{scalar_type::null};
     // NOLINTNEXTLINE(readability-redundant-member-init)
-    std::unordered_map<std::string, std::string> tags{};
+    boost::unordered_flat_map<std::string, std::string> tags{};
     mutable std::size_t hash{0};
 };
 
@@ -75,14 +76,14 @@ struct node_equal {
 struct node_record {
     std::size_t hash{0};
     bool truncated{false};
-    std::unordered_map<std::string_view, base_node> children;
+    boost::unordered_flat_map<std::string_view, base_node> children;
 };
 
 struct node_array {
     std::size_t hash{0};
     bool truncated{false};
     std::size_t length{0};
-    std::unordered_set<base_node, node_hash, node_equal> children;
+    boost::unordered_flat_set<base_node, node_hash, node_equal> children;
 };
 
 std::size_t node_hash::operator()(const base_node &node) const

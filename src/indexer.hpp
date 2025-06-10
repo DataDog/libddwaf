@@ -6,8 +6,8 @@
 
 #pragma once
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <set>
-#include <unordered_map>
 
 #include "mkmap.hpp"
 
@@ -15,8 +15,9 @@ namespace ddwaf {
 
 template <typename T> class indexer {
 public:
-    using iterator = typename std::unordered_map<std::string_view, T *>::iterator;
-    using const_iterator = typename std::unordered_map<std::string_view, T *>::const_iterator;
+    using iterator = typename boost::unordered_flat_map<std::string_view, T *>::iterator;
+    using const_iterator =
+        typename boost::unordered_flat_map<std::string_view, T *>::const_iterator;
 
     void emplace(T *item)
     {
@@ -53,7 +54,7 @@ public:
     const_iterator end() const { return by_id_.end(); }
 
 protected:
-    std::unordered_map<std::string_view, T *> by_id_;
+    boost::unordered_flat_map<std::string_view, T *> by_id_;
     multi_key_map<std::string, T *> by_tags_;
 };
 

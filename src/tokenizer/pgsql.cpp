@@ -6,10 +6,10 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string_view>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "boost/unordered/unordered_flat_set_fwd.hpp"
 #include "log.hpp"
 #include "re2.h"
 #include "tokenizer/pgsql.hpp"
@@ -39,7 +39,7 @@ re2::RE2 parameter_regex(R"(^(?P<parameter>\$[0-9]+)(?:\b|\s|$))");
 } // namespace
 
 pgsql_tokenizer::pgsql_tokenizer(
-    std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
+    std::string_view str, boost::unordered_flat_set<sql_token_type> skip_tokens)
     : sql_tokenizer(str, std::move(skip_tokens))
 {
     if (!identifier_regex.ok()) {

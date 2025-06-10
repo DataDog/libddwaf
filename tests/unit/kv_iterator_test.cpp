@@ -97,7 +97,7 @@ TEST(TestKVIterator, TestArrayMultipleItems)
     auto object = owned_object::make_array();
     for (unsigned i = 0; i < 50; i++) { object.emplace_back(std::to_string(i)); }
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::kv_iterator it(object, {}, exclude);
 
@@ -127,7 +127,7 @@ TEST(TestKVIterator, TestArrayMultipleNullAndInvalid)
 
     EXPECT_EQ(object.size(), 75);
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::kv_iterator it(object, {}, exclude);
 
@@ -155,7 +155,7 @@ TEST(TestKVIterator, TestDeepArray)
         array = array.emplace_back(owned_object::make_array());
     }
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::kv_iterator it(object, {}, exclude);
     for (unsigned i = 0; i < 10; i++) {
@@ -733,7 +733,7 @@ TEST(TestKVIterator, TestExcludeSingleObject)
 {
     auto object = owned_object::make_map({{"key", "value"}});
 
-    std::unordered_set<object_view> persistent{object.at(0)};
+    boost::unordered_flat_set<object_view> persistent{object.at(0)};
 
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::kv_iterator it(object, {}, exclude);
@@ -748,7 +748,7 @@ TEST(TestKVIterator, TestExcludeMultipleObjects)
     auto map =
         root.emplace("other", owned_object::make_map({{"hello_key", "hello"}, {"bye_key", "bye"}}));
 
-    std::unordered_set<object_view> persistent{root.at(0), map.at(1)};
+    boost::unordered_flat_set<object_view> persistent{root.at(0), map.at(1)};
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::kv_iterator it(root, {}, exclude);
 
@@ -785,7 +785,7 @@ TEST(TestKVIterator, TestExcludeObjectInKeyPath)
     auto child = root.emplace("parent", owned_object::make_map());
     child.emplace("child", "value");
 
-    std::unordered_set<object_view> persistent{child.at(0)};
+    boost::unordered_flat_set<object_view> persistent{child.at(0)};
     exclusion::object_set_ref exclude{persistent, {}};
     std::vector<std::string> key_path{"parent", "child"};
     ddwaf::kv_iterator it(root, key_path, exclude);
@@ -797,7 +797,7 @@ TEST(TestKVIterator, TestExcludeRootOfKeyPath)
 {
     auto root = owned_object::make_map({{"parent", owned_object::make_map({{"child", "value"}})}});
 
-    std::unordered_set<object_view> persistent{root.at(0)};
+    boost::unordered_flat_set<object_view> persistent{root.at(0)};
     exclusion::object_set_ref exclude{persistent, {}};
     std::vector<std::string> key_path{"parent", "child"};
     ddwaf::kv_iterator it(root, key_path, exclude);

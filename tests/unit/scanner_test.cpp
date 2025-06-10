@@ -21,7 +21,7 @@ TEST(TestScanner, SimpleMatch)
     std::unique_ptr<matcher::base> value_matcher =
         std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "PII"}, {"category", "IP"}};
+    boost::unordered_flat_map<std::string, std::string> tags{{"type", "PII"}, {"category", "IP"}};
     scanner scnr{"something", tags, std::move(key_matcher), std::move(value_matcher)};
     EXPECT_STRV(scnr.get_id(), "something");
     EXPECT_EQ(scnr.get_tags(), tags);
@@ -36,7 +36,7 @@ TEST(TestScanner, SimpleMatchNoKeyMatcher)
     std::unique_ptr<matcher::base> value_matcher =
         std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "PII"}, {"category", "IP"}};
+    boost::unordered_flat_map<std::string, std::string> tags{{"type", "PII"}, {"category", "IP"}};
     scanner scnr{"something", tags, {}, std::move(value_matcher)};
     EXPECT_STRV(scnr.get_id(), "something");
     EXPECT_EQ(scnr.get_tags(), tags);
@@ -52,7 +52,7 @@ TEST(TestScanner, SimpleMatchNoValueMatcher)
     std::unique_ptr<matcher::base> key_matcher =
         std::make_unique<matcher::exact_match>(std::vector<std::string>{"hello", "goodbye"});
 
-    std::unordered_map<std::string, std::string> tags{{"type", "PII"}, {"category", "IP"}};
+    boost::unordered_flat_map<std::string, std::string> tags{{"type", "PII"}, {"category", "IP"}};
     scanner scnr{"something", tags, std::move(key_matcher), {}};
     EXPECT_STRV(scnr.get_id(), "something");
     EXPECT_EQ(scnr.get_tags(), tags);
@@ -71,7 +71,7 @@ TEST(TestScanner, NoMatchOnKey)
     std::unique_ptr<matcher::base> value_matcher =
         std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{
+    boost::unordered_flat_map<std::string, std::string> tags{
         {"type", "PII"}, {"category", "IP"}, {"danger", "0"}};
     scanner scnr{"0", tags, std::move(key_matcher), std::move(value_matcher)};
     EXPECT_STRV(scnr.get_id(), "0");
@@ -91,7 +91,7 @@ TEST(TestScanner, NoMatchOnValue)
     std::unique_ptr<matcher::base> value_matcher =
         std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{};
+    boost::unordered_flat_map<std::string, std::string> tags{};
     scanner scnr{"null", tags, std::move(key_matcher), std::move(value_matcher)};
     EXPECT_STRV(scnr.get_id(), "null");
     EXPECT_EQ(scnr.get_tags(), tags);
@@ -109,7 +109,7 @@ TEST(TestScanner, InvalidKey)
     std::unique_ptr<matcher::base> value_matcher =
         std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{
+    boost::unordered_flat_map<std::string, std::string> tags{
         {"type", "PII"}, {"category", "IP"}, {"danger", "0"}};
     scanner scnr{"0", tags, std::move(key_matcher), std::move(value_matcher)};
     EXPECT_STRV(scnr.get_id(), "0");
@@ -127,7 +127,7 @@ TEST(TestScanner, InvalidValue)
     std::unique_ptr<matcher::base> value_matcher =
         std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    std::unordered_map<std::string, std::string> tags{};
+    boost::unordered_flat_map<std::string, std::string> tags{};
     scanner scnr{"null", tags, std::move(key_matcher), std::move(value_matcher)};
     EXPECT_STRV(scnr.get_id(), "null");
     EXPECT_EQ(scnr.get_tags(), tags);

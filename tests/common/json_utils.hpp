@@ -5,10 +5,10 @@
 // Copyright 2021 Datadog, Inc.
 #pragma once
 
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <optional>
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/schema.h>
-#include <unordered_map>
 #include <vector>
 
 #include "ddwaf.h"
@@ -30,7 +30,8 @@ inline rapidjson::Document object_to_rapidjson(const ddwaf::detail::object &obj)
     return object_to_rapidjson(reinterpret_cast<const ddwaf_object &>(obj));
 }
 
-std::unordered_map<std::string_view, std::string_view> object_to_map(const ddwaf_object &obj);
+boost::unordered_flat_map<std::string_view, std::string_view> object_to_map(
+    const ddwaf_object &obj);
 
 } // namespace ddwaf::test
 

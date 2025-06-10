@@ -10,16 +10,16 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <utility>
 
 #include "action_mapper.hpp"
+#include "boost/unordered/unordered_flat_map_fwd.hpp"
 #include "builder/action_mapper_builder.hpp"
 
 namespace ddwaf {
 
 void action_mapper_builder::set_action(const std::string &id, std::string type,
-    std::unordered_map<std::string, std::string> parameters)
+    boost::unordered_flat_map<std::string, std::string> parameters)
 {
     auto [it, res] =
         action_by_id_.try_emplace(id, action_parameters{.type = action_type_from_string(type),

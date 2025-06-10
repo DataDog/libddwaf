@@ -16,7 +16,7 @@ TEST(TestValueIterator, TestInvalidIterator)
 {
     owned_object object;
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
     EXPECT_FALSE(it);
@@ -33,7 +33,7 @@ TEST(TestValueIterator, TestStringScalar)
 {
     owned_object object{"value"};
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
     EXPECT_TRUE(it);
@@ -51,7 +51,7 @@ TEST(TestValueIterator, TestUnsignedScalar)
 {
     owned_object object{22U};
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
     EXPECT_TRUE(it);
@@ -67,7 +67,7 @@ TEST(TestValueIterator, TestSignedScalar)
 {
     owned_object object{22L};
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
     EXPECT_TRUE(it);
@@ -83,7 +83,7 @@ TEST(TestValueIterator, TestArraySingleItem)
 {
     auto object = owned_object::make_array({"string"});
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
     EXPECT_TRUE(it);
@@ -101,7 +101,7 @@ TEST(TestValueIterator, TestArrayMultipleItems)
     auto object = owned_object::make_array();
     for (unsigned i = 0; i < 50; i++) { object.emplace_back(std::to_string(i)); }
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
 
@@ -131,7 +131,7 @@ TEST(TestValueIterator, TestArrayMultipleNullAndInvalid)
 
     EXPECT_EQ(object.size(), 75);
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
 
@@ -159,7 +159,7 @@ TEST(TestValueIterator, TestDeepArray)
         array = array.emplace_back(owned_object::make_array());
     }
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
     for (unsigned i = 0; i < 10; i++) {
@@ -182,7 +182,7 @@ TEST(TestValueIterator, TestArrayNoScalars)
     auto object = owned_object::make_array();
     for (unsigned i = 0; i < 50; i++) { object.emplace_back(owned_object::make_array()); }
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
 
@@ -194,7 +194,7 @@ TEST(TestValueIterator, TestMapSingleItem)
 {
     auto object = owned_object::make_map({{"key", "value"}});
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
 
@@ -217,7 +217,7 @@ TEST(TestValueIterator, TestMapMultipleItems)
         object.emplace("key" + index, "value" + index);
     }
 
-    std::unordered_set<object_view> persistent{};
+    boost::unordered_flat_set<object_view> persistent{};
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
 
@@ -259,7 +259,7 @@ TEST(TestValueIterator, TestMapMultipleMultipleNullAndInvalid)
         }
     }
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
 
@@ -291,7 +291,7 @@ TEST(TestValueIterator, TestDeepMap)
         map = map.emplace("map" + index, owned_object::make_map());
     }
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
     for (unsigned i = 0; i < 10; i++) {
@@ -317,7 +317,7 @@ TEST(TestValueIterator, TestMapNoScalars)
     auto object = owned_object::make_map();
     for (unsigned i = 0; i < 50; i++) { object.emplace("key", owned_object::make_map()); }
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
 
@@ -343,7 +343,7 @@ TEST(TestValueIterator, TestContainerMix)
         }
     )");
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     {
         ddwaf::value_iterator it(object, {}, exclude);
@@ -371,7 +371,7 @@ TEST(TestValueIterator, TestInvalidObjectPath)
 {
     owned_object object;
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     {
         std::vector<std::string> key_path{"key"};
@@ -411,7 +411,7 @@ TEST(TestValueIterator, TestSimplePath)
 {
     auto object = owned_object::make_map({{"key", "value"}, {"key1", "value"}, {"key2", "value"}});
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     {
         std::vector<std::string> key_path{"key"};
@@ -457,7 +457,7 @@ TEST(TestValueIterator, TestMultiPath)
                        {"value", "value_second"}})},
             {"value", "value_first"}});
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     {
         std::vector<std::string> key_path{"first"};
@@ -553,7 +553,7 @@ TEST(TestValueIterator, TestContainerMixPath)
         }
     )");
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
     {
         std::vector<std::pair<std::string, std::vector<std::string>>> values = {
@@ -627,7 +627,7 @@ TEST(TestValueIterator, TestContainerMixInvalidPath)
         }
     )");
 
-    std::unordered_set<object_view> persistent;
+    boost::unordered_flat_set<object_view> persistent;
     exclusion::object_set_ref exclude{.persistent = persistent, .ephemeral = {}};
     {
         std::vector<std::string> key_path{"rat"};
@@ -652,7 +652,7 @@ TEST(TestValueIterator, TestExcludeSingleObject)
 {
     auto object = owned_object::make_map({{"key", "value"}});
 
-    std::unordered_set<object_view> persistent{object.at(0)};
+    boost::unordered_flat_set<object_view> persistent{object.at(0)};
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(object, {}, exclude);
 
@@ -665,7 +665,7 @@ TEST(TestValueIterator, TestExcludeMultipleObjects)
 
     auto map = root.emplace("other", owned_object::make_array({"hello", "bye"}));
 
-    std::unordered_set<object_view> persistent{root.at(0), map.at(1)};
+    boost::unordered_flat_set<object_view> persistent{root.at(0), map.at(1)};
     exclusion::object_set_ref exclude{persistent, {}};
     ddwaf::value_iterator it(root, {}, exclude);
 
@@ -686,7 +686,7 @@ TEST(TestValueIterator, TestExcludeObjectInKeyPath)
     auto child = root.emplace("parent", owned_object::make_map());
     child.emplace("child", "value");
 
-    std::unordered_set<object_view> persistent{child.at(0)};
+    boost::unordered_flat_set<object_view> persistent{child.at(0)};
     exclusion::object_set_ref exclude{persistent, {}};
     std::vector<std::string> key_path{"parent", "child"};
     ddwaf::value_iterator it(root, key_path, exclude);
@@ -698,7 +698,7 @@ TEST(TestValueIterator, TestExcludeRootOfKeyPath)
 {
     auto root = owned_object::make_map({{"parent", owned_object::make_map({{"child", "value"}})}});
 
-    std::unordered_set<object_view> persistent{root.at(0)};
+    boost::unordered_flat_set<object_view> persistent{root.at(0)};
 
     exclusion::object_set_ref exclude{persistent, {}};
     std::vector<std::string> key_path{"parent", "child"};

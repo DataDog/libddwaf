@@ -9,11 +9,11 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "argument_retriever.hpp"
+#include "boost/unordered/unordered_flat_set_fwd.hpp"
 #include "clock.hpp"
 #include "condition/base.hpp"
 #include "condition/match_iterator.hpp"
@@ -153,7 +153,8 @@ bool detect_parameter_injection(
 ssrf_result ssrf_impl(const uri_decomposed &uri, object_view params,
     const exclusion::object_set_ref &objects_excluded,
     const std::unique_ptr<matcher::ip_match> &dangerous_ip_matcher,
-    const std::unordered_set<std::string_view> &authorised_scheme_set, ddwaf::timer &deadline)
+    const boost::unordered_flat_set<std::string_view> &authorised_scheme_set,
+    ddwaf::timer &deadline)
 {
     static constexpr std::size_t min_str_len = 4;
 
