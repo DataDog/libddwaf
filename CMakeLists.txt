@@ -100,7 +100,7 @@ endif()
 
 add_subdirectory(third_party EXCLUDE_FROM_ALL)
 
-set(LIBDDWAF_PRIVATE_LIBRARIES lib_rapidjson)
+set(LIBDDWAF_PRIVATE_LIBRARIES lib_rapidjson boost_unordered)
 if(NOT MSVC AND LIBDDWAF_TESTING AND LIBDDWAF_TEST_COVERAGE)
     list(APPEND LIBDDWAF_PRIVATE_LIBRARIES gcov)
 endif()

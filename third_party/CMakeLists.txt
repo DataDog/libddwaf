@@ -1,5 +1,6 @@
 project(third_party)
 include(ExternalProject)
+include(FetchContent)
 
 set(DOWNLOAD_SUBDIR downloads)
 set(INSTALL_DIR  ${CMAKE_BINARY_DIR}/third_party)
@@ -135,3 +136,11 @@ ExternalProject_Add(proj_event_rules
 
 set_target_properties(proj_event_rules PROPERTIES EXCLUDE_FROM_ALL TRUE)
 # vim: et
+
+FetchContent_Declare(
+  boost_unordered
+  GIT_REPOSITORY https://github.com/MikePopoloski/boost_unordered
+  GIT_TAG v1.87.1
+  GIT_SHALLOW ON)
+
+FetchContent_MakeAvailable(boost_unordered)
