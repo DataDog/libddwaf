@@ -7,6 +7,7 @@
 #pragma once
 
 #include "dynamic_string.hpp"
+#include "memory_resource"
 #include "object_type.hpp"
 #include "traits.hpp"
 #include "utils.hpp"
@@ -15,7 +16,6 @@
 #include <cstring>
 #include <deque>
 #include <initializer_list>
-#include <memory_resource>
 #include <stdexcept>
 #include <type_traits>
 
@@ -127,9 +127,8 @@ template <typename SizeType> inline char *copy_string(const char *str, SizeType 
 
     static std::pmr::memory_resource *alloc = std::pmr::get_default_resource();
 
-    auto *copy = static_cast<char *>(alloc->allocate(length + 1, alignof(char)));
+    auto *copy = static_cast<char *>(alloc->allocate(length, alignof(char)));
     memcpy(copy, str, length);
-    copy[length] = '\0';
 
     return copy;
 }
@@ -176,17 +175,23 @@ inline void object_destroy(object &obj)
         for (std::size_t i = 0; i < obj.via.array.size; ++i) {
             object_destroy(obj.via.array.ptr[i]);
         }
-        alloc->deallocate(obj.via.array.ptr, sizeof(detail::object) * obj.via.array.capacity,
-            alignof(detail::object));
+        if (obj.via.array.ptr != nullptr) {
+            alloc->deallocate(obj.via.array.ptr, sizeof(detail::object) * obj.via.array.capacity,
+                alignof(detail::object));
+        }
     } else if (obj.type == object_type::map) {
         for (std::size_t i = 0; i < obj.via.map.size; ++i) {
             object_destroy(obj.via.map.ptr[i].key);
             object_destroy(obj.via.map.ptr[i].val);
         }
-        alloc->deallocate(obj.via.map.ptr, sizeof(detail::object_kv) * obj.via.map.capacity,
-            alignof(detail::object_kv));
+        if (obj.via.map.ptr != nullptr) {
+            alloc->deallocate(obj.via.map.ptr, sizeof(detail::object_kv) * obj.via.map.capacity,
+                alignof(detail::object_kv));
+        }
     } else if (obj.type == object_type::string) {
-        alloc->deallocate(obj.via.str.ptr, obj.via.str.size + 1, alignof(char));
+        if (obj.via.str.ptr != nullptr) {
+            alloc->deallocate(obj.via.str.ptr, obj.via.str.size, alignof(char));
+        }
     }
 }
 

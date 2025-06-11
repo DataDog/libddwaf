@@ -73,6 +73,7 @@ public:
 
     constexpr explicit operator std::string_view() { return {buffer_, length_}; }
 
+    [[nodiscard]] std::pmr::memory_resource *alloc() { return alloc_; }
     [[nodiscard]] constexpr std::size_t length() const { return length_; }
     [[nodiscard]] constexpr const char *data() const { return buffer_; }
     [[nodiscard]] char *modifiable_data()
@@ -119,6 +120,7 @@ public:
         modified_ = false;
         buffer_ = nullptr;
         length_ = 0;
+        capacity_ = 0;
         return res;
     }
 

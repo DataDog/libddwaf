@@ -12,9 +12,10 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <limits>
-#include <memory_resource>
 #include <string>
 #include <string_view>
+
+#include "memory_resource"
 
 namespace ddwaf {
 
@@ -27,7 +28,7 @@ class dynamic_string {
 public:
     using size_type = uint32_t;
 
-    dynamic_string() : dynamic_string(static_cast<size_type>(0)){};
+    dynamic_string() = default;
 
     explicit dynamic_string(size_type capacity) { ensure_spare_capacity(capacity); }
 
@@ -84,7 +85,10 @@ public:
 
     dynamic_string &operator=(dynamic_string &&other) noexcept
     {
-        alloc_->deallocate(buffer_, capacity_, alignof(char));
+        if (buffer_ != nullptr) {
+            alloc_->deallocate(buffer_, capacity_, alignof(char));
+        }
+
         buffer_ = other.buffer_;
         size_ = other.size_;
         capacity_ = other.capacity_;
@@ -124,7 +128,7 @@ public:
 
     bool operator==(const dynamic_string &other) const noexcept
     {
-        return size_ == other.size_ && (memcmp(buffer_, other.buffer_, size_) == 0);
+        return size_ == other.size_ && (size_ == 0 || memcmp(buffer_, other.buffer_, size_) == 0);
     }
 
     template <typename T> static dynamic_string from_movable_string(T &str)
@@ -139,14 +143,16 @@ public:
 protected:
     void ensure_spare_capacity(size_type at_least)
     {
-        // We need to be able to allocate at_least + 1 to include the null character
+        if (at_least == 0) {
+            return;
+        }
+
         if (at_least > (std::numeric_limits<size_type>::max() - capacity_)) {
             throw std::bad_alloc{};
         }
 
         if ((size_ + at_least) >= capacity_) {
             auto new_capacity = capacity_ + std::max(capacity_, at_least);
-            // NOLINTNEXTLINE(hicpp-no-malloc)
             char *new_buffer = static_cast<char *>(alloc_->allocate(new_capacity, alignof(char)));
             if (buffer_ != nullptr) {
                 memcpy(new_buffer, buffer_, size_);

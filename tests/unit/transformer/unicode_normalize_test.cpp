@@ -13,7 +13,7 @@ namespace {
 
 TEST(TestUnicodeNormalize, NameAndID)
 {
-    EXPECT_STREQ(transformer::unicode_normalize::name().data(), "unicode_normalize");
+    EXPECT_STR(transformer::unicode_normalize::name(), "unicode_normalize");
     EXPECT_EQ(transformer::unicode_normalize::id(), transformer_id::unicode_normalize);
 }
 
@@ -51,7 +51,7 @@ TEST(TestUnicodeNormalize, ValidTransform)
 
         cow_string str(original);
         EXPECT_TRUE(transformer::unicode_normalize::transform(str));
-        EXPECT_STREQ(str.data(), result.c_str());
+        EXPECT_STR(str, result);
     }
 }
 

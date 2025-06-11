@@ -12,7 +12,7 @@ namespace ddwaf {
 owned_object dynamic_string::to_object()
 {
     owned_object object;
-    if (size_ != capacity_) {
+    if (size_ == capacity_) {
         object = owned_object::make_string_nocopy(buffer_, size_);
     } else {
         object = owned_object::make_string(buffer_, size_);

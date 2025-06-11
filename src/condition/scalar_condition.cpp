@@ -41,12 +41,10 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
     const object_view src = *it;
     if (src.is_string()) {
         if (!transformers.empty()) {
-            owned_object dst{};
-
             auto transformed = transformer::manager::transform(src, transformers);
             if (transformed) {
-                auto [res, highlight] =
-                    matcher.match(static_cast<std::string_view>(transformed.value()));
+                auto transformed_sv = static_cast<std::string_view>(transformed.value());
+                auto [res, highlight] = matcher.match(transformed_sv);
                 if (!res) {
                     return {};
                 }
@@ -56,10 +54,8 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
                 if constexpr (std::is_same_v<ResultType, bool>) {
                     return true;
                 } else {
-                    return {
-                        {{{"input"sv, dst.convert<std::string>(), address, it.get_current_path()}},
-                            {std::move(highlight)}, matcher.name(), matcher.to_string(),
-                            ephemeral}};
+                    return {{{{"input"sv, transformed_sv, address, it.get_current_path()}},
+                        {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
                 }
             }
         }

@@ -9,7 +9,6 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <new>
 #include <optional>
 #include <span>
 #include <stdexcept>
@@ -22,6 +21,7 @@
 #include "argument_retriever.hpp"
 #include "clock.hpp"
 #include "cow_string.hpp"
+#include "dynamic_string.hpp"
 #include "exception.hpp"
 #include "log.hpp"
 #include "object.hpp"
