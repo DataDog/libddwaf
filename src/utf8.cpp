@@ -15,7 +15,7 @@ extern "C" {
 }
 
 #include "cow_string.hpp"
-#include "memory_resource"
+#include "memory_resource.hpp"
 #include "utf8.hpp"
 
 namespace ddwaf::utf8 {

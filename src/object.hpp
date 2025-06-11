@@ -7,7 +7,7 @@
 #pragma once
 
 #include "dynamic_string.hpp"
-#include "memory_resource"
+#include "memory_resource.hpp"
 #include "object_type.hpp"
 #include "traits.hpp"
 #include "utils.hpp"

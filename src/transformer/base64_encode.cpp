@@ -11,7 +11,7 @@
 #include <limits>
 
 #include "cow_string.hpp"
-#include "memory_resource"
+#include "memory_resource.hpp"
 #include "transformer/base64_encode.hpp"
 
 namespace ddwaf::transformer {
