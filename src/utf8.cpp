@@ -15,7 +15,7 @@ extern "C" {
 }
 
 #include "cow_string.hpp"
-#include "memory_resource.hpp"
+#include "memory_resource.hpp" // IWYU pragma: keep
 #include "utf8.hpp"
 
 namespace ddwaf::utf8 {
@@ -211,12 +211,14 @@ struct ScratchpadChunk {
 
     explicit ScratchpadChunk(uint64_t chunkLength) : length(chunkLength)
     {
+        // NOLINTNEXTLINE(misc-include-cleaner)
         static auto *alloc = std::pmr::get_default_resource();
         scratchpad = static_cast<char *>(alloc->allocate(length, alignof(char)));
     }
 
     ~ScratchpadChunk()
     {
+        // NOLINTNEXTLINE(misc-include-cleaner)
         static auto *alloc = std::pmr::get_default_resource();
         alloc->deallocate(scratchpad, length, alignof(char));
     }
@@ -372,6 +374,7 @@ bool normalize_string(cow_string &str)
         // Compile the scratch pads into the final normalized string
         for (const ScratchpadChunk &chunk : scratchPad) { new_length += chunk.used; }
 
+        // NOLINTNEXTLINE(misc-include-cleaner)
         static auto *alloc = std::pmr::get_default_resource();
         new_buffer = static_cast<char *>(alloc->allocate(new_length, alignof(char)));
 

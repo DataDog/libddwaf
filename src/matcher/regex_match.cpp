@@ -49,7 +49,7 @@ std::pair<bool, dynamic_string> regex_match::match_impl(std::string_view pattern
         return {false, {}};
     }
 
-    return {true, {match[0].data(), match[0].size()}};
+    return {true, {match[0].data(), static_cast<dynamic_string::size_type>(match[0].size())}};
 }
 
 } // namespace ddwaf::matcher

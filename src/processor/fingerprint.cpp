@@ -394,9 +394,10 @@ owned_object generate_fragment(std::string_view header, Generators... generators
     std::array<std::string, num_fields> fields;
 
     auto length =
+        header.size() + num_fields +
         generate_fragment_field(std::span<std::string, num_fields>{fields}, generators...);
 
-    dynamic_string buffer{length + header.size() + num_fields};
+    dynamic_string buffer{static_cast<dynamic_string::size_type>(length)};
     buffer.append(header);
     for (const auto &field : fields) {
         buffer.append('-');
@@ -453,9 +454,9 @@ owned_object generate_fragment_cached(std::string_view header,
         cache.resize(num_fields);
     }
 
-    auto length = generate_fragment_field_cached(cache, generators...);
+    auto length = header.size() + num_fields + generate_fragment_field_cached(cache, generators...);
 
-    dynamic_string buffer{length + header.size() + num_fields};
+    dynamic_string buffer{static_cast<dynamic_string::size_type>(length)};
     buffer.append(header);
     for (const auto &field : cache) {
         buffer.append('-');
