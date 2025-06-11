@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "ddwaf.h"
-#include "memory_resource"
+#include "memory_resource.hpp"
 #include "utils.hpp"
 
 #include "common/gtest_utils.hpp"
