@@ -43,9 +43,10 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
         if (!transformers.empty()) {
             owned_object dst{};
 
-            auto transformed = transformer::manager::transform(src, dst, transformers);
+            auto transformed = transformer::manager::transform(src, transformers);
             if (transformed) {
-                auto [res, highlight] = matcher.match(dst);
+                auto [res, highlight] =
+                    matcher.match(static_cast<std::string_view>(transformed.value()));
                 if (!res) {
                     return {};
                 }

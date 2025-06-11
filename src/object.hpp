@@ -15,6 +15,7 @@
 #include <cstring>
 #include <deque>
 #include <initializer_list>
+#include <memory_resource>
 #include <stdexcept>
 #include <type_traits>
 
@@ -120,17 +121,13 @@ template <typename T> constexpr std::size_t maxof_v = std::numeric_limits<T>::ma
 
 template <typename SizeType> inline char *copy_string(const char *str, SizeType length)
 {
-    // TODO new char[size];
     if (length == maxof_v<SizeType>) {
         throw std::bad_alloc();
     }
 
-    // NOLINTNEXTLINE(hicpp-no-malloc)
-    char *copy = static_cast<char *>(malloc(length + 1));
-    if (copy == nullptr) [[unlikely]] {
-        throw std::bad_alloc();
-    }
+    static std::pmr::memory_resource *alloc = std::pmr::get_default_resource();
 
+    auto *copy = static_cast<char *>(alloc->allocate(length + 1, alignof(char)));
     memcpy(copy, str, length);
     copy[length] = '\0';
 
@@ -142,12 +139,9 @@ T *alloc_helper(SizeType size)
     requires(std::is_unsigned_v<SizeType> && sizeof(SizeType) <= sizeof(std::size_t))
 
 {
-    // NOLINTNEXTLINE(hicpp-no-malloc)
-    auto *data = static_cast<T *>(calloc(size, sizeof(T)));
-    if (size > 0 && data == nullptr) [[unlikely]] {
-        throw std::bad_alloc();
-    }
-    return data;
+    static std::pmr::memory_resource *alloc = std::pmr::get_default_resource();
+    // TODO add check for sizeof(T) * size
+    return static_cast<T *>(alloc->allocate(sizeof(T) * size, alignof(T)));
 }
 
 template <typename T, typename SizeType>
@@ -163,15 +157,12 @@ inline std::pair<T *, SizeType> realloc_helper(T *data, SizeType size)
         new_size = size * 2;
     }
 
-    // NOLINTNEXTLINE(hicpp-no-malloc)
-    auto *new_data = static_cast<T *>(calloc(new_size, sizeof(T)));
-    if (new_data == nullptr) [[unlikely]] {
-        throw std::bad_alloc();
-    }
+    static std::pmr::memory_resource *alloc = std::pmr::get_default_resource();
 
+    auto *new_data = static_cast<T *>(alloc->allocate(sizeof(T) * new_size, alignof(T)));
     memcpy(new_data, data, sizeof(T) * size);
-    // NOLINTNEXTLINE(hicpp-no-malloc)
-    free(data);
+
+    alloc->deallocate(data, sizeof(T) * size, alignof(T));
 
     return {new_data, new_size};
 }
@@ -179,22 +170,23 @@ inline std::pair<T *, SizeType> realloc_helper(T *data, SizeType size)
 // NOLINTNEXTLINE(misc-no-recursion)
 inline void object_destroy(object &obj)
 {
+    static std::pmr::memory_resource *alloc = std::pmr::get_default_resource();
+
     if (obj.type == object_type::array) {
         for (std::size_t i = 0; i < obj.via.array.size; ++i) {
             object_destroy(obj.via.array.ptr[i]);
         }
-        // NOLINTNEXTLINE(hicpp-no-malloc)
-        free(obj.via.array.ptr);
+        alloc->deallocate(obj.via.array.ptr, sizeof(detail::object) * obj.via.array.capacity,
+            alignof(detail::object));
     } else if (obj.type == object_type::map) {
         for (std::size_t i = 0; i < obj.via.map.size; ++i) {
             object_destroy(obj.via.map.ptr[i].key);
             object_destroy(obj.via.map.ptr[i].val);
         }
-        // NOLINTNEXTLINE(hicpp-no-malloc)
-        free(obj.via.map.ptr);
+        alloc->deallocate(obj.via.map.ptr, sizeof(detail::object_kv) * obj.via.map.capacity,
+            alignof(detail::object_kv));
     } else if (obj.type == object_type::string) {
-        // NOLINTNEXTLINE(hicpp-no-malloc)
-        free(obj.via.str.ptr);
+        alloc->deallocate(obj.via.str.ptr, obj.via.str.size + 1, alignof(char));
     }
 }
 

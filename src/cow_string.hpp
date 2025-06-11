@@ -12,7 +12,7 @@
 #include <stdexcept>
 #include <string_view>
 
-#include "utils.hpp"
+#include "memory_resource"
 
 namespace ddwaf {
 
@@ -28,14 +28,20 @@ public:
     }
     cow_string(const cow_string &) = delete;
     cow_string &operator=(const cow_string &) = delete;
-    cow_string(cow_string &&other) = delete;
+    cow_string(cow_string &&other) noexcept
+        : modified_(other.modified_), owned_(other.owned_), buffer_(other.buffer_),
+          length_(other.length_), capacity_(other.capacity_)
+    {
+        other.modified_ = other.owned_ = false;
+        other.buffer_ = nullptr;
+        other.length_ = other.capacity_ = 0;
+    }
     cow_string &operator=(cow_string &&other) = delete;
 
     ~cow_string()
     {
-        [[likely]] if (modified_ && owned_) {
-            // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
-            free(buffer_);
+        [[likely]] if (modified_ && owned_ && buffer_ != nullptr) {
+            alloc_->deallocate(buffer_, capacity_, alignof(char));
         }
     }
 
@@ -89,17 +95,18 @@ public:
     }
 
     // Replaces the internal buffer, ownership is transferred
-    void replace_buffer(char *str, std::size_t length)
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    void replace_buffer(char *str, std::size_t length, std::size_t capacity)
     {
         [[likely]] if (modified_ && owned_) {
-            // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
-            free(buffer_);
+            alloc_->deallocate(buffer_, capacity_, alignof(char));
         }
 
         modified_ = true;
         owned_ = true;
         buffer_ = str;
         length_ = length;
+        capacity_ = capacity;
     }
 
     // Moves the contents and invalidates the string if the buffer has been
@@ -120,7 +127,6 @@ public:
     {
         [[likely]] if (modified_) {
             length_ = length;
-            buffer_[length] = '\0';
         } else {
             force_copy(length);
         }
@@ -128,32 +134,35 @@ public:
 
 protected:
     explicit cow_string(char *str, std::size_t length)
-        : modified_(true), owned_(false), buffer_(str), length_(length)
+        : modified_(true), owned_(false), buffer_(str), length_(length), capacity_(length)
     {}
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     void force_copy(std::size_t bytes)
     {
         [[unlikely]] if (!modified_) {
-            // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-no-malloc)
-            char *new_copy = static_cast<char *>(malloc(bytes + 1));
+            char *new_copy = static_cast<char *>(alloc_->allocate(bytes, alignof(char)));
             if (new_copy == nullptr) {
                 throw std::bad_alloc();
             }
 
             memcpy(new_copy, buffer_, bytes);
-            new_copy[bytes] = '\0';
 
             buffer_ = new_copy;
             modified_ = true;
             length_ = bytes;
+            capacity_ = bytes;
         }
     }
 
+    std::pmr::memory_resource *alloc_{std::pmr::get_default_resource()};
+
+    // TODO Use capacity to determine if the string has been modified
     bool modified_{false};
     bool owned_{true};
     char *buffer_{nullptr};
     std::size_t length_;
+    std::size_t capacity_{0};
 };
 
 } // namespace ddwaf

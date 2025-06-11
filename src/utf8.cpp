@@ -379,7 +379,7 @@ bool normalize_string(cow_string &str)
             for (const ScratchpadChunk &chunk : scratchPad) { new_length += chunk.used; }
 
             // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-no-malloc,hicpp-no-malloc)
-            new_buffer = reinterpret_cast<char *>(malloc(new_length + 1));
+            new_buffer = reinterpret_cast<char *>(malloc(new_length));
             if (new_buffer == nullptr) {
                 return false;
             }
@@ -391,8 +391,7 @@ bool normalize_string(cow_string &str)
             }
         }
 
-        new_buffer[new_length] = '\0';
-        str.replace_buffer(new_buffer, new_length);
+        str.replace_buffer(new_buffer, new_length, new_length);
 
         return true;
     } catch (const std::bad_alloc & /*unused*/) {} // NOLINT(bugprone-empty-catch)

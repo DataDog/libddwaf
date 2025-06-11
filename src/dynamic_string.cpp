@@ -11,9 +11,16 @@ namespace ddwaf {
 
 owned_object dynamic_string::to_object()
 {
-    auto final_size = size_;
+    owned_object object;
+    if (size_ != capacity_) {
+        object = owned_object::make_string_nocopy(buffer_, size_);
+    } else {
+        object = owned_object::make_string(buffer_, size_);
+        alloc_->deallocate(buffer_, capacity_, alignof(char));
+    }
+    buffer_ = nullptr;
     size_ = capacity_ = 0;
-    return owned_object::make_string_nocopy(buffer_.release(), final_size);
+    return object;
 }
 
 } // namespace ddwaf
