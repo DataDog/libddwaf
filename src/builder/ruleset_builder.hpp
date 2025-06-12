@@ -18,9 +18,9 @@ namespace ddwaf {
 
 class ruleset_builder {
 public:
-    explicit ruleset_builder(ddwaf_object_free_fn free_fn = ddwaf_object_free,
+    explicit ruleset_builder(
         std::shared_ptr<match_obfuscator> obfuscator = std::make_shared<match_obfuscator>())
-        : free_fn_(free_fn), obfuscator_(std::move(obfuscator))
+        : obfuscator_(std::move(obfuscator))
     {}
 
     ~ruleset_builder() = default;
@@ -35,7 +35,6 @@ public:
 protected:
     // These members are obtained through ddwaf_config and are persistent across
     // all updates.
-    ddwaf_object_free_fn free_fn_;
     std::shared_ptr<match_obfuscator> obfuscator_;
 
     // These contain the specification of each main component obtained directly

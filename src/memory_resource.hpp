@@ -22,3 +22,12 @@
 #  endif
 
 #endif
+
+namespace ddwaf::memory {
+
+using memory_resource = std::pmr::memory_resource;
+using monotonic_buffer_resource = std::pmr::monotonic_buffer_resource;
+
+const auto get_default_resource = std::pmr::get_default_resource;
+
+} // namespace ddwaf::memory

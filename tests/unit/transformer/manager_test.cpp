@@ -32,7 +32,7 @@ namespace {
 
 std::optional<std::string> transform(std::string_view input, const std::vector<transformer_id> &ids)
 {
-    auto src = owned_object::make_string_nocopy(input, nullptr);
+    auto src = owned_object::make_string_literal(input.data(), input.size());
 
     auto res = transformer::manager::transform(src, ids);
 

@@ -15,6 +15,7 @@
 #include "exclusion/common.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
+#include "memory_resource.hpp"
 #include "obfuscator.hpp"
 #include "ruleset.hpp"
 
@@ -60,8 +61,6 @@ public:
 
     std::pair<bool, owned_object> run(uint64_t);
 
-    [[nodiscard]] ddwaf_object_free_fn get_free_fn() const noexcept { return ruleset_->free_fn; }
-
     void eval_preprocessors(ddwaf::timer &deadline);
     void eval_postprocessors(ddwaf::timer &deadline);
     // This function below returns a reference to an internal object,
@@ -92,6 +91,8 @@ protected:
         }
         return false;
     }
+
+    memory::memory_resource *alloc{memory::get_default_resource()};
 
     std::shared_ptr<ruleset> ruleset_;
     ddwaf::object_store store_;
@@ -159,11 +160,9 @@ public:
         return ctx_->run(timeout);
     }
 
-    [[nodiscard]] ddwaf_object_free_fn get_free_fn() const noexcept { return ctx_->get_free_fn(); }
-
 protected:
     context *ctx_;
-    std::pmr::monotonic_buffer_resource mr_;
+    memory::monotonic_buffer_resource mr_;
 };
 
 } // namespace ddwaf

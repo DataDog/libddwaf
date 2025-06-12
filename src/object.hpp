@@ -115,8 +115,6 @@ static_assert(offsetof(object_map, size) == offsetof(object_array, size));
 static_assert(offsetof(object_map, capacity) == offsetof(object_array, capacity));
 static_assert(offsetof(object_map, ptr) == offsetof(object_array, ptr));
 
-using object_free_fn = void (*)(object *object);
-
 template <typename T> constexpr std::size_t maxof_v = std::numeric_limits<T>::max();
 
 template <typename SizeType> inline char *copy_string(const char *str, SizeType length)
@@ -194,8 +192,6 @@ inline void object_destroy(object &obj)
         }
     }
 }
-
-inline void object_free(detail::object *ptr) { object_destroy(*ptr); }
 
 namespace initializer {
 
@@ -798,9 +794,7 @@ class owned_object final : public readable_object<owned_object>,
                            public writable_object<owned_object> {
 public:
     owned_object() = default;
-    explicit owned_object(detail::object obj, detail::object_free_fn free_fn = detail::object_free)
-        : obj_(obj), free_fn_(free_fn)
-    {}
+    explicit owned_object(detail::object obj) : obj_(obj) {}
 
     explicit owned_object(std::nullptr_t) { *this = make_null(); }
     explicit owned_object(bool value) { *this = make_boolean(value); }
@@ -835,31 +829,22 @@ public:
 
     explicit owned_object(const char *data, std::size_t size) { *this = make_string(data, size); }
 
-    ~owned_object()
-    {
-        if (free_fn_ != nullptr) {
-            free_fn_(&obj_);
-        }
-    }
+    ~owned_object() { detail::object_destroy(obj_); }
 
     owned_object(const owned_object &) = delete;
     owned_object &operator=(const owned_object &) = delete;
 
-    owned_object(owned_object &&other) noexcept : obj_(other.obj_), free_fn_(other.free_fn_)
+    owned_object(owned_object &&other) noexcept : obj_(other.obj_)
     {
         other.obj_ = detail::object{};
     }
 
     owned_object &operator=(owned_object &&other) noexcept
     {
-        if (free_fn_ != nullptr) {
-            free_fn_(&obj_);
-        }
+        detail::object_destroy(obj_);
 
         obj_ = other.obj_;
-        free_fn_ = other.free_fn_;
         other.obj_ = detail::object{};
-        other.free_fn_ = nullptr;
         return *this;
     }
 
@@ -898,22 +883,19 @@ public:
             .ptr = const_cast<char *>(str)}}}};
     }
 
-    static owned_object make_string_nocopy(
-        const char *str, std::size_t len, detail::object_free_fn free_fn = detail::object_free)
+    static owned_object make_string_nocopy(const char *str, std::size_t len)
     {
         return owned_object{{.via{.str{.type = object_type::string,
-                                .size = static_cast<uint32_t>(len),
-                                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-                                .ptr = const_cast<char *>(str)}}},
-            free_fn};
+            .size = static_cast<uint32_t>(len),
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+            .ptr = const_cast<char *>(str)}}}};
     }
 
     template <typename T>
-    static owned_object make_string_nocopy(
-        T str, detail::object_free_fn free_fn = detail::object_free)
+    static owned_object make_string_nocopy(T str)
         requires std::is_same_v<T, std::string_view> || std::is_same_v<T, object_view>
     {
-        return make_string_nocopy(str.data(), str.size(), free_fn);
+        return make_string_nocopy(str.data(), str.size());
     }
 
     static owned_object make_string(const char *str, std::size_t len)
@@ -921,9 +903,8 @@ public:
         if (len < detail::small_string_size) {
             // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
             owned_object obj{{.via{.sstr{.type = object_type::small_string,
-                                 .size = static_cast<uint8_t>(len),
-                                 .data = {}}}},
-                detail::object_free};
+                .size = static_cast<uint8_t>(len),
+                .data = {}}}}};
             memcpy(obj.obj_.via.sstr.data.data(), str, len);
             // TODO avoid nul terminator
             obj.obj_.via.sstr.data[len] = '\0';
@@ -932,9 +913,8 @@ public:
 
         // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
         return owned_object{{.via{.str{.type = object_type::string,
-                                .size = static_cast<uint32_t>(len),
-                                .ptr = detail::copy_string(str, len)}}},
-            detail::object_free};
+            .size = static_cast<uint32_t>(len),
+            .ptr = detail::copy_string(str, len)}}}};
     }
 
     static owned_object make_string(std::string_view str)
@@ -948,15 +928,13 @@ public:
     static owned_object make_array()
     {
         return owned_object{
-            {.via{.array{.type = object_type::array, .size = 0, .capacity = 0, .ptr = nullptr}}},
-            detail::object_free};
+            {.via{.array{.type = object_type::array, .size = 0, .capacity = 0, .ptr = nullptr}}}};
     }
 
     static owned_object make_map()
     {
         return owned_object{
-            {.via{.map{.type = object_type::map, .size = 0, .capacity = 0, .ptr = nullptr}}},
-            detail::object_free};
+            {.via{.map{.type = object_type::map, .size = 0, .capacity = 0, .ptr = nullptr}}}};
     }
 
     static owned_object make_array(std::initializer_list<detail::initializer::movable_object> list);
@@ -966,13 +944,11 @@ public:
     {
         detail::object copy = obj_;
         obj_ = detail::object{};
-        free_fn_ = nullptr;
         return copy;
     }
 
 protected:
     detail::object obj_{.type = object_type::invalid};
-    detail::object_free_fn free_fn_{nullptr};
 
     friend class borrowed_object;
     friend class object_view;

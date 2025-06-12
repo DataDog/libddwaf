@@ -180,8 +180,7 @@ ddwaf::waf *ddwaf_init(
 {
     try {
         if (ruleset != nullptr) {
-            auto free_fn = config != nullptr ? config->free_fn : ddwaf_object_free;
-            ddwaf::waf_builder builder(free_fn, obfuscator_from_config(config));
+            ddwaf::waf_builder builder(obfuscator_from_config(config));
 
             ddwaf::raw_configuration input{to_ref(ruleset)};
             if (diagnostics == nullptr) {
@@ -278,20 +277,12 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
     }
 
     try {
-        auto free_fn = context->get_free_fn();
-
-        if (persistent_data != nullptr &&
-            !context->insert(
-                owned_object{// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-                    to_ref(persistent_data), reinterpret_cast<detail::object_free_fn>(free_fn)})) {
+        if (persistent_data != nullptr && !context->insert(owned_object{to_ref(persistent_data)})) {
             return DDWAF_ERR_INVALID_OBJECT;
         }
 
         if (ephemeral_data != nullptr &&
-            !context->insert(owned_object{to_ref(ephemeral_data),
-                                 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-                                 reinterpret_cast<detail::object_free_fn>(free_fn)},
-                context::attribute::ephemeral)) {
+            !context->insert(owned_object{to_ref(ephemeral_data)}, context::attribute::ephemeral)) {
             return DDWAF_ERR_INVALID_OBJECT;
         }
 
@@ -343,8 +334,7 @@ bool ddwaf_set_log_cb(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level)
 ddwaf_builder ddwaf_builder_init(const ddwaf_config *config)
 {
     try {
-        auto free_fn = config != nullptr ? config->free_fn : ddwaf_object_free;
-        return new ddwaf::waf_builder(free_fn, obfuscator_from_config(config));
+        return new ddwaf::waf_builder(obfuscator_from_config(config));
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());
     } catch (...) {
@@ -774,5 +764,16 @@ const ddwaf_object *ddwaf_object_find(const ddwaf_object *object, const char *ke
 
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     return reinterpret_cast<const ddwaf_object *>(view.find(std::string_view{key, length}).ptr());
+}
+
+ddwaf_object *ddwaf_object_clone(const ddwaf_object *source, ddwaf_object *destination)
+{
+    const object_view view{to_ptr(source)};
+    if (!view.has_value()) {
+        return nullptr;
+    }
+
+    to_ref(destination) = view.clone().move();
+    return destination;
 }
 }

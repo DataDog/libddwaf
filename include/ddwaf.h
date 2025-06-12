@@ -833,6 +833,11 @@ const ddwaf_object* ddwaf_object_at_value(const ddwaf_object *object, size_t ind
 const ddwaf_object* ddwaf_object_find(const ddwaf_object *object, const char *key, size_t length);
 
 /**
+ * ddwaf_object_clone
+ **/
+ddwaf_object* ddwaf_object_clone(const ddwaf_object *source, ddwaf_object *destination);
+
+/**
  * ddwaf_object_free
  *
  * @param object Object to free. (nonnull)

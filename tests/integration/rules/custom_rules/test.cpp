@@ -37,8 +37,6 @@ TEST(TestCustomRulesIntegration, InitWithoutBaseRules)
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "custom_rule1"));
 
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
     }
 
     {
@@ -46,8 +44,6 @@ TEST(TestCustomRulesIntegration, InitWithoutBaseRules)
         ddwaf_object_map_add(&parameter, "value2", ddwaf_object_string(&tmp, "custom_rule2"));
 
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
     }
 
     ddwaf_context_destroy(context1);
@@ -77,8 +73,6 @@ TEST(TestCustomRulesIntegration, InitWithBaseRules)
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
     }
 
     {
@@ -86,8 +80,6 @@ TEST(TestCustomRulesIntegration, InitWithBaseRules)
         ddwaf_object_map_add(&parameter, "value2", ddwaf_object_string(&tmp, "custom_rule2"));
 
         EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
     }
 
     ddwaf_context_destroy(context1);
@@ -127,7 +119,6 @@ TEST(TestCustomRulesIntegration, RegularCustomRulesPrecedence)
                                    .highlight = "custom_rule"sv,
                                    .args = {{.value = "custom_rule"sv, .address = "value3"}}}}});
         ddwaf_object_free(&res);
-        ddwaf_object_free(&parameter);
     }
 
     ddwaf_context_destroy(context1);
@@ -172,7 +163,6 @@ TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
                                                    {"type", "auto"}}}});
 
         ddwaf_object_free(&res);
-        ddwaf_object_free(&parameter);
     }
 
     ddwaf_context_destroy(context1);
@@ -216,7 +206,6 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
                                                    {"type", "auto"}}}});
 
         ddwaf_object_free(&res);
-        ddwaf_object_free(&parameter);
     }
 
     ddwaf_context_destroy(context1);
@@ -278,7 +267,6 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
                                                    {"type", "auto"}}}});
 
         ddwaf_object_free(&res);
-        ddwaf_object_free(&parameter);
     }
 
     {
@@ -300,7 +288,6 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
                                                    {"type", "auto"}}}});
 
         ddwaf_object_free(&res);
-        ddwaf_object_free(&parameter);
     }
 
     ddwaf_context_destroy(context1);
@@ -366,7 +353,6 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
                                                    {"type", "auto"}}}});
 
         ddwaf_object_free(&res);
-        ddwaf_object_free(&parameter);
     }
 
     {
@@ -385,7 +371,6 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
 
         ddwaf_object_free(&res);
-        ddwaf_object_free(&parameter);
     }
 
     ddwaf_context_destroy(context1);
@@ -474,7 +459,6 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
                                                    {"type", "auto"}}}});
 
         ddwaf_object_free(&res);
-        ddwaf_object_free(&parameter);
     }
 
     {
@@ -496,7 +480,6 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
                                                    {"type", "auto"}}}});
 
         ddwaf_object_free(&res);
-        ddwaf_object_free(&parameter);
     }
 
     ddwaf_context_destroy(context1);
@@ -562,7 +545,6 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
                                                    {"type", "auto"}}}});
 
         ddwaf_object_free(&res);
-        ddwaf_object_free(&parameter);
     }
 
     {
@@ -584,7 +566,6 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
                                                    {"type", "auto"}}}});
 
         ddwaf_object_free(&res);
-        ddwaf_object_free(&parameter);
     }
 
     ddwaf_context_destroy(context1);
@@ -664,7 +645,6 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
                                                    {"type", "auto"}}}});
 
         ddwaf_object_free(&res);
-        ddwaf_object_free(&parameter);
     }
 
     {
@@ -672,8 +652,6 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
         ddwaf_object_map_add(&parameter, "value4", ddwaf_object_string(&tmp, "custom_rule"));
 
         EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-
-        ddwaf_object_free(&parameter);
     }
 
     {
@@ -695,7 +673,6 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
                                                    {"type", "auto"}}}});
 
         ddwaf_object_free(&res);
-        ddwaf_object_free(&parameter);
     }
 
     ddwaf_context_destroy(context1);
@@ -762,7 +739,6 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
                                                    {"type", "auto"}}}});
 
         ddwaf_object_free(&res);
-        ddwaf_object_free(&parameter);
     }
 
     {
@@ -784,7 +760,6 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
                                                    {"type", "auto"}}}});
 
         ddwaf_object_free(&res);
-        ddwaf_object_free(&parameter);
     }
 
     ddwaf_context_destroy(context1);
@@ -867,7 +842,6 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
                                                    {"type", "auto"}}}});
 
         ddwaf_object_free(&res);
-        ddwaf_object_free(&parameter);
     }
 
     {
@@ -889,7 +863,6 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
                                    }}}}});
 
         ddwaf_object_free(&res);
-        ddwaf_object_free(&parameter);
     }
 
     {
@@ -911,7 +884,6 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
                                    }}}}});
 
         ddwaf_object_free(&res);
-        ddwaf_object_free(&parameter);
     }
 
     ddwaf_context_destroy(context1);
