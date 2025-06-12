@@ -180,13 +180,6 @@ static_assert(sizeof(struct _ddwaf_object_kv) == 32);
 #endif
 
 /**
- * @typedef ddwaf_object_free_fn
- *
- * Type of the function to free ddwaf::objects.
- **/
-typedef void (*ddwaf_object_free_fn)(ddwaf_object *object);
-
-/**
  * @struct ddwaf_config
  *
  * Configuration to be provided to the WAF
@@ -200,11 +193,6 @@ struct _ddwaf_config
         /** Regular expression for value-based obfuscation */
         const char *value_regex;
     } obfuscator;
-
-    /** Function to free the ddwaf::object provided to the context during calls
-     *  to ddwaf_run. If the value of this function is NULL, the objects will
-     *  not be freed. The default value should be ddwaf_object_free. */
-    ddwaf_object_free_fn free_fn;
 };
 
 /**
@@ -396,8 +384,7 @@ void ddwaf_context_destroy(ddwaf_context context);
  *
  * @return Handle to the builer instance or NULL on error.
  *
- * @note If config is NULL, default values will be used, including the default
- *       free function (ddwaf_object_free).
+ * @note If config is NULL, default values will be used
  **/
 ddwaf_builder ddwaf_builder_init(const ddwaf_config *config);
 
