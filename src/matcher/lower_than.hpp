@@ -10,7 +10,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "ddwaf.h"
 #include "matcher/base.hpp"
 
 namespace ddwaf::matcher {

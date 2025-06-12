@@ -8,7 +8,6 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <ddwaf.h>
 #include <stdexcept>
 #include <string_view>
 

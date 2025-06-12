@@ -9,7 +9,6 @@
 #include <unordered_set>
 
 #include "context_allocator.hpp"
-#include "ddwaf.h"
 #include "log.hpp"
 #include "object.hpp"
 #include "utils.hpp"

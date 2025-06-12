@@ -11,7 +11,6 @@
 
 #include "attribute_collector.hpp"
 #include "context_allocator.hpp"
-#include "ddwaf.h"
 #include "exclusion/common.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
