@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    const ddwaf_config config{{.key_regex=key_regex, .value_regex=value_regex}, ddwaf_object_free};
+    const ddwaf_config config{{.key_regex=key_regex, .value_regex=value_regex}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     std::size_t index = 0;
