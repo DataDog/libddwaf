@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 
         ddwaf_object ret;
         auto code =
-            ddwaf_run(context, &persistent, &ephemeral, &ret, std::numeric_limits<uint64_t>::max());
+            ddwaf_run(context, &persistent, &ephemeral, true, &ret, std::numeric_limits<uint64_t>::max());
 
         if (code == DDWAF_MATCH) {
             YAML::Emitter out(std::cout);

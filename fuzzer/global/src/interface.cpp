@@ -111,9 +111,9 @@ void run_waf(ddwaf_handle handle, ddwaf_object args, bool ephemeral, size_t time
 
     ddwaf_object res;
     if (ephemeral) {
-        ddwaf_run(context, nullptr, &args, &res, timeLeftInUs);
+        ddwaf_run(context, nullptr, &args, true, &res, timeLeftInUs);
     } else {
-        ddwaf_run(context, &args, nullptr, &res, timeLeftInUs);
+        ddwaf_run(context, &args, nullptr, true, &res, timeLeftInUs);
     }
 
     // TODO split input in several ddwaf_object, and call ddwaf_run on the same context

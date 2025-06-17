@@ -269,7 +269,7 @@ ddwaf_context ddwaf_context_init(ddwaf::waf *handle)
 
 DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    ddwaf_object *ephemeral_data, ddwaf_object *result, uint64_t timeout)
+    ddwaf_object *ephemeral_data, bool free_objects, ddwaf_object *result, uint64_t timeout)
 {
     if (context == nullptr || (persistent_data == nullptr && ephemeral_data == nullptr)) {
         DDWAF_WARN("Illegal WAF call: context or data was null");
@@ -277,13 +277,31 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
     }
 
     try {
-        if (persistent_data != nullptr && !context->insert(owned_object{to_ref(persistent_data)})) {
-            return DDWAF_ERR_INVALID_OBJECT;
+        if (persistent_data != nullptr) {
+            if (free_objects) {
+                if (!context->insert(owned_object{to_ref(persistent_data)})) {
+                    return DDWAF_ERR_INVALID_OBJECT;
+                }
+            } else {
+                object_view input{to_ref(persistent_data)};
+                if (!input.is_map() || !context->insert(input.as<map_view>())) {
+                    return DDWAF_ERR_INVALID_OBJECT;
+                }
+            }
         }
 
-        if (ephemeral_data != nullptr &&
-            !context->insert(owned_object{to_ref(ephemeral_data)}, context::attribute::ephemeral)) {
-            return DDWAF_ERR_INVALID_OBJECT;
+        if (ephemeral_data != nullptr) {
+            auto attr = context::attribute::ephemeral;
+            if (free_objects) {
+                if (!context->insert(owned_object{to_ref(ephemeral_data)}, attr)) {
+                    return DDWAF_ERR_INVALID_OBJECT;
+                }
+            } else {
+                object_view input{to_ref(ephemeral_data)};
+                if (!input.is_map() || !context->insert(input.as<map_view>(), attr)) {
+                    return DDWAF_ERR_INVALID_OBJECT;
+                }
+            }
         }
 
         // The timers will actually count nanoseconds, std::chrono doesn't

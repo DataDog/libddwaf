@@ -58,6 +58,15 @@ public:
         return true;
     }
 
+    bool insert(map_view data, attribute attr = attribute::none) noexcept
+    {
+        if (!store_.insert(data, attr)) {
+            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+            return false;
+        }
+        return true;
+    }
+
     std::pair<bool, owned_object> run(uint64_t);
 
     void eval_preprocessors(ddwaf::timer &deadline);
@@ -151,6 +160,12 @@ public:
     {
         memory::memory_resource_guard guard(&mr_);
         return ctx_->insert(std::forward<owned_object>(data), attr);
+    }
+
+    bool insert(map_view data, context::attribute attr = context::attribute::none) noexcept
+    {
+        memory::memory_resource_guard guard(&mr_);
+        return ctx_->insert(data, attr);
     }
 
     std::pair<bool, owned_object> run(uint64_t timeout)

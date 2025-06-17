@@ -31,7 +31,7 @@ TEST(TestConditionTransformersIntegration, GlobalTransformer)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1_0", ddwaf_object_string(&tmp, "RULE1"));
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -43,7 +43,7 @@ TEST(TestConditionTransformersIntegration, GlobalTransformer)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1_1", ddwaf_object_string(&tmp, "RULE1"));
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -55,7 +55,7 @@ TEST(TestConditionTransformersIntegration, GlobalTransformer)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value2_0", ddwaf_object_string(&tmp, "  RULE2    "));
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -67,7 +67,7 @@ TEST(TestConditionTransformersIntegration, GlobalTransformer)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value2_1", ddwaf_object_string(&tmp, "      RULE2   "));
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -96,7 +96,7 @@ TEST(TestConditionTransformersIntegration, GlobalTransformerKeysOnly)
         ddwaf_object_map_add(&map, "RULE3", ddwaf_object_string(&tmp, "randomvalue"));
         ddwaf_object_map_add(&parameter, "value3_0", &map);
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -110,7 +110,7 @@ TEST(TestConditionTransformersIntegration, GlobalTransformerKeysOnly)
         ddwaf_object_map_add(&map, "key", ddwaf_object_string(&tmp, "RULE3"));
         ddwaf_object_map_add(&parameter, "value3_0", &map);
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -124,7 +124,7 @@ TEST(TestConditionTransformersIntegration, GlobalTransformerKeysOnly)
         ddwaf_object_map_add(&map, "key", ddwaf_object_string(&tmp, "RULE3"));
         ddwaf_object_map_add(&parameter, "value3_1", &map);
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -138,7 +138,7 @@ TEST(TestConditionTransformersIntegration, GlobalTransformerKeysOnly)
         ddwaf_object_map_add(&map, "RULE3", ddwaf_object_string(&tmp, "randomvalue"));
         ddwaf_object_map_add(&parameter, "value3_1", &map);
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -165,7 +165,7 @@ TEST(TestConditionTransformersIntegration, InputTransformer)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1_0", ddwaf_object_string(&tmp, "RULE1"));
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -177,7 +177,7 @@ TEST(TestConditionTransformersIntegration, InputTransformer)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1_1", ddwaf_object_string(&tmp, "RULE1"));
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -189,7 +189,7 @@ TEST(TestConditionTransformersIntegration, InputTransformer)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value2_0", ddwaf_object_string(&tmp, "  RULE2    "));
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -201,7 +201,7 @@ TEST(TestConditionTransformersIntegration, InputTransformer)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value2_1", ddwaf_object_string(&tmp, "      RULE2   "));
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -230,7 +230,7 @@ TEST(TestConditionTransformersIntegration, InputTransformerKeysOnly)
         ddwaf_object_map_add(&map, "RULE3", ddwaf_object_string(&tmp, "randomvalue"));
         ddwaf_object_map_add(&parameter, "value3_0", &map);
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -244,7 +244,7 @@ TEST(TestConditionTransformersIntegration, InputTransformerKeysOnly)
         ddwaf_object_map_add(&map, "key", ddwaf_object_string(&tmp, "RULE3"));
         ddwaf_object_map_add(&parameter, "value3_0", &map);
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -258,7 +258,7 @@ TEST(TestConditionTransformersIntegration, InputTransformerKeysOnly)
         ddwaf_object_map_add(&map, "key", ddwaf_object_string(&tmp, "RULE3"));
         ddwaf_object_map_add(&parameter, "value3_1", &map);
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -272,7 +272,7 @@ TEST(TestConditionTransformersIntegration, InputTransformerKeysOnly)
         ddwaf_object_map_add(&map, "RULE3", ddwaf_object_string(&tmp, "randomvalue"));
         ddwaf_object_map_add(&parameter, "value3_1", &map);
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -299,7 +299,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1_0", ddwaf_object_string(&tmp, " RULE1 "));
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -311,7 +311,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1_0", ddwaf_object_string(&tmp, "    rule1 "));
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -323,7 +323,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1_1", ddwaf_object_string(&tmp, " rule1 "));
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -335,7 +335,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1_1", ddwaf_object_string(&tmp, " RULE1 "));
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -347,7 +347,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1_2", ddwaf_object_string(&tmp, "   rule1   "));
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -359,7 +359,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1_2", ddwaf_object_string(&tmp, "  RULE1   "));
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -371,7 +371,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1_3", ddwaf_object_string(&tmp, "    RULE1   "));
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -400,7 +400,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
     /*ddwaf_object_map_add(&map, "rule2", ddwaf_object_string(&tmp, "value"));*/
     /*ddwaf_object_map_add(&parameter, "value2_0", &map);*/
 
-    /*EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);*/
+    /*EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);*/
 
     /*ddwaf_context_destroy(context);*/
     /*}*/
@@ -414,7 +414,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
         ddwaf_object_map_add(&map, "rule2", ddwaf_object_string(&tmp, "value"));
         ddwaf_object_map_add(&parameter, "value2_1", &map);
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -428,7 +428,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
         ddwaf_object_map_add(&map, "value", ddwaf_object_string(&tmp, "rule2"));
         ddwaf_object_map_add(&parameter, "value2_1", &map);
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -442,7 +442,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
         ddwaf_object_map_add(&map, "value", ddwaf_object_string(&tmp, "RULE2"));
         ddwaf_object_map_add(&parameter, "value2_1", &map);
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -456,7 +456,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
         ddwaf_object_map_add(&map, "value", ddwaf_object_string(&tmp, "RULE2"));
         ddwaf_object_map_add(&parameter, "value2_2", &map);
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -470,7 +470,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
         ddwaf_object_map_add(&map, "rule2", ddwaf_object_string(&tmp, "value"));
         ddwaf_object_map_add(&parameter, "value2_2", &map);
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -484,7 +484,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
         ddwaf_object_map_add(&map, "rule2", ddwaf_object_string(&tmp, "value"));
         ddwaf_object_map_add(&parameter, "value2_3", &map);
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -498,7 +498,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
         ddwaf_object_map_add(&map, "value", ddwaf_object_string(&tmp, "rule2"));
         ddwaf_object_map_add(&parameter, "value2_3", &map);
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -512,7 +512,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
         ddwaf_object_map_add(&map, "value", ddwaf_object_string(&tmp, "RULE2"));
         ddwaf_object_map_add(&parameter, "value2_3", &map);
 
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }

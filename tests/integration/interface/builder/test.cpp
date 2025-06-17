@@ -56,7 +56,7 @@ TEST(TestEngineBuilderFunctional, BaseRules)
 
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -82,11 +82,11 @@ TEST(TestEngineBuilderFunctional, BaseRules)
 
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "value2", ddwaf_object_string(&tmp, "rule2"));
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -133,11 +133,11 @@ TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
 
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "value2", ddwaf_object_string(&tmp, "rule2"));
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -157,11 +157,11 @@ TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
 
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "value2", ddwaf_object_string(&tmp, "rule2"));
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -198,7 +198,7 @@ TEST(TestEngineBuilderFunctional, CustomRules)
 
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -224,11 +224,11 @@ TEST(TestEngineBuilderFunctional, CustomRules)
 
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "value2", ddwaf_object_string(&tmp, "rule2"));
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }

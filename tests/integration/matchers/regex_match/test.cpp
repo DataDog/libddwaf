@@ -34,7 +34,7 @@ TEST(TestRegexMatchIntegration, CaseSensitiveMatch)
 
         ddwaf_object ret;
 
-        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+        auto code = ddwaf_run(context, &param, nullptr, true, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
         const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
@@ -65,7 +65,7 @@ TEST(TestRegexMatchIntegration, CaseSensitiveMatch)
 
         ddwaf_object ret;
 
-        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+        auto code = ddwaf_run(context, &param, nullptr, true, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
@@ -99,7 +99,7 @@ TEST(TestRegexMatchIntegration, CaseInsensitiveMatch)
 
         ddwaf_object ret;
 
-        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+        auto code = ddwaf_run(context, &param, nullptr, true, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
         const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
@@ -130,7 +130,7 @@ TEST(TestRegexMatchIntegration, CaseInsensitiveMatch)
 
         ddwaf_object ret;
 
-        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+        auto code = ddwaf_run(context, &param, nullptr, true, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
@@ -174,7 +174,7 @@ TEST(TestRegexMatchIntegration, MinLength)
 
         ddwaf_object ret;
 
-        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+        auto code = ddwaf_run(context, &param, nullptr, true, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_OK);
         ddwaf_object_free(&ret);
 
@@ -193,7 +193,7 @@ TEST(TestRegexMatchIntegration, MinLength)
 
         ddwaf_object ret;
 
-        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+        auto code = ddwaf_run(context, &param, nullptr, true, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",

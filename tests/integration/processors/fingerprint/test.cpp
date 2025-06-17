@@ -98,7 +98,7 @@ TEST(TestFingerprintIntegration, Postprocessor)
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -181,7 +181,7 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -206,7 +206,7 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         ddwaf_object_map_add(&map, "server.request.body", &body);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -229,7 +229,7 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         ddwaf_object_map_add(&map, "server.request.query", &query);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -261,7 +261,7 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         ddwaf_object_map_add(&map, "server.request.cookies", &cookies);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -282,7 +282,7 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         ddwaf_object_map_add(&map, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -302,7 +302,7 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         ddwaf_object_map_add(&map, "usr.session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -410,7 +410,7 @@ TEST(TestFingerprintIntegration, Preprocessor)
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -537,7 +537,7 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
         ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -580,7 +580,7 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
         ddwaf_object_map_add(&map, "server.request.query", &query);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -600,7 +600,7 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
         ddwaf_object_map_add(&map, "server.request.body", &body);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -641,7 +641,7 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
         ddwaf_object_map_add(&map, "server.request.cookies", &cookies);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -662,7 +662,7 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
         ddwaf_object_map_add(&map, "usr.session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -779,7 +779,7 @@ TEST(TestFingerprintIntegration, Processor)
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -913,7 +913,7 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
         ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -962,7 +962,7 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
         ddwaf_object_map_add(&map, "server.request.query", &query);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -985,7 +985,7 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
         ddwaf_object_map_add(&map, "server.request.body", &body);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -1031,7 +1031,7 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
         ddwaf_object_map_add(&map, "server.request.cookies", &cookies);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -1055,7 +1055,7 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
         ddwaf_object_map_add(&map, "usr.session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -1118,7 +1118,7 @@ TEST(TestFingerprintIntegration, InvalidBodyType)
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -1165,7 +1165,7 @@ TEST(TestFingerprintIntegration, InvalidQueryType)
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -1212,7 +1212,7 @@ TEST(TestFingerprintIntegration, InvalidQueryAndBodyType)
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -1272,7 +1272,7 @@ TEST(TestFingerprintIntegration, InvalidHeader)
     ddwaf_object_map_add(&map, "server.request.headers.no_cookies", &headers);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -1317,7 +1317,7 @@ TEST(TestFingerprintIntegration, InvalidCookies)
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+    ASSERT_EQ(ddwaf_run(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 

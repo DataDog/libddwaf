@@ -89,7 +89,8 @@ bool test_runner::run_test(const YAML::Node &runs)
                 ephemeral_ptr = &ephemeral;
             }
 
-            auto retval = ddwaf_run(ctx.get(), persistent_ptr, ephemeral_ptr, res.get(), timeout);
+            auto retval =
+                ddwaf_run(ctx.get(), persistent_ptr, ephemeral_ptr, false, res.get(), timeout);
 
             expect(retval, code);
             if (code == DDWAF_MATCH) {
