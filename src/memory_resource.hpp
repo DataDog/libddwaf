@@ -7,6 +7,7 @@
 #pragma once
 
 #include <version>
+#include <stdexcept>
 
 #if defined(__cpp_lib_memory_resource)
 #  include <memory_resource>
