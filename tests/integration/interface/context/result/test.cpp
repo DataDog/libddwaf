@@ -29,7 +29,7 @@ TEST(TestContextResultIntegration, ResultInvalidArgumentNullContext)
     ddwaf_object result;
     ddwaf_object_invalid(&result);
 
-    EXPECT_EQ(ddwaf_run(nullptr, &persistent, nullptr, true, &result, LONG_TIME),
+    EXPECT_EQ(ddwaf_context_eval(nullptr, &persistent, nullptr, true, &result, LONG_TIME),
         DDWAF_ERR_INVALID_ARGUMENT);
 
     // The result object must be unchanged
@@ -54,8 +54,8 @@ TEST(TestContextResultIntegration, ResultInvalidArgumentNoData)
     ddwaf_object result;
     ddwaf_object_invalid(&result);
 
-    EXPECT_EQ(
-        ddwaf_run(context, nullptr, nullptr, true, &result, LONG_TIME), DDWAF_ERR_INVALID_ARGUMENT);
+    EXPECT_EQ(ddwaf_context_eval(context, nullptr, nullptr, true, &result, LONG_TIME),
+        DDWAF_ERR_INVALID_ARGUMENT);
 
     // The result object must be unchanged
     EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_INVALID);
@@ -83,7 +83,7 @@ TEST(TestContextResultIntegration, ResultInvalidObjectInvalidPersistentDataSchem
     ddwaf_object result;
     ddwaf_object_invalid(&result);
 
-    EXPECT_EQ(ddwaf_run(context, &persistent, nullptr, true, &result, LONG_TIME),
+    EXPECT_EQ(ddwaf_context_eval(context, &persistent, nullptr, true, &result, LONG_TIME),
         DDWAF_ERR_INVALID_OBJECT);
 
     // The result object must be unchanged
@@ -113,7 +113,7 @@ TEST(TestContextResultIntegration, ResultInvalidObjectInvalidEphemeralDataSchema
     ddwaf_object result;
     ddwaf_object_invalid(&result);
 
-    EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, true, &result, LONG_TIME),
+    EXPECT_EQ(ddwaf_context_eval(context, nullptr, &ephemeral, true, &result, LONG_TIME),
         DDWAF_ERR_INVALID_OBJECT);
 
     // The result object must be unchanged
@@ -145,7 +145,7 @@ TEST(TestContextResultIntegration, ResultOk)
 
     ddwaf_object result;
     ddwaf_object_invalid(&result);
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, &result, LONG_TIME), DDWAF_OK);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, LONG_TIME), DDWAF_OK);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
@@ -207,7 +207,7 @@ TEST(TestContextResultIntegration, ResultOkWithAttributes)
 
     ddwaf_object result;
     ddwaf_object_invalid(&result);
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, &result, LONG_TIME), DDWAF_OK);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, LONG_TIME), DDWAF_OK);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
@@ -264,7 +264,7 @@ TEST(TestContextResultIntegration, ResultOkWithTimeout)
 
     ddwaf_object result;
     ddwaf_object_invalid(&result);
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, &result, 0), DDWAF_OK);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, 0), DDWAF_OK);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
@@ -321,7 +321,8 @@ TEST(TestContextResultIntegration, ResultMatch)
 
     ddwaf_object result;
     ddwaf_object_invalid(&result);
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, &result, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(
+        ddwaf_context_eval(context, &parameter, nullptr, true, &result, LONG_TIME), DDWAF_MATCH);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
@@ -378,7 +379,7 @@ TEST(TestContextResultIntegration, ResultMatchWithTimeout)
 
     ddwaf_object result;
     ddwaf_object_invalid(&result);
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, &result, 0), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, 0), DDWAF_MATCH);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
@@ -441,7 +442,7 @@ TEST(TestContextResultIntegration, ResultMatchWithTimeoutOnPreprocessor)
 
     ddwaf_object result;
     ddwaf_object_invalid(&result);
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, &result, 0), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, 0), DDWAF_MATCH);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);

@@ -32,7 +32,7 @@ TEST(TestIsXSSIntegration, Match)
 
     ddwaf_object ret;
 
-    auto code = ddwaf_run(context, &param, nullptr, true, &ret, LONG_TIME);
+    auto code = ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));

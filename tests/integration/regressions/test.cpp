@@ -30,7 +30,7 @@ TEST(TestRegressionsIntegration, DuplicateFlowMatches)
     ddwaf_object_map_add(&parameter, "param2", ddwaf_object_string(&tmp, "Duplicate"));
 
     ddwaf_object ret;
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &ret, LONG_TIME), DDWAF_MATCH);
 
     const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));

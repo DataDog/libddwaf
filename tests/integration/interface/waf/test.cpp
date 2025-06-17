@@ -41,7 +41,8 @@ TEST(TestWafIntegration, HandleBad)
     EXPECT_NO_FATAL_FAILURE(ddwaf_destroy(nullptr));
 
     ddwaf_object_string(&object, "value");
-    EXPECT_EQ(ddwaf_run(nullptr, &object, nullptr, true, nullptr, 1), DDWAF_ERR_INVALID_ARGUMENT);
+    EXPECT_EQ(ddwaf_context_eval(nullptr, &object, nullptr, true, nullptr, 1),
+        DDWAF_ERR_INVALID_ARGUMENT);
     ddwaf_object_free(&object);
 
     auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
@@ -55,15 +56,17 @@ TEST(TestWafIntegration, HandleBad)
     ASSERT_NE(context, nullptr);
 
     ddwaf_object_string(&object, "value");
-    EXPECT_EQ(ddwaf_run(context, &object, nullptr, true, nullptr, 1), DDWAF_ERR_INVALID_OBJECT);
+    EXPECT_EQ(
+        ddwaf_context_eval(context, &object, nullptr, true, nullptr, 1), DDWAF_ERR_INVALID_OBJECT);
 
     ddwaf_object_string(&object, "value");
-    EXPECT_EQ(ddwaf_run(context, nullptr, &object, true, nullptr, 1), DDWAF_ERR_INVALID_OBJECT);
+    EXPECT_EQ(
+        ddwaf_context_eval(context, nullptr, &object, true, nullptr, 1), DDWAF_ERR_INVALID_OBJECT);
 
     object = DDWAF_OBJECT_MAP;
     ddwaf_object_map_add(&object, "value1", ddwaf_object_string(&tmp, "value"));
     ddwaf_object res;
-    EXPECT_EQ(ddwaf_run(context, &object, nullptr, true, &res, 0), DDWAF_OK);
+    EXPECT_EQ(ddwaf_context_eval(context, &object, nullptr, true, &res, 0), DDWAF_OK);
 
     const auto *timeout = ddwaf_object_find(&res, STRL("timeout"));
     EXPECT_TRUE(ddwaf_object_get_bool(timeout));
@@ -127,7 +130,8 @@ TEST(TestWafIntegration, HandleLifetime)
     ddwaf_object_map_add(&parameter, "value1", &param_key);
     ddwaf_object_map_add(&parameter, "value2", &param_val);
 
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(
+        ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
     ddwaf_context_destroy(context);
 }
@@ -165,10 +169,12 @@ TEST(TestWafIntegration, HandleLifetimeMultipleContexts)
     ddwaf_object_map_add(&parameter, "value1", &param_key);
     ddwaf_object_map_add(&parameter, "value2", &param_val);
 
-    EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(
+        ddwaf_context_eval(context1, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
     ddwaf_context_destroy(context1);
 
-    EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(
+        ddwaf_context_eval(context2, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
     ddwaf_context_destroy(context2);
 }
 
@@ -225,7 +231,8 @@ TEST(TestWafIntegration, PreloadRuleData)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
 
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -239,7 +246,8 @@ TEST(TestWafIntegration, PreloadRuleData)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "paco"));
 
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
@@ -266,7 +274,7 @@ TEST(TestWafIntegration, PreloadRuleData)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
 
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -280,7 +288,7 @@ TEST(TestWafIntegration, PreloadRuleData)
         ddwaf_object_map(&root);
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "paco"));
 
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -329,11 +337,15 @@ TEST(TestWafIntegration, UpdateRules)
     ddwaf_object parameter2 = DDWAF_OBJECT_MAP;
     ddwaf_object_map_add(&parameter2, "value1", ddwaf_object_string(&tmp, "rule2"));
 
-    EXPECT_EQ(ddwaf_run(context1, &parameter1, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
-    EXPECT_EQ(ddwaf_run(context2, &parameter1, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(
+        ddwaf_context_eval(context1, &parameter1, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(
+        ddwaf_context_eval(context2, &parameter1, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
-    EXPECT_EQ(ddwaf_run(context1, &parameter2, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
-    EXPECT_EQ(ddwaf_run(context2, &parameter2, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
+    EXPECT_EQ(
+        ddwaf_context_eval(context1, &parameter2, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(
+        ddwaf_context_eval(context2, &parameter2, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
     ddwaf_context_destroy(context2);
     ddwaf_context_destroy(context1);
@@ -380,11 +392,15 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByID)
     ddwaf_object parameter2 = DDWAF_OBJECT_MAP;
     ddwaf_object_map_add(&parameter2, "value1", ddwaf_object_string(&tmp, "rule2"));
 
-    EXPECT_EQ(ddwaf_run(context1, &parameter1, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
-    EXPECT_EQ(ddwaf_run(context2, &parameter1, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
+    EXPECT_EQ(
+        ddwaf_context_eval(context1, &parameter1, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(
+        ddwaf_context_eval(context2, &parameter1, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
-    EXPECT_EQ(ddwaf_run(context1, &parameter2, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
-    EXPECT_EQ(ddwaf_run(context2, &parameter2, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(
+        ddwaf_context_eval(context1, &parameter2, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(
+        ddwaf_context_eval(context2, &parameter2, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
     ddwaf_context_destroy(context1);
     ddwaf_destroy(handle1);
@@ -400,8 +416,10 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByID)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, nullptr, true, nullptr, LONG_TIME),
+            DDWAF_MATCH);
     }
 
     ddwaf_context_destroy(context2);
@@ -451,13 +469,15 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByTags)
         ddwaf_object parameter2 = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter2, "value1", ddwaf_object_string(&tmp, "rule2"));
 
-        EXPECT_EQ(
-            ddwaf_run(context1, &parameter1, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter1, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter1, nullptr, false, nullptr, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter1, nullptr, true, nullptr, LONG_TIME),
+            DDWAF_MATCH);
 
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter2, nullptr, false, nullptr, LONG_TIME),
+            DDWAF_MATCH);
         EXPECT_EQ(
-            ddwaf_run(context1, &parameter2, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter2, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
+            ddwaf_context_eval(context2, &parameter2, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
     }
 
     ddwaf_context_destroy(context1);
@@ -482,12 +502,15 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByTags)
         ddwaf_object parameter2 = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter2, "value1", ddwaf_object_string(&tmp, "rule2"));
 
-        EXPECT_EQ(
-            ddwaf_run(context2, &parameter1, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context3, &parameter1, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter1, nullptr, false, nullptr, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter1, nullptr, true, nullptr, LONG_TIME),
+            DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter2, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context3, &parameter2, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter2, nullptr, false, nullptr, LONG_TIME),
+            DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter2, nullptr, true, nullptr, LONG_TIME),
+            DDWAF_MATCH);
     }
 
     ddwaf_context_destroy(context2);
@@ -551,9 +574,10 @@ TEST(TestWafIntegration, UpdateActionsByID)
         ddwaf_object result1;
         ddwaf_object result2;
 
-        EXPECT_EQ(
-            ddwaf_run(context1, &parameter, nullptr, false, &result1, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, &result2, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, false, &result1, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, true, &result2, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_ACTIONS(result1, {});
         EXPECT_ACTIONS(
@@ -581,9 +605,10 @@ TEST(TestWafIntegration, UpdateActionsByID)
         ddwaf_object result1;
         ddwaf_object result2;
 
-        EXPECT_EQ(
-            ddwaf_run(context1, &parameter, nullptr, false, &result1, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, &result2, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, false, &result1, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, true, &result2, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_ACTIONS(result1, {});
         EXPECT_ACTIONS(result2, {});
@@ -626,9 +651,10 @@ TEST(TestWafIntegration, UpdateActionsByID)
         ddwaf_object result2;
         ddwaf_object result3;
 
-        EXPECT_EQ(
-            ddwaf_run(context2, &parameter, nullptr, false, &result2, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, true, &result3, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, false, &result2, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, nullptr, true, &result3, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_ACTIONS(
             result2, {{"block_request",
@@ -701,9 +727,10 @@ TEST(TestWafIntegration, UpdateActionsByTags)
         ddwaf_object result1;
         ddwaf_object result2;
 
-        EXPECT_EQ(
-            ddwaf_run(context1, &parameter, nullptr, false, &result1, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, &result2, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, false, &result1, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, true, &result2, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_ACTIONS(result1, {});
         EXPECT_ACTIONS(
@@ -731,9 +758,10 @@ TEST(TestWafIntegration, UpdateActionsByTags)
         ddwaf_object result1;
         ddwaf_object result2;
 
-        EXPECT_EQ(
-            ddwaf_run(context1, &parameter, nullptr, false, &result1, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, &result2, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, false, &result1, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, true, &result2, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_ACTIONS(result1, {});
         EXPECT_ACTIONS(result2, {});
@@ -790,9 +818,10 @@ TEST(TestWafIntegration, UpdateTagsByID)
         ddwaf_object result1;
         ddwaf_object result2;
 
-        EXPECT_EQ(
-            ddwaf_run(context1, &parameter, nullptr, false, &result1, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, &result2, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, false, &result1, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, true, &result2, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_EVENTS(result1,
             {.id = "1",
@@ -839,9 +868,10 @@ TEST(TestWafIntegration, UpdateTagsByID)
         ddwaf_object result3;
         ddwaf_object result2;
 
-        EXPECT_EQ(
-            ddwaf_run(context3, &parameter, nullptr, false, &result3, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, &result2, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, nullptr, false, &result3, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, true, &result2, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_EVENTS(result3,
             {.id = "1",
@@ -918,9 +948,10 @@ TEST(TestWafIntegration, UpdateTagsByTags)
         ddwaf_object result1;
         ddwaf_object result2;
 
-        EXPECT_EQ(
-            ddwaf_run(context1, &parameter, nullptr, false, &result1, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, &result2, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, false, &result1, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, true, &result2, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_EVENTS(result1,
             {.id = "1",
@@ -964,9 +995,10 @@ TEST(TestWafIntegration, UpdateTagsByTags)
         ddwaf_object result1;
         ddwaf_object result2;
 
-        EXPECT_EQ(
-            ddwaf_run(context1, &parameter, nullptr, false, &result1, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, &result2, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, false, &result1, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, true, &result2, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_EVENTS(result1,
             {.id = "2",
@@ -1009,9 +1041,10 @@ TEST(TestWafIntegration, UpdateTagsByTags)
         ddwaf_object result1;
         ddwaf_object result2;
 
-        EXPECT_EQ(
-            ddwaf_run(context1, &parameter, nullptr, false, &result1, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, &result2, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, false, &result1, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, true, &result2, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_EVENTS(result1,
             {.id = "3",
@@ -1058,9 +1091,10 @@ TEST(TestWafIntegration, UpdateTagsByTags)
         ddwaf_object result3;
         ddwaf_object result2;
 
-        EXPECT_EQ(
-            ddwaf_run(context3, &parameter, nullptr, false, &result3, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, &result2, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, nullptr, false, &result3, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, true, &result2, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_EVENTS(result3,
             {.id = "3",
@@ -1136,9 +1170,10 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
         ddwaf_object result1;
         ddwaf_object result2;
 
-        EXPECT_EQ(
-            ddwaf_run(context1, &parameter, nullptr, false, &result1, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, &result2, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, false, &result1, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, true, &result2, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_EVENTS(result1,
             {.id = "1",
@@ -1199,9 +1234,10 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
         ddwaf_object result2;
         ddwaf_object result3;
 
-        EXPECT_EQ(
-            ddwaf_run(context2, &parameter, nullptr, false, &result2, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, true, &result3, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, false, &result2, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, nullptr, true, &result3, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_EVENTS(result2,
             {.id = "1",
@@ -1259,8 +1295,10 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context4, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, nullptr, false, nullptr, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context4, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context3);
         ddwaf_context_destroy(context4);
@@ -1350,18 +1388,24 @@ TEST(TestWafIntegration, UpdateRuleData)
         ddwaf_object_map_add(
             &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, false, nullptr, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context3, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
     }
 
     {
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "usr.id", ddwaf_object_string(&tmp, "paco"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, nullptr, true, nullptr, LONG_TIME),
+            DDWAF_MATCH);
     }
 
     ddwaf_context_destroy(context1);
@@ -1412,8 +1456,10 @@ TEST(TestWafIntegration, UpdateAndRevertRuleData)
         ddwaf_object_map_add(
             &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, true, nullptr, LONG_TIME),
+            DDWAF_MATCH);
 
         ddwaf_context_destroy(context1);
         ddwaf_context_destroy(context2);
@@ -1434,8 +1480,10 @@ TEST(TestWafIntegration, UpdateAndRevertRuleData)
         ddwaf_object_map_add(
             &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, false, nullptr, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context3, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context3);
@@ -1485,8 +1533,10 @@ TEST(TestWafIntegration, UpdateRuleExclusions)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, false, nullptr, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -1503,8 +1553,10 @@ TEST(TestWafIntegration, UpdateRuleExclusions)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, false, nullptr, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, true, nullptr, LONG_TIME),
+            DDWAF_MATCH);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -1526,8 +1578,10 @@ TEST(TestWafIntegration, UpdateRuleExclusions)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, nullptr, true, nullptr, LONG_TIME),
+            DDWAF_MATCH);
 
         ddwaf_context_destroy(context3);
         ddwaf_context_destroy(context2);
@@ -1576,8 +1630,10 @@ TEST(TestWafIntegration, UpdateInputExclusions)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, false, nullptr, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -1594,8 +1650,10 @@ TEST(TestWafIntegration, UpdateInputExclusions)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, false, nullptr, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -1612,8 +1670,10 @@ TEST(TestWafIntegration, UpdateInputExclusions)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value2", ddwaf_object_string(&tmp, "rule3"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, false, nullptr, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, true, nullptr, LONG_TIME),
+            DDWAF_MATCH);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -1635,8 +1695,10 @@ TEST(TestWafIntegration, UpdateInputExclusions)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, nullptr, true, nullptr, LONG_TIME),
+            DDWAF_MATCH);
 
         ddwaf_context_destroy(context3);
         ddwaf_context_destroy(context2);
@@ -1688,8 +1750,10 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object_map_add(
             &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, false, nullptr, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -1707,8 +1771,10 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object_map_add(
             &parameter, "server.request.params", ddwaf_object_string(&tmp, "rule4"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, false, nullptr, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, true, nullptr, LONG_TIME),
+            DDWAF_MATCH);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -1743,9 +1809,10 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object result2;
         ddwaf_object result3;
 
-        EXPECT_EQ(
-            ddwaf_run(context2, &parameter, nullptr, false, &result2, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, true, &result3, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, false, &result2, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, nullptr, true, &result3, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_ACTIONS(result2, {});
         EXPECT_ACTIONS(
@@ -1771,8 +1838,10 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object_map_add(
             &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(
+            ddwaf_context_eval(context3, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context3);
@@ -1808,8 +1877,10 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object result3;
         ddwaf_object result4;
 
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, false, &result3, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context4, &parameter, nullptr, true, &result4, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, nullptr, false, &result3, LONG_TIME),
+            DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context4, &parameter, nullptr, true, &result4, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_ACTIONS(result3, {});
         EXPECT_ACTIONS(
@@ -1832,7 +1903,8 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object_map_add(
             &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
 
-        EXPECT_EQ(ddwaf_run(context4, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(
+            ddwaf_context_eval(context4, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context4);
     }
@@ -1867,9 +1939,10 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object result4;
         ddwaf_object result5;
 
-        EXPECT_EQ(
-            ddwaf_run(context4, &parameter, nullptr, false, &result4, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context5, &parameter, nullptr, true, &result5, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context4, &parameter, nullptr, false, &result4, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context5, &parameter, nullptr, true, &result5, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_ACTIONS(
             result4, {{"block_request",
@@ -1896,8 +1969,10 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
-        EXPECT_EQ(ddwaf_run(context4, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context5, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context4, &parameter, nullptr, false, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context5, &parameter, nullptr, true, nullptr, LONG_TIME),
+            DDWAF_MATCH);
 
         ddwaf_context_destroy(context4);
         ddwaf_context_destroy(context5);
@@ -1918,9 +1993,10 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object result4;
         ddwaf_object result5;
 
+        EXPECT_EQ(ddwaf_context_eval(context4, &parameter, nullptr, false, &result4, LONG_TIME),
+            DDWAF_MATCH);
         EXPECT_EQ(
-            ddwaf_run(context4, &parameter, nullptr, false, &result4, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context5, &parameter, nullptr, true, &result5, LONG_TIME), DDWAF_OK);
+            ddwaf_context_eval(context5, &parameter, nullptr, true, &result5, LONG_TIME), DDWAF_OK);
 
         EXPECT_ACTIONS(
             result4, {{"block_request",
@@ -1964,8 +2040,10 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object result5;
         ddwaf_object result6;
 
-        EXPECT_EQ(ddwaf_run(context5, &parameter, nullptr, false, &result5, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context6, &parameter, nullptr, true, &result6, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context5, &parameter, nullptr, false, &result5, LONG_TIME),
+            DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context6, &parameter, nullptr, true, &result6, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_ACTIONS(result5, {});
         EXPECT_ACTIONS(
@@ -1994,9 +2072,10 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object result5;
         ddwaf_object result6;
 
-        EXPECT_EQ(
-            ddwaf_run(context5, &parameter, nullptr, false, &result5, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context6, &parameter, nullptr, true, &result6, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context5, &parameter, nullptr, false, &result5, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context6, &parameter, nullptr, true, &result6, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_ACTIONS(
             result5, {{"block_request",
@@ -2021,7 +2100,8 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object_map_add(
             &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
 
-        EXPECT_EQ(ddwaf_run(context6, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(
+            ddwaf_context_eval(context6, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context6);
     }
@@ -2048,8 +2128,10 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object result6;
         ddwaf_object result7;
 
-        EXPECT_EQ(ddwaf_run(context6, &parameter, nullptr, false, &result6, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context7, &parameter, nullptr, true, &result7, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context6, &parameter, nullptr, false, &result6, LONG_TIME),
+            DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context7, &parameter, nullptr, true, &result7, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_ACTIONS(result6, {});
         EXPECT_ACTIONS(
@@ -2086,9 +2168,10 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object result7;
         ddwaf_object result8;
 
-        EXPECT_EQ(
-            ddwaf_run(context7, &parameter, nullptr, false, &result7, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context8, &parameter, nullptr, true, &result8, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context7, &parameter, nullptr, false, &result7, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context8, &parameter, nullptr, true, &result8, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_ACTIONS(
             result7, {{"block_request",
@@ -2117,9 +2200,10 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object result7;
         ddwaf_object result8;
 
-        EXPECT_EQ(
-            ddwaf_run(context7, &parameter, nullptr, false, &result7, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context8, &parameter, nullptr, true, &result8, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context7, &parameter, nullptr, false, &result7, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context8, &parameter, nullptr, true, &result8, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_ACTIONS(
             result7, {{"block_request",
@@ -2153,9 +2237,10 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object result8;
         ddwaf_object result9;
 
-        EXPECT_EQ(
-            ddwaf_run(context8, &parameter, nullptr, false, &result8, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context9, &parameter, nullptr, true, &result9, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context8, &parameter, nullptr, false, &result8, LONG_TIME),
+            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context9, &parameter, nullptr, true, &result9, LONG_TIME),
+            DDWAF_MATCH);
 
         EXPECT_ACTIONS(result8, {});
         EXPECT_ACTIONS(result9, {});
@@ -2182,9 +2267,10 @@ TEST(TestWafIntegration, UpdateEverything)
         ddwaf_object result8;
         ddwaf_object result9;
 
+        EXPECT_EQ(ddwaf_context_eval(context8, &parameter, nullptr, false, &result8, LONG_TIME),
+            DDWAF_MATCH);
         EXPECT_EQ(
-            ddwaf_run(context8, &parameter, nullptr, false, &result8, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context9, &parameter, nullptr, true, &result9, LONG_TIME), DDWAF_OK);
+            ddwaf_context_eval(context9, &parameter, nullptr, true, &result9, LONG_TIME), DDWAF_OK);
 
         EXPECT_ACTIONS(result9, {});
 

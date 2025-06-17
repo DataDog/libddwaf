@@ -31,7 +31,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRule)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "type2"}, {"category", "category"}},
@@ -64,7 +64,7 @@ TEST(TestRuleFilterIntegration, ExcludeByType)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
@@ -97,7 +97,7 @@ TEST(TestRuleFilterIntegration, ExcludeByCategory)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_OK);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_OK);
 
     ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
@@ -122,7 +122,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTags)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "type2"}, {"category", "category"}},
@@ -157,7 +157,7 @@ TEST(TestRuleFilterIntegration, ExcludeAllWithCondition)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_OK);
 
         ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
@@ -173,7 +173,7 @@ TEST(TestRuleFilterIntegration, ExcludeAllWithCondition)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -219,7 +219,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithCondition)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
@@ -244,7 +244,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithCondition)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -291,7 +291,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithConditionAndTransformers)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "AD      MIN"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
@@ -316,7 +316,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithConditionAndTransformers)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -361,7 +361,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTypeWithCondition)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
@@ -386,7 +386,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTypeWithCondition)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -432,7 +432,7 @@ TEST(TestRuleFilterIntegration, ExcludeByCategoryWithCondition)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_OK);
 
         ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
@@ -448,7 +448,7 @@ TEST(TestRuleFilterIntegration, ExcludeByCategoryWithCondition)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -494,7 +494,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTagsWithCondition)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
@@ -519,7 +519,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTagsWithCondition)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -563,7 +563,7 @@ TEST(TestRuleFilterIntegration, MonitorSingleRule)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
@@ -599,7 +599,7 @@ TEST(TestRuleFilterIntegration, AvoidHavingTwoMonitorOnActions)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
@@ -634,7 +634,7 @@ TEST(TestRuleFilterIntegration, MonitorBypassFilterModePrecedence)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -657,7 +657,7 @@ TEST(TestRuleFilterIntegration, MonitorCustomFilterModePrecedence)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
@@ -692,7 +692,7 @@ TEST(TestRuleFilterIntegration, BypassCustomFilterModePrecedence)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -716,7 +716,7 @@ TEST(TestRuleFilterIntegration, UnconditionalCustomFilterMode)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
@@ -754,7 +754,7 @@ TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
@@ -782,7 +782,7 @@ TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.2"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
@@ -824,7 +824,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
@@ -860,7 +860,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
@@ -904,7 +904,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeNonblockingAction)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},

@@ -267,7 +267,7 @@ ddwaf_context ddwaf_context_init(ddwaf::waf *handle)
     return nullptr;
 }
 
-DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
+DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *persistent_data,
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     ddwaf_object *ephemeral_data, bool free_objects, ddwaf_object *result, uint64_t timeout)
 {
