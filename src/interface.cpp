@@ -309,7 +309,7 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *persisten
         constexpr uint64_t max_timeout_ms = std::chrono::nanoseconds::max().count() / 1000;
         timeout = std::min(timeout, max_timeout_ms);
 
-        auto [code, res] = context->run(timeout);
+        auto [code, res] = context->eval(timeout);
         if (result != nullptr) {
             to_ref(result) = res.move();
         }
@@ -445,7 +445,6 @@ uint32_t ddwaf_builder_get_config_paths(
 
         if (paths != nullptr) {
             ddwaf_object_array(paths);
-            // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
             for (const auto &value : config_paths) {
                 ddwaf_object tmp{};
                 ddwaf_object_array_add(

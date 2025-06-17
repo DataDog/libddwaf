@@ -50,8 +50,7 @@ void set_context_event_address(object_store &store)
 
 } // namespace
 
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-std::pair<bool, owned_object> context::run(uint64_t timeout)
+std::pair<bool, owned_object> context::eval(uint64_t timeout)
 {
     // This scope ensures that all ephemeral and cached objects are removed
     // from the store at the end of the evaluation

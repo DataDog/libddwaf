@@ -123,7 +123,7 @@ template <typename SizeType> inline char *copy_string(const char *str, SizeType 
         throw std::bad_alloc();
     }
 
-    static std::pmr::memory_resource *alloc = std::pmr::get_default_resource();
+    static auto *alloc = memory::get_default_resource();
 
     auto *copy = static_cast<char *>(alloc->allocate(length, alignof(char)));
     memcpy(copy, str, length);
@@ -136,7 +136,7 @@ T *alloc_helper(SizeType size)
     requires(std::is_unsigned_v<SizeType> && sizeof(SizeType) <= sizeof(std::size_t))
 
 {
-    static std::pmr::memory_resource *alloc = std::pmr::get_default_resource();
+    static auto *alloc = memory::get_default_resource();
     // TODO add check for sizeof(T) * size
     return static_cast<T *>(alloc->allocate(sizeof(T) * size, alignof(T)));
 }
@@ -154,7 +154,7 @@ inline std::pair<T *, SizeType> realloc_helper(T *data, SizeType size)
         new_size = size * 2;
     }
 
-    static std::pmr::memory_resource *alloc = std::pmr::get_default_resource();
+    static auto *alloc = memory::get_default_resource();
 
     auto *new_data = static_cast<T *>(alloc->allocate(sizeof(T) * new_size, alignof(T)));
     memcpy(new_data, data, sizeof(T) * size);
@@ -167,7 +167,7 @@ inline std::pair<T *, SizeType> realloc_helper(T *data, SizeType size)
 // NOLINTNEXTLINE(misc-no-recursion)
 inline void object_destroy(object &obj)
 {
-    static std::pmr::memory_resource *alloc = std::pmr::get_default_resource();
+    static memory::memory_resource *alloc = memory::get_default_resource();
 
     if (obj.type == object_type::array) {
         for (std::size_t i = 0; i < obj.via.array.size; ++i) {
@@ -900,18 +900,14 @@ public:
 
     static owned_object make_string(const char *str, std::size_t len)
     {
-        if (len < detail::small_string_size) {
-            // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
+        if (len <= detail::small_string_size) {
             owned_object obj{{.via{.sstr{.type = object_type::small_string,
                 .size = static_cast<uint8_t>(len),
                 .data = {}}}}};
             memcpy(obj.obj_.via.sstr.data.data(), str, len);
-            // TODO avoid nul terminator
-            obj.obj_.via.sstr.data[len] = '\0';
             return obj;
         }
 
-        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
         return owned_object{{.via{.str{.type = object_type::string,
             .size = static_cast<uint32_t>(len),
             .ptr = detail::copy_string(str, len)}}}};
@@ -1113,13 +1109,10 @@ borrowed_object writable_object<Derived>::emplace_back(owned_object &&value)
 
     // We preallocate 8 entries
     if (container.via.array.size == 0) {
-        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
         container.via.array.ptr = detail::alloc_helper<detail::object>(8U);
-        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
         container.via.array.capacity = 8;
     } else if (container.via.array.capacity == container.via.array.size) {
         auto [new_array, new_capacity] =
-            // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
             detail::realloc_helper(container.via.array.ptr, container.via.array.capacity);
         container.via.array.ptr = new_array;
         container.via.array.capacity = new_capacity;
@@ -1146,13 +1139,10 @@ borrowed_object writable_object<Derived>::emplace(owned_object &&key, owned_obje
 
     // We preallocate 8 entries
     if (container.via.map.size == 0) {
-        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
         container.via.map.ptr = detail::alloc_helper<detail::object_kv>(8U);
-        // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
         container.via.map.capacity = 8;
     } else if (container.via.map.capacity == container.via.map.size) {
         auto [new_map, new_capacity] =
-            // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
             detail::realloc_helper(container.via.map.ptr, container.via.map.capacity);
         container.via.map.ptr = new_map;
         container.via.map.capacity = new_capacity;

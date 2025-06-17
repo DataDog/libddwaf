@@ -52,7 +52,7 @@ TEST(TestWaf, BasicContextRun)
     auto *ctx = instance.create_context();
 
     EXPECT_TRUE(ctx->insert(std::move(root)));
-    auto [code, res] = ctx->run(LONG_TIME);
+    auto [code, res] = ctx->eval(LONG_TIME);
     EXPECT_EQ(code, DDWAF_MATCH);
     delete ctx;
 }

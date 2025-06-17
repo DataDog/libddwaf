@@ -72,7 +72,7 @@ public:
 
     constexpr explicit operator std::string_view() { return {buffer_, length_}; }
 
-    [[nodiscard]] std::pmr::memory_resource *alloc() { return alloc_; }
+    [[nodiscard]] memory::memory_resource *alloc() { return alloc_; }
     [[nodiscard]] constexpr std::size_t length() const { return length_; }
     [[nodiscard]] constexpr const char *data() const { return buffer_; }
     [[nodiscard]] char *modifiable_data()
@@ -156,7 +156,7 @@ protected:
         }
     }
 
-    std::pmr::memory_resource *alloc_{std::pmr::get_default_resource()};
+    memory::memory_resource *alloc_{memory::get_default_resource()};
 
     // TODO Use capacity to determine if the string has been modified
     bool modified_{false};

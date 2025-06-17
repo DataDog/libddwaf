@@ -55,7 +55,7 @@ public:
     ~dynamic_string()
     {
         if (buffer_ != nullptr) {
-            std::pmr::memory_resource *alloc{std::pmr::get_default_resource()};
+            memory::memory_resource *alloc{memory::get_default_resource()};
             alloc->deallocate(buffer_, capacity_, alignof(char));
             buffer_ = nullptr;
             size_ = capacity_ = 0;
@@ -164,7 +164,7 @@ protected:
         }
     }
 
-    std::pmr::memory_resource *alloc_{std::pmr::get_default_resource()};
+    memory::memory_resource *alloc_{memory::get_default_resource()};
 
     char *buffer_{nullptr};
     // Size explicitly excludes the null character, while capacity includes it

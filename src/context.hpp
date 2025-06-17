@@ -67,7 +67,7 @@ public:
         return true;
     }
 
-    std::pair<bool, owned_object> run(uint64_t);
+    std::pair<bool, owned_object> eval(uint64_t);
 
     void eval_preprocessors(ddwaf::timer &deadline);
     void eval_postprocessors(ddwaf::timer &deadline);
@@ -168,10 +168,10 @@ public:
         return ctx_->insert(data, attr);
     }
 
-    std::pair<bool, owned_object> run(uint64_t timeout)
+    std::pair<bool, owned_object> eval(uint64_t timeout)
     {
         memory::memory_resource_guard guard(&mr_);
-        return ctx_->run(timeout);
+        return ctx_->eval(timeout);
     }
 
 protected:

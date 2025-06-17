@@ -26,7 +26,7 @@ bool base64_encode::transform_impl(cow_string &str)
     const size_t encoded_length = (str.length() + 2) / 3 * 4;
 
     // NOLINTNEXTLINE(misc-include-cleaner)
-    auto *alloc = std::pmr::get_default_resource();
+    auto *alloc = memory::get_default_resource();
     auto *new_string = static_cast<char *>(alloc->allocate(encoded_length, alignof(char)));
 
     // We don't have a good way to make this test fail in the CI, thus crapping on the coverage

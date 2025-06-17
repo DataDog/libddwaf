@@ -169,7 +169,7 @@ struct string_field : field_generator<string_field> {
         auto str_lc = cow_string::from_mutable_buffer(buffer.data(), buffer.size());
         transformer::lowercase::transform(str_lc);
 
-        return buffer; // NOLINT(clang-analyzer-unix.Malloc)
+        return buffer;
     }
 
     std::string_view value;
@@ -404,7 +404,6 @@ owned_object generate_fragment(std::string_view header, Generators... generators
         buffer.append(field);
     }
 
-    // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
     return buffer.to_object();
 }
 
@@ -465,7 +464,6 @@ owned_object generate_fragment_cached(std::string_view header,
         }
     }
 
-    // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
     return buffer.to_object();
 }
 
