@@ -283,7 +283,7 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
                     return DDWAF_ERR_INVALID_OBJECT;
                 }
             } else {
-                object_view input{to_ref(persistent_data)};
+                const object_view input{to_ref(persistent_data)};
                 if (!input.is_map() || !context->insert(input.as<map_view>())) {
                     return DDWAF_ERR_INVALID_OBJECT;
                 }
@@ -297,7 +297,7 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
                     return DDWAF_ERR_INVALID_OBJECT;
                 }
             } else {
-                object_view input{to_ref(ephemeral_data)};
+                const object_view input{to_ref(ephemeral_data)};
                 if (!input.is_map() || !context->insert(input.as<map_view>(), attr)) {
                     return DDWAF_ERR_INVALID_OBJECT;
                 }
