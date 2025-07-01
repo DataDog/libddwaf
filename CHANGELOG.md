@@ -1,5 +1,9 @@
 # libddwaf release
 
+## v1.25.2 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+#### Fixes
+- Add missing `ddwaf_builder_get_config_paths` export to windows shared libraries ([#421](https://github.com/DataDog/libddwaf/pull/421))
+
 ## v1.25.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Fixes
 - Support backwards-incompatible rules through the `rules_compat` key ([#409](https://github.com/DataDog/libddwaf/pull/409))
