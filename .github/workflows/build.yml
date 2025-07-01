@@ -274,7 +274,7 @@ jobs:
           path: artifacts
 
       - name: Display structure of downloaded files
-        run: find
+        run: find ./artifacts/
 
       - name: Package Nuget
         run: |
@@ -314,6 +314,42 @@ jobs:
         with:
           name: nuget
           path: ${{ github.workspace }}/output-packages
+
+  compare-artifacts:
+    needs: [ windows-builds, macos-universal-package, linux-musl-build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: find ./artifacts/
+
+      - name: Uncompress Release 
+        run: |
+          mkdir -p ./baseline ; cd ./baseline
+          find ../artifacts -name "*.tar.gz" -exec tar xvzf {} \;
+
+      - name: Generate Comparison Table
+        run: |
+          echo "### Artifact Size Comparison 📦" > comparison.md
+          echo "| Artifact | Previous Release | This PR | Difference |" >> comparison.md
+          echo "|----------|-----------------|---------|------------|" >> comparison.md
+
+          find ./baseline -regex ".*\.\(a\|a\.stripped\|so\|dll\|lib\)" | while read file; do
+            base=$(echo $file | sed "s@.*/libddwaf-[0-9]*\.[0-9]*\.[0-9]*\(-\(alpha\|beta\)[0-9]*\)*-\([^-]*-[^-/]*\).*@\3@g")
+            artifact=$(echo "$base/$(basename $file)")
+
+            echo "|$artifact|$(du -b $file | awk '{print $1}')| ... | ... |" >> comparison.md
+          done
+
+      - name: Post PR comment
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          file-path: comparison.md
 
   release:
     needs: [ windows-builds, macos-build, docker-builds, linux-musl-build, package-nuget]
