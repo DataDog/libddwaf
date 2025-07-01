@@ -5,6 +5,7 @@ EXPORTS
   ddwaf_builder_init
   ddwaf_builder_add_or_update_config
   ddwaf_builder_remove_config
+  ddwaf_builder_get_config_paths
   ddwaf_builder_build_instance
   ddwaf_builder_destroy
   ddwaf_known_addresses
