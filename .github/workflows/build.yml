@@ -318,6 +318,9 @@ jobs:
   compare-artifacts:
     needs: [ windows-builds, macos-universal-package, linux-musl-build]
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
 
@@ -347,9 +350,10 @@ jobs:
           done
 
       - name: Post PR comment
-        uses: thollander/actions-comment-pull-request@v3
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b
         with:
           file-path: comparison.md
+          comment-tag: artifact-size-comparison
 
   release:
     needs: [ windows-builds, macos-build, docker-builds, linux-musl-build, package-nuget]
