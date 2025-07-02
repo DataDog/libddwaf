@@ -1,8 +1,22 @@
 # libddwaf release
 
-## v1.25.2 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+## v1.26.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+### New features
+
+This release introduces a new operator, `hidden_ascii_match`, designed to detect hidden ASCII characters within arbitrary text inputs. Hidden ASCII refers specifically to characters found within the Unicode range [U+E0000, U+E007F]. This Unicode block was initially defined to provide non-printable mappings of standard ASCII characters, effectively allowing ASCII data to be embedded invisibly within text.
+
+Hidden ASCII characters have been increasingly leveraged to inject concealed instructions into prompts provided to LLMs, manipulating their behavior without explicit visibility to users or systems. The introduction of the `hidden_ascii_match` operator represents the first step toward a deterministic AI security strategy, proactively identifying and flagging these character sequences to support the effective monitoring and mitigation of potential Unicode-based prompt injection exploits.
+
+#### Changes
+- Hidden ASCII Matcher ([#411](https://github.com/DataDog/libddwaf/pull/411))
+
 #### Fixes
 - Add missing `ddwaf_builder_get_config_paths` export to windows shared libraries ([#421](https://github.com/DataDog/libddwaf/pull/421))
+
+#### Miscellaneous
+- Replace `re2::StringPiece` with `std::string_view` ([#412](https://github.com/DataDog/libddwaf/pull/412))
+- Add artifact comparison to PR ([#422](https://github.com/DataDog/libddwaf/pull/422))
 
 ## v1.25.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 #### Fixes
