@@ -410,7 +410,7 @@ ddwaf_handle ddwaf_builder_build_instance(ddwaf_builder builder);
  *        provided regular expression is used unanchored so matches can be found
  *        at any point within the path, any necessary anchors must be explicitly
  *        added to the regex. (nullable).
- * @oaran filter_len The length of the filter string (or 0 otherwise).
+ * @param filter_len The length of the filter string (or 0 otherwise).
  *
  * @return The total number of configurations loaded or, if provided, the number
  *         of those matching the filter.
