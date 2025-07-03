@@ -87,9 +87,10 @@ public:
 
 protected:
     template <size_t I, size_t... Is, typename Args>
-    bool resolve_arguments(const object_store &store,
-        const exclusion::object_set_ref &objects_excluded, Args &args,
-        std::index_sequence<I, Is...> /*unused*/) const
+    bool resolve_arguments(
+        const object_store &store, const exclusion::object_set_ref &objects_excluded, Args &args,
+        std::index_sequence<I, Is...> /*unused*/
+    ) const
     {
         using TupleElement = std::tuple_element_t<I, Args>;
         auto arg = resolve_argument<I>(store, objects_excluded);

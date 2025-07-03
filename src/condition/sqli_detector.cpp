@@ -96,7 +96,8 @@ std::string strip_literals(std::string_view statement, std::span<sql_token> toke
 }
 
 bool is_query_comment(std::string_view resource, std::span<sql_token> param_tokens,
-    std::size_t param_end /* the end position of the injection within the resource */)
+    std::size_t param_end /* the end position of the injection within the resource */
+)
 {
     /* We want to consider as malicious user-injected comments, even if they
      * are below our 3 tokens limit.
@@ -143,9 +144,10 @@ bool is_query_comment(std::string_view resource, std::span<sql_token> param_toke
     return false;
 }
 
-bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
-    std::span<sql_token> param_tokens,
-    std::size_t param_tokens_begin /* first index of param_tokens in resource_tokens */)
+bool is_where_tautology(
+    const std::vector<sql_token> &resource_tokens, std::span<sql_token> param_tokens,
+    std::size_t param_tokens_begin /* first index of param_tokens in resource_tokens */
+)
 {
     /* We want to consider as malicious the injections of 3 tokens (4 tokens
      * are already considered malicious) such as:

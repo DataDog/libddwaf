@@ -42,7 +42,8 @@ namespace {
 class scalar_iterator {
 public:
     explicit scalar_iterator(const ddwaf_object *obj, const std::span<const std::string> & /*path*/,
-        const exclusion::object_set_ref & /*exclude*/, const object_limits & /*limits*/)
+        const exclusion::object_set_ref & /*exclude*/, const object_limits & /*limits*/
+        )
         : current_(obj)
     {}
 

@@ -118,7 +118,8 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
 [[nodiscard]] eval_result exists_negated_condition::eval_impl(
     const unary_argument<const ddwaf_object *> &input, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer & /*deadline*/) const
+    ddwaf::timer & /*deadline*/
+) const
 {
     // We need to make sure the key path hasn't been found. If the result is
     // unknown, we can't guarantee that the key path isn't actually present in

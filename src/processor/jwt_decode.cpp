@@ -105,7 +105,8 @@ std::string_view find_token(const ddwaf_object &root, std::span<const std::strin
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<ddwaf_object, object_store::attribute> jwt_decode::eval_impl(
     const unary_argument<const ddwaf_object *> &input, processor_cache & /*cache*/,
-    ddwaf::timer & /*deadline*/) const
+    ddwaf::timer & /*deadline*/
+) const
 {
     const object_store::attribute attr =
         input.ephemeral ? object_store::attribute::ephemeral : object_store::attribute::none;

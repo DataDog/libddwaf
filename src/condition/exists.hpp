@@ -39,7 +39,8 @@ public:
 protected:
     [[nodiscard]] eval_result eval_impl(const unary_argument<const ddwaf_object *> &input,
         condition_cache &cache, const exclusion::object_set_ref &objects_excluded,
-        const object_limits &limits, ddwaf::timer & /*deadline*/) const;
+        const object_limits &limits, ddwaf::timer & /*deadline*/
+    ) const;
 
     friend class base_impl<exists_negated_condition>;
 };

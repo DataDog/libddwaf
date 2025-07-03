@@ -92,8 +92,9 @@ public:
 
         void set_error(std::string_view /*error*/) override {}
         void add_loaded(std::string_view /*id*/) override {}
-        void add_failed(std::string_view /*id*/, parser_error_severity /*sev*/,
-            std::string_view /*error*/) override
+        void add_failed(
+            std::string_view /*id*/, parser_error_severity /*sev*/, std::string_view /*error*/
+            ) override
         {}
         void add_skipped(std::string_view /*id*/) override {}
     };
@@ -114,7 +115,7 @@ public:
     void set_ruleset_version(std::string_view /*version*/) override{};
     void set_error(std::string /*error*/) override {}
 
-    void to_object(ddwaf_object & /*output*/) override{};
+    void to_object(ddwaf_object & /*output*/) override {};
 };
 
 class ruleset_info : public base_ruleset_info {

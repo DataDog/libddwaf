@@ -262,13 +262,15 @@ WafResultActionMatcher::WafResultActionMatcher(
 {}
 
 bool WafResultActionMatcher::MatchAndExplain(
-    const ddwaf::test::action_map &obtained, ::testing::MatchResultListener * /*unused*/) const
+    const ddwaf::test::action_map &obtained, ::testing::MatchResultListener * /*unused*/
+) const
 {
     return obtained == expected_;
 }
 
 bool WafResultDataMatcher::MatchAndExplain(
-    std::list<ddwaf::test::event> events, ::testing::MatchResultListener * /*unused*/) const
+    std::list<ddwaf::test::event> events, ::testing::MatchResultListener * /*unused*/
+) const
 {
     if (events.size() != expected_events_.size()) {
         return false;
@@ -293,7 +295,8 @@ bool WafResultDataMatcher::MatchAndExplain(
 }
 
 bool MatchMatcher::MatchAndExplain(
-    std::list<ddwaf::test::event::match> matches, ::testing::MatchResultListener * /*unused*/) const
+    std::list<ddwaf::test::event::match> matches, ::testing::MatchResultListener * /*unused*/
+) const
 {
     if (matches.size() != expected_matches_.size()) {
         return false;
