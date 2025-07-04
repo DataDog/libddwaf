@@ -3,8 +3,10 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <optional>
 #include <span>
 #include <string_view>
+#include <utility>
 
 #include "cow_string.hpp"
 #include "object.hpp"
@@ -79,11 +81,11 @@ bool call_transformer(transformer_id id, cow_string &str)
 
 } // namespace
 
-bool manager::transform(object_view source, owned_object &destination,
-    const std::span<const transformer_id> &transformers)
+std::optional<cow_string> manager::transform(
+    object_view source, const std::span<const transformer_id> &transformers)
 {
     if (!source.is_string() || source.empty()) {
-        return false;
+        return std::nullopt;
     }
 
     bool transformed = false;
@@ -94,19 +96,10 @@ bool manager::transform(object_view source, owned_object &destination,
     }
 
     if (!transformed) {
-        return false;
+        return std::nullopt;
     }
 
-    // Note that this object might contain a string which is greater in
-    // capacity than the length specified
-    auto [buffer, length] = str.move();
-
-    // The memory returned by str.move() is now owned by destination, however
-    // clang-tidy believes it has been leaked as it can't track the fact that
-    // it has changed ownership.
-    // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
-    destination = owned_object::make_string_nocopy(buffer, length);
-    return true;
+    return {std::move(str)};
 }
 
 } // namespace ddwaf::transformer

@@ -124,7 +124,7 @@ std::pair<owned_object, object_store::attribute> jwt_decode::eval_impl(
     token.remove_prefix(prefix.size());
 
     std::size_t spaces = 0;
-    while (!token.empty() && ddwaf::isspace(token[spaces])) { ++spaces; }
+    while (spaces < token.size() && ddwaf::isspace(token[spaces])) { ++spaces; }
 
     token.remove_prefix(spaces);
 

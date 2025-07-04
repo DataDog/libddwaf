@@ -32,16 +32,16 @@ namespace {
 
 std::optional<std::string> transform(std::string_view input, const std::vector<transformer_id> &ids)
 {
-    auto src = owned_object::make_string_nocopy(input, nullptr);
-    owned_object dst;
+    auto src = owned_object::make_string_literal(input.data(), input.size());
 
-    auto res = transformer::manager::transform(src, dst, ids);
+    auto res = transformer::manager::transform(src, ids);
 
     if (!res) {
         return std::nullopt;
     }
 
-    return {object_view{dst}.as<std::string>()};
+    auto str = std::string{static_cast<std::string_view>(res.value())};
+    return {std::move(str)};
 }
 
 TEST(TestTransformerManager, InvalidTypes)
@@ -51,79 +51,79 @@ TEST(TestTransformerManager, InvalidTypes)
 
     {
         std::vector<transformer_id> ids{transformer_id::compress_whitespace};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
     {
         std::vector<transformer_id> ids{transformer_id::lowercase};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
     {
         std::vector<transformer_id> ids{transformer_id::normalize_path};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
     {
         std::vector<transformer_id> ids{transformer_id::normalize_path_win};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
     {
         std::vector<transformer_id> ids{transformer_id::remove_comments};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
     {
         std::vector<transformer_id> ids{transformer_id::remove_nulls};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
     {
         std::vector<transformer_id> ids{transformer_id::unicode_normalize};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
     {
         std::vector<transformer_id> ids{transformer_id::url_decode};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
     {
         std::vector<transformer_id> ids{transformer_id::url_decode_iis};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
     {
         std::vector<transformer_id> ids{transformer_id::base64_decode};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
     {
         std::vector<transformer_id> ids{transformer_id::base64url_decode};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
     {
         std::vector<transformer_id> ids{transformer_id::base64_encode};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
     {
         std::vector<transformer_id> ids{transformer_id::url_path};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
     {
         std::vector<transformer_id> ids{transformer_id::url_basename};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
     {
         std::vector<transformer_id> ids{transformer_id::url_querystring};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
     {
         std::vector<transformer_id> ids{transformer_id::shell_unescape};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
     {
         std::vector<transformer_id> ids{transformer_id::js_decode};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
     {
         std::vector<transformer_id> ids{transformer_id::html_entity_decode};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
     {
         std::vector<transformer_id> ids{transformer_id::css_decode};
-        EXPECT_FALSE(transformer::manager::transform(src, dst, ids));
+        EXPECT_FALSE(transformer::manager::transform(src, ids));
     }
 }
 

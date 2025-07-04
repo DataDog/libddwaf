@@ -24,8 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include "ddwaf.h"
-
 // Convert numbers to strings
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
@@ -33,13 +31,6 @@
 #define STRL(value) value, sizeof(value) - 1
 
 template <typename T> using optional_ref = std::optional<std::reference_wrapper<T>>;
-
-// Internals
-// clang-format off
-#define PWI_DATA_TYPES (DDWAF_OBJ_SIGNED | DDWAF_OBJ_UNSIGNED | DDWAF_OBJ_STRING | DDWAF_OBJ_BOOL | DDWAF_OBJ_FLOAT)
-#define PWI_CONTAINER_TYPES (DDWAF_OBJ_ARRAY | DDWAF_OBJ_MAP)
-#define DDWAF_RESULT_INITIALISER {false, {{.str = nullptr}, DDWAF_OBJ_ARRAY, 0, 0}, {{.str = nullptr}, DDWAF_OBJ_MAP, 0, 0}, {{.str = nullptr}, DDWAF_OBJ_MAP, 0, 0}, 0}
-// clang-format on
 
 namespace ddwaf {
 

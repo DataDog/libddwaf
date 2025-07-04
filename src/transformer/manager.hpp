@@ -18,8 +18,8 @@ namespace ddwaf::transformer {
 // this will also host the cache and will have to be shared by all conditions.
 class manager {
 public:
-    static bool transform(object_view source, owned_object &destination,
-        const std::span<const transformer_id> &transformers);
+    static std::optional<cow_string> transform(
+        object_view source, const std::span<const transformer_id> &transformers);
 };
 
 } // namespace ddwaf::transformer

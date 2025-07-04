@@ -15,6 +15,7 @@ extern "C" {
 }
 
 #include "cow_string.hpp"
+#include "memory_resource.hpp" // IWYU pragma: keep
 #include "utf8.hpp"
 
 namespace ddwaf::utf8 {
@@ -210,16 +211,17 @@ struct ScratchpadChunk {
 
     explicit ScratchpadChunk(uint64_t chunkLength) : length(chunkLength)
     {
-        // Allow for potential \0
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-no-malloc,hicpp-no-malloc)
-        scratchpad = reinterpret_cast<char *>(malloc(length + 1));
-        if (scratchpad == nullptr) {
-            throw std::bad_alloc();
-        }
+        // NOLINTNEXTLINE(misc-include-cleaner)
+        static auto *alloc = memory::get_default_resource();
+        scratchpad = static_cast<char *>(alloc->allocate(length, alignof(char)));
     }
 
-    // NOLINTNEXTLINE(cppcoreguidelines-no-malloc,hicpp-no-malloc)
-    ~ScratchpadChunk() { free(scratchpad); }
+    ~ScratchpadChunk()
+    {
+        // NOLINTNEXTLINE(misc-include-cleaner)
+        static auto *alloc = memory::get_default_resource();
+        alloc->deallocate(scratchpad, length, alignof(char));
+    }
 
     ScratchpadChunk(const ScratchpadChunk &) = delete;
     ScratchpadChunk(ScratchpadChunk &&chunk) noexcept
@@ -368,31 +370,21 @@ bool normalize_string(cow_string &str)
 
         std::size_t new_length = 0;
         char *new_buffer = nullptr;
-        if (scratchPad.size() == 1) {
-            // We have a single scratchpad, we can simply swap the pointers :D
-            new_buffer = scratchPad.front().scratchpad;
-            new_length = scratchPad.front().used;
-            // Prevent the destructor from freeing the pointer we're now using.
-            scratchPad.front().scratchpad = nullptr;
-        } else {
-            // Compile the scratch pads into the final normalized string
-            for (const ScratchpadChunk &chunk : scratchPad) { new_length += chunk.used; }
 
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-no-malloc,hicpp-no-malloc)
-            new_buffer = reinterpret_cast<char *>(malloc(new_length + 1));
-            if (new_buffer == nullptr) {
-                return false;
-            }
+        // Compile the scratch pads into the final normalized string
+        for (const ScratchpadChunk &chunk : scratchPad) { new_length += chunk.used; }
 
-            uint64_t writeIndex = 0;
-            for (const ScratchpadChunk &chunk : scratchPad) {
-                memcpy(&new_buffer[writeIndex], chunk.scratchpad, chunk.used);
-                writeIndex += chunk.used;
-            }
+        // NOLINTNEXTLINE(misc-include-cleaner)
+        static auto *alloc = memory::get_default_resource();
+        new_buffer = static_cast<char *>(alloc->allocate(new_length, alignof(char)));
+
+        uint64_t writeIndex = 0;
+        for (const ScratchpadChunk &chunk : scratchPad) {
+            memcpy(&new_buffer[writeIndex], chunk.scratchpad, chunk.used);
+            writeIndex += chunk.used;
         }
 
-        new_buffer[new_length] = '\0';
-        str.replace_buffer(new_buffer, new_length);
+        str.replace_buffer(new_buffer, new_length, new_length);
 
         return true;
     } catch (const std::bad_alloc & /*unused*/) {} // NOLINT(bugprone-empty-catch)

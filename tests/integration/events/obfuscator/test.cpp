@@ -19,7 +19,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{"password", "rule1_obf"}, ddwaf_object_free};
+    ddwaf_config config{{"password", "rule1_obf"}};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ddwaf_object_free(&rule);
@@ -33,7 +33,8 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -57,7 +58,8 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
         ddwaf_object_map_add(&parameter, "value", &inter);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -81,7 +83,8 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -105,7 +108,8 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
         ddwaf_object_map_add(&parameter, "value", &inter);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -129,7 +133,7 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{"password", nullptr}, ddwaf_object_free};
+    ddwaf_config config{{"password", nullptr}};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ddwaf_object_free(&rule);
@@ -143,7 +147,8 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -167,7 +172,8 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
         ddwaf_object_map_add(&parameter, "value", &inter);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -191,7 +197,8 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -214,7 +221,7 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, "rule1_obf"}, ddwaf_object_free};
+    ddwaf_config config{{nullptr, "rule1_obf"}};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ddwaf_object_free(&rule);
@@ -228,7 +235,8 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -252,7 +260,8 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
         ddwaf_object_map_add(&parameter, "value", &inter);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -276,7 +285,8 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -299,7 +309,7 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = "^badvalue"}, ddwaf_object_free};
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = "^badvalue"}};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ddwaf_object_free(&rule);
@@ -313,7 +323,8 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "badvalue_something"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "security_scanner"}, {"category", "category2"}},
@@ -335,7 +346,8 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "othervalue_badvalue"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "security_scanner"}, {"category", "category2"}},
@@ -357,7 +369,7 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, ""}, ddwaf_object_free};
+    ddwaf_config config{{nullptr, ""}};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ddwaf_object_free(&rule);
@@ -371,7 +383,8 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -395,7 +408,8 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
         ddwaf_object_map_add(&parameter, "value", &inter);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -419,7 +433,8 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -442,7 +457,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{"[", nullptr}, ddwaf_object_free};
+    ddwaf_config config{{"[", nullptr}};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ddwaf_object_free(&rule);
@@ -456,7 +471,8 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -480,7 +496,8 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
         ddwaf_object_map_add(&parameter, "value", &inter);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -504,7 +521,8 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -527,7 +545,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, "]"}, ddwaf_object_free};
+    ddwaf_config config{{nullptr, "]"}};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ddwaf_object_free(&rule);
@@ -541,7 +559,8 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -565,7 +584,8 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
         ddwaf_object_map_add(&parameter, "value", &inter);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -589,7 +609,8 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},

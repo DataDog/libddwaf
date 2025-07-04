@@ -58,7 +58,7 @@ typedef enum
 /**
  * @enum DDWAF_RET_CODE
  *
- * Codes returned by ddwaf_run.
+ * Codes returned by ddwaf_context_eval.
  **/
 typedef enum
 {
@@ -180,13 +180,6 @@ static_assert(sizeof(struct _ddwaf_object_kv) == 32);
 #endif
 
 /**
- * @typedef ddwaf_object_free_fn
- *
- * Type of the function to free ddwaf::objects.
- **/
-typedef void (*ddwaf_object_free_fn)(ddwaf_object *object);
-
-/**
  * @struct ddwaf_config
  *
  * Configuration to be provided to the WAF
@@ -200,11 +193,6 @@ struct _ddwaf_config
         /** Regular expression for value-based obfuscation */
         const char *value_regex;
     } obfuscator;
-
-    /** Function to free the ddwaf::object provided to the context during calls
-     *  to ddwaf_run. If the value of this function is NULL, the objects will
-     *  not be freed. The default value should be ddwaf_object_free. */
-    ddwaf_object_free_fn free_fn;
 };
 
 /**
@@ -303,7 +291,7 @@ const char *const *ddwaf_known_actions(const ddwaf_handle handle, uint32_t *size
 ddwaf_context ddwaf_context_init(const ddwaf_handle handle);
 
 /**
- * ddwaf_run
+ * ddwaf_context_eval
  *
  * Perform a matching operation on the provided data
  *
@@ -323,7 +311,7 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle);
  * @param ephemeral_data Data on which to perform the pattern matching. This
  *    data will not be cached by the WAF. Matches arising from this data will
  *    also not be cached at any level. The data will be freed at the end of the
- *    call to ddwaf_run. The object must be a map of {string, <value>} in which
+ *    call to ddwaf_context_eval. The object must be a map of {string, <value>} in which
  *    each key represents the relevant address associated to the value, which
  *    can be of an arbitrary type. This parameter can be null if persistent data
  *    is provided.
@@ -340,7 +328,7 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle);
  *               - keep: whether the data contained herein must override any
  *                       transport sampling through the relevant mechanism.
  *               This structure must be freed by the caller and will contain all
- *               specified keys when the value returned by ddwaf_run is either
+ *               specified keys when the value returned by ddwaf_context_eval is either
  *               DDWAF_OK or DDWAF_MATCH and will be empty otherwise.
  * @param timeout Maximum time budget in microseconds.
  *
@@ -374,14 +362,14 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle);
  *  batch by a persistent address, however taking advantage of this is not
  *  recommended and might be explicitly rejected in the future.
  **/
-DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
-    ddwaf_object *ephemeral_data, ddwaf_object *result,  uint64_t timeout);
+DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *persistent_data,
+    ddwaf_object *ephemeral_data, bool free_objects, ddwaf_object *result,  uint64_t timeout);
 
 /**
  * ddwaf_context_destroy
  *
  * Performs the destruction of the context, freeing the data passed to it through
- * ddwaf_run using the used-defined free function.
+ * ddwaf_context_eval using the used-defined free function.
  *
  * @param context Context to destroy. (nonnull)
  **/
@@ -396,8 +384,7 @@ void ddwaf_context_destroy(ddwaf_context context);
  *
  * @return Handle to the builer instance or NULL on error.
  *
- * @note If config is NULL, default values will be used, including the default
- *       free function (ddwaf_object_free).
+ * @note If config is NULL, default values will be used
  **/
 ddwaf_builder ddwaf_builder_init(const ddwaf_config *config);
 
@@ -831,6 +818,11 @@ const ddwaf_object* ddwaf_object_at_value(const ddwaf_object *object, size_t ind
  *         object is not a container.
  **/
 const ddwaf_object* ddwaf_object_find(const ddwaf_object *object, const char *key, size_t length);
+
+/**
+ * ddwaf_object_clone
+ **/
+ddwaf_object* ddwaf_object_clone(const ddwaf_object *source, ddwaf_object *destination);
 
 /**
  * ddwaf_object_free

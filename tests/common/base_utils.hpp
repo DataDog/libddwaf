@@ -100,9 +100,8 @@ protected:
 
 // Convenience structure to build rulesets
 struct ruleset_builder {
-    explicit ruleset_builder(ddwaf_object_free_fn free_fn = ddwaf_object_free)
-        : free_fn(free_fn),
-          preprocessors(std::make_shared<typename decltype(preprocessors)::element_type>()),
+    ruleset_builder()
+        : preprocessors(std::make_shared<typename decltype(preprocessors)::element_type>()),
           postprocessors(std::make_shared<typename decltype(postprocessors)::element_type>()),
           rule_filters(std::make_shared<typename decltype(rule_filters)::element_type>()),
           input_filters(std::make_shared<typename decltype(input_filters)::element_type>()),
@@ -154,7 +153,6 @@ struct ruleset_builder {
         auto ruleset = std::make_shared<ddwaf::ruleset>();
         ruleset->obfuscator = std::make_shared<ddwaf::match_obfuscator>();
 
-        ruleset->free_fn = free_fn;
         ruleset->insert_preprocessors(preprocessors);
         ruleset->insert_rules(base_rules, user_rules);
         ruleset->insert_filters(rule_filters);
@@ -169,7 +167,6 @@ struct ruleset_builder {
         return ruleset;
     }
 
-    ddwaf_object_free_fn free_fn;
     std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> preprocessors;
     std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> postprocessors;
 

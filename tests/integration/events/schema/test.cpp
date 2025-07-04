@@ -79,7 +79,7 @@ TEST_F(TestSchemaIntegration, SimpleResult)
     ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "rule1"));
 
     ddwaf_object ret;
-    auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+    auto code = ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME);
     Validate(ret, code);
     ddwaf_object_free(&ret);
 }
@@ -93,7 +93,7 @@ TEST_F(TestSchemaIntegration, SimpleResultWithKeyPath)
     ddwaf_object_map_add(&param, "arg2", &arg2);
 
     ddwaf_object ret;
-    auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+    auto code = ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME);
     Validate(ret, code);
     ddwaf_object_free(&ret);
 }
@@ -110,7 +110,7 @@ TEST_F(TestSchemaIntegration, SimpleResultWithMultiKeyPath)
     ddwaf_object_map_add(&param, "arg2", &arg2);
 
     ddwaf_object ret;
-    auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+    auto code = ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME);
     Validate(ret, code);
     ddwaf_object_free(&ret);
 }
@@ -127,7 +127,7 @@ TEST_F(TestSchemaIntegration, ResultWithMultiCondition)
     ddwaf_object_map_add(&param, "arg4", &arg4);
 
     ddwaf_object ret;
-    auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+    auto code = ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME);
     Validate(ret, code);
     ddwaf_object_free(&ret);
 }
@@ -152,7 +152,7 @@ TEST_F(TestSchemaIntegration, MultiResultWithMultiCondition)
     ddwaf_object_map_add(&param, "arg4", &arg4);
 
     ddwaf_object ret;
-    auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+    auto code = ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME);
     Validate(ret, code);
     ddwaf_object_free(&ret);
 }

@@ -38,7 +38,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -84,7 +84,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
@@ -114,7 +114,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -171,7 +171,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -217,7 +217,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
@@ -247,7 +247,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -303,7 +303,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -349,7 +349,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
@@ -385,7 +385,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -441,7 +441,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -487,7 +487,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
@@ -517,7 +517,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",

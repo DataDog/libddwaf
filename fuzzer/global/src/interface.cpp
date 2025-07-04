@@ -92,8 +92,7 @@ ddwaf_handle init_waf()
     ddwaf_config config{
         {.key_regex =
                 R"((p(ass)?w(or)?d|pass(_?phrase)?|secret|(api_?|private_?|public_?)key)|token|consumer_?(id|key|secret)|sign(ed|ature)|bearer|authorization)",
-            .value_regex = R"(^(?:\d[ -]*?){13,16}$)"},
-        ddwaf_object_free};
+            .value_regex = R"(^(?:\d[ -]*?){13,16}$)"}};
     ddwaf_object rule = file_to_object("sample_rules.yml");
     ddwaf_object ruleset_info;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &ruleset_info);
@@ -112,12 +111,12 @@ void run_waf(ddwaf_handle handle, ddwaf_object args, bool ephemeral, size_t time
 
     ddwaf_object res;
     if (ephemeral) {
-        ddwaf_run(context, nullptr, &args, &res, timeLeftInUs);
+        ddwaf_context_eval(context, nullptr, &args, true, &res, timeLeftInUs);
     } else {
-        ddwaf_run(context, &args, nullptr, &res, timeLeftInUs);
+        ddwaf_context_eval(context, &args, nullptr, true, &res, timeLeftInUs);
     }
 
-    // TODO split input in several ddwaf_object, and call ddwaf_run on the same context
+    // TODO split input in several ddwaf_object, and call ddwaf_context_eval on the same context
 
     ddwaf_object_free(&res);
     ddwaf_context_destroy(context);

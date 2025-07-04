@@ -54,7 +54,8 @@ uint64_t run_fixture::test_main()
 
     for (auto &object : objects_) {
         ddwaf_object res{};
-        auto code = ddwaf_run(ctx_, nullptr, &object, &res, std::numeric_limits<uint32_t>::max());
+        auto code = ddwaf_context_eval(
+            ctx_, nullptr, &object, false, &res, std::numeric_limits<uint32_t>::max());
         if (code < 0) {
             throw std::runtime_error("WAF returned " + std::to_string(code));
         }

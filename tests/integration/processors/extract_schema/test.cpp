@@ -43,7 +43,7 @@ TEST(TestExtractSchemaIntegration, Postprocessor)
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -89,7 +89,7 @@ TEST(TestExtractSchemaIntegration, Preprocessor)
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -146,7 +146,7 @@ TEST(TestExtractSchemaIntegration, Processor)
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -207,7 +207,7 @@ TEST(TestExtractSchemaIntegration, ProcessorWithScannerByTags)
     ASSERT_NE(context, nullptr);
 
     ddwaf_object out;
-    ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
+    ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -257,7 +257,7 @@ TEST(TestExtractSchemaIntegration, ProcessorWithScannerByID)
     ASSERT_NE(context, nullptr);
 
     ddwaf_object out;
-    ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
+    ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -311,7 +311,7 @@ TEST(TestExtractSchemaIntegration, ProcessorUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
-        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
+        ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -354,7 +354,7 @@ TEST(TestExtractSchemaIntegration, ProcessorUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
-        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
+        ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -409,7 +409,7 @@ TEST(TestExtractSchemaIntegration, ScannerUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
-        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
+        ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -453,7 +453,7 @@ TEST(TestExtractSchemaIntegration, ScannerUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
-        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
+        ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -510,7 +510,7 @@ TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
-        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
+        ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -553,7 +553,7 @@ TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
-        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
+        ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -609,7 +609,7 @@ TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
-        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
+        ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -645,7 +645,7 @@ TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
-        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
+        ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -699,7 +699,7 @@ TEST(TestExtractSchemaIntegration, EmptyProcessorUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
-        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
+        ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -742,7 +742,7 @@ TEST(TestExtractSchemaIntegration, EmptyProcessorUpdate)
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
-        ddwaf_run(context, &map, nullptr, &out, LONG_TIME);
+        ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -790,7 +790,8 @@ TEST(TestExtractSchemaIntegration, PostprocessorWithEphemeralMapping)
         ddwaf_object_map_add(&ephemeral, "server.request.body", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &persistent, &ephemeral, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(
+            ddwaf_context_eval(context, &persistent, &ephemeral, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -811,7 +812,8 @@ TEST(TestExtractSchemaIntegration, PostprocessorWithEphemeralMapping)
         ddwaf_object_map_add(&ephemeral, "server.request.body", &map);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, nullptr, &ephemeral, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(
+            ddwaf_context_eval(context, nullptr, &ephemeral, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -861,7 +863,8 @@ TEST(TestExtractSchemaIntegration, PreprocessorWithEphemeralMapping)
         ddwaf_object_map_add(&ephemeral, "server.request.body", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &persistent, &ephemeral, &out, LONG_TIME), DDWAF_MATCH);
+        ASSERT_EQ(ddwaf_context_eval(context, &persistent, &ephemeral, true, &out, LONG_TIME),
+            DDWAF_MATCH);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -889,7 +892,8 @@ TEST(TestExtractSchemaIntegration, PreprocessorWithEphemeralMapping)
         ddwaf_object_map_add(&ephemeral, "server.request.body", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, nullptr, &ephemeral, &out, LONG_TIME), DDWAF_MATCH);
+        ASSERT_EQ(
+            ddwaf_context_eval(context, nullptr, &ephemeral, true, &out, LONG_TIME), DDWAF_MATCH);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -949,7 +953,8 @@ TEST(TestExtractSchemaIntegration, ProcessorEphemeralExpression)
         ddwaf_object_map_add(&ephemeral, "waf.context.processor", &settings);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &persistent, &ephemeral, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(
+            ddwaf_context_eval(context, &persistent, &ephemeral, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -968,7 +973,8 @@ TEST(TestExtractSchemaIntegration, ProcessorEphemeralExpression)
         ddwaf_object_map_add(&persistent, "server.request.body", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &persistent, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(
+            ddwaf_context_eval(context, &persistent, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -986,7 +992,8 @@ TEST(TestExtractSchemaIntegration, ProcessorEphemeralExpression)
         ddwaf_object_map_add(&ephemeral, "waf.context.processor", &settings);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, nullptr, &ephemeral, &out, LONG_TIME), DDWAF_MATCH);
+        ASSERT_EQ(
+            ddwaf_context_eval(context, nullptr, &ephemeral, true, &out, LONG_TIME), DDWAF_MATCH);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 

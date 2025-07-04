@@ -12,9 +12,10 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <limits>
-#include <memory>
 #include <string>
 #include <string_view>
+
+#include "memory_resource.hpp"
 
 namespace ddwaf {
 
@@ -25,21 +26,18 @@ class owned_object;
 // result in an output object, as it prevents copying unnecessary strings.
 class dynamic_string {
 public:
-    dynamic_string() : dynamic_string(static_cast<std::size_t>(0)){};
+    using size_type = uint32_t;
 
-    explicit dynamic_string(std::size_t capacity)
-    {
-        ensure_spare_capacity(capacity);
-        buffer_.get()[0] = '\0';
-    }
+    dynamic_string() = default;
 
-    dynamic_string(const char *str, std::size_t size) : size_(size)
+    explicit dynamic_string(size_type capacity) { ensure_spare_capacity(capacity); }
+
+    dynamic_string(const char *str, size_type size) : size_(size)
     {
         ensure_spare_capacity(size_);
         if (size_ != 0) {
-            memcpy(buffer_.get(), str, size_);
+            memcpy(buffer_, str, size_);
         }
-        buffer_.get()[size_] = '\0';
     }
 
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
@@ -54,7 +52,15 @@ public:
         : dynamic_string(std::string_view{str})
     {}
 
-    ~dynamic_string() = default;
+    ~dynamic_string()
+    {
+        if (buffer_ != nullptr) {
+            memory::memory_resource *alloc{memory::get_default_resource()};
+            alloc->deallocate(buffer_, capacity_, alignof(char));
+            buffer_ = nullptr;
+            size_ = capacity_ = 0;
+        }
+    }
 
     dynamic_string(const dynamic_string &str) : dynamic_string(str.data(), str.size()) {}
 
@@ -71,17 +77,23 @@ public:
     // object leaves the original string in an unusable state and must be
     // reinitialised if reuse is required.
     dynamic_string(dynamic_string &&other) noexcept
-        : buffer_(std::move(other.buffer_)), size_(other.size_), capacity_(other.capacity_)
+        : buffer_(other.buffer_), size_(other.size_), capacity_(other.capacity_)
     {
+        other.buffer_ = nullptr;
         other.size_ = other.capacity_ = 0;
     }
 
     dynamic_string &operator=(dynamic_string &&other) noexcept
     {
-        buffer_ = std::move(other.buffer_);
+        if (buffer_ != nullptr) {
+            alloc_->deallocate(buffer_, capacity_, alignof(char));
+        }
+
+        buffer_ = other.buffer_;
         size_ = other.size_;
         capacity_ = other.capacity_;
 
+        other.buffer_ = nullptr;
         other.size_ = other.capacity_ = 0;
 
         return *this;
@@ -90,76 +102,75 @@ public:
     // This method moves the contents of the string into the resulting object
     owned_object to_object();
 
-    [[nodiscard]] std::size_t size() const noexcept { return size_; }
+    [[nodiscard]] size_type size() const noexcept { return size_; }
     [[nodiscard]] bool empty() const noexcept { return size_ == 0; }
-    [[nodiscard]] std::size_t capacity() const noexcept { return capacity_; }
-    [[nodiscard]] const char *data() const noexcept { return buffer_.get(); }
+    [[nodiscard]] size_type capacity() const noexcept { return capacity_; }
+    [[nodiscard]] const char *data() const noexcept { return buffer_; }
 
     void append(std::string_view str)
     {
         ensure_spare_capacity(str.size());
         if (!str.empty()) [[likely]] {
-            memcpy(&buffer_.get()[size_], str.data(), str.size());
+            memcpy(&buffer_[size_], str.data(), str.size());
             size_ += str.size();
         }
-        buffer_.get()[size_] = '\0';
     }
 
     void append(char c)
     {
         ensure_spare_capacity(1);
-        buffer_.get()[size_++] = c;
-        buffer_.get()[size_] = '\0';
+        buffer_[size_++] = c;
     }
 
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-    operator std::string_view() const noexcept { return {buffer_.get(), size_}; }
-    explicit operator std::string() const { return {buffer_.get(), size_}; }
+    operator std::string_view() const noexcept { return {buffer_, size_}; }
+    explicit operator std::string() const { return {buffer_, size_}; }
 
     bool operator==(const dynamic_string &other) const noexcept
     {
-        return size_ == other.size_ && (memcmp(buffer_.get(), other.buffer_.get(), size_) == 0);
+        return size_ == other.size_ && (size_ == 0 || memcmp(buffer_, other.buffer_, size_) == 0);
     }
 
     template <typename T> static dynamic_string from_movable_string(T &str)
     {
         dynamic_string dynstr;
         auto [ptr, size] = str.move();
-        dynstr.buffer_.reset(ptr);
+        dynstr.buffer_ = ptr;
         dynstr.size_ = size;
         return dynstr;
     }
 
 protected:
-    void ensure_spare_capacity(std::size_t at_least)
+    void ensure_spare_capacity(size_type at_least)
     {
-        // We need to be able to allocate at_least + 1 to include the null character
-        if (at_least >= (std::numeric_limits<std::size_t>::max() - capacity_)) {
+        if (at_least == 0) {
+            return;
+        }
+
+        if (at_least > (std::numeric_limits<size_type>::max() - capacity_)) {
             throw std::bad_alloc{};
         }
 
-        if ((size_ + at_least + 1) >= capacity_) {
-            auto new_capacity_ = capacity_ + std::max(capacity_, at_least + 1);
-            // NOLINTNEXTLINE(hicpp-no-malloc)
-            char *new_buffer = static_cast<char *>(malloc(new_capacity_));
-            if (new_buffer == nullptr) {
-                throw std::bad_alloc{};
+        if ((size_ + at_least) >= capacity_) {
+            auto new_capacity = capacity_ + std::max(capacity_, at_least);
+            char *new_buffer = static_cast<char *>(alloc_->allocate(new_capacity, alignof(char)));
+            if (buffer_ != nullptr) {
+                memcpy(new_buffer, buffer_, size_);
+                alloc_->deallocate(buffer_, capacity_, alignof(char));
             }
 
-            if (buffer_) {
-                memcpy(new_buffer, buffer_.get(), size_);
-            }
-
-            buffer_.reset(new_buffer);
-            capacity_ = new_capacity_;
+            buffer_ = new_buffer;
+            capacity_ = new_capacity;
         }
     }
 
-    std::unique_ptr<char, decltype(&free)> buffer_{nullptr, free};
+    memory::memory_resource *alloc_{memory::get_default_resource()};
+
+    char *buffer_{nullptr};
     // Size explicitly excludes the null character, while capacity includes it
     // as if refers to the total memory allocated.
-    std::size_t size_{0};
-    std::size_t capacity_{0};
+    size_type size_{0};
+    size_type capacity_{0};
 };
 
 template <> struct fmt::formatter<dynamic_string> : fmt::formatter<std::string_view> {

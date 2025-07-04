@@ -150,7 +150,6 @@ public:
 
         assert(key_.is_invalid());
 
-        // NOLINTNEXTLINE(hicpp-no-malloc)
         key_ = owned_object::make_string(str, length);
 
         return true;

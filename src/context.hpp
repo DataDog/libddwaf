@@ -11,10 +11,10 @@
 
 #include "attribute_collector.hpp"
 #include "context_allocator.hpp"
-#include "ddwaf.h"
 #include "exclusion/common.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
+#include "memory_resource.hpp"
 #include "obfuscator.hpp"
 #include "ruleset.hpp"
 
@@ -58,9 +58,16 @@ public:
         return true;
     }
 
-    std::pair<bool, owned_object> run(uint64_t);
+    bool insert(map_view data, attribute attr = attribute::none) noexcept
+    {
+        if (!store_.insert(data, attr)) {
+            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+            return false;
+        }
+        return true;
+    }
 
-    [[nodiscard]] ddwaf_object_free_fn get_free_fn() const noexcept { return ruleset_->free_fn; }
+    std::pair<bool, owned_object> eval(uint64_t);
 
     void eval_preprocessors(ddwaf::timer &deadline);
     void eval_postprocessors(ddwaf::timer &deadline);
@@ -92,6 +99,8 @@ protected:
         }
         return false;
     }
+
+    memory::memory_resource *alloc{memory::get_default_resource()};
 
     std::shared_ptr<ruleset> ruleset_;
     ddwaf::object_store store_;
@@ -153,17 +162,21 @@ public:
         return ctx_->insert(std::forward<owned_object>(data), attr);
     }
 
-    std::pair<bool, owned_object> run(uint64_t timeout)
+    bool insert(map_view data, context::attribute attr = context::attribute::none) noexcept
     {
         memory::memory_resource_guard guard(&mr_);
-        return ctx_->run(timeout);
+        return ctx_->insert(data, attr);
     }
 
-    [[nodiscard]] ddwaf_object_free_fn get_free_fn() const noexcept { return ctx_->get_free_fn(); }
+    std::pair<bool, owned_object> eval(uint64_t timeout)
+    {
+        memory::memory_resource_guard guard(&mr_);
+        return ctx_->eval(timeout);
+    }
 
 protected:
     context *ctx_;
-    std::pmr::monotonic_buffer_resource mr_;
+    memory::monotonic_buffer_resource mr_;
 };
 
 } // namespace ddwaf

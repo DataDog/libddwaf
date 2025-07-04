@@ -9,7 +9,6 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <new>
 #include <optional>
 #include <span>
 #include <stdexcept>
@@ -22,6 +21,7 @@
 #include "argument_retriever.hpp"
 #include "clock.hpp"
 #include "cow_string.hpp"
+#include "dynamic_string.hpp"
 #include "exception.hpp"
 #include "log.hpp"
 #include "object.hpp"
@@ -34,54 +34,6 @@
 
 namespace ddwaf {
 namespace {
-
-struct string_buffer {
-    explicit string_buffer(std::size_t length)
-        // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
-        : buffer(reinterpret_cast<char *>(malloc(sizeof(char) * (length + 1)))), length(length)
-    {
-        if (buffer == nullptr) {
-            throw std::bad_alloc{};
-        }
-    }
-
-    // NOLINTNEXTLINE(hicpp-no-malloc,cppcoreguidelines-pro-type-reinterpret-cast)
-    ~string_buffer() { free(buffer); }
-
-    string_buffer(const string_buffer &) = delete;
-    string_buffer(string_buffer &&) = delete;
-
-    string_buffer &operator=(const string_buffer &) = delete;
-    string_buffer &operator=(string_buffer &&) = delete;
-
-    void append(std::string_view str)
-    {
-        if (!str.empty() && (index + str.size()) <= length) [[likely]] {
-            memcpy(&buffer[index], str.data(), str.size());
-            index += str.size();
-        }
-    }
-
-    void append(char c)
-    {
-        if (index < length) [[likely]] {
-            buffer[index++] = c;
-        }
-    }
-
-    owned_object to_object()
-    {
-        buffer[index] = '\0';
-
-        auto object = owned_object::make_string_nocopy(buffer, index);
-        buffer = nullptr;
-        return object; // NOLINT(clang-analyzer-unix.Malloc)
-    }
-
-    char *buffer{nullptr};
-    std::size_t index{0};
-    std::size_t length;
-};
 
 // Return true if the first argument is less than (i.e. is ordered before) the second
 bool str_casei_cmp(std::string_view left, std::string_view right)
@@ -217,7 +169,7 @@ struct string_field : field_generator<string_field> {
         auto str_lc = cow_string::from_mutable_buffer(buffer.data(), buffer.size());
         transformer::lowercase::transform(str_lc);
 
-        return buffer; // NOLINT(clang-analyzer-unix.Malloc)
+        return buffer;
     }
 
     std::string_view value;
@@ -442,16 +394,16 @@ owned_object generate_fragment(std::string_view header, Generators... generators
     std::array<std::string, num_fields> fields;
 
     auto length =
+        header.size() + num_fields +
         generate_fragment_field(std::span<std::string, num_fields>{fields}, generators...);
 
-    string_buffer buffer{length + header.size() + num_fields};
+    dynamic_string buffer{static_cast<dynamic_string::size_type>(length)};
     buffer.append(header);
     for (const auto &field : fields) {
         buffer.append('-');
         buffer.append(field);
     }
 
-    // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
     return buffer.to_object();
 }
 
@@ -501,9 +453,9 @@ owned_object generate_fragment_cached(std::string_view header,
         cache.resize(num_fields);
     }
 
-    auto length = generate_fragment_field_cached(cache, generators...);
+    auto length = header.size() + num_fields + generate_fragment_field_cached(cache, generators...);
 
-    string_buffer buffer{length + header.size() + num_fields};
+    dynamic_string buffer{static_cast<dynamic_string::size_type>(length)};
     buffer.append(header);
     for (const auto &field : cache) {
         buffer.append('-');
@@ -512,7 +464,6 @@ owned_object generate_fragment_cached(std::string_view header,
         }
     }
 
-    // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
     return buffer.to_object();
 }
 

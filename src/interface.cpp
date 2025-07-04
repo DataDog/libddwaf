@@ -180,8 +180,7 @@ ddwaf::waf *ddwaf_init(
 {
     try {
         if (ruleset != nullptr) {
-            auto free_fn = config != nullptr ? config->free_fn : ddwaf_object_free;
-            ddwaf::waf_builder builder(free_fn, obfuscator_from_config(config));
+            ddwaf::waf_builder builder(obfuscator_from_config(config));
 
             ddwaf::raw_configuration input{to_ref(ruleset)};
             if (diagnostics == nullptr) {
@@ -268,9 +267,9 @@ ddwaf_context ddwaf_context_init(ddwaf::waf *handle)
     return nullptr;
 }
 
-DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
+DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *persistent_data,
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    ddwaf_object *ephemeral_data, ddwaf_object *result, uint64_t timeout)
+    ddwaf_object *ephemeral_data, bool free_objects, ddwaf_object *result, uint64_t timeout)
 {
     if (context == nullptr || (persistent_data == nullptr && ephemeral_data == nullptr)) {
         DDWAF_WARN("Illegal WAF call: context or data was null");
@@ -278,21 +277,31 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
     }
 
     try {
-        auto free_fn = context->get_free_fn();
-
-        if (persistent_data != nullptr &&
-            !context->insert(
-                owned_object{// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-                    to_ref(persistent_data), reinterpret_cast<detail::object_free_fn>(free_fn)})) {
-            return DDWAF_ERR_INVALID_OBJECT;
+        if (persistent_data != nullptr) {
+            if (free_objects) {
+                if (!context->insert(owned_object{to_ref(persistent_data)})) {
+                    return DDWAF_ERR_INVALID_OBJECT;
+                }
+            } else {
+                const object_view input{to_ref(persistent_data)};
+                if (!input.is_map() || !context->insert(input.as<map_view>())) {
+                    return DDWAF_ERR_INVALID_OBJECT;
+                }
+            }
         }
 
-        if (ephemeral_data != nullptr &&
-            !context->insert(owned_object{to_ref(ephemeral_data),
-                                 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-                                 reinterpret_cast<detail::object_free_fn>(free_fn)},
-                context::attribute::ephemeral)) {
-            return DDWAF_ERR_INVALID_OBJECT;
+        if (ephemeral_data != nullptr) {
+            auto attr = context::attribute::ephemeral;
+            if (free_objects) {
+                if (!context->insert(owned_object{to_ref(ephemeral_data)}, attr)) {
+                    return DDWAF_ERR_INVALID_OBJECT;
+                }
+            } else {
+                const object_view input{to_ref(ephemeral_data)};
+                if (!input.is_map() || !context->insert(input.as<map_view>(), attr)) {
+                    return DDWAF_ERR_INVALID_OBJECT;
+                }
+            }
         }
 
         // The timers will actually count nanoseconds, std::chrono doesn't
@@ -300,7 +309,7 @@ DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
         constexpr uint64_t max_timeout_ms = std::chrono::nanoseconds::max().count() / 1000;
         timeout = std::min(timeout, max_timeout_ms);
 
-        auto [code, res] = context->run(timeout);
+        auto [code, res] = context->eval(timeout);
         if (result != nullptr) {
             to_ref(result) = res.move();
         }
@@ -343,8 +352,7 @@ bool ddwaf_set_log_cb(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level)
 ddwaf_builder ddwaf_builder_init(const ddwaf_config *config)
 {
     try {
-        auto free_fn = config != nullptr ? config->free_fn : ddwaf_object_free;
-        return new ddwaf::waf_builder(free_fn, obfuscator_from_config(config));
+        return new ddwaf::waf_builder(obfuscator_from_config(config));
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());
     } catch (...) {
@@ -437,7 +445,6 @@ uint32_t ddwaf_builder_get_config_paths(
 
         if (paths != nullptr) {
             ddwaf_object_array(paths);
-            // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
             for (const auto &value : config_paths) {
                 ddwaf_object tmp{};
                 ddwaf_object_array_add(
@@ -774,5 +781,16 @@ const ddwaf_object *ddwaf_object_find(const ddwaf_object *object, const char *ke
 
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     return reinterpret_cast<const ddwaf_object *>(view.find(std::string_view{key, length}).ptr());
+}
+
+ddwaf_object *ddwaf_object_clone(const ddwaf_object *source, ddwaf_object *destination)
+{
+    const object_view view{to_ptr(source)};
+    if (!view.has_value()) {
+        return nullptr;
+    }
+
+    to_ref(destination) = view.clone().move();
+    return destination;
 }
 }
