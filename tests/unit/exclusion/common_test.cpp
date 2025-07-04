@@ -21,7 +21,7 @@ TEST(ExclusionObjectSet, Empty)
 
 TEST(ExclusionObjectSet, PersistentOnly)
 {
-    auto root = owned_object::make_map({{"value", "node"}});
+    auto root = object_builder::map({{"value", "node"}});
 
     exclusion::object_set excluded{{root.at(0)}, {}};
     EXPECT_FALSE(excluded.empty());
@@ -31,7 +31,7 @@ TEST(ExclusionObjectSet, PersistentOnly)
 
 TEST(ExclusionObjectSet, EphemeralOnly)
 {
-    auto root = owned_object::make_map({{"value", "node"}});
+    auto root = object_builder::map({{"value", "node"}});
 
     exclusion::object_set excluded{{}, {root.at(0)}};
     EXPECT_FALSE(excluded.empty());
@@ -41,7 +41,7 @@ TEST(ExclusionObjectSet, EphemeralOnly)
 
 TEST(ExclusionObjectSet, EphemeralAndPersistent)
 {
-    auto root = owned_object::make_map({{"first", "node"}, {"second", "node"}});
+    auto root = object_builder::map({{"first", "node"}, {"second", "node"}});
 
     exclusion::object_set excluded{{root.at(1)}, {root.at(0)}};
     EXPECT_FALSE(excluded.empty());
@@ -79,7 +79,7 @@ TEST(ExclusionObjectSetRef, Empty)
 
 TEST(ExclusionObjectSetRef, PersistentOnly)
 {
-    auto root = owned_object::make_map({{"value", "node"}});
+    auto root = object_builder::map({{"value", "node"}});
 
     std::unordered_set<object_view> persistent{root.at(0)};
     exclusion::object_set_ref excluded{persistent, {}};
@@ -90,7 +90,7 @@ TEST(ExclusionObjectSetRef, PersistentOnly)
 
 TEST(ExclusionObjectSetRef, EphemeralOnly)
 {
-    auto root = owned_object::make_map({{"value", "node"}});
+    auto root = object_builder::map({{"value", "node"}});
 
     std::unordered_set<object_view> ephemeral{root.at(0)};
     exclusion::object_set_ref excluded{{}, ephemeral};
@@ -101,7 +101,7 @@ TEST(ExclusionObjectSetRef, EphemeralOnly)
 
 TEST(ExclusionObjectSetRef, EphemeralAndPersistent)
 {
-    auto root = owned_object::make_map({{"first", "node"}, {"second", "node"}});
+    auto root = object_builder::map({{"first", "node"}, {"second", "node"}});
 
     std::unordered_set<object_view> persistent{root.at(1)};
     std::unordered_set<object_view> ephemeral{root.at(0)};

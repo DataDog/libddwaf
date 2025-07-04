@@ -136,9 +136,9 @@ std::pair<owned_object, object_store::attribute> jwt_decode::eval_impl(
     }
 
     // Decode header and payload and generate output
-    auto output = owned_object::make_map(
+    auto output = object_builder::map(
         {{"header", decode_and_parse(jwt.header)}, {"payload", decode_and_parse(jwt.payload)},
-            {"signature", owned_object::make_map({{"available", !jwt.signature.empty()}})}});
+            {"signature", object_builder::map({{"available", !jwt.signature.empty()}})}});
 
     return {std::move(output), attr};
 }

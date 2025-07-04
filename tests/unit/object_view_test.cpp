@@ -45,7 +45,7 @@ TEST(TestObjectView, InvalidObject)
 
 TEST(TestObjectView, NullObject)
 {
-    owned_object original{nullptr};
+    auto original = owned_object::make_null();
 
     object_view view(original);
 
@@ -514,10 +514,10 @@ TEST(TestObjectView, AsOrDefault)
 
 TEST(TestObjectView, KeyPathAccess)
 {
-    auto root = owned_object::make_map({
-        {"1", owned_object::make_map({{"1.2", 111}, {"1.3", 123}})},
-        {"2", owned_object::make_map({{"2.1", owned_object::make_map({{"2.1.1", 9}})}})},
-        {"3", owned_object::make_array({"3.1"})},
+    auto root = object_builder::map({
+        {"1", object_builder::map({{"1.2", 111}, {"1.3", 123}})},
+        {"2", object_builder::map({{"2.1", object_builder::map({{"2.1.1", 9}})}})},
+        {"3", object_builder::array({"3.1"})},
     });
 
     object_view view(root);
@@ -893,10 +893,10 @@ TEST(TestMapView, IteratorAccess)
 
 TEST(TestMapView, KeyPathAccess)
 {
-    auto root = owned_object::make_map({
-        {"1", owned_object::make_map({{"1.2", 111}, {"1.3", 123}})},
-        {"2", owned_object::make_map({{"2.1", owned_object::make_map({{"2.1.1", 9}})}})},
-        {"3", owned_object::make_array({"3.1"})},
+    auto root = object_builder::map({
+        {"1", object_builder::map({{"1.2", 111}, {"1.3", 123}})},
+        {"2", object_builder::map({{"2.1", object_builder::map({{"2.1.1", 9}})}})},
+        {"3", object_builder::array({"3.1"})},
     });
 
     map_view view(root);

@@ -49,7 +49,7 @@ TEST(TestScalarNegatedCondition, NoMatch)
     scalar_negated_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    auto root = owned_object::make_map({{"server.request.uri.raw", "hello"}});
+    auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -66,7 +66,7 @@ TEST(TestScalarNegatedCondition, Timeout)
     scalar_negated_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    auto root = owned_object::make_map({{"server.request.uri.raw", "hello"}});
+    auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -81,7 +81,7 @@ TEST(TestScalarNegatedCondition, SimpleMatch)
     scalar_negated_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    auto root = owned_object::make_map({{"server.request.uri.raw", owned_object{}}});
+    auto root = object_builder::map({{"server.request.uri.raw", owned_object{}}});
 
     object_store store;
     store.insert(std::move(root));
@@ -101,7 +101,7 @@ TEST(TestScalarNegatedCondition, CachedMatch)
     ddwaf::timer deadline{2s};
     condition_cache cache;
 
-    auto root = owned_object::make_map({{"server.request.uri.raw", owned_object{}}});
+    auto root = object_builder::map({{"server.request.uri.raw", owned_object{}}});
 
     {
         object_store store;
@@ -130,8 +130,8 @@ TEST(TestScalarNegatedCondition, SimpleMatchOnKeys)
     scalar_negated_condition cond{
         std::make_unique<matcher::regex_match>("hello", 0, true), {}, {std::move(target)}};
 
-    auto root = owned_object::make_map(
-        {{"server.request.uri.raw", owned_object::make_map({{"bye", "hello"}})}});
+    auto root =
+        object_builder::map({{"server.request.uri.raw", object_builder::map({{"bye", "hello"}})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -148,7 +148,7 @@ TEST(TestScalarNegatedCondition, SimpleEphemeralMatch)
     scalar_negated_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    auto root = owned_object::make_map({{"server.request.uri.raw", owned_object{}}});
+    auto root = object_builder::map({{"server.request.uri.raw", owned_object{}}});
 
     object_store store;
     {

@@ -50,7 +50,7 @@ TEST(TestModuleUngrouped, SingleRuleMatch)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -62,7 +62,7 @@ TEST(TestModuleUngrouped, SingleRuleMatch)
     }
 
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(root);
         std::vector<rule_result> results;
@@ -115,7 +115,7 @@ TEST(TestModuleUngrouped, MultipleMonitoringRuleMatch)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -129,7 +129,7 @@ TEST(TestModuleUngrouped, MultipleMonitoringRuleMatch)
     }
 
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(root);
         std::vector<rule_result> results;
@@ -183,7 +183,7 @@ TEST(TestModuleUngrouped, BlockingRuleMatch)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -240,7 +240,7 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -254,7 +254,7 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
 
     // Check that we can still match the blocking rule
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.2"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.2"}});
         store.insert(std::move(root));
 
         std::vector<rule_result> results;
@@ -310,7 +310,7 @@ TEST(TestModuleUngrouped, BlockingRuleMatchBasePrecedence)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -370,7 +370,7 @@ TEST(TestModuleUngrouped, BlockingRuleMatchUserPrecedence)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -409,7 +409,7 @@ TEST(TestModuleUngrouped, NonExpiringModule)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -446,7 +446,7 @@ TEST(TestModuleUngrouped, ExpiringModule)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -484,7 +484,7 @@ TEST(TestModuleUngrouped, DisabledRules)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -536,7 +536,7 @@ TEST(TestModuleGrouped, MultipleGroupsMonitoringRuleMatch)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -592,7 +592,7 @@ TEST(TestModuleGrouped, MultipleGroupsBlockingRuleMatch)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -647,7 +647,7 @@ TEST(TestModuleGrouped, SingleGroupBlockingRuleMatch)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -701,7 +701,7 @@ TEST(TestModuleGrouped, SingleGroupMonitoringRuleMatch)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -756,7 +756,7 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupMonitoringUserMatch)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -811,7 +811,7 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupMonitoringBaseMatch)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -867,7 +867,7 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingBaseMatch)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -923,7 +923,7 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingUserMatch)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -979,7 +979,7 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingBaseMatch)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -1035,7 +1035,7 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingUserMatch)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -1090,7 +1090,7 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsMonitoringMatch)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -1146,7 +1146,7 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsBlockingMatch)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -1201,7 +1201,7 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsMonitoringMatch)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -1257,7 +1257,7 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsBlockingMatch)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -1402,7 +1402,7 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
 
         ddwaf::object_store store;
 
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.2"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.2"}});
         store.insert(std::move(root));
 
         std::vector<rule_result> results;
@@ -1504,7 +1504,7 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
 
         ddwaf::object_store store;
 
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -1607,7 +1607,7 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
 
         ddwaf::object_store store;
 
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -1648,7 +1648,7 @@ TEST(TestModuleGrouped, DisabledRules)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -1683,7 +1683,7 @@ TEST(TestModuleGrouped, NonExpiringModule)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -1720,7 +1720,7 @@ TEST(TestModuleGrouped, ExpiringModule)
 
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 

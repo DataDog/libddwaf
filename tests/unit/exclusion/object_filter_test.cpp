@@ -19,8 +19,8 @@ TEST(TestObjectFilter, RootTarget)
 
     object_store store;
 
-    auto root = owned_object::make_map({
-        {"query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
+    auto root = object_builder::map({
+        {"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
     });
     store.insert(root);
 
@@ -48,11 +48,11 @@ TEST(TestObjectFilter, DuplicateTarget)
     object_filter::cache_type cache;
 
     std::vector<owned_object> objects;
-    objects.emplace_back(owned_object::make_map({
-        {"query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
+    objects.emplace_back(object_builder::map({
+        {"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
     }));
-    objects.emplace_back(owned_object::make_map({
-        {"query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
+    objects.emplace_back(object_builder::map({
+        {"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
     }));
     {
         store.insert(objects[0]);
@@ -85,8 +85,8 @@ TEST(TestObjectFilter, DuplicateCachedTarget)
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
 
-    auto root = owned_object::make_map({
-        {"query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
+    auto root = object_builder::map({
+        {"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
     });
     store.insert(root);
 
@@ -108,9 +108,9 @@ TEST(TestObjectFilter, SingleTarget)
 
     object_store store;
 
-    auto root = owned_object::make_map();
+    auto root = object_builder::map();
     auto child = root.emplace(
-        "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
+        "query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
     store.insert(root);
 
@@ -138,9 +138,9 @@ TEST(TestObjectFilter, DuplicateSingleTarget)
     object_filter::cache_type cache;
 
     {
-        auto root = owned_object::make_map();
+        auto root = object_builder::map();
         auto child = root.emplace(
-            "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
+            "query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
         store.insert(std::move(root));
 
@@ -150,9 +150,9 @@ TEST(TestObjectFilter, DuplicateSingleTarget)
     }
 
     {
-        auto root = owned_object::make_map();
+        auto root = object_builder::map();
         auto child = root.emplace(
-            "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
+            "query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
         store.insert(std::move(root));
 
@@ -169,17 +169,17 @@ TEST(TestObjectFilter, MultipleTargets)
 
     object_store store;
 
-    auto root = owned_object::make_map();
+    auto root = object_builder::map();
 
     // Query
     auto child = root.emplace(
-        "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
+        "query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
     // Path Params
-    auto sibling = root.emplace("path_params", owned_object::make_map({{"username", "Paco"}}));
+    auto sibling = root.emplace("path_params", object_builder::map({{"username", "Paco"}}));
 
     auto object = sibling.emplace(
-        "token", owned_object::make_map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
+        "token", object_builder::map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
     store.insert(root);
 
@@ -211,16 +211,16 @@ TEST(TestObjectFilter, DuplicateMultipleTargets)
     object_filter::cache_type cache;
 
     {
-        auto root = owned_object::make_map();
+        auto root = object_builder::map();
         // Query
         auto child = root.emplace(
-            "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
+            "query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
         // Path Params
-        auto sibling = root.emplace("path_params", owned_object::make_map({{"username", "Paco"}}));
+        auto sibling = root.emplace("path_params", object_builder::map({{"username", "Paco"}}));
 
-        auto object = sibling.emplace("token",
-            owned_object::make_map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
+        auto object = sibling.emplace(
+            "token", object_builder::map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
         store.insert(std::move(root));
 
@@ -232,16 +232,16 @@ TEST(TestObjectFilter, DuplicateMultipleTargets)
     }
 
     {
-        auto root = owned_object::make_map();
+        auto root = object_builder::map();
         // Query
         auto child = root.emplace(
-            "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
+            "query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
         // Path Params
-        auto sibling = root.emplace("path_params", owned_object::make_map({{"username", "Paco"}}));
+        auto sibling = root.emplace("path_params", object_builder::map({{"username", "Paco"}}));
 
-        auto object = sibling.emplace("token",
-            owned_object::make_map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
+        auto object = sibling.emplace(
+            "token", object_builder::map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
         store.insert(std::move(root));
 
@@ -261,10 +261,10 @@ TEST(TestObjectFilter, MissingTarget)
 
     object_store store;
 
-    auto root = owned_object::make_map({
-        {"query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
-        {"path_params", owned_object::make_map({{"username", "Paco"},
-                            {"token", owned_object::make_map({{"value", "naskjdnakjsd"},
+    auto root = object_builder::map({
+        {"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
+        {"path_params", object_builder::map({{"username", "Paco"},
+                            {"token", object_builder::map({{"value", "naskjdnakjsd"},
                                           {"expiration", "yesterday"}})}})},
     });
     store.insert(root);
@@ -284,9 +284,9 @@ TEST(TestObjectFilter, SingleTargetCache)
 
     object_store store;
 
-    auto root = owned_object::make_map();
+    auto root = object_builder::map();
     auto child = root.emplace(
-        "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
+        "query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
     store.insert(root);
 
@@ -321,9 +321,9 @@ TEST(TestObjectFilter, MultipleTargetsCache)
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
     {
-        auto root = owned_object::make_map();
+        auto root = object_builder::map();
         auto child = root.emplace(
-            "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
+            "query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
         store.insert(std::move(root));
 
@@ -333,12 +333,12 @@ TEST(TestObjectFilter, MultipleTargetsCache)
     }
 
     {
-        auto root = owned_object::make_map();
+        auto root = object_builder::map();
         // Path Params
-        auto sibling = root.emplace("path_params", owned_object::make_map({{"username", "Paco"}}));
+        auto sibling = root.emplace("path_params", object_builder::map({{"username", "Paco"}}));
 
-        auto object = sibling.emplace("token",
-            owned_object::make_map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
+        auto object = sibling.emplace(
+            "token", object_builder::map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
         store.insert(std::move(root));
 
@@ -364,9 +364,9 @@ TEST(TestObjectFilter, SingleGlobTarget)
     {
         object_store store;
         object_filter::cache_type cache;
-        auto root = owned_object::make_map();
+        auto root = object_builder::map();
         auto child = root.emplace(
-            "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
+            "query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
         store.insert(root);
 
@@ -380,9 +380,9 @@ TEST(TestObjectFilter, SingleGlobTarget)
         object_store store;
         object_filter::cache_type cache;
 
-        auto root = owned_object::make_map();
+        auto root = object_builder::map();
         auto child = root.emplace("query",
-            owned_object::make_map({{"params", owned_object::make_map({{"value", "paramsvalue"}})},
+            object_builder::map({{"params", object_builder::map({{"value", "paramsvalue"}})},
                 {"uri", "uri_value"}}));
 
         store.insert(root);
@@ -397,7 +397,7 @@ TEST(TestObjectFilter, SingleGlobTarget)
         object_store store;
         object_filter::cache_type cache;
 
-        auto root = owned_object::make_map({{"query", owned_object{}}});
+        auto root = object_builder::map({{"query", owned_object{}}});
         store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
@@ -418,9 +418,9 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
         object_store store;
         object_filter::cache_type cache;
 
-        auto root = owned_object::make_map();
+        auto root = object_builder::map();
         auto child = root.emplace(
-            "query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
+            "query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
         store.insert(root);
 
@@ -434,9 +434,9 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
         object_store store;
         object_filter::cache_type cache;
 
-        auto root = owned_object::make_map();
+        auto root = object_builder::map();
         auto child = root.emplace("query",
-            owned_object::make_map({{"params", owned_object::make_map({{"value", "paramsvalue"}})},
+            object_builder::map({{"params", object_builder::map({{"value", "paramsvalue"}})},
                 {"uri", "uri_value"}}));
 
         store.insert(root);
@@ -451,7 +451,7 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
         object_store store;
         object_filter::cache_type cache;
 
-        auto root = owned_object::make_map({{"query", owned_object{}}});
+        auto root = object_builder::map({{"query", owned_object{}}});
         store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, false, deadline);
@@ -473,11 +473,10 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
         object_store store;
         object_filter::cache_type cache;
 
-        owned_object root = owned_object::make_map();
-        auto child = root.emplace(
-            "query", owned_object::make_map(
-                         {{"params", owned_object::make_map({{"other", "paramsvalue"}})}}));
-        auto grandnephew = child.emplace("uri", owned_object::make_map({{"other", "paramsvalue"}}));
+        owned_object root = object_builder::map();
+        auto child = root.emplace("query",
+            object_builder::map({{"params", object_builder::map({{"other", "paramsvalue"}})}}));
+        auto grandnephew = child.emplace("uri", object_builder::map({{"other", "paramsvalue"}}));
 
         store.insert(root);
 
@@ -490,11 +489,10 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
         object_store store;
         object_filter::cache_type cache;
 
-        owned_object root = owned_object::make_map();
-        auto child = root.emplace("query", owned_object::make_map());
-        auto grandchild =
-            child.emplace("params", owned_object::make_map({{"value", "paramsvalue"}}));
-        auto grandnephew = child.emplace("uri", owned_object::make_map({{"value", "paramsvalue"}}));
+        owned_object root = object_builder::map();
+        auto child = root.emplace("query", object_builder::map());
+        auto grandchild = child.emplace("params", object_builder::map({{"value", "paramsvalue"}}));
+        auto grandnephew = child.emplace("uri", object_builder::map({{"value", "paramsvalue"}}));
 
         store.insert(root);
 
@@ -507,10 +505,9 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
     {
         object_store store;
         object_filter::cache_type cache;
-        owned_object root = owned_object::make_map(
-            {{"query", owned_object::make_map(
-                           {{"value", owned_object::make_map({{"whatever", "paramsvalue"}})},
-                               {"other", owned_object::make_map({{"random", "paramsvalue"}})}})}});
+        owned_object root = object_builder::map({{"query",
+            object_builder::map({{"value", object_builder::map({{"whatever", "paramsvalue"}})},
+                {"other", object_builder::map({{"random", "paramsvalue"}})}})}});
 
         store.insert(root);
 
@@ -523,7 +520,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
         object_filter::cache_type cache;
 
         owned_object root =
-            owned_object::make_map({{"query", owned_object::make_map({{"value", "value"}})}});
+            object_builder::map({{"query", object_builder::map({{"value", "value"}})}});
 
         store.insert(root);
 
@@ -545,14 +542,14 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
         object_store store;
         object_filter::cache_type cache;
 
-        owned_object root = owned_object::make_map();
-        auto child = root.emplace("query", owned_object::make_map());
-        auto grandchild = child.emplace("params", owned_object::make_map());
+        owned_object root = object_builder::map();
+        auto child = root.emplace("query", object_builder::map());
+        auto grandchild = child.emplace("params", object_builder::map());
         auto greatgrandchild = grandchild.emplace("something",
-            owned_object::make_map({{"other", "paramsvalue"}, {"somethingelse", "paramsvalue"}}));
-        auto grandnephew = child.emplace("uri", owned_object::make_map());
+            object_builder::map({{"other", "paramsvalue"}, {"somethingelse", "paramsvalue"}}));
+        auto grandnephew = child.emplace("uri", object_builder::map());
         auto greatgrandnephew = grandnephew.emplace("random",
-            owned_object::make_map({{"other", "paramsvalue"}, {"somethingelse", "paramsvalue"}}));
+            object_builder::map({{"other", "paramsvalue"}, {"somethingelse", "paramsvalue"}}));
 
         store.insert(root);
 
@@ -568,9 +565,9 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
         object_store store;
         object_filter::cache_type cache;
 
-        auto root = owned_object::make_map({{"query",
-            owned_object::make_map({{"params", owned_object::make_map({{"something", "value"}})},
-                {"uri", owned_object::make_map({{"random", "value"}})}})}});
+        auto root = object_builder::map({{"query",
+            object_builder::map({{"params", object_builder::map({{"something", "value"}})},
+                {"uri", object_builder::map({{"random", "value"}})}})}});
 
         store.insert(root);
 
@@ -582,8 +579,8 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
         object_store store;
         object_filter::cache_type cache;
 
-        auto root = owned_object::make_map(
-            {{"query", owned_object::make_map({{"params", "value"}, {"uri", "value"}})}});
+        auto root = object_builder::map(
+            {{"query", object_builder::map({{"params", "value"}, {"uri", "value"}})}});
 
         store.insert(root);
 
@@ -667,9 +664,9 @@ TEST(TestObjectFilter, ArrayWithGlobTargets)
     {
         object_store store;
         object_filter::cache_type cache;
-        auto root = owned_object::make_map({{"query",
-            owned_object::make_map({{"a", owned_object::make_array({owned_object::make_map({{"c",
-                                              owned_object::make_map({{"d", "value"}})}})})}})}});
+        auto root = object_builder::map({{"query",
+            object_builder::map({{"a", object_builder::array({object_builder::map(
+                                           {{"c", object_builder::map({{"d", "value"}})}})})}})}});
 
         store.insert(root);
 
@@ -685,8 +682,8 @@ TEST(TestObjectFilter, Timeout)
 
     object_store store;
 
-    auto root = owned_object::make_map(
-        {{"query", owned_object::make_map({{"params", "paramsvalue"}, {"uri", "uri_value"}})}});
+    auto root = object_builder::map(
+        {{"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})}});
     store.insert(root);
 
     object_filter filter;

@@ -48,7 +48,7 @@ TEST(TestWaf, BasicContextRun)
 {
     auto instance = build_instance("interface.yaml");
 
-    auto root = owned_object::make_map({{"value1", "rule1"}});
+    auto root = object_builder::map({{"value1", "rule1"}});
     auto *ctx = instance.create_context();
 
     EXPECT_TRUE(ctx->insert(std::move(root)));
