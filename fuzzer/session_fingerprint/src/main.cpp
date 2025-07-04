@@ -7,6 +7,7 @@
 #include <cstdint>
 
 #include "common.hpp"
+#include "memory_resource.hpp"
 #include <processor/fingerprint.hpp>
 
 using namespace ddwaf;
@@ -40,7 +41,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
                 .key_path = {},
                 .ephemeral = false,
                 .value = buffer.get<std::string_view>()}},
-            cache, deadline);
+            cache, memory::get_default_resource(), deadline);
 
     return 0;
 }

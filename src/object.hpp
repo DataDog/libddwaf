@@ -9,6 +9,7 @@
 #include "dynamic_string.hpp"
 #include "memory_resource.hpp"
 #include "object_type.hpp"
+#include "pointer.hpp"
 #include "traits.hpp"
 #include "utils.hpp"
 
@@ -16,6 +17,7 @@
 #include <cstring>
 #include <deque>
 #include <initializer_list>
+#include <span>
 #include <stdexcept>
 #include <type_traits>
 #include <variant>
@@ -171,7 +173,7 @@ inline char *copy_string(const char *str, SizeType length, memory::memory_resour
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-inline void object_destroy(object &obj, memory::memory_resource *alloc)
+inline void object_destroy(object &obj, nonnull_ptr<memory::memory_resource> alloc)
 {
     if (alloc->is_equal(*memory::get_default_null_resource())) {
         return;
@@ -199,7 +201,8 @@ inline void object_destroy(object &obj, memory::memory_resource *alloc)
     }
 }
 
-inline bool alloc_equal(memory::memory_resource *left, memory::memory_resource *right)
+inline bool alloc_equal(
+    nonnull_ptr<memory::memory_resource> left, nonnull_ptr<memory::memory_resource> right)
 {
     return left == right || left->is_equal(*right);
 }
@@ -376,7 +379,7 @@ public:
     template <typename T> T convert() const;
 
     [[nodiscard]] owned_object clone(
-        memory::memory_resource *alloc = memory::get_default_resource()) const;
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource()) const;
 
 private:
     readable_object() = default;
@@ -756,7 +759,7 @@ public:
 private:
     writable_object() = default;
     detail::object &object_ref() { return static_cast<Derived *>(this)->ref(); }
-    memory::memory_resource *alloc_ptr() { return static_cast<Derived *>(this)->alloc(); }
+    nonnull_ptr<memory::memory_resource> alloc() { return static_cast<Derived *>(this)->alloc(); }
 
     friend Derived;
 };
@@ -765,27 +768,19 @@ private:
 class borrowed_object final : public readable_object<borrowed_object>,
                               public writable_object<borrowed_object> {
 public:
-    explicit borrowed_object(
-        detail::object *obj, memory::memory_resource *alloc = memory::get_default_resource())
+    explicit borrowed_object(detail::object *obj,
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
         : obj_(obj), alloc_(alloc)
     {
         if (obj_ == nullptr) {
             throw std::invalid_argument("invalid borrowed object (null)");
         }
-
-        if (alloc == nullptr) {
-            throw std::invalid_argument("invalid memory resource (null)");
-        }
     }
 
-    explicit borrowed_object(
-        detail::object &obj, memory::memory_resource *alloc = memory::get_default_resource())
+    explicit borrowed_object(detail::object &obj,
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
         : obj_(&obj), alloc_(alloc)
-    {
-        if (alloc == nullptr) {
-            throw std::invalid_argument("invalid memory resource (null)");
-        }
-    }
+    {}
 
     explicit borrowed_object(owned_object &obj);
     borrowed_object &operator=(owned_object &&obj);
@@ -793,12 +788,12 @@ public:
     [[nodiscard]] detail::object &ref() noexcept { return *obj_; }
     [[nodiscard]] const detail::object &ref() const noexcept { return *obj_; }
     [[nodiscard]] detail::object *ptr() { return obj_; }
-    [[nodiscard]] const detail::object *ptr() const { return obj_; }
-    [[nodiscard]] memory::memory_resource *alloc() { return alloc_; }
+    [[nodiscard]] const detail::object *ptr() const noexcept { return obj_; }
+    [[nodiscard]] nonnull_ptr<memory::memory_resource> alloc() const noexcept { return alloc_; }
 
 protected:
     detail::object *obj_;
-    memory::memory_resource *alloc_{memory::get_default_resource()};
+    nonnull_ptr<memory::memory_resource> alloc_{memory::get_default_resource()};
 
     friend class owned_object;
     friend class object_view;
@@ -809,14 +804,10 @@ class owned_object final : public readable_object<owned_object>,
                            public writable_object<owned_object> {
 public:
     owned_object() = default;
-    explicit owned_object(
-        detail::object obj, memory::memory_resource *alloc = memory::get_default_resource())
+    explicit owned_object(detail::object obj,
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
         : obj_(obj), alloc_(alloc)
-    {
-        if (alloc == nullptr) {
-            throw std::invalid_argument("invalid memory resource (null)");
-        }
-    }
+    {}
 
     explicit owned_object(bool value) { *this = make_boolean(value); }
 
@@ -841,22 +832,22 @@ public:
         *this = make_float(value);
     }
 
-    explicit owned_object(
-        const char *value, memory::memory_resource *alloc = memory::get_default_resource())
+    explicit owned_object(const char *value,
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
     {
         *this = make_string(std::string_view{value}, alloc);
     }
 
     template <typename T>
     explicit owned_object(
-        const T &value, memory::memory_resource *alloc = memory::get_default_resource())
+        const T &value, nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
         requires is_type_in_set_v<T, std::string, std::string_view, dynamic_string>
     {
         *this = make_string(std::string_view{value}, alloc);
     }
 
     explicit owned_object(const char *data, std::size_t size,
-        memory::memory_resource *alloc = memory::get_default_resource())
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
     {
         *this = make_string(data, size, alloc);
     }
@@ -884,8 +875,8 @@ public:
     [[nodiscard]] detail::object &ref() noexcept { return obj_; }
     [[nodiscard]] const detail::object &ref() const noexcept { return obj_; }
     [[nodiscard]] detail::object *ptr() { return &obj_; }
-    [[nodiscard]] const detail::object *ptr() const { return &obj_; }
-    [[nodiscard]] memory::memory_resource *alloc() { return alloc_; }
+    [[nodiscard]] const detail::object *ptr() const noexcept { return &obj_; }
+    [[nodiscard]] nonnull_ptr<memory::memory_resource> alloc() const noexcept { return alloc_; }
 
     static owned_object make_null() { return owned_object{{.type = object_type::null}}; }
 
@@ -918,7 +909,7 @@ public:
     }
 
     static owned_object make_string_nocopy(const char *str, std::size_t len,
-        memory::memory_resource *alloc = memory::get_default_resource())
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
     {
         return owned_object{{.via{.str{.type = object_type::string,
                                 .size = static_cast<uint32_t>(len),
@@ -929,14 +920,14 @@ public:
 
     template <typename T>
     static owned_object make_string_nocopy(
-        T str, memory::memory_resource *alloc = memory::get_default_resource())
+        T str, nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
         requires std::is_same_v<T, std::string_view> || std::is_same_v<T, object_view>
     {
         return make_string_nocopy(str.data(), str.size(), alloc);
     }
 
     static owned_object make_string(const char *str, std::size_t len,
-        memory::memory_resource *alloc = memory::get_default_resource())
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
     {
         if (len <= detail::small_string_size) {
             owned_object obj{{.via{.sstr{.type = object_type::small_string,
@@ -952,8 +943,8 @@ public:
             alloc};
     }
 
-    static owned_object make_string(
-        std::string_view str, memory::memory_resource *alloc = memory::get_default_resource())
+    static owned_object make_string(std::string_view str,
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
     {
         if (str.empty()) {
             return make_string("", 0);
@@ -961,8 +952,8 @@ public:
         return make_string(str.data(), str.size(), alloc);
     }
 
-    static owned_object make_array(
-        uint16_t capacity = 0, memory::memory_resource *alloc = memory::get_default_resource())
+    static owned_object make_array(uint16_t capacity = 0,
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
     {
         if (capacity == 0) {
             return owned_object{
@@ -979,8 +970,8 @@ public:
             alloc};
     }
 
-    static owned_object make_map(
-        uint16_t capacity = 0, memory::memory_resource *alloc = memory::get_default_resource())
+    static owned_object make_map(uint16_t capacity = 0,
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
     {
         if (capacity == 0) {
             return owned_object{
@@ -1005,7 +996,7 @@ public:
 
 protected:
     detail::object obj_{.type = object_type::invalid};
-    memory::memory_resource *alloc_{memory::get_default_resource()};
+    nonnull_ptr<memory::memory_resource> alloc_{memory::get_default_resource()};
 
     friend class borrowed_object;
     friend class object_view;
@@ -1044,9 +1035,11 @@ template <typename Derived> template <typename T> T readable_object<Derived>::co
 }
 
 template <typename Derived>
-[[nodiscard]] owned_object readable_object<Derived>::clone(memory::memory_resource *alloc) const
+[[nodiscard]] owned_object readable_object<Derived>::clone(
+    nonnull_ptr<memory::memory_resource> alloc) const
 {
-    auto clone_helper = [](object_view source, memory::memory_resource *alloc) -> owned_object {
+    auto clone_helper = [](object_view source,
+                            nonnull_ptr<memory::memory_resource> alloc) -> owned_object {
         switch (source.type()) {
         case object_type::boolean:
             return owned_object::make_boolean(source.as<bool>());
@@ -1139,11 +1132,11 @@ template <typename Derived>
 
     if (container.type == object_type::map) {
         assert(idx < static_cast<std::size_t>(container.via.map.size));
-        return borrowed_object{&container.via.map.ptr[idx].val, alloc_ptr()};
+        return borrowed_object{&container.via.map.ptr[idx].val, alloc()};
     }
 
     assert(idx < static_cast<std::size_t>(container.via.array.size));
-    return borrowed_object{&container.via.array.ptr[idx], alloc_ptr()};
+    return borrowed_object{&container.via.array.ptr[idx], alloc()};
 }
 
 template <typename Derived>
@@ -1151,26 +1144,25 @@ template <typename Derived>
 borrowed_object writable_object<Derived>::emplace_back(owned_object &&value)
 {
     auto &container = object_ref();
-    auto *alloc = alloc_ptr();
 
     assert(static_cast<object_type>(container.type) == object_type::array);
 
-    if (detail::requires_allocator(value.type()) && !detail::alloc_equal(alloc, value.alloc())) {
+    if (detail::requires_allocator(value.type()) && !detail::alloc_equal(alloc(), value.alloc())) {
         throw std::runtime_error("emplace: incompatible allocators");
     }
 
     // We preallocate 8 entries
     if (container.via.array.capacity == 0) {
-        container.via.array.ptr = detail::alloc_helper<detail::object, uint16_t>(8U, *alloc);
+        container.via.array.ptr = detail::alloc_helper<detail::object, uint16_t>(8U, alloc());
         container.via.array.capacity = 8;
     } else if (container.via.array.capacity == container.via.array.size) {
         auto [new_array, new_capacity] = detail::realloc_helper<detail::object, uint16_t>(
-            container.via.array.ptr, container.via.array.capacity, *alloc);
+            container.via.array.ptr, container.via.array.capacity, alloc());
         container.via.array.ptr = new_array;
         container.via.array.capacity = new_capacity;
     }
 
-    borrowed_object slot{&container.via.array.ptr[container.via.array.size++], alloc};
+    borrowed_object slot{&container.via.array.ptr[container.via.array.size++], alloc()};
     slot = std::move(value);
     return slot;
 }
@@ -1179,7 +1171,7 @@ template <typename Derived>
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 borrowed_object writable_object<Derived>::emplace(std::string_view key, owned_object &&value)
 {
-    return emplace(owned_object{key, alloc_ptr()}, std::move(value));
+    return emplace(owned_object{key, alloc()}, std::move(value));
 }
 
 template <typename Derived>
@@ -1187,28 +1179,28 @@ template <typename Derived>
 borrowed_object writable_object<Derived>::emplace(owned_object &&key, owned_object &&value)
 {
     auto &container = object_ref();
-    auto *alloc = alloc_ptr();
 
     assert(static_cast<object_type>(container.type) == object_type::map);
 
-    if ((detail::requires_allocator(key.type()) && !detail::alloc_equal(alloc, key.alloc())) ||
-        (detail::requires_allocator(value.type()) && !detail::alloc_equal(alloc, value.alloc()))) {
+    if ((detail::requires_allocator(key.type()) && !detail::alloc_equal(alloc(), key.alloc())) ||
+        (detail::requires_allocator(value.type()) &&
+            !detail::alloc_equal(alloc(), value.alloc()))) {
         throw std::runtime_error("emplace: incompatible allocators");
     }
 
     // We preallocate 8 entries
     if (container.via.map.capacity == 0) {
-        container.via.map.ptr = detail::alloc_helper<detail::object_kv, uint16_t>(8U, *alloc);
+        container.via.map.ptr = detail::alloc_helper<detail::object_kv, uint16_t>(8U, alloc());
         container.via.map.capacity = 8;
     } else if (container.via.map.capacity == container.via.map.size) {
         auto [new_map, new_capacity] = detail::realloc_helper<detail::object_kv, uint16_t>(
-            container.via.map.ptr, container.via.map.capacity, *alloc);
+            container.via.map.ptr, container.via.map.capacity, alloc());
         container.via.map.ptr = new_map;
         container.via.map.capacity = new_capacity;
     }
 
-    borrowed_object key_slot{container.via.map.ptr[container.via.map.size].key, alloc};
-    borrowed_object val_slot{container.via.map.ptr[container.via.map.size].val, alloc};
+    borrowed_object key_slot{container.via.map.ptr[container.via.map.size].key, alloc()};
+    borrowed_object val_slot{container.via.map.ptr[container.via.map.size].val, alloc()};
     ++container.via.map.size;
 
     key_slot = std::move(key);
@@ -1258,7 +1250,7 @@ using all_types = std::variant<bool, int16_t, int32_t, int64_t, uint16_t, uint32
 using key_value = std::pair<std::string_view, all_types>;
 
 inline owned_object array(std::initializer_list<all_types> list = {},
-    memory::memory_resource *alloc = memory::get_default_resource())
+    nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
 {
     auto container = owned_object::make_array(static_cast<uint16_t>(list.size()), alloc);
     for (const auto &value : list) {
@@ -1292,7 +1284,7 @@ inline owned_object array(std::initializer_list<all_types> list = {},
 }
 
 inline owned_object map(std::initializer_list<key_value> list = {},
-    memory::memory_resource *alloc = memory::get_default_resource())
+    nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
 {
     auto container = owned_object::make_map(static_cast<uint16_t>(list.size()), alloc);
     for (const auto &[key, value] : list) {
