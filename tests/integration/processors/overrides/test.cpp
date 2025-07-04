@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "common/gtest_utils.hpp"
+#include "common/json_utils.hpp"
 #include "configuration/common/raw_configuration.hpp"
 
 using namespace ddwaf;
@@ -41,7 +42,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersById)
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -78,7 +79,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersById)
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -126,7 +127,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersByTags)
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -163,7 +164,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersByTags)
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -211,7 +212,7 @@ TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
         ddwaf_object_map_add(&map, "server.request.headers", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -249,7 +250,7 @@ TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
         ddwaf_object_map_add(&map, "server.request.headers", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -287,7 +288,7 @@ TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
         ddwaf_object_map_add(&map, "server.request.headers", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -334,7 +335,7 @@ TEST(TestProcessorOverridesIntegration, DisableDefaultScanners)
         ddwaf_object_map_add(&map, "server.request.headers", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -372,7 +373,7 @@ TEST(TestProcessorOverridesIntegration, DisableDefaultScanners)
         ddwaf_object_map_add(&map, "server.request.headers", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -419,7 +420,7 @@ TEST(TestProcessorOverridesIntegration, RemoveScannersAfterOverride)
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -456,7 +457,7 @@ TEST(TestProcessorOverridesIntegration, RemoveScannersAfterOverride)
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -490,7 +491,7 @@ TEST(TestProcessorOverridesIntegration, RemoveScannersAfterOverride)
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -537,7 +538,7 @@ TEST(TestProcessorOverridesIntegration, RemoveOverride)
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -574,7 +575,7 @@ TEST(TestProcessorOverridesIntegration, RemoveOverride)
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -608,7 +609,7 @@ TEST(TestProcessorOverridesIntegration, RemoveOverride)
         ddwaf_object_map_add(&map, "server.request.body", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -659,19 +660,21 @@ TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
         ddwaf_object_map_add(&map, "server.request.headers", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
         EXPECT_EQ(ddwaf_object_size(attributes), 2);
-        ddwaf::raw_configuration derivatives_object(*attributes);
+        ddwaf::raw_configuration derivatives_object(
+            *reinterpret_cast<const detail::object *>(attributes));
         auto derivatives = static_cast<ddwaf::raw_configuration::map>(derivatives_object);
 
-        auto headers_schema = test::object_to_json(derivatives["server.request.headers.schema"]);
+        auto headers_schema =
+            test::object_to_json(derivatives["server.request.headers.schema"]->ref());
         EXPECT_STR(headers_schema, R"([{"email":[8,{"type":"token","category":"credential"}]}])");
 
-        auto body_schema = test::object_to_json(derivatives["server.request.body.schema"]);
+        auto body_schema = test::object_to_json(derivatives["server.request.body.schema"]->ref());
         EXPECT_STR(body_schema, R"([{"email":[8]}])");
 
         ddwaf_object_free(&out);
@@ -705,7 +708,7 @@ TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
         ddwaf_object_map_add(&map, "server.request.headers", &value);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -713,13 +716,15 @@ TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
         EXPECT_EQ(ddwaf_object_size(attributes), 2);
 
         EXPECT_EQ(ddwaf_object_size(attributes), 2);
-        ddwaf::raw_configuration derivatives_object(*attributes);
+        ddwaf::raw_configuration derivatives_object(
+            *reinterpret_cast<const detail::object *>(attributes));
         auto derivatives = static_cast<ddwaf::raw_configuration::map>(derivatives_object);
 
-        auto headers_schema = test::object_to_json(derivatives["server.request.headers.schema"]);
+        auto headers_schema =
+            test::object_to_json(derivatives["server.request.headers.schema"]->ref());
         EXPECT_STR(headers_schema, R"([{"email":[8,{"type":"email","category":"pii"}]}])");
 
-        auto body_schema = test::object_to_json(derivatives["server.request.body.schema"]);
+        auto body_schema = test::object_to_json(derivatives["server.request.body.schema"]->ref());
         EXPECT_STR(body_schema, R"([{"email":[8,{"type":"email","category":"pii"}]}])");
 
         ddwaf_object_free(&out);

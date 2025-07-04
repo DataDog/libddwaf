@@ -18,7 +18,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     {
-        auto rule = read_file("exclude_one_rule_by_user.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("exclude_one_rule_by_user.yaml", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
         ddwaf_object_free(&rule);
@@ -38,7 +38,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -64,7 +64,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
     }
 
     {
-        auto data = yaml_to_object(
+        auto data = yaml_to_object<ddwaf_object>(
             R"({exclusion_data: [{id: usr_data, type: data_with_expiration, data: [{value: admin, expiration: 0}]}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusion_data"), &data, nullptr);
         ddwaf_object_free(&data);
@@ -84,7 +84,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
@@ -114,7 +114,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -151,7 +151,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     {
-        auto rule = read_file("exclude_one_rule_by_ip.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("exclude_one_rule_by_ip.yaml", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
         ddwaf_object_free(&rule);
@@ -171,7 +171,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -197,7 +197,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
     }
 
     {
-        auto data = yaml_to_object(
+        auto data = yaml_to_object<ddwaf_object>(
             R"({exclusion_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.0.1, expiration: 0}]}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusion_data"), &data, nullptr);
         ddwaf_object_free(&data);
@@ -217,7 +217,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
@@ -247,7 +247,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -283,7 +283,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     {
-        auto rule = read_file("exclude_one_rule_by_ip.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("exclude_one_rule_by_ip.yaml", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
         ddwaf_object_free(&rule);
@@ -303,7 +303,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -329,7 +329,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
     }
 
     {
-        auto data = yaml_to_object(
+        auto data = yaml_to_object<ddwaf_object>(
             R"({exclusion_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.0.1, expiration: 0}]}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusion_data"), &data, nullptr);
         ddwaf_object_free(&data);
@@ -349,7 +349,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
@@ -365,8 +365,8 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
     }
 
     {
-        auto data =
-            yaml_to_object(R"({exclusion_data: [{id: ip_data, type: unknown_data, data: [{}]}]})");
+        auto data = yaml_to_object<ddwaf_object>(
+            R"({exclusion_data: [{id: ip_data, type: unknown_data, data: [{}]}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusion_data"), &data, nullptr);
         ddwaf_object_free(&data);
     }
@@ -385,7 +385,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -421,7 +421,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     {
-        auto rule = read_file("exclude_one_input_by_ip.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("exclude_one_input_by_ip.yaml", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
         ddwaf_object_free(&rule);
@@ -441,7 +441,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -467,7 +467,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
     }
 
     {
-        auto data = yaml_to_object(
+        auto data = yaml_to_object<ddwaf_object>(
             R"({exclusion_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.0.1, expiration: 0}]}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusion_data"), &data, nullptr);
         ddwaf_object_free(&data);
@@ -487,7 +487,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
@@ -517,7 +517,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",

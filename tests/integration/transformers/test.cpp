@@ -14,7 +14,7 @@ constexpr std::string_view base_dir = "integration/transformers/";
 
 TEST(TestTransformers, Base64Decode)
 {
-    auto rule = read_file("base64_decode.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("base64_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -29,7 +29,7 @@ TEST(TestTransformers, Base64Decode)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -46,7 +46,7 @@ TEST(TestTransformers, Base64Decode)
 
 TEST(TestTransformers, Base64DecodeAlias)
 {
-    auto rule = read_file("base64_decode.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("base64_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -61,7 +61,7 @@ TEST(TestTransformers, Base64DecodeAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -78,7 +78,7 @@ TEST(TestTransformers, Base64DecodeAlias)
 
 TEST(TestTransformers, Base64UrlDecode)
 {
-    auto rule = read_file("base64url_decode.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("base64url_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -93,7 +93,7 @@ TEST(TestTransformers, Base64UrlDecode)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -110,7 +110,7 @@ TEST(TestTransformers, Base64UrlDecode)
 
 TEST(TestTransformers, Base64Encode)
 {
-    auto rule = read_file("base64_encode.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("base64_encode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -125,7 +125,7 @@ TEST(TestTransformers, Base64Encode)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -143,7 +143,7 @@ TEST(TestTransformers, Base64Encode)
 
 TEST(TestTransformers, Base64EncodeAlias)
 {
-    auto rule = read_file("base64_encode.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("base64_encode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -158,7 +158,7 @@ TEST(TestTransformers, Base64EncodeAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -176,7 +176,7 @@ TEST(TestTransformers, Base64EncodeAlias)
 
 TEST(TestTransformers, CompressWhitespace)
 {
-    auto rule = read_file("compress_whitespace.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("compress_whitespace.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -191,7 +191,7 @@ TEST(TestTransformers, CompressWhitespace)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -209,7 +209,7 @@ TEST(TestTransformers, CompressWhitespace)
 
 TEST(TestTransformers, CompressWhitespaceAlias)
 {
-    auto rule = read_file("compress_whitespace.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("compress_whitespace.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -224,7 +224,7 @@ TEST(TestTransformers, CompressWhitespaceAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -242,7 +242,7 @@ TEST(TestTransformers, CompressWhitespaceAlias)
 
 TEST(TestTransformers, CssDecode)
 {
-    auto rule = read_file("css_decode.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("css_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -257,7 +257,7 @@ TEST(TestTransformers, CssDecode)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -276,7 +276,7 @@ TEST(TestTransformers, CssDecode)
 
 TEST(TestTransformers, CssDecodeAlias)
 {
-    auto rule = read_file("css_decode.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("css_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -291,7 +291,7 @@ TEST(TestTransformers, CssDecodeAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -310,7 +310,7 @@ TEST(TestTransformers, CssDecodeAlias)
 
 TEST(TestTransformers, HtmlEntityDecode)
 {
-    auto rule = read_file("html_entity_decode.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("html_entity_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -325,7 +325,7 @@ TEST(TestTransformers, HtmlEntityDecode)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -344,7 +344,7 @@ TEST(TestTransformers, HtmlEntityDecode)
 
 TEST(TestTransformers, HtmlEntityDecodeAlias)
 {
-    auto rule = read_file("html_entity_decode.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("html_entity_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -359,7 +359,7 @@ TEST(TestTransformers, HtmlEntityDecodeAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -378,7 +378,7 @@ TEST(TestTransformers, HtmlEntityDecodeAlias)
 
 TEST(TestTransformers, JsDecode)
 {
-    auto rule = read_file("js_decode.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("js_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -393,7 +393,7 @@ TEST(TestTransformers, JsDecode)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -412,7 +412,7 @@ TEST(TestTransformers, JsDecode)
 
 TEST(TestTransformers, JsDecodeAlias)
 {
-    auto rule = read_file("js_decode.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("js_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -427,7 +427,7 @@ TEST(TestTransformers, JsDecodeAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -446,7 +446,7 @@ TEST(TestTransformers, JsDecodeAlias)
 
 TEST(TestTransformers, Lowercase)
 {
-    auto rule = read_file("lowercase.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("lowercase.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -461,7 +461,7 @@ TEST(TestTransformers, Lowercase)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -479,7 +479,7 @@ TEST(TestTransformers, Lowercase)
 
 TEST(TestTransformers, NormalizePath)
 {
-    auto rule = read_file("normalize_path.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("normalize_path.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -494,7 +494,7 @@ TEST(TestTransformers, NormalizePath)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -512,7 +512,7 @@ TEST(TestTransformers, NormalizePath)
 
 TEST(TestTransformers, NormalizePathAlias)
 {
-    auto rule = read_file("normalize_path.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("normalize_path.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -527,7 +527,7 @@ TEST(TestTransformers, NormalizePathAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -545,7 +545,7 @@ TEST(TestTransformers, NormalizePathAlias)
 
 TEST(TestTransformers, NormalizePathWin)
 {
-    auto rule = read_file("normalize_path_win.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("normalize_path_win.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -560,7 +560,7 @@ TEST(TestTransformers, NormalizePathWin)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -578,7 +578,7 @@ TEST(TestTransformers, NormalizePathWin)
 
 TEST(TestTransformers, NormalizePathAliasWin)
 {
-    auto rule = read_file("normalize_path_win.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("normalize_path_win.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -593,7 +593,7 @@ TEST(TestTransformers, NormalizePathAliasWin)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -611,7 +611,7 @@ TEST(TestTransformers, NormalizePathAliasWin)
 
 TEST(TestTransformers, RemoveComments)
 {
-    auto rule = read_file("remove_comments.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("remove_comments.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -626,7 +626,7 @@ TEST(TestTransformers, RemoveComments)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -644,7 +644,7 @@ TEST(TestTransformers, RemoveComments)
 
 TEST(TestTransformers, RemoveCommentsAlias)
 {
-    auto rule = read_file("remove_comments.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("remove_comments.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -659,7 +659,7 @@ TEST(TestTransformers, RemoveCommentsAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -677,7 +677,7 @@ TEST(TestTransformers, RemoveCommentsAlias)
 
 TEST(TestTransformers, RemoveNulls)
 {
-    auto rule = read_file("remove_nulls.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("remove_nulls.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -692,7 +692,7 @@ TEST(TestTransformers, RemoveNulls)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -710,7 +710,7 @@ TEST(TestTransformers, RemoveNulls)
 
 TEST(TestTransformers, RemoveNullsAlias)
 {
-    auto rule = read_file("remove_nulls.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("remove_nulls.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -725,7 +725,7 @@ TEST(TestTransformers, RemoveNullsAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -743,7 +743,7 @@ TEST(TestTransformers, RemoveNullsAlias)
 
 TEST(TestTransformers, ShellUnescape)
 {
-    auto rule = read_file("shell_unescape.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("shell_unescape.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -758,7 +758,7 @@ TEST(TestTransformers, ShellUnescape)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -776,7 +776,7 @@ TEST(TestTransformers, ShellUnescape)
 
 TEST(TestTransformers, ShellUnescapeAlias)
 {
-    auto rule = read_file("shell_unescape.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("shell_unescape.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -791,7 +791,7 @@ TEST(TestTransformers, ShellUnescapeAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -809,7 +809,7 @@ TEST(TestTransformers, ShellUnescapeAlias)
 
 TEST(TestTransformers, UnicodeNormalize)
 {
-    auto rule = read_file("unicode_normalize.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("unicode_normalize.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -824,7 +824,7 @@ TEST(TestTransformers, UnicodeNormalize)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -842,7 +842,7 @@ TEST(TestTransformers, UnicodeNormalize)
 
 TEST(TestTransformers, UrlBasename)
 {
-    auto rule = read_file("url_basename.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("url_basename.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -857,7 +857,7 @@ TEST(TestTransformers, UrlBasename)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -875,7 +875,7 @@ TEST(TestTransformers, UrlBasename)
 
 TEST(TestTransformers, UrlBasenameAlias)
 {
-    auto rule = read_file("url_basename.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("url_basename.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -890,7 +890,7 @@ TEST(TestTransformers, UrlBasenameAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -908,7 +908,7 @@ TEST(TestTransformers, UrlBasenameAlias)
 
 TEST(TestTransformers, UrlDecode)
 {
-    auto rule = read_file("url_decode.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("url_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -923,7 +923,7 @@ TEST(TestTransformers, UrlDecode)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -941,7 +941,7 @@ TEST(TestTransformers, UrlDecode)
 
 TEST(TestTransformers, UrlDecodeAlias)
 {
-    auto rule = read_file("url_decode.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("url_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -956,7 +956,7 @@ TEST(TestTransformers, UrlDecodeAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -974,7 +974,7 @@ TEST(TestTransformers, UrlDecodeAlias)
 
 TEST(TestTransformers, UrlDecodeIis)
 {
-    auto rule = read_file("url_decode_iis.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("url_decode_iis.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -989,7 +989,7 @@ TEST(TestTransformers, UrlDecodeIis)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -1007,7 +1007,7 @@ TEST(TestTransformers, UrlDecodeIis)
 
 TEST(TestTransformers, UrlDecodeIisAlias)
 {
-    auto rule = read_file("url_decode_iis.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("url_decode_iis.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -1022,7 +1022,7 @@ TEST(TestTransformers, UrlDecodeIisAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -1040,7 +1040,7 @@ TEST(TestTransformers, UrlDecodeIisAlias)
 
 TEST(TestTransformers, UrlPath)
 {
-    auto rule = read_file("url_path.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("url_path.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -1055,7 +1055,7 @@ TEST(TestTransformers, UrlPath)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -1073,7 +1073,7 @@ TEST(TestTransformers, UrlPath)
 
 TEST(TestTransformers, UrlPathAlias)
 {
-    auto rule = read_file("url_path.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("url_path.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -1088,7 +1088,7 @@ TEST(TestTransformers, UrlPathAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -1106,7 +1106,7 @@ TEST(TestTransformers, UrlPathAlias)
 
 TEST(TestTransformers, UrlQuerystring)
 {
-    auto rule = read_file("url_querystring.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("url_querystring.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -1121,7 +1121,7 @@ TEST(TestTransformers, UrlQuerystring)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -1139,7 +1139,7 @@ TEST(TestTransformers, UrlQuerystring)
 
 TEST(TestTransformers, UrlQuerystringAlias)
 {
-    auto rule = read_file("url_querystring.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("url_querystring.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -1154,7 +1154,7 @@ TEST(TestTransformers, UrlQuerystringAlias)
     ddwaf_object_map_add(&map, "value2", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -1172,7 +1172,7 @@ TEST(TestTransformers, UrlQuerystringAlias)
 
 TEST(TestTransformers, Mixed)
 {
-    auto rule = read_file("mixed.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("mixed.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -1187,7 +1187,7 @@ TEST(TestTransformers, Mixed)
     ddwaf_object_map_add(&map, "value1", &string);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(

@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 
 file(READ "version" version)
 
+string(STRIP "${version}" version)
 string(REGEX REPLACE "-(alpha|beta)[0-9]*$" "" mmp_version ${version})
 
 if (APPLE)

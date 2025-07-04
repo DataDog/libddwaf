@@ -197,7 +197,7 @@ int main()
     ddwaf_object_map_add(&root, "arg2", ddwaf_object_string(&tmp, "string 2"));
 
     ddwaf_object ret;
-    auto code = ddwaf_run(context, &root, nullptr, &ret, LONG_TIME);
+    auto code = ddwaf_context_eval(context, &root, nullptr, &ret, LONG_TIME);
     std::cout << "Output second run: " << code << '\n';
     if (code == DDWAF_MATCH) {
         YAML::Emitter out(std::cout);

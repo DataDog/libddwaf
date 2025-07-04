@@ -14,7 +14,7 @@ constexpr std::string_view base_dir = "integration/conditions/exists";
 
 TEST(TestConditionExistsIntegration, AddressAvailable)
 {
-    auto rule = read_file("exists.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -28,7 +28,7 @@ TEST(TestConditionExistsIntegration, AddressAvailable)
     ddwaf_object_map_add(&map, "input-1", ddwaf_object_invalid(&value));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
 
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
@@ -48,7 +48,7 @@ TEST(TestConditionExistsIntegration, AddressAvailable)
 
 TEST(TestConditionExistsIntegration, AddressNotAvailable)
 {
-    auto rule = read_file("exists.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -62,7 +62,7 @@ TEST(TestConditionExistsIntegration, AddressNotAvailable)
     ddwaf_object_map_add(&map, "input", ddwaf_object_invalid(&value));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
     ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -70,7 +70,7 @@ TEST(TestConditionExistsIntegration, AddressNotAvailable)
 
 TEST(TestConditionExistsIntegration, KeyPathAvailable)
 {
-    auto rule = read_file("exists.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -86,7 +86,7 @@ TEST(TestConditionExistsIntegration, KeyPathAvailable)
     ddwaf_object_map_add(&map, "input-2", &intermediate);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -103,7 +103,7 @@ TEST(TestConditionExistsIntegration, KeyPathAvailable)
 
 TEST(TestConditionExistsIntegration, KeyPathNotAvailable)
 {
-    auto rule = read_file("exists.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -119,7 +119,7 @@ TEST(TestConditionExistsIntegration, KeyPathNotAvailable)
     ddwaf_object_map_add(&map, "input-2", &intermediate);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
 
     ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
@@ -128,7 +128,7 @@ TEST(TestConditionExistsIntegration, KeyPathNotAvailable)
 
 TEST(TestConditionExistsIntegration, AddressAvailableVariadicRule)
 {
-    auto rule = read_file("exists.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -142,7 +142,7 @@ TEST(TestConditionExistsIntegration, AddressAvailableVariadicRule)
     ddwaf_object_map_add(&map, "input-3-1", ddwaf_object_invalid(&value));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "3",
@@ -161,7 +161,7 @@ TEST(TestConditionExistsIntegration, AddressAvailableVariadicRule)
 
 TEST(TestConditionExistsIntegration, KeyPathAvailableVariadicRule)
 {
-    auto rule = read_file("exists.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -177,7 +177,7 @@ TEST(TestConditionExistsIntegration, KeyPathAvailableVariadicRule)
     ddwaf_object_map_add(&map, "input-3-2", &intermediate);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "3",
@@ -194,7 +194,7 @@ TEST(TestConditionExistsIntegration, KeyPathAvailableVariadicRule)
 
 TEST(TestConditionExistsIntegration, AddressAvailableKeyPathNotAvailableVariadicRule)
 {
-    auto rule = read_file("exists.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -211,7 +211,7 @@ TEST(TestConditionExistsIntegration, AddressAvailableKeyPathNotAvailableVariadic
     ddwaf_object_map_add(&map, "input-3-1", ddwaf_object_invalid(&value));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "3",
@@ -230,7 +230,7 @@ TEST(TestConditionExistsIntegration, AddressAvailableKeyPathNotAvailableVariadic
 
 TEST(TestConditionExistsNegatedIntegration, AddressAvailable)
 {
-    auto rule = read_file("exists_negated.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists_negated.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -244,7 +244,7 @@ TEST(TestConditionExistsNegatedIntegration, AddressAvailable)
     ddwaf_object_map_add(&map, "input-1", ddwaf_object_invalid(&value));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
 
     ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
@@ -253,7 +253,7 @@ TEST(TestConditionExistsNegatedIntegration, AddressAvailable)
 
 TEST(TestConditionExistsNegatedIntegration, AddressNotAvailable)
 {
-    auto rule = read_file("exists_negated.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists_negated.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -270,7 +270,7 @@ TEST(TestConditionExistsNegatedIntegration, AddressNotAvailable)
     // as the !exists operator only supports address + key path, since we can't
     // assert the absence of an address given that these are provided in stages
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
 
     ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
@@ -279,7 +279,7 @@ TEST(TestConditionExistsNegatedIntegration, AddressNotAvailable)
 
 TEST(TestConditionExistsNegatedIntegration, KeyPathNotAvailable)
 {
-    auto rule = read_file("exists_negated.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists_negated.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -295,7 +295,7 @@ TEST(TestConditionExistsNegatedIntegration, KeyPathNotAvailable)
     ddwaf_object_map_add(&map, "input-2", &intermediate);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -312,7 +312,7 @@ TEST(TestConditionExistsNegatedIntegration, KeyPathNotAvailable)
 
 TEST(TestConditionExistsNegatedIntegration, KeyPathAvailable)
 {
-    auto rule = read_file("exists_negated.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exists_negated.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -328,7 +328,7 @@ TEST(TestConditionExistsNegatedIntegration, KeyPathAvailable)
     ddwaf_object_map_add(&map, "input-2", &intermediate);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_OK);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
 
     ddwaf_object_free(&out);
     ddwaf_context_destroy(context);

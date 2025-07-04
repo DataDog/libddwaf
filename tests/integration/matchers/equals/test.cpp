@@ -14,7 +14,7 @@ constexpr std::string_view base_dir = "integration/matchers/equals/";
 
 TEST(TestEqualsMatcherIntegration, StringEquals)
 {
-    auto rule = read_file("equals.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -29,7 +29,7 @@ TEST(TestEqualsMatcherIntegration, StringEquals)
     ddwaf_object_map_add(&map, "input", &value);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -49,7 +49,7 @@ TEST(TestEqualsMatcherIntegration, StringEquals)
 
 TEST(TestEqualsMatcherIntegration, BoolEquals)
 {
-    auto rule = read_file("equals.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -64,7 +64,7 @@ TEST(TestEqualsMatcherIntegration, BoolEquals)
     ddwaf_object_map_add(&map, "input", &value);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -86,7 +86,7 @@ TEST(TestEqualsMatcherIntegration, BoolEquals)
 
 TEST(TestEqualsMatcherIntegration, SignedEquals)
 {
-    auto rule = read_file("equals.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -101,7 +101,7 @@ TEST(TestEqualsMatcherIntegration, SignedEquals)
     ddwaf_object_map_add(&map, "input", &value);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "3",
@@ -121,7 +121,7 @@ TEST(TestEqualsMatcherIntegration, SignedEquals)
 
 TEST(TestEqualsMatcherIntegration, UnsignedEquals)
 {
-    auto rule = read_file("equals.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -136,7 +136,7 @@ TEST(TestEqualsMatcherIntegration, UnsignedEquals)
     ddwaf_object_map_add(&map, "input", &value);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "4",
@@ -158,7 +158,7 @@ TEST(TestEqualsMatcherIntegration, UnsignedEquals)
 
 TEST(TestEqualsMatcherIntegration, FloatEquals)
 {
-    auto rule = read_file("equals.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
@@ -173,7 +173,7 @@ TEST(TestEqualsMatcherIntegration, FloatEquals)
     ddwaf_object_map_add(&map, "input", &value);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "5",

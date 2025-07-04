@@ -15,7 +15,7 @@ constexpr std::string_view base_dir = "integration/interface/context/result/";
 
 TEST(TestContextResultIntegration, ResultInvalidArgumentNullContext)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -29,8 +29,8 @@ TEST(TestContextResultIntegration, ResultInvalidArgumentNullContext)
     ddwaf_object result;
     ddwaf_object_invalid(&result);
 
-    EXPECT_EQ(
-        ddwaf_run(nullptr, &persistent, nullptr, &result, LONG_TIME), DDWAF_ERR_INVALID_ARGUMENT);
+    EXPECT_EQ(ddwaf_context_eval(nullptr, &persistent, nullptr, true, &result, LONG_TIME),
+        DDWAF_ERR_INVALID_ARGUMENT);
 
     // The result object must be unchanged
     EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_INVALID);
@@ -41,7 +41,7 @@ TEST(TestContextResultIntegration, ResultInvalidArgumentNullContext)
 
 TEST(TestContextResultIntegration, ResultInvalidArgumentNoData)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -54,7 +54,8 @@ TEST(TestContextResultIntegration, ResultInvalidArgumentNoData)
     ddwaf_object result;
     ddwaf_object_invalid(&result);
 
-    EXPECT_EQ(ddwaf_run(context, nullptr, nullptr, &result, LONG_TIME), DDWAF_ERR_INVALID_ARGUMENT);
+    EXPECT_EQ(ddwaf_context_eval(context, nullptr, nullptr, true, &result, LONG_TIME),
+        DDWAF_ERR_INVALID_ARGUMENT);
 
     // The result object must be unchanged
     EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_INVALID);
@@ -65,7 +66,7 @@ TEST(TestContextResultIntegration, ResultInvalidArgumentNoData)
 
 TEST(TestContextResultIntegration, ResultInvalidObjectInvalidPersistentDataSchema)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -82,8 +83,8 @@ TEST(TestContextResultIntegration, ResultInvalidObjectInvalidPersistentDataSchem
     ddwaf_object result;
     ddwaf_object_invalid(&result);
 
-    EXPECT_EQ(
-        ddwaf_run(context, &persistent, nullptr, &result, LONG_TIME), DDWAF_ERR_INVALID_OBJECT);
+    EXPECT_EQ(ddwaf_context_eval(context, &persistent, nullptr, true, &result, LONG_TIME),
+        DDWAF_ERR_INVALID_OBJECT);
 
     // The result object must be unchanged
     EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_INVALID);
@@ -95,7 +96,7 @@ TEST(TestContextResultIntegration, ResultInvalidObjectInvalidPersistentDataSchem
 
 TEST(TestContextResultIntegration, ResultInvalidObjectInvalidEphemeralDataSchema)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -112,8 +113,8 @@ TEST(TestContextResultIntegration, ResultInvalidObjectInvalidEphemeralDataSchema
     ddwaf_object result;
     ddwaf_object_invalid(&result);
 
-    EXPECT_EQ(
-        ddwaf_run(context, nullptr, &ephemeral, &result, LONG_TIME), DDWAF_ERR_INVALID_OBJECT);
+    EXPECT_EQ(ddwaf_context_eval(context, nullptr, &ephemeral, true, &result, LONG_TIME),
+        DDWAF_ERR_INVALID_OBJECT);
 
     // The result object must be unchanged
     EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_INVALID);
@@ -125,7 +126,7 @@ TEST(TestContextResultIntegration, ResultInvalidObjectInvalidEphemeralDataSchema
 
 TEST(TestContextResultIntegration, ResultOk)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -144,7 +145,7 @@ TEST(TestContextResultIntegration, ResultOk)
 
     ddwaf_object result;
     ddwaf_object_invalid(&result);
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &result, LONG_TIME), DDWAF_OK);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, LONG_TIME), DDWAF_OK);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
@@ -182,7 +183,7 @@ TEST(TestContextResultIntegration, ResultOk)
 
 TEST(TestContextResultIntegration, ResultOkWithAttributes)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -206,7 +207,7 @@ TEST(TestContextResultIntegration, ResultOkWithAttributes)
 
     ddwaf_object result;
     ddwaf_object_invalid(&result);
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &result, LONG_TIME), DDWAF_OK);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, LONG_TIME), DDWAF_OK);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
@@ -244,7 +245,7 @@ TEST(TestContextResultIntegration, ResultOkWithAttributes)
 
 TEST(TestContextResultIntegration, ResultOkWithTimeout)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -263,7 +264,7 @@ TEST(TestContextResultIntegration, ResultOkWithTimeout)
 
     ddwaf_object result;
     ddwaf_object_invalid(&result);
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &result, 0), DDWAF_OK);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, 0), DDWAF_OK);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
@@ -301,7 +302,7 @@ TEST(TestContextResultIntegration, ResultOkWithTimeout)
 
 TEST(TestContextResultIntegration, ResultMatch)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -320,7 +321,8 @@ TEST(TestContextResultIntegration, ResultMatch)
 
     ddwaf_object result;
     ddwaf_object_invalid(&result);
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &result, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(
+        ddwaf_context_eval(context, &parameter, nullptr, true, &result, LONG_TIME), DDWAF_MATCH);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
@@ -358,7 +360,7 @@ TEST(TestContextResultIntegration, ResultMatch)
 
 TEST(TestContextResultIntegration, ResultMatchWithTimeout)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -377,7 +379,7 @@ TEST(TestContextResultIntegration, ResultMatchWithTimeout)
 
     ddwaf_object result;
     ddwaf_object_invalid(&result);
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &result, 0), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, 0), DDWAF_MATCH);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
@@ -415,7 +417,7 @@ TEST(TestContextResultIntegration, ResultMatchWithTimeout)
 
 TEST(TestContextResultIntegration, ResultMatchWithTimeoutOnPreprocessor)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -440,7 +442,7 @@ TEST(TestContextResultIntegration, ResultMatchWithTimeoutOnPreprocessor)
 
     ddwaf_object result;
     ddwaf_object_invalid(&result);
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &result, 0), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, 0), DDWAF_MATCH);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);

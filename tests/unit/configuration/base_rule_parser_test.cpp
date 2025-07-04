@@ -21,17 +21,15 @@ TEST(TestBaseRuleParser, ParseEventRule)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
-    auto rule_object = yaml_to_object(
+    auto rule_object = yaml_to_object<owned_object>(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     parse_base_rules(rule_array, collector, section);
 
-    ddwaf_object_free(&rule_object);
-
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -44,8 +42,6 @@ TEST(TestBaseRuleParser, ParseEventRule)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -97,17 +93,15 @@ TEST(TestBaseRuleParser, ParseOutputRule)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
-    auto rule_object = yaml_to_object(
+    auto rule_object = yaml_to_object<owned_object>(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}], output: {event: false, keep: false, attributes: {output.attribute: {address: arg1}}}}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     parse_base_rules(rule_array, collector, section);
 
-    ddwaf_object_free(&rule_object);
-
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -120,8 +114,6 @@ TEST(TestBaseRuleParser, ParseOutputRule)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -174,17 +166,15 @@ TEST(TestBaseRuleParser, ParseComboRule)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
-    auto rule_object = yaml_to_object(
+    auto rule_object = yaml_to_object<owned_object>(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}], output: {event: true, keep: true, attributes: {output.attribute: {address: arg1}}}}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     parse_base_rules(rule_array, collector, section);
 
-    ddwaf_object_free(&rule_object);
-
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -197,8 +187,6 @@ TEST(TestBaseRuleParser, ParseComboRule)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -251,17 +239,15 @@ TEST(TestBaseRuleParser, ParseRuleWithoutType)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
-    auto rule_object = yaml_to_object(
+    auto rule_object = yaml_to_object<owned_object>(
         R"([{id: 1, name: rule1, tags: {category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     parse_base_rules(rule_array, collector, section);
 
-    ddwaf_object_free(&rule_object);
-
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -280,8 +266,6 @@ TEST(TestBaseRuleParser, ParseRuleWithoutType)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -317,16 +301,15 @@ TEST(TestBaseRuleParser, ParseRuleWithoutConditions)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
-    auto rule_object = yaml_to_object(
+    auto rule_object = yaml_to_object<owned_object>(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: []}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     parse_base_rules(rule_array, collector, section);
 
-    ddwaf_object_free(&rule_object);
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -348,8 +331,6 @@ TEST(TestBaseRuleParser, ParseRuleWithoutConditions)
 
         auto warnings = at<raw_configuration::map>(root_map, "warnings");
         EXPECT_EQ(warnings.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -385,17 +366,15 @@ TEST(TestBaseRuleParser, ParseRuleInvalidTransformer)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
-    auto rule_object = yaml_to_object(
+    auto rule_object = yaml_to_object<owned_object>(
         R"([{id: 1, name: rule1, tags: {category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y], transformers: [unknown]}], regex: .*}}]}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     parse_base_rules(rule_array, collector, section);
 
-    ddwaf_object_free(&rule_object);
-
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -417,8 +396,6 @@ TEST(TestBaseRuleParser, ParseRuleInvalidTransformer)
         auto warning_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(warning_rules.size(), 1);
         EXPECT_NE(warning_rules.find("1"), warning_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -454,17 +431,15 @@ TEST(TestBaseRuleParser, ParseRuleWithoutID)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
-    auto rule_object = yaml_to_object(
+    auto rule_object = yaml_to_object<owned_object>(
         R"([{name: rule1, tags: {type: type1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     parse_base_rules(rule_array, collector, section);
 
-    ddwaf_object_free(&rule_object);
-
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -483,8 +458,6 @@ TEST(TestBaseRuleParser, ParseRuleWithoutID)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -520,7 +493,7 @@ TEST(TestBaseRuleParser, ParseMultipleRules)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
-    auto rule_object = yaml_to_object(
+    auto rule_object = yaml_to_object<owned_object>(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]},{id: secondrule, name: rule2, tags: {type: flow2, category: category2, confidence: none}, conditions: [{operator: ip_match, parameters: {inputs: [{address: http.client_ip}], data: blocked_ips}}], on_match: [block]}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
@@ -528,11 +501,9 @@ TEST(TestBaseRuleParser, ParseMultipleRules)
 
     parse_base_rules(rule_array, collector, section);
 
-    ddwaf_object_free(&rule_object);
-
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -546,8 +517,6 @@ TEST(TestBaseRuleParser, ParseMultipleRules)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -592,18 +561,16 @@ TEST(TestBaseRuleParser, ParseMultipleRulesOneInvalid)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
-    auto rule_object = yaml_to_object(
+    auto rule_object = yaml_to_object<owned_object>(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]},{id: secondrule, name: rule2, tags: {type: flow2, category: category2, confidence: none}, conditions: [{operator: ip_match, parameters: {inputs: [{address: http.client_ip}], data: blocked_ips}}], on_match: [block]}, {id: error}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
 
     parse_base_rules(rule_array, collector, section);
 
-    ddwaf_object_free(&rule_object);
-
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -624,8 +591,6 @@ TEST(TestBaseRuleParser, ParseMultipleRulesOneInvalid)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("error"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -670,7 +635,7 @@ TEST(TestBaseRuleParser, ParseMultipleRulesOneDuplicate)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
-    auto rule_object = yaml_to_object(
+    auto rule_object = yaml_to_object<owned_object>(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]},{id: 1, name: rule2, tags: {type: flow2, category: category2, confidence: none}, conditions: [{operator: ip_match, parameters: {inputs: [{address: http.client_ip}], data: blocked_ips}}], on_match: [block]}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
@@ -678,11 +643,9 @@ TEST(TestBaseRuleParser, ParseMultipleRulesOneDuplicate)
 
     parse_base_rules(rule_array, collector, section);
 
-    ddwaf_object_free(&rule_object);
-
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -702,8 +665,6 @@ TEST(TestBaseRuleParser, ParseMultipleRulesOneDuplicate)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -726,74 +687,6 @@ TEST(TestBaseRuleParser, ParseMultipleRulesOneDuplicate)
     }
 }
 
-TEST(TestBaseRuleParser, KeyPathTooLong)
-{
-    configuration_spec cfg;
-    configuration_change_spec change;
-    configuration_collector collector{change, cfg};
-    ruleset_info::section_info section;
-
-    auto rule_object = yaml_to_object(
-        R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z]}], regex: .*}}]}])");
-
-    auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
-    EXPECT_EQ(rule_array.size(), 1);
-
-    parse_base_rules(rule_array, collector, section);
-
-    ddwaf_object_free(&rule_object);
-
-    {
-        raw_configuration root;
-        section.to_object(root);
-
-        auto root_map = static_cast<raw_configuration::map>(root);
-
-        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
-        EXPECT_EQ(loaded.size(), 0);
-
-        auto failed = at<raw_configuration::string_set>(root_map, "failed");
-        EXPECT_EQ(failed.size(), 1);
-        EXPECT_NE(failed.find("1"), failed.end());
-
-        auto errors = at<raw_configuration::map>(root_map, "errors");
-        EXPECT_EQ(errors.size(), 1);
-        auto it = errors.find("key_path beyond maximum container depth");
-        EXPECT_NE(it, errors.end());
-
-        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
-        EXPECT_EQ(error_rules.size(), 1);
-        EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
-    }
-
-    EXPECT_TRUE(change.empty());
-    EXPECT_TRUE(change.actions.empty());
-    EXPECT_TRUE(change.base_rules.empty());
-    EXPECT_TRUE(change.user_rules.empty());
-    EXPECT_TRUE(change.exclusion_data.empty());
-    EXPECT_TRUE(change.rule_data.empty());
-    EXPECT_TRUE(change.rule_filters.empty());
-    EXPECT_TRUE(change.input_filters.empty());
-    EXPECT_TRUE(change.processors.empty());
-    EXPECT_TRUE(change.scanners.empty());
-    EXPECT_TRUE(change.rule_overrides_by_id.empty());
-    EXPECT_TRUE(change.rule_overrides_by_tags.empty());
-
-    EXPECT_TRUE(cfg.actions.empty());
-    EXPECT_TRUE(cfg.base_rules.empty());
-    EXPECT_TRUE(cfg.user_rules.empty());
-    EXPECT_TRUE(cfg.exclusion_data.empty());
-    EXPECT_TRUE(cfg.rule_data.empty());
-    EXPECT_TRUE(cfg.rule_filters.empty());
-    EXPECT_TRUE(cfg.input_filters.empty());
-    EXPECT_TRUE(cfg.processors.empty());
-    EXPECT_TRUE(cfg.scanners.empty());
-    EXPECT_TRUE(cfg.rule_overrides_by_id.empty());
-    EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
-}
-
 TEST(TestBaseRuleParser, NegatedMatcherTooManyParameters)
 {
     configuration_spec cfg;
@@ -801,7 +694,7 @@ TEST(TestBaseRuleParser, NegatedMatcherTooManyParameters)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
-    auto rule_object = yaml_to_object(
+    auto rule_object = yaml_to_object<owned_object>(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: "!match_regex", parameters: {inputs: [{address: arg1}, {address: arg2}], regex: .*}}]}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
@@ -809,11 +702,9 @@ TEST(TestBaseRuleParser, NegatedMatcherTooManyParameters)
 
     parse_base_rules(rule_array, collector, section);
 
-    ddwaf_object_free(&rule_object);
-
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -832,8 +723,6 @@ TEST(TestBaseRuleParser, NegatedMatcherTooManyParameters)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -869,7 +758,7 @@ TEST(TestBaseRuleParser, SupportedVersionedOperator)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
-    auto rule_object = yaml_to_object(
+    auto rule_object = yaml_to_object<owned_object>(
         R"([{"id":"rsp-930-003","name":"SQLi Exploit detection","tags":{"type":"sqli","category":"exploit_detection","module":"rasp"},"conditions":[{"parameters":{"resource":[{"address":"server.db.statement"}],"params":[{"address":"server.request.query"},{"address":"server.request.body"},{"address":"server.request.path_params"},{"address":"grpc.server.request.message"},{"address":"graphql.server.all_resolvers"},{"address":"graphql.server.resolver"}],"db_type":[{"address":"server.db.system"}]},"operator":"sqli_detector@v2"}]}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
@@ -877,11 +766,9 @@ TEST(TestBaseRuleParser, SupportedVersionedOperator)
 
     parse_base_rules(rule_array, collector, section);
 
-    ddwaf_object_free(&rule_object);
-
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -897,8 +784,6 @@ TEST(TestBaseRuleParser, SupportedVersionedOperator)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -914,7 +799,7 @@ TEST(TestBaseRuleParser, UnsupportedVersionedOperator)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
-    auto rule_object = yaml_to_object(
+    auto rule_object = yaml_to_object<owned_object>(
         R"([{"id":"rsp-930-003","name":"SQLi Exploit detection","tags":{"type":"sqli","category":"exploit_detection","module":"rasp"},"conditions":[{"parameters":{"resource":[{"address":"server.db.statement"}],"params":[{"address":"server.request.query"},{"address":"server.request.body"},{"address":"server.request.path_params"},{"address":"grpc.server.request.message"},{"address":"graphql.server.all_resolvers"},{"address":"graphql.server.resolver"}],"db_type":[{"address":"server.db.system"}]},"operator":"sqli_detector@v20"}]}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
@@ -922,11 +807,9 @@ TEST(TestBaseRuleParser, UnsupportedVersionedOperator)
 
     parse_base_rules(rule_array, collector, section);
 
-    ddwaf_object_free(&rule_object);
-
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -942,8 +825,6 @@ TEST(TestBaseRuleParser, UnsupportedVersionedOperator)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -979,7 +860,7 @@ TEST(TestBaseRuleParser, IncompatibleMinVersion)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
-    auto rule_object = yaml_to_object(
+    auto rule_object = yaml_to_object<owned_object>(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, min_version: 99.0.0, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
@@ -987,11 +868,9 @@ TEST(TestBaseRuleParser, IncompatibleMinVersion)
 
     parse_base_rules(rule_array, collector, section);
 
-    ddwaf_object_free(&rule_object);
-
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1007,8 +886,6 @@ TEST(TestBaseRuleParser, IncompatibleMinVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -1044,7 +921,7 @@ TEST(TestBaseRuleParser, IncompatibleMaxVersion)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
-    auto rule_object = yaml_to_object(
+    auto rule_object = yaml_to_object<owned_object>(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, max_version: 0.0.99, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
@@ -1052,11 +929,9 @@ TEST(TestBaseRuleParser, IncompatibleMaxVersion)
 
     parse_base_rules(rule_array, collector, section);
 
-    ddwaf_object_free(&rule_object);
-
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1072,8 +947,6 @@ TEST(TestBaseRuleParser, IncompatibleMaxVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -1109,7 +982,7 @@ TEST(TestBaseRuleParser, CompatibleVersion)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
-    auto rule_object = yaml_to_object(
+    auto rule_object = yaml_to_object<owned_object>(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, min_version: 0.0.99, max_version: 2.0.0, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
@@ -1117,11 +990,9 @@ TEST(TestBaseRuleParser, CompatibleVersion)
 
     parse_base_rules(rule_array, collector, section);
 
-    ddwaf_object_free(&rule_object);
-
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1137,8 +1008,6 @@ TEST(TestBaseRuleParser, CompatibleVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -1154,17 +1023,15 @@ TEST(TestBaseRuleParser, InconsequentialRule)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
-    auto rule_object = yaml_to_object(
+    auto rule_object = yaml_to_object<owned_object>(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}], output: {event: false, keep: false, attributes: {}}}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     parse_base_rules(rule_array, collector, section);
 
-    ddwaf_object_free(&rule_object);
-
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1183,7 +1050,6 @@ TEST(TestBaseRuleParser, InconsequentialRule)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -1219,17 +1085,15 @@ TEST(TestBaseRuleParser, InvalidOutputType)
     configuration_collector collector{change, cfg};
     ruleset_info::section_info section;
 
-    auto rule_object = yaml_to_object(
+    auto rule_object = yaml_to_object<owned_object>(
         R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}], output: {event: false, keep: false, attributes: {output.attribute: {value: null}}}}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     parse_base_rules(rule_array, collector, section);
 
-    ddwaf_object_free(&rule_object);
-
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1248,7 +1112,6 @@ TEST(TestBaseRuleParser, InvalidOutputType)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());

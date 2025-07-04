@@ -63,7 +63,7 @@ bool test_runner::run_test(const YAML::Node &runs)
     std::unique_ptr<std::remove_pointer_t<ddwaf_context>, decltype(&ddwaf_context_destroy)> ctx(
         ddwaf_context_init(handle_), ddwaf_context_destroy);
 
-    ddwaf_object res_mem;
+    ddwaf_object res_mem{};
     ddwaf_object_invalid(&res_mem);
     std::unique_ptr<ddwaf_object, decltype(&ddwaf_object_free)> res{&res_mem, ddwaf_object_free};
 
@@ -89,7 +89,8 @@ bool test_runner::run_test(const YAML::Node &runs)
                 ephemeral_ptr = &ephemeral;
             }
 
-            auto retval = ddwaf_run(ctx.get(), persistent_ptr, ephemeral_ptr, res.get(), timeout);
+            auto retval = ddwaf_context_eval(
+                ctx.get(), persistent_ptr, ephemeral_ptr, true, res.get(), timeout);
 
             expect(retval, code);
             if (code == DDWAF_MATCH) {

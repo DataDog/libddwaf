@@ -24,8 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include "ddwaf.h"
-
 // Convert numbers to strings
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
@@ -34,91 +32,12 @@
 
 template <typename T> using optional_ref = std::optional<std::reference_wrapper<T>>;
 
-// Internals
-// clang-format off
-#define PWI_DATA_TYPES (DDWAF_OBJ_SIGNED | DDWAF_OBJ_UNSIGNED | DDWAF_OBJ_STRING | DDWAF_OBJ_BOOL | DDWAF_OBJ_FLOAT)
-#define PWI_CONTAINER_TYPES (DDWAF_OBJ_ARRAY | DDWAF_OBJ_MAP)
-#define DDWAF_RESULT_INITIALISER {false,  {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_ARRAY}, {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_MAP}, {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_MAP}, 0}
-// clang-format on
-
 namespace ddwaf {
 
 struct eval_result {
     bool outcome;
     bool ephemeral;
 };
-
-struct object_limits {
-    static constexpr uint32_t default_max_container_depth{DDWAF_MAX_CONTAINER_DEPTH};
-    static constexpr uint32_t default_max_container_size{DDWAF_MAX_CONTAINER_SIZE};
-    static constexpr uint32_t default_max_string_length{DDWAF_MAX_STRING_LENGTH};
-
-    // Non-overridable limits
-    static constexpr uint32_t max_transformers_per_address{10};
-    static constexpr uint32_t max_key_path_depth{DDWAF_MAX_CONTAINER_DEPTH};
-
-    // User provided limits
-    uint32_t max_container_depth{DDWAF_MAX_CONTAINER_DEPTH};
-    uint32_t max_container_size{DDWAF_MAX_CONTAINER_SIZE};
-    uint32_t max_string_length{DDWAF_MAX_STRING_LENGTH};
-};
-
-inline size_t find_string_cutoff(const char *str, size_t length, object_limits limits = {})
-{
-    // If the string is shorter than our cap, then fine
-    if (length <= limits.max_string_length) {
-        return length;
-    }
-
-    // If it's longer, we need to truncate it. However, we don't want to cut a UTF-8 byte sequence
-    // in the middle of it! Valid UTF8 has a specific binary format. 	If it's a single byte UTF8
-    // character, then it is always of form '0xxxxxxx', where 'x' is any binary digit. 	If it's a
-    // two byte UTF8 character, then it's always of form '110xxxxx 10xxxxxx'. 	Similarly for three
-    // and four byte UTF8 characters it starts with '1110xxxx' and '11110xxx' followed 		by
-    // '10xxxxxx' one less times as there are bytes.
-
-    // We take the two strongest bits of the first trimmed character. We have four possibilities:
-    //  - 00 or 01: single UTF-8 byte, no risk trimming
-    //  - 11: New multi-byte sequence, we can ignore it, no risk trimming
-    //  - 10: Middle of multi byte sequence, we need to step back
-    //  We therefore loop as long as we see the '10' sequence
-
-    size_t pos = limits.max_string_length;
-    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-    while (pos != 0 && (str[pos] & 0xC0) == 0x80) { pos -= 1; }
-
-    return pos;
-}
-
-namespace object {
-
-inline bool is_container(const ddwaf_object *obj)
-{
-    return obj != nullptr && (obj->type & PWI_CONTAINER_TYPES) != 0 && obj->array != nullptr;
-}
-
-inline bool is_map(const ddwaf_object *obj)
-{
-    return obj != nullptr && obj->type == DDWAF_OBJ_MAP && obj->array != nullptr;
-}
-
-inline bool is_scalar(const ddwaf_object *obj)
-{
-    return obj != nullptr && (obj->type & PWI_DATA_TYPES) != 0;
-}
-
-inline bool is_invalid_or_null(const ddwaf_object *obj)
-{
-    return obj != nullptr && (obj->type == DDWAF_OBJ_INVALID || obj->type == DDWAF_OBJ_NULL);
-}
-
-ddwaf_object clone(const ddwaf_object *input);
-
-const ddwaf_object *find_key_path(const ddwaf_object &root, std::span<const std::string> key_path);
-
-// Assign source to dest without leaking keys
-void assign(ddwaf_object &dest, const ddwaf_object &source);
-} // namespace object
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 inline bool isalpha(char c) { return (static_cast<unsigned>(c) | 32) - 'a' < 26; }
@@ -128,11 +47,11 @@ inline bool isspace(char c)
 {
     return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v';
 }
-inline constexpr bool isupper(char c) { return static_cast<unsigned>(c) - 'A' < 26; }
+inline bool isupper(char c) { return static_cast<unsigned>(c) - 'A' < 26; }
 inline bool islower(char c) { return static_cast<unsigned>(c) - 'a' < 26; }
 inline bool isalnum(char c) { return isalpha(c) || isdigit(c); }
 inline bool isboundary(char c) { return !isalnum(c) && c != '_'; }
-inline constexpr char tolower(char c) { return isupper(c) ? static_cast<char>(c | 32) : c; }
+inline char tolower(char c) { return isupper(c) ? static_cast<char>(c | 32) : c; }
 inline uint8_t from_hex(char c)
 {
     auto uc = static_cast<uint8_t>(c);
@@ -240,31 +159,6 @@ template <typename T> std::pair<bool, T> from_string(std::string_view str)
     }
 
     return {false, {}};
-}
-
-inline std::string object_to_string(const ddwaf_object &object)
-{
-    if (object.type == DDWAF_OBJ_STRING) {
-        return std::string{object.stringValue, static_cast<std::size_t>(object.nbEntries)};
-    }
-
-    if (object.type == DDWAF_OBJ_BOOL) {
-        return to_string<std::string>(object.boolean);
-    }
-
-    if (object.type == DDWAF_OBJ_SIGNED) {
-        return to_string<std::string>(object.intValue);
-    }
-
-    if (object.type == DDWAF_OBJ_UNSIGNED) {
-        return to_string<std::string>(object.uintValue);
-    }
-
-    if (object.type == DDWAF_OBJ_FLOAT) {
-        return to_string<std::string>(object.f64);
-    }
-
-    return {};
 }
 
 inline std::vector<std::string_view> split(std::string_view str, char sep)

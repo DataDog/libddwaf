@@ -17,7 +17,7 @@ constexpr std::string_view base_dir = "integration/diagnostics/v2/";
 
 TEST(TestDiagnosticsV2Integration, InvalidConfigType)
 {
-    auto rule = yaml_to_object(
+    auto rule = yaml_to_object<ddwaf_object>(
         R"([version, '2.1', [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]])");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -29,7 +29,7 @@ TEST(TestDiagnosticsV2Integration, InvalidConfigType)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto error = ddwaf::at<std::string>(root_map, "error");
@@ -42,7 +42,7 @@ TEST(TestDiagnosticsV2Integration, InvalidConfigType)
 
 TEST(TestDiagnosticsV2Integration, UnsupportedSchema)
 {
-    auto rule = yaml_to_object(
+    auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '3.0', metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -54,7 +54,7 @@ TEST(TestDiagnosticsV2Integration, UnsupportedSchema)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto error = ddwaf::at<std::string>(root_map, "error");
@@ -67,7 +67,7 @@ TEST(TestDiagnosticsV2Integration, UnsupportedSchema)
 
 TEST(TestDiagnosticsV2Integration, NoSchema)
 {
-    auto rule = yaml_to_object(
+    auto rule = yaml_to_object<ddwaf_object>(
         R"({ metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -79,7 +79,7 @@ TEST(TestDiagnosticsV2Integration, NoSchema)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -104,7 +104,7 @@ TEST(TestDiagnosticsV2Integration, NoSchema)
 
 TEST(TestDiagnosticsV2Integration, BasicRule)
 {
-    auto rule = yaml_to_object(
+    auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -116,7 +116,7 @@ TEST(TestDiagnosticsV2Integration, BasicRule)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -143,7 +143,7 @@ TEST(TestDiagnosticsV2Integration, BasicRuleWithUpdate)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule = yaml_to_object(
+    auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -153,7 +153,7 @@ TEST(TestDiagnosticsV2Integration, BasicRuleWithUpdate)
     {
         EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -179,7 +179,7 @@ TEST(TestDiagnosticsV2Integration, BasicRuleWithUpdate)
     {
         EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -216,7 +216,7 @@ TEST(TestDiagnosticsV2Integration, NullRuleset)
 
 TEST(TestDiagnosticsV2Integration, InvalidRule)
 {
-    auto rule = read_file("invalid_single.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("invalid_single.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -227,7 +227,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRule)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
@@ -254,7 +254,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRule)
 
 TEST(TestDiagnosticsV2Integration, MultipleSameInvalidRules)
 {
-    auto rule = read_file("invalid_multiple_same.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("invalid_multiple_same.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -265,7 +265,7 @@ TEST(TestDiagnosticsV2Integration, MultipleSameInvalidRules)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
@@ -294,7 +294,7 @@ TEST(TestDiagnosticsV2Integration, MultipleSameInvalidRules)
 
 TEST(TestDiagnosticsV2Integration, MultipleDiffInvalidRules)
 {
-    auto rule = read_file("invalid_multiple_diff.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("invalid_multiple_diff.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -305,7 +305,7 @@ TEST(TestDiagnosticsV2Integration, MultipleDiffInvalidRules)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
@@ -346,7 +346,7 @@ TEST(TestDiagnosticsV2Integration, MultipleDiffInvalidRules)
 
 TEST(TestDiagnosticsV2Integration, MultipleMixInvalidRules)
 {
-    auto rule = read_file("invalid_multiple_mix.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("invalid_multiple_mix.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -357,7 +357,7 @@ TEST(TestDiagnosticsV2Integration, MultipleMixInvalidRules)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
@@ -412,7 +412,7 @@ TEST(TestDiagnosticsV2Integration, MultipleMixInvalidRules)
 
 TEST(TestDiagnosticsV2Integration, InvalidDuplicate)
 {
-    auto rule = read_file("invalid_duplicate.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("invalid_duplicate.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -423,7 +423,7 @@ TEST(TestDiagnosticsV2Integration, InvalidDuplicate)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
@@ -453,7 +453,7 @@ TEST(TestDiagnosticsV2Integration, InvalidDuplicate)
 
 TEST(TestDiagnosticsV2Integration, InvalidRuleset)
 {
-    auto rule = read_file("invalid_ruleset.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("invalid_ruleset.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -464,7 +464,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleset)
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
-    ddwaf::raw_configuration root(diagnostics);
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
     auto rules = ddwaf::at<raw_configuration::map>(root_map, "rules");
@@ -496,10 +496,10 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleset)
 
 TEST(TestDiagnosticsV2Integration, MultipleRules)
 {
-    auto rule = read_file("rules.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}};
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
@@ -509,7 +509,7 @@ TEST(TestDiagnosticsV2Integration, MultipleRules)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root = diagnostics;
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -534,7 +534,7 @@ TEST(TestDiagnosticsV2Integration, MultipleRules)
         auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&root);
+        ddwaf_object_free(&diagnostics);
     }
 
     ddwaf_destroy(handle);
@@ -542,10 +542,10 @@ TEST(TestDiagnosticsV2Integration, MultipleRules)
 
 TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
 {
-    auto rule = read_file("rules_min_version.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("rules_min_version.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}};
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
@@ -555,7 +555,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root = diagnostics;
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -578,7 +578,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
         auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&root);
+        ddwaf_object_free(&diagnostics);
     }
 
     ddwaf_destroy(handle);
@@ -586,10 +586,10 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
 
 TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
 {
-    auto rule = read_file("rules_max_version.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("rules_max_version.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}};
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
@@ -599,7 +599,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root = diagnostics;
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -622,7 +622,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
         auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&root);
+        ddwaf_object_free(&diagnostics);
     }
 
     ddwaf_destroy(handle);
@@ -630,10 +630,10 @@ TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
 
 TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
 {
-    auto rule = read_file("rules_min_max_version.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("rules_min_max_version.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}};
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
@@ -643,7 +643,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root = diagnostics;
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -667,7 +667,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
         auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&root);
+        ddwaf_object_free(&diagnostics);
     }
 
     ddwaf_destroy(handle);
@@ -675,10 +675,10 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
 
 TEST(TestDiagnosticsV2Integration, RulesWithErrors)
 {
-    auto rule = read_file("rules_with_errors.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("rules_with_errors.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}};
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
@@ -688,7 +688,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root = diagnostics;
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -752,7 +752,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
             EXPECT_TRUE(error_rules.contains("rule6"));
         }
 
-        ddwaf_object_free(&root);
+        ddwaf_object_free(&diagnostics);
     }
 
     ddwaf_destroy(handle);
@@ -760,10 +760,10 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
 
 TEST(TestDiagnosticsV2Integration, CustomRules)
 {
-    auto rule = read_file("custom_rules.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("custom_rules.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}};
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
@@ -773,7 +773,7 @@ TEST(TestDiagnosticsV2Integration, CustomRules)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root = diagnostics;
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -798,7 +798,7 @@ TEST(TestDiagnosticsV2Integration, CustomRules)
         auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&root);
+        ddwaf_object_free(&diagnostics);
     }
 
     ddwaf_destroy(handle);
@@ -806,10 +806,10 @@ TEST(TestDiagnosticsV2Integration, CustomRules)
 
 TEST(TestDiagnosticsV2Integration, InputFilter)
 {
-    auto rule = read_file("input_filter.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("input_filter.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}};
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
@@ -819,7 +819,7 @@ TEST(TestDiagnosticsV2Integration, InputFilter)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root = diagnostics;
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto exclusions = ddwaf::at<raw_configuration::map>(root_map, "exclusions");
@@ -838,7 +838,7 @@ TEST(TestDiagnosticsV2Integration, InputFilter)
         auto errors = ddwaf::at<raw_configuration::map>(exclusions, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&root);
+        ddwaf_object_free(&diagnostics);
     }
 
     ddwaf_destroy(handle);
@@ -846,10 +846,10 @@ TEST(TestDiagnosticsV2Integration, InputFilter)
 
 TEST(TestDiagnosticsV2Integration, RuleData)
 {
-    auto rule = read_file("rule_data.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("rule_data.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}};
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
@@ -859,7 +859,7 @@ TEST(TestDiagnosticsV2Integration, RuleData)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root = diagnostics;
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto rule_data = ddwaf::at<raw_configuration::map>(root_map, "rules_data");
@@ -879,7 +879,7 @@ TEST(TestDiagnosticsV2Integration, RuleData)
         auto errors = ddwaf::at<raw_configuration::map>(rule_data, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&root);
+        ddwaf_object_free(&diagnostics);
     }
 
     ddwaf_destroy(handle);
@@ -890,7 +890,7 @@ TEST(TestDiagnosticsV2Integration, Processor)
     auto rule = read_json_file("processor.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}};
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
@@ -900,7 +900,7 @@ TEST(TestDiagnosticsV2Integration, Processor)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root = diagnostics;
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<raw_configuration::map>(root);
 
         auto processor = ddwaf::at<raw_configuration::map>(root_map, "processors");
@@ -919,7 +919,7 @@ TEST(TestDiagnosticsV2Integration, Processor)
         auto errors = ddwaf::at<raw_configuration::map>(processor, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&root);
+        ddwaf_object_free(&diagnostics);
     }
 
     ddwaf_destroy(handle);
@@ -929,8 +929,8 @@ TEST(TestDiagnosticsV2Integration, InvalidRulesContainer)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule =
-        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules: {}})");
+    auto rule = yaml_to_object<ddwaf_object>(
+        R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -940,7 +940,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRulesContainer)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -961,8 +961,8 @@ TEST(TestDiagnosticsV2Integration, InvalidCustomRulesContainer)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule =
-        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, custom_rules: {}})");
+    auto rule = yaml_to_object<ddwaf_object>(
+        R"({version: '2.1', metadata: {rules_version: '1.2.7'}, custom_rules: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -972,7 +972,7 @@ TEST(TestDiagnosticsV2Integration, InvalidCustomRulesContainer)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -993,8 +993,8 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionsContainer)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule =
-        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, exclusions: {}})");
+    auto rule = yaml_to_object<ddwaf_object>(
+        R"({version: '2.1', metadata: {rules_version: '1.2.7'}, exclusions: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -1004,7 +1004,7 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionsContainer)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -1025,7 +1025,7 @@ TEST(TestDiagnosticsV2Integration, InvalidOverridesContainer)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule = yaml_to_object(
+    auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules_override: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -1036,7 +1036,7 @@ TEST(TestDiagnosticsV2Integration, InvalidOverridesContainer)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -1057,8 +1057,8 @@ TEST(TestDiagnosticsV2Integration, InvalidScannersContainer)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule =
-        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, scanners: {}})");
+    auto rule = yaml_to_object<ddwaf_object>(
+        R"({version: '2.1', metadata: {rules_version: '1.2.7'}, scanners: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -1068,7 +1068,7 @@ TEST(TestDiagnosticsV2Integration, InvalidScannersContainer)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -1089,8 +1089,8 @@ TEST(TestDiagnosticsV2Integration, InvalidProcessorsContainer)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule =
-        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, processors: {}})");
+    auto rule = yaml_to_object<ddwaf_object>(
+        R"({version: '2.1', metadata: {rules_version: '1.2.7'}, processors: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -1100,7 +1100,7 @@ TEST(TestDiagnosticsV2Integration, InvalidProcessorsContainer)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -1121,8 +1121,8 @@ TEST(TestDiagnosticsV2Integration, InvalidActionsContainer)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule =
-        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, actions: {}})");
+    auto rule = yaml_to_object<ddwaf_object>(
+        R"({version: '2.1', metadata: {rules_version: '1.2.7'}, actions: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -1132,7 +1132,7 @@ TEST(TestDiagnosticsV2Integration, InvalidActionsContainer)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -1153,8 +1153,8 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleDataContainer)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule =
-        yaml_to_object(R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules_data: {}})");
+    auto rule = yaml_to_object<ddwaf_object>(
+        R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules_data: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -1164,7 +1164,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleDataContainer)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");
@@ -1185,7 +1185,7 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionDataContainer)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
-    auto rule = yaml_to_object(
+    auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, exclusion_data: {}})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -1196,7 +1196,7 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionDataContainer)
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
     {
-        ddwaf::raw_configuration root(diagnostics);
+        ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
         auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
 
         auto version = ddwaf::at<std::string>(root_map, "ruleset_version");

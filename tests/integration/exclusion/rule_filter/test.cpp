@@ -15,7 +15,7 @@ constexpr std::string_view base_dir = "integration/exclusion/rule_filter/";
 
 TEST(TestRuleFilterIntegration, ExcludeSingleRule)
 {
-    auto rule = read_file("exclude_one_rule.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exclude_one_rule.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -31,7 +31,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRule)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "type2"}, {"category", "category"}},
@@ -48,7 +48,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRule)
 
 TEST(TestRuleFilterIntegration, ExcludeByType)
 {
-    auto rule = read_file("exclude_by_type.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exclude_by_type.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -64,7 +64,7 @@ TEST(TestRuleFilterIntegration, ExcludeByType)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
@@ -81,7 +81,7 @@ TEST(TestRuleFilterIntegration, ExcludeByType)
 
 TEST(TestRuleFilterIntegration, ExcludeByCategory)
 {
-    auto rule = read_file("exclude_by_category.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exclude_by_category.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -97,7 +97,7 @@ TEST(TestRuleFilterIntegration, ExcludeByCategory)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_OK);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_OK);
 
     ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
@@ -106,7 +106,7 @@ TEST(TestRuleFilterIntegration, ExcludeByCategory)
 
 TEST(TestRuleFilterIntegration, ExcludeByTags)
 {
-    auto rule = read_file("exclude_by_tags.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exclude_by_tags.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -122,7 +122,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTags)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "type2"}, {"category", "category"}},
@@ -139,7 +139,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTags)
 
 TEST(TestRuleFilterIntegration, ExcludeAllWithCondition)
 {
-    auto rule = read_file("exclude_all_with_condition.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exclude_all_with_condition.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -157,7 +157,7 @@ TEST(TestRuleFilterIntegration, ExcludeAllWithCondition)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_OK);
 
         ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
@@ -173,7 +173,7 @@ TEST(TestRuleFilterIntegration, ExcludeAllWithCondition)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -201,7 +201,7 @@ TEST(TestRuleFilterIntegration, ExcludeAllWithCondition)
 
 TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithCondition)
 {
-    auto rule = read_file("exclude_one_rule_with_condition.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exclude_one_rule_with_condition.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -219,7 +219,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithCondition)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
@@ -244,7 +244,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithCondition)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -272,7 +272,8 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithCondition)
 
 TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithConditionAndTransformers)
 {
-    auto rule = read_file("exclude_one_rule_with_condition_and_transformers.yaml", base_dir);
+    auto rule =
+        read_file<ddwaf_object>("exclude_one_rule_with_condition_and_transformers.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -290,7 +291,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithConditionAndTransformers)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "AD      MIN"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
@@ -315,7 +316,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithConditionAndTransformers)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -342,7 +343,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithConditionAndTransformers)
 }
 TEST(TestRuleFilterIntegration, ExcludeByTypeWithCondition)
 {
-    auto rule = read_file("exclude_by_type_with_condition.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exclude_by_type_with_condition.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -360,7 +361,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTypeWithCondition)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
@@ -385,7 +386,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTypeWithCondition)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -413,7 +414,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTypeWithCondition)
 
 TEST(TestRuleFilterIntegration, ExcludeByCategoryWithCondition)
 {
-    auto rule = read_file("exclude_by_category_with_condition.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exclude_by_category_with_condition.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -431,7 +432,7 @@ TEST(TestRuleFilterIntegration, ExcludeByCategoryWithCondition)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_OK);
 
         ddwaf_object_free(&out);
         ddwaf_context_destroy(context);
@@ -447,7 +448,7 @@ TEST(TestRuleFilterIntegration, ExcludeByCategoryWithCondition)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -475,7 +476,7 @@ TEST(TestRuleFilterIntegration, ExcludeByCategoryWithCondition)
 
 TEST(TestRuleFilterIntegration, ExcludeByTagsWithCondition)
 {
-    auto rule = read_file("exclude_by_tags_with_condition.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exclude_by_tags_with_condition.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -493,7 +494,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTagsWithCondition)
         ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
@@ -518,7 +519,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTagsWithCondition)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -546,7 +547,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTagsWithCondition)
 
 TEST(TestRuleFilterIntegration, MonitorSingleRule)
 {
-    auto rule = read_file("monitor_one_rule.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("monitor_one_rule.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -562,7 +563,7 @@ TEST(TestRuleFilterIntegration, MonitorSingleRule)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
@@ -582,7 +583,7 @@ TEST(TestRuleFilterIntegration, MonitorSingleRule)
 
 TEST(TestRuleFilterIntegration, AvoidHavingTwoMonitorOnActions)
 {
-    auto rule = read_file("multiple_monitor_on_match.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("multiple_monitor_on_match.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -598,7 +599,7 @@ TEST(TestRuleFilterIntegration, AvoidHavingTwoMonitorOnActions)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
@@ -618,7 +619,7 @@ TEST(TestRuleFilterIntegration, AvoidHavingTwoMonitorOnActions)
 
 TEST(TestRuleFilterIntegration, MonitorBypassFilterModePrecedence)
 {
-    auto rule = read_file("monitor_bypass_precedence.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("monitor_bypass_precedence.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -633,14 +634,14 @@ TEST(TestRuleFilterIntegration, MonitorBypassFilterModePrecedence)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestRuleFilterIntegration, MonitorCustomFilterModePrecedence)
 {
-    auto rule = read_file("monitor_custom_precedence.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("monitor_custom_precedence.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -656,7 +657,7 @@ TEST(TestRuleFilterIntegration, MonitorCustomFilterModePrecedence)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
@@ -676,7 +677,7 @@ TEST(TestRuleFilterIntegration, MonitorCustomFilterModePrecedence)
 
 TEST(TestRuleFilterIntegration, BypassCustomFilterModePrecedence)
 {
-    auto rule = read_file("bypass_custom_precedence.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("bypass_custom_precedence.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -691,7 +692,7 @@ TEST(TestRuleFilterIntegration, BypassCustomFilterModePrecedence)
     ddwaf_object_map(&root);
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -699,7 +700,7 @@ TEST(TestRuleFilterIntegration, BypassCustomFilterModePrecedence)
 
 TEST(TestRuleFilterIntegration, UnconditionalCustomFilterMode)
 {
-    auto rule = read_file("exclude_with_custom_action.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exclude_with_custom_action.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -715,7 +716,7 @@ TEST(TestRuleFilterIntegration, UnconditionalCustomFilterMode)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
@@ -736,7 +737,7 @@ TEST(TestRuleFilterIntegration, UnconditionalCustomFilterMode)
 
 TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
 {
-    auto rule = read_file("exclude_with_custom_action_and_condition.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exclude_with_custom_action_and_condition.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -753,7 +754,7 @@ TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
@@ -781,7 +782,7 @@ TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.2"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
@@ -804,7 +805,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     {
-        auto rule = read_file("exclude_with_unknown_action.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("exclude_with_unknown_action.yaml", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &rule, nullptr);
         ddwaf_object_free(&rule);
@@ -823,7 +824,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
@@ -840,8 +841,8 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
     }
 
     {
-        auto actions =
-            yaml_to_object(R"({actions: [{id: block2, type: block_request, parameters: {}}]})");
+        auto actions = yaml_to_object<ddwaf_object>(
+            R"({actions: [{id: block2, type: block_request, parameters: {}}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("actions"), &actions, nullptr);
         ddwaf_object_free(&actions);
     }
@@ -859,7 +860,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
         ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
@@ -887,7 +888,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeNonblockingAction)
     // In this test, the ruleset contains a rule filter with the action
     // generate_stack, which is neither a blocking, redirecting or monitoring
     // action, hence its ignored.
-    auto rule = read_file("exclude_with_nonblocking_action.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("exclude_with_nonblocking_action.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     auto *handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -903,7 +904,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeNonblockingAction)
     ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_run(context, &root, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},

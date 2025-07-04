@@ -25,11 +25,6 @@ extern "C"
 #include <stddef.h>
 #include <stdint.h>
 
-#define DDWAF_MAX_STRING_LENGTH 4096
-#define DDWAF_MAX_CONTAINER_DEPTH 20
-#define DDWAF_MAX_CONTAINER_SIZE 256
-#define DDWAF_RUN_TIMEOUT 5000
-
 /**
  * @enum DDWAF_OBJ_TYPE
  *
@@ -37,29 +32,33 @@ extern "C"
  **/
 typedef enum
 {
-    DDWAF_OBJ_INVALID     = 0,
-    // 64-bit signed integer type
-    DDWAF_OBJ_SIGNED   = 1 << 0,
-    // 64-bit unsigned integer type
-    DDWAF_OBJ_UNSIGNED = 1 << 1,
-    // UTF-8 string of length nbEntries
-    DDWAF_OBJ_STRING   = 1 << 2,
-    // Array of ddwaf_object of length nbEntries, each item having no parameterName
-    DDWAF_OBJ_ARRAY    = 1 << 3,
-    // Array of ddwaf_object of length nbEntries, each item having a parameterName
-    DDWAF_OBJ_MAP      = 1 << 4,
-    // Boolean type
-    DDWAF_OBJ_BOOL     = 1 << 5,
-    // 64-bit float (or double) type
-    DDWAF_OBJ_FLOAT    = 1 << 6,
+    DDWAF_OBJ_INVALID  = 0,
     // Null type, only used for its semantical value
-    DDWAF_OBJ_NULL    = 1 << 7,
+    DDWAF_OBJ_NULL     = 0x01,
+    // Boolean type
+    DDWAF_OBJ_BOOL     = 0x02,
+    // 64-bit signed integer type
+    DDWAF_OBJ_SIGNED   = 0x04,
+    // 64-bit unsigned integer type
+    DDWAF_OBJ_UNSIGNED = 0x06,
+    // 64-bit float (or double) type
+    DDWAF_OBJ_FLOAT    = 0x08,
+    // Dynamic UTF-8 string of up to max(uint16) length
+    DDWAF_OBJ_STRING   = 0x10,
+    // Literal UTF-8 string of up to max(uint32) length, these are never freed
+    DDWAF_OBJ_LITERAL_STRING   = 0x12,
+    // UTF-8 string of up to 14 bytes in length
+    DDWAF_OBJ_SMALL_STRING   = 0x14,
+    // Array of ddwaf_object of length nbEntries, each item having no parameterName
+    DDWAF_OBJ_ARRAY    = 0x20,
+    // Array of ddwaf_object of length nbEntries, each item having a parameterName
+    DDWAF_OBJ_MAP      = 0x40,
 } DDWAF_OBJ_TYPE;
 
 /**
  * @enum DDWAF_RET_CODE
  *
- * Codes returned by ddwaf_run.
+ * Codes returned by ddwaf_context_eval.
  **/
 typedef enum
 {
@@ -91,37 +90,94 @@ typedef struct _ddwaf_context* ddwaf_context;
 typedef struct _ddwaf_builder* ddwaf_builder;
 #endif
 
-typedef struct _ddwaf_object ddwaf_object;
 typedef struct _ddwaf_config ddwaf_config;
+typedef union _ddwaf_object ddwaf_object;
+
+struct _ddwaf_object_kv;
+
+struct _ddwaf_object_bool {
+    uint8_t type;
+    bool val;
+};
+
+struct _ddwaf_object_signed {
+    uint8_t type;
+    int64_t val;
+};
+
+struct _ddwaf_object_unsigned {
+    uint8_t type;
+    uint64_t val;
+};
+
+struct _ddwaf_object_float {
+    uint8_t type;
+    double val;
+};
+
+struct _ddwaf_object_string {
+    uint8_t type;
+    uint32_t size;
+    char *ptr;
+};
+
+struct _ddwaf_object_small_string {
+#define DDWAF_OBJ_SSTR_SIZE 14
+    uint8_t type;
+    uint8_t size;
+    char data[DDWAF_OBJ_SSTR_SIZE];
+};
+
+struct _ddwaf_object_array {
+    uint8_t type;
+    uint16_t size;
+    uint16_t capacity;
+    union _ddwaf_object *ptr;
+};
+
+struct _ddwaf_object_map {
+    uint8_t type;
+    uint16_t size;
+    uint16_t capacity;
+    struct _ddwaf_object_kv *ptr;
+};
+
 /**
  * @struct ddwaf_object
  *
  * Generic object used to pass data and rules to the WAF.
  **/
-struct _ddwaf_object
-{
-    const char* parameterName;
-    uint64_t parameterNameLength;
-    // uintValue should be at least as wide as the widest type on the platform.
-    union
-    {
-        const char* stringValue;
-        uint64_t uintValue;
-        int64_t intValue;
-        ddwaf_object* array;
-        bool boolean;
-        double f64;
-    };
-    uint64_t nbEntries;
-    DDWAF_OBJ_TYPE type;
+#ifdef _MSC_VER
+union _ddwaf_object {
+#else
+union __attribute__((may_alias)) _ddwaf_object {
+#endif
+    uint8_t type;
+    union {
+        struct _ddwaf_object_bool b8;
+        struct _ddwaf_object_signed i64;
+        struct _ddwaf_object_unsigned u64;
+        struct _ddwaf_object_float f64;
+        struct _ddwaf_object_string str;
+        struct _ddwaf_object_small_string sstr;
+        struct _ddwaf_object_array array;
+        struct _ddwaf_object_map map;
+    } via;
 };
 
-/**
- * @typedef ddwaf_object_free_fn
- *
- * Type of the function to free ddwaf::objects.
- **/
-typedef void (*ddwaf_object_free_fn)(ddwaf_object *object);
+struct _ddwaf_object_kv {
+    union _ddwaf_object key;
+    union _ddwaf_object val;
+};
+
+#if defined(_Static_assert) || defined(static_assert)
+#ifndef static_assert
+#define static_assert _Static_assert
+#endif
+
+static_assert(sizeof(union _ddwaf_object) == 16);
+static_assert(sizeof(struct _ddwaf_object_kv) == 32);
+#endif
 
 /**
  * @struct ddwaf_config
@@ -130,15 +186,6 @@ typedef void (*ddwaf_object_free_fn)(ddwaf_object *object);
  **/
 struct _ddwaf_config
 {
-    struct _ddwaf_config_limits {
-        /** Maximum size of ddwaf::object containers. */
-        uint32_t max_container_size;
-        /** Maximum depth of ddwaf::object containers. */
-        uint32_t max_container_depth;
-        /** Maximum length of ddwaf::object strings. */
-        uint32_t max_string_length;
-    } limits;
-
     /** Obfuscator regexes - the strings are owned by the caller */
     struct _ddwaf_config_obfuscator {
         /** Regular expression for key-based obfuscation */
@@ -146,11 +193,6 @@ struct _ddwaf_config
         /** Regular expression for value-based obfuscation */
         const char *value_regex;
     } obfuscator;
-
-    /** Function to free the ddwaf::object provided to the context during calls
-     *  to ddwaf_run. If the value of this function is NULL, the objects will
-     *  not be freed. The default value should be ddwaf_object_free. */
-    ddwaf_object_free_fn free_fn;
 };
 
 /**
@@ -249,7 +291,7 @@ const char *const *ddwaf_known_actions(const ddwaf_handle handle, uint32_t *size
 ddwaf_context ddwaf_context_init(const ddwaf_handle handle);
 
 /**
- * ddwaf_run
+ * ddwaf_context_eval
  *
  * Perform a matching operation on the provided data
  *
@@ -269,7 +311,7 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle);
  * @param ephemeral_data Data on which to perform the pattern matching. This
  *    data will not be cached by the WAF. Matches arising from this data will
  *    also not be cached at any level. The data will be freed at the end of the
- *    call to ddwaf_run. The object must be a map of {string, <value>} in which
+ *    call to ddwaf_context_eval. The object must be a map of {string, <value>} in which
  *    each key represents the relevant address associated to the value, which
  *    can be of an arbitrary type. This parameter can be null if persistent data
  *    is provided.
@@ -286,7 +328,7 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle);
  *               - keep: whether the data contained herein must override any
  *                       transport sampling through the relevant mechanism.
  *               This structure must be freed by the caller and will contain all
- *               specified keys when the value returned by ddwaf_run is either
+ *               specified keys when the value returned by ddwaf_context_eval is either
  *               DDWAF_OK or DDWAF_MATCH and will be empty otherwise.
  * @param timeout Maximum time budget in microseconds.
  *
@@ -320,14 +362,14 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle);
  *  batch by a persistent address, however taking advantage of this is not
  *  recommended and might be explicitly rejected in the future.
  **/
-DDWAF_RET_CODE ddwaf_run(ddwaf_context context, ddwaf_object *persistent_data,
-    ddwaf_object *ephemeral_data, ddwaf_object *result,  uint64_t timeout);
+DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *persistent_data,
+    ddwaf_object *ephemeral_data, bool free_objects, ddwaf_object *result,  uint64_t timeout);
 
 /**
  * ddwaf_context_destroy
  *
  * Performs the destruction of the context, freeing the data passed to it through
- * ddwaf_run using the used-defined free function.
+ * ddwaf_context_eval using the used-defined free function.
  *
  * @param context Context to destroy. (nonnull)
  **/
@@ -342,8 +384,7 @@ void ddwaf_context_destroy(ddwaf_context context);
  *
  * @return Handle to the builer instance or NULL on error.
  *
- * @note If config is NULL, default values will be used, including the default
- *       free function (ddwaf_object_free).
+ * @note If config is NULL, default values will be used
  **/
 ddwaf_builder ddwaf_builder_init(const ddwaf_config *config);
 
@@ -681,19 +722,6 @@ size_t ddwaf_object_size(const ddwaf_object *object);
 size_t ddwaf_object_length(const ddwaf_object *object);
 
 /**
- * ddwaf_object_get_key
- *
- * Returns the key contained within the object.
- *
- * @param object The object from which to get the key.
- * @param length Output parameter on which to return the length of the key,
- *               this parameter is optional / nullable.
- *
- * @return The key of the object or NULL if the object doesn't contain a key.
- **/
-const char* ddwaf_object_get_key(const ddwaf_object *object, size_t *length);
-
-/**
  * ddwaf_object_get_string
  *
  * Returns the string contained within the object.
@@ -751,7 +779,21 @@ double ddwaf_object_get_float(const ddwaf_object *object);
 bool ddwaf_object_get_bool(const ddwaf_object *object);
 
 /**
- * ddwaf_object_get_index
+ * ddwaf_object_at_key
+ *
+ * Returns the key contained in the container at the given index.
+ *
+ * @param object The container from which to extract the object.
+ * @param index The position of the required object within the container.
+ *
+ * @return The requested object or NULL if the index is out of bounds or the
+ *         object is not a container.
+ **/
+const ddwaf_object* ddwaf_object_at_key(const ddwaf_object *object, size_t index);
+
+
+/**
+ * ddwaf_object_at_value
  *
  * Returns the object contained in the container at the given index.
  *
@@ -761,7 +803,7 @@ bool ddwaf_object_get_bool(const ddwaf_object *object);
  * @return The requested object or NULL if the index is out of bounds or the
  *         object is not a container.
  **/
-const ddwaf_object* ddwaf_object_get_index(const ddwaf_object *object, size_t index);
+const ddwaf_object* ddwaf_object_at_value(const ddwaf_object *object, size_t index);
 
 /**
  * ddwaf_object_find
@@ -776,6 +818,11 @@ const ddwaf_object* ddwaf_object_get_index(const ddwaf_object *object, size_t in
  *         object is not a container.
  **/
 const ddwaf_object* ddwaf_object_find(const ddwaf_object *object, const char *key, size_t length);
+
+/**
+ * ddwaf_object_clone
+ **/
+ddwaf_object* ddwaf_object_clone(const ddwaf_object *source, ddwaf_object *destination);
 
 /**
  * ddwaf_object_free

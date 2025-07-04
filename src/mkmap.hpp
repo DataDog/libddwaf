@@ -10,27 +10,24 @@
 #include <iterator>
 #include <set>
 #include <unordered_map>
-#include <vector>
 
 #include "traits.hpp"
 
 namespace ddwaf {
-template <typename Key, typename T, class Compare = std::less<Key>,
-    typename = std::enable_if_t<std::is_copy_constructible_v<std::remove_cv_t<std::decay_t<T>>>>>
+template <typename Key, typename T, class Compare = std::less<Key>>
+    requires std::is_copy_constructible_v<std::decay_t<T>>
 class multi_key_map {
 public:
-    template <typename U,
-        typename = typename std::enable_if_t<is_pair<typename U::iterator::value_type>::value,
-            typename U::iterator>>
+    template <typename U>
     void insert(const U &keys, const T &value)
+        requires is_pair<typename U::iterator::value_type>::value
     {
         for (const auto &key : keys) { data_[key.first][key.second].emplace(value); }
     }
 
-    template <typename U,
-        typename = typename std::enable_if_t<is_pair<typename U::iterator::value_type>::value,
-            typename U::iterator>>
+    template <typename U>
     void erase(const U &keys, const T &value)
+        requires is_pair<typename U::iterator::value_type>::value
     {
         for (const auto &key : keys) { data_[key.first][key.second].erase(value); }
     }

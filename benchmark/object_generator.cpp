@@ -112,7 +112,7 @@ void generate_objects(ddwaf_object &root, const object_specification &s)
         unsigned intermediate_nodes_in_current = intermediate;
 
         while ((terminal + intermediate) > 0) {
-            ddwaf_object next;
+            ddwaf_object next{};
 
             if ((random::get_bool() && terminal > 0) || intermediate == 0) {
                 generate_string_object(next, s.string_length);
@@ -135,11 +135,12 @@ void generate_objects(ddwaf_object &root, const object_specification &s)
             auto next_level = generate_horizontal_distribution(
                 intermediate_nodes_in_current, next_intermediate, next_terminal);
 
-            for (unsigned i = 0, j = 0; i < object->nbEntries; ++i) {
-                auto type = object->array[i].type;
-                if (type == DDWAF_OBJ_MAP || type == DDWAF_OBJ_ARRAY) {
-                    object_queue.emplace_back(&object->array[i], level + 1,
-                        next_level[j].intermediate, next_level[j].terminal);
+            for (unsigned i = 0, j = 0; i < ddwaf_object_size(object); ++i) {
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+                auto *child = const_cast<ddwaf_object *>(ddwaf_object_at_value(object, i));
+                if (child->type == DDWAF_OBJ_MAP || child->type == DDWAF_OBJ_ARRAY) {
+                    object_queue.emplace_back(
+                        child, level + 1, next_level[j].intermediate, next_level[j].terminal);
                     ++j;
                 }
             }
@@ -153,11 +154,11 @@ std::vector<ddwaf_object> object_generator::operator()(unsigned n, object_specif
 {
     std::vector<ddwaf_object> objects;
     while (n-- > 0) {
-        ddwaf_object root;
+        ddwaf_object root{};
         ddwaf_object_map(&root);
 
         for (const auto addr : addresses_) {
-            ddwaf_object value;
+            ddwaf_object value{};
             if (spec.depth == 0) {
                 generate_string_object(value, spec.string_length);
             } else {

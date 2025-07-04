@@ -74,7 +74,7 @@ TEST(TestCoWString, TruncateUnmodified)
     str.truncate(4);
 
     EXPECT_EQ(str.length(), 4);
-    EXPECT_STREQ(str.data(), "valu");
+    EXPECT_STR(str, "valu");
 }
 
 TEST(TestCoWString, TruncateUnmodifiedMutableBuffer)
@@ -88,7 +88,7 @@ TEST(TestCoWString, TruncateUnmodifiedMutableBuffer)
     str.truncate(4);
 
     EXPECT_EQ(str.length(), 4);
-    EXPECT_STREQ(str.data(), "valu");
+    EXPECT_STR(str, "valu");
     EXPECT_EQ(str.data(), original.data());
 }
 
@@ -104,7 +104,7 @@ TEST(TestCoWString, WriteAndTruncate)
 
     str.truncate(4);
     EXPECT_EQ(str.length(), 4);
-    EXPECT_STREQ(str.data(), "vale");
+    EXPECT_STR(str, "vale");
 }
 
 TEST(TestCoWString, WriteAndTruncateMutableBuffer)
@@ -121,7 +121,7 @@ TEST(TestCoWString, WriteAndTruncateMutableBuffer)
 
     str.truncate(4);
     EXPECT_EQ(str.length(), 4);
-    EXPECT_STREQ(str.data(), "vale");
+    EXPECT_STR(str, "vale");
     EXPECT_EQ(str.data(), original.data());
 }
 
@@ -135,7 +135,7 @@ TEST(TestCoWString, EmptyString)
     EXPECT_EQ(str.length(), 0);
     EXPECT_TRUE(str.modified());
     EXPECT_NE(str.data(), nullptr);
-    EXPECT_STREQ(str.data(), "");
+    EXPECT_STR(str, "");
 }
 
 TEST(TestCoWString, NullString) { EXPECT_THROW(cow_string({}), std::runtime_error); }
@@ -151,9 +151,10 @@ TEST(TestCoWString, WriteAndMove)
     EXPECT_NE(str.data(), nullptr);
 
     auto [buffer, length] = str.move();
-    EXPECT_STREQ(buffer, "valee");
+    EXPECT_STR((std::string_view{buffer, length}), "valee");
     EXPECT_EQ(length, 5);
-    free(buffer);
+
+    str.alloc()->deallocate(buffer, length, alignof(char));
 
     EXPECT_EQ(str.length(), 0);
     EXPECT_FALSE(str.modified());
@@ -167,9 +168,9 @@ TEST(TestCoWString, MoveUnmodified)
     EXPECT_FALSE(str.modified());
 
     auto [buffer, length] = str.move();
-    EXPECT_STREQ(buffer, "value");
+    EXPECT_STR((std::string_view{buffer, length}), "value");
     EXPECT_EQ(length, 5);
-    free(buffer);
+    str.alloc()->deallocate(buffer, length, alignof(char));
 
     EXPECT_EQ(str.length(), 0);
     EXPECT_FALSE(str.modified());
@@ -185,9 +186,9 @@ TEST(TestCoWString, MoveAfterTruncate)
     str.truncate(4);
 
     auto [buffer, length] = str.move();
-    EXPECT_STREQ(buffer, "valu");
+    EXPECT_STR((std::string_view{buffer, length}), "valu");
     EXPECT_EQ(length, 4);
-    free(buffer);
+    str.alloc()->deallocate(buffer, length, alignof(char));
 
     EXPECT_EQ(str.length(), 0);
     EXPECT_FALSE(str.modified());

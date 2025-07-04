@@ -53,7 +53,7 @@ struct processor_cache {
 
 template <typename Class, typename... Args>
 function_traits<Class::param_names.size(), Class, Args...> make_eval_traits(
-    std::pair<ddwaf_object, object_store::attribute> (Class::*)(Args...) const);
+    std::pair<owned_object, object_store::attribute> (Class::*)(Args...) const);
 
 template <typename... Ts> constexpr std::size_t count_optionals()
 {
@@ -81,7 +81,7 @@ public:
     virtual ~base_processor() = default;
 
     virtual void eval(object_store &store, attribute_collector &collector, processor_cache &cache,
-        const object_limits &limits, ddwaf::timer &deadline) const = 0;
+        ddwaf::timer &deadline) const = 0;
 
     virtual void get_addresses(std::unordered_map<target_index, std::string> &addresses) const = 0;
 
@@ -104,11 +104,11 @@ public:
     ~structured_processor() override = default;
 
     void eval(object_store &store, attribute_collector &collector, processor_cache &cache,
-        const object_limits &limits, ddwaf::timer &deadline) const override
+        ddwaf::timer &deadline) const override
     {
         DDWAF_DEBUG("Evaluating processor '{}'", id_);
 
-        if (!expr_->eval(cache.expr_cache, store, {}, {}, limits, deadline).outcome) {
+        if (!expr_->eval(cache.expr_cache, store, {}, {}, deadline).outcome) {
             return;
         }
 
@@ -178,17 +178,22 @@ public:
                 }
             }
 
-            if (object.type == DDWAF_OBJ_INVALID) {
+            if (object.is_invalid()) {
                 continue;
             }
 
             if (evaluate_) {
-                store.insert(mapping.output.index, mapping.output.name, object, attr);
+                if (!output_) {
+                    store.insert(
+                        mapping.output.index, mapping.output.name, std::move(object), attr);
+                } else {
+                    store.insert(mapping.output.index, mapping.output.name, object.clone(), attr);
+                }
             }
 
             if (output_) {
                 // The object is copied if we are also using it for evaluation
-                collector.insert(mapping.output.name, object, /*copy*/ evaluate_);
+                collector.insert(mapping.output.name, std::move(object));
             }
         }
     }

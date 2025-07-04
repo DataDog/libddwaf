@@ -143,8 +143,7 @@ public:
 
     std::pair<verdict_type, std::optional<rule_result>> match(const object_store &store,
         cache_type &cache, const exclusion::object_set_ref &objects_excluded,
-        const matcher_mapper &dynamic_matchers, const object_limits &limits,
-        ddwaf::timer &deadline) const;
+        const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const;
 
     [[nodiscard]] bool is_enabled() const { return enabled_; }
 

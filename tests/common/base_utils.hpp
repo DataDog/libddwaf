@@ -17,29 +17,22 @@
 
 #define DDWAF_OBJECT_INVALID                                                                       \
     {                                                                                              \
-        NULL, 0, {NULL}, 0, DDWAF_OBJ_INVALID                                                      \
+        .type = DDWAF_OBJ_INVALID                                                                  \
     }
 #define DDWAF_OBJECT_MAP                                                                           \
     {                                                                                              \
-        NULL, 0, {NULL}, 0, DDWAF_OBJ_MAP                                                          \
+        .via                                                                                       \
+        {                                                                                          \
+            .map { .type = DDWAF_OBJ_MAP, .size = 0, .capacity = 0, .ptr = NULL }                  \
+        }                                                                                          \
     }
 #define DDWAF_OBJECT_ARRAY                                                                         \
     {                                                                                              \
-        NULL, 0, {NULL}, 0, DDWAF_OBJ_ARRAY                                                        \
+        .via                                                                                       \
+        {                                                                                          \
+            .array { .type = DDWAF_OBJ_ARRAY, .size = 0, .capacity = 0, .ptr = NULL }              \
+        }                                                                                          \
     }
-#define DDWAF_OBJECT_SIGNED_FORCE(value)                                                           \
-    {                                                                                              \
-        NULL, 0, {(const char *)value}, 0, DDWAF_OBJ_SIGNED                                        \
-    }
-#define DDWAF_OBJECT_UNSIGNED_FORCE(value)                                                         \
-    {                                                                                              \
-        NULL, 0, {(const char *)value}, 0, DDWAF_OBJ_UNSIGNED                                      \
-    }
-#define DDWAF_OBJECT_STRING_PTR(string, length)                                                    \
-    {                                                                                              \
-        NULL, 0, {string}, length, DDWAF_OBJ_STRING                                                \
-    }
-
 #define LSTRARG(value) value, sizeof(value) - 1
 
 namespace ddwaf::test {
@@ -107,9 +100,8 @@ protected:
 
 // Convenience structure to build rulesets
 struct ruleset_builder {
-    explicit ruleset_builder(ddwaf_object_free_fn free_fn = ddwaf_object_free)
-        : free_fn(free_fn),
-          preprocessors(std::make_shared<typename decltype(preprocessors)::element_type>()),
+    ruleset_builder()
+        : preprocessors(std::make_shared<typename decltype(preprocessors)::element_type>()),
           postprocessors(std::make_shared<typename decltype(postprocessors)::element_type>()),
           rule_filters(std::make_shared<typename decltype(rule_filters)::element_type>()),
           input_filters(std::make_shared<typename decltype(input_filters)::element_type>()),
@@ -161,7 +153,6 @@ struct ruleset_builder {
         auto ruleset = std::make_shared<ddwaf::ruleset>();
         ruleset->obfuscator = std::make_shared<ddwaf::match_obfuscator>();
 
-        ruleset->free_fn = free_fn;
         ruleset->insert_preprocessors(preprocessors);
         ruleset->insert_rules(base_rules, user_rules);
         ruleset->insert_filters(rule_filters);
@@ -176,7 +167,6 @@ struct ruleset_builder {
         return ruleset;
     }
 
-    ddwaf_object_free_fn free_fn;
     std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> preprocessors;
     std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> postprocessors;
 

@@ -140,11 +140,6 @@ static void _hstring_write_pwargs(hstring *str, size_t depth,
         return;
     }
     _hstring_repeat(str, ' ', depth * 2);
-    if (pwargs->parameterName) {
-        _hstring_append(str, pwargs->parameterName,
-                        pwargs->parameterNameLength);
-        HSTRING_APPEND_CONST(str, ": ");
-    }
     switch (pwargs->type) {
     case DDWAF_OBJ_INVALID:
         HSTRING_APPEND_CONST(str, "<INVALID>\n");
@@ -153,7 +148,7 @@ static void _hstring_write_pwargs(hstring *str, size_t depth,
         HSTRING_APPEND_CONST(str, "<SIGNED> ");
         char scratch[sizeof("-9223372036854775808")];
         int len = snprintf(scratch, sizeof(scratch), "%" PRId64,
-                           pwargs->intValue);
+                           ddwaf_object_get_signed(pwargs));
         if ((size_t) len < sizeof scratch) {
             _hstring_append(str, scratch, (size_t) len);
         } // else should never happen
@@ -164,28 +159,36 @@ static void _hstring_write_pwargs(hstring *str, size_t depth,
         HSTRING_APPEND_CONST(str, "<UNSIGNED> ");
         char scratch[sizeof("18446744073709551615")];
         int len = snprintf(scratch, sizeof(scratch), "%" PRIu64,
-                           pwargs->uintValue);
+                           ddwaf_object_get_unsigned(pwargs));
         if ((size_t) len < sizeof scratch) {
             _hstring_append(str, scratch, (size_t) len);
         } // else should never happen
         HSTRING_APPEND_CONST(str, "\n");
         break;
     }
-    case DDWAF_OBJ_STRING:
+    case DDWAF_OBJ_STRING: {
         HSTRING_APPEND_CONST(str, "<STRING> ");
-        _hstring_append(str, pwargs->stringValue, pwargs->nbEntries);
+        size_t len;
+        const char *data = ddwaf_object_get_string(pwargs, &len);
+        _hstring_append(str, data, len);
         HSTRING_APPEND_CONST(str, "\n");
         break;
+    }
     case DDWAF_OBJ_ARRAY: {
         HSTRING_APPEND_CONST(str, "<ARRAY>\n");
-        for (size_t i = 0; i < pwargs->nbEntries; i++) {
-            _hstring_write_pwargs(str, depth + 1, pwargs->array + i);
+        for (size_t i = 0; i < ddwaf_object_size(pwargs); i++) {
+            _hstring_write_pwargs(str, depth + 1, ddwaf_object_at_value(pwargs, i));
         }
         break;
     case DDWAF_OBJ_MAP: {
         HSTRING_APPEND_CONST(str, "<MAP>\n");
-        for (size_t i = 0; i < pwargs->nbEntries; i++) {
-            _hstring_write_pwargs(str, depth + 1, pwargs->array + i);
+        for (size_t i = 0; i < ddwaf_object_size(pwargs); i++) {
+            const ddwaf_object *key = ddwaf_object_at_key(pwargs, i);
+            size_t key_len;
+            const char *key_data = ddwaf_object_get_string(key, &key_len);
+            _hstring_append(str, key_data, key_len);
+            HSTRING_APPEND_CONST(str, ": ");
+            _hstring_write_pwargs(str, depth + 1, ddwaf_object_at_value(pwargs, i));
         }
         break;
     }
@@ -253,7 +256,7 @@ int main() {
     ddwaf_object_map_add(&data, "key", DDSTR("Arachni"));
 
     ddwaf_object result = {0};
-    ddwaf_run(ctx, &data, NULL, &result, (uint32_t)-1);
+    ddwaf_context_eval(ctx, &data, NULL, true, &result, (uint32_t)-1);
     
 
     const ddwaf_object *events = ddwaf_object_find(&result, "events", sizeof("events") - 1);
