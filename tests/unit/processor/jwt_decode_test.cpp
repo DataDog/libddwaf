@@ -15,7 +15,7 @@ namespace {
 
 TEST(TestJwtDecoder, Basic)
 {
-    auto headers = owned_object::make_map({{"authorization",
+    auto headers = object_builder::map({{"authorization",
         "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
         "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
         "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
@@ -43,8 +43,8 @@ TEST(TestJwtDecoder, Basic)
 
 TEST(TestJwtDecoder, KeyPathLeadsToSingleValueArray)
 {
-    auto headers = owned_object::make_map({{"authorization",
-        owned_object::make_array(
+    auto headers = object_builder::map({{"authorization",
+        object_builder::array(
             {"Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
              "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
              "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
@@ -72,8 +72,8 @@ TEST(TestJwtDecoder, KeyPathLeadsToSingleValueArray)
 
 TEST(TestJwtDecoder, KeyPathLeadsToValidMultiValueArray)
 {
-    auto headers = owned_object::make_map({{"authorization",
-        owned_object::make_array(
+    auto headers = object_builder::map({{"authorization",
+        object_builder::array(
             {"Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
              "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
              "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
@@ -104,8 +104,8 @@ TEST(TestJwtDecoder, KeyPathLeadsToInvalidMultiValueArray)
 {
     // Even though the token is there, we only take the first element of arrays as we're trying
     // to account for the serialisation not perform a JWT search.
-    auto headers = owned_object::make_map({{"authorization",
-        owned_object::make_array({"Arachni",
+    auto headers = object_builder::map({{"authorization",
+        object_builder::array({"Arachni",
             "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
             "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
             "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
@@ -153,7 +153,7 @@ TEST(TestJwtDecoder, MissingKeypath)
 
 TEST(TestJwtDecoder, EmptyHeader)
 {
-    auto headers = owned_object::make_map({{"authorization",
+    auto headers = object_builder::map({{"authorization",
         "Bearer ."
         "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
         "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
@@ -181,7 +181,7 @@ TEST(TestJwtDecoder, EmptyHeader)
 
 TEST(TestJwtDecoder, EmptyPayload)
 {
-    auto headers = owned_object::make_map({{"authorization",
+    auto headers = object_builder::map({{"authorization",
         "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
         ".o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
         "8B48NpATozzMHn0j3rE0xVUldxShzy0xeJ7vYAccVXu2Gs9rnTVqouc-UZu_wJHkZiKBL67j8_"
@@ -208,7 +208,7 @@ TEST(TestJwtDecoder, EmptyPayload)
 
 TEST(TestJwtDecoder, LargePayloadBeyondLimit)
 {
-    auto headers = owned_object::make_map({{"authorization",
+    auto headers = object_builder::map({{"authorization",
         "Bearer "
         "eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
         "eyJrZXlfMCI6eyJrZXlfMSI6eyJrZXlfMiI6eyJrZXlfMyI6eyJrZXlfNCI6eyJrZXlfNSI6eyJrZXlfNiI6ey"
@@ -234,7 +234,7 @@ TEST(TestJwtDecoder, LargePayloadBeyondLimit)
 
 TEST(TestJwtDecoder, NoSignature)
 {
-    auto headers = owned_object::make_map({{"authorization",
+    auto headers = object_builder::map({{"authorization",
         "Bearer "
         "eyJhbGciOiJub25lIn0."
         "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
@@ -259,7 +259,7 @@ TEST(TestJwtDecoder, NoSignature)
 TEST(TestJwtDecoder, NoPayloadNoSignatureMissingDelim)
 {
     auto headers =
-        owned_object::make_map({{"authorization", "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."}});
+        object_builder::map({{"authorization", "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."}});
 
     jwt_decode gen{"id", {}, {}, false, true};
 
@@ -277,7 +277,7 @@ TEST(TestJwtDecoder, NoPayloadNoSignatureMissingDelim)
 TEST(TestJwtDecoder, NoPayloadNoSignatureMissingAllDelim)
 {
     auto headers =
-        owned_object::make_map({{"authorization", "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9"}});
+        object_builder::map({{"authorization", "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9"}});
     jwt_decode gen{"id", {}, {}, false, true};
 
     std::vector<std::string> key_path{"authorization"};
@@ -293,7 +293,7 @@ TEST(TestJwtDecoder, NoPayloadNoSignatureMissingAllDelim)
 
 TEST(TestJwtDecoder, NoSignatureNoDelim)
 {
-    auto headers = owned_object::make_map({{"authorization",
+    auto headers = object_builder::map({{"authorization",
         "Bearer "
         "eyJhbGciOiJub25lIn0."
         "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"

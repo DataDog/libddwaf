@@ -81,7 +81,7 @@ TEST(TestValueIterator, TestSignedScalar)
 
 TEST(TestValueIterator, TestArraySingleItem)
 {
-    auto object = owned_object::make_array({"string"});
+    auto object = object_builder::array({"string"});
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -98,7 +98,7 @@ TEST(TestValueIterator, TestArraySingleItem)
 
 TEST(TestValueIterator, TestArrayMultipleItems)
 {
-    auto object = owned_object::make_array();
+    auto object = object_builder::array();
     for (unsigned i = 0; i < 50; i++) { object.emplace_back(std::to_string(i)); }
 
     std::unordered_set<object_view> persistent;
@@ -122,11 +122,11 @@ TEST(TestValueIterator, TestArrayMultipleItems)
 
 TEST(TestValueIterator, TestArrayMultipleNullAndInvalid)
 {
-    auto object = owned_object::make_array();
+    auto object = object_builder::array();
     for (unsigned i = 0; i < 25; i++) {
         object.emplace_back(std::to_string(i));
         object.emplace_back(owned_object{});
-        object.emplace_back(nullptr);
+        object.emplace_back(owned_object::make_null());
     }
 
     EXPECT_EQ(object.size(), 75);
@@ -152,11 +152,11 @@ TEST(TestValueIterator, TestArrayMultipleNullAndInvalid)
 
 TEST(TestValueIterator, TestDeepArray)
 {
-    auto object = owned_object::make_array();
+    auto object = object_builder::array();
     borrowed_object array{object};
     for (unsigned i = 0; i < 10; i++) {
         array.emplace_back("val" + std::to_string(i));
-        array = array.emplace_back(owned_object::make_array());
+        array = array.emplace_back(object_builder::array());
     }
 
     std::unordered_set<object_view> persistent;
@@ -179,8 +179,8 @@ TEST(TestValueIterator, TestDeepArray)
 
 TEST(TestValueIterator, TestArrayNoScalars)
 {
-    auto object = owned_object::make_array();
-    for (unsigned i = 0; i < 50; i++) { object.emplace_back(owned_object::make_array()); }
+    auto object = object_builder::array();
+    for (unsigned i = 0; i < 50; i++) { object.emplace_back(object_builder::array()); }
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -192,7 +192,7 @@ TEST(TestValueIterator, TestArrayNoScalars)
 
 TEST(TestValueIterator, TestMapSingleItem)
 {
-    auto object = owned_object::make_map({{"key", "value"}});
+    auto object = object_builder::map({{"key", "value"}});
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -210,7 +210,7 @@ TEST(TestValueIterator, TestMapSingleItem)
 
 TEST(TestValueIterator, TestMapMultipleItems)
 {
-    auto object = owned_object::make_map();
+    auto object = object_builder::map();
 
     for (unsigned i = 0; i < 50; i++) {
         auto index = std::to_string(i);
@@ -240,7 +240,7 @@ TEST(TestValueIterator, TestMapMultipleItems)
 
 TEST(TestValueIterator, TestMapMultipleMultipleNullAndInvalid)
 {
-    auto object = owned_object::make_map();
+    auto object = object_builder::map();
 
     for (unsigned i = 0; i < 25; i++) {
         {
@@ -250,7 +250,7 @@ TEST(TestValueIterator, TestMapMultipleMultipleNullAndInvalid)
 
         {
             auto index = std::to_string(i * 3 + 1);
-            object.emplace("key" + index, nullptr);
+            object.emplace("key" + index, owned_object::make_null());
         }
 
         {
@@ -282,13 +282,13 @@ TEST(TestValueIterator, TestMapMultipleMultipleNullAndInvalid)
 
 TEST(TestValueIterator, TestDeepMap)
 {
-    auto object = owned_object::make_map();
+    auto object = object_builder::map();
     borrowed_object map{object};
 
     for (unsigned i = 0; i < 10; i++) {
         auto index = std::to_string(i);
         map.emplace("str" + index, "val" + index);
-        map = map.emplace("map" + index, owned_object::make_map());
+        map = map.emplace("map" + index, object_builder::map());
     }
 
     std::unordered_set<object_view> persistent;
@@ -314,8 +314,8 @@ TEST(TestValueIterator, TestDeepMap)
 
 TEST(TestValueIterator, TestMapNoScalars)
 {
-    auto object = owned_object::make_map();
-    for (unsigned i = 0; i < 50; i++) { object.emplace("key", owned_object::make_map()); }
+    auto object = object_builder::map();
+    for (unsigned i = 0; i < 50; i++) { object.emplace("key", object_builder::map()); }
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -409,7 +409,7 @@ TEST(TestValueIterator, TestInvalidObjectPath)
 
 TEST(TestValueIterator, TestSimplePath)
 {
-    auto object = owned_object::make_map({{"key", "value"}, {"key1", "value"}, {"key2", "value"}});
+    auto object = object_builder::map({{"key", "value"}, {"key1", "value"}, {"key2", "value"}});
 
     std::unordered_set<object_view> persistent;
     exclusion::object_set_ref exclude{persistent, {}};
@@ -451,9 +451,9 @@ TEST(TestValueIterator, TestSimplePath)
 
 TEST(TestValueIterator, TestMultiPath)
 {
-    auto object = owned_object::make_map(
-        {{"first", owned_object::make_map({{"second", owned_object::make_map({{"third", "final"},
-                                                          {"value", "value_third"}})},
+    auto object = object_builder::map(
+        {{"first", object_builder::map({{"second", object_builder::map({{"third", "final"},
+                                                       {"value", "value_third"}})},
                        {"value", "value_second"}})},
             {"value", "value_first"}});
 
@@ -650,7 +650,7 @@ TEST(TestValueIterator, TestContainerMixInvalidPath)
 
 TEST(TestValueIterator, TestExcludeSingleObject)
 {
-    auto object = owned_object::make_map({{"key", "value"}});
+    auto object = object_builder::map({{"key", "value"}});
 
     std::unordered_set<object_view> persistent{object.at(0)};
     exclusion::object_set_ref exclude{persistent, {}};
@@ -661,9 +661,9 @@ TEST(TestValueIterator, TestExcludeSingleObject)
 
 TEST(TestValueIterator, TestExcludeMultipleObjects)
 {
-    auto root = owned_object::make_map({{"key", "value"}});
+    auto root = object_builder::map({{"key", "value"}});
 
-    auto map = root.emplace("other", owned_object::make_array({"hello", "bye"}));
+    auto map = root.emplace("other", object_builder::array({"hello", "bye"}));
 
     std::unordered_set<object_view> persistent{root.at(0), map.at(1)};
     exclusion::object_set_ref exclude{persistent, {}};
@@ -682,8 +682,8 @@ TEST(TestValueIterator, TestExcludeMultipleObjects)
 
 TEST(TestValueIterator, TestExcludeObjectInKeyPath)
 {
-    auto root = owned_object::make_map();
-    auto child = root.emplace("parent", owned_object::make_map());
+    auto root = object_builder::map();
+    auto child = root.emplace("parent", object_builder::map());
     child.emplace("child", "value");
 
     std::unordered_set<object_view> persistent{child.at(0)};
@@ -696,7 +696,7 @@ TEST(TestValueIterator, TestExcludeObjectInKeyPath)
 
 TEST(TestValueIterator, TestExcludeRootOfKeyPath)
 {
-    auto root = owned_object::make_map({{"parent", owned_object::make_map({{"child", "value"}})}});
+    auto root = object_builder::map({{"parent", object_builder::map({{"child", "value"}})}});
 
     std::unordered_set<object_view> persistent{root.at(0)};
 

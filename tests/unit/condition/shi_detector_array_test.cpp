@@ -21,8 +21,8 @@ TEST(TestShiDetectorArray, InvalidType)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
-    auto root = owned_object::make_map(
-        {{"server.sys.shell.cmd", owned_object::make_map()}, {"server.request.query", "whatever"}});
+    auto root = object_builder::map(
+        {{"server.sys.shell.cmd", object_builder::map()}, {"server.request.query", "whatever"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -37,8 +37,8 @@ TEST(TestShiDetectorArray, EmptyResource)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
-    auto root = owned_object::make_map({{"server.sys.shell.cmd", owned_object::make_array()},
-        {"server.request.query", "whatever"}});
+    auto root = object_builder::map(
+        {{"server.sys.shell.cmd", object_builder::array()}, {"server.request.query", "whatever"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -52,9 +52,9 @@ TEST(TestShiDetectorArray, EmptyResource)
 TEST(TestShiDetectorArray, InvalidTypeWithinArray)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
-    auto root = owned_object::make_map({{"server.request.query", "cat /etc/passwd"},
-        {"server.sys.shell.cmd", owned_object::make_array({"ls", "-l", ";", 22,
-                                     owned_object::make_map(), "cat /etc/passwd"})}});
+    auto root = object_builder::map({{"server.request.query", "cat /etc/passwd"},
+        {"server.sys.shell.cmd", object_builder::array({"ls", "-l", ";", 22, object_builder::map(),
+                                     "cat /etc/passwd"})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -109,9 +109,9 @@ TEST(TestShiDetectorArray, NoMatchAndFalsePositives)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = owned_object::make_map();
+        auto root = object_builder::map();
         root.emplace("server.request.query", param);
-        auto array = root.emplace("server.sys.shell.cmd", owned_object::make_array());
+        auto array = root.emplace("server.sys.shell.cmd", object_builder::array());
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
@@ -146,9 +146,9 @@ TEST(TestShiDetectorArray, ExecutablesAndRedirections)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = owned_object::make_map();
+        auto root = object_builder::map();
         root.emplace("server.request.query", param);
-        auto array = root.emplace("server.sys.shell.cmd", owned_object::make_array());
+        auto array = root.emplace("server.sys.shell.cmd", object_builder::array());
         std::string resource_str;
         for (const auto &arg : resource) {
             array.emplace_back(arg);
@@ -169,14 +169,14 @@ TEST(TestShiDetectorArray, ExecutablesAndRedirections)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, resource_str);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, param.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, param);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], param.c_str());
+        EXPECT_STR(cache.match->highlights[0], param);
     }
 }
 
@@ -200,9 +200,9 @@ TEST(TestShiDetectorArray, OverlappingInjections)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = owned_object::make_map();
+        auto root = object_builder::map();
         root.emplace("server.request.query", param);
-        auto array = root.emplace("server.sys.shell.cmd", owned_object::make_array());
+        auto array = root.emplace("server.sys.shell.cmd", object_builder::array());
 
         std::string resource_str;
         for (const auto &arg : resource) {
@@ -240,9 +240,9 @@ TEST(TestShiDetectorArray, InjectionsWithinCommandSubstitution)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = owned_object::make_map();
+        auto root = object_builder::map();
         root.emplace("server.request.query", param);
-        auto array = root.emplace("server.sys.shell.cmd", owned_object::make_array());
+        auto array = root.emplace("server.sys.shell.cmd", object_builder::array());
 
         std::string resource_str;
         for (const auto &arg : resource) {
@@ -264,14 +264,14 @@ TEST(TestShiDetectorArray, InjectionsWithinCommandSubstitution)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, resource_str);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, param.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, param);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], param.c_str());
+        EXPECT_STR(cache.match->highlights[0], param);
     }
 }
 
@@ -285,9 +285,9 @@ TEST(TestShiDetectorArray, InjectionsWithinProcessSubstitution)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = owned_object::make_map();
+        auto root = object_builder::map();
         root.emplace("server.request.query", param);
-        auto array = root.emplace("server.sys.shell.cmd", owned_object::make_array());
+        auto array = root.emplace("server.sys.shell.cmd", object_builder::array());
 
         std::string resource_str;
         for (const auto &arg : resource) {
@@ -309,14 +309,14 @@ TEST(TestShiDetectorArray, InjectionsWithinProcessSubstitution)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, resource_str);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, param.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, param);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], param.c_str());
+        EXPECT_STR(cache.match->highlights[0], param);
     }
 }
 
@@ -336,9 +336,9 @@ TEST(TestShiDetectorArray, OffByOnePayloadsMatch)
         {{"l", "-l", "-a", ";", "l -l"}, "l -l"}};
 
     for (const auto &[resource, param] : samples) {
-        auto root = owned_object::make_map();
+        auto root = object_builder::map();
         root.emplace("server.request.query", param);
-        auto array = root.emplace("server.sys.shell.cmd", owned_object::make_array());
+        auto array = root.emplace("server.sys.shell.cmd", object_builder::array());
 
         std::string resource_str;
         for (const auto &arg : resource) {
@@ -360,14 +360,14 @@ TEST(TestShiDetectorArray, OffByOnePayloadsMatch)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, resource_str);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, param.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, param);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], param.c_str());
+        EXPECT_STR(cache.match->highlights[0], param);
     }
 }
 

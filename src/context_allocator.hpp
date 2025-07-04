@@ -21,17 +21,6 @@ inline memory_resource *get_local_memory_resource() { return local_memory_resour
 
 inline void set_local_memory_resource(memory_resource *mr) { local_memory_resource = mr; }
 
-// The null memory resource is used as the default onef or the static thread
-// local memory resource. Only exposed for testing purposes.
-class null_memory_resource final : public memory_resource {
-    void *do_allocate(size_t /*bytes*/, size_t /*alignment*/) override { throw std::bad_alloc(); }
-    void do_deallocate(void * /*p*/, size_t /*bytes*/, size_t /*alignment*/) noexcept override {}
-    [[nodiscard]] bool do_is_equal(const memory_resource &other) const noexcept override
-    {
-        return this == &other;
-    }
-};
-
 // The memory resource guard replaces the current static thread local memory
 // resource with the user provided one on construction and reverts it back on
 // destruction.

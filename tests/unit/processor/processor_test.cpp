@@ -42,7 +42,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    auto input_map = owned_object::make_map({{"input_address", "input_string"}});
+    auto input_map = object_builder::map({{"input_address", "input_string"}});
     object_store store;
     store.insert(input_map);
 
@@ -80,7 +80,7 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
     owned_object first_output = owned_object::make_string("first_output_string");
     owned_object second_output = owned_object::make_string("second_output_string");
 
-    auto input_map = owned_object::make_map({{"input_address.first", "first_input_string"},
+    auto input_map = object_builder::map({{"input_address.first", "first_input_string"},
         {"input_address.second", "second_input_string"}});
 
     object_store store;
@@ -134,8 +134,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    auto input_map =
-        owned_object::make_map({{"input_address", "input_string"}, {"enabled?", true}});
+    auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", true}});
 
     object_store store;
     store.insert(input_map);
@@ -178,7 +177,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    auto input_map = owned_object::make_map({{"enabled?", true}});
+    auto input_map = object_builder::map({{"enabled?", true}});
 
     object_store store;
     store.insert(std::move(input_map));
@@ -213,7 +212,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 0);
 
-    input_map = owned_object::make_map({
+    input_map = object_builder::map({
         {"input_address", "input_string"},
     });
 
@@ -232,8 +231,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    auto input_map =
-        owned_object::make_map({{"input_address", "input_string"}, {"enabled?", false}});
+    auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", false}});
 
     object_store store;
     store.insert(std::move(input_map));
@@ -269,7 +267,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    auto input_map = owned_object::make_map({
+    auto input_map = object_builder::map({
         {"input_address", "input_string"},
     });
 
@@ -315,8 +313,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    auto input_map =
-        owned_object::make_map({{"input_address", "input_string"}, {"enabled?", true}});
+    auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", true}});
 
     object_store store;
     store.insert(std::move(input_map));
@@ -363,8 +360,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    auto input_map =
-        owned_object::make_map({{"input_address", "input_string"}, {"enabled?", false}});
+    auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", false}});
 
     object_store store;
     store.insert(std::move(input_map));
@@ -403,7 +399,7 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
     owned_object first_output = owned_object::make_string("first_output_string");
     owned_object second_output = owned_object::make_string("second_output_string");
 
-    auto input_map = owned_object::make_map({{"input_address.first", "first_input_string"},
+    auto input_map = object_builder::map({{"input_address.first", "first_input_string"},
         {"input_address.second", "second_input_string"}});
 
     object_store store;
@@ -459,7 +455,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    auto input_map = owned_object::make_map({
+    auto input_map = object_builder::map({
         {"input_address", "input_string"},
     });
 
@@ -509,8 +505,8 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
 
 TEST(TestProcessor, OutputAlreadyAvailableInStore)
 {
-    auto input_map =
-        owned_object::make_map({{"input_address", "input_string"}, {"output_address", nullptr}});
+    auto input_map = object_builder::map(
+        {{"input_address", "input_string"}, {"output_address", owned_object::make_null()}});
 
     object_store store;
     store.insert(std::move(input_map));
@@ -537,7 +533,7 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
 
 TEST(TestProcessor, OutputAlreadyGenerated)
 {
-    auto input_map = owned_object::make_map({
+    auto input_map = object_builder::map({
         {"input_address", "input_string"},
     });
 
@@ -567,8 +563,8 @@ TEST(TestProcessor, OutputAlreadyGenerated)
 
 TEST(TestProcessor, EvalAlreadyAvailableInStore)
 {
-    auto input_map =
-        owned_object::make_map({{"input_address", "input_string"}, {"output_address", nullptr}});
+    auto input_map = object_builder::map(
+        {{"input_address", "input_string"}, {"output_address", owned_object::make_null()}});
 
     object_store store;
     store.insert(std::move(input_map));
@@ -598,7 +594,7 @@ TEST(TestProcessor, OutputEvalWithoutattributesMap)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    auto input_map = owned_object::make_map({
+    auto input_map = object_builder::map({
         {"input_address", "input_string"},
     });
 

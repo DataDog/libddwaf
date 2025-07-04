@@ -27,7 +27,7 @@ TEST(TestRule, Match)
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
     core_rule rule("id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
 
-    auto root = owned_object::make_map();
+    auto root = object_builder::map();
     root.emplace("http.client_ip", "192.168.0.1");
 
     ddwaf::object_store store;
@@ -86,7 +86,7 @@ TEST(TestRule, EphemeralMatch)
 
     ddwaf::object_store store;
 
-    auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
     ddwaf::timer deadline{2s};
 
@@ -123,7 +123,7 @@ TEST(TestRule, NoMatch)
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
     core_rule rule("id", "name", std::move(tags), builder.build());
 
-    auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
     ddwaf::object_store store;
     store.insert(std::move(root));
@@ -157,7 +157,7 @@ TEST(TestRule, ValidateCachedMatch)
     // only the latest address. This ensures that the IP condition can't be
     // matched on the second run.
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         ddwaf::object_store store;
         store.insert(std::move(root));
@@ -168,7 +168,7 @@ TEST(TestRule, ValidateCachedMatch)
     }
 
     {
-        auto root = owned_object::make_map({{"usr.id", "admin"}});
+        auto root = object_builder::map({{"usr.id", "admin"}});
 
         ddwaf::object_store store;
         store.insert(std::move(root));
@@ -229,7 +229,7 @@ TEST(TestRule, MatchWithoutCache)
     // the second run when there isn't a cached match.
     ddwaf::object_store store;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -239,7 +239,7 @@ TEST(TestRule, MatchWithoutCache)
     }
 
     {
-        auto root = owned_object::make_map({{"usr.id", "admin"}});
+        auto root = object_builder::map({{"usr.id", "admin"}});
 
         store.insert(std::move(root));
 
@@ -291,7 +291,7 @@ TEST(TestRule, NoMatchWithoutCache)
     // In this test we validate that when the cache is empty and only one
     // address is passed, the filter doesn't match (as it should be).
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         ddwaf::object_store store;
         store.insert(std::move(root));
@@ -303,7 +303,7 @@ TEST(TestRule, NoMatchWithoutCache)
     }
 
     {
-        auto root = owned_object::make_map({{"usr.id", "admin"}});
+        auto root = object_builder::map({{"usr.id", "admin"}});
 
         ddwaf::object_store store;
         store.insert(std::move(root));
@@ -337,8 +337,7 @@ TEST(TestRule, FullCachedMatchSecondRun)
 
     core_rule::cache_type cache;
     {
-        auto root =
-            owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
 
         ddwaf::object_store store;
         store.insert(std::move(root));
@@ -350,8 +349,7 @@ TEST(TestRule, FullCachedMatchSecondRun)
     }
 
     {
-        auto root =
-            owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
 
         ddwaf::object_store store;
         store.insert(std::move(root));
@@ -374,7 +372,7 @@ TEST(TestRule, ExcludeObject)
 
     core_rule rule("id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
 
-    auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
     ddwaf::object_store store;
     store.insert(std::move(root));
 

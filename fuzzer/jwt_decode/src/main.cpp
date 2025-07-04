@@ -17,7 +17,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     std::string_view value{reinterpret_cast<const char *>(bytes), size};
 
-    auto headers = owned_object::make_map({{"authorization", value}});
+    auto headers = object_builder::map({{"authorization", value}});
 
     jwt_decode gen{"id", {}, {}, false, true};
 

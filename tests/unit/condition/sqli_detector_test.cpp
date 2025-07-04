@@ -34,7 +34,7 @@ TEST_P(DialectTestFixture, InvalidSql)
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
     for (const auto &[statement, input] : samples) {
-        auto root = owned_object::make_map({{"server.db.statement", statement},
+        auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
@@ -59,7 +59,7 @@ TEST_P(DialectTestFixture, InjectionWithoutTokens)
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
     for (const auto &[statement, input] : samples) {
-        auto root = owned_object::make_map({{"server.db.statement", statement},
+        auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
@@ -96,7 +96,7 @@ TEST_P(DialectTestFixture, BenignInjections)
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
     for (const auto &[statement, input] : samples) {
-        auto root = owned_object::make_map({{"server.db.statement", statement},
+        auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
@@ -146,7 +146,7 @@ TEST_P(DialectTestFixture, MaliciousInjections)
     };
 
     for (const auto &[statement, obfuscated, input] : samples) {
-        auto root = owned_object::make_map({{"server.db.statement", statement},
+        auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
@@ -160,14 +160,14 @@ TEST_P(DialectTestFixture, MaliciousInjections)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, obfuscated.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, obfuscated);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, input);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input.c_str());
+        EXPECT_STR(cache.match->highlights[0], input);
     }
 }
 
@@ -217,7 +217,7 @@ TEST_P(DialectTestFixture, Tautologies)
     };
 
     for (const auto &[statement, obfuscated, input] : samples) {
-        auto root = owned_object::make_map({{"server.db.statement", statement},
+        auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
@@ -231,14 +231,14 @@ TEST_P(DialectTestFixture, Tautologies)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, obfuscated.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, obfuscated);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, input);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input.c_str());
+        EXPECT_STR(cache.match->highlights[0], input);
     }
 }
 
@@ -262,7 +262,7 @@ TEST_P(DialectTestFixture, Comments)
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
     for (const auto &[statement, obfuscated, input] : samples) {
-        auto root = owned_object::make_map({{"server.db.statement", statement},
+        auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
@@ -276,14 +276,14 @@ TEST_P(DialectTestFixture, Comments)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, obfuscated.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, obfuscated);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, input);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input.c_str());
+        EXPECT_STR(cache.match->highlights[0], input);
     }
 }
 
@@ -304,7 +304,7 @@ TEST(TestSqliDetectorMySql, Comments)
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
     for (const auto &[statement, obfuscated, input] : samples) {
-        auto root = owned_object::make_map({{"server.db.statement", statement},
+        auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", "mysql"}, {"server.request.query", input}});
 
         object_store store;
@@ -318,14 +318,14 @@ TEST(TestSqliDetectorMySql, Comments)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, obfuscated.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, obfuscated);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, input);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input.c_str());
+        EXPECT_STR(cache.match->highlights[0], input);
     }
 }
 
@@ -349,7 +349,7 @@ TEST(TestSqliDetectorMySql, Tautologies)
     };
 
     for (const auto &[statement, obfuscated, input] : samples) {
-        auto root = owned_object::make_map({{"server.db.statement", statement},
+        auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", "mysql"}, {"server.request.query", input}});
 
         object_store store;
@@ -363,14 +363,14 @@ TEST(TestSqliDetectorMySql, Tautologies)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, obfuscated.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, obfuscated);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, input);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input.c_str());
+        EXPECT_STR(cache.match->highlights[0], input);
     }
 }
 
@@ -397,7 +397,7 @@ TEST(TestSqliDetectorPgSql, Tautologies)
     };
 
     for (const auto &[statement, obfuscated, input] : samples) {
-        auto root = owned_object::make_map({{"server.db.statement", statement},
+        auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", "pgsql"}, {"server.request.query", input}});
 
         object_store store;
@@ -411,14 +411,14 @@ TEST(TestSqliDetectorPgSql, Tautologies)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, obfuscated.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, obfuscated);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, input);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input.c_str());
+        EXPECT_STR(cache.match->highlights[0], input);
     }
 }
 } // namespace

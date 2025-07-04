@@ -27,7 +27,7 @@ TEST(TestExtractSchema, UnknownScalarSchema)
 
 TEST(TestExtractSchema, NullScalarSchema)
 {
-    owned_object input{nullptr};
+    auto input = owned_object::make_null();
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -99,7 +99,7 @@ TEST(TestExtractSchema, FloatScalarSchema)
 
 TEST(TestExtractSchema, EmptyArraySchema)
 {
-    auto input = owned_object::make_array();
+    auto input = object_builder::array();
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -111,7 +111,7 @@ TEST(TestExtractSchema, EmptyArraySchema)
 
 TEST(TestExtractSchema, ArraySchema)
 {
-    auto input = owned_object::make_array({22, "string", owned_object{}, nullptr});
+    auto input = object_builder::array({22, "string", owned_object{}, owned_object::make_null()});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -123,7 +123,7 @@ TEST(TestExtractSchema, ArraySchema)
 
 TEST(TestExtractSchema, ArrayWithDuplicateScalarSchema)
 {
-    auto input = owned_object::make_array({"string", "string", "string", "string"});
+    auto input = object_builder::array({"string", "string", "string", "string"});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -135,10 +135,9 @@ TEST(TestExtractSchema, ArrayWithDuplicateScalarSchema)
 
 TEST(TestExtractSchema, ArrayWithDuplicateMapsSchema)
 {
-    auto input =
-        owned_object::make_array({owned_object::make_map({{"unsigned", 5}, {"string", "str"}}),
-            owned_object::make_map({{"signed", -5}}), owned_object::make_map({{"unsigned", 5}}),
-            owned_object::make_map({{"unsigned", 109}, {"string", "wahtever"}})});
+    auto input = object_builder::array({object_builder::map({{"unsigned", 5}, {"string", "str"}}),
+        object_builder::map({{"signed", -5}}), object_builder::map({{"unsigned", 5}}),
+        object_builder::map({{"unsigned", 109}, {"string", "wahtever"}})});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -151,9 +150,9 @@ TEST(TestExtractSchema, ArrayWithDuplicateMapsSchema)
 
 TEST(TestExtractSchema, ArrayWithDuplicateArraysSchema)
 {
-    auto input = owned_object::make_array(
-        {owned_object::make_array({5, "str"}), owned_object::make_array({-5}),
-            owned_object::make_array({5}), owned_object::make_array({109, "wahtever"})});
+    auto input =
+        object_builder::array({object_builder::array({5, "str"}), object_builder::array({-5}),
+            object_builder::array({5}), object_builder::array({109, "wahtever"})});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -165,10 +164,9 @@ TEST(TestExtractSchema, ArrayWithDuplicateArraysSchema)
 
 TEST(TestExtractSchema, ArrayWithDuplicateContainersSchema)
 {
-    auto input =
-        owned_object::make_array({owned_object::make_map({{"unsigned", 5}, {"string", "str"}}),
-            owned_object::make_array({-5}), owned_object::make_array({5}),
-            owned_object::make_map({{"string", "wahtever"}, {"unsigned", 109}})});
+    auto input = object_builder::array({object_builder::map({{"unsigned", 5}, {"string", "str"}}),
+        object_builder::array({-5}), object_builder::array({5}),
+        object_builder::map({{"string", "wahtever"}, {"unsigned", 109}})});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -181,7 +179,7 @@ TEST(TestExtractSchema, ArrayWithDuplicateContainersSchema)
 
 TEST(TestExtractSchema, EmptyMapSchema)
 {
-    auto input = owned_object::make_map();
+    auto input = object_builder::map();
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -193,10 +191,10 @@ TEST(TestExtractSchema, EmptyMapSchema)
 
 TEST(TestExtractSchema, MapSchema)
 {
-    auto input = owned_object::make_map(
-        {{"unsigned", 22}, {"string", "string"}, {"invalid", owned_object{}}, {"null", nullptr},
-            {"map", owned_object::make_map({{"unsigned", 5}, {"string", "str"}})},
-            {"array", owned_object::make_array({-5})}});
+    auto input = object_builder::map({{"unsigned", 22}, {"string", "string"},
+        {"invalid", owned_object{}}, {"null", owned_object::make_null()},
+        {"map", object_builder::map({{"unsigned", 5}, {"string", "str"}})},
+        {"array", object_builder::array({-5})}});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -209,10 +207,10 @@ TEST(TestExtractSchema, MapSchema)
 
 TEST(TestExtractSchema, DepthLimit)
 {
-    auto input = owned_object::make_array();
+    auto input = object_builder::array();
     borrowed_object parent{input};
     for (unsigned i = 0; i < extract_schema::max_container_depth + 10; ++i) {
-        parent = parent.emplace_back(owned_object::make_array());
+        parent = parent.emplace_back(object_builder::array());
     }
 
     extract_schema gen{"id", {}, {}, {}, false, true};
@@ -226,9 +224,9 @@ TEST(TestExtractSchema, DepthLimit)
 
 TEST(TestExtractSchema, ArrayNodesLimit)
 {
-    auto input = owned_object::make_array();
+    auto input = object_builder::array();
     for (unsigned i = 0; i < extract_schema::max_array_nodes + 10; ++i) {
-        input.emplace_back(owned_object::make_array());
+        input.emplace_back(object_builder::array());
     }
 
     extract_schema gen{"id", {}, {}, {}, false, true};
@@ -240,9 +238,9 @@ TEST(TestExtractSchema, ArrayNodesLimit)
 
 TEST(TestExtractSchema, RecordNodesLimit)
 {
-    auto input = owned_object::make_map();
+    auto input = object_builder::map();
     for (unsigned i = 0; i < extract_schema::max_record_nodes + 10; ++i) {
-        input.emplace("child", owned_object::make_array());
+        input.emplace("child", object_builder::array());
     }
 
     extract_schema gen{"id", {}, {}, {}, false, true};
@@ -323,7 +321,7 @@ TEST(TestExtractSchema, SchemaWithScannerSingleValueNoKey)
 
 TEST(TestExtractSchema, SchemaWithScannerArrayNoKey)
 {
-    auto input = owned_object::make_array({"string"});
+    auto input = object_builder::array({"string"});
 
     scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}},
         std::make_unique<matcher::regex_match>("string", 6, true),
@@ -339,7 +337,7 @@ TEST(TestExtractSchema, SchemaWithScannerArrayNoKey)
 
 TEST(TestExtractSchema, SchemaWithScannerArrayWithKey)
 {
-    auto input = owned_object::make_map({{"string", owned_object::make_array({"string"})}});
+    auto input = object_builder::map({{"string", object_builder::array({"string"})}});
 
     scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}},
         std::make_unique<matcher::regex_match>("string", 6, true),
@@ -356,8 +354,8 @@ TEST(TestExtractSchema, SchemaWithScannerArrayWithKey)
 
 TEST(TestExtractSchema, SchemaWithScannerNestedArrayWithKey)
 {
-    auto input = owned_object::make_map(
-        {{"string", owned_object::make_array({owned_object::make_array({"string"})})}});
+    auto input = object_builder::map(
+        {{"string", object_builder::array({object_builder::array({"string"})})}});
 
     scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}},
         std::make_unique<matcher::regex_match>("string", 6, true),

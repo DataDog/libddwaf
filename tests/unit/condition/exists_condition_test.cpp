@@ -23,7 +23,7 @@ TEST(TestExistsCondition, AddressAvailable)
 {
     exists_condition cond{{gen_variadic_param("server.request.uri_raw")}};
 
-    auto root = owned_object::make_map({{"server.request.uri_raw", owned_object{}}});
+    auto root = object_builder::map({{"server.request.uri_raw", owned_object{}}});
 
     object_store store;
     store.insert(std::move(root));
@@ -39,10 +39,9 @@ TEST(TestExistsCondition, KeyPathAvailable)
     exists_condition cond{{{{{{"server.request.uri_raw", get_target_index("server.request.uri_raw"),
         {"path", "to", "object"}}}}}}};
 
-    auto root = owned_object::make_map({{"server.request.uri_raw",
-        owned_object::make_map(
-            {{"path", owned_object::make_map(
-                          {{"to", owned_object::make_map({{"object", owned_object{}}})}})}})}});
+    auto root = object_builder::map({{"server.request.uri_raw",
+        object_builder::map({{"path",
+            object_builder::map({{"to", object_builder::map({{"object", owned_object{}}})}})}})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -57,7 +56,7 @@ TEST(TestExistsCondition, AddressNotAvaialble)
 {
     exists_condition cond{{gen_variadic_param("server.request.uri_raw")}};
 
-    auto root = owned_object::make_map({{"server.request.query", owned_object{}}});
+    auto root = object_builder::map({{"server.request.query", owned_object{}}});
 
     object_store store;
     store.insert(std::move(root));
@@ -73,8 +72,8 @@ TEST(TestExistsCondition, KeyPathNotAvailable)
     exists_condition cond{{{{{{"server.request.uri_raw", get_target_index("server.request.uri_raw"),
         {"path", "to", "object"}}}}}}};
 
-    auto root = owned_object::make_map({{"server.request.uri_raw",
-        owned_object::make_map({{"path", owned_object::make_map({{"to", owned_object{}}})}})}});
+    auto root = object_builder::map({{"server.request.uri_raw",
+        object_builder::map({{"path", object_builder::map({{"to", owned_object{}}})}})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -90,10 +89,9 @@ TEST(TestExistsCondition, KeyPathAvailableButExcluded)
     exists_condition cond{{{{{{"server.request.uri_raw", get_target_index("server.request.uri_raw"),
         {"path", "to", "object"}}}}}}};
 
-    auto root = owned_object::make_map({{"server.request.uri_raw",
-        owned_object::make_map(
-            {{"path", owned_object::make_map(
-                          {{"to", owned_object::make_map({{"object", owned_object{}}})}})}})}});
+    auto root = object_builder::map({{"server.request.uri_raw",
+        object_builder::map({{"path",
+            object_builder::map({{"to", object_builder::map({{"object", owned_object{}}})}})}})}});
 
     std::unordered_set<object_view> excluded = {root.at(0)};
     object_store store;
@@ -118,7 +116,7 @@ TEST(TestExistsCondition, MultipleAddresses)
         {gen_variadic_param("server.request.uri_raw", "server.request.body", "usr.id")}};
 
     auto validate_address = [&](const std::string &address, bool expected = true) {
-        auto root = owned_object::make_map({{address, owned_object{}}});
+        auto root = object_builder::map({{address, owned_object{}}});
 
         object_store store;
         store.insert(std::move(root));
@@ -145,11 +143,11 @@ TEST(TestExistsCondition, MultipleAddressesAndKeyPaths)
 
     auto validate_address = [&](const std::string &address, const std::vector<std::string> &kp,
                                 bool expected = true) {
-        auto root = owned_object::make_map();
-        auto map = root.emplace(address, owned_object::make_map());
+        auto root = object_builder::map();
+        auto map = root.emplace(address, object_builder::map());
         // NOLINTNEXTLINE(modernize-loop-convert)
         for (auto it = kp.begin(); it != kp.end(); ++it) {
-            map = map.emplace(*it, owned_object::make_map());
+            map = map.emplace(*it, object_builder::map());
         }
 
         object_store store;
@@ -178,10 +176,9 @@ TEST(TestExistsNegatedCondition, KeyPathAvailable)
     exists_negated_condition cond{{{{{{"server.request.uri_raw",
         get_target_index("server.request.uri_raw"), {"path", "to", "object"}}}}}}};
 
-    auto root = owned_object::make_map({{"server.request.uri_raw",
-        owned_object::make_map(
-            {{"path", owned_object::make_map(
-                          {{"to", owned_object::make_map({{"object", owned_object{}}})}})}})}});
+    auto root = object_builder::map({{"server.request.uri_raw",
+        object_builder::map({{"path",
+            object_builder::map({{"to", object_builder::map({{"object", owned_object{}}})}})}})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -197,8 +194,8 @@ TEST(TestExistsNegatedCondition, KeyPathNotAvailable)
     exists_negated_condition cond{{{{{{"server.request.uri_raw",
         get_target_index("server.request.uri_raw"), {"path", "to", "object"}}}}}}};
 
-    auto root = owned_object::make_map({{"server.request.uri_raw",
-        owned_object::make_map({{"path", owned_object::make_map({{"to", owned_object{}}})}})}});
+    auto root = object_builder::map({{"server.request.uri_raw",
+        object_builder::map({{"path", object_builder::map({{"to", owned_object{}}})}})}});
     object_store store;
     store.insert(std::move(root));
 
@@ -213,10 +210,9 @@ TEST(TestExistsNegatedCondition, KeyPathAvailableButExcluded)
     exists_negated_condition cond{{{{{{"server.request.uri_raw",
         get_target_index("server.request.uri_raw"), {"path", "to", "object"}}}}}}};
 
-    auto root = owned_object::make_map({{"server.request.uri_raw",
-        owned_object::make_map(
-            {{"path", owned_object::make_map(
-                          {{"to", owned_object::make_map({{"object", owned_object{}}})}})}})}});
+    auto root = object_builder::map({{"server.request.uri_raw",
+        object_builder::map({{"path",
+            object_builder::map({{"to", object_builder::map({{"object", owned_object{}}})}})}})}});
 
     std::unordered_set<object_view> excluded = {root.at(0)};
 
