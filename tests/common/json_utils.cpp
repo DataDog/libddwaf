@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "common/json_utils.hpp"
+#include "ddwaf.h"
 #include "log.hpp"
 
 #include <fstream>
@@ -102,6 +103,7 @@ template <typename T>
 void json_to_object_helper(ddwaf_object *object, T &doc)
     requires std::is_same_v<rapidjson::Document, T> || std::is_same_v<rapidjson::Value, T>
 {
+    auto *alloc = ddwaf_get_default_allocator();
     switch (doc.GetType()) {
     case rapidjson::kFalseType:
         ddwaf_object_set_bool(object, false);
@@ -110,29 +112,26 @@ void json_to_object_helper(ddwaf_object *object, T &doc)
         ddwaf_object_set_bool(object, true);
         break;
     case rapidjson::kObjectType: {
-        ddwaf_object_map(object);
+        ddwaf_object_set_map(object, doc.Size(), alloc);
         for (auto &kv : doc.GetObject()) {
-            ddwaf_object element{};
-            json_to_object_helper(&element, kv.value);
-
             const std::string_view key = kv.name.GetString();
-            ddwaf_object_map_addl(object, key.data(), key.length(), &element);
+            auto *element = ddwaf_object_insert_key(object, key.data(), key.length(), alloc);
+
+            json_to_object_helper(element, kv.value);
         }
         break;
     }
     case rapidjson::kArrayType: {
-        ddwaf_object_array(object);
+        ddwaf_object_set_array(object, doc.Size(), alloc);
         for (auto &v : doc.GetArray()) {
-            ddwaf_object element{};
-            json_to_object_helper(&element, v);
-
-            ddwaf_object_array_add(object, &element);
+            auto *element = ddwaf_object_insert(object, alloc);
+            json_to_object_helper(element, v);
         }
         break;
     }
     case rapidjson::kStringType: {
         const std::string_view str = doc.GetString();
-        ddwaf_object_stringl(object, str.data(), str.size());
+        ddwaf_object_set_string(object, str.data(), str.size(), alloc);
         break;
     }
     case rapidjson::kNumberType: {

@@ -6,6 +6,7 @@
 
 #include "common/gtest_utils.hpp"
 #include "configuration/common/common.hpp"
+#include "ddwaf.h"
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -16,17 +17,22 @@ constexpr std::string_view base_dir = "integration/diagnostics/v1/";
 
 void run_test(ddwaf_handle handle)
 {
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
+    auto *alloc = ddwaf_get_default_allocator();
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object param, arg2, tmp;
-    ddwaf_object_map(&param);
-    ddwaf_object_map(&arg2);
+    ddwaf_object param;
+    ddwaf_object_set_map(&param, 2, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&param, STRL("arg1"), alloc), STRL("string 1"), alloc);
 
-    ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "string 1"));
-    ddwaf_object_map_add(&arg2, "x", ddwaf_object_string(&tmp, "string 2"));
-    ddwaf_object_map_add(&arg2, "y", ddwaf_object_string(&tmp, "string 3"));
-    ddwaf_object_map_add(&param, "arg2", &arg2);
+    auto *arg2 = ddwaf_object_insert_key(&param, STRL("arg2"), alloc);
+    ddwaf_object_set_map(arg2, 2, alloc);
+
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(arg2, STRL("x"), alloc), STRL("string 2"), alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(arg2, STRL("y"), alloc), STRL("string 3"), alloc);
 
     ddwaf_object ret;
 

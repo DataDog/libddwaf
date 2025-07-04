@@ -477,22 +477,12 @@ ddwaf_allocator ddwaf_get_default_allocator();
 
 ddwaf_object* ddwaf_object_set_string(ddwaf_object *object, const char *string, size_t length, ddwaf_allocator alloc);
 ddwaf_object* ddwaf_object_set_string_literal(ddwaf_object *object, const char *string, size_t length);
-ddwaf_object* ddwaf_object_set_array(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc);
-ddwaf_object* ddwaf_object_set_map(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc);
 
 ddwaf_object *ddwaf_object_insert(ddwaf_object *array, ddwaf_allocator alloc);
 ddwaf_object *ddwaf_object_insert_key(ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
 ddwaf_object *ddwaf_object_insert_literal_key(ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
 
-bool ddwaf_object_is_invalid(const ddwaf_object *object);
-bool ddwaf_object_is_null(const ddwaf_object *object);
-bool ddwaf_object_is_bool(const ddwaf_object *object);
-bool ddwaf_object_is_signed(const ddwaf_object *object);
-bool ddwaf_object_is_unsigned(const ddwaf_object *object);
-bool ddwaf_object_is_float(const ddwaf_object *object);
-bool ddwaf_object_is_string(const ddwaf_object *object);
-bool ddwaf_object_is_array(const ddwaf_object *object);
-bool ddwaf_object_is_map(const ddwaf_object *object);
+
 /*********************/
 
 /**
@@ -529,7 +519,6 @@ ddwaf_object* ddwaf_object_set_null(ddwaf_object *object);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_string(ddwaf_object *object, const char *string);
 
 /**
  * ddwaf_object_stringl
@@ -543,7 +532,6 @@ ddwaf_object* ddwaf_object_string(ddwaf_object *object, const char *string);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_stringl(ddwaf_object *object, const char *string, size_t length);
 
 /**
  * ddwaf_object_stringl_nc
@@ -556,7 +544,6 @@ ddwaf_object* ddwaf_object_stringl(ddwaf_object *object, const char *string, siz
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_stringl_nc(ddwaf_object *object, const char *string, size_t length);
 
 /**
  * ddwaf_object_unsigned
@@ -619,10 +606,9 @@ ddwaf_object* ddwaf_object_set_float(ddwaf_object *object, double value);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_array(ddwaf_object *object);
 
 /**
- * ddwaf_object_map
+ * ddwaf_object_set_map
  *
  * Creates a map object, for key-value storage.
  *
@@ -630,7 +616,7 @@ ddwaf_object* ddwaf_object_array(ddwaf_object *object);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_map(ddwaf_object *object);
+ddwaf_object* ddwaf_object_set_map(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc);
 
 /**
  * ddwaf_object_array_add
@@ -642,7 +628,7 @@ ddwaf_object* ddwaf_object_map(ddwaf_object *object);
  *
  * @return The success or failure of the operation.
  **/
-bool ddwaf_object_array_add(ddwaf_object *array, ddwaf_object *object);
+ddwaf_object* ddwaf_object_set_array(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc);
 
 /**
  * ddwaf_object_map_add
@@ -656,7 +642,6 @@ bool ddwaf_object_array_add(ddwaf_object *array, ddwaf_object *object);
  *
  * @return The success or failure of the operation.
  **/
-bool ddwaf_object_map_add(ddwaf_object *map, const char *key, ddwaf_object *object);
 
 /**
  * ddwaf_object_map_addl
@@ -670,7 +655,6 @@ bool ddwaf_object_map_add(ddwaf_object *map, const char *key, ddwaf_object *obje
  *
  * @return The success or failure of the operation.
  **/
-bool ddwaf_object_map_addl(ddwaf_object *map, const char *key, size_t length, ddwaf_object *object);
 
 /**
  * ddwaf_object_map_addl_nc
@@ -685,7 +669,6 @@ bool ddwaf_object_map_addl(ddwaf_object *map, const char *key, size_t length, dd
  *
  * @return The success or failure of the operation.
  **/
-bool ddwaf_object_map_addl_nc(ddwaf_object *map, const char *key, size_t length, ddwaf_object *object);
 
 /**
  * ddwaf_object_get_type
@@ -822,6 +805,16 @@ const ddwaf_object* ddwaf_object_find(const ddwaf_object *object, const char *ke
  * ddwaf_object_clone
  **/
 ddwaf_object* ddwaf_object_clone(const ddwaf_object *source, ddwaf_object *destination);
+
+bool ddwaf_object_is_invalid(const ddwaf_object *object);
+bool ddwaf_object_is_null(const ddwaf_object *object);
+bool ddwaf_object_is_bool(const ddwaf_object *object);
+bool ddwaf_object_is_signed(const ddwaf_object *object);
+bool ddwaf_object_is_unsigned(const ddwaf_object *object);
+bool ddwaf_object_is_float(const ddwaf_object *object);
+bool ddwaf_object_is_string(const ddwaf_object *object);
+bool ddwaf_object_is_array(const ddwaf_object *object);
+bool ddwaf_object_is_map(const ddwaf_object *object);
 
 /**
  * ddwaf_object_free

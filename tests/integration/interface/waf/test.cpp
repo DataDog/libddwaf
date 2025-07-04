@@ -32,15 +32,16 @@ TEST(TestWafIntegration, GetWafVersion)
 
 TEST(TestWafIntegration, HandleBad)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
 
-    ddwaf_object tmp;
-    ddwaf_object object = DDWAF_OBJECT_INVALID;
+    ddwaf_object object;
+    ddwaf_object_set_invalid(&object);
     EXPECT_EQ(ddwaf_init(&object, &config, nullptr), nullptr);
 
     EXPECT_NO_FATAL_FAILURE(ddwaf_destroy(nullptr));
 
-    ddwaf_object_string(&object, "value");
+    ddwaf_object_set_string(&object, STRL("value"), alloc);
     EXPECT_EQ(ddwaf_context_eval(nullptr, &object, nullptr, true, nullptr, 1),
         DDWAF_ERR_INVALID_ARGUMENT);
     ddwaf_object_free(&object);
@@ -55,16 +56,18 @@ TEST(TestWafIntegration, HandleBad)
     ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object_string(&object, "value");
+    ddwaf_object_set_string(&object, STRL("value"), alloc);
     EXPECT_EQ(
         ddwaf_context_eval(context, &object, nullptr, true, nullptr, 1), DDWAF_ERR_INVALID_OBJECT);
 
-    ddwaf_object_string(&object, "value");
+    ddwaf_object_set_string(&object, STRL("value"), alloc);
     EXPECT_EQ(
         ddwaf_context_eval(context, nullptr, &object, true, nullptr, 1), DDWAF_ERR_INVALID_OBJECT);
 
-    object = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&object, "value1", ddwaf_object_string(&tmp, "value"));
+    ddwaf_object_set_map(&object, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&object, STRL("value1"), alloc), STRL("value"), alloc);
+
     ddwaf_object res;
     EXPECT_EQ(ddwaf_context_eval(context, &object, nullptr, true, &res, 0), DDWAF_OK);
 
@@ -102,6 +105,8 @@ TEST(TestWafIntegration, RootAddresses)
 
 TEST(TestWafIntegration, HandleLifetime)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -111,24 +116,24 @@ TEST(TestWafIntegration, HandleLifetime)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object tmp;
-    ddwaf_object parameter = DDWAF_OBJECT_MAP;
-    ddwaf_object param_key = DDWAF_OBJECT_ARRAY;
-    ddwaf_object param_val = DDWAF_OBJECT_ARRAY;
+    ddwaf_object parameter;
+    ddwaf_object_set_map(&parameter, 2, alloc);
 
-    ddwaf_object_array_add(&param_key, ddwaf_object_set_unsigned(&tmp, 4242));
-    ddwaf_object_array_add(&param_key, ddwaf_object_string(&tmp, "randomString"));
+    auto *param_key = ddwaf_object_insert_key(&parameter, STRL("value1"), alloc);
+    ddwaf_object_set_array(param_key, 2, alloc);
 
-    ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule1"));
+    ddwaf_object_set_unsigned(ddwaf_object_insert(param_key, alloc), 4242);
+    ddwaf_object_set_string(ddwaf_object_insert(param_key, alloc), STRL("randomString"), alloc);
 
-    ddwaf_object_map_add(&parameter, "value1", &param_key);
-    ddwaf_object_map_add(&parameter, "value2", &param_val);
+    auto *param_val = ddwaf_object_insert_key(&parameter, STRL("value2"), alloc);
+    ddwaf_object_set_array(param_val, 1, alloc);
+    ddwaf_object_set_string(ddwaf_object_insert(param_val, alloc), STRL("rule1"), alloc);
 
     EXPECT_EQ(
         ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);

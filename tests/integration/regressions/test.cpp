@@ -21,13 +21,17 @@ TEST(TestRegressionsIntegration, DuplicateFlowMatches)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object parameter = DDWAF_OBJECT_MAP;
-    ddwaf_object tmp;
-    ddwaf_object_map_add(&parameter, "param1", ddwaf_object_string(&tmp, "Sqreen"));
-    ddwaf_object_map_add(&parameter, "param2", ddwaf_object_string(&tmp, "Duplicate"));
+    ddwaf_object parameter;
+    ddwaf_object_set_map(&parameter, 2, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&parameter, STRL("param1"), alloc), STRL("Sqreen"), alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&parameter, STRL("param2"), alloc), STRL("Duplicate"), alloc);
 
     ddwaf_object ret;
     EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &ret, LONG_TIME), DDWAF_MATCH);

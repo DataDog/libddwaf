@@ -466,12 +466,9 @@ uint32_t ddwaf_builder_get_config_paths(
         }
 
         if (paths != nullptr) {
-            ddwaf_object_array(paths);
-            for (const auto &value : config_paths) {
-                ddwaf_object tmp{};
-                ddwaf_object_array_add(
-                    paths, ddwaf_object_stringl(&tmp, value.data(), value.size()));
-            }
+            auto object = owned_object::make_array(config_paths.size());
+            for (const auto &value : config_paths) { object.emplace_back(value); }
+            to_ref(paths) = object.move();
         }
         return config_paths.size();
     } catch (const std::exception &e) {
@@ -678,11 +675,6 @@ ddwaf_object *ddwaf_object_set_map(ddwaf_object *object, uint16_t capacity, ddwa
 ddwaf_object *ddwaf_object_array(ddwaf_object *object)
 {
     return ddwaf_object_set_array(object, 0, ddwaf_get_default_allocator());
-}
-
-ddwaf_object *ddwaf_object_map(ddwaf_object *object)
-{
-    return ddwaf_object_set_map(object, 0, ddwaf_get_default_allocator());
 }
 
 ddwaf_object *ddwaf_object_insert(ddwaf_object *array, ddwaf_allocator alloc)
