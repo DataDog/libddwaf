@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     if (context == nullptr) {
         ddwaf_destroy(handle);
         std::cout << "Failed to initialise context\n";

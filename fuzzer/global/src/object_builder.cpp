@@ -160,7 +160,7 @@ void build_map(Data *data, ddwaf_object *object, size_t deep)
             if (!ddwaf_object_map_addl(object, "", 0, &item)) {
                 ddwaf_object_free(&item);
             } else {
-                auto index = static_cast<std::size_t>(ddwaf_object_size(object) - 1);
+                auto index = static_cast<std::size_t>(ddwaf_object_get_size(object) - 1);
                 auto &key = object->via.map.ptr[index].key;
                 if (key.type == DDWAF_OBJ_STRING) {
                     // NOLINTNEXTLINE(hicpp-no-malloc)
@@ -200,22 +200,22 @@ ddwaf_object create_object(Data *data, size_t deep)
 
     switch (selector) {
     case 8:
-        ddwaf_object_invalid(&result);
+        ddwaf_object_set_invalid(&result);
         break;
     case 7:
-        ddwaf_object_null(&result);
+        ddwaf_object_set_null(&result);
         break;
     case 6:
-        ddwaf_object_float(&result, popDouble(data));
+        ddwaf_object_set_float(&result, popDouble(data));
         break;
     case 5:
-        ddwaf_object_bool(&result, popBoolean(data));
+        ddwaf_object_set_bool(&result, popBoolean(data));
         break;
     case 4:
-        ddwaf_object_unsigned(&result, popUnsignedInteger(data));
+        ddwaf_object_set_unsigned(&result, popUnsignedInteger(data));
         break;
     case 3:
-        ddwaf_object_signed(&result, popInteger(data));
+        ddwaf_object_set_signed(&result, popInteger(data));
         break;
     case 2:
         pop_string(data, &result);

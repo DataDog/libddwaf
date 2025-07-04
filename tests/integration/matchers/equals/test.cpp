@@ -20,7 +20,7 @@ TEST(TestEqualsMatcherIntegration, StringEquals)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object map = DDWAF_OBJECT_MAP;
@@ -55,12 +55,12 @@ TEST(TestEqualsMatcherIntegration, BoolEquals)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object map = DDWAF_OBJECT_MAP;
     ddwaf_object value;
-    ddwaf_object_bool(&value, false);
+    ddwaf_object_set_bool(&value, false);
     ddwaf_object_map_add(&map, "input", &value);
 
     ddwaf_object out;
@@ -92,12 +92,12 @@ TEST(TestEqualsMatcherIntegration, SignedEquals)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object map = DDWAF_OBJECT_MAP;
     ddwaf_object value;
-    ddwaf_object_signed(&value, -42);
+    ddwaf_object_set_signed(&value, -42);
     ddwaf_object_map_add(&map, "input", &value);
 
     ddwaf_object out;
@@ -127,12 +127,12 @@ TEST(TestEqualsMatcherIntegration, UnsignedEquals)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object map = DDWAF_OBJECT_MAP;
     ddwaf_object value;
-    ddwaf_object_unsigned(&value, 42);
+    ddwaf_object_set_unsigned(&value, 42);
     ddwaf_object_map_add(&map, "input", &value);
 
     ddwaf_object out;
@@ -164,12 +164,12 @@ TEST(TestEqualsMatcherIntegration, FloatEquals)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object map = DDWAF_OBJECT_MAP;
     ddwaf_object value;
-    ddwaf_object_float(&value, 42.01);
+    ddwaf_object_set_float(&value, 42.01);
     ddwaf_object_map_add(&map, "input", &value);
 
     ddwaf_object out;

@@ -28,7 +28,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
     ASSERT_NE(handle1, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle1);
+        ddwaf_context context = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -74,7 +74,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
     ASSERT_NE(handle2, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle2);
+        ddwaf_context context = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -104,7 +104,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
     ASSERT_NE(handle3, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle3);
+        ddwaf_context context = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -161,7 +161,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
     ASSERT_NE(handle1, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle1);
+        ddwaf_context context = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -207,7 +207,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
     ASSERT_NE(handle2, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle2);
+        ddwaf_context context = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -237,7 +237,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
     ASSERT_NE(handle3, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle3);
+        ddwaf_context context = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -293,7 +293,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
     ASSERT_NE(handle1, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle1);
+        ddwaf_context context = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -339,7 +339,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
     ASSERT_NE(handle2, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle2);
+        ddwaf_context context = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -375,7 +375,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
     ASSERT_NE(handle3, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle3);
+        ddwaf_context context = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -431,7 +431,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
     ASSERT_NE(handle1, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle1);
+        ddwaf_context context = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -477,7 +477,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
     ASSERT_NE(handle2, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle2);
+        ddwaf_context context = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -507,7 +507,7 @@ TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
     ASSERT_NE(handle3, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle3);
+        ddwaf_context context = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;

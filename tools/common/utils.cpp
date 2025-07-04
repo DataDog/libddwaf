@@ -56,22 +56,22 @@ ddwaf_object yaml_to_object(const Node& node)
             ddwaf_object arg{};
             if (node.Tag() == "?") {
                 try {
-                    ddwaf_object_unsigned(&arg, node.as<uint64_t>());
+                    ddwaf_object_set_unsigned(&arg, node.as<uint64_t>());
                     return arg;
                 } catch (...) {}
 
                 try {
-                    ddwaf_object_signed(&arg, node.as<int64_t>());
+                    ddwaf_object_set_signed(&arg, node.as<int64_t>());
                     return arg;
                 } catch (...) {}
 
                 try {
-                    ddwaf_object_float(&arg, node.as<double>());
+                    ddwaf_object_set_float(&arg, node.as<double>());
                     return arg;
                 } catch (...) {}
 
                 try {
-                    ddwaf_object_bool(&arg, node.as<bool>());
+                    ddwaf_object_set_bool(&arg, node.as<bool>());
                     return arg;
                 } catch (...) {}
             }
@@ -83,7 +83,7 @@ ddwaf_object yaml_to_object(const Node& node)
         case NodeType::Null:
         case NodeType::Undefined:
             ddwaf_object arg{};
-            ddwaf_object_invalid(&arg);
+            ddwaf_object_set_invalid(&arg);
             return arg;
     }
 
@@ -118,13 +118,13 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
     case DDWAF_OBJ_STRING:
     case DDWAF_OBJ_SMALL_STRING:
     case DDWAF_OBJ_LITERAL_STRING:
-        output = std::string{ddwaf_object_get_string(&obj, nullptr), ddwaf_object_length(&obj)};
+        output = std::string{ddwaf_object_get_string(&obj, nullptr), ddwaf_object_get_length(&obj)};
         break;
     case DDWAF_OBJ_MAP:
         output = YAML::Load("{}");
         for (unsigned i = 0; i < obj.via.map.size; i++) {
             const auto *child = ddwaf_object_at_key(&obj, i);
-            std::string key{ddwaf_object_get_string(child, nullptr), ddwaf_object_length(child)};
+            std::string key{ddwaf_object_get_string(child, nullptr), ddwaf_object_get_length(child)};
 
             YAML::Node value;
             object_to_yaml_helper(*ddwaf_object_at_value(&obj, i), value);
@@ -164,10 +164,10 @@ void json_to_object_helper(ddwaf_object *object, T &doc)
 {
     switch (doc.GetType()) {
     case rapidjson::kFalseType:
-        ddwaf_object_bool(object, false);
+        ddwaf_object_set_bool(object, false);
         break;
     case rapidjson::kTrueType:
-        ddwaf_object_bool(object, true);
+        ddwaf_object_set_bool(object, true);
         break;
     case rapidjson::kObjectType: {
         ddwaf_object_map(object);
@@ -197,19 +197,19 @@ void json_to_object_helper(ddwaf_object *object, T &doc)
     }
     case rapidjson::kNumberType: {
         if (doc.IsInt64()) {
-            ddwaf_object_signed(object, doc.GetInt64());
+            ddwaf_object_set_signed(object, doc.GetInt64());
         } else if (doc.IsUint64()) {
-            ddwaf_object_unsigned(object, doc.GetUint64());
+            ddwaf_object_set_unsigned(object, doc.GetUint64());
         } else if (doc.IsDouble()) {
-            ddwaf_object_float(object, doc.GetDouble());
+            ddwaf_object_set_float(object, doc.GetDouble());
         }
         break;
     }
     case rapidjson::kNullType:
-        ddwaf_object_null(object);
+        ddwaf_object_set_null(object);
         break;
     default:
-        ddwaf_object_invalid(object);
+        ddwaf_object_set_invalid(object);
         break;
     }
 }

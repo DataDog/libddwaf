@@ -13,9 +13,11 @@ class waf;
 class context_wrapper;
 class waf_builder;
 } // namespace ddwaf
+
 using ddwaf_handle = ddwaf::waf *;
 using ddwaf_context = ddwaf::context_wrapper *;
 using ddwaf_builder = ddwaf::waf_builder *;
+using ddwaf_allocator = void *;
 
 extern "C"
 {
@@ -88,6 +90,7 @@ typedef enum
 typedef struct _ddwaf_handle* ddwaf_handle;
 typedef struct _ddwaf_context* ddwaf_context;
 typedef struct _ddwaf_builder* ddwaf_builder;
+typedef struct _ddwaf_allocator* ddwaf_allocator;
 #endif
 
 typedef struct _ddwaf_config ddwaf_config;
@@ -288,7 +291,7 @@ const char *const *ddwaf_known_actions(const ddwaf_handle handle, uint32_t *size
  *
  * @note The WAF instance needs to be valid for the lifetime of the context.
  **/
-ddwaf_context ddwaf_context_init(const ddwaf_handle handle);
+ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_allocator output_alloc);
 
 /**
  * ddwaf_context_eval
@@ -470,8 +473,20 @@ uint32_t ddwaf_builder_get_config_paths(ddwaf_builder builder, ddwaf_object *pat
  */
 void ddwaf_builder_destroy(ddwaf_builder builder);
 
+ddwaf_allocator ddwaf_get_default_allocator();
+
+ddwaf_object* ddwaf_object_set_string(ddwaf_object *object, const char *string, size_t length, ddwaf_allocator alloc);
+ddwaf_object* ddwaf_object_set_string_literal(ddwaf_object *object, const char *string, size_t length);
+
+ddwaf_object *ddwaf_object_insert(ddwaf_object *array, ddwaf_allocator alloc);
+ddwaf_object *ddwaf_object_insert_key(ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
+ddwaf_object *ddwaf_object_insert_literal_key(ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
+
+
+/*********************/
+
 /**
- * ddwaf_object_invalid
+ * ddwaf_object_set_invalid
  *
  * Creates an invalid object.
  *
@@ -479,10 +494,10 @@ void ddwaf_builder_destroy(ddwaf_builder builder);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_invalid(ddwaf_object *object);
+ddwaf_object* ddwaf_object_set_invalid(ddwaf_object *object);
 
 /**
- * ddwaf_object_null
+ * ddwaf_object_set_null
  *
  * Creates an null object. Provides a different semantical value to invalid as
  * it can be used to signify that a value is null rather than of an unknown type.
@@ -491,7 +506,7 @@ ddwaf_object* ddwaf_object_invalid(ddwaf_object *object);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_null(ddwaf_object *object);
+ddwaf_object* ddwaf_object_set_null(ddwaf_object *object);
 
 /**
  * ddwaf_object_string
@@ -504,7 +519,6 @@ ddwaf_object* ddwaf_object_null(ddwaf_object *object);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_string(ddwaf_object *object, const char *string);
 
 /**
  * ddwaf_object_stringl
@@ -518,7 +532,6 @@ ddwaf_object* ddwaf_object_string(ddwaf_object *object, const char *string);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_stringl(ddwaf_object *object, const char *string, size_t length);
 
 /**
  * ddwaf_object_stringl_nc
@@ -531,36 +544,9 @@ ddwaf_object* ddwaf_object_stringl(ddwaf_object *object, const char *string, siz
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_stringl_nc(ddwaf_object *object, const char *string, size_t length);
 
 /**
- * ddwaf_object_string_from_unsigned
- *
- * Creates an object using an unsigned integer (64-bit). The resulting object
- * will contain a string created using the integer provided.
- *
- * @param object Object to perform the operation on. (nonnull)
- * @param value Integer to initialise the object with.
- *
- * @return A pointer to the passed object or NULL if the operation failed.
- **/
-ddwaf_object* ddwaf_object_string_from_unsigned(ddwaf_object *object, uint64_t value);
-
-/**
- * ddwaf_object_string_from_signed
- *
- * Creates an object using a signed integer (64-bit). The resulting object
- * will contain a string created using the integer provided.
- *
- * @param object Object to perform the operation on. (nonnull)
- * @param value Integer to initialise the object with.
- *
- * @return A pointer to the passed object or NULL if the operation failed.
- **/
-ddwaf_object* ddwaf_object_string_from_signed(ddwaf_object *object, int64_t value);
-
-/**
- * ddwaf_object_unsigned_force
+ * ddwaf_object_unsigned
  *
  * Creates an object using an unsigned integer (64-bit). The resulting object
  * will contain an unsigned integer as opposed to a string.
@@ -570,10 +556,10 @@ ddwaf_object* ddwaf_object_string_from_signed(ddwaf_object *object, int64_t valu
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_unsigned(ddwaf_object *object, uint64_t value);
+ddwaf_object* ddwaf_object_set_unsigned(ddwaf_object *object, uint64_t value);
 
 /**
- * ddwaf_object_signed_force
+ * ddwaf_object_set_signed
  *
  * Creates an object using a signed integer (64-bit). The resulting object
  * will contain a signed integer as opposed to a string.
@@ -583,10 +569,10 @@ ddwaf_object* ddwaf_object_unsigned(ddwaf_object *object, uint64_t value);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_signed(ddwaf_object *object, int64_t value);
+ddwaf_object* ddwaf_object_set_signed(ddwaf_object *object, int64_t value);
 
 /**
- * ddwaf_object_bool
+ * ddwaf_object_set_bool
  *
  * Creates an object using a boolean, the resulting object will contain a
  * boolean as opposed to a string.
@@ -596,7 +582,7 @@ ddwaf_object* ddwaf_object_signed(ddwaf_object *object, int64_t value);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_bool(ddwaf_object *object, bool value);
+ddwaf_object* ddwaf_object_set_bool(ddwaf_object *object, bool value);
 
 /**
  * ddwaf_object_float
@@ -609,7 +595,7 @@ ddwaf_object* ddwaf_object_bool(ddwaf_object *object, bool value);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_float(ddwaf_object *object, double value);
+ddwaf_object* ddwaf_object_set_float(ddwaf_object *object, double value);
 
 /**
  * ddwaf_object_array
@@ -620,10 +606,9 @@ ddwaf_object* ddwaf_object_float(ddwaf_object *object, double value);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_array(ddwaf_object *object);
 
 /**
- * ddwaf_object_map
+ * ddwaf_object_set_map
  *
  * Creates a map object, for key-value storage.
  *
@@ -631,7 +616,7 @@ ddwaf_object* ddwaf_object_array(ddwaf_object *object);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_map(ddwaf_object *object);
+ddwaf_object* ddwaf_object_set_map(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc);
 
 /**
  * ddwaf_object_array_add
@@ -643,7 +628,7 @@ ddwaf_object* ddwaf_object_map(ddwaf_object *object);
  *
  * @return The success or failure of the operation.
  **/
-bool ddwaf_object_array_add(ddwaf_object *array, ddwaf_object *object);
+ddwaf_object* ddwaf_object_set_array(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc);
 
 /**
  * ddwaf_object_map_add
@@ -657,7 +642,6 @@ bool ddwaf_object_array_add(ddwaf_object *array, ddwaf_object *object);
  *
  * @return The success or failure of the operation.
  **/
-bool ddwaf_object_map_add(ddwaf_object *map, const char *key, ddwaf_object *object);
 
 /**
  * ddwaf_object_map_addl
@@ -671,7 +655,6 @@ bool ddwaf_object_map_add(ddwaf_object *map, const char *key, ddwaf_object *obje
  *
  * @return The success or failure of the operation.
  **/
-bool ddwaf_object_map_addl(ddwaf_object *map, const char *key, size_t length, ddwaf_object *object);
 
 /**
  * ddwaf_object_map_addl_nc
@@ -686,10 +669,9 @@ bool ddwaf_object_map_addl(ddwaf_object *map, const char *key, size_t length, dd
  *
  * @return The success or failure of the operation.
  **/
-bool ddwaf_object_map_addl_nc(ddwaf_object *map, const char *key, size_t length, ddwaf_object *object);
 
 /**
- * ddwaf_object_type
+ * ddwaf_object_get_type
  *
  * Returns the type of the object.
  *
@@ -697,10 +679,10 @@ bool ddwaf_object_map_addl_nc(ddwaf_object *map, const char *key, size_t length,
  *
  * @return The object type of DDWAF_OBJ_INVALID if NULL.
  **/
-DDWAF_OBJ_TYPE ddwaf_object_type(const ddwaf_object *object);
+DDWAF_OBJ_TYPE ddwaf_object_get_type(const ddwaf_object *object);
 
 /**
- * ddwaf_object_size
+ * ddwaf_object_get_size
  *
  * Returns the size of the container object.
  *
@@ -708,10 +690,10 @@ DDWAF_OBJ_TYPE ddwaf_object_type(const ddwaf_object *object);
  *
  * @return The object size or 0 if the object is not a container (array, map).
  **/
-size_t ddwaf_object_size(const ddwaf_object *object);
+size_t ddwaf_object_get_size(const ddwaf_object *object);
 
 /**
- * ddwaf_object_length
+ * ddwaf_object_get_length
  *
  * Returns the length of the string object.
  *
@@ -719,7 +701,7 @@ size_t ddwaf_object_size(const ddwaf_object *object);
  *
  * @return The string length or 0 if the object is not a string.
  **/
-size_t ddwaf_object_length(const ddwaf_object *object);
+size_t ddwaf_object_get_length(const ddwaf_object *object);
 
 /**
  * ddwaf_object_get_string
@@ -823,6 +805,16 @@ const ddwaf_object* ddwaf_object_find(const ddwaf_object *object, const char *ke
  * ddwaf_object_clone
  **/
 ddwaf_object* ddwaf_object_clone(const ddwaf_object *source, ddwaf_object *destination);
+
+bool ddwaf_object_is_invalid(const ddwaf_object *object);
+bool ddwaf_object_is_null(const ddwaf_object *object);
+bool ddwaf_object_is_bool(const ddwaf_object *object);
+bool ddwaf_object_is_signed(const ddwaf_object *object);
+bool ddwaf_object_is_unsigned(const ddwaf_object *object);
+bool ddwaf_object_is_float(const ddwaf_object *object);
+bool ddwaf_object_is_string(const ddwaf_object *object);
+bool ddwaf_object_is_array(const ddwaf_object *object);
+bool ddwaf_object_is_map(const ddwaf_object *object);
 
 /**
  * ddwaf_object_free

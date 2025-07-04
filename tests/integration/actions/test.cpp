@@ -22,13 +22,15 @@ TEST(TestActionsIntegration, DefaultActions)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_object tmp;
+    auto *alloc = ddwaf_get_default_allocator();
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "block"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *child = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_string(child, STRL("block"), alloc);
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -52,8 +54,10 @@ TEST(TestActionsIntegration, DefaultActions)
     }
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "stack_trace"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *child = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_string(child, STRL("stack_trace"), alloc);
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -102,8 +106,10 @@ TEST(TestActionsIntegration, DefaultActions)
     }
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "extract_schema"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *child = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_string(child, STRL("extract_schema"), alloc);
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -127,8 +133,10 @@ TEST(TestActionsIntegration, DefaultActions)
     }
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "unblock"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *child = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_string(child, STRL("unblock"), alloc);
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -169,12 +177,14 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
-    ddwaf_object tmp;
+    auto *alloc = ddwaf_get_default_allocator();
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "block"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *child = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_string(child, STRL("block"), alloc);
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object res;
@@ -213,10 +223,12 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "block"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *child = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_string(child, STRL("block"), alloc);
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object res;
@@ -259,12 +271,14 @@ TEST(TestActionsIntegration, AddNewAction)
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
-    ddwaf_object tmp;
+    auto *alloc = ddwaf_get_default_allocator();
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "unblock"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *child = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_string(child, STRL("unblock"), alloc);
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object res;
@@ -302,10 +316,12 @@ TEST(TestActionsIntegration, AddNewAction)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "unblock"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *child = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_string(child, STRL("unblock"), alloc);
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object res;
@@ -344,11 +360,13 @@ TEST(TestActionsIntegration, EmptyOrInvalidActions)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_object tmp;
-    ddwaf_object parameter = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "block"));
+    auto *alloc = ddwaf_get_default_allocator();
+    ddwaf_object parameter;
+    ddwaf_object_set_map(&parameter, 1, alloc);
+    auto *child = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+    ddwaf_object_set_string(child, STRL("block"), alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object res;

@@ -49,7 +49,7 @@ TEST(TestEngineBuilderFunctional, BaseRules)
 
     // Test that the rules work
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object tmp;
         ddwaf_object root;
@@ -76,7 +76,7 @@ TEST(TestEngineBuilderFunctional, BaseRules)
 
     // Test that the old rules don't work and new ones do
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object tmp;
         ddwaf_object root;
@@ -128,7 +128,7 @@ TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
 
     // Test that both rules work
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object tmp;
         ddwaf_object root;
@@ -154,7 +154,7 @@ TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
 
     // Test that only the remaining rule works
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object tmp;
         ddwaf_object root;
@@ -196,7 +196,7 @@ TEST(TestEngineBuilderFunctional, CustomRules)
 
     // Test that the rules work
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object tmp;
         ddwaf_object root;
@@ -223,7 +223,7 @@ TEST(TestEngineBuilderFunctional, CustomRules)
 
     // Test that the old rules don't work and new ones do
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object tmp;
         ddwaf_object root;

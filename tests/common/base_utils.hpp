@@ -15,24 +15,6 @@
 #define LONG_TIME 1000000
 #define SHORT_TIME 1
 
-#define DDWAF_OBJECT_INVALID                                                                       \
-    {                                                                                              \
-        .type = DDWAF_OBJ_INVALID                                                                  \
-    }
-#define DDWAF_OBJECT_MAP                                                                           \
-    {                                                                                              \
-        .via                                                                                       \
-        {                                                                                          \
-            .map { .type = DDWAF_OBJ_MAP, .size = 0, .capacity = 0, .ptr = NULL }                  \
-        }                                                                                          \
-    }
-#define DDWAF_OBJECT_ARRAY                                                                         \
-    {                                                                                              \
-        .via                                                                                       \
-        {                                                                                          \
-            .array { .type = DDWAF_OBJ_ARRAY, .size = 0, .capacity = 0, .ptr = NULL }              \
-        }                                                                                          \
-    }
 #define LSTRARG(value) value, sizeof(value) - 1
 
 namespace ddwaf::test {

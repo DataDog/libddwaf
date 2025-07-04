@@ -38,22 +38,22 @@ ddwaf_object node_to_arg(const Node &node)
         ddwaf_object arg{};
         if (node.Tag() == "?") {
             try {
-                ddwaf_object_unsigned(&arg, node.as<uint64_t>());
+                ddwaf_object_set_unsigned(&arg, node.as<uint64_t>());
                 return arg;
             } catch (...) {}
 
             try {
-                ddwaf_object_signed(&arg, node.as<int64_t>());
+                ddwaf_object_set_signed(&arg, node.as<int64_t>());
                 return arg;
             } catch (...) {}
 
             try {
-                ddwaf_object_float(&arg, node.as<double>());
+                ddwaf_object_set_float(&arg, node.as<double>());
                 return arg;
             } catch (...) {}
 
             try {
-                ddwaf_object_bool(&arg, node.as<bool>());
+                ddwaf_object_set_bool(&arg, node.as<bool>());
                 return arg;
             } catch (...) {}
         }
@@ -65,7 +65,7 @@ ddwaf_object node_to_arg(const Node &node)
     case NodeType::Null:
     case NodeType::Undefined:
         ddwaf_object arg{};
-        ddwaf_object_invalid(&arg);
+        ddwaf_object_set_invalid(&arg);
         return arg;
     }
 
@@ -98,18 +98,18 @@ YAML::Emitter &operator<<(YAML::Emitter &out, const ddwaf_object &o)
     case DDWAF_OBJ_STRING:
     case DDWAF_OBJ_SMALL_STRING:
     case DDWAF_OBJ_LITERAL_STRING:
-        out << std::string{ddwaf_object_get_string(&o, nullptr), ddwaf_object_length(&o)};
+        out << std::string{ddwaf_object_get_string(&o, nullptr), ddwaf_object_get_length(&o)};
         break;
     case DDWAF_OBJ_ARRAY:
         out << YAML::BeginSeq;
-        for (std::size_t i = 0; i < ddwaf_object_size(&o); i++) {
+        for (std::size_t i = 0; i < ddwaf_object_get_size(&o); i++) {
             out << *ddwaf_object_at_value(&o, i);
         }
         out << YAML::EndSeq;
         break;
     case DDWAF_OBJ_MAP:
         out << YAML::BeginMap;
-        for (std::size_t i = 0; i < ddwaf_object_size(&o); i++) {
+        for (std::size_t i = 0; i < ddwaf_object_get_size(&o); i++) {
             out << YAML::Key << *ddwaf_object_at_key(&o, i);
             out << YAML::Value << *ddwaf_object_at_value(&o, i);
             ;

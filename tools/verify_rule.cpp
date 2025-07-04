@@ -38,7 +38,7 @@ bool runVectors(YAML::Node rule, ddwaf_handle handle, bool runPositiveMatches)
              ++vector, ++counter) {
             auto root = vector->as<ddwaf_object>();
             if (root.type != DDWAF_OBJ_INVALID) {
-                ddwaf_context ctx = ddwaf_context_init(handle);
+                ddwaf_context ctx = ddwaf_context_init(handle, ddwaf_get_default_allocator());
                 DDWAF_RET_CODE ret = ddwaf_context_eval(ctx, &root, nullptr, true, nullptr, LONG_TIME);
 
                 bool hadError = ret < DDWAF_OK;

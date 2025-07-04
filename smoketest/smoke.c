@@ -176,13 +176,13 @@ static void _hstring_write_pwargs(hstring *str, size_t depth,
     }
     case DDWAF_OBJ_ARRAY: {
         HSTRING_APPEND_CONST(str, "<ARRAY>\n");
-        for (size_t i = 0; i < ddwaf_object_size(pwargs); i++) {
+        for (size_t i = 0; i < ddwaf_object_get_size(pwargs); i++) {
             _hstring_write_pwargs(str, depth + 1, ddwaf_object_at_value(pwargs, i));
         }
         break;
     case DDWAF_OBJ_MAP: {
         HSTRING_APPEND_CONST(str, "<MAP>\n");
-        for (size_t i = 0; i < ddwaf_object_size(pwargs); i++) {
+        for (size_t i = 0; i < ddwaf_object_get_size(pwargs); i++) {
             const ddwaf_object *key = ddwaf_object_at_key(pwargs, i);
             size_t key_len;
             const char *key_data = ddwaf_object_get_string(key, &key_len);
@@ -245,7 +245,7 @@ int main() {
     }
 
 
-    ddwaf_context ctx = ddwaf_context_init(handle);
+    ddwaf_context ctx = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     if (!ctx) {
         puts("ctx is null");
         return 1;
@@ -260,7 +260,7 @@ int main() {
     
 
     const ddwaf_object *events = ddwaf_object_find(&result, "events", sizeof("events") - 1);
-    if (ddwaf_object_size(events) == 0) {
+    if (ddwaf_object_get_size(events) == 0) {
         puts("result is empty");
         return 1;
     }

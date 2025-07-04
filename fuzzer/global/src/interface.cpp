@@ -58,7 +58,7 @@ ddwaf_object yaml_to_object(const Node &node)
     case NodeType::Null:
     case NodeType::Undefined: {
         ddwaf_object arg;
-        ddwaf_object_invalid(&arg);
+        ddwaf_object_set_invalid(&arg);
         return arg;
     }
     }
@@ -103,7 +103,7 @@ ddwaf_handle init_waf()
 
 void run_waf(ddwaf_handle handle, ddwaf_object args, bool ephemeral, size_t timeLeftInUs)
 {
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     if (context == nullptr) {
         ddwaf_object_free(&args);
         return;

@@ -24,7 +24,7 @@ TEST(TestRulesCompatIntegration, VerifyBothBaseAndCompat)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -41,7 +41,7 @@ TEST(TestRulesCompatIntegration, VerifyBothBaseAndCompat)
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, LONG_TIME),
             DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
         EXPECT_EVENTS(result,
             {.id = "rule1",
@@ -61,12 +61,12 @@ TEST(TestRulesCompatIntegration, VerifyBothBaseAndCompat)
 
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
-        EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         const auto *tag = ddwaf_object_find(attributes, STRL("result.rule2"));
         EXPECT_NE(tag, nullptr);
-        EXPECT_TRUE((ddwaf_object_type(tag) & DDWAF_OBJ_STRING) != 0);
+        EXPECT_TRUE((ddwaf_object_get_type(tag) & DDWAF_OBJ_STRING) != 0);
 
         std::size_t length;
         const auto *str = ddwaf_object_get_string(tag, &length);
@@ -136,7 +136,7 @@ TEST(TestRulesCompatIntegration, DuplicateRules)
 
     ddwaf_object_free(&diagnostics);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -153,7 +153,7 @@ TEST(TestRulesCompatIntegration, DuplicateRules)
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, LONG_TIME),
             DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
         EXPECT_EVENTS(
             result, {.id = "rule1",
@@ -166,8 +166,8 @@ TEST(TestRulesCompatIntegration, DuplicateRules)
 
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
-        EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
         const auto *keep = ddwaf_object_find(&result, STRL("keep"));
         EXPECT_NE(keep, nullptr);

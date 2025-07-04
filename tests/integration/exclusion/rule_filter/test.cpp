@@ -22,7 +22,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRule)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
@@ -55,7 +55,7 @@ TEST(TestRuleFilterIntegration, ExcludeByType)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
@@ -88,7 +88,7 @@ TEST(TestRuleFilterIntegration, ExcludeByCategory)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
@@ -113,7 +113,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTags)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
@@ -147,7 +147,7 @@ TEST(TestRuleFilterIntegration, ExcludeAllWithCondition)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -164,7 +164,7 @@ TEST(TestRuleFilterIntegration, ExcludeAllWithCondition)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -209,7 +209,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithCondition)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -235,7 +235,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithCondition)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -281,7 +281,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithConditionAndTransformers)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -307,7 +307,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithConditionAndTransformers)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -351,7 +351,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTypeWithCondition)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -377,7 +377,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTypeWithCondition)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -422,7 +422,7 @@ TEST(TestRuleFilterIntegration, ExcludeByCategoryWithCondition)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -439,7 +439,7 @@ TEST(TestRuleFilterIntegration, ExcludeByCategoryWithCondition)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -484,7 +484,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTagsWithCondition)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -510,7 +510,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTagsWithCondition)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -554,7 +554,7 @@ TEST(TestRuleFilterIntegration, MonitorSingleRule)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
@@ -590,7 +590,7 @@ TEST(TestRuleFilterIntegration, AvoidHavingTwoMonitorOnActions)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
@@ -626,7 +626,7 @@ TEST(TestRuleFilterIntegration, MonitorBypassFilterModePrecedence)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
@@ -648,7 +648,7 @@ TEST(TestRuleFilterIntegration, MonitorCustomFilterModePrecedence)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
@@ -684,7 +684,7 @@ TEST(TestRuleFilterIntegration, BypassCustomFilterModePrecedence)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
@@ -707,7 +707,7 @@ TEST(TestRuleFilterIntegration, UnconditionalCustomFilterMode)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
@@ -745,7 +745,7 @@ TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
     ddwaf_object_free(&rule);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -773,7 +773,7 @@ TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -815,7 +815,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
     ASSERT_NE(handle1, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle1);
+        ddwaf_context context = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -851,7 +851,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
     ASSERT_NE(handle1, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle2);
+        ddwaf_context context = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -895,7 +895,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeNonblockingAction)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;

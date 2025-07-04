@@ -9,6 +9,7 @@
 
 #include "configuration/common/raw_configuration.hpp"
 #include "context.hpp"
+#include "memory_resource.hpp"
 #include "ruleset.hpp"
 #include "ruleset_info.hpp"
 #include "utils.hpp"
@@ -25,7 +26,11 @@ public:
     waf &operator=(waf &&) = default;
     ~waf() = default;
 
-    ddwaf::context_wrapper *create_context() { return new context_wrapper(ruleset_); }
+    ddwaf::context_wrapper *create_context(
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+    {
+        return new context_wrapper(ruleset_, alloc);
+    }
 
     [[nodiscard]] const std::vector<const char *> &get_root_addresses() const
     {
