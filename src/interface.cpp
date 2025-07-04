@@ -29,6 +29,7 @@
 #include "object.hpp"
 #include "object_store.hpp"
 #include "object_type.hpp"
+#include "pointer.hpp"
 #include "re2.h"
 #include "ruleset_info.hpp"
 #include "utils.hpp"
@@ -917,5 +918,51 @@ ddwaf_object *ddwaf_object_clone(const ddwaf_object *source, ddwaf_object *desti
 
     to_ref(destination) = view.clone().move();
     return destination;
+}
+
+bool ddwaf_object_is_invalid(const ddwaf_object *object)
+{
+    const object_view view{to_ptr(object)};
+    return view.has_value() && view.is_invalid();
+}
+bool ddwaf_object_is_null(const ddwaf_object *object)
+{
+    const object_view view{to_ptr(object)};
+    return view.has_value() && view.type() == object_type::null;
+}
+bool ddwaf_object_is_bool(const ddwaf_object *object)
+{
+    const object_view view{to_ptr(object)};
+    return view.has_value() && view.type() == object_type::boolean;
+}
+bool ddwaf_object_is_signed(const ddwaf_object *object)
+{
+    const object_view view{to_ptr(object)};
+    return view.has_value() && view.type() == object_type::int64;
+}
+bool ddwaf_object_is_unsigned(const ddwaf_object *object)
+{
+    const object_view view{to_ptr(object)};
+    return view.has_value() && view.type() == object_type::uint64;
+}
+bool ddwaf_object_is_float(const ddwaf_object *object)
+{
+    const object_view view{to_ptr(object)};
+    return view.has_value() && view.type() == object_type::float64;
+}
+bool ddwaf_object_is_string(const ddwaf_object *object)
+{
+    const object_view view{to_ptr(object)};
+    return view.has_value() && view.is_string();
+}
+bool ddwaf_object_is_array(const ddwaf_object *object)
+{
+    const object_view view{to_ptr(object)};
+    return view.has_value() && view.is_array();
+}
+bool ddwaf_object_is_map(const ddwaf_object *object)
+{
+    const object_view view{to_ptr(object)};
+    return view.has_value() && view.is_map();
 }
 }

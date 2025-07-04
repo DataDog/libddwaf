@@ -484,6 +484,15 @@ ddwaf_object *ddwaf_object_insert(ddwaf_object *array, ddwaf_allocator alloc);
 ddwaf_object *ddwaf_object_insert_key(ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
 ddwaf_object *ddwaf_object_insert_literal_key(ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
 
+bool ddwaf_object_is_invalid(const ddwaf_object *object);
+bool ddwaf_object_is_null(const ddwaf_object *object);
+bool ddwaf_object_is_bool(const ddwaf_object *object);
+bool ddwaf_object_is_signed(const ddwaf_object *object);
+bool ddwaf_object_is_unsigned(const ddwaf_object *object);
+bool ddwaf_object_is_float(const ddwaf_object *object);
+bool ddwaf_object_is_string(const ddwaf_object *object);
+bool ddwaf_object_is_array(const ddwaf_object *object);
+bool ddwaf_object_is_map(const ddwaf_object *object);
 /*********************/
 
 /**
