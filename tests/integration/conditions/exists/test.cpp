@@ -20,12 +20,12 @@ TEST(TestConditionExistsIntegration, AddressAvailable)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object map = DDWAF_OBJECT_MAP;
     ddwaf_object value;
-    ddwaf_object_map_add(&map, "input-1", ddwaf_object_invalid(&value));
+    ddwaf_object_map_add(&map, "input-1", ddwaf_object_set_invalid(&value));
 
     ddwaf_object out;
     ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -54,12 +54,12 @@ TEST(TestConditionExistsIntegration, AddressNotAvailable)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object map = DDWAF_OBJECT_MAP;
     ddwaf_object value;
-    ddwaf_object_map_add(&map, "input", ddwaf_object_invalid(&value));
+    ddwaf_object_map_add(&map, "input", ddwaf_object_set_invalid(&value));
 
     ddwaf_object out;
     ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
@@ -76,13 +76,13 @@ TEST(TestConditionExistsIntegration, KeyPathAvailable)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object intermediate = DDWAF_OBJECT_MAP;
     ddwaf_object map = DDWAF_OBJECT_MAP;
     ddwaf_object value;
-    ddwaf_object_map_add(&intermediate, "path", ddwaf_object_invalid(&value));
+    ddwaf_object_map_add(&intermediate, "path", ddwaf_object_set_invalid(&value));
     ddwaf_object_map_add(&map, "input-2", &intermediate);
 
     ddwaf_object out;
@@ -109,13 +109,13 @@ TEST(TestConditionExistsIntegration, KeyPathNotAvailable)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object intermediate = DDWAF_OBJECT_MAP;
     ddwaf_object map = DDWAF_OBJECT_MAP;
     ddwaf_object value;
-    ddwaf_object_map_add(&intermediate, "poth", ddwaf_object_invalid(&value));
+    ddwaf_object_map_add(&intermediate, "poth", ddwaf_object_set_invalid(&value));
     ddwaf_object_map_add(&map, "input-2", &intermediate);
 
     ddwaf_object out;
@@ -134,12 +134,12 @@ TEST(TestConditionExistsIntegration, AddressAvailableVariadicRule)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object map = DDWAF_OBJECT_MAP;
     ddwaf_object value;
-    ddwaf_object_map_add(&map, "input-3-1", ddwaf_object_invalid(&value));
+    ddwaf_object_map_add(&map, "input-3-1", ddwaf_object_set_invalid(&value));
 
     ddwaf_object out;
     ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -167,13 +167,13 @@ TEST(TestConditionExistsIntegration, KeyPathAvailableVariadicRule)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object intermediate = DDWAF_OBJECT_MAP;
     ddwaf_object map = DDWAF_OBJECT_MAP;
     ddwaf_object value;
-    ddwaf_object_map_add(&intermediate, "path", ddwaf_object_invalid(&value));
+    ddwaf_object_map_add(&intermediate, "path", ddwaf_object_set_invalid(&value));
     ddwaf_object_map_add(&map, "input-3-2", &intermediate);
 
     ddwaf_object out;
@@ -200,15 +200,15 @@ TEST(TestConditionExistsIntegration, AddressAvailableKeyPathNotAvailableVariadic
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object intermediate = DDWAF_OBJECT_MAP;
     ddwaf_object map = DDWAF_OBJECT_MAP;
     ddwaf_object value;
-    ddwaf_object_map_add(&intermediate, "poth", ddwaf_object_invalid(&value));
+    ddwaf_object_map_add(&intermediate, "poth", ddwaf_object_set_invalid(&value));
     ddwaf_object_map_add(&map, "input-3-2", &intermediate);
-    ddwaf_object_map_add(&map, "input-3-1", ddwaf_object_invalid(&value));
+    ddwaf_object_map_add(&map, "input-3-1", ddwaf_object_set_invalid(&value));
 
     ddwaf_object out;
     ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -236,12 +236,12 @@ TEST(TestConditionExistsNegatedIntegration, AddressAvailable)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object map = DDWAF_OBJECT_MAP;
     ddwaf_object value;
-    ddwaf_object_map_add(&map, "input-1", ddwaf_object_invalid(&value));
+    ddwaf_object_map_add(&map, "input-1", ddwaf_object_set_invalid(&value));
 
     ddwaf_object out;
     ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
@@ -259,12 +259,12 @@ TEST(TestConditionExistsNegatedIntegration, AddressNotAvailable)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object map = DDWAF_OBJECT_MAP;
     ddwaf_object value;
-    ddwaf_object_map_add(&map, "input", ddwaf_object_invalid(&value));
+    ddwaf_object_map_add(&map, "input", ddwaf_object_set_invalid(&value));
 
     // Even though the address isn't present, this test shouldn't result in a match
     // as the !exists operator only supports address + key path, since we can't
@@ -285,13 +285,13 @@ TEST(TestConditionExistsNegatedIntegration, KeyPathNotAvailable)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object intermediate = DDWAF_OBJECT_MAP;
     ddwaf_object map = DDWAF_OBJECT_MAP;
     ddwaf_object value;
-    ddwaf_object_map_add(&intermediate, "poth", ddwaf_object_invalid(&value));
+    ddwaf_object_map_add(&intermediate, "poth", ddwaf_object_set_invalid(&value));
     ddwaf_object_map_add(&map, "input-2", &intermediate);
 
     ddwaf_object out;
@@ -318,13 +318,13 @@ TEST(TestConditionExistsNegatedIntegration, KeyPathAvailable)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object intermediate = DDWAF_OBJECT_MAP;
     ddwaf_object map = DDWAF_OBJECT_MAP;
     ddwaf_object value;
-    ddwaf_object_map_add(&intermediate, "path", ddwaf_object_invalid(&value));
+    ddwaf_object_map_add(&intermediate, "path", ddwaf_object_set_invalid(&value));
     ddwaf_object_map_add(&map, "input-2", &intermediate);
 
     ddwaf_object out;

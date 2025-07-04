@@ -16,7 +16,7 @@ constexpr std::string_view base_dir = "integration/diagnostics/v1/";
 
 void run_test(ddwaf_handle handle)
 {
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object param, arg2, tmp;

@@ -65,7 +65,7 @@ ddwaf_object generate_rule_data(const std::vector<std::string>& ip_set)
     for (const auto& ip : ip_set) {
         ddwaf_object data_point;
         ddwaf_object_map(&data_point);
-        ddwaf_object_map_add(&data_point, "expiration", ddwaf_object_unsigned_force(&tmp, 0));
+        ddwaf_object_map_add(&data_point, "expiration", ddwaf_object_set_unsigned_force(&tmp, 0));
 
         ddwaf_object_map_add(&data_point, "value", ddwaf_object_stringl(&tmp, ip.c_str(), ip.size()));
 

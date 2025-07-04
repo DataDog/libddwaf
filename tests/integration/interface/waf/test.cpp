@@ -52,7 +52,7 @@ TEST(TestWafIntegration, HandleBad)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object_string(&object, "value");
@@ -111,7 +111,7 @@ TEST(TestWafIntegration, HandleLifetime)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -122,7 +122,7 @@ TEST(TestWafIntegration, HandleLifetime)
     ddwaf_object param_key = DDWAF_OBJECT_ARRAY;
     ddwaf_object param_val = DDWAF_OBJECT_ARRAY;
 
-    ddwaf_object_array_add(&param_key, ddwaf_object_string_from_unsigned(&tmp, 4242));
+    ddwaf_object_array_add(&param_key, ddwaf_object_set_unsigned(&tmp, 4242));
     ddwaf_object_array_add(&param_key, ddwaf_object_string(&tmp, "randomString"));
 
     ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule1"));
@@ -147,10 +147,10 @@ TEST(TestWafIntegration, HandleLifetimeMultipleContexts)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle);
+    ddwaf_context context2 = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context2, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -161,7 +161,7 @@ TEST(TestWafIntegration, HandleLifetimeMultipleContexts)
     ddwaf_object param_key = DDWAF_OBJECT_ARRAY;
     ddwaf_object param_val = DDWAF_OBJECT_ARRAY;
 
-    ddwaf_object_array_add(&param_key, ddwaf_object_string_from_unsigned(&tmp, 4242));
+    ddwaf_object_array_add(&param_key, ddwaf_object_set_unsigned(&tmp, 4242));
     ddwaf_object_array_add(&param_key, ddwaf_object_string(&tmp, "randomString"));
 
     ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule1"));
@@ -223,7 +223,7 @@ TEST(TestWafIntegration, PreloadRuleData)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -238,7 +238,7 @@ TEST(TestWafIntegration, PreloadRuleData)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -266,7 +266,7 @@ TEST(TestWafIntegration, PreloadRuleData)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -280,7 +280,7 @@ TEST(TestWafIntegration, PreloadRuleData)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
@@ -311,7 +311,7 @@ TEST(TestWafIntegration, UpdateRules)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
     ddwaf_builder_remove_config(builder, "default", sizeof("default") - 1);
@@ -323,7 +323,7 @@ TEST(TestWafIntegration, UpdateRules)
     ASSERT_NE(new_handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context2 = ddwaf_context_init(new_handle);
+    ddwaf_context context2 = ddwaf_context_init(new_handle, ddwaf_get_default_allocator());
     ASSERT_NE(context2, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -369,7 +369,7 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByID)
     auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
     {
@@ -382,7 +382,7 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByID)
     auto *handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
     ASSERT_NE(context2, nullptr);
 
     ddwaf_object tmp;
@@ -409,7 +409,7 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByID)
     auto *handle3 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle3, nullptr);
 
-    ddwaf_context context3 = ddwaf_context_init(handle3);
+    ddwaf_context context3 = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
     ASSERT_NE(context3, nullptr);
 
     {
@@ -445,7 +445,7 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByTags)
     auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
     {
@@ -458,7 +458,7 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByTags)
     auto *handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
     ASSERT_NE(context2, nullptr);
 
     {
@@ -488,10 +488,10 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByTags)
     auto *handle3 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle3, nullptr);
 
-    context2 = ddwaf_context_init(handle2);
+    context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
     ASSERT_NE(context2, nullptr);
 
-    ddwaf_context context3 = ddwaf_context_init(handle3);
+    ddwaf_context context3 = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
     ASSERT_NE(context3, nullptr);
 
     {
@@ -561,10 +561,10 @@ TEST(TestWafIntegration, UpdateActionsByID)
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object tmp;
@@ -592,10 +592,10 @@ TEST(TestWafIntegration, UpdateActionsByID)
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object tmp;
@@ -638,10 +638,10 @@ TEST(TestWafIntegration, UpdateActionsByID)
     }
 
     {
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
         ASSERT_NE(context3, nullptr);
 
         ddwaf_object tmp;
@@ -714,10 +714,10 @@ TEST(TestWafIntegration, UpdateActionsByTags)
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object tmp;
@@ -745,10 +745,10 @@ TEST(TestWafIntegration, UpdateActionsByTags)
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object tmp;
@@ -805,10 +805,10 @@ TEST(TestWafIntegration, UpdateTagsByID)
     ASSERT_NE(handle2, nullptr);
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object tmp;
@@ -855,10 +855,10 @@ TEST(TestWafIntegration, UpdateTagsByID)
     auto *handle3 = ddwaf_builder_build_instance(builder);
 
     {
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
         ASSERT_NE(context3, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object tmp;
@@ -935,10 +935,10 @@ TEST(TestWafIntegration, UpdateTagsByTags)
     ASSERT_NE(handle2, nullptr);
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object tmp;
@@ -982,10 +982,10 @@ TEST(TestWafIntegration, UpdateTagsByTags)
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object tmp;
@@ -1028,10 +1028,10 @@ TEST(TestWafIntegration, UpdateTagsByTags)
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object tmp;
@@ -1078,10 +1078,10 @@ TEST(TestWafIntegration, UpdateTagsByTags)
     auto *handle3 = ddwaf_builder_build_instance(builder);
 
     {
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
         ASSERT_NE(context3, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object tmp;
@@ -1157,10 +1157,10 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
     ASSERT_NE(handle2, nullptr);
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object tmp;
@@ -1221,10 +1221,10 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
     ASSERT_NE(handle3, nullptr);
 
     {
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
         ASSERT_NE(context3, nullptr);
 
         ddwaf_object tmp;
@@ -1285,10 +1285,10 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
     ASSERT_NE(handle4, nullptr);
 
     {
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
         ASSERT_NE(context3, nullptr);
 
-        ddwaf_context context4 = ddwaf_context_init(handle4);
+        ddwaf_context context4 = ddwaf_context_init(handle4, ddwaf_get_default_allocator());
         ASSERT_NE(context4, nullptr);
 
         ddwaf_object tmp;
@@ -1373,13 +1373,13 @@ TEST(TestWafIntegration, UpdateRuleData)
     auto *handle3 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle3, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
     ASSERT_NE(context2, nullptr);
 
-    ddwaf_context context3 = ddwaf_context_init(handle3);
+    ddwaf_context context3 = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
     ASSERT_NE(context3, nullptr);
 
     ddwaf_object tmp;
@@ -1446,10 +1446,10 @@ TEST(TestWafIntegration, UpdateAndRevertRuleData)
 
     ddwaf_object tmp;
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -1470,10 +1470,10 @@ TEST(TestWafIntegration, UpdateAndRevertRuleData)
     ASSERT_NE(handle3, nullptr);
 
     {
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
         ASSERT_NE(context3, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -1523,10 +1523,10 @@ TEST(TestWafIntegration, UpdateRuleExclusions)
     ASSERT_NE(handle2, nullptr);
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object tmp;
@@ -1543,10 +1543,10 @@ TEST(TestWafIntegration, UpdateRuleExclusions)
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object tmp;
@@ -1568,10 +1568,10 @@ TEST(TestWafIntegration, UpdateRuleExclusions)
     ASSERT_NE(handle3, nullptr);
 
     {
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
         ASSERT_NE(context3, nullptr);
 
         ddwaf_object tmp;
@@ -1620,10 +1620,10 @@ TEST(TestWafIntegration, UpdateInputExclusions)
     ASSERT_NE(handle2, nullptr);
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object tmp;
@@ -1640,10 +1640,10 @@ TEST(TestWafIntegration, UpdateInputExclusions)
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object tmp;
@@ -1660,10 +1660,10 @@ TEST(TestWafIntegration, UpdateInputExclusions)
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object tmp;
@@ -1685,10 +1685,10 @@ TEST(TestWafIntegration, UpdateInputExclusions)
     ASSERT_NE(handle3, nullptr);
 
     {
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
         ASSERT_NE(context3, nullptr);
 
         ddwaf_object tmp;
@@ -1739,10 +1739,10 @@ TEST(TestWafIntegration, UpdateEverything)
     ASSERT_NE(handle2, nullptr);
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object tmp;
@@ -1760,10 +1760,10 @@ TEST(TestWafIntegration, UpdateEverything)
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
         ddwaf_object tmp;
@@ -1795,10 +1795,10 @@ TEST(TestWafIntegration, UpdateEverything)
     ASSERT_NE(handle3, nullptr);
 
     {
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
         ASSERT_NE(context3, nullptr);
 
         ddwaf_object tmp;
@@ -1827,10 +1827,10 @@ TEST(TestWafIntegration, UpdateEverything)
     }
 
     {
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
         ASSERT_NE(context3, nullptr);
 
         ddwaf_object tmp;
@@ -1863,10 +1863,10 @@ TEST(TestWafIntegration, UpdateEverything)
     ASSERT_NE(handle4, nullptr);
 
     {
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
         ASSERT_NE(context3, nullptr);
 
-        ddwaf_context context4 = ddwaf_context_init(handle4);
+        ddwaf_context context4 = ddwaf_context_init(handle4, ddwaf_get_default_allocator());
         ASSERT_NE(context4, nullptr);
 
         ddwaf_object tmp;
@@ -1895,7 +1895,7 @@ TEST(TestWafIntegration, UpdateEverything)
     }
 
     {
-        ddwaf_context context4 = ddwaf_context_init(handle4);
+        ddwaf_context context4 = ddwaf_context_init(handle4, ddwaf_get_default_allocator());
         ASSERT_NE(context4, nullptr);
 
         ddwaf_object tmp;
@@ -1925,10 +1925,10 @@ TEST(TestWafIntegration, UpdateEverything)
     ASSERT_NE(handle5, nullptr);
 
     {
-        ddwaf_context context4 = ddwaf_context_init(handle4);
+        ddwaf_context context4 = ddwaf_context_init(handle4, ddwaf_get_default_allocator());
         ASSERT_NE(context4, nullptr);
 
-        ddwaf_context context5 = ddwaf_context_init(handle5);
+        ddwaf_context context5 = ddwaf_context_init(handle5, ddwaf_get_default_allocator());
         ASSERT_NE(context5, nullptr);
 
         ddwaf_object tmp;
@@ -1959,10 +1959,10 @@ TEST(TestWafIntegration, UpdateEverything)
     }
 
     {
-        ddwaf_context context4 = ddwaf_context_init(handle4);
+        ddwaf_context context4 = ddwaf_context_init(handle4, ddwaf_get_default_allocator());
         ASSERT_NE(context4, nullptr);
 
-        ddwaf_context context5 = ddwaf_context_init(handle5);
+        ddwaf_context context5 = ddwaf_context_init(handle5, ddwaf_get_default_allocator());
         ASSERT_NE(context5, nullptr);
 
         ddwaf_object tmp;
@@ -1979,10 +1979,10 @@ TEST(TestWafIntegration, UpdateEverything)
     }
 
     {
-        ddwaf_context context4 = ddwaf_context_init(handle4);
+        ddwaf_context context4 = ddwaf_context_init(handle4, ddwaf_get_default_allocator());
         ASSERT_NE(context4, nullptr);
 
-        ddwaf_context context5 = ddwaf_context_init(handle5);
+        ddwaf_context context5 = ddwaf_context_init(handle5, ddwaf_get_default_allocator());
         ASSERT_NE(context5, nullptr);
 
         ddwaf_object tmp;
@@ -2026,10 +2026,10 @@ TEST(TestWafIntegration, UpdateEverything)
     ASSERT_NE(handle6, nullptr);
 
     {
-        ddwaf_context context5 = ddwaf_context_init(handle5);
+        ddwaf_context context5 = ddwaf_context_init(handle5, ddwaf_get_default_allocator());
         ASSERT_NE(context5, nullptr);
 
-        ddwaf_context context6 = ddwaf_context_init(handle6);
+        ddwaf_context context6 = ddwaf_context_init(handle6, ddwaf_get_default_allocator());
         ASSERT_NE(context6, nullptr);
 
         ddwaf_object tmp;
@@ -2058,10 +2058,10 @@ TEST(TestWafIntegration, UpdateEverything)
     }
 
     {
-        ddwaf_context context5 = ddwaf_context_init(handle5);
+        ddwaf_context context5 = ddwaf_context_init(handle5, ddwaf_get_default_allocator());
         ASSERT_NE(context5, nullptr);
 
-        ddwaf_context context6 = ddwaf_context_init(handle6);
+        ddwaf_context context6 = ddwaf_context_init(handle6, ddwaf_get_default_allocator());
         ASSERT_NE(context6, nullptr);
 
         ddwaf_object tmp;
@@ -2092,7 +2092,7 @@ TEST(TestWafIntegration, UpdateEverything)
     }
 
     {
-        ddwaf_context context6 = ddwaf_context_init(handle6);
+        ddwaf_context context6 = ddwaf_context_init(handle6, ddwaf_get_default_allocator());
         ASSERT_NE(context6, nullptr);
 
         ddwaf_object tmp;
@@ -2114,10 +2114,10 @@ TEST(TestWafIntegration, UpdateEverything)
     ASSERT_NE(handle7, nullptr);
 
     {
-        ddwaf_context context6 = ddwaf_context_init(handle6);
+        ddwaf_context context6 = ddwaf_context_init(handle6, ddwaf_get_default_allocator());
         ASSERT_NE(context6, nullptr);
 
-        ddwaf_context context7 = ddwaf_context_init(handle7);
+        ddwaf_context context7 = ddwaf_context_init(handle7, ddwaf_get_default_allocator());
         ASSERT_NE(context7, nullptr);
 
         ddwaf_object tmp;
@@ -2154,10 +2154,10 @@ TEST(TestWafIntegration, UpdateEverything)
     ASSERT_NE(handle8, nullptr);
 
     {
-        ddwaf_context context7 = ddwaf_context_init(handle7);
+        ddwaf_context context7 = ddwaf_context_init(handle7, ddwaf_get_default_allocator());
         ASSERT_NE(context7, nullptr);
 
-        ddwaf_context context8 = ddwaf_context_init(handle8);
+        ddwaf_context context8 = ddwaf_context_init(handle8, ddwaf_get_default_allocator());
         ASSERT_NE(context8, nullptr);
 
         ddwaf_object tmp;
@@ -2186,10 +2186,10 @@ TEST(TestWafIntegration, UpdateEverything)
     }
 
     {
-        ddwaf_context context7 = ddwaf_context_init(handle7);
+        ddwaf_context context7 = ddwaf_context_init(handle7, ddwaf_get_default_allocator());
         ASSERT_NE(context7, nullptr);
 
-        ddwaf_context context8 = ddwaf_context_init(handle8);
+        ddwaf_context context8 = ddwaf_context_init(handle8, ddwaf_get_default_allocator());
         ASSERT_NE(context8, nullptr);
 
         ddwaf_object tmp;
@@ -2223,10 +2223,10 @@ TEST(TestWafIntegration, UpdateEverything)
     ASSERT_NE(handle9, nullptr);
 
     {
-        ddwaf_context context8 = ddwaf_context_init(handle8);
+        ddwaf_context context8 = ddwaf_context_init(handle8, ddwaf_get_default_allocator());
         ASSERT_NE(context8, nullptr);
 
-        ddwaf_context context9 = ddwaf_context_init(handle9);
+        ddwaf_context context9 = ddwaf_context_init(handle9, ddwaf_get_default_allocator());
         ASSERT_NE(context9, nullptr);
 
         ddwaf_object tmp;
@@ -2253,10 +2253,10 @@ TEST(TestWafIntegration, UpdateEverything)
     }
 
     {
-        ddwaf_context context8 = ddwaf_context_init(handle8);
+        ddwaf_context context8 = ddwaf_context_init(handle8, ddwaf_get_default_allocator());
         ASSERT_NE(context8, nullptr);
 
-        ddwaf_context context9 = ddwaf_context_init(handle9);
+        ddwaf_context context9 = ddwaf_context_init(handle9, ddwaf_get_default_allocator());
         ASSERT_NE(context9, nullptr);
 
         ddwaf_object tmp;
@@ -2655,9 +2655,9 @@ TEST(TestWafIntegration, KnownActionsNullHandle)
 std::unordered_set<std::string_view> object_to_string_set(const ddwaf_object *array)
 {
     std::unordered_set<std::string_view> set;
-    for (std::size_t i = 0; i < ddwaf_object_size(array); ++i) {
+    for (std::size_t i = 0; i < ddwaf_object_get_size(array); ++i) {
         const ddwaf_object *child = ddwaf_object_at_value(array, i);
-        EXPECT_TRUE((ddwaf_object_type(child) & DDWAF_OBJ_STRING) != 0);
+        EXPECT_TRUE((ddwaf_object_get_type(child) & DDWAF_OBJ_STRING) != 0);
 
         std::size_t length;
         const char *str = ddwaf_object_get_string(child, &length);
@@ -2680,8 +2680,8 @@ TEST(TestWafIntegration, GetConfigPathSingleConfig)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
 
         EXPECT_EQ(count, 1);
-        EXPECT_EQ(ddwaf_object_size(&paths), 1);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
@@ -2725,8 +2725,8 @@ TEST(TestWafIntegration, GetConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
 
         EXPECT_EQ(count, 3);
-        EXPECT_EQ(ddwaf_object_size(&paths), 3);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 3);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
@@ -2747,8 +2747,8 @@ TEST(TestWafIntegration, GetConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
 
         EXPECT_EQ(count, 2);
-        EXPECT_EQ(ddwaf_object_size(&paths), 2);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 2);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
@@ -2768,8 +2768,8 @@ TEST(TestWafIntegration, GetConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
 
         EXPECT_EQ(count, 1);
-        EXPECT_EQ(ddwaf_object_size(&paths), 1);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
@@ -2788,8 +2788,8 @@ TEST(TestWafIntegration, GetConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
 
         EXPECT_EQ(count, 0);
-        EXPECT_EQ(ddwaf_object_size(&paths), 0);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 0);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         ddwaf_object_free(&paths);
     }
@@ -2815,8 +2815,8 @@ TEST(TestWafIntegration, GetFilteredConfigPathSingleConfig)
         ddwaf_object paths;
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM_DD/.*"));
         EXPECT_EQ(count, 1);
-        EXPECT_EQ(ddwaf_object_size(&paths), 1);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
@@ -2834,8 +2834,8 @@ TEST(TestWafIntegration, GetFilteredConfigPathSingleConfig)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM/.*"));
 
         EXPECT_EQ(count, 0);
-        EXPECT_EQ(ddwaf_object_size(&paths), 0);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 0);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         ddwaf_object_free(&paths);
     }
@@ -2876,8 +2876,8 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^random"));
 
         EXPECT_EQ(count, 0);
-        EXPECT_EQ(ddwaf_object_size(&paths), 0);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 0);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         ddwaf_object_free(&paths);
     }
@@ -2892,8 +2892,8 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM.*"));
 
         EXPECT_EQ(count, 3);
-        EXPECT_EQ(ddwaf_object_size(&paths), 3);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 3);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
@@ -2913,8 +2913,8 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM_DD/.*"));
 
         EXPECT_EQ(count, 1);
-        EXPECT_EQ(ddwaf_object_size(&paths), 1);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
@@ -2932,8 +2932,8 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM_D.*"));
 
         EXPECT_EQ(count, 2);
-        EXPECT_EQ(ddwaf_object_size(&paths), 2);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 2);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
@@ -2952,8 +2952,8 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM/.*"));
 
         EXPECT_EQ(count, 1);
-        EXPECT_EQ(ddwaf_object_size(&paths), 1);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM/overrides"));
@@ -2973,8 +2973,8 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM_D.*"));
 
         EXPECT_EQ(count, 2);
-        EXPECT_EQ(ddwaf_object_size(&paths), 2);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 2);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
@@ -2994,8 +2994,8 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM_DD/.*"));
 
         EXPECT_EQ(count, 1);
-        EXPECT_EQ(ddwaf_object_size(&paths), 1);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
@@ -3013,8 +3013,8 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^random"));
 
         EXPECT_EQ(count, 0);
-        EXPECT_EQ(ddwaf_object_size(&paths), 0);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 0);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         ddwaf_object_free(&paths);
     }
@@ -3030,8 +3030,8 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM.*"));
 
         EXPECT_EQ(count, 0);
-        EXPECT_EQ(ddwaf_object_size(&paths), 0);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 0);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         ddwaf_object_free(&paths);
     }

@@ -34,7 +34,7 @@ TEST(TestFingerprintIntegration, Postprocessor)
     EXPECT_TRUE(address_set.contains("usr.session_id"));
     EXPECT_TRUE(address_set.contains("waf.context.processor"));
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object tmp;
@@ -43,11 +43,11 @@ TEST(TestFingerprintIntegration, Postprocessor)
     ddwaf_object settings = DDWAF_OBJECT_MAP;
 
     ddwaf_object body = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&body, "key", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&body, "key", ddwaf_object_set_invalid(&tmp));
     ddwaf_object_map_add(&map, "server.request.body", &body);
 
     ddwaf_object query = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&query, "key", ddwaf_object_set_invalid(&tmp));
     ddwaf_object_map_add(&map, "server.request.query", &query);
 
     ddwaf_object_map_add(
@@ -56,27 +56,27 @@ TEST(TestFingerprintIntegration, Postprocessor)
 
     ddwaf_object headers;
     ddwaf_object_map(&headers);
-    ddwaf_object_map_add(&headers, "referer", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "connection", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "content-encoding", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "te", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "content-type", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "referer", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "connection", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "content-encoding", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "te", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "content-type", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_set_invalid(&tmp));
     ddwaf_object_map_add(&headers, "user-agent", ddwaf_object_string(&tmp, "Random"));
     ddwaf_object_map_add(&headers, "x-forwarded-for", ddwaf_object_string(&tmp, "::1"));
-    ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_set_invalid(&tmp));
 
     ddwaf_object_map_add(&map, "server.request.headers.no_cookies", &headers);
 
@@ -94,7 +94,7 @@ TEST(TestFingerprintIntegration, Postprocessor)
     ddwaf_object_map_add(&map, "usr.id", ddwaf_object_string(&tmp, "admin"));
     ddwaf_object_map_add(&map, "usr.session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
 
-    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
+    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_set_bool(&tmp, true));
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_object out;
@@ -103,7 +103,7 @@ TEST(TestFingerprintIntegration, Postprocessor)
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 4);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 4);
 
     auto derivatives = test::object_to_map(*attributes);
     EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3-2c70e12b-2c70e12b");
@@ -138,7 +138,7 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
     EXPECT_TRUE(address_set.contains("usr.session_id"));
     EXPECT_TRUE(address_set.contains("waf.context.processor"));
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     {
@@ -153,31 +153,31 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
 
         ddwaf_object headers;
         ddwaf_object_map(&headers);
-        ddwaf_object_map_add(&headers, "referer", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "connection", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "content-encoding", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "te", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "content-type", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "accept", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "referer", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "connection", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "content-encoding", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "te", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "content-type", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "accept", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_set_invalid(&tmp));
         ddwaf_object_map_add(&headers, "user-agent", ddwaf_object_string(&tmp, "Random"));
         ddwaf_object_map_add(&headers, "x-forwarded-for", ddwaf_object_string(&tmp, "::1"));
-        ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_set_invalid(&tmp));
 
         ddwaf_object_map_add(&map, "server.request.headers.no_cookies", &headers);
 
-        ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
+        ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_set_bool(&tmp, true));
         ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
         ddwaf_object out;
@@ -186,7 +186,7 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 3);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 3);
 
         auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3--");
@@ -202,7 +202,7 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         ddwaf_object map = DDWAF_OBJECT_MAP;
 
         ddwaf_object body = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&body, "key", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&body, "key", ddwaf_object_set_invalid(&tmp));
         ddwaf_object_map_add(&map, "server.request.body", &body);
 
         ddwaf_object out;
@@ -211,7 +211,7 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3--2c70e12b");
@@ -225,7 +225,7 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         ddwaf_object map = DDWAF_OBJECT_MAP;
 
         ddwaf_object query = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&query, "key", ddwaf_object_set_invalid(&tmp));
         ddwaf_object_map_add(&map, "server.request.query", &query);
 
         ddwaf_object out;
@@ -234,7 +234,7 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(
@@ -266,7 +266,7 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(derivatives["_dd.appsec.fp.session"], "ssn--df6143bc-60ba1602-");
@@ -287,7 +287,7 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(derivatives["_dd.appsec.fp.session"], "ssn-8c6976e5-df6143bc-60ba1602-");
@@ -307,7 +307,7 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(
@@ -346,7 +346,7 @@ TEST(TestFingerprintIntegration, Preprocessor)
     EXPECT_TRUE(address_set.contains("_dd.appsec.fp.http.network"));
     EXPECT_TRUE(address_set.contains("_dd.appsec.fp.session"));
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object tmp;
@@ -355,11 +355,11 @@ TEST(TestFingerprintIntegration, Preprocessor)
     ddwaf_object settings = DDWAF_OBJECT_MAP;
 
     ddwaf_object body = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&body, "key", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&body, "key", ddwaf_object_set_invalid(&tmp));
     ddwaf_object_map_add(&map, "server.request.body", &body);
 
     ddwaf_object query = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&query, "key", ddwaf_object_set_invalid(&tmp));
     ddwaf_object_map_add(&map, "server.request.query", &query);
 
     ddwaf_object_map_add(
@@ -368,27 +368,27 @@ TEST(TestFingerprintIntegration, Preprocessor)
 
     ddwaf_object headers;
     ddwaf_object_map(&headers);
-    ddwaf_object_map_add(&headers, "referer", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "connection", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "content-encoding", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "te", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "content-type", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "referer", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "connection", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "content-encoding", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "te", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "content-type", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_set_invalid(&tmp));
     ddwaf_object_map_add(&headers, "user-agent", ddwaf_object_string(&tmp, "Random"));
     ddwaf_object_map_add(&headers, "x-forwarded-for", ddwaf_object_string(&tmp, "::1"));
-    ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_set_invalid(&tmp));
 
     ddwaf_object_map_add(&map, "server.request.headers.no_cookies", &headers);
 
@@ -406,7 +406,7 @@ TEST(TestFingerprintIntegration, Preprocessor)
     ddwaf_object_map_add(&map, "usr.id", ddwaf_object_string(&tmp, "admin"));
     ddwaf_object_map_add(&map, "usr.session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
 
-    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
+    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_set_bool(&tmp, true));
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_object out;
@@ -461,7 +461,7 @@ TEST(TestFingerprintIntegration, Preprocessor)
                 }}}}}, );
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 0);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
     ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
@@ -494,7 +494,7 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
     EXPECT_TRUE(address_set.contains("_dd.appsec.fp.http.network"));
     EXPECT_TRUE(address_set.contains("_dd.appsec.fp.session"));
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     {
@@ -509,31 +509,31 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
 
         ddwaf_object headers;
         ddwaf_object_map(&headers);
-        ddwaf_object_map_add(&headers, "referer", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "connection", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "content-encoding", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "te", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "content-type", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "accept", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "referer", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "connection", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "content-encoding", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "te", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "content-type", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "accept", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_set_invalid(&tmp));
         ddwaf_object_map_add(&headers, "user-agent", ddwaf_object_string(&tmp, "Random"));
         ddwaf_object_map_add(&headers, "x-forwarded-for", ddwaf_object_string(&tmp, "::1"));
-        ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_set_invalid(&tmp));
 
         ddwaf_object_map_add(&map, "server.request.headers.no_cookies", &headers);
 
-        ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
+        ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_set_bool(&tmp, true));
         ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
         ddwaf_object out;
@@ -566,7 +566,7 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
                     }}}}}, );
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
         ddwaf_object_free(&out);
     }
 
@@ -576,7 +576,7 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
         ddwaf_object map = DDWAF_OBJECT_MAP;
 
         ddwaf_object query = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&query, "key", ddwaf_object_set_invalid(&tmp));
         ddwaf_object_map_add(&map, "server.request.query", &query);
 
         ddwaf_object out;
@@ -585,7 +585,7 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
         ddwaf_object_free(&out);
     }
@@ -596,7 +596,7 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
         ddwaf_object map = DDWAF_OBJECT_MAP;
 
         ddwaf_object body = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&body, "key", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&body, "key", ddwaf_object_set_invalid(&tmp));
         ddwaf_object_map_add(&map, "server.request.body", &body);
 
         ddwaf_object out;
@@ -618,7 +618,7 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
                     }}}}}, );
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
         ddwaf_object_free(&out);
     }
 
@@ -646,10 +646,10 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *events = ddwaf_object_find(&out, STRL("events"));
-        EXPECT_EQ(ddwaf_object_size(events), 0);
+        EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
         ddwaf_object_free(&out);
     }
 
@@ -680,7 +680,7 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
                     }}}}}, );
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
         ddwaf_object_free(&out);
     }
 
@@ -715,7 +715,7 @@ TEST(TestFingerprintIntegration, Processor)
     EXPECT_TRUE(address_set.contains("_dd.appsec.fp.http.network"));
     EXPECT_TRUE(address_set.contains("_dd.appsec.fp.session"));
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object tmp;
@@ -724,11 +724,11 @@ TEST(TestFingerprintIntegration, Processor)
     ddwaf_object settings = DDWAF_OBJECT_MAP;
 
     ddwaf_object body = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&body, "key", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&body, "key", ddwaf_object_set_invalid(&tmp));
     ddwaf_object_map_add(&map, "server.request.body", &body);
 
     ddwaf_object query = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&query, "key", ddwaf_object_set_invalid(&tmp));
     ddwaf_object_map_add(&map, "server.request.query", &query);
 
     ddwaf_object_map_add(
@@ -737,27 +737,27 @@ TEST(TestFingerprintIntegration, Processor)
 
     ddwaf_object headers;
     ddwaf_object_map(&headers);
-    ddwaf_object_map_add(&headers, "referer", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "connection", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "content-encoding", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "te", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "content-type", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "referer", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "connection", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "content-encoding", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "te", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "content-type", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_set_invalid(&tmp));
     ddwaf_object_map_add(&headers, "user-agent", ddwaf_object_string(&tmp, "Random"));
     ddwaf_object_map_add(&headers, "x-forwarded-for", ddwaf_object_string(&tmp, "::1"));
-    ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_invalid(&tmp));
-    ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_set_invalid(&tmp));
+    ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_set_invalid(&tmp));
 
     ddwaf_object_map_add(&map, "server.request.headers.no_cookies", &headers);
 
@@ -775,7 +775,7 @@ TEST(TestFingerprintIntegration, Processor)
     ddwaf_object_map_add(&map, "usr.id", ddwaf_object_string(&tmp, "admin"));
     ddwaf_object_map_add(&map, "usr.session_id", ddwaf_object_string(&tmp, "ansd0182u2n"));
 
-    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
+    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_set_bool(&tmp, true));
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_object out;
@@ -830,7 +830,7 @@ TEST(TestFingerprintIntegration, Processor)
                 }}}}}, );
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 4);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 4);
 
     auto derivatives = test::object_to_map(*attributes);
     EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3-2c70e12b-2c70e12b");
@@ -870,7 +870,7 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
     EXPECT_TRUE(address_set.contains("_dd.appsec.fp.http.network"));
     EXPECT_TRUE(address_set.contains("_dd.appsec.fp.session"));
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     {
@@ -885,31 +885,31 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
 
         ddwaf_object headers;
         ddwaf_object_map(&headers);
-        ddwaf_object_map_add(&headers, "referer", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "connection", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "content-encoding", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "te", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "content-type", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "accept", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "referer", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "connection", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "accept-encoding", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "content-encoding", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "cache-control", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "te", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "accept-charset", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "content-type", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "accept", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "accept-language", ddwaf_object_set_invalid(&tmp));
         ddwaf_object_map_add(&headers, "user-agent", ddwaf_object_string(&tmp, "Random"));
         ddwaf_object_map_add(&headers, "x-forwarded-for", ddwaf_object_string(&tmp, "::1"));
-        ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "x-real-ip", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "true-client-ip", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "x-client-ip", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "x-forwarded", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "forwarded-for", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "x-cluster-client-ip", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "fastly-client-ip", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "cf-connecting-ip", ddwaf_object_set_invalid(&tmp));
+        ddwaf_object_map_add(&headers, "cf-connecting-ipv6", ddwaf_object_set_invalid(&tmp));
 
         ddwaf_object_map_add(&map, "server.request.headers.no_cookies", &headers);
 
-        ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
+        ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_set_bool(&tmp, true));
         ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
         ddwaf_object out;
@@ -942,7 +942,7 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
                     }}}}}, );
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 3);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 3);
 
         auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3--");
@@ -958,7 +958,7 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
         ddwaf_object map = DDWAF_OBJECT_MAP;
 
         ddwaf_object query = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&query, "key", ddwaf_object_set_invalid(&tmp));
         ddwaf_object_map_add(&map, "server.request.query", &query);
 
         ddwaf_object out;
@@ -967,7 +967,7 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3-2c70e12b-");
@@ -981,7 +981,7 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
         ddwaf_object map = DDWAF_OBJECT_MAP;
 
         ddwaf_object body = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&body, "key", ddwaf_object_invalid(&tmp));
+        ddwaf_object_map_add(&body, "key", ddwaf_object_set_invalid(&tmp));
         ddwaf_object_map_add(&map, "server.request.body", &body);
 
         ddwaf_object out;
@@ -1003,7 +1003,7 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
                     }}}}}, );
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(
@@ -1036,10 +1036,10 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *events = ddwaf_object_find(&out, STRL("events"));
-        EXPECT_EQ(ddwaf_object_size(events), 0);
+        EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(derivatives["_dd.appsec.fp.session"], "ssn--df6143bc-60ba1602-");
@@ -1073,7 +1073,7 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
                     }}}}}, );
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto derivatives = test::object_to_map(*attributes);
         EXPECT_STRV(
@@ -1094,7 +1094,7 @@ TEST(TestFingerprintIntegration, InvalidBodyType)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object tmp;
@@ -1107,14 +1107,14 @@ TEST(TestFingerprintIntegration, InvalidBodyType)
     ddwaf_object_map_add(&map, "server.request.body", &body);
 
     ddwaf_object query = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&query, "key", ddwaf_object_set_invalid(&tmp));
     ddwaf_object_map_add(&map, "server.request.query", &query);
 
     ddwaf_object_map_add(
         &map, "server.request.uri.raw", ddwaf_object_string(&tmp, "/path/to/resource/?key="));
     ddwaf_object_map_add(&map, "server.request.method", ddwaf_object_string(&tmp, "PuT"));
 
-    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
+    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_set_bool(&tmp, true));
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_object out;
@@ -1123,7 +1123,7 @@ TEST(TestFingerprintIntegration, InvalidBodyType)
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
     auto derivatives = test::object_to_map(*attributes);
     EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3-2c70e12b-");
@@ -1141,7 +1141,7 @@ TEST(TestFingerprintIntegration, InvalidQueryType)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object tmp;
@@ -1150,7 +1150,7 @@ TEST(TestFingerprintIntegration, InvalidQueryType)
     ddwaf_object settings = DDWAF_OBJECT_MAP;
 
     ddwaf_object body = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&body, "key", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&body, "key", ddwaf_object_set_invalid(&tmp));
     ddwaf_object_map_add(&map, "server.request.body", &body);
 
     ddwaf_object query = DDWAF_OBJECT_ARRAY;
@@ -1161,7 +1161,7 @@ TEST(TestFingerprintIntegration, InvalidQueryType)
         &map, "server.request.uri.raw", ddwaf_object_string(&tmp, "/path/to/resource/?key="));
     ddwaf_object_map_add(&map, "server.request.method", ddwaf_object_string(&tmp, "PuT"));
 
-    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
+    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_set_bool(&tmp, true));
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_object out;
@@ -1170,7 +1170,7 @@ TEST(TestFingerprintIntegration, InvalidQueryType)
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
     auto derivatives = test::object_to_map(*attributes);
     EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3--2c70e12b");
@@ -1188,7 +1188,7 @@ TEST(TestFingerprintIntegration, InvalidQueryAndBodyType)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object tmp;
@@ -1208,7 +1208,7 @@ TEST(TestFingerprintIntegration, InvalidQueryAndBodyType)
         &map, "server.request.uri.raw", ddwaf_object_string(&tmp, "/path/to/resource/?key="));
     ddwaf_object_map_add(&map, "server.request.method", ddwaf_object_string(&tmp, "PuT"));
 
-    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
+    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_set_bool(&tmp, true));
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
 
     ddwaf_object out;
@@ -1217,7 +1217,7 @@ TEST(TestFingerprintIntegration, InvalidQueryAndBodyType)
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
     auto derivatives = test::object_to_map(*attributes);
     EXPECT_STRV(derivatives["_dd.appsec.fp.http.endpoint"], "http-put-729d56c3--");
@@ -1235,7 +1235,7 @@ TEST(TestFingerprintIntegration, InvalidHeader)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object tmp;
@@ -1265,7 +1265,7 @@ TEST(TestFingerprintIntegration, InvalidHeader)
     ddwaf_object_array_add(&headers, ddwaf_object_string(&tmp, "cf-connecting-ipv6"));
 
     ddwaf_object settings = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
+    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_set_bool(&tmp, true));
 
     ddwaf_object map = DDWAF_OBJECT_MAP;
     ddwaf_object_map_add(&map, "waf.context.processor", &settings);
@@ -1277,7 +1277,7 @@ TEST(TestFingerprintIntegration, InvalidHeader)
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 0);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
     ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
@@ -1292,13 +1292,13 @@ TEST(TestFingerprintIntegration, InvalidCookies)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object tmp;
 
     ddwaf_object settings = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_bool(&tmp, true));
+    ddwaf_object_map_add(&settings, "fingerprint", ddwaf_object_set_bool(&tmp, true));
 
     ddwaf_object cookies;
     ddwaf_object_array(&cookies);
@@ -1322,7 +1322,7 @@ TEST(TestFingerprintIntegration, InvalidCookies)
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
     auto derivatives = test::object_to_map(*attributes);
     EXPECT_STRV(derivatives["_dd.appsec.fp.session"], "ssn-8c6976e5---269500d3");

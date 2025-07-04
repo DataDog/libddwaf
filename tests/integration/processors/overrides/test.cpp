@@ -30,7 +30,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersById)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object tmp;
@@ -47,7 +47,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersById)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.body.schema":[{"email":[8]}]})");
@@ -67,7 +67,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersById)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object tmp;
@@ -84,7 +84,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersById)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema,
@@ -115,7 +115,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersByTags)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object tmp;
@@ -132,7 +132,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersByTags)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.body.schema":[{"email":[8]}]})");
@@ -152,7 +152,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersByTags)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object tmp;
@@ -169,7 +169,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersByTags)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema,
@@ -200,7 +200,7 @@ TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object tmp;
@@ -217,7 +217,7 @@ TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema,
@@ -238,7 +238,7 @@ TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object tmp;
@@ -255,7 +255,7 @@ TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema,
@@ -276,7 +276,7 @@ TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object tmp;
@@ -293,7 +293,7 @@ TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.headers.schema":[{"email":[8]}]})");
@@ -323,7 +323,7 @@ TEST(TestProcessorOverridesIntegration, DisableDefaultScanners)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object tmp;
@@ -340,7 +340,7 @@ TEST(TestProcessorOverridesIntegration, DisableDefaultScanners)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema,
@@ -361,7 +361,7 @@ TEST(TestProcessorOverridesIntegration, DisableDefaultScanners)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object tmp;
@@ -378,7 +378,7 @@ TEST(TestProcessorOverridesIntegration, DisableDefaultScanners)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.headers.schema":[{"email":[8]}]})");
@@ -408,7 +408,7 @@ TEST(TestProcessorOverridesIntegration, RemoveScannersAfterOverride)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object tmp;
@@ -425,7 +425,7 @@ TEST(TestProcessorOverridesIntegration, RemoveScannersAfterOverride)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.body.schema":[{"email":[8]}]})");
@@ -445,7 +445,7 @@ TEST(TestProcessorOverridesIntegration, RemoveScannersAfterOverride)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object tmp;
@@ -462,7 +462,7 @@ TEST(TestProcessorOverridesIntegration, RemoveScannersAfterOverride)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema,
@@ -479,7 +479,7 @@ TEST(TestProcessorOverridesIntegration, RemoveScannersAfterOverride)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object tmp;
@@ -496,7 +496,7 @@ TEST(TestProcessorOverridesIntegration, RemoveScannersAfterOverride)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.body.schema":[{"email":[8]}]})");
@@ -526,7 +526,7 @@ TEST(TestProcessorOverridesIntegration, RemoveOverride)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object tmp;
@@ -543,7 +543,7 @@ TEST(TestProcessorOverridesIntegration, RemoveOverride)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.body.schema":[{"email":[8]}]})");
@@ -563,7 +563,7 @@ TEST(TestProcessorOverridesIntegration, RemoveOverride)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object tmp;
@@ -580,7 +580,7 @@ TEST(TestProcessorOverridesIntegration, RemoveOverride)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema,
@@ -597,7 +597,7 @@ TEST(TestProcessorOverridesIntegration, RemoveOverride)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object tmp;
@@ -614,7 +614,7 @@ TEST(TestProcessorOverridesIntegration, RemoveOverride)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.body.schema":[{"email":[8]}]})");
@@ -644,7 +644,7 @@ TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object tmp;
@@ -665,7 +665,7 @@ TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 2);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 2);
         ddwaf::raw_configuration derivatives_object(
             *reinterpret_cast<const detail::object *>(attributes));
         auto derivatives = static_cast<ddwaf::raw_configuration::map>(derivatives_object);
@@ -692,7 +692,7 @@ TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object tmp;
@@ -713,9 +713,9 @@ TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 2);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 2);
 
-        EXPECT_EQ(ddwaf_object_size(attributes), 2);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 2);
         ddwaf::raw_configuration derivatives_object(
             *reinterpret_cast<const detail::object *>(attributes));
         auto derivatives = static_cast<ddwaf::raw_configuration::map>(derivatives_object);

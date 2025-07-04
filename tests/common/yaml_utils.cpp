@@ -72,17 +72,17 @@ ddwaf_object node_to_ddwaf_object(const Node &node)
 
         if (node.Tag() == "?") {
             try {
-                ddwaf_object_unsigned(&arg, node.as<uint64_t>());
+                ddwaf_object_set_unsigned(&arg, node.as<uint64_t>());
                 return arg;
             } catch (...) {}
 
             try {
-                ddwaf_object_signed(&arg, node.as<int64_t>());
+                ddwaf_object_set_signed(&arg, node.as<int64_t>());
                 return arg;
             } catch (...) {}
 
             try {
-                ddwaf_object_float(&arg, node.as<double>());
+                ddwaf_object_set_float(&arg, node.as<double>());
                 return arg;
             } catch (...) {}
 
@@ -90,7 +90,7 @@ ddwaf_object node_to_ddwaf_object(const Node &node)
                 if (!value.empty() && value[0] != 'Y' && value[0] != 'y' && value[0] != 'n' &&
                     value[0] != 'N') {
                     // Skip the yes / no variants of boolean
-                    ddwaf_object_bool(&arg, node.as<bool>());
+                    ddwaf_object_set_bool(&arg, node.as<bool>());
                     return arg;
                 }
             } catch (...) {}
@@ -101,12 +101,12 @@ ddwaf_object node_to_ddwaf_object(const Node &node)
     }
     case NodeType::Null: {
         ddwaf_object arg;
-        ddwaf_object_null(&arg);
+        ddwaf_object_set_null(&arg);
         return arg;
     }
     case NodeType::Undefined: {
         ddwaf_object arg;
-        ddwaf_object_invalid(&arg);
+        ddwaf_object_set_invalid(&arg);
         return arg;
     }
     }

@@ -135,7 +135,7 @@ void generate_objects(ddwaf_object &root, const object_specification &s)
             auto next_level = generate_horizontal_distribution(
                 intermediate_nodes_in_current, next_intermediate, next_terminal);
 
-            for (unsigned i = 0, j = 0; i < ddwaf_object_size(object); ++i) {
+            for (unsigned i = 0, j = 0; i < ddwaf_object_get_size(object); ++i) {
                 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
                 auto *child = const_cast<ddwaf_object *>(ddwaf_object_at_value(object, i));
                 if (child->type == DDWAF_OBJ_MAP || child->type == DDWAF_OBJ_ARRAY) {

@@ -22,7 +22,7 @@ TEST(TestActionsIntegration, DefaultActions)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
     ddwaf_object tmp;
@@ -174,7 +174,7 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "block"));
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object res;
@@ -216,7 +216,7 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "block"));
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object res;
@@ -264,7 +264,7 @@ TEST(TestActionsIntegration, AddNewAction)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "unblock"));
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object res;
@@ -305,7 +305,7 @@ TEST(TestActionsIntegration, AddNewAction)
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "unblock"));
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object res;
@@ -348,7 +348,7 @@ TEST(TestActionsIntegration, EmptyOrInvalidActions)
     ddwaf_object parameter = DDWAF_OBJECT_MAP;
     ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "block"));
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object res;

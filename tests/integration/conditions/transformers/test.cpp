@@ -25,7 +25,7 @@ TEST(TestConditionTransformersIntegration, GlobalTransformer)
 
     ddwaf_object tmp;
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -38,7 +38,7 @@ TEST(TestConditionTransformersIntegration, GlobalTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -51,7 +51,7 @@ TEST(TestConditionTransformersIntegration, GlobalTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -64,7 +64,7 @@ TEST(TestConditionTransformersIntegration, GlobalTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -92,7 +92,7 @@ TEST(TestConditionTransformersIntegration, GlobalTransformerKeysOnly)
 
     ddwaf_object tmp;
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -107,7 +107,7 @@ TEST(TestConditionTransformersIntegration, GlobalTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -122,7 +122,7 @@ TEST(TestConditionTransformersIntegration, GlobalTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -137,7 +137,7 @@ TEST(TestConditionTransformersIntegration, GlobalTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -167,7 +167,7 @@ TEST(TestConditionTransformersIntegration, InputTransformer)
 
     ddwaf_object tmp;
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -180,7 +180,7 @@ TEST(TestConditionTransformersIntegration, InputTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -193,7 +193,7 @@ TEST(TestConditionTransformersIntegration, InputTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -206,7 +206,7 @@ TEST(TestConditionTransformersIntegration, InputTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -234,7 +234,7 @@ TEST(TestConditionTransformersIntegration, InputTransformerKeysOnly)
 
     ddwaf_object tmp;
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -249,7 +249,7 @@ TEST(TestConditionTransformersIntegration, InputTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -264,7 +264,7 @@ TEST(TestConditionTransformersIntegration, InputTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -279,7 +279,7 @@ TEST(TestConditionTransformersIntegration, InputTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -309,7 +309,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
 
     ddwaf_object tmp;
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -322,7 +322,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -335,7 +335,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -348,7 +348,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -361,7 +361,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -374,7 +374,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -387,7 +387,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -415,7 +415,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
 
     ddwaf_object tmp;
     /*    {*/
-    /*ddwaf_context context = ddwaf_context_init(handle);*/
+    /*ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());*/
     /*ASSERT_NE(context, nullptr);*/
 
     /*ddwaf_object parameter = DDWAF_OBJECT_MAP;*/
@@ -430,7 +430,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
     /*}*/
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -445,7 +445,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -460,7 +460,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -475,7 +475,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -490,7 +490,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -505,7 +505,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -520,7 +520,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;
@@ -535,7 +535,7 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP;

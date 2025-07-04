@@ -27,7 +27,7 @@ TEST(TestJwtDecoderIntegration, Preprocessor)
     EXPECT_TRUE(address_set.contains("server.request.headers.no_cookies"));
     EXPECT_TRUE(address_set.contains("server.request.jwt"));
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object tmp;
@@ -66,7 +66,7 @@ TEST(TestJwtDecoderIntegration, Preprocessor)
                                }}}}});
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 0);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
     ddwaf_object_free(&out);
     ddwaf_context_destroy(context);
@@ -87,7 +87,7 @@ TEST(TestJwtDecoderIntegration, Postprocessor)
     std::unordered_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.headers.no_cookies"));
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object tmp;
@@ -116,7 +116,7 @@ TEST(TestJwtDecoderIntegration, Postprocessor)
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
     EXPECT_JSON(*attributes,
         R"({"server.request.jwt":{"header":{"alg":"RS384","typ":"JWT"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022},"signature":{"available":true}}})");
@@ -141,7 +141,7 @@ TEST(TestJwtDecoderIntegration, Processor)
     EXPECT_TRUE(address_set.contains("server.request.headers.no_cookies"));
     EXPECT_TRUE(address_set.contains("server.request.jwt"));
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object tmp;
@@ -180,7 +180,7 @@ TEST(TestJwtDecoderIntegration, Processor)
                                }}}}});
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
     EXPECT_JSON(*attributes,
         R"({"server.request.jwt":{"header":{"alg":"RS384","typ":"JWT"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022},"signature":{"available":true}}})");

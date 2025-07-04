@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 
     ddwaf_object_map(&input);
     ddwaf_object_map(&settings);
-    ddwaf_object_map_add(&settings, "extract-schema", ddwaf_object_bool(&tmp, true));
+    ddwaf_object_map_add(&settings, "extract-schema", ddwaf_object_set_bool(&tmp, true));
     ddwaf_object_map_add(&input, "waf.context.processor", &settings);
     ddwaf_object_map_add(&input, "server.request.body", &body);
 
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 
     ddwaf_result ret;
     ddwaf_context_eval(context, &input, nullptr, &ret, std::numeric_limits<uint32_t>::max());
-    if (ddwaf_object_size(&ret.derivatives) > 0) {
+    if (ddwaf_object_get_size(&ret.derivatives) > 0) {
         std::cout << object_to_json(ret.derivatives) << '\n';
     }
 

@@ -27,7 +27,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
 
     // No Obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
@@ -51,7 +51,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
 
     // Key-based obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, inter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
@@ -77,7 +77,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
 
     // Value-based obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
@@ -101,7 +101,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
 
     // Both
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, inter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1_obf"));
@@ -141,7 +141,7 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
 
     // No Obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
@@ -165,7 +165,7 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
 
     // Key-based obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, inter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
@@ -191,7 +191,7 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
 
     // Value-based obfuscation (?)
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
@@ -229,7 +229,7 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
 
     // No Obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
@@ -253,7 +253,7 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
 
     // Key-based obfuscation (?)
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, inter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
@@ -279,7 +279,7 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
 
     // Value-based obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
@@ -317,7 +317,7 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
 
     // Highlight obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "badvalue_something"));
@@ -340,7 +340,7 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
 
     // No obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "othervalue_badvalue"));
@@ -377,7 +377,7 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
 
     // No Obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
@@ -401,7 +401,7 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
 
     // Key-based obfuscation (?)
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, inter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
@@ -427,7 +427,7 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
 
     // Value-based obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
@@ -465,7 +465,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
 
     // No Obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
@@ -489,7 +489,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
 
     // Key-based obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, inter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
@@ -515,7 +515,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
 
     // Value-based obfuscation (?)
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
@@ -553,7 +553,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
 
     // No Obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
@@ -577,7 +577,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
 
     // Key-based obfuscation (?)
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, inter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
@@ -603,7 +603,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
 
     // Value-based obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
 
         ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
         ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));

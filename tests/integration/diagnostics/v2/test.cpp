@@ -207,7 +207,7 @@ TEST(TestDiagnosticsV2Integration, BasicRuleWithUpdate)
 TEST(TestDiagnosticsV2Integration, NullRuleset)
 {
     ddwaf_object diagnostics;
-    ddwaf_object_invalid(&diagnostics);
+    ddwaf_object_set_invalid(&diagnostics);
     ddwaf_handle handle = ddwaf_init(nullptr, nullptr, &diagnostics);
     ASSERT_EQ(handle, nullptr);
 

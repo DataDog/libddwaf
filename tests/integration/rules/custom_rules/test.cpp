@@ -25,7 +25,7 @@ TEST(TestCustomRulesIntegration, InitWithoutBaseRules)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -63,7 +63,7 @@ TEST(TestCustomRulesIntegration, InitWithBaseRules)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -101,7 +101,7 @@ TEST(TestCustomRulesIntegration, RegularCustomRulesPrecedence)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -141,7 +141,7 @@ TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -186,7 +186,7 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -244,10 +244,10 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
     ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
     ASSERT_NE(context2, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -332,10 +332,10 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
     ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
     ASSERT_NE(context2, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -440,10 +440,10 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
     ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
     ASSERT_NE(context2, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -528,10 +528,10 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
     ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
     ASSERT_NE(context2, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -626,13 +626,13 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
     ddwaf_handle handle3 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle3, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
     ASSERT_NE(context2, nullptr);
 
-    ddwaf_context context3 = ddwaf_context_init(handle3);
+    ddwaf_context context3 = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
     ASSERT_NE(context3, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -727,10 +727,10 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
     ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
     ASSERT_NE(context2, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -825,13 +825,13 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
     ddwaf_handle handle3 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle3, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, ddwaf_get_default_allocator());
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, ddwaf_get_default_allocator());
     ASSERT_NE(context2, nullptr);
 
-    ddwaf_context context3 = ddwaf_context_init(handle3);
+    ddwaf_context context3 = ddwaf_context_init(handle3, ddwaf_get_default_allocator());
     ASSERT_NE(context3, nullptr);
 
     // Destroying the handle should not invalidate it

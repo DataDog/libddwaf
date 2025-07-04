@@ -27,13 +27,13 @@ TEST(TestContextResultIntegration, ResultInvalidArgumentNullContext)
     ddwaf_object_map_add(&persistent, "value1", ddwaf_object_string(&tmp, "rule1"));
 
     ddwaf_object result;
-    ddwaf_object_invalid(&result);
+    ddwaf_object_set_invalid(&result);
 
     EXPECT_EQ(ddwaf_context_eval(nullptr, &persistent, nullptr, true, &result, LONG_TIME),
         DDWAF_ERR_INVALID_ARGUMENT);
 
     // The result object must be unchanged
-    EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_INVALID);
+    EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_INVALID);
 
     ddwaf_object_free(&persistent);
     ddwaf_destroy(handle);
@@ -48,17 +48,17 @@ TEST(TestContextResultIntegration, ResultInvalidArgumentNoData)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object result;
-    ddwaf_object_invalid(&result);
+    ddwaf_object_set_invalid(&result);
 
     EXPECT_EQ(ddwaf_context_eval(context, nullptr, nullptr, true, &result, LONG_TIME),
         DDWAF_ERR_INVALID_ARGUMENT);
 
     // The result object must be unchanged
-    EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_INVALID);
+    EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_INVALID);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -73,7 +73,7 @@ TEST(TestContextResultIntegration, ResultInvalidObjectInvalidPersistentDataSchem
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object tmp;
@@ -81,13 +81,13 @@ TEST(TestContextResultIntegration, ResultInvalidObjectInvalidPersistentDataSchem
     ddwaf_object_array_add(&persistent, ddwaf_object_string(&tmp, "rule1"));
 
     ddwaf_object result;
-    ddwaf_object_invalid(&result);
+    ddwaf_object_set_invalid(&result);
 
     EXPECT_EQ(ddwaf_context_eval(context, &persistent, nullptr, true, &result, LONG_TIME),
         DDWAF_ERR_INVALID_OBJECT);
 
     // The result object must be unchanged
-    EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_INVALID);
+    EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_INVALID);
 
     // The persistent object, even though invalid, is freed on context destruction
     ddwaf_context_destroy(context);
@@ -103,7 +103,7 @@ TEST(TestContextResultIntegration, ResultInvalidObjectInvalidEphemeralDataSchema
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     ddwaf_object tmp;
@@ -111,13 +111,13 @@ TEST(TestContextResultIntegration, ResultInvalidObjectInvalidEphemeralDataSchema
     ddwaf_object_array_add(&ephemeral, ddwaf_object_string(&tmp, "rule1"));
 
     ddwaf_object result;
-    ddwaf_object_invalid(&result);
+    ddwaf_object_set_invalid(&result);
 
     EXPECT_EQ(ddwaf_context_eval(context, nullptr, &ephemeral, true, &result, LONG_TIME),
         DDWAF_ERR_INVALID_OBJECT);
 
     // The result object must be unchanged
-    EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_INVALID);
+    EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_INVALID);
 
     // The ephemeral object, even though invalid, is freed on context destruction
     ddwaf_context_destroy(context);
@@ -133,7 +133,7 @@ TEST(TestContextResultIntegration, ResultOk)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -141,40 +141,40 @@ TEST(TestContextResultIntegration, ResultOk)
 
     ddwaf_object tmp;
     ddwaf_object parameter = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&parameter, "value1", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&parameter, "value1", ddwaf_object_set_invalid(&tmp));
 
     ddwaf_object result;
-    ddwaf_object_invalid(&result);
+    ddwaf_object_set_invalid(&result);
     EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, LONG_TIME), DDWAF_OK);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
-    EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-    EXPECT_EQ(ddwaf_object_size(events), 0);
+    EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+    EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
     const auto *actions = ddwaf_object_find(&result, STRL("actions"));
     ASSERT_NE(actions, nullptr);
-    EXPECT_EQ(ddwaf_object_type(actions), DDWAF_OBJ_MAP);
-    EXPECT_EQ(ddwaf_object_size(actions), 0);
+    EXPECT_EQ(ddwaf_object_get_type(actions), DDWAF_OBJ_MAP);
+    EXPECT_EQ(ddwaf_object_get_size(actions), 0);
 
     const auto *timeout = ddwaf_object_find(&result, STRL("timeout"));
     ASSERT_NE(timeout, nullptr);
-    EXPECT_EQ(ddwaf_object_type(timeout), DDWAF_OBJ_BOOL);
+    EXPECT_EQ(ddwaf_object_get_type(timeout), DDWAF_OBJ_BOOL);
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     const auto *duration = ddwaf_object_find(&result, STRL("duration"));
     ASSERT_NE(duration, nullptr);
-    EXPECT_EQ(ddwaf_object_type(duration), DDWAF_OBJ_UNSIGNED);
+    EXPECT_EQ(ddwaf_object_get_type(duration), DDWAF_OBJ_UNSIGNED);
     EXPECT_GT(ddwaf_object_get_unsigned(duration), 0);
 
     const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
     ASSERT_NE(attributes, nullptr);
-    EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-    EXPECT_EQ(ddwaf_object_size(attributes), 0);
+    EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
     const auto *keep = ddwaf_object_find(&result, STRL("keep"));
     ASSERT_NE(keep, nullptr);
-    EXPECT_EQ(ddwaf_object_type(keep), DDWAF_OBJ_BOOL);
+    EXPECT_EQ(ddwaf_object_get_type(keep), DDWAF_OBJ_BOOL);
     EXPECT_FALSE(ddwaf_object_get_bool(keep));
 
     ddwaf_object_free(&result);
@@ -190,7 +190,7 @@ TEST(TestContextResultIntegration, ResultOkWithAttributes)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -198,45 +198,45 @@ TEST(TestContextResultIntegration, ResultOkWithAttributes)
 
     ddwaf_object tmp;
     ddwaf_object parameter = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&parameter, "server.request.body", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&parameter, "server.request.body", ddwaf_object_set_invalid(&tmp));
 
     ddwaf_object settings;
     ddwaf_object_map(&settings);
-    ddwaf_object_map_add(&settings, "extract-schema", ddwaf_object_bool(&tmp, true));
+    ddwaf_object_map_add(&settings, "extract-schema", ddwaf_object_set_bool(&tmp, true));
     ddwaf_object_map_add(&parameter, "waf.context.processor", &settings);
 
     ddwaf_object result;
-    ddwaf_object_invalid(&result);
+    ddwaf_object_set_invalid(&result);
     EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, LONG_TIME), DDWAF_OK);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
-    EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-    EXPECT_EQ(ddwaf_object_size(events), 0);
+    EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+    EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
     const auto *actions = ddwaf_object_find(&result, STRL("actions"));
     ASSERT_NE(actions, nullptr);
-    EXPECT_EQ(ddwaf_object_type(actions), DDWAF_OBJ_MAP);
-    EXPECT_EQ(ddwaf_object_size(actions), 0);
+    EXPECT_EQ(ddwaf_object_get_type(actions), DDWAF_OBJ_MAP);
+    EXPECT_EQ(ddwaf_object_get_size(actions), 0);
 
     const auto *timeout = ddwaf_object_find(&result, STRL("timeout"));
     ASSERT_NE(timeout, nullptr);
-    EXPECT_EQ(ddwaf_object_type(timeout), DDWAF_OBJ_BOOL);
+    EXPECT_EQ(ddwaf_object_get_type(timeout), DDWAF_OBJ_BOOL);
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     const auto *duration = ddwaf_object_find(&result, STRL("duration"));
     ASSERT_NE(duration, nullptr);
-    EXPECT_EQ(ddwaf_object_type(duration), DDWAF_OBJ_UNSIGNED);
+    EXPECT_EQ(ddwaf_object_get_type(duration), DDWAF_OBJ_UNSIGNED);
     EXPECT_GT(ddwaf_object_get_unsigned(duration), 0);
 
     const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
     ASSERT_NE(attributes, nullptr);
-    EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+    EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
     const auto *keep = ddwaf_object_find(&result, STRL("keep"));
     ASSERT_NE(keep, nullptr);
-    EXPECT_EQ(ddwaf_object_type(keep), DDWAF_OBJ_BOOL);
+    EXPECT_EQ(ddwaf_object_get_type(keep), DDWAF_OBJ_BOOL);
     EXPECT_FALSE(ddwaf_object_get_bool(keep));
 
     ddwaf_object_free(&result);
@@ -252,7 +252,7 @@ TEST(TestContextResultIntegration, ResultOkWithTimeout)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -260,40 +260,40 @@ TEST(TestContextResultIntegration, ResultOkWithTimeout)
 
     ddwaf_object tmp;
     ddwaf_object parameter = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&parameter, "value1", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&parameter, "value1", ddwaf_object_set_invalid(&tmp));
 
     ddwaf_object result;
-    ddwaf_object_invalid(&result);
+    ddwaf_object_set_invalid(&result);
     EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, 0), DDWAF_OK);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
-    EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-    EXPECT_EQ(ddwaf_object_size(events), 0);
+    EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+    EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
     const auto *actions = ddwaf_object_find(&result, STRL("actions"));
     ASSERT_NE(actions, nullptr);
-    EXPECT_EQ(ddwaf_object_type(actions), DDWAF_OBJ_MAP);
-    EXPECT_EQ(ddwaf_object_size(actions), 0);
+    EXPECT_EQ(ddwaf_object_get_type(actions), DDWAF_OBJ_MAP);
+    EXPECT_EQ(ddwaf_object_get_size(actions), 0);
 
     const auto *timeout = ddwaf_object_find(&result, STRL("timeout"));
     ASSERT_NE(timeout, nullptr);
-    EXPECT_EQ(ddwaf_object_type(timeout), DDWAF_OBJ_BOOL);
+    EXPECT_EQ(ddwaf_object_get_type(timeout), DDWAF_OBJ_BOOL);
     EXPECT_TRUE(ddwaf_object_get_bool(timeout));
 
     const auto *duration = ddwaf_object_find(&result, STRL("duration"));
     ASSERT_NE(duration, nullptr);
-    EXPECT_EQ(ddwaf_object_type(duration), DDWAF_OBJ_UNSIGNED);
+    EXPECT_EQ(ddwaf_object_get_type(duration), DDWAF_OBJ_UNSIGNED);
     EXPECT_GT(ddwaf_object_get_unsigned(duration), 0);
 
     const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
     ASSERT_NE(attributes, nullptr);
-    EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-    EXPECT_EQ(ddwaf_object_size(attributes), 0);
+    EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
     const auto *keep = ddwaf_object_find(&result, STRL("keep"));
     ASSERT_NE(keep, nullptr);
-    EXPECT_EQ(ddwaf_object_type(keep), DDWAF_OBJ_BOOL);
+    EXPECT_EQ(ddwaf_object_get_type(keep), DDWAF_OBJ_BOOL);
     EXPECT_FALSE(ddwaf_object_get_bool(keep));
 
     ddwaf_object_free(&result);
@@ -309,7 +309,7 @@ TEST(TestContextResultIntegration, ResultMatch)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -320,38 +320,38 @@ TEST(TestContextResultIntegration, ResultMatch)
     ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
     ddwaf_object result;
-    ddwaf_object_invalid(&result);
+    ddwaf_object_set_invalid(&result);
     EXPECT_EQ(
         ddwaf_context_eval(context, &parameter, nullptr, true, &result, LONG_TIME), DDWAF_MATCH);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
-    EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-    EXPECT_EQ(ddwaf_object_size(events), 1);
+    EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+    EXPECT_EQ(ddwaf_object_get_size(events), 1);
 
     const auto *actions = ddwaf_object_find(&result, STRL("actions"));
     ASSERT_NE(actions, nullptr);
-    EXPECT_EQ(ddwaf_object_type(actions), DDWAF_OBJ_MAP);
-    EXPECT_EQ(ddwaf_object_size(actions), 0);
+    EXPECT_EQ(ddwaf_object_get_type(actions), DDWAF_OBJ_MAP);
+    EXPECT_EQ(ddwaf_object_get_size(actions), 0);
 
     const auto *timeout = ddwaf_object_find(&result, STRL("timeout"));
     ASSERT_NE(timeout, nullptr);
-    EXPECT_EQ(ddwaf_object_type(timeout), DDWAF_OBJ_BOOL);
+    EXPECT_EQ(ddwaf_object_get_type(timeout), DDWAF_OBJ_BOOL);
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     const auto *duration = ddwaf_object_find(&result, STRL("duration"));
     ASSERT_NE(duration, nullptr);
-    EXPECT_EQ(ddwaf_object_type(duration), DDWAF_OBJ_UNSIGNED);
+    EXPECT_EQ(ddwaf_object_get_type(duration), DDWAF_OBJ_UNSIGNED);
     EXPECT_GT(ddwaf_object_get_unsigned(duration), 0);
 
     const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
     ASSERT_NE(attributes, nullptr);
-    EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-    EXPECT_EQ(ddwaf_object_size(attributes), 0);
+    EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
     const auto *keep = ddwaf_object_find(&result, STRL("keep"));
     ASSERT_NE(keep, nullptr);
-    EXPECT_EQ(ddwaf_object_type(keep), DDWAF_OBJ_BOOL);
+    EXPECT_EQ(ddwaf_object_get_type(keep), DDWAF_OBJ_BOOL);
     EXPECT_TRUE(ddwaf_object_get_bool(keep));
 
     ddwaf_object_free(&result);
@@ -367,7 +367,7 @@ TEST(TestContextResultIntegration, ResultMatchWithTimeout)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -378,37 +378,37 @@ TEST(TestContextResultIntegration, ResultMatchWithTimeout)
     ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
 
     ddwaf_object result;
-    ddwaf_object_invalid(&result);
+    ddwaf_object_set_invalid(&result);
     EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, 0), DDWAF_MATCH);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
-    EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-    EXPECT_EQ(ddwaf_object_size(events), 1);
+    EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+    EXPECT_EQ(ddwaf_object_get_size(events), 1);
 
     const auto *actions = ddwaf_object_find(&result, STRL("actions"));
     ASSERT_NE(actions, nullptr);
-    EXPECT_EQ(ddwaf_object_type(actions), DDWAF_OBJ_MAP);
-    EXPECT_EQ(ddwaf_object_size(actions), 0);
+    EXPECT_EQ(ddwaf_object_get_type(actions), DDWAF_OBJ_MAP);
+    EXPECT_EQ(ddwaf_object_get_size(actions), 0);
 
     const auto *timeout = ddwaf_object_find(&result, STRL("timeout"));
     ASSERT_NE(timeout, nullptr);
-    EXPECT_EQ(ddwaf_object_type(timeout), DDWAF_OBJ_BOOL);
+    EXPECT_EQ(ddwaf_object_get_type(timeout), DDWAF_OBJ_BOOL);
     EXPECT_TRUE(ddwaf_object_get_bool(timeout));
 
     const auto *duration = ddwaf_object_find(&result, STRL("duration"));
     ASSERT_NE(duration, nullptr);
-    EXPECT_EQ(ddwaf_object_type(duration), DDWAF_OBJ_UNSIGNED);
+    EXPECT_EQ(ddwaf_object_get_type(duration), DDWAF_OBJ_UNSIGNED);
     EXPECT_GT(ddwaf_object_get_unsigned(duration), 0);
 
     const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
     ASSERT_NE(attributes, nullptr);
-    EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-    EXPECT_EQ(ddwaf_object_size(attributes), 0);
+    EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
     const auto *keep = ddwaf_object_find(&result, STRL("keep"));
     ASSERT_NE(keep, nullptr);
-    EXPECT_EQ(ddwaf_object_type(keep), DDWAF_OBJ_BOOL);
+    EXPECT_EQ(ddwaf_object_get_type(keep), DDWAF_OBJ_BOOL);
     EXPECT_TRUE(ddwaf_object_get_bool(keep));
 
     ddwaf_object_free(&result);
@@ -424,7 +424,7 @@ TEST(TestContextResultIntegration, ResultMatchWithTimeoutOnPreprocessor)
     ASSERT_NE(handle, nullptr);
     ddwaf_object_free(&rule);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -433,45 +433,45 @@ TEST(TestContextResultIntegration, ResultMatchWithTimeoutOnPreprocessor)
     ddwaf_object tmp;
     ddwaf_object settings;
     ddwaf_object_map(&settings);
-    ddwaf_object_map_add(&settings, "extract-schema", ddwaf_object_bool(&tmp, true));
+    ddwaf_object_map_add(&settings, "extract-schema", ddwaf_object_set_bool(&tmp, true));
 
     ddwaf_object parameter = DDWAF_OBJECT_MAP;
     ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
-    ddwaf_object_map_add(&parameter, "server.request.body", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&parameter, "server.request.body", ddwaf_object_set_invalid(&tmp));
     ddwaf_object_map_add(&parameter, "waf.context.processor", &settings);
 
     ddwaf_object result;
-    ddwaf_object_invalid(&result);
+    ddwaf_object_set_invalid(&result);
     EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, 0), DDWAF_MATCH);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
-    EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-    EXPECT_EQ(ddwaf_object_size(events), 1);
+    EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+    EXPECT_EQ(ddwaf_object_get_size(events), 1);
 
     const auto *actions = ddwaf_object_find(&result, STRL("actions"));
     ASSERT_NE(actions, nullptr);
-    EXPECT_EQ(ddwaf_object_type(actions), DDWAF_OBJ_MAP);
-    EXPECT_EQ(ddwaf_object_size(actions), 0);
+    EXPECT_EQ(ddwaf_object_get_type(actions), DDWAF_OBJ_MAP);
+    EXPECT_EQ(ddwaf_object_get_size(actions), 0);
 
     const auto *timeout = ddwaf_object_find(&result, STRL("timeout"));
     ASSERT_NE(timeout, nullptr);
-    EXPECT_EQ(ddwaf_object_type(timeout), DDWAF_OBJ_BOOL);
+    EXPECT_EQ(ddwaf_object_get_type(timeout), DDWAF_OBJ_BOOL);
     EXPECT_TRUE(ddwaf_object_get_bool(timeout));
 
     const auto *duration = ddwaf_object_find(&result, STRL("duration"));
     ASSERT_NE(duration, nullptr);
-    EXPECT_EQ(ddwaf_object_type(duration), DDWAF_OBJ_UNSIGNED);
+    EXPECT_EQ(ddwaf_object_get_type(duration), DDWAF_OBJ_UNSIGNED);
     EXPECT_GT(ddwaf_object_get_unsigned(duration), 0);
 
     const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
     ASSERT_NE(attributes, nullptr);
-    EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-    EXPECT_EQ(ddwaf_object_size(attributes), 0);
+    EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
     const auto *keep = ddwaf_object_find(&result, STRL("keep"));
     ASSERT_NE(keep, nullptr);
-    EXPECT_EQ(ddwaf_object_type(keep), DDWAF_OBJ_BOOL);
+    EXPECT_EQ(ddwaf_object_get_type(keep), DDWAF_OBJ_BOOL);
     EXPECT_TRUE(ddwaf_object_get_bool(keep));
 
     ddwaf_object_free(&result);

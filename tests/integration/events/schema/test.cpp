@@ -33,7 +33,7 @@ public:
 
     void SetUp()
     {
-        context = ddwaf_context_init(handle);
+        context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
     }
 
@@ -49,8 +49,8 @@ public:
         EXPECT_EQ(code, DDWAF_MATCH);
 
         const auto *events = ddwaf_object_find(&ret, STRL("events"));
-        ASSERT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-        ASSERT_GT(ddwaf_object_size(events), 0);
+        ASSERT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+        ASSERT_GT(ddwaf_object_get_size(events), 0);
 
         const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));

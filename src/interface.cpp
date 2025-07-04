@@ -172,6 +172,26 @@ borrowed_object to_borrowed(ddwaf_object *ptr)
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     return borrowed_object{reinterpret_cast<detail::object *>(ptr)};
 }
+
+borrowed_object to_borrowed(ddwaf_object *ptr, nonnull_ptr<memory::memory_resource> alloc)
+{
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    return borrowed_object{reinterpret_cast<detail::object *>(ptr), alloc};
+}
+
+memory::memory_resource *to_alloc_ptr(ddwaf_allocator alloc)
+{
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    return reinterpret_cast<memory::memory_resource *>(alloc);
+}
+/*nonnull_ptr<memory::memory_resource> to_optional_alloc(ddwaf_allocator alloc)*/
+/*{*/
+/*if (alloc == nullptr) {*/
+/*return memory::get_default_null_resource();*/
+/*}*/
+
+/*return alloc;*/
+/*}*/
 } // namespace
 
 // explicit instantiation declaration to suppress warning
@@ -254,11 +274,11 @@ const char *const *ddwaf_known_actions(ddwaf::waf *handle, uint32_t *size)
     return action_types.data();
 }
 
-ddwaf_context ddwaf_context_init(ddwaf::waf *handle)
+ddwaf_context ddwaf_context_init(ddwaf::waf *handle, ddwaf_allocator output_alloc)
 {
     try {
-        if (handle != nullptr) {
-            return handle->create_context();
+        if (handle != nullptr && output_alloc != nullptr) {
+            return handle->create_context(to_alloc_ptr(output_alloc));
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());
@@ -464,7 +484,9 @@ uint32_t ddwaf_builder_get_config_paths(
 
 void ddwaf_builder_destroy(ddwaf_builder builder) { delete builder; }
 
-ddwaf_object *ddwaf_object_invalid(ddwaf_object *object)
+ddwaf_allocator ddwaf_get_default_allocator() { return memory::get_default_resource(); }
+
+ddwaf_object *ddwaf_object_set_invalid(ddwaf_object *object)
 {
     if (object == nullptr) {
         return nullptr;
@@ -475,7 +497,12 @@ ddwaf_object *ddwaf_object_invalid(ddwaf_object *object)
     return object;
 }
 
-ddwaf_object *ddwaf_object_null(ddwaf_object *object)
+ddwaf_object *ddwaf_object_invalid(ddwaf_object *object)
+{
+    return ddwaf_object_set_invalid(object);
+}
+
+ddwaf_object *ddwaf_object_set_null(ddwaf_object *object)
 {
     if (object == nullptr) {
         return nullptr;
@@ -483,6 +510,28 @@ ddwaf_object *ddwaf_object_null(ddwaf_object *object)
 
     to_ref(object) = owned_object::make_null().move();
 
+    return object;
+}
+
+ddwaf_object *ddwaf_object_null(ddwaf_object *object) { return ddwaf_object_set_null(object); }
+
+ddwaf_object *ddwaf_object_set_string(
+    ddwaf_object *object, const char *string, size_t length, ddwaf_allocator alloc)
+{
+    if (object == nullptr || string == nullptr || alloc == nullptr) {
+        return nullptr;
+    }
+    to_ref(object) = owned_object{string, length, to_alloc_ptr(alloc)}.move();
+    return object;
+}
+
+ddwaf_object *ddwaf_object_set_string_literal(
+    ddwaf_object *object, const char *string, size_t length)
+{
+    if (object == nullptr || string == nullptr) {
+        return nullptr;
+    }
+    to_ref(object) = owned_object::make_string_literal(string, length).move();
     return object;
 }
 
@@ -548,7 +597,22 @@ ddwaf_object *ddwaf_object_string_from_unsigned(ddwaf_object *object, uint64_t v
     return ddwaf_object_stringl(object, container, length);
 }
 
+ddwaf_object *ddwaf_object_set_unsigned(ddwaf_object *object, uint64_t value)
+{
+    if (object == nullptr) {
+        return nullptr;
+    }
+
+    to_ref(object) = owned_object{value}.move();
+    return object;
+}
+
 ddwaf_object *ddwaf_object_unsigned(ddwaf_object *object, uint64_t value)
+{
+    return ddwaf_object_set_unsigned(object, value);
+}
+
+ddwaf_object *ddwaf_object_set_signed(ddwaf_object *object, int64_t value)
 {
     if (object == nullptr) {
         return nullptr;
@@ -560,15 +624,24 @@ ddwaf_object *ddwaf_object_unsigned(ddwaf_object *object, uint64_t value)
 
 ddwaf_object *ddwaf_object_signed(ddwaf_object *object, int64_t value)
 {
+    return ddwaf_object_set_signed(object, value);
+}
+
+ddwaf_object *ddwaf_object_set_bool(ddwaf_object *object, bool value)
+{
     if (object == nullptr) {
         return nullptr;
     }
-
     to_ref(object) = owned_object{value}.move();
     return object;
 }
 
 ddwaf_object *ddwaf_object_bool(ddwaf_object *object, bool value)
+{
+    return ddwaf_object_set_bool(object, value);
+}
+
+ddwaf_object *ddwaf_object_set_float(ddwaf_object *object, double value)
 {
     if (object == nullptr) {
         return nullptr;
@@ -579,30 +652,81 @@ ddwaf_object *ddwaf_object_bool(ddwaf_object *object, bool value)
 
 ddwaf_object *ddwaf_object_float(ddwaf_object *object, double value)
 {
-    if (object == nullptr) {
+    return ddwaf_object_set_float(object, value);
+}
+
+ddwaf_object *ddwaf_object_set_array(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc)
+{
+    if (object == nullptr || alloc == nullptr) {
         return nullptr;
     }
-    to_ref(object) = owned_object{value}.move();
+    to_ref(object) = owned_object::make_array(capacity, to_alloc_ptr(alloc)).move();
+    return object;
+}
+
+ddwaf_object *ddwaf_object_set_map(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc)
+{
+    if (object == nullptr || alloc == nullptr) {
+        return nullptr;
+    }
+
+    to_ref(object) = owned_object::make_map(capacity, to_alloc_ptr(alloc)).move();
     return object;
 }
 
 ddwaf_object *ddwaf_object_array(ddwaf_object *object)
 {
-    if (object == nullptr) {
-        return nullptr;
-    }
-    to_ref(object) = owned_object::make_array().move();
-    return object;
+    return ddwaf_object_set_array(object, 0, ddwaf_get_default_allocator());
 }
 
 ddwaf_object *ddwaf_object_map(ddwaf_object *object)
 {
-    if (object == nullptr) {
+    return ddwaf_object_set_map(object, 0, ddwaf_get_default_allocator());
+}
+
+ddwaf_object *ddwaf_object_insert(ddwaf_object *array, ddwaf_allocator alloc)
+{
+    if (array == nullptr || array->type != DDWAF_OBJ_ARRAY || alloc == nullptr) {
         return nullptr;
     }
 
-    to_ref(object) = owned_object::make_map().move();
-    return object;
+    try {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        return reinterpret_cast<ddwaf_object *>(
+            to_borrowed(array, to_alloc_ptr(alloc)).emplace_back({}).ptr());
+    } catch (...) {} // NOLINT(bugprone-empty-catch)
+    return nullptr;
+}
+ddwaf_object *ddwaf_object_insert_key(
+    ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc)
+{
+    if (map == nullptr || map->type != DDWAF_OBJ_MAP || alloc == nullptr) {
+        return nullptr;
+    }
+
+    try {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        return reinterpret_cast<ddwaf_object *>(
+            to_borrowed(map, to_alloc_ptr(alloc)).emplace(std::string_view{key, length}, {}).ptr());
+    } catch (...) {} // NOLINT(bugprone-empty-catch)
+    return nullptr;
+}
+
+ddwaf_object *ddwaf_object_insert_literal_key(
+    ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc)
+{
+    if (map == nullptr || map->type != DDWAF_OBJ_MAP || alloc == nullptr) {
+        return nullptr;
+    }
+
+    try {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        return reinterpret_cast<ddwaf_object *>(
+            to_borrowed(map, to_alloc_ptr(alloc))
+                .emplace(owned_object::make_string_literal(key, length), {})
+                .ptr());
+    } catch (...) {} // NOLINT(bugprone-empty-catch)
+    return nullptr;
 }
 
 bool ddwaf_object_array_add(ddwaf_object *array, ddwaf_object *object)
@@ -671,7 +795,7 @@ void ddwaf_object_free(ddwaf_object *object)
     ddwaf_object_invalid(object);
 }
 
-DDWAF_OBJ_TYPE ddwaf_object_type(const ddwaf_object *object)
+DDWAF_OBJ_TYPE ddwaf_object_get_type(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     if (!view.has_value()) {
@@ -681,7 +805,7 @@ DDWAF_OBJ_TYPE ddwaf_object_type(const ddwaf_object *object)
     return static_cast<DDWAF_OBJ_TYPE>(view.type());
 }
 
-size_t ddwaf_object_size(const ddwaf_object *object)
+size_t ddwaf_object_get_size(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     if (!view.has_value() || !view.is_container()) {
@@ -691,7 +815,7 @@ size_t ddwaf_object_size(const ddwaf_object *object)
     return view.size();
 }
 
-size_t ddwaf_object_length(const ddwaf_object *object)
+size_t ddwaf_object_get_length(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     if (!view.has_value() || !view.is_string()) {
