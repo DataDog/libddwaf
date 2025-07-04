@@ -20,9 +20,11 @@
 #include "argument_retriever.hpp"
 #include "clock.hpp"
 #include "exception.hpp"
+#include "memory_resource.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
 #include "object_type.hpp"
+#include "pointer.hpp"
 #include "processor/base.hpp"
 #include "processor/extract_schema.hpp"
 #include "scanner.hpp"
@@ -181,13 +183,15 @@ struct node_serialize {
     owned_object operator()(const node_scalar &node) const;
     owned_object operator()(const node_array_ptr &node) const;
     owned_object operator()(const node_record_ptr &node) const;
+
+    nonnull_ptr<memory::memory_resource> alloc{memory::get_default_resource()};
 };
 
 owned_object node_serialize::operator()(const std::monostate & /*node*/) const
 {
     static constexpr unsigned unknown_type = 0;
 
-    auto array = owned_object::make_array();
+    auto array = owned_object::make_array(1, alloc);
     array.emplace_back(unknown_type);
 
     return array;
@@ -195,11 +199,11 @@ owned_object node_serialize::operator()(const std::monostate & /*node*/) const
 
 owned_object node_serialize::operator()(const node_scalar &node) const
 {
-    auto array = owned_object::make_array();
+    auto array = owned_object::make_array(node.tags.empty() ? 1 : 2, alloc);
     array.emplace_back(static_cast<std::underlying_type_t<scalar_type>>(node.type));
 
     if (!node.tags.empty()) {
-        auto meta = array.emplace_back(owned_object::make_map());
+        auto meta = array.emplace_back(owned_object::make_map(node.tags.size(), alloc));
         for (const auto &[key, value] : node.tags) { meta.emplace(key, value); }
     }
 
@@ -209,18 +213,18 @@ owned_object node_serialize::operator()(const node_scalar &node) const
 // NOLINTNEXTLINE(misc-no-recursion)
 owned_object node_serialize::operator()(const node_array_ptr &node) const
 {
-    auto array = owned_object::make_array();
-    auto types = array.emplace_back(owned_object::make_array());
+    auto array = owned_object::make_array(2, alloc);
+    auto types = array.emplace_back(owned_object::make_array(node->children.size(), alloc));
 
     for (const auto &child : node->children) {
-        auto res = std::visit(node_serialize{}, child);
+        auto res = std::visit(node_serialize{alloc}, child);
         types.emplace_back(std::move(res));
     }
 
-    auto meta = array.emplace_back(owned_object::make_map());
-    meta.emplace("len", node->length);
     if (node->truncated) {
-        meta.emplace("truncated", true);
+        array.emplace_back(object_builder::map({{"len", node->length}, {"truncated", true}}));
+    } else {
+        array.emplace_back(object_builder::map({{"len", node->length}}));
     }
 
     return array;
@@ -229,17 +233,16 @@ owned_object node_serialize::operator()(const node_array_ptr &node) const
 // NOLINTNEXTLINE(misc-no-recursion)
 owned_object node_serialize::operator()(const node_record_ptr &node) const
 {
-    owned_object array = owned_object::make_array();
+    owned_object array = owned_object::make_array(2, alloc);
 
-    auto map = array.emplace_back(owned_object::make_map());
+    auto map = array.emplace_back(owned_object::make_map(node->children.size(), alloc));
     for (const auto &[key, child] : node->children) {
-        auto res = std::visit(node_serialize{}, child);
+        auto res = std::visit(node_serialize{alloc}, child);
         map.emplace(key, std::move(res));
     }
 
     if (node->truncated) {
-        auto meta = array.emplace_back(owned_object::make_map());
-        meta.emplace("truncated", true);
+        array.emplace_back(object_builder::map({{"truncated", true}}));
     }
 
     return array;
@@ -247,7 +250,10 @@ owned_object node_serialize::operator()(const node_record_ptr &node) const
 
 namespace {
 // NOLINTNEXTLINE(misc-no-recursion)
-owned_object serialize(const base_node &node) { return std::visit(node_serialize{}, node); }
+owned_object serialize(const base_node &node, nonnull_ptr<memory::memory_resource> alloc)
+{
+    return std::visit(node_serialize{alloc}, node);
+}
 
 // NOLINTNEXTLINE(misc-no-recursion)
 base_node generate_helper(object_view object, std::string_view key,
@@ -319,11 +325,12 @@ base_node generate_helper(object_view object, std::string_view key,
     return {};
 }
 
-owned_object generate(
-    object_view object, const std::set<const scanner *> &scanners, ddwaf::timer &deadline)
+owned_object generate(object_view object, const std::set<const scanner *> &scanners,
+    nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline)
 {
     return serialize(
-        generate_helper(object, {}, scanners, extract_schema::max_container_depth, deadline));
+        generate_helper(object, {}, scanners, extract_schema::max_container_depth, deadline),
+        alloc);
 }
 
 } // namespace
@@ -332,7 +339,7 @@ owned_object generate(
 
 std::pair<owned_object, object_store::attribute> extract_schema::eval_impl(
     const unary_argument<object_view> &input, processor_cache & /*cache*/,
-    ddwaf::timer &deadline) const
+    nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const
 {
     if (!input.value.has_value()) {
         return {};
@@ -340,7 +347,7 @@ std::pair<owned_object, object_store::attribute> extract_schema::eval_impl(
 
     const object_store::attribute attr =
         input.ephemeral ? object_store::attribute::ephemeral : object_store::attribute::none;
-    return {schema::generate(input.value, scanners_, deadline), attr};
+    return {schema::generate(input.value, scanners_, alloc, deadline), attr};
 }
 
 } // namespace ddwaf

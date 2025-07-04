@@ -24,8 +24,10 @@
 #include "dynamic_string.hpp"
 #include "exception.hpp"
 #include "log.hpp"
+#include "memory_resource.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
+#include "pointer.hpp"
 #include "processor/base.hpp"
 #include "processor/fingerprint.hpp"
 #include "sha256.hpp"
@@ -53,7 +55,7 @@ bool str_casei_cmp(std::string_view left, std::string_view right)
 // - Lowercasing the string
 // - Escaping commas
 // - Adding trailing commas
-void normalize_key(std::string_view key, std::string &buffer, bool trailing_separator)
+void normalize_key(std::string_view key, dynamic_string &buffer, bool trailing_separator)
 {
     buffer.clear();
 
@@ -66,19 +68,19 @@ void normalize_key(std::string_view key, std::string &buffer, bool trailing_sepa
         if (c == ',') {
             buffer.append(R"(\,)");
         } else {
-            buffer.append(1, ddwaf::tolower(c));
+            buffer.append(ddwaf::tolower(c));
         }
     }
 
     if (trailing_separator) {
-        buffer.append(1, ',');
+        buffer.append(',');
     }
 }
 
 // Header normalization implies:
 // - Lowercasing the header
 // - Replacing '_' with '-'
-void normalize_header(std::string_view original, std::string &buffer)
+void normalize_header(std::string_view original, dynamic_string &buffer)
 {
     buffer.resize(original.size());
 
@@ -89,7 +91,7 @@ void normalize_header(std::string_view original, std::string &buffer)
 }
 
 // Value (as opposed to key) normalisation only requires escaping commas
-void normalize_value(std::string_view key, std::string &buffer, bool trailing_separator)
+void normalize_value(std::string_view key, dynamic_string &buffer, bool trailing_separator)
 {
     buffer.clear();
 
@@ -113,7 +115,7 @@ void normalize_value(std::string_view key, std::string &buffer, bool trailing_se
     }
 
     if (trailing_separator) {
-        buffer.append(1, ',');
+        buffer.append(',');
     }
 }
 
@@ -133,7 +135,7 @@ std::string_view value_object_to_string(object_view view)
     return {};
 }
 
-template <typename Derived, typename Output = std::string> struct field_generator {
+template <typename Derived, typename Output = dynamic_string> struct field_generator {
     using output_type = Output;
 
 public:
@@ -162,14 +164,11 @@ private:
 struct string_field : field_generator<string_field> {
     explicit string_field(std::string_view input) : value(input) {}
     // NOLINTNEXTLINE(readability-make-member-function-const)
-    [[nodiscard]] std::string generate()
+    [[nodiscard]] dynamic_string generate()
     {
-        auto buffer = std::string{value};
-
-        auto str_lc = cow_string::from_mutable_buffer(buffer.data(), buffer.size());
+        cow_string str_lc{value};
         transformer::lowercase::transform(str_lc);
-
-        return buffer;
+        return dynamic_string::from_movable_string(str_lc);
     }
 
     std::string_view value;
@@ -180,7 +179,7 @@ template <typename T>
 struct unsigned_field : field_generator<unsigned_field<T>> {
     explicit unsigned_field(T input) : value(input) {}
 
-    [[nodiscard]] std::string generate() { return ddwaf::to_string<std::string>(value); }
+    [[nodiscard]] dynamic_string generate() { return ddwaf::to_string<std::string>(value); }
 
     T value;
 };
@@ -189,7 +188,7 @@ struct string_hash_field : field_generator<string_hash_field> {
     explicit string_hash_field(std::string_view input) : value(input) {}
 
     // NOLINTNEXTLINE(readability-make-member-function-const)
-    [[nodiscard]] std::string generate()
+    [[nodiscard]] dynamic_string generate()
     {
         if (value.empty()) {
             return {};
@@ -211,7 +210,7 @@ struct key_hash_field : field_generator<key_hash_field> {
     explicit key_hash_field(map_view input) : value(input) {}
 
     // NOLINTNEXTLINE(readability-make-member-function-const)
-    [[nodiscard]] std::string generate()
+    [[nodiscard]] dynamic_string generate()
     {
         if (value.empty()) {
             return {};
@@ -228,7 +227,7 @@ struct key_hash_field : field_generator<key_hash_field> {
 
         std::sort(keys.begin(), keys.end(), str_casei_cmp);
 
-        std::string normalized;
+        dynamic_string normalized;
         // By reserving the largest possible size, it should reduce reallocations
         // We also add +1 to account for the trailing comma
         normalized.reserve(max_string_size + 1);
@@ -249,7 +248,7 @@ struct vector_hash_field : field_generator<vector_hash_field> {
     explicit vector_hash_field(std::vector<std::string> &&input) : value(std::move(input)) {}
 
     // NOLINTNEXTLINE(readability-make-member-function-const)
-    [[nodiscard]] std::string generate()
+    [[nodiscard]] dynamic_string generate()
     {
         if (value.empty()) {
             return {};
@@ -298,7 +297,7 @@ struct kv_hash_fields : field_generator<kv_hash_fields, std::pair<std::string, s
         std::sort(kv_sorted.begin(), kv_sorted.end(),
             [](auto &left, auto &right) { return str_casei_cmp(left.first, right.first); });
 
-        std::string normalized;
+        dynamic_string normalized;
         // By reserving the largest possible size, it should reduce reallocations
         // We also add +1 to account for the trailing comma
         normalized.reserve(max_string_size + 1);
@@ -388,7 +387,8 @@ std::size_t generate_fragment_field(std::span<std::string, N> fields, T &generat
 }
 
 template <typename... Generators>
-owned_object generate_fragment(std::string_view header, Generators... generators)
+owned_object generate_fragment(
+    std::string_view header, nonnull_ptr<memory::memory_resource> alloc, Generators... generators)
 {
     constexpr std::size_t num_fields = generate_num_fields<Generators...>();
     std::array<std::string, num_fields> fields;
@@ -397,7 +397,7 @@ owned_object generate_fragment(std::string_view header, Generators... generators
         header.size() + num_fields +
         generate_fragment_field(std::span<std::string, num_fields>{fields}, generators...);
 
-    dynamic_string buffer{static_cast<dynamic_string::size_type>(length)};
+    dynamic_string buffer{static_cast<dynamic_string::size_type>(length), alloc};
     buffer.append(header);
     for (const auto &field : fields) {
         buffer.append('-');
@@ -409,7 +409,7 @@ owned_object generate_fragment(std::string_view header, Generators... generators
 
 template <typename T, typename... Rest>
 std::size_t generate_fragment_field_cached(
-    std::span<std::optional<std::string>> cache, T &generator, Rest &&...rest)
+    std::span<std::optional<dynamic_string>> cache, T &generator, Rest &&...rest)
 {
     std::size_t length = 0;
     if constexpr (is_pair_v<typename T::output_type>) {
@@ -446,7 +446,8 @@ std::size_t generate_fragment_field_cached(
 
 template <typename... Generators>
 owned_object generate_fragment_cached(std::string_view header,
-    std::vector<std::optional<std::string>> &cache, Generators... generators)
+    nonnull_ptr<memory::memory_resource> alloc, std::vector<std::optional<dynamic_string>> &cache,
+    Generators... generators)
 {
     constexpr std::size_t num_fields = generate_num_fields<Generators...>();
     if (cache.empty()) {
@@ -455,7 +456,7 @@ owned_object generate_fragment_cached(std::string_view header,
 
     auto length = header.size() + num_fields + generate_fragment_field_cached(cache, generators...);
 
-    dynamic_string buffer{static_cast<dynamic_string::size_type>(length)};
+    dynamic_string buffer{static_cast<dynamic_string::size_type>(length), alloc};
     buffer.append(header);
     for (const auto &field : cache) {
         buffer.append('-');
@@ -509,7 +510,8 @@ std::pair<header_type, unsigned> get_header_type_and_index(std::string_view head
 std::pair<owned_object, object_store::attribute> http_endpoint_fingerprint::eval_impl(
     const unary_argument<std::string_view> &method, const unary_argument<std::string_view> &uri_raw,
     const optional_argument<map_view> &query, const optional_argument<map_view> &body,
-    processor_cache &cache, ddwaf::timer &deadline) const
+    processor_cache &cache, nonnull_ptr<memory::memory_resource> alloc,
+    ddwaf::timer &deadline) const
 {
     if (deadline.expired()) {
         throw ddwaf::timeout_exception();
@@ -524,7 +526,7 @@ std::pair<owned_object, object_store::attribute> http_endpoint_fingerprint::eval
 
     owned_object res;
     try {
-        res = generate_fragment_cached("http", cache.fingerprint.fragment_fields,
+        res = generate_fragment_cached("http", alloc, cache.fingerprint.fragment_fields,
             string_field{method.value}, string_hash_field{stripped_uri},
             optional_generator<key_hash_field>{query}, optional_generator<key_hash_field>{body});
     } catch (const std::out_of_range &e) {
@@ -537,14 +539,14 @@ std::pair<owned_object, object_store::attribute> http_endpoint_fingerprint::eval
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<owned_object, object_store::attribute> http_header_fingerprint::eval_impl(
     const unary_argument<map_view> &headers, processor_cache & /*cache*/,
-    ddwaf::timer &deadline) const
+    nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const
 {
-    std::string known_header_bitset;
+    dynamic_string known_header_bitset;
     known_header_bitset.resize(standard_headers_length, '0');
 
     std::string_view user_agent;
     std::vector<std::string> unknown_headers;
-    std::string normalized_header;
+    dynamic_string normalized_header;
     for (const auto [key, child] : headers.value) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
@@ -567,7 +569,7 @@ std::pair<owned_object, object_store::attribute> http_header_fingerprint::eval_i
     auto unknown_header_size = unknown_headers.size();
     owned_object res;
     try {
-        res = generate_fragment("hdr", string_field{known_header_bitset},
+        res = generate_fragment("hdr", alloc, string_field{known_header_bitset},
             string_hash_field{user_agent}, unsigned_field{unknown_header_size},
             vector_hash_field{std::move(unknown_headers)});
     } catch (const std::out_of_range &e) {
@@ -580,14 +582,14 @@ std::pair<owned_object, object_store::attribute> http_header_fingerprint::eval_i
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<owned_object, object_store::attribute> http_network_fingerprint::eval_impl(
     const unary_argument<map_view> &headers, processor_cache & /*cache*/,
-    ddwaf::timer &deadline) const
+    nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const
 {
-    std::string ip_origin_bitset;
+    dynamic_string ip_origin_bitset;
     ip_origin_bitset.resize(ip_origin_headers_length, '0');
 
     unsigned chosen_header = ip_origin_headers_length;
     std::string_view chosen_header_value;
-    std::string normalized_header;
+    dynamic_string normalized_header;
     for (const auto [key, child] : headers.value) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
@@ -620,7 +622,8 @@ std::pair<owned_object, object_store::attribute> http_network_fingerprint::eval_
 
     owned_object res;
     try {
-        res = generate_fragment("net", unsigned_field{ip_count}, string_field{ip_origin_bitset});
+        res = generate_fragment(
+            "net", alloc, unsigned_field{ip_count}, string_field{ip_origin_bitset});
     } catch (const std::out_of_range &e) {
         DDWAF_WARN("Failed to generate http network fingerprint: {}", e.what());
     }
@@ -634,7 +637,7 @@ std::pair<owned_object, object_store::attribute> session_fingerprint::eval_impl(
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     const optional_argument<std::string_view> &session_id,
     const optional_argument<std::string_view> &user_id, processor_cache &cache,
-    ddwaf::timer &deadline) const
+    nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const
 {
     if (deadline.expired()) {
         throw ddwaf::timeout_exception();
@@ -642,7 +645,7 @@ std::pair<owned_object, object_store::attribute> session_fingerprint::eval_impl(
 
     owned_object res;
     try {
-        res = generate_fragment_cached("ssn", cache.fingerprint.fragment_fields,
+        res = generate_fragment_cached("ssn", alloc, cache.fingerprint.fragment_fields,
             optional_generator<string_hash_field>{user_id},
             optional_generator<kv_hash_fields>{cookies},
             optional_generator<string_hash_field>{session_id});

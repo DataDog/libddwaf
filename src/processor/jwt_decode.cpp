@@ -10,8 +10,10 @@
 #include "clock.hpp"
 #include "cow_string.hpp"
 #include "json_utils.hpp"
+#include "memory_resource.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
+#include "pointer.hpp"
 #include "processor/base.hpp"
 #include "transformer/base64_decode.hpp"
 #include "utils.hpp"
@@ -65,14 +67,14 @@ std::pair<bool, exploded_jwt> split_token(std::string_view source)
     return {true, parts};
 }
 
-owned_object decode_and_parse(std::string_view source)
+owned_object decode_and_parse(std::string_view source, nonnull_ptr<memory::memory_resource> alloc)
 {
     cow_string cstr{source};
     if (!transformer::base64url_decode::transform(cstr)) {
         return {};
     }
 
-    return json_to_object(static_cast<std::string_view>(cstr));
+    return json_to_object(static_cast<std::string_view>(cstr), alloc);
 }
 
 std::string_view find_token(object_view root, std::span<const std::string> key_path)
@@ -104,7 +106,7 @@ std::string_view find_token(object_view root, std::span<const std::string> key_p
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<owned_object, object_store::attribute> jwt_decode::eval_impl(
     const unary_argument<object_view> &input, processor_cache & /*cache*/,
-    ddwaf::timer & /*deadline*/) const
+    nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer & /*deadline*/) const
 {
     const object_store::attribute attr =
         input.ephemeral ? object_store::attribute::ephemeral : object_store::attribute::none;
@@ -136,9 +138,9 @@ std::pair<owned_object, object_store::attribute> jwt_decode::eval_impl(
     }
 
     // Decode header and payload and generate output
-    auto output = object_builder::map(
-        {{"header", decode_and_parse(jwt.header)}, {"payload", decode_and_parse(jwt.payload)},
-            {"signature", object_builder::map({{"available", !jwt.signature.empty()}})}});
+    auto output = object_builder::map({{"header", decode_and_parse(jwt.header, alloc)},
+        {"payload", decode_and_parse(jwt.payload, alloc)},
+        {"signature", object_builder::map({{"available", !jwt.signature.empty()}}, alloc)}});
 
     return {std::move(output), attr};
 }

@@ -57,14 +57,15 @@ std::pair<bool, owned_object> context::eval(uint64_t timeout)
     auto store_cleanup_scope = store_.get_eval_scope();
     auto on_exit = scope_exit([this]() { this->exclusion_policy_.ephemeral.clear(); });
 
+    result_serializer serializer(obfuscator_, actions_, output_alloc_);
+
     // Generate result object once relevant checks have been made
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
 
     if (!store_.has_new_targets()) {
         return {false, std::move(result_object)};
     }
 
-    const result_serializer serializer(obfuscator_, actions_);
     ddwaf::timer deadline{std::chrono::microseconds(timeout)};
 
     try {
@@ -123,7 +124,7 @@ void context::eval_preprocessors(ddwaf::timer &deadline)
             it = new_it;
         }
 
-        preproc->eval(store_, collector_, it->second, deadline);
+        preproc->eval(store_, collector_, it->second, output_alloc_, deadline);
     }
 }
 
@@ -143,7 +144,7 @@ void context::eval_postprocessors(ddwaf::timer &deadline)
             it = new_it;
         }
 
-        postproc->eval(store_, collector_, it->second, deadline);
+        postproc->eval(store_, collector_, it->second, output_alloc_, deadline);
     }
 }
 

@@ -31,7 +31,7 @@ public:
 
     std::pair<owned_object, object_store::attribute> eval_impl(
         const unary_argument<object_view> &input, processor_cache &cache,
-        ddwaf::timer &deadline) const;
+        nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const;
 
 protected:
     std::set<const scanner *> scanners_;

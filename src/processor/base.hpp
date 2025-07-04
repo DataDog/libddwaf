@@ -14,6 +14,7 @@
 #include "attribute_collector.hpp"
 #include "exception.hpp"
 #include "expression.hpp"
+#include "memory_resource.hpp"
 #include "object_store.hpp"
 #include "utils.hpp"
 
@@ -47,7 +48,7 @@ struct processor_cache {
 
     // Fingerprinting cache
     struct {
-        std::vector<std::optional<std::string>> fragment_fields;
+        std::vector<std::optional<dynamic_string>> fragment_fields;
     } fingerprint;
 };
 
@@ -81,7 +82,7 @@ public:
     virtual ~base_processor() = default;
 
     virtual void eval(object_store &store, attribute_collector &collector, processor_cache &cache,
-        ddwaf::timer &deadline) const = 0;
+        nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const = 0;
 
     virtual void get_addresses(std::unordered_map<target_index, std::string> &addresses) const = 0;
 
@@ -104,7 +105,7 @@ public:
     ~structured_processor() override = default;
 
     void eval(object_store &store, attribute_collector &collector, processor_cache &cache,
-        ddwaf::timer &deadline) const override
+        nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const override
     {
         DDWAF_DEBUG("Evaluating processor '{}'", id_);
 
@@ -159,10 +160,14 @@ public:
                 }
             }
 
+            // If the result is to be evaluated, the contents must be allocated using
+            // the default allocator and cloned using the user-provided one.
+            auto suitable_alloc = evaluate_ ? memory::get_default_resource() : alloc;
+
             auto [object, attr] = std::apply(
                 [&](auto &&...args) {
                     return static_cast<const Self *>(this)->eval_impl(
-                        std::forward<decltype(args)>(args)..., cache, deadline);
+                        std::forward<decltype(args)>(args)..., cache, suitable_alloc, deadline);
                 },
                 std::move(args));
             if (attr != object_store::attribute::ephemeral) {
@@ -182,18 +187,18 @@ public:
                 continue;
             }
 
-            if (evaluate_) {
-                if (!output_) {
+            if (output_) {
+                if (evaluate_) {
+                    // If the object is to be evaluated, we clone it before adding it to the
+                    // collector using the user-provided allocator.
+                    collector.insert(mapping.output.name, object.clone(alloc));
                     store.insert(
                         mapping.output.index, mapping.output.name, std::move(object), attr);
                 } else {
-                    store.insert(mapping.output.index, mapping.output.name, object.clone(), attr);
+                    collector.insert(mapping.output.name, std::move(object));
                 }
-            }
-
-            if (output_) {
-                // The object is copied if we are also using it for evaluation
-                collector.insert(mapping.output.name, std::move(object));
+            } else {
+                store.insert(mapping.output.index, mapping.output.name, std::move(object), attr);
             }
         }
     }

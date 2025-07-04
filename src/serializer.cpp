@@ -16,9 +16,11 @@
 #include "attribute_collector.hpp"
 #include "clock.hpp"
 #include "condition/base.hpp"
+#include "memory_resource.hpp"
 #include "obfuscator.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
+#include "pointer.hpp"
 #include "rule.hpp"
 #include "serializer.hpp"
 #include "uuid.hpp"
@@ -27,37 +29,51 @@ namespace ddwaf {
 
 namespace {
 
-owned_object serialize_match(condition_match &match)
+owned_object serialize_match(condition_match &match, nonnull_ptr<memory::memory_resource> alloc)
 {
-    auto match_map = owned_object::make_map();
+    auto match_map = owned_object::make_map(3, alloc);
 
     match_map.emplace("operator", match.operator_name);
     match_map.emplace("operator_value", match.operator_value);
 
-    auto parameters = match_map.emplace("parameters", owned_object::make_array());
-    auto param = parameters.emplace_back(owned_object::make_map());
-
-    auto highlight_arr = param.emplace("highlight", owned_object::make_array());
-    for (auto &highlight : match.highlights) { highlight_arr.emplace_back(highlight.to_object()); }
+    auto parameters = match_map.emplace("parameters", owned_object::make_array(1, alloc));
 
     // Scalar case
     if (match.args.size() == 1 && match.args[0].name == "input") {
+        auto param = parameters.emplace_back(owned_object::make_map(4, alloc));
+
         auto &arg = match.args[0];
 
         param.emplace("address", arg.address);
         param.emplace("value", arg.resolved.to_object());
 
-        auto key_path = param.emplace("key_path", owned_object::make_array());
+        auto key_path =
+            param.emplace("key_path", owned_object::make_array(arg.key_path.size(), alloc));
         for (const auto &key : arg.key_path) { key_path.emplace_back(key); }
+
+        auto highlight_arr =
+            param.emplace("highlight", owned_object::make_array(match.highlights.size(), alloc));
+        for (auto &highlight : match.highlights) {
+            highlight_arr.emplace_back(highlight.to_object());
+        }
     } else {
+        auto param = parameters.emplace_back(owned_object::make_map(match.args.size() + 1, alloc));
+
         for (auto &arg : match.args) {
-            auto argument = param.emplace(arg.name, owned_object::make_map());
+            auto argument = param.emplace(arg.name, owned_object::make_map(3, alloc));
 
             argument.emplace("address", arg.address);
             argument.emplace("value", arg.resolved.to_object());
 
-            auto key_path = argument.emplace("key_path", owned_object::make_array());
+            auto key_path =
+                argument.emplace("key_path", owned_object::make_array(arg.key_path.size(), alloc));
             for (const auto &key : arg.key_path) { key_path.emplace_back(key); }
+        }
+
+        auto highlight_arr =
+            param.emplace("highlight", owned_object::make_array(match.highlights.size(), alloc));
+        for (auto &highlight : match.highlights) {
+            highlight_arr.emplace_back(highlight.to_object());
         }
     }
 
@@ -103,9 +119,9 @@ void add_action_to_tracker(action_tracker &actions, std::string_view id, action_
 
 std::pair<owned_object, /*stack id*/ bool> serialize_and_consolidate_actions(
     std::string_view action_override, const std::vector<std::string> &rule_actions,
-    action_tracker &actions)
+    action_tracker &actions, nonnull_ptr<memory::memory_resource> alloc)
 {
-    auto actions_array = owned_object::make_array();
+    auto actions_array = owned_object::make_array(rule_actions.size(), alloc);
     if (rule_actions.empty() && action_override.empty()) {
         return {std::move(actions_array), false};
     }
@@ -196,23 +212,27 @@ void serialize_event(rule_event &event, const match_obfuscator &obfuscator,
     std::string_view action_override, const std::vector<std::string> &rule_actions,
     action_tracker &actions, borrowed_object &event_array)
 {
-    auto root_map = event_array.emplace_back(owned_object::make_map());
-
-    auto rule_map = root_map.emplace("rule", owned_object::make_map());
-    rule_map.emplace("id", event.rule.id);
-    rule_map.emplace("name", event.rule.name);
-
-    auto tags_map = rule_map.emplace("tags", owned_object::make_map());
-    for (const auto &[key, value] : event.rule.tags.get()) { tags_map.emplace(key, value); }
+    auto alloc = event_array.alloc();
 
     auto [actions_array, has_stack_id] =
-        serialize_and_consolidate_actions(action_override, rule_actions, actions);
+        serialize_and_consolidate_actions(action_override, rule_actions, actions, alloc);
+
+    auto root_map = event_array.emplace_back(owned_object::make_map(has_stack_id ? 3 : 2, alloc));
+
+    auto rule_map = root_map.emplace("rule", owned_object::make_map(4, alloc));
+    rule_map.emplace("id", event.rule.id);
+    rule_map.emplace("name", event.rule.name);
     rule_map.emplace("on_match", std::move(actions_array));
 
-    auto match_array = root_map.emplace("rule_matches", owned_object::make_array());
+    const auto &rule_tags = event.rule.tags.get();
+    auto tags_map = rule_map.emplace("tags", owned_object::make_map(rule_tags.size(), alloc));
+    for (const auto &[key, value] : rule_tags) { tags_map.emplace(key, value); }
+
+    auto match_array =
+        root_map.emplace("rule_matches", owned_object::make_array(event.matches.size(), alloc));
     for (auto &match : event.matches) {
         obfuscator.obfuscate_match(match);
-        match_array.emplace_back(serialize_match(match));
+        match_array.emplace_back(serialize_match(match, alloc));
     }
 
     if (has_stack_id) {
@@ -234,10 +254,13 @@ void serialize_action(
         return;
     }
 
-    auto param_map = action_map.emplace(type_str, owned_object::make_map());
     if (type != action_type::generate_stack) {
+        auto param_map = action_map.emplace(
+            type_str, owned_object::make_map(parameters.size(), action_map.alloc()));
         for (const auto &[k, v] : parameters) { param_map.emplace(k, v); }
     } else {
+        auto param_map =
+            action_map.emplace(type_str, owned_object::make_map(1, action_map.alloc()));
         param_map.emplace("stack_id", actions.stack_id);
     }
 }
@@ -277,7 +300,7 @@ void collect_attributes(const object_store &store, const std::vector<rule_attrib
 } // namespace
 
 void result_serializer::serialize(const object_store &store, std::vector<rule_result> &results,
-    attribute_collector &collector, const timer &deadline, result_components output) const
+    attribute_collector &collector, const timer &deadline, result_components output)
 {
     action_tracker actions{
         .blocking_action = {}, .stack_id = {}, .non_blocking_actions = {}, .mapper = actions_};
@@ -310,9 +333,12 @@ void result_serializer::serialize(const object_store &store, std::vector<rule_re
 
 std::pair<owned_object, result_components> result_serializer::initialise_result_object()
 {
-    auto object = object_builder::map({{"events", object_builder::array()},
-        {"actions", object_builder::map()}, {"duration", owned_object::make_unsigned(0)},
-        {"timeout", false}, {"attributes", object_builder::map()}, {"keep", false}});
+    auto object =
+        object_builder::map({{"events", object_builder::array({}, alloc_)},
+                                {"actions", object_builder::map({}, alloc_)},
+                                {"duration", owned_object::make_unsigned(0)}, {"timeout", false},
+                                {"attributes", object_builder::map({}, alloc_)}, {"keep", false}},
+            alloc_);
 
     const result_components res{.events = object.at(0),
         .actions = object.at(1),
