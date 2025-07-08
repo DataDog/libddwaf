@@ -29,7 +29,7 @@ public:
 
     explicit context(std::shared_ptr<ruleset> ruleset,
         nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
-        : output_alloc_(output_alloc), ruleset_(std::move(ruleset)),
+        : output_alloc_(output_alloc), ruleset_(std::move(ruleset)), collector_(output_alloc),
           preprocessors_(*ruleset_->preprocessors), postprocessors_(*ruleset_->postprocessors),
           rule_filters_(*ruleset_->rule_filters), input_filters_(*ruleset_->input_filters),
           rule_matchers_(*ruleset_->rule_matchers),
@@ -105,11 +105,11 @@ protected:
 
     // This memory resource is used primarily for the allocation of memory
     // which will be returned to the user.
-    nonnull_ptr<memory::memory_resource> output_alloc_{memory::get_default_resource()};
+    nonnull_ptr<memory::memory_resource> output_alloc_;
 
     std::shared_ptr<ruleset> ruleset_;
     ddwaf::object_store store_;
-    attribute_collector collector_{output_alloc_};
+    attribute_collector collector_;
 
     // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
     const std::vector<std::unique_ptr<base_processor>> &preprocessors_;
