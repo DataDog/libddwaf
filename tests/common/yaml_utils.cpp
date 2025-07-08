@@ -159,7 +159,7 @@ owned_object node_to_owned_object(const Node &node)
         return owned_object{value};
     }
     case NodeType::Null:
-        return owned_object{nullptr};
+        return owned_object::make_null();
     case NodeType::Undefined:
         return {};
     }

@@ -310,9 +310,9 @@ void result_serializer::serialize(const object_store &store, std::vector<rule_re
 
 std::pair<owned_object, result_components> result_serializer::initialise_result_object()
 {
-    auto object = owned_object::make_map({{"events", owned_object::make_array()},
-        {"actions", owned_object::make_map()}, {"duration", owned_object::make_unsigned(0)},
-        {"timeout", false}, {"attributes", owned_object::make_map()}, {"keep", false}});
+    auto object = object_builder::map({{"events", object_builder::array()},
+        {"actions", object_builder::map()}, {"duration", owned_object::make_unsigned(0)},
+        {"timeout", false}, {"attributes", object_builder::map()}, {"keep", false}});
 
     const result_components res{.events = object.at(0),
         .actions = object.at(1),

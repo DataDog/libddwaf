@@ -24,6 +24,7 @@
 #include "context.hpp"
 #include "ddwaf.h"
 #include "log.hpp"
+#include "memory_resource.hpp"
 #include "obfuscator.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
@@ -480,7 +481,7 @@ ddwaf_object *ddwaf_object_null(ddwaf_object *object)
         return nullptr;
     }
 
-    to_ref(object) = owned_object{nullptr}.move();
+    to_ref(object) = owned_object::make_null().move();
 
     return object;
 }
@@ -665,7 +666,7 @@ void ddwaf_object_free(ddwaf_object *object)
         return;
     }
 
-    detail::object_destroy(to_ref(object));
+    detail::object_destroy(to_ref(object), memory::get_default_resource());
 
     ddwaf_object_invalid(object);
 }

@@ -29,7 +29,7 @@ void match_path_and_input(
     ssrf_detector cond{{gen_param_def("server.io.net.url", "server.request.query")}};
 
     for (const auto &[path, sample] : samples) {
-        auto root = owned_object::make_map({{"server.io.net.url", path},
+        auto root = object_builder::map({{"server.io.net.url", path},
             {"server.request.query", yaml_to_object<owned_object>(sample.yaml)}});
 
         object_store store;

@@ -35,7 +35,7 @@ TEST(TestLFIDetector, MatchBasicUnix)
 
     for (const auto &[path, input] : samples) {
         auto root =
-            owned_object::make_map({{"server.io.fs.file", path}, {"server.request.query", input}});
+            object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
         store.insert(std::move(root));
@@ -48,14 +48,14 @@ TEST(TestLFIDetector, MatchBasicUnix)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
-        EXPECT_STR(cache.match->args[0].resolved, path.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, path);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, input);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input.c_str());
+        EXPECT_STR(cache.match->highlights[0], input);
     }
 }
 
@@ -99,7 +99,7 @@ TEST(TestLFIDetector, MatchBasicWindows)
 
     for (const auto &[path, input] : samples) {
         auto root =
-            owned_object::make_map({{"server.io.fs.file", path}, {"server.request.query", input}});
+            object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
         store.insert(std::move(root));
@@ -112,14 +112,14 @@ TEST(TestLFIDetector, MatchBasicWindows)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
-        EXPECT_STR(cache.match->args[0].resolved, path.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, path);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, input);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input.c_str());
+        EXPECT_STR(cache.match->highlights[0], input);
     }
 }
 
@@ -160,12 +160,12 @@ TEST(TestLFIDetector, PartiallyEphemeralMatch)
 
     {
         auto root =
-            owned_object::make_map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"}});
+            object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"}});
         store.insert(std::move(root));
     }
 
     {
-        auto root = owned_object::make_map({{"server.request.query", "../../../etc/passwd"}});
+        auto root = object_builder::map({{"server.request.query", "../../../etc/passwd"}});
         store.insert(std::move(root), object_store::attribute::ephemeral);
     }
 
@@ -193,7 +193,7 @@ TEST(TestLFIDetector, EphemeralMatch)
 
     object_store store;
 
-    auto root = owned_object::make_map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
+    auto root = object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
         {"server.request.query", "../../../etc/passwd"}});
 
     store.insert(std::move(root), object_store::attribute::ephemeral);
@@ -232,7 +232,7 @@ TEST(TestLFIDetector, NoMatchUnix)
 
     for (const auto &[path, input] : samples) {
         auto root =
-            owned_object::make_map({{"server.io.fs.file", path}, {"server.request.query", input}});
+            object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
         store.insert(std::move(root));
@@ -271,7 +271,7 @@ TEST(TestLFIDetector, NoMatchWindows)
 
     for (const auto &[path, input] : samples) {
         auto root =
-            owned_object::make_map({{"server.io.fs.file", path}, {"server.request.query", input}});
+            object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
         store.insert(std::move(root));
@@ -289,11 +289,11 @@ TEST(TestLFIDetector, NoMatchExcludedPath)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
-    auto root = owned_object::make_map({
+    auto root = object_builder::map({
         {"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
     });
     auto params_map = root.emplace(
-        "server.request.query", owned_object::make_map({{"endpoint", "../../../etc/passwd"}}));
+        "server.request.query", object_builder::map({{"endpoint", "../../../etc/passwd"}}));
 
     std::unordered_set<object_view> persistent{params_map.at(0)};
     exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
@@ -313,8 +313,8 @@ TEST(TestLFIDetector, NoMatchExcludedAddress)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
-    auto root = owned_object::make_map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
-        {"server.request.query", owned_object::make_map({{"endpoint", "../../../etc/passwd"}})}});
+    auto root = object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
+        {"server.request.query", object_builder::map({{"endpoint", "../../../etc/passwd"}})}});
 
     std::unordered_set<object_view> persistent{root.at(1)};
     exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
@@ -334,8 +334,8 @@ TEST(TestLFIDetector, Timeout)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
-    auto root = owned_object::make_map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
-        {"server.request.query", owned_object::make_map({{"endpoint", "../../../etc/passwd"}})}});
+    auto root = object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
+        {"server.request.query", object_builder::map({{"endpoint", "../../../etc/passwd"}})}});
 
     std::unordered_set<object_view> persistent{root.at(1)};
     exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
@@ -355,7 +355,7 @@ TEST(TestLFIDetector, NoParams)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
-    auto root = owned_object::make_map({
+    auto root = object_builder::map({
         {"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
     });
 

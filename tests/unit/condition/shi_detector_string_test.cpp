@@ -21,7 +21,7 @@ TEST(TestShiDetectorString, InvalidType)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
-    auto root = owned_object::make_map(
+    auto root = object_builder::map(
         {{"server.sys.shell.cmd", owned_object{}}, {"server.request.query", "whatever"}});
 
     object_store store;
@@ -37,8 +37,8 @@ TEST(TestShiDetectorString, EmptyResource)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
-    auto root = owned_object::make_map(
-        {{"server.sys.shell.cmd", ""}, {"server.request.query", "whatever"}});
+    auto root =
+        object_builder::map({{"server.sys.shell.cmd", ""}, {"server.request.query", "whatever"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -76,7 +76,7 @@ TEST(TestShiDetectorString, NoMatchAndFalsePositives)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = owned_object::make_map({
+        auto root = object_builder::map({
             {"server.sys.shell.cmd", resource},
             {"server.request.query", param},
         });
@@ -107,7 +107,7 @@ TEST(TestShiDetectorString, ExecutablesAndRedirections)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = owned_object::make_map({
+        auto root = object_builder::map({
             {"server.sys.shell.cmd", resource},
             {"server.request.query", param},
         });
@@ -123,14 +123,14 @@ TEST(TestShiDetectorString, ExecutablesAndRedirections)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, resource);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, param.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, param);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], param.c_str());
+        EXPECT_STR(cache.match->highlights[0], param);
     }
 }
 
@@ -151,7 +151,7 @@ TEST(TestShiDetectorString, InjectionsWithinCommandSubstitution)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = owned_object::make_map({
+        auto root = object_builder::map({
             {"server.sys.shell.cmd", resource},
             {"server.request.query", param},
         });
@@ -167,14 +167,14 @@ TEST(TestShiDetectorString, InjectionsWithinCommandSubstitution)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, resource);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, param.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, param);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], param.c_str());
+        EXPECT_STR(cache.match->highlights[0], param);
     }
 }
 
@@ -188,7 +188,7 @@ TEST(TestShiDetectorString, InjectionsWithinProcessSubstitution)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = owned_object::make_map({
+        auto root = object_builder::map({
             {"server.sys.shell.cmd", resource},
             {"server.request.query", param},
         });
@@ -204,14 +204,14 @@ TEST(TestShiDetectorString, InjectionsWithinProcessSubstitution)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, resource);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, param.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, param);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], param.c_str());
+        EXPECT_STR(cache.match->highlights[0], param);
     }
 }
 
@@ -227,7 +227,7 @@ TEST(TestShiDetectorString, OffByOnePayloadsMatch)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = owned_object::make_map({
+        auto root = object_builder::map({
             {"server.sys.shell.cmd", resource},
             {"server.request.query", param},
         });
@@ -243,14 +243,14 @@ TEST(TestShiDetectorString, OffByOnePayloadsMatch)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, resource);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, param.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, param);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], param.c_str());
+        EXPECT_STR(cache.match->highlights[0], param);
     }
 }
 
@@ -289,7 +289,7 @@ TEST(TestShiDetectorString, MultipleArgumentsMatch)
     };
 
     for (const auto &resource : samples) {
-        auto root = owned_object::make_map({{"server.sys.shell.cmd", resource},
+        auto root = object_builder::map({{"server.sys.shell.cmd", resource},
             {"server.request.query", yaml_to_object<owned_object>(params)}});
 
         object_store store;
@@ -303,7 +303,7 @@ TEST(TestShiDetectorString, MultipleArgumentsMatch)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, resource);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
     }
 }

@@ -18,7 +18,7 @@ TEST(TestInputFilter, InputExclusionNoConditions)
 {
     object_store store;
 
-    auto root = owned_object::make_map({{"query", "value"}});
+    auto root = object_builder::map({{"query", "value"}});
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
@@ -43,7 +43,7 @@ TEST(TestInputFilter, EphemeralInputExclusionNoConditions)
 {
     object_store store;
 
-    auto root = owned_object::make_map({{"query", "value"}});
+    auto root = object_builder::map({{"query", "value"}});
     store.insert(root, object_store::attribute::ephemeral);
 
     auto obj_filter = std::make_shared<object_filter>();
@@ -68,8 +68,8 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
 {
     object_store store;
 
-    auto root = owned_object::make_map();
-    auto child = root.emplace("query", owned_object::make_map());
+    auto root = object_builder::map();
+    auto child = root.emplace("query", object_builder::map());
     child.emplace("params", "param");
 
     store.insert(root);
@@ -96,8 +96,8 @@ TEST(TestInputFilter, EphemeralObjectExclusionNoConditions)
 {
     object_store store;
 
-    auto root = owned_object::make_map();
-    auto child = root.emplace("query", owned_object::make_map());
+    auto root = object_builder::map();
+    auto child = root.emplace("query", object_builder::map());
     child.emplace("params", "param");
 
     store.insert(root, object_store::attribute::ephemeral);
@@ -128,7 +128,7 @@ TEST(TestInputFilter, PersistentInputExclusionWithPersistentCondition)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
     ddwaf::object_store store;
     store.insert(root);
 
@@ -157,7 +157,7 @@ TEST(TestInputFilter, EphemeralInputExclusionWithEphemeralCondition)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
     ddwaf::object_store store;
     store.insert(root, object_store::attribute::ephemeral);
@@ -189,10 +189,10 @@ TEST(TestInputFilter, PersistentInputExclusionWithEphemeralCondition)
 
     ddwaf::object_store store;
 
-    auto root = owned_object::make_map({{"usr.id", "admin"}});
+    auto root = object_builder::map({{"usr.id", "admin"}});
     store.insert(std::move(root), object_store::attribute::ephemeral);
 
-    root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+    root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
@@ -222,10 +222,10 @@ TEST(TestInputFilter, EphemeralInputExclusionWithPersistentCondition)
 
     ddwaf::object_store store;
 
-    auto root = owned_object::make_map({{"usr.id", "admin"}});
+    auto root = object_builder::map({{"usr.id", "admin"}});
     store.insert(std::move(root));
 
-    root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+    root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
     store.insert(root, object_store::attribute::ephemeral);
 
     auto obj_filter = std::make_shared<object_filter>();
@@ -253,7 +253,7 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
     builder.add_target("usr.id", {}, {transformer_id::lowercase});
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    auto root = owned_object::make_map({{"usr.id", "ADMIN"}});
+    auto root = object_builder::map({{"usr.id", "ADMIN"}});
 
     ddwaf::object_store store;
     store.insert(root);
@@ -282,7 +282,7 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    auto root = owned_object::make_map({{"http.client_ip", "192.168.0.2"}});
+    auto root = object_builder::map({{"http.client_ip", "192.168.0.2"}});
 
     ddwaf::object_store store;
     store.insert(root);
@@ -307,11 +307,11 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    auto root = owned_object::make_map({
+    auto root = object_builder::map({
         {"http.client_ip", "192.168.0.1"},
     });
 
-    auto child = root.emplace("query", owned_object::make_map({{"params", "value"}}));
+    auto child = root.emplace("query", object_builder::map({{"params", "value"}}));
 
     ddwaf::object_store store;
     store.insert(root);
@@ -341,8 +341,8 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
     builder.add_target("http.client_ip");
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-    auto root = owned_object::make_map({{"http.client_ip", "192.168.0.2"},
-        {"query", owned_object::make_map({{"params", "value"}})}});
+    auto root = object_builder::map(
+        {{"http.client_ip", "192.168.0.2"}, {"query", object_builder::map({{"params", "value"}})}});
 
     ddwaf::object_store store;
     store.insert(root);
@@ -383,7 +383,7 @@ TEST(TestInputFilter, InputValidateCachedMatch)
     // matched on the second run.
     input_filter::cache_type cache;
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         ddwaf::object_store store;
         store.insert(root);
@@ -393,7 +393,7 @@ TEST(TestInputFilter, InputValidateCachedMatch)
     }
 
     {
-        auto root = owned_object::make_map({{"usr.id", "admin"}});
+        auto root = object_builder::map({{"usr.id", "admin"}});
 
         ddwaf::object_store store;
         store.insert(root);
@@ -425,11 +425,11 @@ TEST(TestInputFilter, InputValidateCachedEphemeralMatch)
     // only the latest address. This ensures that the IP condition can't be
     // matched on the second run.
     std::vector<owned_object> objects;
-    objects.emplace_back(owned_object::make_map({{"http.client_ip", "192.168.0.1"}}));
-    objects.emplace_back(owned_object::make_map({{"usr.id", "admin"}}));
-    objects.emplace_back(owned_object::make_map({{"usr.id", "admin"}}));
-    objects.emplace_back(owned_object::make_map({{"http.client_ip", "192.168.0.1"}}));
-    objects.emplace_back(owned_object::make_map({{"usr.id", "admin"}}));
+    objects.emplace_back(object_builder::map({{"http.client_ip", "192.168.0.1"}}));
+    objects.emplace_back(object_builder::map({{"usr.id", "admin"}}));
+    objects.emplace_back(object_builder::map({{"usr.id", "admin"}}));
+    objects.emplace_back(object_builder::map({{"http.client_ip", "192.168.0.1"}}));
+    objects.emplace_back(object_builder::map({{"usr.id", "admin"}}));
 
     input_filter::cache_type cache;
     ddwaf::object_store store;
@@ -493,7 +493,7 @@ TEST(TestInputFilter, InputMatchWithoutCache)
     // In this test we validate that when the cache is empty and only one
     // address is passed, the filter doesn't match (as it should be).
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         ddwaf::object_store store;
         store.insert(root);
@@ -504,7 +504,7 @@ TEST(TestInputFilter, InputMatchWithoutCache)
     }
 
     {
-        auto root = owned_object::make_map({{"usr.id", "admin"}});
+        auto root = object_builder::map({{"usr.id", "admin"}});
 
         ddwaf::object_store store;
         store.insert(root);
@@ -539,8 +539,8 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
     ddwaf::object_store store;
 
     std::vector<owned_object> objects;
-    objects.emplace_back(owned_object::make_map({{"http.client_ip", "192.168.0.1"}}));
-    objects.emplace_back(owned_object::make_map({{"usr.id", "admin"}}));
+    objects.emplace_back(object_builder::map({{"http.client_ip", "192.168.0.1"}}));
+    objects.emplace_back(object_builder::map({{"usr.id", "admin"}}));
 
     {
         store.insert(objects[0]);
@@ -592,8 +592,8 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
 
     std::vector<owned_object> objects;
     objects.emplace_back(
-        owned_object::make_map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}}));
-    objects.emplace_back(owned_object::make_map({{"random", "random"}}));
+        object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}}));
+    objects.emplace_back(object_builder::map({{"random", "random"}}));
 
     {
         auto scope = store.get_eval_scope();
@@ -643,10 +643,10 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
     input_filter::cache_type cache;
 
     std::vector<owned_object> objects;
-    objects.emplace_back(owned_object::make_map({{"http.client_ip", "192.168.0.1"},
-        {"query", owned_object::make_map({{"params", "value"}})}}));
-    objects.emplace_back(owned_object::make_map(
-        {{"usr.id", "admin"}, {"query", owned_object::make_map({{"params", "value"}})}}));
+    objects.emplace_back(object_builder::map({{"http.client_ip", "192.168.0.1"},
+        {"query", object_builder::map({{"params", "value"}})}}));
+    objects.emplace_back(object_builder::map(
+        {{"usr.id", "admin"}, {"query", object_builder::map({{"params", "value"}})}}));
 
     {
         ddwaf::object_store store;
@@ -690,8 +690,8 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
     // In this test we validate that when the cache is empty and only one
     // address is passed, the filter doesn't match (as it should be).
     {
-        auto root = owned_object::make_map({{"http.client_ip", "192.168.0.1"},
-            {"query", owned_object::make_map({{"params", "value"}})}});
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"},
+            {"query", object_builder::map({{"params", "value"}})}});
         ddwaf::object_store store;
         store.insert(root);
 
@@ -702,8 +702,8 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
 
     {
 
-        auto root = owned_object::make_map(
-            {{"usr.id", "admin"}, {"query", owned_object::make_map({{"params", "value"}})}});
+        auto root = object_builder::map(
+            {{"usr.id", "admin"}, {"query", object_builder::map({{"params", "value"}})}});
         ddwaf::object_store store;
         store.insert(root);
 
@@ -737,9 +737,9 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
     ddwaf::object_store store;
 
     std::vector<owned_object> objects;
-    objects.emplace_back(owned_object::make_map({{"http.client_ip", "192.168.0.1"},
-        {"query", owned_object::make_map({{"params", "value"}})}}));
-    objects.emplace_back(owned_object::make_map({{"usr.id", "admin"}}));
+    objects.emplace_back(object_builder::map({{"http.client_ip", "192.168.0.1"},
+        {"query", object_builder::map({{"params", "value"}})}}));
+    objects.emplace_back(object_builder::map({{"usr.id", "admin"}}));
 
     {
         store.insert(objects[0]);
@@ -787,9 +787,9 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     input_filter::cache_type cache;
 
     std::vector<owned_object> objects;
-    objects.emplace_back(owned_object::make_map({{"http.client_ip", "192.168.0.1"},
-        {"usr.id", "admin"}, {"query", owned_object::make_map({{"params", "value"}})}}));
-    objects.emplace_back(owned_object::make_map({{"random", "random"}}));
+    objects.emplace_back(object_builder::map({{"http.client_ip", "192.168.0.1"},
+        {"usr.id", "admin"}, {"query", object_builder::map({{"params", "value"}})}}));
+    objects.emplace_back(object_builder::map({{"random", "random"}}));
 
     {
         auto scope = store.get_eval_scope();
@@ -833,10 +833,10 @@ TEST(TestInputFilter, MatchWithDynamicMatcher)
     input_filter filter("filter", builder.build(), {rule.get()}, std::move(obj_filter));
 
     std::vector<owned_object> objects;
-    objects.emplace_back(owned_object::make_map({{"http.client_ip", "192.168.0.1"},
-        {"usr.id", "admin"}, {"query", owned_object::make_map({{"params", "value"}})}}));
-    objects.emplace_back(owned_object::make_map({{"http.client_ip", "192.168.0.1"},
-        {"usr.id", "admin"}, {"query", owned_object::make_map({{"params", "value"}})}}));
+    objects.emplace_back(object_builder::map({{"http.client_ip", "192.168.0.1"},
+        {"usr.id", "admin"}, {"query", object_builder::map({{"params", "value"}})}}));
+    objects.emplace_back(object_builder::map({{"http.client_ip", "192.168.0.1"},
+        {"usr.id", "admin"}, {"query", object_builder::map({{"params", "value"}})}}));
 
     {
         ddwaf::object_store store;

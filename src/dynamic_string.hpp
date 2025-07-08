@@ -55,8 +55,7 @@ public:
     ~dynamic_string()
     {
         if (buffer_ != nullptr) {
-            memory::memory_resource *alloc{memory::get_default_resource()};
-            alloc->deallocate(buffer_, capacity_, alignof(char));
+            alloc_->deallocate(buffer_, capacity_, alignof(char));
             buffer_ = nullptr;
             size_ = capacity_ = 0;
         }

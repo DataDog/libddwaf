@@ -37,8 +37,8 @@ TEST(TestCmdiDetector, InvalidType)
 {
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
-    auto root = owned_object::make_map(
-        {{"server.sys.exec.cmd", owned_object::make_map()}, {"server.request.query", "whatever"}});
+    auto root = object_builder::map(
+        {{"server.sys.exec.cmd", object_builder::map()}, {"server.request.query", "whatever"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -53,8 +53,8 @@ TEST(TestCmdiDetector, EmptyResource)
 {
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
-    auto root = owned_object::make_map({{"server.sys.exec.cmd", owned_object::make_array()},
-        {"server.request.query", "whatever"}});
+    auto root = object_builder::map(
+        {{"server.sys.exec.cmd", object_builder::array()}, {"server.request.query", "whatever"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -98,9 +98,9 @@ TEST(TestCmdiDetector, NoInjection)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = owned_object::make_map({{"server.request.query", param}});
+        auto root = object_builder::map({{"server.request.query", param}});
 
-        auto array = root.emplace("server.sys.exec.cmd", owned_object::make_array());
+        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
@@ -138,9 +138,9 @@ TEST(TestCmdiDetector, NoExecutableInjection)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = owned_object::make_map({{"server.request.query", param}});
+        auto root = object_builder::map({{"server.request.query", param}});
 
-        auto array = root.emplace("server.sys.exec.cmd", owned_object::make_array());
+        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
@@ -195,9 +195,9 @@ TEST(TestCmdiDetector, NoShellInjection)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = owned_object::make_map({{"server.request.query", param}});
+        auto root = object_builder::map({{"server.request.query", param}});
 
-        auto array = root.emplace("server.sys.exec.cmd", owned_object::make_array());
+        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
@@ -231,9 +231,9 @@ TEST(TestCmdiDetector, ExecutableInjectionLinux)
     };
 
     for (const auto &[resource, param, expected] : samples) {
-        auto root = owned_object::make_map({{"server.request.query", param}});
+        auto root = object_builder::map({{"server.request.query", param}});
 
-        auto array = root.emplace("server.sys.exec.cmd", owned_object::make_array());
+        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
@@ -253,10 +253,10 @@ TEST(TestCmdiDetector, ExecutableInjectionLinux)
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, expected.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, expected);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], expected.c_str());
+        EXPECT_STR(cache.match->highlights[0], expected);
     }
 }
 
@@ -281,9 +281,9 @@ TEST(TestCmdiDetector, ExecutableInjectionWindows)
     };
 
     for (const auto &[resource, param, expected] : samples) {
-        auto root = owned_object::make_map({{"server.request.query", param}});
+        auto root = object_builder::map({{"server.request.query", param}});
 
-        auto array = root.emplace("server.sys.exec.cmd", owned_object::make_array());
+        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
@@ -299,14 +299,14 @@ TEST(TestCmdiDetector, ExecutableInjectionWindows)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, resource_str);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, expected.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, expected);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], expected.c_str());
+        EXPECT_STR(cache.match->highlights[0], expected);
     }
 }
 
@@ -326,9 +326,9 @@ TEST(TestCmdiDetector, ExecutableWithSpacesInjection)
     };
 
     for (const auto &[resource, param, expected] : samples) {
-        auto root = owned_object::make_map({{"server.request.query", param}});
+        auto root = object_builder::map({{"server.request.query", param}});
 
-        auto array = root.emplace("server.sys.exec.cmd", owned_object::make_array());
+        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
@@ -344,14 +344,14 @@ TEST(TestCmdiDetector, ExecutableWithSpacesInjection)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, resource_str);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, expected.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, expected);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], expected.c_str());
+        EXPECT_STR(cache.match->highlights[0], expected);
     }
 }
 
@@ -554,9 +554,9 @@ TEST(TestCmdiDetector, LinuxShellInjection)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = owned_object::make_map({{"server.request.query", param}});
+        auto root = object_builder::map({{"server.request.query", param}});
 
-        auto array = root.emplace("server.sys.exec.cmd", owned_object::make_array());
+        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
@@ -572,14 +572,14 @@ TEST(TestCmdiDetector, LinuxShellInjection)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, resource_str);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, param.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, param);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], param.c_str());
+        EXPECT_STR(cache.match->highlights[0], param);
     }
 }
 
@@ -643,9 +643,9 @@ TEST(TestCmdiDetector, WindowsShellInjection)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = owned_object::make_map({{"server.request.query", param}});
+        auto root = object_builder::map({{"server.request.query", param}});
 
-        auto array = root.emplace("server.sys.exec.cmd", owned_object::make_array());
+        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
@@ -661,14 +661,14 @@ TEST(TestCmdiDetector, WindowsShellInjection)
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, resource_str);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, param.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, param);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], param.c_str());
+        EXPECT_STR(cache.match->highlights[0], param);
     }
 }
 
@@ -681,12 +681,12 @@ TEST(TestCmdiDetector, ExecutableInjectionMultipleArguments)
         {"halt", "bin"}, {"-h", "usr"}, {"executable", "/usr/bin/halt"}};
     std::string resource_str = generate_resource_string(resource);
 
-    auto root = owned_object::make_map();
-    auto array = root.emplace("server.sys.exec.cmd", owned_object::make_array());
+    auto root = object_builder::map();
+    auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
     for (const auto &arg : resource) { array.emplace_back(arg); }
 
-    auto map = root.emplace("server.request.query", owned_object::make_map());
+    auto map = root.emplace("server.request.query", object_builder::map());
     for (const auto &[key, value] : params) { map.emplace(key, value); }
 
     object_store store;
@@ -700,7 +700,7 @@ TEST(TestCmdiDetector, ExecutableInjectionMultipleArguments)
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
-    EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+    EXPECT_STR(cache.match->args[0].resolved, resource_str);
     EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
     EXPECT_STRV(cache.match->args[1].address, "server.request.query");
@@ -720,12 +720,12 @@ TEST(TestCmdiDetector, EmptyExecutable)
 
     std::string resource_str = generate_resource_string(resource);
 
-    auto root = owned_object::make_map();
-    auto array = root.emplace("server.sys.exec.cmd", owned_object::make_array());
+    auto root = object_builder::map();
+    auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
     for (const auto &arg : resource) { array.emplace_back(arg); }
 
-    auto map = root.emplace("server.request.query", owned_object::make_map());
+    auto map = root.emplace("server.request.query", object_builder::map());
     for (const auto &[key, value] : params) { map.emplace(key, value); }
 
     object_store store;
@@ -748,12 +748,12 @@ TEST(TestCmdiDetector, ShellInjectionMultipleArguments)
 
     std::string resource_str = generate_resource_string(resource);
 
-    auto root = owned_object::make_map();
-    auto array = root.emplace("server.sys.exec.cmd", owned_object::make_array());
+    auto root = object_builder::map();
+    auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
     for (const auto &arg : resource) { array.emplace_back(arg); }
 
-    auto map = root.emplace("server.request.query", owned_object::make_map());
+    auto map = root.emplace("server.request.query", object_builder::map());
     for (const auto &[key, value] : params) { map.emplace(key, value); }
 
     object_store store;
@@ -767,7 +767,7 @@ TEST(TestCmdiDetector, ShellInjectionMultipleArguments)
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
-    EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+    EXPECT_STR(cache.match->args[0].resolved, resource_str);
     EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
     EXPECT_STRV(cache.match->args[1].address, "server.request.query");

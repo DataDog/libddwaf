@@ -44,9 +44,9 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    auto input_map = owned_object::make_map(
+    auto input_map = object_builder::map(
         {{"unary_address", "unary_string"}, {"optional_address", "optional_string"},
-            {"variadic_address_1", 1UL}, {"variadic_address_2", 1UL}});
+            {"variadic_address_1", 1U}, {"variadic_address_2", 1U}});
     object_store store;
     store.insert(input_map);
 
@@ -92,8 +92,8 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
 {
     owned_object output = owned_object::make_string("output_string");
 
-    auto input_map = owned_object::make_map({{"unary_address", "unary_string"},
-        {"variadic_address_1", 1UL}, {"variadic_address_2", 1UL}});
+    auto input_map = object_builder::map({{"unary_address", "unary_string"},
+        {"variadic_address_1", 1U}, {"variadic_address_2", 1U}});
 
     object_store store;
     store.insert(input_map);
@@ -138,8 +138,8 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
 
 TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
 {
-    auto input_map = owned_object::make_map({{"optional_address", "optional_string"},
-        {"variadic_address_1", 1UL}, {"variadic_address_2", 1UL}});
+    auto input_map = object_builder::map({{"optional_address", "optional_string"},
+        {"variadic_address_1", 1U}, {"variadic_address_2", 1U}});
 
     object_store store;
     store.insert(input_map);
@@ -178,7 +178,7 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
 
 TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
 {
-    auto input_map = owned_object::make_map({
+    auto input_map = object_builder::map({
         {"unary_address", "unary_string"},
         {"optional_address", "optional_string"},
     });

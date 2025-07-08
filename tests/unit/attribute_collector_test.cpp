@@ -58,7 +58,7 @@ TEST(TestAttributeCollector, InsertDuplicate)
 TEST(TestAttributeCollector, CollectAvailableScalar)
 {
     std::string_view expected = "value";
-    auto input = owned_object::make_map({{"input_address", expected}});
+    auto input = object_builder::map({{"input_address", expected}});
 
     object_store store;
     store.insert(std::move(input));
@@ -79,8 +79,8 @@ TEST(TestAttributeCollector, CollectAvailableScalar)
 TEST(TestAttributeCollector, CollectAvailableKeyPathScalar)
 {
     std::string_view expected = "value";
-    auto input = owned_object::make_map({{"input_address",
-        owned_object::make_map({{"first", owned_object::make_map({{"second", expected}})}})}});
+    auto input = object_builder::map({{"input_address",
+        object_builder::map({{"first", object_builder::map({{"second", expected}})}})}});
 
     object_store store;
     store.insert(std::move(input));
@@ -103,9 +103,9 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathScalar)
 TEST(TestAttributeCollector, CollectAvailableKeyPathSingleValueArray)
 {
     std::string_view expected = "value";
-    auto input = owned_object::make_map({{"input_address",
-        owned_object::make_map({{"first",
-            owned_object::make_map({{"second", owned_object::make_array({expected})}})}})}});
+    auto input = object_builder::map({{"input_address",
+        object_builder::map(
+            {{"first", object_builder::map({{"second", object_builder::array({expected})}})}})}});
 
     object_store store;
     store.insert(std::move(input));
@@ -128,10 +128,10 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathSingleValueArray)
 TEST(TestAttributeCollector, CollectAvailableKeyPathMultiValueArray)
 {
     std::string_view expected = "value0";
-    auto input = owned_object::make_map({{"input_address",
-        owned_object::make_map(
-            {{"first", owned_object::make_map({{"second",
-                           owned_object::make_array({expected, "value1", "value2"})}})}})}});
+    auto input = object_builder::map(
+        {{"input_address", object_builder::map({{"first",
+                               object_builder::map({{"second",
+                                   object_builder::array({expected, "value1", "value2"})}})}})}});
 
     object_store store;
     store.insert(std::move(input));
@@ -153,9 +153,9 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathMultiValueArray)
 
 TEST(TestAttributeCollector, CollectUnavailableKeyPath)
 {
-    auto input = owned_object::make_map({{"input_address",
-        owned_object::make_map({{"first", owned_object::make_map({{"second",
-                                              owned_object::make_map({{"third", "value"}})}})}})}});
+    auto input = object_builder::map({{"input_address",
+        object_builder::map({{"first",
+            object_builder::map({{"second", object_builder::map({{"third", "value"}})}})}})}});
 
     object_store store;
     store.insert(std::move(input));
@@ -174,8 +174,8 @@ TEST(TestAttributeCollector, CollectUnavailableKeyPath)
 TEST(TestAttributeCollector, CollectPendingKeyPathScalar)
 {
     std::string_view expected = "value";
-    auto input = owned_object::make_map({{"input_address",
-        owned_object::make_map({{"first", owned_object::make_map({{"second", expected}})}})}});
+    auto input = object_builder::map({{"input_address",
+        object_builder::map({{"first", object_builder::map({{"second", expected}})}})}});
     object_store store;
 
     attribute_collector collector;
@@ -200,9 +200,9 @@ TEST(TestAttributeCollector, CollectPendingKeyPathScalar)
 
 TEST(TestAttributeCollector, CollectAvailableKeyPathInvalidValue)
 {
-    auto input = owned_object::make_map(
-        {{"input_address", owned_object::make_map({{"first",
-                               owned_object::make_map({{"second", owned_object::make_map()}})}})}});
+    auto input = object_builder::map(
+        {{"input_address", object_builder::map({{"first",
+                               object_builder::map({{"second", object_builder::map()}})}})}});
 
     object_store store;
     store.insert(std::move(input));
@@ -221,7 +221,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathInvalidValue)
 TEST(TestAttributeCollector, CollectDuplicateScalar)
 {
     std::string_view expected = "value";
-    auto input = owned_object::make_map({{"input_address", expected}});
+    auto input = object_builder::map({{"input_address", expected}});
 
     object_store store;
     store.insert(std::move(input));
@@ -243,7 +243,7 @@ TEST(TestAttributeCollector, CollectDuplicateScalar)
 TEST(TestAttributeCollector, CollectAvailableScalarFromSingleValueArray)
 {
     std::string_view expected = "value";
-    auto input = owned_object::make_map({{"input_address", owned_object::make_array({expected})}});
+    auto input = object_builder::map({{"input_address", object_builder::array({expected})}});
 
     object_store store;
     store.insert(std::move(input));
@@ -264,8 +264,8 @@ TEST(TestAttributeCollector, CollectAvailableScalarFromSingleValueArray)
 TEST(TestAttributeCollector, CollectAvailableScalarFromMultiValueArray)
 {
     std::string_view expected = "value0";
-    auto input = owned_object::make_map(
-        {{"input_address", owned_object::make_array({expected, "value1", "value2"})}});
+    auto input = object_builder::map(
+        {{"input_address", object_builder::array({expected, "value1", "value2"})}});
 
     object_store store;
     store.insert(std::move(input));
@@ -285,8 +285,8 @@ TEST(TestAttributeCollector, CollectAvailableScalarFromMultiValueArray)
 
 TEST(TestAttributeCollector, CollectInvalidObjectFromArray)
 {
-    auto input = owned_object::make_map(
-        {{"input_address", owned_object::make_array({owned_object::make_map()})}});
+    auto input =
+        object_builder::map({{"input_address", object_builder::array({object_builder::map()})}});
 
     object_store store;
     store.insert(std::move(input));
@@ -318,7 +318,7 @@ TEST(TestAttributeCollector, CollectUnavailableScalar)
     // After adding the attribute, collect_pending should extract, copy and return
     // the expected attribute
     std::string_view expected = "value";
-    auto input = owned_object::make_map({{"input_address", expected}});
+    auto input = object_builder::map({{"input_address", expected}});
 
     store.insert(std::move(input));
     collector.collect_pending(store);
@@ -353,7 +353,7 @@ TEST(TestAttributeCollector, CollectUnavailableScalarFromSingleValueArray)
     // After adding the attribute, collect_pending should extract, copy and return
     // the expected attribute
     std::string_view expected = "value";
-    auto input = owned_object::make_map({{"input_address", owned_object::make_array({expected})}});
+    auto input = object_builder::map({{"input_address", object_builder::array({expected})}});
 
     store.insert(std::move(input));
     collector.collect_pending(store);
@@ -388,8 +388,8 @@ TEST(TestAttributeCollector, CollectUnavailableScalarFromMultiValueArray)
     // After adding the attribute, collect_pending should extract, copy and return
     // the expected attribute
     std::string_view expected = "value0";
-    auto input = owned_object::make_map(
-        {{"input_address", owned_object::make_array({expected, "value1", "value2"})}});
+    auto input = object_builder::map(
+        {{"input_address", object_builder::array({expected, "value1", "value2"})}});
 
     store.insert(std::move(input));
     collector.collect_pending(store);
@@ -423,7 +423,7 @@ TEST(TestAttributeCollector, CollectUnavailableInvalidObject)
 
     // After adding the attribute, collect_pending should extract, copy and return
     // the expected attribute
-    auto input = owned_object::make_map({{"input_address", owned_object::make_array()}});
+    auto input = object_builder::map({{"input_address", object_builder::array()}});
 
     store.insert(std::move(input));
     collector.collect_pending(store);
@@ -470,7 +470,7 @@ TEST(TestAttributeCollector, CollectMultipleUnavailableScalars)
         // After adding the attribute, collect_pending should extract, copy and return
         // the expected attribute
         std::string_view expected = "value";
-        auto input = owned_object::make_map({{"input_address_0", expected}});
+        auto input = object_builder::map({{"input_address_0", expected}});
 
         store.insert(std::move(input));
 
@@ -493,7 +493,7 @@ TEST(TestAttributeCollector, CollectMultipleUnavailableScalars)
         // the expected attribute
 
         std::string_view expected = "value";
-        auto input = owned_object::make_map({{"input_address_2", expected}});
+        auto input = object_builder::map({{"input_address_2", expected}});
         store.insert(std::move(input));
 
         collector.collect_pending(store);
@@ -512,7 +512,7 @@ TEST(TestAttributeCollector, CollectMultipleUnavailableScalars)
         // the expected attribute
 
         std::string_view expected = "value";
-        auto input = owned_object::make_map({{"input_address_1", expected}});
+        auto input = object_builder::map({{"input_address_1", expected}});
 
         store.insert(std::move(input));
 
