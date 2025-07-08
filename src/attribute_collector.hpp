@@ -71,8 +71,6 @@ public:
     // Only used for testing
     [[nodiscard]] bool has_pending_attributes() const { return !pending_.empty(); }
 
-    nonnull_ptr<memory::memory_resource> alloc() const noexcept { return attributes_.alloc(); }
-
 protected:
     enum class collection_state : uint8_t { success, unavailable, failed };
 

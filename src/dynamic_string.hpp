@@ -61,7 +61,7 @@ public:
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
     dynamic_string(
         T str, nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
-        requires std::is_constructible_v<std::string_view, T>
+        requires std::is_convertible_v<T, std::string_view>
         : dynamic_string(std::string_view{str}, alloc)
     {}
 
@@ -150,7 +150,9 @@ public:
     void resize(size_type count, char c)
     {
         ensure_spare_capacity(count);
-        memset(buffer_, c, count);
+        if (count > size_) {
+            memset(&buffer_[size_], c, count - size_);
+        }
         size_ = count;
     }
 
@@ -170,8 +172,8 @@ public:
     template <typename T> static dynamic_string from_movable_string(T &str)
     {
         dynamic_string dynstr;
-        auto [ptr, size] = str.move();
-        dynstr.alloc_ = str.alloc();
+        auto [ptr, size, alloc] = str.move();
+        dynstr.alloc_ = alloc;
         dynstr.buffer_ = ptr;
         dynstr.size_ = size;
         return dynstr;

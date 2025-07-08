@@ -10,6 +10,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <string_view>
+#include <type_traits>
 
 #include "memory_resource.hpp"
 #include "pointer.hpp"
@@ -102,11 +103,12 @@ public:
 
     // Moves the contents and invalidates the string if the buffer has been
     // modified, otherwise it does nothing
-    std::pair<char *, std::size_t> move()
+    std::tuple<char *, std::size_t, nonnull_ptr<memory::memory_resource>> move()
     {
         force_copy(length_);
 
-        std::pair<char *, std::size_t> res{buffer_, length_};
+        std::tuple<char *, std::size_t, nonnull_ptr<memory::memory_resource>> res{
+            buffer_, length_, alloc_};
         buffer_ = nullptr;
         length_ = 0;
         capacity_ = 0;
