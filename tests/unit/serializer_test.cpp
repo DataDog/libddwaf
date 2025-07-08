@@ -27,7 +27,7 @@ TEST(TestEventSerializer, SerializeNothing)
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
     serializer.serialize(store, results, collector, deadline, output);
 
     EXPECT_EVENTS(result_object, ); // This means no results
@@ -42,7 +42,7 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
     object_store store;
     attribute_collector collector;
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
 
     std::unordered_map<std::string, std::string> tags{{"type", {}}, {"category", {}}};
     std::vector<std::string> actions;
@@ -103,7 +103,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
     serializer.serialize(store, results, collector, deadline, output);
     EXPECT_EVENTS(result_object, {.id = "xasd1022",
                                      .name = "random rule",
@@ -179,7 +179,7 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
     serializer.serialize(store, results, collector, deadline, output);
 
     EXPECT_EVENTS(result_object, {.id = "xasd1022",
@@ -310,7 +310,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
     serializer.serialize(store, results, collector, deadline, output);
     EXPECT_EVENTS(result_object,
         {.id = "xasd1022",
@@ -394,7 +394,7 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
     serializer.serialize(store, results, collector, deadline, output);
     EXPECT_EVENTS(result_object, {.id = "xasd1022",
                                      .name = "random rule",
@@ -451,7 +451,7 @@ TEST(TestEventSerializer, SerializeAllTags)
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
     serializer.serialize(store, results, collector, deadline, output);
     EXPECT_EVENTS(
         result_object, {.id = "xasd1022",
@@ -509,7 +509,7 @@ TEST(TestEventSerializer, NoMonitorActions)
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
     serializer.serialize(store, results, collector, deadline, output);
     EXPECT_EVENTS(
         result_object, {.id = "xasd1022",
@@ -568,7 +568,7 @@ TEST(TestEventSerializer, UndefinedActions)
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
     serializer.serialize(store, results, collector, deadline, output);
     EXPECT_EVENTS(
         result_object, {.id = "xasd1022",
@@ -627,7 +627,7 @@ TEST(TestEventSerializer, StackTraceAction)
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
     serializer.serialize(store, results, collector, deadline, output);
     EXPECT_EVENTS(
         result_object, {.id = "xasd1022",

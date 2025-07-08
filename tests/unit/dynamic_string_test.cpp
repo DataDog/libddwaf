@@ -152,6 +152,75 @@ TEST(TestDynamicString, MoveToObject)
     EXPECT_STR(str_view, "thisisastring");
 }
 
+TEST(TestDynamicString, MoveToObjectDifferentCapacity)
+{
+    dynamic_string str{32};
+    str.append("thisisastring");
+    EXPECT_NE(str.data(), nullptr);
+
+    EXPECT_EQ(str.capacity(), 32);
+    EXPECT_EQ(str.size(), 13);
+
+    auto object = str.to_object();
+
+    auto str_view = object.as<std::string_view>();
+
+    EXPECT_EQ(str.capacity(), 0);
+    EXPECT_EQ(str.size(), 0);
+    EXPECT_TRUE(str.empty());
+    EXPECT_EQ(str.data(), nullptr);
+
+    EXPECT_NE(str_view.data(), nullptr);
+    EXPECT_STR(str_view, "thisisastring");
+}
+
+TEST(TestDynamicString, MoveToObjectIncompatibleAllocatorAndDifferentCapacity)
+{
+    dynamic_string str{32};
+    str.append("thisisnotasmallstring");
+    EXPECT_NE(str.data(), nullptr);
+
+    EXPECT_EQ(str.capacity(), 32);
+    EXPECT_EQ(str.size(), 21);
+
+    memory::monotonic_buffer_resource resource;
+    auto object = str.to_object(&resource);
+    EXPECT_EQ(object.alloc(), &resource);
+
+    auto str_view = object.as<std::string_view>();
+
+    EXPECT_EQ(str.capacity(), 0);
+    EXPECT_EQ(str.size(), 0);
+    EXPECT_TRUE(str.empty());
+    EXPECT_EQ(str.data(), nullptr);
+
+    EXPECT_NE(str_view.data(), nullptr);
+    EXPECT_STR(str_view, "thisisnotasmallstring");
+}
+
+TEST(TestDynamicString, MoveToObjectIncompatibleAllocatorAnEqualCapacity)
+{
+    dynamic_string str{"thisisnotasmallstring"sv};
+    EXPECT_NE(str.data(), nullptr);
+
+    EXPECT_EQ(str.capacity(), 21);
+    EXPECT_EQ(str.size(), 21);
+
+    memory::monotonic_buffer_resource resource;
+    auto object = str.to_object(&resource);
+    EXPECT_EQ(object.alloc(), &resource);
+
+    auto str_view = object.as<std::string_view>();
+
+    EXPECT_EQ(str.capacity(), 0);
+    EXPECT_EQ(str.size(), 0);
+    EXPECT_TRUE(str.empty());
+    EXPECT_EQ(str.data(), nullptr);
+
+    EXPECT_NE(str_view.data(), nullptr);
+    EXPECT_STR(str_view, "thisisnotasmallstring");
+}
+
 TEST(TestDynamicString, AppendDefaultString)
 {
     dynamic_string str;

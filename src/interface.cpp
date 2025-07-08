@@ -501,7 +501,7 @@ ddwaf_object *ddwaf_object_stringl(ddwaf_object *object, const char *string, siz
         return nullptr;
     }
 
-    to_ref(object) = owned_object{string, length}.move();
+    to_ref(object) = owned_object{string, static_cast<uint32_t>(length)}.move();
     return object;
 }
 
@@ -511,7 +511,7 @@ ddwaf_object *ddwaf_object_stringl_nc(ddwaf_object *object, const char *string, 
         return nullptr;
     }
 
-    to_ref(object) = owned_object::make_string_nocopy(string, length).move();
+    to_ref(object) = owned_object::make_string_nocopy(string, static_cast<uint32_t>(length)).move();
     return object;
 }
 
@@ -653,7 +653,8 @@ bool ddwaf_object_map_addl_nc(
 
     try {
         to_borrowed(map).emplace(
-            owned_object::make_string_nocopy(key, length), owned_object{to_ref(object)});
+            owned_object::make_string_nocopy(key, static_cast<uint32_t>(length)),
+            owned_object{to_ref(object)});
         return true;
     } catch (...) {} // NOLINT(bugprone-empty-catch)
     return false;

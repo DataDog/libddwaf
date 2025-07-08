@@ -5,7 +5,6 @@
 // (https://www.datadoghq.com/). Copyright 2023 Datadog, Inc.
 
 #include "common/gtest_utils.hpp"
-#include "ddwaf.h"
 #include "processor/jwt_decode.hpp"
 
 using namespace ddwaf;
@@ -15,6 +14,8 @@ namespace {
 
 TEST(TestJwtDecoder, Basic)
 {
+    auto *alloc = memory::get_default_resource();
+
     auto headers = object_builder::map({{"authorization",
         "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
         "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
@@ -33,7 +34,7 @@ TEST(TestJwtDecoder, Basic)
     processor_cache cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, deadline);
+            cache, alloc, deadline);
     EXPECT_EQ(output.type(), object_type::map);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -43,6 +44,8 @@ TEST(TestJwtDecoder, Basic)
 
 TEST(TestJwtDecoder, KeyPathLeadsToSingleValueArray)
 {
+    auto *alloc = memory::get_default_resource();
+
     auto headers = object_builder::map({{"authorization",
         object_builder::array(
             {"Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
@@ -62,7 +65,7 @@ TEST(TestJwtDecoder, KeyPathLeadsToSingleValueArray)
     processor_cache cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, deadline);
+            cache, alloc, deadline);
     EXPECT_EQ(output.type(), object_type::map);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -72,6 +75,8 @@ TEST(TestJwtDecoder, KeyPathLeadsToSingleValueArray)
 
 TEST(TestJwtDecoder, KeyPathLeadsToValidMultiValueArray)
 {
+    auto *alloc = memory::get_default_resource();
+
     auto headers = object_builder::map({{"authorization",
         object_builder::array(
             {"Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
@@ -92,7 +97,7 @@ TEST(TestJwtDecoder, KeyPathLeadsToValidMultiValueArray)
     processor_cache cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, deadline);
+            cache, alloc, deadline);
     EXPECT_EQ(output.type(), object_type::map);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -102,6 +107,8 @@ TEST(TestJwtDecoder, KeyPathLeadsToValidMultiValueArray)
 
 TEST(TestJwtDecoder, KeyPathLeadsToInvalidMultiValueArray)
 {
+    auto *alloc = memory::get_default_resource();
+
     // Even though the token is there, we only take the first element of arrays as we're trying
     // to account for the serialisation not perform a JWT search.
     auto headers = object_builder::map({{"authorization",
@@ -123,12 +130,14 @@ TEST(TestJwtDecoder, KeyPathLeadsToInvalidMultiValueArray)
     processor_cache cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, deadline);
+            cache, alloc, deadline);
     EXPECT_EQ(output.type(), object_type::invalid);
 }
 
 TEST(TestJwtDecoder, MissingKeypath)
 {
+    auto *alloc = memory::get_default_resource();
+
     owned_object headers{
         "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
         "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
@@ -147,12 +156,14 @@ TEST(TestJwtDecoder, MissingKeypath)
     processor_cache cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, deadline);
+            cache, alloc, deadline);
     EXPECT_EQ(output.type(), object_type::invalid);
 }
 
 TEST(TestJwtDecoder, EmptyHeader)
 {
+    auto *alloc = memory::get_default_resource();
+
     auto headers = object_builder::map({{"authorization",
         "Bearer ."
         "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
@@ -171,7 +182,7 @@ TEST(TestJwtDecoder, EmptyHeader)
     processor_cache cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, deadline);
+            cache, alloc, deadline);
     EXPECT_EQ(output.type(), object_type::map);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -181,6 +192,8 @@ TEST(TestJwtDecoder, EmptyHeader)
 
 TEST(TestJwtDecoder, EmptyPayload)
 {
+    auto *alloc = memory::get_default_resource();
+
     auto headers = object_builder::map({{"authorization",
         "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
         ".o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
@@ -198,7 +211,7 @@ TEST(TestJwtDecoder, EmptyPayload)
     processor_cache cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, deadline);
+            cache, alloc, deadline);
     EXPECT_EQ(output.type(), object_type::map);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -208,6 +221,8 @@ TEST(TestJwtDecoder, EmptyPayload)
 
 TEST(TestJwtDecoder, LargePayloadBeyondLimit)
 {
+    auto *alloc = memory::get_default_resource();
+
     auto headers = object_builder::map({{"authorization",
         "Bearer "
         "eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
@@ -224,7 +239,7 @@ TEST(TestJwtDecoder, LargePayloadBeyondLimit)
     processor_cache cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, deadline);
+            cache, alloc, deadline);
     EXPECT_EQ(output.type(), object_type::map);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -234,6 +249,8 @@ TEST(TestJwtDecoder, LargePayloadBeyondLimit)
 
 TEST(TestJwtDecoder, NoSignature)
 {
+    auto *alloc = memory::get_default_resource();
+
     auto headers = object_builder::map({{"authorization",
         "Bearer "
         "eyJhbGciOiJub25lIn0."
@@ -248,7 +265,7 @@ TEST(TestJwtDecoder, NoSignature)
     processor_cache cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, deadline);
+            cache, alloc, deadline);
     EXPECT_EQ(output.type(), object_type::map);
     EXPECT_EQ(attr, object_store::attribute::none);
 
@@ -258,6 +275,8 @@ TEST(TestJwtDecoder, NoSignature)
 
 TEST(TestJwtDecoder, NoPayloadNoSignatureMissingDelim)
 {
+    auto *alloc = memory::get_default_resource();
+
     auto headers =
         object_builder::map({{"authorization", "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."}});
 
@@ -269,13 +288,15 @@ TEST(TestJwtDecoder, NoPayloadNoSignatureMissingDelim)
     processor_cache cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, deadline);
+            cache, alloc, deadline);
     EXPECT_EQ(output.type(), object_type::invalid);
     EXPECT_EQ(attr, object_store::attribute::none);
 }
 
 TEST(TestJwtDecoder, NoPayloadNoSignatureMissingAllDelim)
 {
+    auto *alloc = memory::get_default_resource();
+
     auto headers =
         object_builder::map({{"authorization", "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9"}});
     jwt_decode gen{"id", {}, {}, false, true};
@@ -286,13 +307,15 @@ TEST(TestJwtDecoder, NoPayloadNoSignatureMissingAllDelim)
     processor_cache cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, deadline);
+            cache, alloc, deadline);
     EXPECT_EQ(output.type(), object_type::invalid);
     EXPECT_EQ(attr, object_store::attribute::none);
 }
 
 TEST(TestJwtDecoder, NoSignatureNoDelim)
 {
+    auto *alloc = memory::get_default_resource();
+
     auto headers = object_builder::map({{"authorization",
         "Bearer "
         "eyJhbGciOiJub25lIn0."
@@ -307,7 +330,7 @@ TEST(TestJwtDecoder, NoSignatureNoDelim)
     processor_cache cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, deadline);
+            cache, alloc, deadline);
     EXPECT_EQ(output.type(), object_type::invalid);
     EXPECT_EQ(attr, object_store::attribute::none);
 }

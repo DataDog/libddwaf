@@ -5,17 +5,19 @@
 // (https://www.datadoghq.com/). Copyright 2025 Datadog, Inc.
 
 #include "dynamic_string.hpp"
+#include "memory_resource.hpp"
 #include "object.hpp"
+#include "pointer.hpp"
 
 namespace ddwaf {
 
-owned_object dynamic_string::to_object()
+owned_object dynamic_string::to_object(nonnull_ptr<memory::memory_resource> alloc)
 {
     owned_object object;
-    if (size_ == capacity_) {
+    if (size_ == capacity_ && alloc->is_equal(*alloc_)) {
         object = owned_object::make_string_nocopy(buffer_, size_);
     } else {
-        object = owned_object::make_string(buffer_, size_);
+        object = owned_object::make_string(buffer_, size_, alloc);
         alloc_->deallocate(buffer_, capacity_, alignof(char));
     }
     buffer_ = nullptr;

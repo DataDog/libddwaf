@@ -12,6 +12,7 @@
 
 #include "clock.hpp"
 #include "condition/base.hpp"
+#include "dynamic_string.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
@@ -54,7 +55,8 @@ ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
                 if constexpr (std::is_same_v<ResultType, bool>) {
                     return true;
                 } else {
-                    return {{{{"input"sv, transformed_sv, address, it.get_current_path()}},
+                    return {{{{"input"sv, dynamic_string::from_movable_string(transformed.value()),
+                                 address, it.get_current_path()}},
                         {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
                 }
             }

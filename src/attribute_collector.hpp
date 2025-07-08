@@ -10,7 +10,9 @@
 #include <string_view>
 #include <unordered_map>
 
+#include "memory_resource.hpp"
 #include "object_store.hpp"
+#include "pointer.hpp"
 #include "target_address.hpp"
 
 namespace ddwaf {
@@ -31,7 +33,10 @@ namespace ddwaf {
  */
 class attribute_collector {
 public:
-    attribute_collector() : attributes_(owned_object::make_map()) {}
+    explicit attribute_collector(
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+        : attributes_(owned_object::make_map(0, alloc))
+    {}
     attribute_collector(const attribute_collector &) = delete;
     attribute_collector &operator=(const attribute_collector &) = delete;
     attribute_collector(attribute_collector &&other) noexcept = delete;
@@ -57,7 +62,7 @@ public:
     {
         auto output_object = std::move(attributes_);
         // Reset attributes
-        attributes_ = owned_object::make_map();
+        attributes_ = owned_object::make_map(0, output_object.alloc());
         inserted_or_pending_attributes_.clear();
 
         return output_object;
@@ -65,6 +70,8 @@ public:
 
     // Only used for testing
     [[nodiscard]] bool has_pending_attributes() const { return !pending_.empty(); }
+
+    nonnull_ptr<memory::memory_resource> alloc() const noexcept { return attributes_.alloc(); }
 
 protected:
     enum class collection_state : uint8_t { success, unavailable, failed };

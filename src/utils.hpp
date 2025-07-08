@@ -15,7 +15,6 @@
 #include <limits>
 #include <optional>
 #include <ostream>
-#include <span>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -203,14 +202,17 @@ template <class T> const null_ostream &operator<<(null_ostream &os, const T & /*
 {
     return os;
 }
+
 template <std::size_t N, std::size_t... I>
+// NOLINTNEXTLINE(modernize-avoid-c-arrays,readability-named-parameter)
 constexpr std::array<char, N> make_array(const char (&str)[N], std::index_sequence<I...>)
 {
     return std::array<char, N>{tolower(str[I])...};
 }
 
 template <std::size_t N>
-constexpr inline bool string_iequals_literal(std::string_view left, const char (&right)[N])
+// NOLINTNEXTLINE(modernize-avoid-c-arrays)
+constexpr bool string_iequals_literal(std::string_view left, const char (&right)[N])
 {
     return left.size() == (N - 1) && std::equal(left.begin(), left.end(),
                                          make_array(right, std::make_index_sequence<N>()).begin(),
@@ -223,5 +225,4 @@ inline bool string_iequals(std::string_view left, std::string_view right)
            std::equal(left.begin(), left.end(), right.begin(),
                [](char l, char r) { return tolower(l) == tolower(r); });
 }
-
 } // namespace ddwaf

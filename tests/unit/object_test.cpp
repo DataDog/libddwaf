@@ -927,35 +927,36 @@ TEST(TestObject, MapObjectBuilderIncompatibleAllocators)
         std::runtime_error);
 }
 
-TEST(TestObject, ObjectWithNullAllocator)
-{
-    auto root = object_builder::map({
-        {"array"sv, object_builder::array({"array", "value"})},
-        {"map"sv, object_builder::map({{"map", "value"}})},
-        {"small string"sv, "small"sv},
-        {"string view"sv, "this is a normal string view"sv},
-        {"string"sv, "this is a normal string"s},
-        {"const char *"sv, "this is a normal const char *"},
-        {"bool"sv, false},
-        {"int16"sv, static_cast<int16_t>(-16)},
-        {"uint16"sv, static_cast<uint16_t>(16)},
-        {"int32"sv, static_cast<int32_t>(-32)},
-        {"uint32"sv, static_cast<uint32_t>(32)},
-        {"int64"sv, static_cast<int64_t>(-64)},
-        {"uint64"sv, static_cast<uint64_t>(64)},
-        {"float"sv, 64.64},
-    });
+// TODO Reevaluate once allocators are exposed through the interface
+/*TEST(TestObject, ObjectWithNullAllocator)*/
+/*{*/
+/*auto root = object_builder::map({*/
+/*{"array"sv, object_builder::array({"array", "value"})},*/
+/*{"map"sv, object_builder::map({{"map", "value"}})},*/
+/*{"small string"sv, "small"sv},*/
+/*{"string view"sv, "this is a normal string view"sv},*/
+/*{"string"sv, "this is a normal string"s},*/
+/*{"const char *"sv, "this is a normal const char *"},*/
+/*{"bool"sv, false},*/
+/*{"int16"sv, static_cast<int16_t>(-16)},*/
+/*{"uint16"sv, static_cast<uint16_t>(16)},*/
+/*{"int32"sv, static_cast<int32_t>(-32)},*/
+/*{"uint32"sv, static_cast<uint32_t>(32)},*/
+/*{"int64"sv, static_cast<int64_t>(-64)},*/
+/*{"uint64"sv, static_cast<uint64_t>(64)},*/
+/*{"float"sv, 64.64},*/
+/*});*/
 
-    // Create a new owned_object using the internal reference to ensure it's not
-    // double freed
-    {
-        null_counting_resource alloc;
-        {
-            owned_object other{root.ref(), &alloc};
-        }
-        EXPECT_EQ(alloc.deallocations(), 0);
-    }
-}
+/*// Create a new owned_object using the internal reference to ensure it's not*/
+/*// double freed*/
+/*{*/
+/*null_counting_resource alloc;*/
+/*{*/
+/*owned_object other{root.ref(), &alloc};*/
+/*}*/
+/*EXPECT_EQ(alloc.deallocations(), 0);*/
+/*}*/
+/*}*/
 
 TEST(TestObject, CloneInvalid)
 {

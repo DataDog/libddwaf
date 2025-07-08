@@ -7,6 +7,7 @@
 #include <cstdint>
 
 #include "common.hpp"
+#include "memory_resource.hpp"
 #include <processor/jwt_decode.hpp>
 
 using namespace ddwaf;
@@ -26,7 +27,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     static const std::vector<std::string> key_path{"authorization"};
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, deadline);
+            cache, memory::get_default_resource(), deadline);
 
     return 0;
 }

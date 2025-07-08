@@ -12,6 +12,7 @@
 #include <string_view>
 
 #include "memory_resource.hpp"
+#include "pointer.hpp"
 
 namespace ddwaf {
 
@@ -28,10 +29,8 @@ public:
     cow_string(const cow_string &) = delete;
     cow_string &operator=(const cow_string &) = delete;
     cow_string(cow_string &&other) noexcept
-        : modified_(other.modified_), owned_(other.owned_), buffer_(other.buffer_),
-          length_(other.length_), capacity_(other.capacity_)
+        : buffer_(other.buffer_), length_(other.length_), capacity_(other.capacity_)
     {
-        other.modified_ = other.owned_ = false;
         other.buffer_ = nullptr;
         other.length_ = other.capacity_ = 0;
     }
@@ -39,14 +38,9 @@ public:
 
     ~cow_string()
     {
-        [[likely]] if (modified_ && owned_ && buffer_ != nullptr) {
+        [[likely]] if (capacity_ > 0 && buffer_ != nullptr) {
             alloc_->deallocate(buffer_, capacity_, alignof(char));
         }
-    }
-
-    static cow_string from_mutable_buffer(char *str, std::size_t length)
-    {
-        return cow_string{str, length};
     }
 
     template <typename T = char> [[nodiscard]] constexpr T at(std::size_t idx) const
@@ -62,7 +56,7 @@ public:
 
     bool copy_char(std::size_t from, std::size_t to)
     {
-        if (to != from) {
+        if (to < from && from < length_) {
             force_copy(length_);
             buffer_[to] = buffer_[from];
             return true;
@@ -72,17 +66,14 @@ public:
 
     constexpr explicit operator std::string_view() { return {buffer_, length_}; }
 
-    [[nodiscard]] memory::memory_resource *alloc() { return alloc_; }
-    [[nodiscard]] constexpr std::size_t length() const { return length_; }
-    [[nodiscard]] constexpr const char *data() const { return buffer_; }
+    [[nodiscard]] nonnull_ptr<memory::memory_resource> alloc() const noexcept { return alloc_; }
+    [[nodiscard]] constexpr std::size_t length() const noexcept { return length_; }
+    [[nodiscard]] constexpr const char *data() const noexcept { return buffer_; }
     [[nodiscard]] char *modifiable_data()
     {
         force_copy(length_);
         return buffer_;
     }
-    // Used for testing purposes
-    [[nodiscard]] constexpr bool modified() const { return modified_; }
-
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     [[nodiscard]] std::pair<bool, std::size_t> find(char c, std::size_t start = 0) const
     {
@@ -96,17 +87,17 @@ public:
 
     // Replaces the internal buffer, ownership is transferred
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    void replace_buffer(char *str, std::size_t length, std::size_t capacity)
+    void replace_buffer(char *str, std::size_t length, std::size_t capacity,
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
     {
-        [[likely]] if (modified_ && owned_) {
+        [[likely]] if (capacity_ > 0) {
             alloc_->deallocate(buffer_, capacity_, alignof(char));
         }
 
-        modified_ = true;
-        owned_ = true;
         buffer_ = str;
         length_ = length;
         capacity_ = capacity;
+        alloc_ = alloc;
     }
 
     // Moves the contents and invalidates the string if the buffer has been
@@ -116,7 +107,6 @@ public:
         force_copy(length_);
 
         std::pair<char *, std::size_t> res{buffer_, length_};
-        modified_ = false;
         buffer_ = nullptr;
         length_ = 0;
         capacity_ = 0;
@@ -126,42 +116,40 @@ public:
     // Update length and nul-terminate, allocate if not allocated
     void truncate(std::size_t length)
     {
-        [[likely]] if (modified_) {
+        [[likely]] if (capacity_ > 0) {
             length_ = length;
         } else {
             force_copy(length);
         }
     }
 
-protected:
-    explicit cow_string(char *str, std::size_t length)
-        : modified_(true), owned_(false), buffer_(str), length_(length), capacity_(length)
-    {}
+    // Used for testing purposes, must not be used for anything else
+    [[nodiscard]] constexpr bool modified() const noexcept { return capacity_ > 0; }
 
+protected:
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     void force_copy(std::size_t bytes)
     {
-        [[unlikely]] if (!modified_) {
-            char *new_copy = static_cast<char *>(alloc_->allocate(bytes, alignof(char)));
-            if (new_copy == nullptr) {
-                throw std::bad_alloc();
+        if (capacity_ == 0) {
+            // Avoid allocating 0-sized strings
+            if (bytes == 0) {
+                buffer_ = nullptr;
+                length_ = 0;
+                return;
             }
 
+            char *new_copy = static_cast<char *>(alloc_->allocate(bytes, alignof(char)));
             memcpy(new_copy, buffer_, bytes);
 
             buffer_ = new_copy;
-            modified_ = true;
             length_ = bytes;
             capacity_ = bytes;
         }
     }
 
-    memory::memory_resource *alloc_{memory::get_default_resource()};
+    nonnull_ptr<memory::memory_resource> alloc_{memory::get_default_resource()};
 
-    // TODO Use capacity to determine if the string has been modified
-    bool modified_{false};
-    bool owned_{true};
-    char *buffer_{nullptr};
+    char *buffer_;
     std::size_t length_;
     std::size_t capacity_{0};
 };
