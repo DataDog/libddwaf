@@ -10,7 +10,9 @@
 #include <string_view>
 #include <unordered_map>
 
+#include "memory_resource.hpp"
 #include "object_store.hpp"
+#include "pointer.hpp"
 #include "target_address.hpp"
 
 namespace ddwaf {
@@ -31,50 +33,22 @@ namespace ddwaf {
  */
 class attribute_collector {
 public:
-    attribute_collector() { ddwaf_object_map(&attributes_); }
+    explicit attribute_collector(
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+        : attributes_(owned_object::make_map(0, alloc))
+    {}
     attribute_collector(const attribute_collector &) = delete;
     attribute_collector &operator=(const attribute_collector &) = delete;
-    attribute_collector(attribute_collector &&other) noexcept = delete;
-    attribute_collector &operator=(attribute_collector &&other) noexcept = delete;
-    ~attribute_collector() { ddwaf_object_free(&attributes_); }
+    attribute_collector(attribute_collector &&other) noexcept = default;
+    attribute_collector &operator=(attribute_collector &&other) noexcept = default;
+    ~attribute_collector() = default;
 
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    bool insert(std::string_view key, std::string_view value)
+    template <typename T> bool insert(std::string_view key, T &&value)
     {
-        ddwaf_object object;
-        ddwaf_object_stringl(&object, value.data(), value.size());
-        return insert(key, object, false);
+        return insert(key, owned_object{std::forward<T>(value)});
     }
 
-    bool insert(std::string_view key, uint64_t value)
-    {
-        ddwaf_object object;
-        ddwaf_object_unsigned(&object, value);
-        return insert(key, object, false);
-    }
-
-    bool insert(std::string_view key, int64_t value)
-    {
-        ddwaf_object object;
-        ddwaf_object_signed(&object, value);
-        return insert(key, object, false);
-    }
-
-    bool insert(std::string_view key, double value)
-    {
-        ddwaf_object object;
-        ddwaf_object_float(&object, value);
-        return insert(key, object, false);
-    }
-
-    bool insert(std::string_view key, bool value)
-    {
-        ddwaf_object object;
-        ddwaf_object_bool(&object, value);
-        return insert(key, object, false);
-    }
-
-    bool insert(std::string_view key, const ddwaf_object &value, bool copy);
+    bool insert(std::string_view key, owned_object &&object);
 
     bool collect(const object_store &store, target_index input_target,
         std::span<const std::string> input_key_path, std::string_view attribute_key);
@@ -84,11 +58,11 @@ public:
     // This method returns the object map containing all the inserted and
     // collected attributes and resets both the internal object (to an empty map)
     // and the list of previously collected attributes.
-    ddwaf_object get_available_attributes_and_reset()
+    owned_object get_available_attributes_and_reset()
     {
-        auto output_object = attributes_;
+        auto output_object = std::move(attributes_);
         // Reset attributes
-        ddwaf_object_map(&attributes_);
+        attributes_ = owned_object::make_map(0, output_object.alloc());
         inserted_or_pending_attributes_.clear();
 
         return output_object;
@@ -102,7 +76,7 @@ protected:
 
     collection_state collect_helper(const object_store &store, target_index input_target,
         std::span<const std::string> input_key_path, std::string_view attribute_key);
-    bool insert_helper(std::string_view key, const ddwaf_object &value, bool copy);
+    bool insert_helper(std::string_view key, owned_object &&object);
 
     // The views and spans used here are owned by rules and processors, these
     // are part of their definition and are unchanging during the lifetime of
@@ -113,7 +87,7 @@ protected:
     std::unordered_map<std::string_view, target_type> pending_;
 
     std::unordered_set<std::string_view> inserted_or_pending_attributes_;
-    ddwaf_object attributes_{};
+    owned_object attributes_;
 };
 
 } // namespace ddwaf

@@ -15,23 +15,27 @@ constexpr std::string_view base_dir = "integration/actions/";
 
 TEST(TestActionsIntegration, DefaultActions)
 {
-    auto rule = read_file("default_actions.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+
+    auto rule = read_file<ddwaf_object>("default_actions.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "block"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *child = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_string(child, STRL("block"), alloc);
 
         ddwaf_object res;
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "block-rule",
                                .name = "block-rule",
@@ -47,15 +51,18 @@ TEST(TestActionsIntegration, DefaultActions)
 
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "stack_trace"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *child = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_string(child, STRL("stack_trace"), alloc);
 
         ddwaf_object res;
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "stack-trace-rule",
                                .name = "stack-trace-rule",
@@ -96,15 +103,18 @@ TEST(TestActionsIntegration, DefaultActions)
             EXPECT_EQ(it->second.at("stack_id"), stack_id);
         }
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "extract_schema"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *child = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_string(child, STRL("extract_schema"), alloc);
 
         ddwaf_object res;
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "extract-schema-rule",
                                .name = "extract-schema-rule",
@@ -120,15 +130,18 @@ TEST(TestActionsIntegration, DefaultActions)
 
         EXPECT_ACTIONS(res, {{"generate_schema", {}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "unblock"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *child = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_string(child, STRL("unblock"), alloc);
 
         ddwaf_object res;
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "unblock-rule",
                                .name = "unblock-rule",
@@ -145,7 +158,7 @@ TEST(TestActionsIntegration, DefaultActions)
         // The unblock action doesn't exist, so no user action is reported, however
         // the rule definition within the event still contains the unblock action
         EXPECT_ACTIONS(res, {});
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
     ddwaf_context_destroy(context1);
     ddwaf_destroy(handle);
@@ -153,28 +166,32 @@ TEST(TestActionsIntegration, DefaultActions)
 
 TEST(TestActionsIntegration, OverrideDefaultAction)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     {
-        auto rule = read_file("default_actions.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("default_actions.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "block"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *child = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_string(child, STRL("block"), alloc);
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object res;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "block-rule",
                                .name = "block-rule",
@@ -190,7 +207,7 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
 
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
 
         ddwaf_context_destroy(context);
     }
@@ -198,24 +215,27 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
     {
         ddwaf_destroy(handle);
 
-        auto actions = yaml_to_object(
+        auto actions = yaml_to_object<ddwaf_object>(
             R"({actions: [{id: block, type: redirect_request, parameters: {location: http://google.com, status_code: 303}}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("actions"), &actions, nullptr);
-        ddwaf_object_free(&actions);
+        ddwaf_object_destroy(&actions, alloc);
     }
 
     handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "block"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *child = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_string(child, STRL("block"), alloc);
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object res;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "block-rule",
                                .name = "block-rule",
@@ -231,7 +251,7 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
 
         EXPECT_ACTIONS(res,
             {{"redirect_request", {{"location", "http://google.com"}, {"status_code", "303"}}}});
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
 
         ddwaf_context_destroy(context);
     }
@@ -241,28 +261,32 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
 
 TEST(TestActionsIntegration, AddNewAction)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     {
-        auto rule = read_file("default_actions.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("default_actions.yaml", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "unblock"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *child = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_string(child, STRL("unblock"), alloc);
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object res;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "unblock-rule",
                                .name = "unblock-rule",
@@ -277,7 +301,7 @@ TEST(TestActionsIntegration, AddNewAction)
                                    }}}}});
 
         EXPECT_ACTIONS(res, {});
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
 
         ddwaf_context_destroy(context);
     }
@@ -285,24 +309,27 @@ TEST(TestActionsIntegration, AddNewAction)
     {
         ddwaf_destroy(handle);
 
-        auto actions = yaml_to_object(
+        auto actions = yaml_to_object<ddwaf_object>(
             R"({actions: [{id: unblock, type: unblock_request, parameters: {code: 303}}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("actions"), &actions, nullptr);
-        ddwaf_object_free(&actions);
+        ddwaf_object_destroy(&actions, alloc);
     }
 
     handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "unblock"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *child = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_string(child, STRL("unblock"), alloc);
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object res;
-        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "unblock-rule",
                                .name = "unblock-rule",
@@ -318,7 +345,7 @@ TEST(TestActionsIntegration, AddNewAction)
 
         EXPECT_ACTIONS(res, {{"unblock_request", {{"code", "303"}}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
 
         ddwaf_context_destroy(context);
     }
@@ -329,22 +356,24 @@ TEST(TestActionsIntegration, AddNewAction)
 
 TEST(TestActionsIntegration, EmptyOrInvalidActions)
 {
-    auto rule = read_file("invalid_actions.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+
+    auto rule = read_file<ddwaf_object>("invalid_actions.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
+    ddwaf_object parameter;
+    ddwaf_object_set_map(&parameter, 1, alloc);
+    auto *child = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+    ddwaf_object_set_string(child, STRL("block"), alloc);
 
-    ddwaf_object tmp;
-    ddwaf_object parameter = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "block"));
-
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object res;
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_EVENTS(res, {.id = "block-rule",
                            .name = "block-rule",
@@ -360,7 +389,7 @@ TEST(TestActionsIntegration, EmptyOrInvalidActions)
 
     EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                {"type", "auto"}}}});
-    ddwaf_object_free(&res);
+    ddwaf_object_destroy(&res, alloc);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);

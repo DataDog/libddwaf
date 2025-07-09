@@ -295,7 +295,7 @@ TEST(TestSqliDetectorInternals, StripLiterals)
     for (const auto &[statement, expected_stripped] : samples) {
         auto tokens = tokenize(statement);
         auto obtained_stripped = internal::strip_literals(statement, tokens);
-        EXPECT_STREQ(obtained_stripped.c_str(), expected_stripped.c_str());
+        EXPECT_STR(obtained_stripped, expected_stripped);
     }
 }
 

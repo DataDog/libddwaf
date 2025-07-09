@@ -127,11 +127,11 @@ ddwaf_context create_context() {
 On the other hand, `ddwaf_context` is not thread-safe. If a `ddwaf_context` is
 used by multiple threads (in web servers where the processing of the request
 can move between several threads, or happen in several threads simultaneously),
-you need to use locks so that calls to `ddwaf_run/destroy` are not run
+you need to use locks so that calls to `ddwaf_context_eval/destroy` are not run
 concurrently, and that changes made to the `ddwaf_context` in one thread through
-`ddwaf_run/destroy` are visible to the other threads subsequently run
-`ddwaf_run/destroy` on the same context. You also need to ensure that no calls
-to `ddwaf_run/destroy` happen after `ddwaf_destroy` is called.
+`ddwaf_context_eval/destroy` are visible to the other threads subsequently run
+`ddwaf_context_eval/destroy` on the same context. You also need to ensure that no calls
+to `ddwaf_context_eval/destroy` happen after `ddwaf_destroy` is called.
 
 ```c++
 // each request will have one of these associated with it
@@ -145,7 +145,7 @@ DDWAF_RET_CODE run_waf(
 {
     std::lock_guard<std::mutex> lock{wrapper.mutex}; // acquire exclusive lock
     if (wrapper.ctx == nullptr) { /* context already destroyed */ }
-    return ddwaf_run(wrapper.ctx, data, result, timeout);
+    return ddwaf_context_eval(wrapper.ctx, data, result, timeout);
     // lock is released on return
 }
 

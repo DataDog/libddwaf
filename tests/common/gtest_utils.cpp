@@ -6,6 +6,9 @@
 
 #include "common/gtest_utils.hpp"
 #include "common/base_path.hpp"
+#include "common/json_utils.hpp"
+#include "common/yaml_utils.hpp"
+#include "condition/base.hpp"
 
 using namespace std::literals;
 
@@ -148,21 +151,6 @@ std::ostream &operator<<(std::ostream &os, const event &e)
     os << indent(4) << "]\n}\n";
 
     return os;
-}
-
-void PrintTo(const ddwaf_object &actions, ::std::ostream *os)
-{
-    *os << "[";
-    for (unsigned i = 0; i < ddwaf_object_size(&actions); i++) {
-        if (i > 0) {
-            *os << ", ";
-        }
-        const auto *object = ddwaf_object_get_index(actions.array, i);
-        if (ddwaf_object_type(object) == DDWAF_OBJ_STRING) {
-            *os << ddwaf_object_get_string(object, nullptr);
-        }
-    }
-    *os << "]";
 }
 
 void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os)

@@ -16,7 +16,7 @@ namespace {
 
 TEST(TestProcessorParser, ParseNoGenerator)
 {
-    auto object = yaml_to_object(R"([{id: 1}])");
+    auto object = yaml_to_object<owned_object>(R"([{id: 1}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -24,11 +24,10 @@ TEST(TestProcessorParser, ParseNoGenerator)
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -47,8 +46,6 @@ TEST(TestProcessorParser, ParseNoGenerator)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -81,7 +78,7 @@ TEST(TestProcessorParser, ParseNoGenerator)
 
 TEST(TestProcessorParser, ParseNoID)
 {
-    auto object = yaml_to_object(R"([{}])");
+    auto object = yaml_to_object<owned_object>(R"([{}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -89,11 +86,10 @@ TEST(TestProcessorParser, ParseNoID)
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -112,8 +108,6 @@ TEST(TestProcessorParser, ParseNoID)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -146,7 +140,7 @@ TEST(TestProcessorParser, ParseNoID)
 
 TEST(TestProcessorParser, ParseNoParameters)
 {
-    auto object = yaml_to_object(R"([{id: 1, generator: extract_schema}])");
+    auto object = yaml_to_object<owned_object>(R"([{id: 1, generator: extract_schema}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -154,11 +148,10 @@ TEST(TestProcessorParser, ParseNoParameters)
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -177,8 +170,6 @@ TEST(TestProcessorParser, ParseNoParameters)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -211,7 +202,8 @@ TEST(TestProcessorParser, ParseNoParameters)
 
 TEST(TestProcessorParser, ParseNoMappings)
 {
-    auto object = yaml_to_object(R"([{id: 1, generator: extract_schema, parameters: {}}])");
+    auto object =
+        yaml_to_object<owned_object>(R"([{id: 1, generator: extract_schema, parameters: {}}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -219,11 +211,10 @@ TEST(TestProcessorParser, ParseNoMappings)
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -242,8 +233,6 @@ TEST(TestProcessorParser, ParseNoMappings)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -276,8 +265,8 @@ TEST(TestProcessorParser, ParseNoMappings)
 
 TEST(TestProcessorParser, ParseEmptyMappings)
 {
-    auto object =
-        yaml_to_object(R"([{id: 1, generator: extract_schema, parameters: {mappings: []}}])");
+    auto object = yaml_to_object<owned_object>(
+        R"([{id: 1, generator: extract_schema, parameters: {mappings: []}}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -285,11 +274,10 @@ TEST(TestProcessorParser, ParseEmptyMappings)
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -308,8 +296,6 @@ TEST(TestProcessorParser, ParseEmptyMappings)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -342,8 +328,8 @@ TEST(TestProcessorParser, ParseEmptyMappings)
 
 TEST(TestProcessorParser, ParseNoInput)
 {
-    auto object =
-        yaml_to_object(R"([{id: 1, generator: extract_schema, parameters: {mappings: [{}]}}])");
+    auto object = yaml_to_object<owned_object>(
+        R"([{id: 1, generator: extract_schema, parameters: {mappings: [{}]}}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -351,11 +337,10 @@ TEST(TestProcessorParser, ParseNoInput)
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -374,8 +359,6 @@ TEST(TestProcessorParser, ParseNoInput)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -408,7 +391,7 @@ TEST(TestProcessorParser, ParseNoInput)
 
 TEST(TestProcessorParser, ParseEmptyInput)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [], output: out}]}}])");
 
     configuration_spec cfg;
@@ -417,11 +400,10 @@ TEST(TestProcessorParser, ParseEmptyInput)
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -440,8 +422,6 @@ TEST(TestProcessorParser, ParseEmptyInput)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -474,7 +454,7 @@ TEST(TestProcessorParser, ParseEmptyInput)
 
 TEST(TestProcessorParser, ParseNoOutput)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}]}]}}])");
 
     configuration_spec cfg;
@@ -483,11 +463,10 @@ TEST(TestProcessorParser, ParseNoOutput)
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -506,8 +485,6 @@ TEST(TestProcessorParser, ParseNoOutput)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -540,7 +517,7 @@ TEST(TestProcessorParser, ParseNoOutput)
 
 TEST(TestProcessorParser, ParseUnknownGenerator)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, generator: unknown, parameters: {mappings: [{inputs: [{address: in}], output: out}]}}])");
 
     configuration_spec cfg;
@@ -549,11 +526,10 @@ TEST(TestProcessorParser, ParseUnknownGenerator)
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -575,8 +551,6 @@ TEST(TestProcessorParser, ParseUnknownGenerator)
         auto warning_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(warning_rules.size(), 1);
         EXPECT_NE(warning_rules.find("1"), warning_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(cfg.processors.size(), 0);
@@ -584,7 +558,7 @@ TEST(TestProcessorParser, ParseUnknownGenerator)
 
 TEST(TestProcessorParser, ParseUseless)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: false, output: false}])");
 
     configuration_spec cfg;
@@ -593,11 +567,10 @@ TEST(TestProcessorParser, ParseUseless)
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -616,8 +589,6 @@ TEST(TestProcessorParser, ParseUseless)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -650,7 +621,7 @@ TEST(TestProcessorParser, ParseUseless)
 
 TEST(TestProcessorParser, ParsePreprocessor)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: true, output: false}])");
 
     configuration_spec cfg;
@@ -659,7 +630,6 @@ TEST(TestProcessorParser, ParsePreprocessor)
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section);
-    ddwaf_object_free(&object);
 
     EXPECT_EQ(change.content, change_set::processors);
     EXPECT_EQ(change.processors.size(), 1);
@@ -670,7 +640,7 @@ TEST(TestProcessorParser, ParsePreprocessor)
 
 TEST(TestProcessorParser, ParsePreprocessorWithOutput)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: true, output: true}])");
 
     configuration_spec cfg;
@@ -679,7 +649,6 @@ TEST(TestProcessorParser, ParsePreprocessorWithOutput)
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section);
-    ddwaf_object_free(&object);
 
     EXPECT_EQ(change.content, change_set::processors);
     EXPECT_EQ(change.processors.size(), 1);
@@ -690,7 +659,7 @@ TEST(TestProcessorParser, ParsePreprocessorWithOutput)
 
 TEST(TestProcessorParser, ParsePostprocessor)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: false, output: true}])");
 
     configuration_spec cfg;
@@ -699,7 +668,6 @@ TEST(TestProcessorParser, ParsePostprocessor)
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section);
-    ddwaf_object_free(&object);
 
     EXPECT_EQ(change.content, change_set::processors);
     EXPECT_EQ(change.processors.size(), 1);
@@ -710,7 +678,7 @@ TEST(TestProcessorParser, ParsePostprocessor)
 
 TEST(TestProcessorParser, ParseDuplicate)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: false, output: true},{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, evaluate: true, output: false}])");
 
     configuration_spec cfg;
@@ -719,7 +687,6 @@ TEST(TestProcessorParser, ParseDuplicate)
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section);
-    ddwaf_object_free(&object);
 
     EXPECT_EQ(change.content, change_set::processors);
     EXPECT_EQ(change.processors.size(), 1);
@@ -728,8 +695,8 @@ TEST(TestProcessorParser, ParseDuplicate)
     EXPECT_TRUE(cfg.processors.contains("1"));
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -749,14 +716,12 @@ TEST(TestProcessorParser, ParseDuplicate)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 }
 
 TEST(TestProcessorParser, IncompatibleMinVersion)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, min_version: 99.0.0, evaluate: false, output: true}])");
 
     configuration_spec cfg;
@@ -765,7 +730,6 @@ TEST(TestProcessorParser, IncompatibleMinVersion)
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section);
-    ddwaf_object_free(&object);
 
     EXPECT_TRUE(change.empty());
     EXPECT_TRUE(change.actions.empty());
@@ -793,8 +757,8 @@ TEST(TestProcessorParser, IncompatibleMinVersion)
     EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -810,14 +774,12 @@ TEST(TestProcessorParser, IncompatibleMinVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 }
 
 TEST(TestProcessorParser, IncompatibleMaxVersion)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, max_version: 0.0.99, evaluate: false, output: true}])");
 
     configuration_spec cfg;
@@ -826,7 +788,6 @@ TEST(TestProcessorParser, IncompatibleMaxVersion)
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section);
-    ddwaf_object_free(&object);
 
     EXPECT_TRUE(change.empty());
     EXPECT_TRUE(change.actions.empty());
@@ -854,8 +815,8 @@ TEST(TestProcessorParser, IncompatibleMaxVersion)
     EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -871,14 +832,12 @@ TEST(TestProcessorParser, IncompatibleMaxVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 }
 
 TEST(TestProcessorParser, CompatibleVersion)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, min_version: 0.0.99, max_version: 2.0.0, evaluate: false, output: true}])");
 
     configuration_spec cfg;
@@ -887,7 +846,6 @@ TEST(TestProcessorParser, CompatibleVersion)
     ruleset_info::section_info section;
     auto array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processors(array, collector, section);
-    ddwaf_object_free(&object);
 
     EXPECT_EQ(change.content, change_set::processors);
     EXPECT_EQ(change.processors.size(), 1);
@@ -896,8 +854,8 @@ TEST(TestProcessorParser, CompatibleVersion)
     EXPECT_TRUE(cfg.processors.contains("1"));
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -913,8 +871,6 @@ TEST(TestProcessorParser, CompatibleVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 }
 

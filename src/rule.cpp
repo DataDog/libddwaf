@@ -22,8 +22,7 @@ std::vector<rule_attribute> empty_attributes{};
 
 std::pair<rule_verdict, std::optional<rule_result>> core_rule::match(const object_store &store,
     cache_type &cache, const exclusion::object_set_ref &objects_excluded,
-    const matcher_mapper &dynamic_matchers, const object_limits &limits,
-    ddwaf::timer &deadline) const
+    const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const
 {
     // We don't need to reevaluate the rule if it has already had a non-ephemeral match or,
     // if it's a rule which doesn't generate events, if attributes have already been provided,
@@ -34,8 +33,7 @@ std::pair<rule_verdict, std::optional<rule_result>> core_rule::match(const objec
         return {verdict_type::none, std::nullopt};
     }
 
-    auto res =
-        expr_->eval(cache.expr_cache, store, objects_excluded, dynamic_matchers, limits, deadline);
+    auto res = expr_->eval(cache.expr_cache, store, objects_excluded, dynamic_matchers, deadline);
     if (!res.outcome) {
         return {verdict_type::none, std::nullopt};
     }
