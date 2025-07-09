@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "common/yaml_utils.hpp"
+#include "ddwaf.h"
 #include "log.hpp"
 
 #include <fstream>
@@ -44,70 +45,66 @@ template <class T> T as(const YAML::Node &node, unsigned key)
 namespace {
 
 // NOLINTNEXTLINE(misc-no-recursion)
-ddwaf_object node_to_ddwaf_object(const Node &node)
+void node_to_ddwaf_object(ddwaf_object *root, const Node &node)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     switch (node.Type()) {
     case NodeType::Sequence: {
-        ddwaf_object arg;
-        ddwaf_object_array(&arg);
+        ddwaf_object_set_array(root, node.size(), alloc);
         for (auto it = node.begin(); it != node.end(); ++it) {
-            ddwaf_object child = node_to_ddwaf_object(*it);
-            ddwaf_object_array_add(&arg, &child);
+            auto *child = ddwaf_object_insert(root, alloc);
+            node_to_ddwaf_object(child, *it);
         }
-        return arg;
+        return;
     }
     case NodeType::Map: {
-        ddwaf_object arg;
-        ddwaf_object_map(&arg);
+        ddwaf_object_set_map(root, node.size(), alloc);
         for (auto it = node.begin(); it != node.end(); ++it) {
             auto key = it->first.as<std::string>();
-            ddwaf_object child = node_to_ddwaf_object(it->second);
-            ddwaf_object_map_addl(&arg, key.c_str(), key.size(), &child);
+            auto *child = ddwaf_object_insert_key(root, key.data(), key.size(), alloc);
+            node_to_ddwaf_object(child, it->second);
         }
-        return arg;
+        return;
     }
     case NodeType::Scalar: {
-        ddwaf_object arg;
         const std::string &value = node.Scalar();
 
         if (node.Tag() == "?") {
             try {
-                ddwaf_object_unsigned(&arg, node.as<uint64_t>());
-                return arg;
+                ddwaf_object_set_unsigned(root, node.as<uint64_t>());
+                return;
             } catch (...) {}
 
             try {
-                ddwaf_object_signed(&arg, node.as<int64_t>());
-                return arg;
+                ddwaf_object_set_signed(root, node.as<int64_t>());
+                return;
             } catch (...) {}
 
             try {
-                ddwaf_object_float(&arg, node.as<double>());
-                return arg;
+                ddwaf_object_set_float(root, node.as<double>());
+                return;
             } catch (...) {}
 
             try {
                 if (!value.empty() && value[0] != 'Y' && value[0] != 'y' && value[0] != 'n' &&
                     value[0] != 'N') {
                     // Skip the yes / no variants of boolean
-                    ddwaf_object_bool(&arg, node.as<bool>());
-                    return arg;
+                    ddwaf_object_set_bool(root, node.as<bool>());
+                    return;
                 }
             } catch (...) {}
         }
 
-        ddwaf_object_stringl(&arg, value.c_str(), value.size());
-        return arg;
+        ddwaf_object_set_string(root, value.data(), value.size(), alloc);
+        return;
     }
     case NodeType::Null: {
-        ddwaf_object arg;
-        ddwaf_object_null(&arg);
-        return arg;
+        ddwaf_object_set_null(root);
+        return;
     }
     case NodeType::Undefined: {
-        ddwaf_object arg;
-        ddwaf_object_invalid(&arg);
-        return arg;
+        ddwaf_object_set_invalid(root);
+        return;
     }
     }
 
@@ -169,7 +166,12 @@ owned_object node_to_owned_object(const Node &node)
 } // namespace
 
 as_if<ddwaf_object, void>::as_if(const Node &node_) : node(node_) {}
-ddwaf_object as_if<ddwaf_object, void>::operator()() const { return node_to_ddwaf_object(node); }
+ddwaf_object as_if<ddwaf_object, void>::operator()() const
+{
+    ddwaf_object object;
+    node_to_ddwaf_object(&object, node);
+    return object;
+}
 
 as_if<owned_object, void>::as_if(const Node &node_) : node(node_) {}
 owned_object as_if<owned_object, void>::operator()() const { return node_to_owned_object(node); }

@@ -49,13 +49,13 @@ void _print_object(ddwaf_object entry, uint8_t depth)
 
     switch (entry.type) {
     case DDWAF_OBJ_MAP:
-        if (ddwaf_object_size(&entry) == 0) {
+        if (ddwaf_object_get_size(&entry) == 0) {
             std::cerr << "{}";
         } else {
 
             std::cerr << "{";
 
-            for (uint64_t i = 0; i < ddwaf_object_size(&entry); i++) {
+            for (uint64_t i = 0; i < ddwaf_object_get_size(&entry); i++) {
                 if (first) {
                     first = false;
                 } else {
@@ -79,13 +79,13 @@ void _print_object(ddwaf_object entry, uint8_t depth)
         break;
 
     case DDWAF_OBJ_ARRAY:
-        if (ddwaf_object_size(&entry) == 0) {
+        if (ddwaf_object_get_size(&entry) == 0) {
             indent(depth);
             std::cerr << "[]";
         } else {
             std::cerr << "[";
 
-            for (uint64_t i = 0; i < ddwaf_object_size(&entry); i++) {
+            for (uint64_t i = 0; i < ddwaf_object_get_size(&entry); i++) {
                 if (first) {
                     first = false;
                 } else {

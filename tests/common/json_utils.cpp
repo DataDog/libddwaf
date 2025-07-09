@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "common/json_utils.hpp"
+#include "ddwaf.h"
 #include "log.hpp"
 
 #include <fstream>
@@ -47,7 +48,7 @@ template <typename T>
 void object_to_json_helper(
     const ddwaf_object &obj, T &output, rapidjson::Document::AllocatorType &alloc)
 {
-    switch (ddwaf_object_type(&obj)) {
+    switch (ddwaf_object_get_type(&obj)) {
     case DDWAF_OBJ_BOOL:
         output.SetBool(ddwaf_object_get_bool(&obj));
         break;
@@ -63,7 +64,8 @@ void object_to_json_helper(
     case DDWAF_OBJ_STRING:
     case DDWAF_OBJ_SMALL_STRING:
     case DDWAF_OBJ_LITERAL_STRING: {
-        output.SetString(ddwaf_object_get_string(&obj, nullptr), ddwaf_object_length(&obj), alloc);
+        output.SetString(
+            ddwaf_object_get_string(&obj, nullptr), ddwaf_object_get_length(&obj), alloc);
     } break;
     case DDWAF_OBJ_MAP:
         output.SetObject();
@@ -74,8 +76,8 @@ void object_to_json_helper(
             object_to_json_helper(*ddwaf_object_at_value(&obj, i), value, alloc);
 
             const auto *child_key = ddwaf_object_at_key(&obj, i);
-            key.SetString(
-                ddwaf_object_get_string(child_key, nullptr), ddwaf_object_length(child_key), alloc);
+            key.SetString(ddwaf_object_get_string(child_key, nullptr),
+                ddwaf_object_get_length(child_key), alloc);
             output.AddMember(key, value, alloc);
         }
         break;
@@ -101,54 +103,52 @@ template <typename T>
 void json_to_object_helper(ddwaf_object *object, T &doc)
     requires std::is_same_v<rapidjson::Document, T> || std::is_same_v<rapidjson::Value, T>
 {
+    auto *alloc = ddwaf_get_default_allocator();
     switch (doc.GetType()) {
     case rapidjson::kFalseType:
-        ddwaf_object_bool(object, false);
+        ddwaf_object_set_bool(object, false);
         break;
     case rapidjson::kTrueType:
-        ddwaf_object_bool(object, true);
+        ddwaf_object_set_bool(object, true);
         break;
     case rapidjson::kObjectType: {
-        ddwaf_object_map(object);
+        ddwaf_object_set_map(object, doc.MemberCount(), alloc);
         for (auto &kv : doc.GetObject()) {
-            ddwaf_object element{};
-            json_to_object_helper(&element, kv.value);
-
             const std::string_view key = kv.name.GetString();
-            ddwaf_object_map_addl(object, key.data(), key.length(), &element);
+            auto *element = ddwaf_object_insert_key(object, key.data(), key.length(), alloc);
+
+            json_to_object_helper(element, kv.value);
         }
         break;
     }
     case rapidjson::kArrayType: {
-        ddwaf_object_array(object);
+        ddwaf_object_set_array(object, doc.Size(), alloc);
         for (auto &v : doc.GetArray()) {
-            ddwaf_object element{};
-            json_to_object_helper(&element, v);
-
-            ddwaf_object_array_add(object, &element);
+            auto *element = ddwaf_object_insert(object, alloc);
+            json_to_object_helper(element, v);
         }
         break;
     }
     case rapidjson::kStringType: {
         const std::string_view str = doc.GetString();
-        ddwaf_object_stringl(object, str.data(), str.size());
+        ddwaf_object_set_string(object, str.data(), str.size(), alloc);
         break;
     }
     case rapidjson::kNumberType: {
         if (doc.IsInt64()) {
-            ddwaf_object_signed(object, doc.GetInt64());
+            ddwaf_object_set_signed(object, doc.GetInt64());
         } else if (doc.IsUint64()) {
-            ddwaf_object_unsigned(object, doc.GetUint64());
+            ddwaf_object_set_unsigned(object, doc.GetUint64());
         } else if (doc.IsDouble()) {
-            ddwaf_object_float(object, doc.GetDouble());
+            ddwaf_object_set_float(object, doc.GetDouble());
         }
         break;
     }
     case rapidjson::kNullType:
-        ddwaf_object_null(object);
+        ddwaf_object_set_null(object);
         break;
     default:
-        ddwaf_object_invalid(object);
+        ddwaf_object_set_invalid(object);
         break;
     }
 }
@@ -190,8 +190,9 @@ std::unordered_map<std::string_view, std::string_view> object_to_map(const ddwaf
         const auto *value = ddwaf_object_at_value(&obj, i);
 
         map.emplace(
-            std::string_view{ddwaf_object_get_string(key, nullptr), ddwaf_object_length(key)},
-            std::string_view{ddwaf_object_get_string(value, nullptr), ddwaf_object_length(value)});
+            std::string_view{ddwaf_object_get_string(key, nullptr), ddwaf_object_get_length(key)},
+            std::string_view{
+                ddwaf_object_get_string(value, nullptr), ddwaf_object_get_length(value)});
     }
     return map;
 }

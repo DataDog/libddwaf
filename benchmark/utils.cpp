@@ -63,11 +63,12 @@ void object_to_json_helper(
         output.SetDouble(ddwaf_object_get_float(&obj));
         break;
     case DDWAF_OBJ_STRING: {
-        output.SetString(ddwaf_object_get_string(&obj, nullptr), ddwaf_object_length(&obj), alloc);
+        output.SetString(
+            ddwaf_object_get_string(&obj, nullptr), ddwaf_object_get_length(&obj), alloc);
     } break;
     case DDWAF_OBJ_MAP:
         output.SetObject();
-        for (std::size_t i = 0; i < ddwaf_object_size(&obj); i++) {
+        for (std::size_t i = 0; i < ddwaf_object_get_size(&obj); i++) {
             rapidjson::Value key;
             rapidjson::Value value;
 
@@ -75,14 +76,14 @@ void object_to_json_helper(
             const auto *child_val = ddwaf_object_at_value(&obj, i);
             object_to_json_helper(*child_val, value, alloc);
 
-            key.SetString(
-                ddwaf_object_get_string(child_key, nullptr), ddwaf_object_length(child_key), alloc);
+            key.SetString(ddwaf_object_get_string(child_key, nullptr),
+                ddwaf_object_get_length(child_key), alloc);
             output.AddMember(key, value, alloc);
         }
         break;
     case DDWAF_OBJ_ARRAY:
         output.SetArray();
-        for (unsigned i = 0; i < ddwaf_object_size(&obj); i++) {
+        for (unsigned i = 0; i < ddwaf_object_get_size(&obj); i++) {
             rapidjson::Value value;
             const auto *child_val = ddwaf_object_at_value(&obj, i);
             object_to_json_helper(*child_val, value, alloc);
@@ -118,43 +119,47 @@ std::string object_to_string(const ddwaf_object &obj) noexcept
 // NOLINTNEXTLINE(misc-no-recursion)
 ddwaf_object object_dup(const ddwaf_object &o) noexcept
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     ddwaf_object copy{};
     switch (o.type) {
     case DDWAF_OBJ_INVALID:
-        ddwaf_object_invalid(&copy);
+        ddwaf_object_set_invalid(&copy);
         break;
     case DDWAF_OBJ_NULL:
-        ddwaf_object_null(&copy);
+        ddwaf_object_set_null(&copy);
         break;
     case DDWAF_OBJ_BOOL:
-        ddwaf_object_bool(&copy, ddwaf_object_get_bool(&o));
+        ddwaf_object_set_bool(&copy, ddwaf_object_get_bool(&o));
         break;
     case DDWAF_OBJ_SIGNED:
-        ddwaf_object_signed(&copy, ddwaf_object_get_signed(&o));
+        ddwaf_object_set_signed(&copy, ddwaf_object_get_signed(&o));
         break;
     case DDWAF_OBJ_UNSIGNED:
-        ddwaf_object_unsigned(&copy, ddwaf_object_get_unsigned(&o));
+        ddwaf_object_set_unsigned(&copy, ddwaf_object_get_unsigned(&o));
         break;
     case DDWAF_OBJ_FLOAT:
-        ddwaf_object_float(&copy, ddwaf_object_get_float(&o));
+        ddwaf_object_set_float(&copy, ddwaf_object_get_float(&o));
         break;
     case DDWAF_OBJ_STRING:
-        ddwaf_object_stringl(&copy, ddwaf_object_get_string(&o, nullptr), ddwaf_object_length(&o));
+        ddwaf_object_set_string(
+            &copy, ddwaf_object_get_string(&o, nullptr), ddwaf_object_get_length(&o), alloc);
         break;
     case DDWAF_OBJ_ARRAY:
-        ddwaf_object_array(&copy);
-        for (std::size_t i = 0; i < ddwaf_object_size(&o); i++) {
-            ddwaf_object child_copy = object_dup(*ddwaf_object_at_value(&o, i));
-            ddwaf_object_array_add(&copy, &child_copy);
+        ddwaf_object_set_array(&copy, ddwaf_object_get_size(&o), alloc);
+        for (std::size_t i = 0; i < ddwaf_object_get_size(&o); i++) {
+            auto *child_copy = ddwaf_object_insert(&copy, alloc);
+            *child_copy = object_dup(*ddwaf_object_at_value(&o, i));
         }
         break;
     case DDWAF_OBJ_MAP:
-        ddwaf_object_map(&copy);
-        for (std::size_t i = 0; i < ddwaf_object_size(&o); i++) {
+        ddwaf_object_set_map(&copy, ddwaf_object_get_size(&o), alloc);
+        for (std::size_t i = 0; i < ddwaf_object_get_size(&o); i++) {
             const auto *child_key = ddwaf_object_at_key(&o, i);
-            ddwaf_object child_copy = object_dup(*ddwaf_object_at_value(&o, i));
-            ddwaf_object_map_addl(&copy, ddwaf_object_get_string(child_key, nullptr),
-                ddwaf_object_length(child_key), &child_copy);
+            auto *child_copy =
+                ddwaf_object_insert_key(&copy, ddwaf_object_get_string(child_key, nullptr),
+                    ddwaf_object_get_length(child_key), alloc);
+            *child_copy = object_dup(*ddwaf_object_at_value(&o, i));
         }
         break;
     }

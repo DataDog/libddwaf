@@ -17,6 +17,7 @@ constexpr std::string_view base_dir = "integration/diagnostics/v2/";
 
 TEST(TestDiagnosticsV2Integration, InvalidConfigType)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = yaml_to_object<ddwaf_object>(
         R"([version, '2.1', [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]])");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
@@ -25,7 +26,7 @@ TEST(TestDiagnosticsV2Integration, InvalidConfigType)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_EQ(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -35,13 +36,14 @@ TEST(TestDiagnosticsV2Integration, InvalidConfigType)
     auto error = ddwaf::at<std::string>(root_map, "error");
     EXPECT_STR(error, "invalid configuration type, expected 'map', obtained 'array'");
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_destroy(&diagnostics, alloc);
 
     ddwaf_destroy(handle);
 }
 
 TEST(TestDiagnosticsV2Integration, UnsupportedSchema)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '3.0', metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
@@ -50,7 +52,7 @@ TEST(TestDiagnosticsV2Integration, UnsupportedSchema)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_EQ(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -60,13 +62,14 @@ TEST(TestDiagnosticsV2Integration, UnsupportedSchema)
     auto error = ddwaf::at<std::string>(root_map, "error");
     EXPECT_STR(error, "unsupported schema version: 3.x");
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_destroy(&diagnostics, alloc);
 
     ddwaf_destroy(handle);
 }
 
 TEST(TestDiagnosticsV2Integration, NoSchema)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = yaml_to_object<ddwaf_object>(
         R"({ metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
@@ -75,7 +78,7 @@ TEST(TestDiagnosticsV2Integration, NoSchema)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -97,13 +100,14 @@ TEST(TestDiagnosticsV2Integration, NoSchema)
     auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 0);
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_destroy(&diagnostics, alloc);
 
     ddwaf_destroy(handle);
 }
 
 TEST(TestDiagnosticsV2Integration, BasicRule)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
@@ -112,7 +116,7 @@ TEST(TestDiagnosticsV2Integration, BasicRule)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -134,13 +138,14 @@ TEST(TestDiagnosticsV2Integration, BasicRule)
     auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 0);
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_destroy(&diagnostics, alloc);
 
     ddwaf_destroy(handle);
 }
 
 TEST(TestDiagnosticsV2Integration, BasicRuleWithUpdate)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     auto rule = yaml_to_object<ddwaf_object>(
@@ -171,7 +176,7 @@ TEST(TestDiagnosticsV2Integration, BasicRuleWithUpdate)
         auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
@@ -197,17 +202,17 @@ TEST(TestDiagnosticsV2Integration, BasicRuleWithUpdate)
         auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
     ddwaf_builder_destroy(builder);
 }
 
 TEST(TestDiagnosticsV2Integration, NullRuleset)
 {
     ddwaf_object diagnostics;
-    ddwaf_object_invalid(&diagnostics);
+    ddwaf_object_set_invalid(&diagnostics);
     ddwaf_handle handle = ddwaf_init(nullptr, nullptr, &diagnostics);
     ASSERT_EQ(handle, nullptr);
 
@@ -216,6 +221,7 @@ TEST(TestDiagnosticsV2Integration, NullRuleset)
 
 TEST(TestDiagnosticsV2Integration, InvalidRule)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("invalid_single.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -223,7 +229,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRule)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_EQ(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -249,11 +255,12 @@ TEST(TestDiagnosticsV2Integration, InvalidRule)
     EXPECT_EQ(error_rules.size(), 1);
     EXPECT_NE(error_rules.find("1"), error_rules.end());
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_destroy(&diagnostics, alloc);
 }
 
 TEST(TestDiagnosticsV2Integration, MultipleSameInvalidRules)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("invalid_multiple_same.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -261,7 +268,7 @@ TEST(TestDiagnosticsV2Integration, MultipleSameInvalidRules)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_EQ(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -289,11 +296,12 @@ TEST(TestDiagnosticsV2Integration, MultipleSameInvalidRules)
     EXPECT_NE(error_rules.find("1"), error_rules.end());
     EXPECT_NE(error_rules.find("2"), error_rules.end());
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_destroy(&diagnostics, alloc);
 }
 
 TEST(TestDiagnosticsV2Integration, MultipleDiffInvalidRules)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("invalid_multiple_diff.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -301,7 +309,7 @@ TEST(TestDiagnosticsV2Integration, MultipleDiffInvalidRules)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_EQ(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -341,11 +349,12 @@ TEST(TestDiagnosticsV2Integration, MultipleDiffInvalidRules)
         EXPECT_NE(warning_rules.find("2"), warning_rules.end());
     }
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_destroy(&diagnostics, alloc);
 }
 
 TEST(TestDiagnosticsV2Integration, MultipleMixInvalidRules)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("invalid_multiple_mix.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -353,7 +362,7 @@ TEST(TestDiagnosticsV2Integration, MultipleMixInvalidRules)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -405,13 +414,14 @@ TEST(TestDiagnosticsV2Integration, MultipleMixInvalidRules)
         EXPECT_EQ(warning_rules.size(), 1);
         EXPECT_NE(warning_rules.find("2"), warning_rules.end());
     }
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_destroy(&diagnostics, alloc);
 
     ddwaf_destroy(handle);
 }
 
 TEST(TestDiagnosticsV2Integration, InvalidDuplicate)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("invalid_duplicate.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -419,7 +429,7 @@ TEST(TestDiagnosticsV2Integration, InvalidDuplicate)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -446,13 +456,14 @@ TEST(TestDiagnosticsV2Integration, InvalidDuplicate)
     EXPECT_EQ(error_rules.size(), 1);
     EXPECT_NE(error_rules.find("1"), error_rules.end());
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_destroy(&diagnostics, alloc);
 
     ddwaf_destroy(handle);
 }
 
 TEST(TestDiagnosticsV2Integration, InvalidRuleset)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("invalid_ruleset.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -460,7 +471,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleset)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_EQ(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -491,11 +502,12 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleset)
         EXPECT_EQ(rules.size(), 20);
     }
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_destroy(&diagnostics, alloc);
 }
 
 TEST(TestDiagnosticsV2Integration, MultipleRules)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -504,7 +516,7 @@ TEST(TestDiagnosticsV2Integration, MultipleRules)
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -534,7 +546,7 @@ TEST(TestDiagnosticsV2Integration, MultipleRules)
         auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_destroy(handle);
@@ -542,6 +554,7 @@ TEST(TestDiagnosticsV2Integration, MultipleRules)
 
 TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules_min_version.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -550,7 +563,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -578,7 +591,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
         auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_destroy(handle);
@@ -586,6 +599,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
 
 TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules_max_version.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -594,7 +608,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -622,7 +636,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
         auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_destroy(handle);
@@ -630,6 +644,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
 
 TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules_min_max_version.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -638,7 +653,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -667,7 +682,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
         auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_destroy(handle);
@@ -675,6 +690,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
 
 TEST(TestDiagnosticsV2Integration, RulesWithErrors)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules_with_errors.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -683,7 +699,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -752,7 +768,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
             EXPECT_TRUE(error_rules.contains("rule6"));
         }
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_destroy(handle);
@@ -760,6 +776,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
 
 TEST(TestDiagnosticsV2Integration, CustomRules)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("custom_rules.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -768,7 +785,7 @@ TEST(TestDiagnosticsV2Integration, CustomRules)
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -798,7 +815,7 @@ TEST(TestDiagnosticsV2Integration, CustomRules)
         auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_destroy(handle);
@@ -806,6 +823,7 @@ TEST(TestDiagnosticsV2Integration, CustomRules)
 
 TEST(TestDiagnosticsV2Integration, InputFilter)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("input_filter.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -814,7 +832,7 @@ TEST(TestDiagnosticsV2Integration, InputFilter)
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -838,7 +856,7 @@ TEST(TestDiagnosticsV2Integration, InputFilter)
         auto errors = ddwaf::at<raw_configuration::map>(exclusions, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_destroy(handle);
@@ -846,6 +864,7 @@ TEST(TestDiagnosticsV2Integration, InputFilter)
 
 TEST(TestDiagnosticsV2Integration, RuleData)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rule_data.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -854,7 +873,7 @@ TEST(TestDiagnosticsV2Integration, RuleData)
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -879,7 +898,7 @@ TEST(TestDiagnosticsV2Integration, RuleData)
         auto errors = ddwaf::at<raw_configuration::map>(rule_data, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_destroy(handle);
@@ -887,6 +906,7 @@ TEST(TestDiagnosticsV2Integration, RuleData)
 
 TEST(TestDiagnosticsV2Integration, Processor)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("processor.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
@@ -895,7 +915,7 @@ TEST(TestDiagnosticsV2Integration, Processor)
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -919,7 +939,7 @@ TEST(TestDiagnosticsV2Integration, Processor)
         auto errors = ddwaf::at<raw_configuration::map>(processor, "errors");
         EXPECT_EQ(errors.size(), 0);
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_destroy(handle);
@@ -927,6 +947,7 @@ TEST(TestDiagnosticsV2Integration, Processor)
 
 TEST(TestDiagnosticsV2Integration, InvalidRulesContainer)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     auto rule = yaml_to_object<ddwaf_object>(
@@ -935,7 +956,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRulesContainer)
 
     ddwaf_object diagnostics;
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -951,7 +972,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRulesContainer)
         auto errors = ddwaf::at<std::string>(rules, "error");
         EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_builder_destroy(builder);
@@ -959,6 +980,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRulesContainer)
 
 TEST(TestDiagnosticsV2Integration, InvalidCustomRulesContainer)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     auto rule = yaml_to_object<ddwaf_object>(
@@ -967,7 +989,7 @@ TEST(TestDiagnosticsV2Integration, InvalidCustomRulesContainer)
 
     ddwaf_object diagnostics;
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -983,7 +1005,7 @@ TEST(TestDiagnosticsV2Integration, InvalidCustomRulesContainer)
         auto errors = ddwaf::at<std::string>(rules, "error");
         EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_builder_destroy(builder);
@@ -991,6 +1013,7 @@ TEST(TestDiagnosticsV2Integration, InvalidCustomRulesContainer)
 
 TEST(TestDiagnosticsV2Integration, InvalidExclusionsContainer)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     auto rule = yaml_to_object<ddwaf_object>(
@@ -999,7 +1022,7 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionsContainer)
 
     ddwaf_object diagnostics;
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -1015,7 +1038,7 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionsContainer)
         auto errors = ddwaf::at<std::string>(rules, "error");
         EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_builder_destroy(builder);
@@ -1023,6 +1046,7 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionsContainer)
 
 TEST(TestDiagnosticsV2Integration, InvalidOverridesContainer)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     auto rule = yaml_to_object<ddwaf_object>(
@@ -1031,7 +1055,7 @@ TEST(TestDiagnosticsV2Integration, InvalidOverridesContainer)
 
     ddwaf_object diagnostics;
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -1047,7 +1071,7 @@ TEST(TestDiagnosticsV2Integration, InvalidOverridesContainer)
         auto errors = ddwaf::at<std::string>(rules, "error");
         EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_builder_destroy(builder);
@@ -1055,6 +1079,7 @@ TEST(TestDiagnosticsV2Integration, InvalidOverridesContainer)
 
 TEST(TestDiagnosticsV2Integration, InvalidScannersContainer)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     auto rule = yaml_to_object<ddwaf_object>(
@@ -1063,7 +1088,7 @@ TEST(TestDiagnosticsV2Integration, InvalidScannersContainer)
 
     ddwaf_object diagnostics;
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -1079,7 +1104,7 @@ TEST(TestDiagnosticsV2Integration, InvalidScannersContainer)
         auto errors = ddwaf::at<std::string>(rules, "error");
         EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_builder_destroy(builder);
@@ -1087,6 +1112,7 @@ TEST(TestDiagnosticsV2Integration, InvalidScannersContainer)
 
 TEST(TestDiagnosticsV2Integration, InvalidProcessorsContainer)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     auto rule = yaml_to_object<ddwaf_object>(
@@ -1095,7 +1121,7 @@ TEST(TestDiagnosticsV2Integration, InvalidProcessorsContainer)
 
     ddwaf_object diagnostics;
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -1111,7 +1137,7 @@ TEST(TestDiagnosticsV2Integration, InvalidProcessorsContainer)
         auto errors = ddwaf::at<std::string>(rules, "error");
         EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_builder_destroy(builder);
@@ -1119,6 +1145,7 @@ TEST(TestDiagnosticsV2Integration, InvalidProcessorsContainer)
 
 TEST(TestDiagnosticsV2Integration, InvalidActionsContainer)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     auto rule = yaml_to_object<ddwaf_object>(
@@ -1127,7 +1154,7 @@ TEST(TestDiagnosticsV2Integration, InvalidActionsContainer)
 
     ddwaf_object diagnostics;
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -1143,7 +1170,7 @@ TEST(TestDiagnosticsV2Integration, InvalidActionsContainer)
         auto errors = ddwaf::at<std::string>(rules, "error");
         EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_builder_destroy(builder);
@@ -1151,6 +1178,7 @@ TEST(TestDiagnosticsV2Integration, InvalidActionsContainer)
 
 TEST(TestDiagnosticsV2Integration, InvalidRuleDataContainer)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     auto rule = yaml_to_object<ddwaf_object>(
@@ -1159,7 +1187,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleDataContainer)
 
     ddwaf_object diagnostics;
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -1175,7 +1203,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleDataContainer)
         auto errors = ddwaf::at<std::string>(rules, "error");
         EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_builder_destroy(builder);
@@ -1183,6 +1211,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleDataContainer)
 
 TEST(TestDiagnosticsV2Integration, InvalidExclusionDataContainer)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     auto rule = yaml_to_object<ddwaf_object>(
@@ -1191,7 +1220,7 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionDataContainer)
 
     ddwaf_object diagnostics;
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, &diagnostics);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
 
@@ -1207,7 +1236,7 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionDataContainer)
         auto errors = ddwaf::at<std::string>(rules, "error");
         EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
 
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
     }
 
     ddwaf_builder_destroy(builder);

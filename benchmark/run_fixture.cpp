@@ -20,7 +20,7 @@ run_fixture::run_fixture(ddwaf_handle handle, std::vector<ddwaf_object> &&object
 
 bool run_fixture::set_up()
 {
-    ctx_ = ddwaf_context_init(handle_);
+    ctx_ = ddwaf_context_init(handle_, ddwaf_get_default_allocator());
     return ctx_ != nullptr;
 }
 
@@ -32,14 +32,14 @@ void run_fixture::warmup()
         object_stack.emplace(&object, 0);
         while (!object_stack.empty()) {
             auto &[current, i] = object_stack.top();
-            for (; i < ddwaf_object_size(current); ++i) {
+            for (; i < ddwaf_object_get_size(current); ++i) {
                 const auto &next = *ddwaf_object_at_value(current, i);
                 if (object_stack.size() <= max_depth &&
                     (next.type == DDWAF_OBJ_ARRAY || next.type == DDWAF_OBJ_MAP)) {
                     break;
                 }
             }
-            if (i == ddwaf_object_size(current)) {
+            if (i == ddwaf_object_get_size(current)) {
                 object_stack.pop();
             } else {
                 object_stack.emplace(ddwaf_object_at_value(current, i++), 0);
@@ -67,7 +67,7 @@ uint64_t run_fixture::test_main()
 
         const auto *duration = ddwaf_object_find(&res, "duration", sizeof("duration") - 1);
         total_runtime += ddwaf_object_get_unsigned(duration);
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, ddwaf_get_default_allocator());
     }
 
     return total_runtime;

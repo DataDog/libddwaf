@@ -13,6 +13,7 @@ namespace {
 
 TEST(TestHiddenAsciiMatchMatchIntegration, Match)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     // Initialize a WAF rule
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: hidden_ascii_match, parameters: {inputs: [{address: arg1}]}}]}]})");
@@ -20,10 +21,10 @@ TEST(TestHiddenAsciiMatchMatchIntegration, Match)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         std::string input =
@@ -34,9 +35,9 @@ TEST(TestHiddenAsciiMatchMatchIntegration, Match)
             "\xF3\xA0\x81\xA1\xF3\xA0\x81\xB3\xF3\xA0\x81\xA3\xF3\xA0\x81\xA9\xF3\xA0\x81\xA9";
 
         ddwaf_object param;
-        ddwaf_object tmp;
-        ddwaf_object_map(&param);
-        ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, input.c_str()));
+        ddwaf_object_set_map(&param, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&param, STRL("arg1"), alloc), input.data(),
+            input.size(), alloc);
         ddwaf_object ret;
 
         auto code = ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME);
@@ -52,19 +53,19 @@ TEST(TestHiddenAsciiMatchMatchIntegration, Match)
                                        .value = input,
                                        .address = "arg1",
                                    }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
 
         ddwaf_context_destroy(context);
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object param;
-        ddwaf_object tmp;
-        ddwaf_object_map(&param);
-        ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "normal text"));
+        ddwaf_object_set_map(&param, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&param, STRL("arg1"), alloc), STRL("normal text"), alloc);
 
         ddwaf_object ret;
 
@@ -72,7 +73,7 @@ TEST(TestHiddenAsciiMatchMatchIntegration, Match)
         EXPECT_EQ(code, DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
 
         ddwaf_context_destroy(context);
     }

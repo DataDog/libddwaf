@@ -65,7 +65,7 @@ ddwaf_object generate_rule_data(const std::vector<std::string>& ip_set)
     for (const auto& ip : ip_set) {
         ddwaf_object data_point;
         ddwaf_object_map(&data_point);
-        ddwaf_object_map_add(&data_point, "expiration", ddwaf_object_unsigned_force(&tmp, 0));
+        ddwaf_object_map_add(&data_point, "expiration", ddwaf_object_set_unsigned_force(&tmp, 0));
 
         ddwaf_object_map_add(&data_point, "value", ddwaf_object_stringl(&tmp, ip.c_str(), ip.size()));
 
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 
     ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
     if (handle == nullptr) {
         std::cout << "Failed to load " << argv[1] << '\n';
         return EXIT_FAILURE;
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 
             auto update = generate_rule_data(ip_set);
             ddwaf_handle updated_handle = ddwaf_update(handle, &update, nullptr);
-            ddwaf_object_free(&update);
+            ddwaf_object_destroy(&update, alloc);
 
             if (updated_handle == nullptr) {
                 std::cout << "Failed to load rule data\n";
@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
                 ddwaf_context_eval(context, &input, nullptr, nullptr, std::numeric_limits<uint32_t>::max());
                 auto count = (std::chrono::system_clock::now() - start).count();
 
-                ddwaf_object_free(&input);
+                ddwaf_object_destroy(&input, alloc);
                 results[size] += count;
 
                 ddwaf_context_destroy(context);

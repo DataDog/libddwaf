@@ -5,6 +5,7 @@
 // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "common/gtest_utils.hpp"
+#include "ddwaf.h"
 
 using namespace rapidjson;
 
@@ -17,7 +18,7 @@ public:
     TestSchemaIntegration()
     {
         auto rule = read_file<ddwaf_object>("schema.yaml", base_dir);
-        if (rule.type == DDWAF_OBJ_INVALID) {
+        if (ddwaf_object_is_invalid(&rule)) {
             throw std::runtime_error("failed to load schema.yaml");
         }
 
@@ -26,14 +27,14 @@ public:
             throw std::runtime_error("failed to obtain waf handle");
         }
 
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, ddwaf_get_default_allocator());
     }
 
     ~TestSchemaIntegration() { ddwaf_destroy(handle); }
 
     void SetUp()
     {
-        context = ddwaf_context_init(handle);
+        context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
     }
 
@@ -49,8 +50,8 @@ public:
         EXPECT_EQ(code, DDWAF_MATCH);
 
         const auto *events = ddwaf_object_find(&ret, STRL("events"));
-        ASSERT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-        ASSERT_GT(ddwaf_object_size(events), 0);
+        ASSERT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+        ASSERT_GT(ddwaf_object_get_size(events), 0);
 
         const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
@@ -73,88 +74,107 @@ protected:
 
 TEST_F(TestSchemaIntegration, SimpleResult)
 {
-    ddwaf_object param, tmp;
-    ddwaf_object_map(&param);
+    auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "rule1"));
+    ddwaf_object param;
+    ddwaf_object_set_map(&param, 1, alloc);
+
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&param, STRL("arg1"), alloc), STRL("rule1"), alloc);
 
     ddwaf_object ret;
     auto code = ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME);
     Validate(ret, code);
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
 }
 
 TEST_F(TestSchemaIntegration, SimpleResultWithKeyPath)
 {
-    ddwaf_object param, arg2, tmp;
-    ddwaf_object_map(&param);
-    ddwaf_object_map(&arg2);
-    ddwaf_object_map_add(&arg2, "key1", ddwaf_object_string(&tmp, "rule2"));
-    ddwaf_object_map_add(&param, "arg2", &arg2);
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_object param;
+    ddwaf_object_set_map(&param, 1, alloc);
+    auto *arg2 = ddwaf_object_insert_key(&param, STRL("arg2"), alloc);
+    ddwaf_object_set_map(arg2, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(arg2, STRL("key1"), alloc), STRL("rule2"), alloc);
 
     ddwaf_object ret;
     auto code = ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME);
     Validate(ret, code);
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
 }
 
 TEST_F(TestSchemaIntegration, SimpleResultWithMultiKeyPath)
 {
-    ddwaf_object param, arg2, array, tmp;
-    ddwaf_object_map(&param);
+    auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_object_array(&array);
-    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "rule2"));
-    ddwaf_object_map(&arg2);
-    ddwaf_object_map_add(&arg2, "key1", &array);
-    ddwaf_object_map_add(&param, "arg2", &arg2);
+    ddwaf_object param;
+    ddwaf_object_set_map(&param, 1, alloc);
+
+    auto *arg2 = ddwaf_object_insert_key(&param, STRL("arg2"), alloc);
+    ddwaf_object_set_map(arg2, 1, alloc);
+
+    auto *array = ddwaf_object_insert_key(arg2, STRL("key1"), alloc);
+    ddwaf_object_set_array(array, 1, alloc);
+    ddwaf_object_set_string(ddwaf_object_insert(array, alloc), STRL("rule2"), alloc);
 
     ddwaf_object ret;
     auto code = ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME);
     Validate(ret, code);
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
 }
 
 TEST_F(TestSchemaIntegration, ResultWithMultiCondition)
 {
-    ddwaf_object param, arg4, tmp;
-    ddwaf_object_map(&param);
+    auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_object_map_add(&param, "arg3", ddwaf_object_string(&tmp, "rule3_value"));
+    ddwaf_object param;
+    ddwaf_object_set_map(&param, 2, alloc);
 
-    ddwaf_object_map(&arg4);
-    ddwaf_object_map_add(&arg4, "key1", ddwaf_object_string(&tmp, "rule3"));
-    ddwaf_object_map_add(&param, "arg4", &arg4);
+    auto *arg4 = ddwaf_object_insert_key(&param, STRL("arg4"), alloc);
+    ddwaf_object_set_map(arg4, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(arg4, STRL("key1"), alloc), STRL("rule3"), alloc);
+
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&param, STRL("arg3"), alloc), STRL("rule3_value"), alloc);
 
     ddwaf_object ret;
     auto code = ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME);
     Validate(ret, code);
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
 }
 
 TEST_F(TestSchemaIntegration, MultiResultWithMultiCondition)
 {
-    ddwaf_object param, arg2, arg4, array, tmp;
-    ddwaf_object_map(&param);
+    auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "rule1"));
+    ddwaf_object param;
+    ddwaf_object_set_map(&param, 4, alloc);
 
-    ddwaf_object_array(&array);
-    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "rule2"));
-    ddwaf_object_map(&arg2);
-    ddwaf_object_map_add(&arg2, "key1", &array);
-    ddwaf_object_map_add(&param, "arg2", &arg2);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&param, STRL("arg1"), alloc), STRL("rule1"), alloc);
 
-    ddwaf_object_map_add(&param, "arg3", ddwaf_object_string(&tmp, "rule3_value"));
+    auto *arg2 = ddwaf_object_insert_key(&param, STRL("arg2"), alloc);
+    ddwaf_object_set_map(arg2, 1, alloc);
 
-    ddwaf_object_map(&arg4);
-    ddwaf_object_map_add(&arg4, "key1", ddwaf_object_string(&tmp, "rule3"));
-    ddwaf_object_map_add(&param, "arg4", &arg4);
+    auto *array = ddwaf_object_insert_key(arg2, STRL("key1"), alloc);
+    ddwaf_object_set_array(array, 1, alloc);
+    ddwaf_object_set_string(ddwaf_object_insert(array, alloc), STRL("rule2"), alloc);
+
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&param, STRL("arg3"), alloc), STRL("rule3_value"), alloc);
+
+    auto *arg4 = ddwaf_object_insert_key(&param, STRL("arg4"), alloc);
+    ddwaf_object_set_map(arg4, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(arg4, STRL("key1"), alloc), STRL("rule3"), alloc);
 
     ddwaf_object ret;
     auto code = ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME);
     Validate(ret, code);
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
 }
 
 } // namespace

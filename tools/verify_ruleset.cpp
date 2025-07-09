@@ -15,6 +15,8 @@
 
 int main(int argc, char *argv[])
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     int retval = EXIT_SUCCESS;
 
     try {
@@ -29,10 +31,10 @@ int main(int argc, char *argv[])
 
         ddwaf_object diagnostics;
         ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
 
         auto root = object_to_yaml(diagnostics);
-        ddwaf_object_free(&diagnostics);
+        ddwaf_object_destroy(&diagnostics, alloc);
 
         ddwaf_destroy(handle);
 

@@ -6,6 +6,7 @@
 
 #include "runner.hpp"
 #include "assert.hpp"
+#include "ddwaf.h"
 #include "utils.hpp"
 #include <unordered_set>
 
@@ -14,7 +15,7 @@ test_runner::test_runner(const std::string &rule_file)
     YAML::Node doc = YAML::Load(read_file(rule_file));
     auto rule_obj = doc.as<ddwaf_object>();
     handle_ = ddwaf_init(&rule_obj, nullptr, nullptr);
-    ddwaf_object_free(&rule_obj);
+    ddwaf_object_destroy(&rule_obj, ddwaf_get_default_allocator());
     if (handle_ == nullptr) {
         throw std::runtime_error("Invalid rule file");
     }
@@ -59,13 +60,17 @@ bool test_runner::run_self_test(const YAML::Node &runs)
 
 bool test_runner::run_test(const YAML::Node &runs)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     bool passed = false;
     std::unique_ptr<std::remove_pointer_t<ddwaf_context>, decltype(&ddwaf_context_destroy)> ctx(
-        ddwaf_context_init(handle_), ddwaf_context_destroy);
+        ddwaf_context_init(handle_, ddwaf_get_default_allocator()), ddwaf_context_destroy);
 
     ddwaf_object res_mem{};
-    ddwaf_object_invalid(&res_mem);
-    std::unique_ptr<ddwaf_object, decltype(&ddwaf_object_free)> res{&res_mem, ddwaf_object_free};
+    ddwaf_object_set_invalid(&res_mem);
+
+    auto destroy_fn = [alloc](ddwaf_object *ptr) { ddwaf_object_destroy(ptr, alloc); };
+    std::unique_ptr<ddwaf_object, decltype(destroy_fn)> res{&res_mem, destroy_fn};
 
     try {
         expect(true, runs.IsDefined());
@@ -79,13 +84,13 @@ bool test_runner::run_test(const YAML::Node &runs)
 
             ddwaf_object *persistent_ptr = nullptr;
             auto persistent = run["persistent-input"].as<ddwaf_object>();
-            if (ddwaf_object_type(&persistent) != DDWAF_OBJ_INVALID) {
+            if (ddwaf_object_get_type(&persistent) != DDWAF_OBJ_INVALID) {
                 persistent_ptr = &persistent;
             }
 
             ddwaf_object *ephemeral_ptr = nullptr;
             auto ephemeral = run["ephemeral-input"].as<ddwaf_object>();
-            if (ddwaf_object_type(&ephemeral) != DDWAF_OBJ_INVALID) {
+            if (ddwaf_object_get_type(&ephemeral) != DDWAF_OBJ_INVALID) {
                 ephemeral_ptr = &ephemeral;
             }
 
@@ -99,7 +104,7 @@ bool test_runner::run_test(const YAML::Node &runs)
                 validate_actions(run["actions"], res_yaml["actions"]);
             }
 
-            ddwaf_object_free(res.get());
+            ddwaf_object_destroy(res.get(), alloc);
         }
         passed = true;
     } catch (const std::exception &e) {

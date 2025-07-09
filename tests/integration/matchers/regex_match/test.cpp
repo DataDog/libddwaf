@@ -13,6 +13,7 @@ namespace {
 
 TEST(TestRegexMatchIntegration, CaseSensitiveMatch)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     // Initialize a WAF rule
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: alert, options: {case_sensitive: true}}}]}]})");
@@ -20,17 +21,16 @@ TEST(TestRegexMatchIntegration, CaseSensitiveMatch)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object param;
-        ddwaf_object tmp;
-        ddwaf_object_map(&param);
-        ddwaf_object_map_add(
-            &param, "arg1", ddwaf_object_string(&tmp, "<script>alert(1);</script>"));
+        ddwaf_object_set_map(&param, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&param, STRL("arg1"), alloc),
+            STRL("<script>alert(1);</script>"), alloc);
 
         ddwaf_object ret;
 
@@ -48,20 +48,19 @@ TEST(TestRegexMatchIntegration, CaseSensitiveMatch)
                                        .value = "<script>alert(1);</script>"sv,
                                        .address = "arg1",
                                    }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
 
         ddwaf_context_destroy(context);
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object param;
-        ddwaf_object tmp;
-        ddwaf_object_map(&param);
-        ddwaf_object_map_add(
-            &param, "arg1", ddwaf_object_string(&tmp, "<script>AlErT(1);</script>"));
+        ddwaf_object_set_map(&param, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&param, STRL("arg1"), alloc),
+            STRL("<script>AlErT(1);</script>"), alloc);
 
         ddwaf_object ret;
 
@@ -69,7 +68,7 @@ TEST(TestRegexMatchIntegration, CaseSensitiveMatch)
         EXPECT_EQ(code, DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
 
         ddwaf_context_destroy(context);
     }
@@ -78,6 +77,7 @@ TEST(TestRegexMatchIntegration, CaseSensitiveMatch)
 
 TEST(TestRegexMatchIntegration, CaseInsensitiveMatch)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     // Initialize a WAF rule
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: alert, options: {case_sensitive: false}}}]}]})");
@@ -85,17 +85,16 @@ TEST(TestRegexMatchIntegration, CaseInsensitiveMatch)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object param;
-        ddwaf_object tmp;
-        ddwaf_object_map(&param);
-        ddwaf_object_map_add(
-            &param, "arg1", ddwaf_object_string(&tmp, "<script>alert(1);</script>"));
+        ddwaf_object_set_map(&param, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&param, STRL("arg1"), alloc),
+            STRL("<script>alert(1);</script>"), alloc);
 
         ddwaf_object ret;
 
@@ -113,20 +112,19 @@ TEST(TestRegexMatchIntegration, CaseInsensitiveMatch)
                                        .value = "<script>alert(1);</script>"sv,
                                        .address = "arg1",
                                    }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
 
         ddwaf_context_destroy(context);
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object param;
-        ddwaf_object tmp;
-        ddwaf_object_map(&param);
-        ddwaf_object_map_add(
-            &param, "arg1", ddwaf_object_string(&tmp, "<script>AlErT(1);</script>"));
+        ddwaf_object_set_map(&param, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&param, STRL("arg1"), alloc),
+            STRL("<script>AlErT(1);</script>"), alloc);
 
         ddwaf_object ret;
 
@@ -145,7 +143,7 @@ TEST(TestRegexMatchIntegration, CaseInsensitiveMatch)
 
         const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
 
         ddwaf_context_destroy(context);
     }
@@ -154,6 +152,7 @@ TEST(TestRegexMatchIntegration, CaseInsensitiveMatch)
 
 TEST(TestRegexMatchIntegration, MinLength)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     // Initialize a WAF rule
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: alert, options: {min_length: 10}}}]}]})");
@@ -161,35 +160,34 @@ TEST(TestRegexMatchIntegration, MinLength)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object param;
-        ddwaf_object tmp;
-        ddwaf_object_map(&param);
-        ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "alert("));
+        ddwaf_object_set_map(&param, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&param, STRL("arg1"), alloc), STRL("alert("), alloc);
 
         ddwaf_object ret;
 
         auto code = ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME);
         EXPECT_EQ(code, DDWAF_OK);
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
 
         ddwaf_context_destroy(context);
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object param;
-        ddwaf_object tmp;
-        ddwaf_object_map(&param);
-        ddwaf_object_map_add(
-            &param, "arg1", ddwaf_object_string(&tmp, "<script>AlErT(1);</script>"));
+        ddwaf_object_set_map(&param, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&param, STRL("arg1"), alloc),
+            STRL("<script>AlErT(1);</script>"), alloc);
 
         ddwaf_object ret;
 
@@ -208,7 +206,7 @@ TEST(TestRegexMatchIntegration, MinLength)
 
         const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
 
         ddwaf_context_destroy(context);
     }

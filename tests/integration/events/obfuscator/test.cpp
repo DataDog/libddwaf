@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "common/gtest_utils.hpp"
+#include "ddwaf.h"
 #include "obfuscator.hpp"
 
 using namespace ddwaf;
@@ -16,21 +17,24 @@ constexpr std::string_view base_dir = "integration/events/obfuscator/";
 
 TEST(TestObfuscatorIntegration, TestConfigKeyValue)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{"password", "rule1_obf"}};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
     ASSERT_NE(handle, nullptr);
 
     // No Obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -45,17 +49,21 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
                                        .value = "rule1"sv,
                                        .address = "value",
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     // Key-based obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, inter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
-        ddwaf_object_map_add(&parameter, "value", &inter);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+
+        auto *inter = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_map(inter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(inter, STRL("passwordle"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -71,16 +79,18 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     // Value-based obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1_obf"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -95,17 +105,21 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
                                        .value = "<Redacted>"sv,
                                        .address = "value",
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     // Both
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, inter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1_obf"));
-        ddwaf_object_map_add(&parameter, "value", &inter);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+
+        auto *inter = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_map(inter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(inter, STRL("passwordle"), alloc), STRL("rule1_obf"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -121,7 +135,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
@@ -130,21 +144,24 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
 
 TEST(TestObfuscatorIntegration, TestConfigKey)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{"password", nullptr}};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
     ASSERT_NE(handle, nullptr);
 
     // No Obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -159,17 +176,21 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
                                        .value = "rule1"sv,
                                        .address = "value",
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     // Key-based obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, inter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
-        ddwaf_object_map_add(&parameter, "value", &inter);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+
+        auto *inter = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_map(inter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(inter, STRL("passwordle"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -185,16 +206,18 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     // Value-based obfuscation (?)
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1_obf"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -209,7 +232,7 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
                                        .value = "rule1_obf"sv,
                                        .address = "value",
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
@@ -218,21 +241,24 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
 
 TEST(TestObfuscatorIntegration, TestConfigValue)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, "rule1_obf"}};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
     ASSERT_NE(handle, nullptr);
 
     // No Obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -247,17 +273,21 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
                                        .value = "rule1"sv,
                                        .address = "value",
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     // Key-based obfuscation (?)
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, inter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
-        ddwaf_object_map_add(&parameter, "value", &inter);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+
+        auto *inter = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_map(inter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(inter, STRL("passwordle"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -273,16 +303,18 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     // Value-based obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1_obf"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -297,7 +329,7 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
                                        .value = "<Redacted>"sv,
                                        .address = "value",
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
@@ -306,21 +338,24 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
 
 TEST(TestObfuscatorIntegration, TestConfigHighlight)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{.key_regex = nullptr, .value_regex = "^badvalue"}};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
     ASSERT_NE(handle, nullptr);
 
     // Highlight obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "badvalue_something"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&parameter, STRL("value"), alloc),
+            STRL("badvalue_something"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -334,16 +369,18 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
                                        .value = "<Redacted>"sv,
                                        .address = "value",
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     // No obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "othervalue_badvalue"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&parameter, STRL("value"), alloc),
+            STRL("othervalue_badvalue"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -357,7 +394,7 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
                                        .value = "othervalue_badvalue"sv,
                                        .address = "value",
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
@@ -366,21 +403,24 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
 
 TEST(TestObfuscatorIntegration, TestConfigEmpty)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, ""}};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
     ASSERT_NE(handle, nullptr);
 
     // No Obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -395,17 +435,21 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
                                        .value = "rule1"sv,
                                        .address = "value",
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     // Key-based obfuscation (?)
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, inter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
-        ddwaf_object_map_add(&parameter, "value", &inter);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+
+        auto *inter = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_map(inter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(inter, STRL("passwordle"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -421,16 +465,18 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     // Value-based obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1_obf"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -445,7 +491,7 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
                                        .value = "rule1_obf"sv,
                                        .address = "value",
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
@@ -454,21 +500,24 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
 
 TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{"[", nullptr}};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
     ASSERT_NE(handle, nullptr);
 
     // No Obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -483,17 +532,21 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
                                        .value = "rule1"sv,
                                        .address = "value",
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     // Key-based obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, inter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
-        ddwaf_object_map_add(&parameter, "value", &inter);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+
+        auto *inter = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_map(inter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(inter, STRL("passwordle"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -509,16 +562,18 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     // Value-based obfuscation (?)
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1_obf"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -533,7 +588,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
                                        .value = "rule1_obf"sv,
                                        .address = "value",
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
@@ -542,21 +597,24 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
 
 TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_config config{{nullptr, "]"}};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
     ASSERT_NE(handle, nullptr);
 
     // No Obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -571,17 +629,21 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
                                        .value = "rule1"sv,
                                        .address = "value",
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     // Key-based obfuscation (?)
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, inter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&inter, "passwordle", ddwaf_object_string(&tmp, "rule1"));
-        ddwaf_object_map_add(&parameter, "value", &inter);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+
+        auto *inter = ddwaf_object_insert_key(&parameter, STRL("value"), alloc);
+        ddwaf_object_set_map(inter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(inter, STRL("passwordle"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -597,16 +659,18 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
                                        .address = "value",
                                        .path = {"passwordle"},
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     // Value-based obfuscation
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP, tmp;
-        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule1_obf"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1_obf"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(
@@ -621,7 +685,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
                                        .value = "rule1_obf"sv,
                                        .address = "value",
                                    }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 

@@ -15,20 +15,21 @@ constexpr std::string_view base_dir = "integration/exclusion/rule_filter/";
 
 TEST(TestRuleFilterIntegration, ExcludeSingleRule)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("exclude_one_rule.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+    ddwaf_object_set_map(&root, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     ddwaf_object out;
     EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -41,27 +42,28 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRule)
                                    .value = "192.168.0.1"sv,
                                    .address = "http.client_ip",
                                }}}}});
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestRuleFilterIntegration, ExcludeByType)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("exclude_by_type.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+    ddwaf_object_set_map(&root, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     ddwaf_object out;
     EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -74,52 +76,54 @@ TEST(TestRuleFilterIntegration, ExcludeByType)
                                    .value = "192.168.0.1"sv,
                                    .address = "http.client_ip",
                                }}}}});
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestRuleFilterIntegration, ExcludeByCategory)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("exclude_by_category.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+    ddwaf_object_set_map(&root, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     ddwaf_object out;
     EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_OK);
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestRuleFilterIntegration, ExcludeByTags)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("exclude_by_tags.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+    ddwaf_object_set_map(&root, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     ddwaf_object out;
     EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -132,45 +136,49 @@ TEST(TestRuleFilterIntegration, ExcludeByTags)
                                    .value = "192.168.0.1"sv,
                                    .address = "http.client_ip",
                                }}}}});
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestRuleFilterIntegration, ExcludeAllWithCondition)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("exclude_all_with_condition.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        ddwaf_object_set_map(&root, 2, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc),
+            STRL("192.168.0.1"), alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&root, STRL("usr.id"), alloc), STRL("admin"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_OK);
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc),
+            STRL("192.168.0.1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -193,7 +201,7 @@ TEST(TestRuleFilterIntegration, ExcludeAllWithCondition)
                         .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
     ddwaf_destroy(handle);
@@ -201,22 +209,25 @@ TEST(TestRuleFilterIntegration, ExcludeAllWithCondition)
 
 TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithCondition)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("exclude_one_rule_with_condition.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        ddwaf_object_set_map(&root, 2, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc),
+            STRL("192.168.0.1"), alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&root, STRL("usr.id"), alloc), STRL("admin"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -230,18 +241,19 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithCondition)
                                        .address = "http.client_ip",
                                    }}}}});
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc),
+            STRL("192.168.0.1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -264,7 +276,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithCondition)
                         .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
     ddwaf_destroy(handle);
@@ -272,23 +284,26 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithCondition)
 
 TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithConditionAndTransformers)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule =
         read_file<ddwaf_object>("exclude_one_rule_with_condition_and_transformers.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "AD      MIN"));
+        ddwaf_object_set_map(&root, 2, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc),
+            STRL("192.168.0.1"), alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&root, STRL("usr.id"), alloc), STRL("AD      MIN"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -302,18 +317,19 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithConditionAndTransformers)
                                        .address = "http.client_ip",
                                    }}}}});
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc),
+            STRL("192.168.0.1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -336,29 +352,32 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithConditionAndTransformers)
                         .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
     ddwaf_destroy(handle);
 }
 TEST(TestRuleFilterIntegration, ExcludeByTypeWithCondition)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("exclude_by_type_with_condition.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        ddwaf_object_set_map(&root, 2, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc),
+            STRL("192.168.0.1"), alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&root, STRL("usr.id"), alloc), STRL("admin"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -372,18 +391,19 @@ TEST(TestRuleFilterIntegration, ExcludeByTypeWithCondition)
                                        .address = "http.client_ip",
                                    }}}}});
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc),
+            STRL("192.168.0.1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -406,7 +426,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTypeWithCondition)
                         .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
     ddwaf_destroy(handle);
@@ -414,38 +434,42 @@ TEST(TestRuleFilterIntegration, ExcludeByTypeWithCondition)
 
 TEST(TestRuleFilterIntegration, ExcludeByCategoryWithCondition)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("exclude_by_category_with_condition.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        ddwaf_object_set_map(&root, 2, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc),
+            STRL("192.168.0.1"), alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&root, STRL("usr.id"), alloc), STRL("admin"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_OK);
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc),
+            STRL("192.168.0.1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -468,7 +492,7 @@ TEST(TestRuleFilterIntegration, ExcludeByCategoryWithCondition)
                         .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
     ddwaf_destroy(handle);
@@ -476,22 +500,25 @@ TEST(TestRuleFilterIntegration, ExcludeByCategoryWithCondition)
 
 TEST(TestRuleFilterIntegration, ExcludeByTagsWithCondition)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("exclude_by_tags_with_condition.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        ddwaf_object_set_map(&root, 2, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc),
+            STRL("192.168.0.1"), alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&root, STRL("usr.id"), alloc), STRL("admin"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -505,18 +532,19 @@ TEST(TestRuleFilterIntegration, ExcludeByTagsWithCondition)
                                        .address = "http.client_ip",
                                    }}}}});
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc),
+            STRL("192.168.0.1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -539,7 +567,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTagsWithCondition)
                         .value = "192.168.0.1"sv,
                         .address = "http.client_ip",
                     }}}}});
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
     ddwaf_destroy(handle);
@@ -547,20 +575,21 @@ TEST(TestRuleFilterIntegration, ExcludeByTagsWithCondition)
 
 TEST(TestRuleFilterIntegration, MonitorSingleRule)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("monitor_one_rule.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+    ddwaf_object_set_map(&root, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     ddwaf_object out;
     EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -576,27 +605,28 @@ TEST(TestRuleFilterIntegration, MonitorSingleRule)
                                }}}}});
     EXPECT_ACTIONS(out, {});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestRuleFilterIntegration, AvoidHavingTwoMonitorOnActions)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("multiple_monitor_on_match.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+    ddwaf_object_set_map(&root, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     ddwaf_object out;
     EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -612,27 +642,28 @@ TEST(TestRuleFilterIntegration, AvoidHavingTwoMonitorOnActions)
                                }}}}});
     EXPECT_ACTIONS(out, {});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestRuleFilterIntegration, MonitorBypassFilterModePrecedence)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("monitor_bypass_precedence.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+    ddwaf_object_set_map(&root, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
     ddwaf_context_destroy(context);
@@ -641,20 +672,21 @@ TEST(TestRuleFilterIntegration, MonitorBypassFilterModePrecedence)
 
 TEST(TestRuleFilterIntegration, MonitorCustomFilterModePrecedence)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("monitor_custom_precedence.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+    ddwaf_object_set_map(&root, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     ddwaf_object out;
     EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -670,27 +702,28 @@ TEST(TestRuleFilterIntegration, MonitorCustomFilterModePrecedence)
                                }}}}});
     EXPECT_ACTIONS(out, {});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestRuleFilterIntegration, BypassCustomFilterModePrecedence)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("bypass_custom_precedence.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+    ddwaf_object_set_map(&root, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
@@ -700,20 +733,21 @@ TEST(TestRuleFilterIntegration, BypassCustomFilterModePrecedence)
 
 TEST(TestRuleFilterIntegration, UnconditionalCustomFilterMode)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("exclude_with_custom_action.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+    ddwaf_object_set_map(&root, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     ddwaf_object out;
     EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -730,28 +764,30 @@ TEST(TestRuleFilterIntegration, UnconditionalCustomFilterMode)
     EXPECT_ACTIONS(out,
         {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}})
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("exclude_with_custom_action_and_condition.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc),
+            STRL("192.168.0.1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -768,18 +804,19 @@ TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
         EXPECT_ACTIONS(out, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}})
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.2"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc),
+            STRL("192.168.0.2"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -794,7 +831,7 @@ TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
                                    }}}}});
         EXPECT_ACTIONS(out, {})
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
     ddwaf_destroy(handle);
@@ -802,26 +839,28 @@ TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
 
 TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     {
         auto rule = read_file<ddwaf_object>("exclude_with_unknown_action.yaml", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle1);
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_context context = ddwaf_context_init(handle1, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc),
+            STRL("192.168.0.1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -836,7 +875,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
                                    }}}}});
         EXPECT_ACTIONS(out, {});
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
@@ -844,20 +883,21 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
         auto actions = yaml_to_object<ddwaf_object>(
             R"({actions: [{id: block2, type: block_request, parameters: {}}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("actions"), &actions, nullptr);
-        ddwaf_object_free(&actions);
+        ddwaf_object_destroy(&actions, alloc);
     }
 
     auto *handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle2);
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_context context = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc),
+            STRL("192.168.0.1"), alloc);
 
         ddwaf_object out;
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -874,7 +914,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
         EXPECT_ACTIONS(out, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}})
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
@@ -885,6 +925,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
 
 TEST(TestRuleFilterIntegration, CustomFilterModeNonblockingAction)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     // In this test, the ruleset contains a rule filter with the action
     // generate_stack, which is neither a blocking, redirecting or monitoring
     // action, hence its ignored.
@@ -893,15 +934,15 @@ TEST(TestRuleFilterIntegration, CustomFilterModeNonblockingAction)
 
     auto *handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+    ddwaf_object_set_map(&root, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     ddwaf_object out;
     EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -918,7 +959,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeNonblockingAction)
     EXPECT_ACTIONS(out,
         {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}})
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
 
     ddwaf_destroy(handle);

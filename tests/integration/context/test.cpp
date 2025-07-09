@@ -14,24 +14,29 @@ constexpr std::string_view base_dir = "integration/context/";
 
 TEST(TestContextIntegration, Basic)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     // Initialize a WAF rule
     auto rule = read_file<ddwaf_object>("processor.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     // Setup the parameter structure
-    ddwaf_object parameter = DDWAF_OBJECT_MAP;
-    ddwaf_object subMap = DDWAF_OBJECT_MAP;
-    ddwaf_object tmp;
-    ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule2"));
-    ddwaf_object_map_add(&subMap, "key", ddwaf_object_string(&tmp, "rule3"));
-    ddwaf_object_map_add(&parameter, "value2", &subMap); // ddwaf_object_string(&,"rule3"));
+
+    ddwaf_object parameter;
+    ddwaf_object_set_map(&parameter, 2, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule2"), alloc);
+
+    auto *subMap = ddwaf_object_insert_key(&parameter, STRL("value2"), alloc);
+    ddwaf_object_set_map(subMap, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(subMap, STRL("key"), alloc), STRL("rule3"), alloc);
 
     ddwaf_object ret;
     EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &ret, LONG_TIME), DDWAF_MATCH);
@@ -58,29 +63,31 @@ TEST(TestContextIntegration, Basic)
                                        .path = {"key"},
                                    }}}}});
 
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestContextIntegration, KeyPaths)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     // Initialize a WAF rule
     auto rule = read_file<ddwaf_object>("processor5.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object root = DDWAF_OBJECT_MAP;
-    ddwaf_object tmp;
-    ddwaf_object param = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&param, "x", ddwaf_object_string(&tmp, "Sqreen"));
-    ddwaf_object_map_add(&root, "param", &param);
+    ddwaf_object root;
+    ddwaf_object_set_map(&root, 1, alloc);
+    auto *param = ddwaf_object_insert_key(&root, STRL("param"), alloc);
+    ddwaf_object_set_map(param, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(param, STRL("x"), alloc), STRL("Sqreen"), alloc);
 
     ddwaf_object ret;
     EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &ret, LONG_TIME), DDWAF_MATCH);
@@ -99,12 +106,13 @@ TEST(TestContextIntegration, KeyPaths)
                                    .path = {"x"},
                                }}}}});
 
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
 
-    root = DDWAF_OBJECT_MAP;
-    param = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&param, "z", ddwaf_object_string(&tmp, "Sqreen"));
-    ddwaf_object_map_add(&root, "param", &param);
+    ddwaf_object_set_map(&root, 1, alloc);
+    param = ddwaf_object_insert_key(&root, STRL("param"), alloc);
+    ddwaf_object_set_map(param, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(param, STRL("z"), alloc), STRL("Sqreen"), alloc);
 
     EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &ret, LONG_TIME), DDWAF_MATCH);
 
@@ -121,17 +129,18 @@ TEST(TestContextIntegration, KeyPaths)
                                    .address = "param",
                                    .path = {"z"},
                                }}}}});
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
     ddwaf_context_destroy(context);
 
-    context = ddwaf_context_init(handle);
+    context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     // Generate a wrapper
-    root = DDWAF_OBJECT_MAP;
-    param = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&param, "y", ddwaf_object_string(&tmp, "Sqreen"));
-    ddwaf_object_map_add(&root, "param", &param);
+    ddwaf_object_set_map(&root, 1, alloc);
+    param = ddwaf_object_insert_key(&root, STRL("param"), alloc);
+    ddwaf_object_set_map(param, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(param, STRL("y"), alloc), STRL("Sqreen"), alloc);
 
     EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, &ret, LONG_TIME), DDWAF_MATCH);
 
@@ -149,30 +158,30 @@ TEST(TestContextIntegration, KeyPaths)
                                    .path = {"y"},
                                }}}}});
 
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestContextIntegration, MissingParameter)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     // Initialize a WAF rule
     auto rule = read_file<ddwaf_object>("processor.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     // Generate a wrapper
-    ddwaf_object param = DDWAF_OBJECT_MAP;
-    ddwaf_object tmp;
 
-    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
-    ddwaf_object_map_add(&param, "param", ddwaf_object_signed(&tmp, 42));
+    ddwaf_object param;
+    ddwaf_object_set_map(&param, 1, alloc);
+    ddwaf_object_set_signed(ddwaf_object_insert_key(&param, STRL("param"), alloc), 42);
 
     ddwaf_object ret;
     EXPECT_EQ(ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME), DDWAF_OK);
@@ -181,16 +190,17 @@ TEST(TestContextIntegration, MissingParameter)
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     const auto *events = ddwaf_object_find(&ret, STRL("events"));
-    EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-    EXPECT_EQ(ddwaf_object_size(events), 0);
+    EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+    EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestContextIntegration, InvalidUTF8Input)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     // Initialize a WAF rule
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: values}, {address: keys}], regex: bla}}]}]})");
@@ -198,22 +208,23 @@ TEST(TestContextIntegration, InvalidUTF8Input)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    // Generate a wrapper
-    std::string ba1 = "keys";
     std::string ba2 = "values";
-    ddwaf_object param = DDWAF_OBJECT_MAP;
-    ddwaf_object mapItem;
-    ddwaf_object tmp;
-    ddwaf_object_string(&mapItem, "\xF0\x82\x82\xAC\xC1"
-                                  "bla");
+    ddwaf_object param;
+    ddwaf_object_set_map(&param, 1, alloc);
 
-    ddwaf_object_map_addl(&param, ba1.c_str(), ba1.length(), &mapItem);
-    ddwaf_object_map_addl(&param, ba2.c_str(), ba2.length(), ddwaf_object_map(&tmp));
+    auto *item = ddwaf_object_insert_key(&param, STRL("values"), alloc);
+    ddwaf_object_set_map(item, 0, alloc);
+
+    item = ddwaf_object_insert_key(&param, STRL("keys"), alloc);
+    ddwaf_object_set_string(item,
+        STRL("\xF0\x82\x82\xAC\xC1"
+             "bla"),
+        alloc);
 
     ddwaf_object ret;
     EXPECT_EQ(ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME), DDWAF_MATCH);
@@ -225,17 +236,18 @@ TEST(TestContextIntegration, InvalidUTF8Input)
     auto data = ddwaf::test::object_to_json(*events);
 
     std::size_t length;
-    const char *str = ddwaf_object_get_string(&mapItem, &length);
+    const char *str = ddwaf_object_get_string(item, &length);
     auto pos = data.find(std::string_view{str, length});
     EXPECT_TRUE(pos != std::string::npos);
 
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestContextIntegration, SingleCollectionMatch)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     // NOTE: this test only works due to the order of the rules in the ruleset
     // Initialize a WAF rule
     auto rule = read_file<ddwaf_object>("processor3.yaml", base_dir);
@@ -243,16 +255,17 @@ TEST(TestContextIntegration, SingleCollectionMatch)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     ddwaf_object ret;
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     {
-        ddwaf_object param1 = DDWAF_OBJECT_MAP;
-        ddwaf_object tmp;
-        ddwaf_object_map_add(&param1, "param1", ddwaf_object_string(&tmp, "Sqreen"));
+        ddwaf_object param1;
+        ddwaf_object_set_map(&param1, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&param1, STRL("param1"), alloc), STRL("Sqreen"), alloc);
 
         EXPECT_EQ(
             ddwaf_context_eval(context, &param1, nullptr, true, &ret, LONG_TIME), DDWAF_MATCH);
@@ -268,23 +281,24 @@ TEST(TestContextIntegration, SingleCollectionMatch)
                                        .value = "Sqreen"sv,
                                        .address = "param1",
                                    }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     {
-        ddwaf_object param = DDWAF_OBJECT_MAP;
-        ddwaf_object tmp;
-        ddwaf_object_map_add(&param, "param2", ddwaf_object_string(&tmp, "Sqreen"));
+        ddwaf_object param;
+        ddwaf_object_set_map(&param, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&param, STRL("param2"), alloc), STRL("Sqreen"), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *events = ddwaf_object_find(&ret, STRL("events"));
-        EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-        EXPECT_EQ(ddwaf_object_size(events), 0);
+        EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     ddwaf_context_destroy(context);
@@ -293,22 +307,24 @@ TEST(TestContextIntegration, SingleCollectionMatch)
 
 TEST(TestContextIntegration, MultiCollectionMatches)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     // Initialize a WAF rule
     auto rule = read_file<ddwaf_object>("processor4.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     ddwaf_object ret;
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     {
-        ddwaf_object param = DDWAF_OBJECT_MAP;
-        ddwaf_object tmp;
-        ddwaf_object_map_add(&param, "param1", ddwaf_object_string(&tmp, "Sqreen"));
+        ddwaf_object param;
+        ddwaf_object_set_map(&param, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&param, STRL("param1"), alloc), STRL("Sqreen"), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME), DDWAF_MATCH);
         const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
@@ -323,28 +339,32 @@ TEST(TestContextIntegration, MultiCollectionMatches)
                                        .value = "Sqreen"sv,
                                        .address = "param1",
                                    }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     {
-        ddwaf_object param = DDWAF_OBJECT_MAP;
-        ddwaf_object tmp;
-        ddwaf_object_map_add(&param, "param", ddwaf_object_string(&tmp, "Pony"));
+        ddwaf_object param;
+        ddwaf_object_set_map(&param, 1, alloc);
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&param, STRL("param"), alloc), STRL("Pony"), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
         const auto *events = ddwaf_object_find(&ret, STRL("events"));
-        EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-        EXPECT_EQ(ddwaf_object_size(events), 0);
+        EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     {
-        ddwaf_object param = DDWAF_OBJECT_MAP;
-        ddwaf_object tmp;
-        ddwaf_object_map_add(&param, "param2", ddwaf_object_string(&tmp, "Sqreen"));
+        ddwaf_object param;
+        ddwaf_object_set_map(&param, 1, alloc);
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&param, STRL("param2"), alloc), STRL("Sqreen"), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &param, nullptr, true, &ret, LONG_TIME), DDWAF_MATCH);
         const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
@@ -359,7 +379,7 @@ TEST(TestContextIntegration, MultiCollectionMatches)
                                        .value = "Sqreen"sv,
                                        .address = "param2",
                                    }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     ddwaf_context_destroy(context);
@@ -368,49 +388,56 @@ TEST(TestContextIntegration, MultiCollectionMatches)
 
 TEST(TestContextIntegration, Timeout)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("slow.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     ddwaf_object ret;
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object param = DDWAF_OBJECT_MAP;
-    ddwaf_object tmp;
-    ddwaf_object_map_add(&param, "pm_param", ddwaf_object_string(&tmp, "aaaabbbbbaaa"));
+    ddwaf_object param;
+    ddwaf_object_set_map(&param, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&param, STRL("pm_param"), alloc), STRL("aaaabbbbbaaa"), alloc);
 
     EXPECT_EQ(ddwaf_context_eval(context, &param, nullptr, true, &ret, SHORT_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
     EXPECT_TRUE(ddwaf_object_get_bool(timeout));
 
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestContextIntegration, ParameterOverride)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("processor6.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object param1 = DDWAF_OBJECT_MAP;
-    ddwaf_object param2 = DDWAF_OBJECT_MAP;
-    ddwaf_object tmp;
+    ddwaf_object param1;
+    ddwaf_object_set_map(&param1, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&param1, STRL("arg1"), alloc), STRL("not string 1"), alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&param1, STRL("arg2"), alloc), STRL("string 2"), alloc);
 
-    ddwaf_object_map_add(&param1, "arg1", ddwaf_object_string(&tmp, "not string 1"));
-    ddwaf_object_map_add(&param1, "arg2", ddwaf_object_string(&tmp, "string 2"));
-    ddwaf_object_map_add(&param2, "arg1", ddwaf_object_string(&tmp, "string 1"));
+    ddwaf_object param2;
+    ddwaf_object_set_map(&param2, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&param2, STRL("arg1"), alloc), STRL("string 1"), alloc);
 
     // Run with both arg1 and arg2, but arg1 is wrong
     //	// Run with just arg1
@@ -419,7 +446,7 @@ TEST(TestContextIntegration, ParameterOverride)
     EXPECT_EQ(code, DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
 
     // Override `arg1`
     code = ddwaf_context_eval(context, &param2, nullptr, true, &ret, LONG_TIME);
@@ -442,16 +469,18 @@ TEST(TestContextIntegration, ParameterOverride)
                                        .address = "arg2",
                                    }}}}});
 
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
 
     // Run again without change
-    code = ddwaf_context_eval(context, ddwaf_object_map(&tmp), nullptr, true, &ret, LONG_TIME);
+    ddwaf_object empty;
+    ddwaf_object_set_map(&empty, 0, alloc);
+    code = ddwaf_context_eval(context, &empty, nullptr, true, &ret, LONG_TIME);
     EXPECT_EQ(code, DDWAF_OK);
 
     timeout = ddwaf_object_find(&ret, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -459,20 +488,22 @@ TEST(TestContextIntegration, ParameterOverride)
 
 TEST(TestContextIntegration, DuplicateEphemeralMatch)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("processor3.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     {
-        ddwaf_object tmp;
-        ddwaf_object param1 = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&param1, "param1", ddwaf_object_string(&tmp, "Sqreen"));
+        ddwaf_object param1;
+        ddwaf_object_set_map(&param1, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&param1, STRL("param1"), alloc), STRL("Sqreen"), alloc);
 
         ddwaf_object ret;
         EXPECT_EQ(
@@ -487,13 +518,14 @@ TEST(TestContextIntegration, DuplicateEphemeralMatch)
                                        .value = "Sqreen"sv,
                                        .address = "param1",
                                    }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     {
-        ddwaf_object tmp;
-        ddwaf_object param1 = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&param1, "param1", ddwaf_object_string(&tmp, "Sqreen"));
+        ddwaf_object param1;
+        ddwaf_object_set_map(&param1, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&param1, STRL("param1"), alloc), STRL("Sqreen"), alloc);
 
         ddwaf_object ret;
         EXPECT_EQ(
@@ -508,7 +540,7 @@ TEST(TestContextIntegration, DuplicateEphemeralMatch)
                                        .value = "Sqreen"sv,
                                        .address = "param1",
                                    }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     ddwaf_context_destroy(context);
@@ -517,22 +549,25 @@ TEST(TestContextIntegration, DuplicateEphemeralMatch)
 
 TEST(TestContextIntegration, EphemeralAndPersistentMatches)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("processor6.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_object_destroy(&rule, alloc);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     {
-        ddwaf_object tmp;
-        ddwaf_object persistent = DDWAF_OBJECT_MAP;
-        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&persistent, "arg1", ddwaf_object_string(&tmp, "string 1"));
-        ddwaf_object_map_add(&ephemeral, "arg2", ddwaf_object_string(&tmp, "string 2"));
+        ddwaf_object persistent;
+        ddwaf_object_set_map(&persistent, 1, alloc);
+        ddwaf_object ephemeral;
+        ddwaf_object_set_map(&ephemeral, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&persistent, STRL("arg1"), alloc), STRL("string 1"), alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&ephemeral, STRL("arg2"), alloc), STRL("string 2"), alloc);
 
         ddwaf_object ret;
         EXPECT_EQ(ddwaf_context_eval(context, &persistent, &ephemeral, true, &ret, LONG_TIME),
@@ -554,13 +589,14 @@ TEST(TestContextIntegration, EphemeralAndPersistentMatches)
                                            .value = "string 2"sv,
                                            .address = "arg2",
                                        }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     {
-        ddwaf_object tmp;
-        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&ephemeral, "arg2", ddwaf_object_string(&tmp, "string 8"));
+        ddwaf_object ephemeral;
+        ddwaf_object_set_map(&ephemeral, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&ephemeral, STRL("arg2"), alloc), STRL("string 8"), alloc);
 
         ddwaf_object ret;
         EXPECT_EQ(
@@ -582,13 +618,15 @@ TEST(TestContextIntegration, EphemeralAndPersistentMatches)
                                            .value = "string 8"sv,
                                            .address = "arg2",
                                        }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     {
-        ddwaf_object tmp;
-        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&ephemeral, "arg2", ddwaf_object_string(&tmp, "string 3"));
+        auto *alloc = ddwaf_get_default_allocator();
+        ddwaf_object ephemeral;
+        ddwaf_object_set_map(&ephemeral, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&ephemeral, STRL("arg2"), alloc), STRL("string 3"), alloc);
 
         ddwaf_object ret;
         EXPECT_EQ(
@@ -610,7 +648,7 @@ TEST(TestContextIntegration, EphemeralAndPersistentMatches)
                                            .value = "string 3"sv,
                                            .address = "arg2",
                                        }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     ddwaf_context_destroy(context);
@@ -619,20 +657,22 @@ TEST(TestContextIntegration, EphemeralAndPersistentMatches)
 
 TEST(TestContextIntegration, EphemeralNonPriorityAndEphemeralPriority)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("processor7.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     {
-        ddwaf_object tmp;
-        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
+        ddwaf_object ephemeral;
+        ddwaf_object_set_map(&ephemeral, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&ephemeral, STRL("arg1"), alloc), STRL("string 1"), alloc);
 
         ddwaf_object ret;
         EXPECT_EQ(
@@ -647,14 +687,16 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndEphemeralPriority)
                                        .value = "string 1"sv,
                                        .address = "arg1",
                                    }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     {
-        ddwaf_object tmp;
-        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
-        ddwaf_object_map_add(&ephemeral, "arg2", ddwaf_object_string(&tmp, "string 8"));
+        ddwaf_object ephemeral;
+        ddwaf_object_set_map(&ephemeral, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&ephemeral, STRL("arg1"), alloc), STRL("string 1"), alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&ephemeral, STRL("arg2"), alloc), STRL("string 8"), alloc);
 
         ddwaf_object ret;
         EXPECT_EQ(
@@ -670,7 +712,7 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndEphemeralPriority)
                                        .value = "string 8"sv,
                                        .address = "arg2",
                                    }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     ddwaf_context_destroy(context);
@@ -679,21 +721,23 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndEphemeralPriority)
 
 TEST(TestContextIntegration, EphemeralPriorityAndEphemeralNonPriority)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("processor7.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_object_destroy(&rule, alloc);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     {
-        ddwaf_object tmp;
-        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
-        ddwaf_object_map_add(&ephemeral, "arg2", ddwaf_object_string(&tmp, "string 8"));
+        ddwaf_object ephemeral;
+        ddwaf_object_set_map(&ephemeral, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&ephemeral, STRL("arg1"), alloc), STRL("string 1"), alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&ephemeral, STRL("arg2"), alloc), STRL("string 8"), alloc);
 
         ddwaf_object ret;
         EXPECT_EQ(
@@ -709,13 +753,14 @@ TEST(TestContextIntegration, EphemeralPriorityAndEphemeralNonPriority)
                                        .value = "string 8"sv,
                                        .address = "arg2",
                                    }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     {
-        ddwaf_object tmp;
-        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
+        ddwaf_object ephemeral;
+        ddwaf_object_set_map(&ephemeral, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&ephemeral, STRL("arg1"), alloc), STRL("string 1"), alloc);
 
         ddwaf_object ret;
         EXPECT_EQ(
@@ -730,7 +775,7 @@ TEST(TestContextIntegration, EphemeralPriorityAndEphemeralNonPriority)
                                        .value = "string 1"sv,
                                        .address = "arg1",
                                    }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     ddwaf_context_destroy(context);
@@ -739,20 +784,22 @@ TEST(TestContextIntegration, EphemeralPriorityAndEphemeralNonPriority)
 
 TEST(TestContextIntegration, EphemeralNonPriorityAndPersistentPriority)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("processor7.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     {
-        ddwaf_object tmp;
-        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
+        ddwaf_object ephemeral;
+        ddwaf_object_set_map(&ephemeral, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&ephemeral, STRL("arg1"), alloc), STRL("string 1"), alloc);
 
         ddwaf_object ret;
         EXPECT_EQ(
@@ -767,13 +814,14 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndPersistentPriority)
                                        .value = "string 1"sv,
                                        .address = "arg1",
                                    }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     {
-        ddwaf_object tmp;
-        ddwaf_object persistent = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&persistent, "arg2", ddwaf_object_string(&tmp, "string 8"));
+        ddwaf_object persistent;
+        ddwaf_object_set_map(&persistent, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&persistent, STRL("arg2"), alloc), STRL("string 8"), alloc);
 
         ddwaf_object ret;
         EXPECT_EQ(
@@ -789,7 +837,7 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndPersistentPriority)
                                        .value = "string 8"sv,
                                        .address = "arg2",
                                    }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     ddwaf_context_destroy(context);
@@ -798,21 +846,24 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndPersistentPriority)
 
 TEST(TestContextIntegration, ReplaceEphemeral)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("processor7.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     {
-        ddwaf_object tmp;
-        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
-        ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
+        ddwaf_object ephemeral;
+        ddwaf_object_set_map(&ephemeral, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&ephemeral, STRL("arg1"), alloc), STRL("string 1"), alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&ephemeral, STRL("arg1"), alloc), STRL("string 1"), alloc);
 
         ddwaf_object ret;
         EXPECT_EQ(
@@ -827,7 +878,7 @@ TEST(TestContextIntegration, ReplaceEphemeral)
                                        .value = "string 1"sv,
                                        .address = "arg1",
                                    }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     ddwaf_context_destroy(context);
@@ -836,20 +887,22 @@ TEST(TestContextIntegration, ReplaceEphemeral)
 
 TEST(TestContextIntegration, EphemeralPriorityAndPersistentNonPriority)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("processor7.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     {
-        ddwaf_object tmp;
-        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&ephemeral, "arg2", ddwaf_object_string(&tmp, "string 8"));
+        ddwaf_object ephemeral;
+        ddwaf_object_set_map(&ephemeral, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&ephemeral, STRL("arg2"), alloc), STRL("string 8"), alloc);
 
         ddwaf_object ret;
         EXPECT_EQ(
@@ -865,13 +918,14 @@ TEST(TestContextIntegration, EphemeralPriorityAndPersistentNonPriority)
                                        .value = "string 8"sv,
                                        .address = "arg2",
                                    }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     {
-        ddwaf_object tmp;
-        ddwaf_object persistent = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&persistent, "arg1", ddwaf_object_string(&tmp, "string 1"));
+        ddwaf_object persistent;
+        ddwaf_object_set_map(&persistent, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&persistent, STRL("arg1"), alloc), STRL("string 1"), alloc);
 
         ddwaf_object ret;
         EXPECT_EQ(
@@ -887,7 +941,7 @@ TEST(TestContextIntegration, EphemeralPriorityAndPersistentNonPriority)
                                        .address = "arg1",
                                    }}}}});
 
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     ddwaf_context_destroy(context);
@@ -896,20 +950,21 @@ TEST(TestContextIntegration, EphemeralPriorityAndPersistentNonPriority)
 
 TEST(TestContextIntegration, PersistentPriorityAndEphemeralNonPriority)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("processor7.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_object_destroy(&rule, alloc);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     {
-        ddwaf_object tmp;
-        ddwaf_object persistent = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&persistent, "arg2", ddwaf_object_string(&tmp, "string 8"));
+        ddwaf_object persistent;
+        ddwaf_object_set_map(&persistent, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&persistent, STRL("arg2"), alloc), STRL("string 8"), alloc);
 
         ddwaf_object ret;
         EXPECT_EQ(
@@ -925,18 +980,19 @@ TEST(TestContextIntegration, PersistentPriorityAndEphemeralNonPriority)
                                        .value = "string 8"sv,
                                        .address = "arg2",
                                    }}}}});
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     {
-        ddwaf_object tmp;
-        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&ephemeral, "arg1", ddwaf_object_string(&tmp, "string 1"));
+        ddwaf_object ephemeral;
+        ddwaf_object_set_map(&ephemeral, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&ephemeral, STRL("arg1"), alloc), STRL("string 1"), alloc);
 
         ddwaf_object ret;
         EXPECT_EQ(
             ddwaf_context_eval(context, nullptr, &ephemeral, true, &ret, LONG_TIME), DDWAF_OK);
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, alloc);
     }
 
     ddwaf_context_destroy(context);
@@ -945,33 +1001,36 @@ TEST(TestContextIntegration, PersistentPriorityAndEphemeralNonPriority)
 
 TEST(TestContextIntegration, WafContextEventAddress)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("context_event_address.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    ddwaf_object tmp;
+    ddwaf_object_destroy(&rule, alloc);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object map = DDWAF_OBJECT_MAP;
+        ddwaf_object map;
+        ddwaf_object_set_map(&map, 5, alloc);
 
-        ddwaf_object body = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&body, "key", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&map, "server.request.body", &body);
+        auto *body = ddwaf_object_insert_key(&map, STRL("server.request.body"), alloc);
+        ddwaf_object_set_map(body, 1, alloc);
+        ddwaf_object_insert_key(body, STRL("key"), alloc);
 
-        ddwaf_object query = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&map, "server.request.query", &query);
+        auto *query = ddwaf_object_insert_key(&map, STRL("server.request.query"), alloc);
+        ddwaf_object_set_map(query, 1, alloc);
+        ddwaf_object_insert_key(query, STRL("key"), alloc);
 
-        ddwaf_object_map_add(
-            &map, "server.request.uri.raw", ddwaf_object_string(&tmp, "/path/to/resource/?key="));
-        ddwaf_object_map_add(&map, "server.request.method", ddwaf_object_string(&tmp, "PuT"));
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&map, STRL("server.request.uri.raw"), alloc),
+            STRL("/path/to/resource/?key="), alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&map, STRL("server.request.method"), alloc),
+            STRL("PuT"), alloc);
 
-        ddwaf_object_map_add(&map, "waf.trigger", ddwaf_object_string(&tmp, "irrelevant"));
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&map, STRL("waf.trigger"), alloc), STRL("irrelevant"), alloc);
 
         ddwaf_object out;
         ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
@@ -979,31 +1038,35 @@ TEST(TestContextIntegration, WafContextEventAddress)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object map = DDWAF_OBJECT_MAP;
+        ddwaf_object map;
+        ddwaf_object_set_map(&map, 5, alloc);
 
-        ddwaf_object body = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&body, "key", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&map, "server.request.body", &body);
+        auto *body = ddwaf_object_insert_key(&map, STRL("server.request.body"), alloc);
+        ddwaf_object_set_map(body, 1, alloc);
+        ddwaf_object_insert_key(body, STRL("key"), alloc);
 
-        ddwaf_object query = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&query, "key", ddwaf_object_invalid(&tmp));
-        ddwaf_object_map_add(&map, "server.request.query", &query);
+        auto *query = ddwaf_object_insert_key(&map, STRL("server.request.query"), alloc);
+        ddwaf_object_set_map(query, 1, alloc);
+        ddwaf_object_insert_key(query, STRL("key"), alloc);
 
-        ddwaf_object_map_add(
-            &map, "server.request.uri.raw", ddwaf_object_string(&tmp, "/path/to/resource/?key="));
-        ddwaf_object_map_add(&map, "server.request.method", ddwaf_object_string(&tmp, "PuT"));
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&map, STRL("server.request.uri.raw"), alloc),
+            STRL("/path/to/resource/?key="), alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&map, STRL("server.request.method"), alloc),
+            STRL("PuT"), alloc);
 
-        ddwaf_object_map_add(&map, "waf.trigger", ddwaf_object_string(&tmp, "rule"));
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&map, STRL("waf.trigger"), alloc), STRL("rule"), alloc);
 
         ddwaf_object out;
         ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -1011,13 +1074,13 @@ TEST(TestContextIntegration, WafContextEventAddress)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto json = test::object_to_json(*attributes);
         EXPECT_STR(
             json, R"({"_dd.appsec.fp.http.endpoint":"http-put-729d56c3-2c70e12b-2c70e12b"})");
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
@@ -1026,6 +1089,7 @@ TEST(TestContextIntegration, WafContextEventAddress)
 
 TEST(TestContextIntegration, MultipleModuleSingleCollectionMatch)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     // NOTE: this test only works due to the order of the rules in the ruleset
     // Initialize a WAF rule
     auto rule = read_file<ddwaf_object>("same-type-different-module.yaml", base_dir);
@@ -1033,15 +1097,16 @@ TEST(TestContextIntegration, MultipleModuleSingleCollectionMatch)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     ddwaf_object ret;
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object param1 = DDWAF_OBJECT_MAP;
-    ddwaf_object tmp;
-    ddwaf_object_map_add(&param1, "param1", ddwaf_object_string(&tmp, "Sqreen"));
+    ddwaf_object param1;
+    ddwaf_object_set_map(&param1, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&param1, STRL("param1"), alloc), STRL("Sqreen"), alloc);
 
     EXPECT_EQ(ddwaf_context_eval(context, &param1, nullptr, true, &ret, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
@@ -1067,7 +1132,7 @@ TEST(TestContextIntegration, MultipleModuleSingleCollectionMatch)
                     .value = "Sqreen"sv,
                     .address = "param1",
                 }}}}});
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -1075,24 +1140,29 @@ TEST(TestContextIntegration, MultipleModuleSingleCollectionMatch)
 
 TEST(TestContextIntegration, TimeoutBeyondLimit)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     // Initialize a WAF rule
     auto rule = read_file<ddwaf_object>("processor.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     // Setup the parameter structure
-    ddwaf_object parameter = DDWAF_OBJECT_MAP;
-    ddwaf_object subMap = DDWAF_OBJECT_MAP;
-    ddwaf_object tmp;
-    ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "rule2"));
-    ddwaf_object_map_add(&subMap, "key", ddwaf_object_string(&tmp, "rule3"));
-    ddwaf_object_map_add(&parameter, "value2", &subMap); // ddwaf_object_string(&,"rule3"));
+
+    ddwaf_object parameter;
+    ddwaf_object_set_map(&parameter, 2, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule2"), alloc);
+
+    auto *subMap = ddwaf_object_insert_key(&parameter, STRL("value2"), alloc);
+    ddwaf_object_set_map(subMap, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(subMap, STRL("key"), alloc), STRL("rule3"), alloc);
 
     ddwaf_object ret;
     EXPECT_EQ(ddwaf_context_eval(
@@ -1120,7 +1190,7 @@ TEST(TestContextIntegration, TimeoutBeyondLimit)
                                        .path = {"key"},
                                    }}}}});
 
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }

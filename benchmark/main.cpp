@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 
             ddwaf_config config{{}};
             ddwaf_handle handle = ddwaf_init(&ruleset, &config, nullptr);
-            ddwaf_object_free(&ruleset);
+            ddwaf_object_destroy(&ruleset, ddwaf_get_default_allocator());
             if (handle == nullptr) {
                 std::cerr << "Invalid ruleset file\n";
                 utils::exit_failure();

@@ -32,8 +32,8 @@ int main(int argc, char *argv[])
 
     std::cout << (std::chrono::system_clock::now() - start).count() << std::endl;
 
-    ddwaf_object_free(&payload);
-    ddwaf_object_free(&schema);
+    ddwaf_object_destroy(&payload, alloc);
+    ddwaf_object_destroy(&schema, alloc);
 
 
     return EXIT_SUCCESS;

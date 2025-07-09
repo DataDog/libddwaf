@@ -125,49 +125,47 @@ inline bool requires_allocator(object_type type)
 }
 
 template <typename T, typename SizeType>
-inline T *alloc_helper(SizeType count, memory::memory_resource &alloc)
+inline T *alloc_helper(SizeType size, memory::memory_resource &alloc)
     requires(std::is_unsigned_v<SizeType> && sizeof(SizeType) <= sizeof(std::size_t))
 {
     static_assert(maxof_v<SizeType> <= maxof_v<std::size_t> / sizeof(T));
 
-    return static_cast<T *>(alloc.allocate(sizeof(T) * count, alignof(T)));
+    return static_cast<T *>(alloc.allocate(sizeof(T) * size, alignof(T)));
 }
 
 template <typename T, typename SizeType>
-inline void dealloc_helper(T *ptr, SizeType count, memory::memory_resource &alloc)
+inline void dealloc_helper(T *ptr, SizeType size, memory::memory_resource &alloc)
     requires(std::is_unsigned_v<SizeType> && sizeof(SizeType) <= sizeof(std::size_t))
 {
-    alloc.deallocate(ptr, sizeof(T) * count, alignof(T));
+    alloc.deallocate(ptr, sizeof(T) * size, alignof(T));
 }
 
 template <typename T, typename SizeType>
 inline std::pair<T *, SizeType> realloc_helper(
-    T *data, SizeType current_count, memory::memory_resource &alloc)
+    T *data, SizeType size, memory::memory_resource &alloc)
     requires(std::is_unsigned_v<SizeType> && sizeof(SizeType) <= sizeof(std::size_t))
 {
     static_assert(maxof_v<SizeType> <= maxof_v<std::size_t> / sizeof(T));
 
-    static constexpr std::size_t max_elements = maxof_v<SizeType>;
-    if (current_count == max_elements) {
-        throw std::bad_alloc{};
-    }
+    constexpr std::size_t max_elements = maxof_v<SizeType>;
 
-    SizeType new_count;
-    if (current_count > max_elements / 2) [[unlikely]] {
-        new_count = max_elements;
+    SizeType new_size;
+    if (size > max_elements / 2) [[unlikely]] {
+        new_size = max_elements;
     } else {
-        new_count = current_count * 2;
+        new_size = size * 2;
     }
 
-    auto *new_data = static_cast<T *>(alloc.allocate(sizeof(T) * new_count, alignof(T)));
-    memcpy(new_data, data, sizeof(T) * current_count);
+    auto *new_data = static_cast<T *>(alloc.allocate(sizeof(T) * new_size, alignof(T)));
+    memcpy(new_data, data, sizeof(T) * size);
 
-    dealloc_helper(data, current_count, alloc);
+    dealloc_helper(data, size, alloc);
 
-    return {new_data, new_count};
+    return {new_data, new_size};
 }
 
-inline char *copy_string(const char *str, uint32_t length, memory::memory_resource &alloc)
+template <typename SizeType>
+inline char *copy_string(const char *str, SizeType length, memory::memory_resource &alloc)
 {
     auto *copy = alloc_helper<char, uint32_t>(length, alloc);
     memcpy(copy, str, length);
@@ -177,6 +175,10 @@ inline char *copy_string(const char *str, uint32_t length, memory::memory_resour
 // NOLINTNEXTLINE(misc-no-recursion)
 inline void object_destroy(object &obj, nonnull_ptr<memory::memory_resource> alloc)
 {
+    if (alloc->is_equal(*memory::get_default_null_resource())) {
+        return;
+    }
+
     if (obj.type == object_type::array) {
         for (std::size_t i = 0; i < obj.via.array.size; ++i) {
             object_destroy(obj.via.array.ptr[i], alloc);
@@ -844,7 +846,7 @@ public:
         *this = make_string(std::string_view{value}, alloc);
     }
 
-    explicit owned_object(const char *data, uint32_t size,
+    explicit owned_object(const char *data, std::size_t size,
         nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
     {
         *this = make_string(data, size, alloc);
@@ -898,7 +900,7 @@ public:
         return owned_object{{.via{.f64{.type = object_type::float64, .val = value}}}};
     }
 
-    static owned_object make_string_literal(const char *str, uint32_t len)
+    static owned_object make_string_literal(const char *str, std::uint32_t len)
     {
         return owned_object{{.via{.str{.type = object_type::literal_string,
             .size = static_cast<uint32_t>(len),
@@ -906,11 +908,11 @@ public:
             .ptr = const_cast<char *>(str)}}}};
     }
 
-    static owned_object make_string_nocopy(const char *str, uint32_t len,
+    static owned_object make_string_nocopy(const char *str, std::uint32_t len,
         nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
     {
         return owned_object{{.via{.str{.type = object_type::string,
-                                .size = static_cast<uint32_t>(len),
+                                .size = len,
                                 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
                                 .ptr = const_cast<char *>(str)}}},
             alloc};
@@ -924,7 +926,7 @@ public:
         return make_string_nocopy(str.data(), str.size(), alloc);
     }
 
-    static owned_object make_string(const char *str, uint32_t len,
+    static owned_object make_string(const char *str, std::uint32_t len,
         nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
     {
         if (len <= detail::small_string_size) {
@@ -936,7 +938,7 @@ public:
         }
 
         return owned_object{{.via{.str{.type = object_type::string,
-                                .size = static_cast<uint32_t>(len),
+                                .size = len,
                                 .ptr = detail::copy_string(str, len, *alloc)}}},
             alloc};
     }
@@ -1232,14 +1234,6 @@ inline borrowed_object &borrowed_object::operator=(owned_object &&obj)
 }
 namespace object_builder {
 
-// The movable object is a workaround which allows the creation of objects,
-// primarily arrays and maps, through initialiser lists. Since all initialiser
-// list elements are const, the movable object gives access to the internal owned
-// object through the use of mutable, ensuring that a hierarchichal structure
-// can be generated through the reuse of the memory allocated for the list.
-//
-// Construction through initialiser list is available through the builder
-// functions defined below.
 struct movable_object {
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
     template <typename T> movable_object(T &&value) : object{std::forward<T>(value)} {}
@@ -1260,28 +1254,28 @@ inline owned_object array(std::initializer_list<all_types> list = {},
 {
     auto container = owned_object::make_array(static_cast<uint16_t>(list.size()), alloc);
     for (const auto &value : list) {
-        if (const auto *pval = std::get_if<bool>(&value)) {
-            container.emplace_back(owned_object{*pval});
-        } else if (const auto *pval = std::get_if<int16_t>(&value)) {
-            container.emplace_back(owned_object{*pval});
-        } else if (const auto *pval = std::get_if<uint16_t>(&value)) {
-            container.emplace_back(owned_object{*pval});
-        } else if (const auto *pval = std::get_if<int32_t>(&value)) {
-            container.emplace_back(owned_object{*pval});
-        } else if (const auto *pval = std::get_if<uint32_t>(&value)) {
-            container.emplace_back(owned_object{*pval});
-        } else if (const auto *pval = std::get_if<int64_t>(&value)) {
-            container.emplace_back(owned_object{*pval});
-        } else if (const auto *pval = std::get_if<uint64_t>(&value)) {
-            container.emplace_back(owned_object{*pval});
-        } else if (const auto *pval = std::get_if<double>(&value)) {
-            container.emplace_back(owned_object{*pval});
-        } else if (const auto *pval = std::get_if<const char *>(&value)) {
-            container.emplace_back(owned_object{*pval, alloc});
-        } else if (const auto *pval = std::get_if<std::string_view>(&value)) {
-            container.emplace_back(owned_object{*pval, alloc});
-        } else if (const auto *pval = std::get_if<std::string>(&value)) {
-            container.emplace_back(owned_object{*pval, alloc});
+        if (std::holds_alternative<bool>(value)) {
+            container.emplace_back(owned_object{std::get<bool>(value)});
+        } else if (std::holds_alternative<int16_t>(value)) {
+            container.emplace_back(owned_object{std::get<int16_t>(value)});
+        } else if (std::holds_alternative<uint16_t>(value)) {
+            container.emplace_back(owned_object{std::get<uint16_t>(value)});
+        } else if (std::holds_alternative<int32_t>(value)) {
+            container.emplace_back(owned_object{std::get<int32_t>(value)});
+        } else if (std::holds_alternative<uint32_t>(value)) {
+            container.emplace_back(owned_object{std::get<uint32_t>(value)});
+        } else if (std::holds_alternative<int64_t>(value)) {
+            container.emplace_back(owned_object{std::get<int64_t>(value)});
+        } else if (std::holds_alternative<uint64_t>(value)) {
+            container.emplace_back(owned_object{std::get<uint64_t>(value)});
+        } else if (std::holds_alternative<double>(value)) {
+            container.emplace_back(owned_object{std::get<double>(value)});
+        } else if (std::holds_alternative<const char *>(value)) {
+            container.emplace_back(owned_object{std::get<const char *>(value), alloc});
+        } else if (std::holds_alternative<std::string_view>(value)) {
+            container.emplace_back(owned_object{std::get<std::string_view>(value), alloc});
+        } else if (std::holds_alternative<std::string>(value)) {
+            container.emplace_back(owned_object{std::get<std::string>(value), alloc});
         } else {
             container.emplace_back(std::move(std::get<movable_object>(value).object));
         }
@@ -1294,28 +1288,28 @@ inline owned_object map(std::initializer_list<key_value> list = {},
 {
     auto container = owned_object::make_map(static_cast<uint16_t>(list.size()), alloc);
     for (const auto &[key, value] : list) {
-        if (const auto *pval = std::get_if<bool>(&value)) {
-            container.emplace(key, owned_object{*pval});
-        } else if (const auto *pval = std::get_if<int16_t>(&value)) {
-            container.emplace(key, owned_object{*pval});
-        } else if (const auto *pval = std::get_if<uint16_t>(&value)) {
-            container.emplace(key, owned_object{*pval});
-        } else if (const auto *pval = std::get_if<int32_t>(&value)) {
-            container.emplace(key, owned_object{*pval});
-        } else if (const auto *pval = std::get_if<uint32_t>(&value)) {
-            container.emplace(key, owned_object{*pval});
-        } else if (const auto *pval = std::get_if<int64_t>(&value)) {
-            container.emplace(key, owned_object{*pval});
-        } else if (const auto *pval = std::get_if<uint64_t>(&value)) {
-            container.emplace(key, owned_object{*pval});
-        } else if (const auto *pval = std::get_if<double>(&value)) {
-            container.emplace(key, owned_object{*pval});
-        } else if (const auto *pval = std::get_if<const char *>(&value)) {
-            container.emplace(key, owned_object{*pval, alloc});
-        } else if (const auto *pval = std::get_if<std::string_view>(&value)) {
-            container.emplace(key, owned_object{*pval, alloc});
-        } else if (const auto *pval = std::get_if<std::string>(&value)) {
-            container.emplace(key, owned_object{*pval, alloc});
+        if (std::holds_alternative<bool>(value)) {
+            container.emplace(key, owned_object{std::get<bool>(value)});
+        } else if (std::holds_alternative<int16_t>(value)) {
+            container.emplace(key, owned_object{std::get<int16_t>(value)});
+        } else if (std::holds_alternative<uint16_t>(value)) {
+            container.emplace(key, owned_object{std::get<uint16_t>(value)});
+        } else if (std::holds_alternative<int32_t>(value)) {
+            container.emplace(key, owned_object{std::get<int32_t>(value)});
+        } else if (std::holds_alternative<uint32_t>(value)) {
+            container.emplace(key, owned_object{std::get<uint32_t>(value)});
+        } else if (std::holds_alternative<int64_t>(value)) {
+            container.emplace(key, owned_object{std::get<int64_t>(value)});
+        } else if (std::holds_alternative<uint64_t>(value)) {
+            container.emplace(key, owned_object{std::get<uint64_t>(value)});
+        } else if (std::holds_alternative<double>(value)) {
+            container.emplace(key, owned_object{std::get<double>(value)});
+        } else if (std::holds_alternative<const char *>(value)) {
+            container.emplace(key, owned_object{std::get<const char *>(value), alloc});
+        } else if (std::holds_alternative<std::string_view>(value)) {
+            container.emplace(key, owned_object{std::get<std::string_view>(value), alloc});
+        } else if (std::holds_alternative<std::string>(value)) {
+            container.emplace(key, owned_object{std::get<std::string>(value), alloc});
         } else {
             container.emplace(key, std::move(std::get<movable_object>(value).object));
         }
