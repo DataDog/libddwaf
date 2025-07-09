@@ -544,6 +544,9 @@ ddwaf_object* ddwaf_object_set_string_literal(ddwaf_object *object, const char *
  * @param length Length of the string.
  *
  * @return A pointer to the passed object or NULL if the operation failed.
+ *
+ * @note The provided string must have been allocated with the same allocator used
+ * with ddwaf_object_destroy.
  **/
 ddwaf_object* ddwaf_object_set_string_nocopy(ddwaf_object *object, const char *string, uint32_t length);
 /**
@@ -678,6 +681,9 @@ ddwaf_object *ddwaf_object_insert_literal_key(ddwaf_object *map, const char *key
  * @param alloc Allocator to use for memory allocation. (nonnull)
  *
  * @return A pointer to the newly inserted object or NULL if the operation failed.
+ *
+ * @note The provided string must have been allocated with the same allocator used
+ * with ddwaf_object_destroy.
  **/
 ddwaf_object *ddwaf_object_insert_key_nocopy(ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
 
@@ -819,10 +825,11 @@ const ddwaf_object* ddwaf_object_find(const ddwaf_object *object, const char *ke
  *
  * @param source The source object to clone from. (nonnull)
  * @param destination The destination object to clone into. (nonnull)
+ * @param alloc Allocator to use for memory allocation. (nonnull)
  *
  * @return A pointer to the destination object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_clone(const ddwaf_object *source, ddwaf_object *destination);
+ddwaf_object* ddwaf_object_clone(const ddwaf_object *source, ddwaf_object *destination, ddwaf_allocator alloc);
 
 /**
  * ddwaf_object_is_invalid
