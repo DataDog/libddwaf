@@ -143,14 +143,16 @@ public:
 
     void resize(size_type count)
     {
-        ensure_spare_capacity(count);
+        if (count > size_) {
+            ensure_spare_capacity(count - size_);
+        }
         size_ = count;
     }
 
     void resize(size_type count, char c)
     {
-        ensure_spare_capacity(count);
         if (count > size_) {
+            ensure_spare_capacity(count - size_);
             memset(&buffer_[size_], c, count - size_);
         }
         size_ = count;
