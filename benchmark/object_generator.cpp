@@ -33,15 +33,15 @@ char *generate_random_string(std::size_t length)
 void generate_string_object(ddwaf_object &o, std::size_t length)
 {
     char *str = generate_random_string(length);
-    ddwaf_object_stringl_nc(&o, str, length);
+    ddwaf_object_set_string_nocopy(&o, str, length);
 }
 
 void generate_container(ddwaf_object &o)
 {
     if (random::get_bool()) {
-        ddwaf_object_array(&o);
+        ddwaf_object_set_array(&o, 0, ddwaf_get_default_allocator());
     } else {
-        ddwaf_object_map(&o);
+        ddwaf_object_set_map(&o, 0, ddwaf_get_default_allocator());
     }
 }
 
@@ -100,6 +100,8 @@ struct queue_node {
 
 void generate_objects(ddwaf_object &root, const object_specification &s)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     auto levels =
         generate_vertical_distribution(s.depth, s.intermediate_nodes - 1, s.terminal_nodes);
 
@@ -112,7 +114,7 @@ void generate_objects(ddwaf_object &root, const object_specification &s)
         unsigned intermediate_nodes_in_current = intermediate;
 
         while ((terminal + intermediate) > 0) {
-            ddwaf_object next{};
+            ddwaf_object next;
 
             if ((random::get_bool() && terminal > 0) || intermediate == 0) {
                 generate_string_object(next, s.string_length);
@@ -124,9 +126,9 @@ void generate_objects(ddwaf_object &root, const object_specification &s)
 
             if (object->type == DDWAF_OBJ_MAP) {
                 auto *str = generate_random_string(s.key_length);
-                ddwaf_object_map_addl_nc(object, str, s.key_length, &next);
+                *ddwaf_object_insert_key(object, str, s.key_length, alloc) = next;
             } else {
-                ddwaf_object_array_add(object, &next);
+                *ddwaf_object_insert(object, alloc) = next;
             }
         }
 
@@ -135,7 +137,7 @@ void generate_objects(ddwaf_object &root, const object_specification &s)
             auto next_level = generate_horizontal_distribution(
                 intermediate_nodes_in_current, next_intermediate, next_terminal);
 
-            for (unsigned i = 0, j = 0; i < ddwaf_object_size(object); ++i) {
+            for (unsigned i = 0, j = 0; i < ddwaf_object_get_size(object); ++i) {
                 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
                 auto *child = const_cast<ddwaf_object *>(ddwaf_object_at_value(object, i));
                 if (child->type == DDWAF_OBJ_MAP || child->type == DDWAF_OBJ_ARRAY) {
@@ -152,20 +154,19 @@ void generate_objects(ddwaf_object &root, const object_specification &s)
 
 std::vector<ddwaf_object> object_generator::operator()(unsigned n, object_specification spec) const
 {
+    void *alloc = ddwaf_get_default_allocator();
     std::vector<ddwaf_object> objects;
     while (n-- > 0) {
         ddwaf_object root{};
-        ddwaf_object_map(&root);
+        ddwaf_object_set_map(&root, addresses_.size(), alloc);
 
         for (const auto addr : addresses_) {
-            ddwaf_object value{};
+            ddwaf_object *value = ddwaf_object_insert_key(&root, addr.data(), addr.size(), alloc);
             if (spec.depth == 0) {
-                generate_string_object(value, spec.string_length);
+                generate_string_object(*value, spec.string_length);
             } else {
-                generate_objects(value, spec);
+                generate_objects(*value, spec);
             }
-
-            ddwaf_object_map_add(&root, addr.data(), &value);
         }
         objects.emplace_back(root);
     }

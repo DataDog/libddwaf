@@ -6,6 +6,7 @@
 
 #include "common/gtest_utils.hpp"
 #include "configuration/common/common.hpp"
+#include "ddwaf.h"
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -16,17 +17,22 @@ constexpr std::string_view base_dir = "integration/diagnostics/v1/";
 
 void run_test(ddwaf_handle handle)
 {
-    ddwaf_context context = ddwaf_context_init(handle);
+    auto *alloc = ddwaf_get_default_allocator();
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object param, arg2, tmp;
-    ddwaf_object_map(&param);
-    ddwaf_object_map(&arg2);
+    ddwaf_object param;
+    ddwaf_object_set_map(&param, 2, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&param, STRL("arg1"), alloc), STRL("string 1"), alloc);
 
-    ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "string 1"));
-    ddwaf_object_map_add(&arg2, "x", ddwaf_object_string(&tmp, "string 2"));
-    ddwaf_object_map_add(&arg2, "y", ddwaf_object_string(&tmp, "string 3"));
-    ddwaf_object_map_add(&param, "arg2", &arg2);
+    auto *arg2 = ddwaf_object_insert_key(&param, STRL("arg2"), alloc);
+    ddwaf_object_set_map(arg2, 2, alloc);
+
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(arg2, STRL("x"), alloc), STRL("string 2"), alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(arg2, STRL("y"), alloc), STRL("string 3"), alloc);
 
     ddwaf_object ret;
 
@@ -62,13 +68,15 @@ void run_test(ddwaf_handle handle)
                                        .address = "arg2",
                                        .path = {"y"},
                                    }}}}});
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
 
     ddwaf_context_destroy(context);
 }
 
 TEST(TestDiagnosticsV1Integration, Basic)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '1.1', events: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operation: match_regex, parameters: {inputs: [arg1], regex: .*}}, {operation: match_regex, parameters: {inputs: [arg2:x], regex: .*}},{operation: match_regex, parameters: {inputs: [arg2:y], regex: .*}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -76,7 +84,7 @@ TEST(TestDiagnosticsV1Integration, Basic)
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -95,7 +103,7 @@ TEST(TestDiagnosticsV1Integration, Basic)
     auto errors = ddwaf::at<raw_configuration::map>(rules, "errors");
     EXPECT_EQ(errors.size(), 0);
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_destroy(&diagnostics, alloc);
 
     run_test(handle);
 
@@ -104,6 +112,8 @@ TEST(TestDiagnosticsV1Integration, Basic)
 
 TEST(TestDiagnosticsV1Integration, TestInvalidRule)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("invalid_single_v1.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -111,7 +121,7 @@ TEST(TestDiagnosticsV1Integration, TestInvalidRule)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_EQ(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -137,11 +147,13 @@ TEST(TestDiagnosticsV1Integration, TestInvalidRule)
     EXPECT_EQ(error_rules.size(), 1);
     EXPECT_NE(error_rules.find("1"), error_rules.end());
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_destroy(&diagnostics, alloc);
 }
 
 TEST(TestDiagnosticsV1Integration, TestMultipleSameInvalidRules)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("invalid_multiple_same_v1.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -149,7 +161,7 @@ TEST(TestDiagnosticsV1Integration, TestMultipleSameInvalidRules)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_EQ(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -176,11 +188,13 @@ TEST(TestDiagnosticsV1Integration, TestMultipleSameInvalidRules)
     EXPECT_NE(error_rules.find("1"), error_rules.end());
     EXPECT_NE(error_rules.find("2"), error_rules.end());
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_destroy(&diagnostics, alloc);
 }
 
 TEST(TestDiagnosticsV1Integration, TestMultipleDiffInvalidRules)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("invalid_multiple_diff_v1.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -188,7 +202,7 @@ TEST(TestDiagnosticsV1Integration, TestMultipleDiffInvalidRules)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_EQ(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -225,11 +239,13 @@ TEST(TestDiagnosticsV1Integration, TestMultipleDiffInvalidRules)
         EXPECT_NE(error_rules.find("2"), error_rules.end());
     }
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_destroy(&diagnostics, alloc);
 }
 
 TEST(TestDiagnosticsV1Integration, TestMultipleMixInvalidRules)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("invalid_multiple_mix_v1.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -237,7 +253,7 @@ TEST(TestDiagnosticsV1Integration, TestMultipleMixInvalidRules)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -284,12 +300,14 @@ TEST(TestDiagnosticsV1Integration, TestMultipleMixInvalidRules)
         EXPECT_NE(error_rules.find("4"), error_rules.end());
     }
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_destroy(&diagnostics, alloc);
     ddwaf_destroy(handle);
 }
 
 TEST(TestDiagnosticsV1Integration, TestInvalidDuplicate)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("invalid_duplicate_v1.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -297,7 +315,7 @@ TEST(TestDiagnosticsV1Integration, TestInvalidDuplicate)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -323,12 +341,14 @@ TEST(TestDiagnosticsV1Integration, TestInvalidDuplicate)
     EXPECT_EQ(error_rules.size(), 1);
     EXPECT_NE(error_rules.find("1"), error_rules.end());
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_destroy(&diagnostics, alloc);
     ddwaf_destroy(handle);
 }
 
 TEST(TestDiagnosticsV1Integration, TestInvalidTooManyTransformers)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("invalid_too_many_transformers_v1.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -336,7 +356,7 @@ TEST(TestDiagnosticsV1Integration, TestInvalidTooManyTransformers)
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_EQ(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -362,19 +382,21 @@ TEST(TestDiagnosticsV1Integration, TestInvalidTooManyTransformers)
     EXPECT_EQ(error_rules.size(), 1);
     EXPECT_NE(error_rules.find("1"), error_rules.end());
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_destroy(&diagnostics, alloc);
     ddwaf_destroy(handle);
 }
 
 TEST(TestDiagnosticsV1Integration, InvalidRulesContainer)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = yaml_to_object<ddwaf_object>(R"({version: '1.1', events: {}})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
     ASSERT_EQ(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
     auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
@@ -387,7 +409,7 @@ TEST(TestDiagnosticsV1Integration, InvalidRulesContainer)
     auto errors = ddwaf::at<std::string>(rules, "error");
     EXPECT_STR(errors, "bad cast, expected 'array', obtained 'map'");
 
-    ddwaf_object_free(&diagnostics);
+    ddwaf_object_destroy(&diagnostics, alloc);
 }
 
 } // namespace

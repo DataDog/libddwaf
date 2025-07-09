@@ -7,9 +7,12 @@
 #include <cstdio>
 #include <cstring>
 
+#include "ddwaf.h"
 #include "helpers.hpp"
 #include "object_builder.hpp"
 
+// NOLINTBEGIN(misc-no-recursion)
+namespace {
 struct Data {
     const uint8_t *bytes{nullptr};
     size_t size{0};
@@ -49,14 +52,15 @@ bool popBoolean(Data *data)
     return (result % 2) == 0;
 }
 
-void pop_string(Data *data, ddwaf_object *object)
+void pop_string(Data *data, ddwaf_object *object, ddwaf_allocator &alloc)
 {
     if (data->position >= data->size) {
-        ddwaf_object_stringl(object, "", 0);
+        ddwaf_object_set_string_literal(object, "", 0);
         return;
     }
 
-    char *result = (char *)(data->bytes + data->position);
+    // NOLINTNEXTLINE-
+    char *result = reinterpret_cast<char *>(const_cast<uint8_t *>(data->bytes + data->position));
     size_t size = 0;
 
     // reserve this useless char for end of string
@@ -75,7 +79,7 @@ void pop_string(Data *data, ddwaf_object *object)
     if (popBoolean(data)) {
         *object = {.via{.str{.type = DDWAF_OBJ_STRING, .size = 0, .ptr = nullptr}}};
     } else {
-        ddwaf_object_stringl(object, result, size);
+        ddwaf_object_set_string(object, result, size, alloc);
     }
 }
 
@@ -114,122 +118,91 @@ uint16_t popUInt16(Data *data)
 
     return result;
 }
-uint8_t popByte(Data *data)
+void create_object(Data *data, ddwaf_object *object, ddwaf_allocator alloc, size_t depth);
+
+void build_map(Data *data, ddwaf_object *object, ddwaf_allocator alloc, size_t depth)
 {
-    uint8_t result = 0;
-
-    popBytes(data, &result, 1);
-
-    return result;
-}
-
-ddwaf_object create_object(Data *data, size_t deep);
-
-void build_map(Data *data, ddwaf_object *object, size_t deep)
-{
-    ddwaf_object_map(object);
-    ddwaf_object key;
-    ddwaf_object item;
-
     uint8_t size = popSize(data);
 
-    if (deep == 0) {
+    if (depth == 0) {
         size = 0;
     }
 
+    ddwaf_object_set_map(object, size, alloc);
     for (uint8_t i = 0; i < size && data->position < data->size; i++) {
         auto null_key = popBoolean(data);
 
-        item = create_object(data, deep - 1);
-
+        ddwaf_object *child = nullptr;
         if (!null_key) {
-            pop_string(data, &key);
+            ddwaf_object key;
+            pop_string(data, &key, alloc);
+
             std::size_t key_len;
             const char *key_ptr = ddwaf_object_get_string(&key, &key_len);
 
-            if (key.type == DDWAF_OBJ_STRING) {
-                if (!ddwaf_object_map_addl_nc(object, key_ptr, key_len, &item)) {
-                    ddwaf_object_free(&item);
-                }
-            } else if (key.type == DDWAF_OBJ_SMALL_STRING) {
-                if (!ddwaf_object_map_addl(object, key_ptr, key_len, &item)) {
-                    ddwaf_object_free(&item);
-                }
+            if (ddwaf_object_get_type(&key) == DDWAF_OBJ_STRING) {
+                child = ddwaf_object_insert_key_nocopy(object, key_ptr, key_len, alloc);
+            } else if (ddwaf_object_get_type(&key) == DDWAF_OBJ_SMALL_STRING) {
+                child = ddwaf_object_insert_key(object, key_ptr, key_len, alloc);
             }
         } else {
-            if (!ddwaf_object_map_addl(object, "", 0, &item)) {
-                ddwaf_object_free(&item);
-            } else {
-                auto index = static_cast<std::size_t>(ddwaf_object_size(object) - 1);
-                auto &key = object->via.map.ptr[index].key;
-                if (key.type == DDWAF_OBJ_STRING) {
-                    // NOLINTNEXTLINE(hicpp-no-malloc)
-                    free((void *)key.via.str.ptr);
-                    // Null but not malformed
-                    key.via.str.ptr = nullptr;
-                    key.via.str.size = 0;
-                }
-            }
+            child = ddwaf_object_insert_literal_key(object, "", 0, alloc);
         }
+
+        create_object(data, child, alloc, depth - 1);
     }
 }
 
-void build_array(Data *data, ddwaf_object *object, size_t deep)
+void build_array(Data *data, ddwaf_object *object, ddwaf_allocator alloc, size_t depth)
 {
-    ddwaf_object_array(object);
-
     uint8_t size = popSize(data);
-    ddwaf_object item;
-
-    if (deep == 0) {
+    if (depth == 0) {
         size = 0;
     }
 
+    ddwaf_object_set_array(object, size, alloc);
+
     for (uint8_t i = 0; i < size && data->position < data->size; i++) {
-        item = create_object(data, deep - 1);
-        if (!ddwaf_object_array_add(object, &item)) {
-            ddwaf_object_free(&item);
-        }
+        auto *child = ddwaf_object_insert(object, alloc);
+        create_object(data, child, alloc, depth - 1);
     }
 }
 
-ddwaf_object create_object(Data *data, size_t deep)
+void create_object(Data *data, ddwaf_object *object, ddwaf_allocator alloc, size_t depth)
 {
-    ddwaf_object result;
-    uint8_t selector = popSelector(data, 9);
-
-    switch (selector) {
-    case 8:
-        ddwaf_object_invalid(&result);
-        break;
+    switch (popSelector(data, 9)) {
     case 7:
-        ddwaf_object_null(&result);
+        ddwaf_object_set_null(object);
         break;
     case 6:
-        ddwaf_object_float(&result, popDouble(data));
+        ddwaf_object_set_float(object, popDouble(data));
         break;
     case 5:
-        ddwaf_object_bool(&result, popBoolean(data));
+        ddwaf_object_set_bool(object, popBoolean(data));
         break;
     case 4:
-        ddwaf_object_unsigned(&result, popUnsignedInteger(data));
+        ddwaf_object_set_unsigned(object, popUnsignedInteger(data));
         break;
     case 3:
-        ddwaf_object_signed(&result, popInteger(data));
+        ddwaf_object_set_signed(object, popInteger(data));
         break;
     case 2:
-        pop_string(data, &result);
+        pop_string(data, object, alloc);
         break;
     case 1:
-        build_array(data, &result, deep);
+        build_array(data, object, alloc, depth);
         break;
     case 0:
-        build_map(data, &result, deep);
+        build_map(data, object, alloc, depth);
+        break;
+    case 8:
+    default:
+        ddwaf_object_set_invalid(object);
         break;
     }
-
-    return result;
 }
+
+} // namespace
 
 ddwaf_object build_object(
     const uint8_t *bytes, size_t size, bool verbose, bool fuzzTimeout, size_t *timeLeftInMs)
@@ -245,8 +218,9 @@ ddwaf_object build_object(
         *timeLeftInMs = 200000; // 200ms
     }
 
+    ddwaf_allocator alloc = ddwaf_get_default_allocator();
     ddwaf_object result;
-    build_map(&data, &result, 30);
+    build_map(&data, &result, alloc, 30);
 
     if (verbose) {
         print_object(result);
@@ -254,3 +228,4 @@ ddwaf_object build_object(
 
     return result;
 }
+// NOLINTEND(misc-no-recursion)

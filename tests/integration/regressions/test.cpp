@@ -14,20 +14,23 @@ constexpr std::string_view base_dir = "integration/regressions/";
 
 TEST(TestRegressionsIntegration, DuplicateFlowMatches)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("regressions2.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object parameter = DDWAF_OBJECT_MAP;
-    ddwaf_object tmp;
-    ddwaf_object_map_add(&parameter, "param1", ddwaf_object_string(&tmp, "Sqreen"));
-    ddwaf_object_map_add(&parameter, "param2", ddwaf_object_string(&tmp, "Duplicate"));
+    ddwaf_object parameter;
+    ddwaf_object_set_map(&parameter, 2, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&parameter, STRL("param1"), alloc), STRL("Sqreen"), alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&parameter, STRL("param2"), alloc), STRL("Duplicate"), alloc);
 
     ddwaf_object ret;
     EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &ret, LONG_TIME), DDWAF_MATCH);
@@ -52,7 +55,7 @@ TEST(TestRegressionsIntegration, DuplicateFlowMatches)
                                        .address = "param2",
                                    }}}}});
 
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }

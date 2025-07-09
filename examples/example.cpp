@@ -179,7 +179,7 @@ int main()
 
     auto rule = doc.as<ddwaf_object>(); //= convert_yaml_to_args(doc);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
     if (handle == nullptr) {
         return EXIT_FAILURE;
     }
@@ -207,7 +207,7 @@ int main()
         out << object_to_yaml(ret);
     }
 
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);

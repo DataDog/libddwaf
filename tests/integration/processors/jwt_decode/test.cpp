@@ -14,11 +14,12 @@ constexpr std::string_view base_dir = "integration/processors/jwt_decode";
 
 TEST(TestJwtDecoderIntegration, Preprocessor)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("preprocessor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
@@ -27,28 +28,25 @@ TEST(TestJwtDecoderIntegration, Preprocessor)
     EXPECT_TRUE(address_set.contains("server.request.headers.no_cookies"));
     EXPECT_TRUE(address_set.contains("server.request.jwt"));
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object tmp;
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-
-    ddwaf_object headers;
-    ddwaf_object_map(&headers);
-    ddwaf_object_map_add(&headers, "authorization",
-        ddwaf_object_string(&tmp,
-            "Bearer "
-            "eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
-            "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
-            "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
-            "8B48NpATozzMHn0j3rE0xVUldxShzy0xeJ7vYAccVXu2Gs9rnTVqouc-UZu_wJHkZiKBL67j8_"
-            "61L6SXswzPAQu4kVDwAefGf5hyYBUM-80vYZwWPEpLI8K4yCBsF6I9N1yQaZAJmkMp_"
-            "Iw371Menae4Mp4JusvBJS-s6LrmG2QbiZaFaxVJiW8KlUkWyUCns8-"
-            "qFl5OMeYlgGFsyvvSHvXCzQrsEXqyCdS4tQJd73ayYA4SPtCb9clz76N1zE5WsV4Z0BYrxeb77oA7jJh"
-            "h994RAPzCG0hmQ"));
-
-    ddwaf_object_map_add(&map, "server.request.headers.no_cookies", &headers);
+    auto *headers = ddwaf_object_insert_key(&map, STRL("server.request.headers.no_cookies"), alloc);
+    ddwaf_object_set_map(headers, 1, alloc);
+    ddwaf_object_set_string(ddwaf_object_insert_key(headers, STRL("authorization"), alloc),
+        STRL("Bearer "
+             "eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
+             "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
+             "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
+             "8B48NpATozzMHn0j3rE0xVUldxShzy0xeJ7vYAccVXu2Gs9rnTVqouc-UZu_wJHkZiKBL67j8_"
+             "61L6SXswzPAQu4kVDwAefGf5hyYBUM-80vYZwWPEpLI8K4yCBsF6I9N1yQaZAJmkMp_"
+             "Iw371Menae4Mp4JusvBJS-s6LrmG2QbiZaFaxVJiW8KlUkWyUCns8-"
+             "qFl5OMeYlgGFsyvvSHvXCzQrsEXqyCdS4tQJd73ayYA4SPtCb9clz76N1zE5WsV4Z0BYrxeb77oA7jJh"
+             "h994RAPzCG0hmQ"),
+        alloc);
 
     ddwaf_object out;
     ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -66,20 +64,21 @@ TEST(TestJwtDecoderIntegration, Preprocessor)
                                }}}}});
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 0);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestJwtDecoderIntegration, Postprocessor)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("postprocessor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
@@ -87,28 +86,25 @@ TEST(TestJwtDecoderIntegration, Postprocessor)
     std::unordered_set<std::string_view> address_set(addresses, addresses + size);
     EXPECT_TRUE(address_set.contains("server.request.headers.no_cookies"));
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object tmp;
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-
-    ddwaf_object headers;
-    ddwaf_object_map(&headers);
-    ddwaf_object_map_add(&headers, "authorization",
-        ddwaf_object_string(&tmp,
-            "Bearer "
-            "eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
-            "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
-            "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
-            "8B48NpATozzMHn0j3rE0xVUldxShzy0xeJ7vYAccVXu2Gs9rnTVqouc-UZu_wJHkZiKBL67j8_"
-            "61L6SXswzPAQu4kVDwAefGf5hyYBUM-80vYZwWPEpLI8K4yCBsF6I9N1yQaZAJmkMp_"
-            "Iw371Menae4Mp4JusvBJS-s6LrmG2QbiZaFaxVJiW8KlUkWyUCns8-"
-            "qFl5OMeYlgGFsyvvSHvXCzQrsEXqyCdS4tQJd73ayYA4SPtCb9clz76N1zE5WsV4Z0BYrxeb77oA7jJh"
-            "h994RAPzCG0hmQ"));
-
-    ddwaf_object_map_add(&map, "server.request.headers.no_cookies", &headers);
+    auto *headers = ddwaf_object_insert_key(&map, STRL("server.request.headers.no_cookies"), alloc);
+    ddwaf_object_set_map(headers, 1, alloc);
+    ddwaf_object_set_string(ddwaf_object_insert_key(headers, STRL("authorization"), alloc),
+        STRL("Bearer "
+             "eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
+             "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
+             "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
+             "8B48NpATozzMHn0j3rE0xVUldxShzy0xeJ7vYAccVXu2Gs9rnTVqouc-UZu_wJHkZiKBL67j8_"
+             "61L6SXswzPAQu4kVDwAefGf5hyYBUM-80vYZwWPEpLI8K4yCBsF6I9N1yQaZAJmkMp_"
+             "Iw371Menae4Mp4JusvBJS-s6LrmG2QbiZaFaxVJiW8KlUkWyUCns8-"
+             "qFl5OMeYlgGFsyvvSHvXCzQrsEXqyCdS4tQJd73ayYA4SPtCb9clz76N1zE5WsV4Z0BYrxeb77oA7jJh"
+             "h994RAPzCG0hmQ"),
+        alloc);
 
     ddwaf_object out;
     ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
@@ -116,23 +112,24 @@ TEST(TestJwtDecoderIntegration, Postprocessor)
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
     EXPECT_JSON(*attributes,
         R"({"server.request.jwt":{"header":{"alg":"RS384","typ":"JWT"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022},"signature":{"available":true}}})");
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestJwtDecoderIntegration, Processor)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("processor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
@@ -141,28 +138,25 @@ TEST(TestJwtDecoderIntegration, Processor)
     EXPECT_TRUE(address_set.contains("server.request.headers.no_cookies"));
     EXPECT_TRUE(address_set.contains("server.request.jwt"));
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object tmp;
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-
-    ddwaf_object headers;
-    ddwaf_object_map(&headers);
-    ddwaf_object_map_add(&headers, "authorization",
-        ddwaf_object_string(&tmp,
-            "Bearer "
-            "eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
-            "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
-            "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
-            "8B48NpATozzMHn0j3rE0xVUldxShzy0xeJ7vYAccVXu2Gs9rnTVqouc-UZu_wJHkZiKBL67j8_"
-            "61L6SXswzPAQu4kVDwAefGf5hyYBUM-80vYZwWPEpLI8K4yCBsF6I9N1yQaZAJmkMp_"
-            "Iw371Menae4Mp4JusvBJS-s6LrmG2QbiZaFaxVJiW8KlUkWyUCns8-"
-            "qFl5OMeYlgGFsyvvSHvXCzQrsEXqyCdS4tQJd73ayYA4SPtCb9clz76N1zE5WsV4Z0BYrxeb77oA7jJh"
-            "h994RAPzCG0hmQ"));
-
-    ddwaf_object_map_add(&map, "server.request.headers.no_cookies", &headers);
+    auto *headers = ddwaf_object_insert_key(&map, STRL("server.request.headers.no_cookies"), alloc);
+    ddwaf_object_set_map(headers, 1, alloc);
+    ddwaf_object_set_string(ddwaf_object_insert_key(headers, STRL("authorization"), alloc),
+        STRL("Bearer "
+             "eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
+             "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
+             "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
+             "8B48NpATozzMHn0j3rE0xVUldxShzy0xeJ7vYAccVXu2Gs9rnTVqouc-UZu_wJHkZiKBL67j8_"
+             "61L6SXswzPAQu4kVDwAefGf5hyYBUM-80vYZwWPEpLI8K4yCBsF6I9N1yQaZAJmkMp_"
+             "Iw371Menae4Mp4JusvBJS-s6LrmG2QbiZaFaxVJiW8KlUkWyUCns8-"
+             "qFl5OMeYlgGFsyvvSHvXCzQrsEXqyCdS4tQJd73ayYA4SPtCb9clz76N1zE5WsV4Z0BYrxeb77oA7jJh"
+             "h994RAPzCG0hmQ"),
+        alloc);
 
     ddwaf_object out;
     ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -180,12 +174,12 @@ TEST(TestJwtDecoderIntegration, Processor)
                                }}}}});
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
     EXPECT_JSON(*attributes,
         R"({"server.request.jwt":{"header":{"alg":"RS384","typ":"JWT"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022},"signature":{"available":true}}})");
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }

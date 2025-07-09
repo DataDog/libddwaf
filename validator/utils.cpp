@@ -5,75 +5,82 @@
 // (https://www.datadoghq.com/). Copyright 2021 Datadog, Inc.
 
 #include "utils.hpp"
+#include "ddwaf.h"
 #include <iostream>
 #include <unistd.h>
 
 using namespace std::literals;
 
 namespace YAML {
-
+namespace {
 // NOLINTNEXTLINE(misc-no-recursion)
-ddwaf_object node_to_arg(const Node &node)
+void node_to_arg(ddwaf_object *root, const Node &node)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     switch (node.Type()) {
     case NodeType::Sequence: {
-        ddwaf_object arg{};
-        ddwaf_object_array(&arg);
+        ddwaf_object_set_array(root, node.size(), alloc);
         for (auto it = node.begin(); it != node.end(); ++it) {
-            ddwaf_object child = node_to_arg(*it);
-            ddwaf_object_array_add(&arg, &child);
+            auto *child = ddwaf_object_insert(root, alloc);
+            node_to_arg(child, *it);
         }
-        return arg;
+        return;
     }
     case NodeType::Map: {
-        ddwaf_object arg{};
-        ddwaf_object_map(&arg);
+        ddwaf_object_set_map(root, node.size(), alloc);
         for (auto it = node.begin(); it != node.end(); ++it) {
             auto key = it->first.as<std::string>();
-            ddwaf_object child = node_to_arg(it->second);
-            ddwaf_object_map_addl(&arg, key.c_str(), key.size(), &child);
+
+            auto *child = ddwaf_object_insert_key(root, key.data(), key.size(), alloc);
+            node_to_arg(child, it->second);
         }
-        return arg;
+        return;
     }
     case NodeType::Scalar: {
-        ddwaf_object arg{};
         if (node.Tag() == "?") {
             try {
-                ddwaf_object_unsigned(&arg, node.as<uint64_t>());
-                return arg;
-            } catch (...) {}
+                ddwaf_object_set_unsigned(root, node.as<uint64_t>());
+                return;
+            } catch (...) {} // NOLINT
 
             try {
-                ddwaf_object_signed(&arg, node.as<int64_t>());
-                return arg;
-            } catch (...) {}
+                ddwaf_object_set_signed(root, node.as<int64_t>());
+                return;
+            } catch (...) {} // NOLINT
 
             try {
-                ddwaf_object_float(&arg, node.as<double>());
-                return arg;
-            } catch (...) {}
+                ddwaf_object_set_float(root, node.as<double>());
+                return;
+            } catch (...) {} // NOLINT
 
             try {
-                ddwaf_object_bool(&arg, node.as<bool>());
-                return arg;
-            } catch (...) {}
+                ddwaf_object_set_bool(root, node.as<bool>());
+                return;
+            } catch (...) {} // NOLINT
         }
 
         const std::string &value = node.Scalar();
-        ddwaf_object_stringl(&arg, value.c_str(), value.size());
-        return arg;
+        ddwaf_object_set_string(root, value.data(), value.size(), alloc);
+        return;
     }
     case NodeType::Null:
+        ddwaf_object_set_null(root);
+        return;
     case NodeType::Undefined:
-        ddwaf_object arg{};
-        ddwaf_object_invalid(&arg);
-        return arg;
+        ddwaf_object_set_invalid(root);
+        return;
     }
 
     throw parsing_error("Invalid YAML node type");
 }
+} // namespace
 
-ddwaf_object as_if<ddwaf_object, void>::operator()() const { return node_to_arg(node); }
+ddwaf_object as_if<ddwaf_object, void>::operator()() const
+{
+    ddwaf_object object;
+    node_to_arg(&object, node);
+    return object;
+}
 
 std::set<std::string> as_if<std::set<std::string>, void>::operator()() const
 {
@@ -156,14 +163,14 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
     case DDWAF_OBJ_STRING:
     case DDWAF_OBJ_SMALL_STRING:
     case DDWAF_OBJ_LITERAL_STRING:
-        output = std::string{ddwaf_object_get_string(&obj, nullptr), ddwaf_object_length(&obj)};
+        output = std::string{ddwaf_object_get_string(&obj, nullptr), ddwaf_object_get_length(&obj)};
         break;
     case DDWAF_OBJ_MAP:
         output = YAML::Load("{}");
         for (unsigned i = 0; i < obj.via.map.size; i++) {
             const auto *child_key = ddwaf_object_at_key(&obj, i);
             std::string key{
-                ddwaf_object_get_string(child_key, nullptr), ddwaf_object_length(child_key)};
+                ddwaf_object_get_string(child_key, nullptr), ddwaf_object_get_length(child_key)};
 
             YAML::Node value;
             object_to_yaml_helper(*ddwaf_object_at_value(&obj, i), value);

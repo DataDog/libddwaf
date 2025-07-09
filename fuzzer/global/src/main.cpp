@@ -104,7 +104,7 @@ public:
             auto [object, ephemeral, timeout] = objects_.front();
             objects_.pop_front();
 
-            ddwaf_object_free(&object);
+            ddwaf_object_destroy(&object, ddwaf_get_default_allocator());
         }
         ddwaf_destroy(handle_);
     }

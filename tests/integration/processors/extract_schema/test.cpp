@@ -14,11 +14,12 @@ constexpr std::string_view base_dir = "integration/processors/extract_schema";
 
 TEST(TestExtractSchemaIntegration, Postprocessor)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("postprocessor.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
@@ -27,20 +28,17 @@ TEST(TestExtractSchemaIntegration, Postprocessor)
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("waf.context.processor"));
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object value;
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 2, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&map, STRL("server.request.body"), alloc), STRL("value"), alloc);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object settings = DDWAF_OBJECT_MAP;
-
-    ddwaf_object_string(&value, "value");
-    ddwaf_object_map_add(&map, "server.request.body", &value);
-
-    ddwaf_object_bool(&value, true);
-    ddwaf_object_map_add(&settings, "extract-schema", &value);
-    ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+    auto *settings = ddwaf_object_insert_key(&map, STRL("waf.context.processor"), alloc);
+    ddwaf_object_set_map(settings, 1, alloc);
+    ddwaf_object_set_bool(ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
     ddwaf_object out;
     ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
@@ -48,23 +46,24 @@ TEST(TestExtractSchemaIntegration, Postprocessor)
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
     auto schema = test::object_to_json(*attributes);
     EXPECT_STR(schema, R"({"server.request.body.schema":[8]})");
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestExtractSchemaIntegration, Preprocessor)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("preprocessor.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
@@ -73,20 +72,17 @@ TEST(TestExtractSchemaIntegration, Preprocessor)
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("server.request.body.schema"));
     EXPECT_TRUE(address_set.contains("waf.context.processor"));
-    ddwaf_context context = ddwaf_context_init(handle);
+
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object value;
-
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object settings = DDWAF_OBJECT_MAP;
-
-    ddwaf_object_string(&value, "value");
-    ddwaf_object_map_add(&map, "server.request.body", &value);
-
-    ddwaf_object_bool(&value, true);
-    ddwaf_object_map_add(&settings, "extract-schema", &value);
-    ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 2, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&map, STRL("server.request.body"), alloc), STRL("value"), alloc);
+    auto *settings = ddwaf_object_insert_key(&map, STRL("waf.context.processor"), alloc);
+    ddwaf_object_set_map(settings, 1, alloc);
+    ddwaf_object_set_bool(ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
     ddwaf_object out;
     ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -106,20 +102,21 @@ TEST(TestExtractSchemaIntegration, Preprocessor)
                                }}}}});
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 0);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestExtractSchemaIntegration, Processor)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("processor.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
@@ -130,20 +127,17 @@ TEST(TestExtractSchemaIntegration, Processor)
     EXPECT_TRUE(address_set.contains("server.request.query"));
     EXPECT_TRUE(address_set.contains("waf.context.processor"));
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object value;
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 2, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&map, STRL("server.request.body"), alloc), STRL("value"), alloc);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object settings = DDWAF_OBJECT_MAP;
-
-    ddwaf_object_string(&value, "value");
-    ddwaf_object_map_add(&map, "server.request.body", &value);
-
-    ddwaf_object_bool(&value, true);
-    ddwaf_object_map_add(&settings, "extract-schema", &value);
-    ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+    auto *settings = ddwaf_object_insert_key(&map, STRL("waf.context.processor"), alloc);
+    ddwaf_object_set_map(settings, 1, alloc);
+    ddwaf_object_set_bool(ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
     ddwaf_object out;
     ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -163,47 +157,47 @@ TEST(TestExtractSchemaIntegration, Processor)
                                }}}}});
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
     auto schema = test::object_to_json(*attributes);
     EXPECT_STR(schema, R"({"server.request.body.schema":[8]})");
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestExtractSchemaIntegration, ProcessorWithScannerByTags)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     auto scanner = read_json_file("scanners.json", base_dir);
     ASSERT_NE(scanner.type, DDWAF_OBJ_INVALID);
     ddwaf_builder_add_or_update_config(builder, LSTRARG("scanners"), &scanner, nullptr);
-    ddwaf_object_free(&scanner);
+    ddwaf_object_destroy(&scanner, alloc);
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
-    ddwaf_object value;
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object values = DDWAF_OBJECT_MAP;
-    ddwaf_object settings = DDWAF_OBJECT_MAP;
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 2, alloc);
 
-    ddwaf_object_string(&value, "data@datadoghq.com");
-    ddwaf_object_map_add(&values, "email", &value);
-    ddwaf_object_map_add(&map, "server.request.body", &values);
+    auto *values = ddwaf_object_insert_key(&map, STRL("server.request.body"), alloc);
+    ddwaf_object_set_map(values, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(values, STRL("email"), alloc), STRL("data@datadoghq.com"), alloc);
 
-    ddwaf_object_bool(&value, true);
-    ddwaf_object_map_add(&settings, "extract-schema", &value);
-    ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+    auto *settings = ddwaf_object_insert_key(&map, STRL("waf.context.processor"), alloc);
+    ddwaf_object_set_map(settings, 1, alloc);
+    ddwaf_object_set_bool(ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object out;
@@ -212,11 +206,11 @@ TEST(TestExtractSchemaIntegration, ProcessorWithScannerByTags)
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
     EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0),
         R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 
@@ -225,35 +219,35 @@ TEST(TestExtractSchemaIntegration, ProcessorWithScannerByTags)
 
 TEST(TestExtractSchemaIntegration, ProcessorWithScannerByID)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     auto rule = read_json_file("processor_with_scanner_by_id.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     auto scanner = read_json_file("scanners.json", base_dir);
     ASSERT_NE(scanner.type, DDWAF_OBJ_INVALID);
     ddwaf_builder_add_or_update_config(builder, LSTRARG("scanners"), &scanner, nullptr);
-    ddwaf_object_free(&scanner);
+    ddwaf_object_destroy(&scanner, alloc);
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
-    ddwaf_object value;
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object values = DDWAF_OBJECT_MAP;
-    ddwaf_object settings = DDWAF_OBJECT_MAP;
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 2, alloc);
 
-    ddwaf_object_string(&value, "data@datadoghq.com");
-    ddwaf_object_map_add(&values, "email", &value);
-    ddwaf_object_map_add(&map, "server.request.body", &values);
+    auto *values = ddwaf_object_insert_key(&map, STRL("server.request.body"), alloc);
+    ddwaf_object_set_map(values, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(values, STRL("email"), alloc), STRL("data@datadoghq.com"), alloc);
 
-    ddwaf_object_bool(&value, true);
-    ddwaf_object_map_add(&settings, "extract-schema", &value);
-    ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+    auto *settings = ddwaf_object_insert_key(&map, STRL("waf.context.processor"), alloc);
+    ddwaf_object_set_map(settings, 1, alloc);
+    ddwaf_object_set_bool(ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     ddwaf_object out;
@@ -262,11 +256,11 @@ TEST(TestExtractSchemaIntegration, ProcessorWithScannerByID)
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-    EXPECT_EQ(ddwaf_object_size(attributes), 1);
+    EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
     EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0),
         R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
 
     ddwaf_destroy(handle);
@@ -275,39 +269,39 @@ TEST(TestExtractSchemaIntegration, ProcessorWithScannerByID)
 
 TEST(TestExtractSchemaIntegration, ProcessorUpdate)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     {
         auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
 
         auto scanner = read_json_file("scanners.json", base_dir);
         ASSERT_NE(scanner.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("scanners"), &scanner, nullptr);
-        ddwaf_object_free(&scanner);
+        ddwaf_object_destroy(&scanner, alloc);
     }
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
-    ddwaf_object value;
-
     {
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object values = DDWAF_OBJECT_MAP;
-        ddwaf_object settings = DDWAF_OBJECT_MAP;
+        ddwaf_object map;
+        ddwaf_object_set_map(&map, 2, alloc);
 
-        ddwaf_object_string(&value, "data@datadoghq.com");
-        ddwaf_object_map_add(&values, "email", &value);
-        ddwaf_object_map_add(&map, "server.request.body", &values);
+        auto *values = ddwaf_object_insert_key(&map, STRL("server.request.body"), alloc);
+        ddwaf_object_set_map(values, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(values, STRL("email"), alloc),
+            STRL("data@datadoghq.com"), alloc);
 
-        ddwaf_object_bool(&value, true);
-        ddwaf_object_map_add(&settings, "extract-schema", &value);
-        ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+        auto *settings = ddwaf_object_insert_key(&map, STRL("waf.context.processor"), alloc);
+        ddwaf_object_set_map(settings, 1, alloc);
+        ddwaf_object_set_bool(
+            ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
@@ -316,12 +310,12 @@ TEST(TestExtractSchemaIntegration, ProcessorUpdate)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0),
             R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
@@ -331,26 +325,27 @@ TEST(TestExtractSchemaIntegration, ProcessorUpdate)
         auto rule = read_json_file("postprocessor.json", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object values = DDWAF_OBJECT_MAP;
-        ddwaf_object settings = DDWAF_OBJECT_MAP;
+        ddwaf_object map;
+        ddwaf_object_set_map(&map, 2, alloc);
 
-        ddwaf_object_string(&value, "data@datadoghq.com");
-        ddwaf_object_map_add(&values, "email", &value);
-        ddwaf_object_map_add(&map, "server.request.body", &values);
+        auto *values = ddwaf_object_insert_key(&map, STRL("server.request.body"), alloc);
+        ddwaf_object_set_map(values, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(values, STRL("email"), alloc),
+            STRL("data@datadoghq.com"), alloc);
 
-        ddwaf_object_bool(&value, true);
-        ddwaf_object_map_add(&settings, "extract-schema", &value);
-        ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+        auto *settings = ddwaf_object_insert_key(&map, STRL("waf.context.processor"), alloc);
+        ddwaf_object_set_map(settings, 1, alloc);
+        ddwaf_object_set_bool(
+            ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
@@ -359,53 +354,52 @@ TEST(TestExtractSchemaIntegration, ProcessorUpdate)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
         EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0), R"([{"email":[8]}])");
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     ddwaf_destroy(handle);
-
     ddwaf_builder_destroy(builder);
 }
 
 TEST(TestExtractSchemaIntegration, ScannerUpdate)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     {
         auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
 
         auto scanner = read_json_file("scanners.json", base_dir);
         ASSERT_NE(scanner.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("scanners"), &scanner, nullptr);
-        ddwaf_object_free(&scanner);
+        ddwaf_object_destroy(&scanner, alloc);
     }
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
-    ddwaf_object value;
-
     {
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object values = DDWAF_OBJECT_MAP;
-        ddwaf_object settings = DDWAF_OBJECT_MAP;
+        ddwaf_object map;
+        ddwaf_object_set_map(&map, 2, alloc);
 
-        ddwaf_object_string(&value, "data@datadoghq.com");
-        ddwaf_object_map_add(&values, "email", &value);
-        ddwaf_object_map_add(&map, "server.request.body", &values);
+        auto *values = ddwaf_object_insert_key(&map, STRL("server.request.body"), alloc);
+        ddwaf_object_set_map(values, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(values, STRL("email"), alloc),
+            STRL("data@datadoghq.com"), alloc);
 
-        ddwaf_object_bool(&value, true);
-        ddwaf_object_map_add(&settings, "extract-schema", &value);
-        ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+        auto *settings = ddwaf_object_insert_key(&map, STRL("waf.context.processor"), alloc);
+        ddwaf_object_set_map(settings, 1, alloc);
+        ddwaf_object_set_bool(
+            ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
@@ -414,12 +408,12 @@ TEST(TestExtractSchemaIntegration, ScannerUpdate)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0),
             R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
@@ -430,26 +424,27 @@ TEST(TestExtractSchemaIntegration, ScannerUpdate)
             R"({"scanners":[{"id":"scanner-002","value":{"operator":"match_regex","parameters":{"regex":"notanemail","options":{"case_sensitive":false,"min_length":1}}},"tags":{"type":"email","category":"pii"}}]})");
         ASSERT_NE(scanner.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("scanners"), &scanner, nullptr);
-        ddwaf_object_free(&scanner);
+        ddwaf_object_destroy(&scanner, alloc);
     }
 
     handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object values = DDWAF_OBJECT_MAP;
-        ddwaf_object settings = DDWAF_OBJECT_MAP;
+        ddwaf_object map;
+        ddwaf_object_set_map(&map, 2, alloc);
 
-        ddwaf_object_string(&value, "notanemail");
-        ddwaf_object_map_add(&values, "email", &value);
-        ddwaf_object_map_add(&map, "server.request.body", &values);
+        auto *values = ddwaf_object_insert_key(&map, STRL("server.request.body"), alloc);
+        ddwaf_object_set_map(values, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(values, STRL("email"), alloc), STRL("notanemail"), alloc);
 
-        ddwaf_object_bool(&value, true);
-        ddwaf_object_map_add(&settings, "extract-schema", &value);
-        ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+        auto *settings = ddwaf_object_insert_key(&map, STRL("waf.context.processor"), alloc);
+        ddwaf_object_set_map(settings, 1, alloc);
+        ddwaf_object_set_bool(
+            ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
@@ -458,55 +453,54 @@ TEST(TestExtractSchemaIntegration, ScannerUpdate)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0),
             R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     ddwaf_destroy(handle);
-
     ddwaf_builder_destroy(builder);
 }
 
 TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     {
         auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
 
         auto scanner = read_json_file("scanners.json", base_dir);
         ASSERT_NE(scanner.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("scanners"), &scanner, nullptr);
-        ddwaf_object_free(&scanner);
+        ddwaf_object_destroy(&scanner, alloc);
     }
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
-    ddwaf_object value;
-
     {
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object values = DDWAF_OBJECT_MAP;
-        ddwaf_object settings = DDWAF_OBJECT_MAP;
+        ddwaf_object map;
+        ddwaf_object_set_map(&map, 2, alloc);
 
-        ddwaf_object_string(&value, "data@datadoghq.com");
-        ddwaf_object_map_add(&values, "email", &value);
-        ddwaf_object_map_add(&map, "server.request.body", &values);
+        auto *values = ddwaf_object_insert_key(&map, STRL("server.request.body"), alloc);
+        ddwaf_object_set_map(values, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(values, STRL("email"), alloc),
+            STRL("data@datadoghq.com"), alloc);
 
-        ddwaf_object_bool(&value, true);
-        ddwaf_object_map_add(&settings, "extract-schema", &value);
-        ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+        auto *settings = ddwaf_object_insert_key(&map, STRL("waf.context.processor"), alloc);
+        ddwaf_object_set_map(settings, 1, alloc);
+        ddwaf_object_set_bool(
+            ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
@@ -515,12 +509,12 @@ TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0),
             R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
@@ -530,26 +524,27 @@ TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
         auto rule = read_json_file("processor_with_scanner_by_id.json", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object values = DDWAF_OBJECT_MAP;
-        ddwaf_object settings = DDWAF_OBJECT_MAP;
+        ddwaf_object map;
+        ddwaf_object_set_map(&map, 2, alloc);
 
-        ddwaf_object_string(&value, "data@datadoghq.com");
-        ddwaf_object_map_add(&values, "email", &value);
-        ddwaf_object_map_add(&map, "server.request.body", &values);
+        auto *values = ddwaf_object_insert_key(&map, STRL("server.request.body"), alloc);
+        ddwaf_object_set_map(values, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(values, STRL("email"), alloc),
+            STRL("data@datadoghq.com"), alloc);
 
-        ddwaf_object_bool(&value, true);
-        ddwaf_object_map_add(&settings, "extract-schema", &value);
-        ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+        auto *settings = ddwaf_object_insert_key(&map, STRL("waf.context.processor"), alloc);
+        ddwaf_object_set_map(settings, 1, alloc);
+        ddwaf_object_set_bool(
+            ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
@@ -558,12 +553,12 @@ TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0),
             R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
@@ -573,39 +568,39 @@ TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
 
 TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     {
         auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
 
         auto scanner = read_json_file("scanners.json", base_dir);
         ASSERT_NE(scanner.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("scanners"), &scanner, nullptr);
-        ddwaf_object_free(&scanner);
+        ddwaf_object_destroy(&scanner, alloc);
     }
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
-    ddwaf_object value;
-
     {
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object values = DDWAF_OBJECT_MAP;
-        ddwaf_object settings = DDWAF_OBJECT_MAP;
+        ddwaf_object map;
+        ddwaf_object_set_map(&map, 2, alloc);
 
-        ddwaf_object_string(&value, "data@datadoghq.com");
-        ddwaf_object_map_add(&values, "email", &value);
-        ddwaf_object_map_add(&map, "server.request.body", &values);
+        auto *values = ddwaf_object_insert_key(&map, STRL("server.request.body"), alloc);
+        ddwaf_object_set_map(values, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(values, STRL("email"), alloc),
+            STRL("data@datadoghq.com"), alloc);
 
-        ddwaf_object_bool(&value, true);
-        ddwaf_object_map_add(&settings, "extract-schema", &value);
-        ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+        auto *settings = ddwaf_object_insert_key(&map, STRL("waf.context.processor"), alloc);
+        ddwaf_object_set_map(settings, 1, alloc);
+        ddwaf_object_set_bool(
+            ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
@@ -614,12 +609,12 @@ TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0),
             R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
@@ -629,19 +624,20 @@ TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object values = DDWAF_OBJECT_MAP;
-        ddwaf_object settings = DDWAF_OBJECT_MAP;
+        ddwaf_object map;
+        ddwaf_object_set_map(&map, 2, alloc);
 
-        ddwaf_object_string(&value, "data@datadoghq.com");
-        ddwaf_object_map_add(&values, "email", &value);
-        ddwaf_object_map_add(&map, "server.request.body", &values);
+        auto *values = ddwaf_object_insert_key(&map, STRL("server.request.body"), alloc);
+        ddwaf_object_set_map(values, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(values, STRL("email"), alloc),
+            STRL("data@datadoghq.com"), alloc);
 
-        ddwaf_object_bool(&value, true);
-        ddwaf_object_map_add(&settings, "extract-schema", &value);
-        ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+        auto *settings = ddwaf_object_insert_key(&map, STRL("waf.context.processor"), alloc);
+        ddwaf_object_set_map(settings, 1, alloc);
+        ddwaf_object_set_bool(
+            ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
@@ -650,10 +646,10 @@ TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
         EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0), R"([{"email":[8]}])");
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
@@ -663,39 +659,39 @@ TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
 
 TEST(TestExtractSchemaIntegration, EmptyProcessorUpdate)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
     {
         auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
 
         auto scanner = read_json_file("scanners.json", base_dir);
         ASSERT_NE(scanner.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("scanners"), &scanner, nullptr);
-        ddwaf_object_free(&scanner);
+        ddwaf_object_destroy(&scanner, alloc);
     }
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
-    ddwaf_object value;
-
     {
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object values = DDWAF_OBJECT_MAP;
-        ddwaf_object settings = DDWAF_OBJECT_MAP;
+        ddwaf_object map;
+        ddwaf_object_set_map(&map, 2, alloc);
 
-        ddwaf_object_string(&value, "data@datadoghq.com");
-        ddwaf_object_map_add(&values, "email", &value);
-        ddwaf_object_map_add(&map, "server.request.body", &values);
+        auto *values = ddwaf_object_insert_key(&map, STRL("server.request.body"), alloc);
+        ddwaf_object_set_map(values, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(values, STRL("email"), alloc),
+            STRL("data@datadoghq.com"), alloc);
 
-        ddwaf_object_bool(&value, true);
-        ddwaf_object_map_add(&settings, "extract-schema", &value);
-        ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+        auto *settings = ddwaf_object_insert_key(&map, STRL("waf.context.processor"), alloc);
+        ddwaf_object_set_map(settings, 1, alloc);
+        ddwaf_object_set_bool(
+            ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
@@ -704,12 +700,12 @@ TEST(TestExtractSchemaIntegration, EmptyProcessorUpdate)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         EXPECT_SCHEMA_EQ(*ddwaf_object_at_value(attributes, 0),
             R"([{"email":[8,{"category":"pii","type":"email"}]}])");
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
@@ -719,26 +715,27 @@ TEST(TestExtractSchemaIntegration, EmptyProcessorUpdate)
             R"({"version": "2.2", "metadata": {"rules_version": "1.8.0"}, "rules": [{"id": "rule1", "name": "rule1", "tags": {"type": "flow1", "category": "category1"}, "conditions": [{"parameters": {"inputs": [{"address": "server.request.body.schema"}], "value": 8, "type": "unsigned"}, "operator": "equals"}]}], "processors": []})");
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object values = DDWAF_OBJECT_MAP;
-        ddwaf_object settings = DDWAF_OBJECT_MAP;
+        ddwaf_object map;
+        ddwaf_object_set_map(&map, 2, alloc);
 
-        ddwaf_object_string(&value, "data@datadoghq.com");
-        ddwaf_object_map_add(&values, "email", &value);
-        ddwaf_object_map_add(&map, "server.request.body", &values);
+        auto *values = ddwaf_object_insert_key(&map, STRL("server.request.body"), alloc);
+        ddwaf_object_set_map(values, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(values, STRL("email"), alloc),
+            STRL("data@datadoghq.com"), alloc);
 
-        ddwaf_object_bool(&value, true);
-        ddwaf_object_map_add(&settings, "extract-schema", &value);
-        ddwaf_object_map_add(&map, "waf.context.processor", &settings);
+        auto *settings = ddwaf_object_insert_key(&map, STRL("waf.context.processor"), alloc);
+        ddwaf_object_set_map(settings, 1, alloc);
+        ddwaf_object_set_bool(
+            ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object out;
@@ -747,9 +744,9 @@ TEST(TestExtractSchemaIntegration, EmptyProcessorUpdate)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
@@ -759,11 +756,12 @@ TEST(TestExtractSchemaIntegration, EmptyProcessorUpdate)
 
 TEST(TestExtractSchemaIntegration, PostprocessorWithEphemeralMapping)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("postprocessor.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
@@ -772,22 +770,21 @@ TEST(TestExtractSchemaIntegration, PostprocessorWithEphemeralMapping)
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("waf.context.processor"));
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object value;
-
-    ddwaf_object persistent = DDWAF_OBJECT_MAP;
-    ddwaf_object settings = DDWAF_OBJECT_MAP;
-
-    ddwaf_object_bool(&value, true);
-    ddwaf_object_map_add(&settings, "extract-schema", &value);
-    ddwaf_object_map_add(&persistent, "waf.context.processor", &settings);
+    ddwaf_object persistent;
+    ddwaf_object_set_map(&persistent, 2, alloc);
+    auto *settings = ddwaf_object_insert_key(&persistent, STRL("waf.context.processor"), alloc);
+    ddwaf_object_set_map(settings, 1, alloc);
+    ddwaf_object_set_bool(ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
     {
-        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
-        ddwaf_object_string(&value, "value");
-        ddwaf_object_map_add(&ephemeral, "server.request.body", &value);
+        ddwaf_object ephemeral;
+        ddwaf_object_set_map(&ephemeral, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&ephemeral, STRL("server.request.body"), alloc), STRL("value"),
+            alloc);
 
         ddwaf_object out;
         ASSERT_EQ(
@@ -796,20 +793,22 @@ TEST(TestExtractSchemaIntegration, PostprocessorWithEphemeralMapping)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.body.schema":[8]})");
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
     }
 
     {
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
-        ddwaf_object_string(&value, "value");
-        ddwaf_object_map_add(&map, "key", &value);
-        ddwaf_object_map_add(&ephemeral, "server.request.body", &map);
+        ddwaf_object ephemeral;
+        ddwaf_object_set_map(&ephemeral, 1, alloc);
+
+        auto *nested_map = ddwaf_object_insert_key(&ephemeral, STRL("server.request.body"), alloc);
+        ddwaf_object_set_map(nested_map, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(nested_map, STRL("key"), alloc), STRL("value"), alloc);
 
         ddwaf_object out;
         ASSERT_EQ(
@@ -818,12 +817,12 @@ TEST(TestExtractSchemaIntegration, PostprocessorWithEphemeralMapping)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.body.schema":[{"key":[8]}]})");
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
     }
 
     ddwaf_context_destroy(context);
@@ -832,11 +831,12 @@ TEST(TestExtractSchemaIntegration, PostprocessorWithEphemeralMapping)
 
 TEST(TestExtractSchemaIntegration, PreprocessorWithEphemeralMapping)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("preprocessor.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
@@ -845,22 +845,22 @@ TEST(TestExtractSchemaIntegration, PreprocessorWithEphemeralMapping)
     EXPECT_TRUE(address_set.contains("server.request.body"));
     EXPECT_TRUE(address_set.contains("server.request.body.schema"));
     EXPECT_TRUE(address_set.contains("waf.context.processor"));
-    ddwaf_context context = ddwaf_context_init(handle);
+
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object value;
-
-    ddwaf_object persistent = DDWAF_OBJECT_MAP;
-    ddwaf_object settings = DDWAF_OBJECT_MAP;
-
-    ddwaf_object_bool(&value, true);
-    ddwaf_object_map_add(&settings, "extract-schema", &value);
-    ddwaf_object_map_add(&persistent, "waf.context.processor", &settings);
+    ddwaf_object persistent;
+    ddwaf_object_set_map(&persistent, 1, alloc);
+    auto *settings = ddwaf_object_insert_key(&persistent, STRL("waf.context.processor"), alloc);
+    ddwaf_object_set_map(settings, 1, alloc);
+    ddwaf_object_set_bool(ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
     {
-        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
-        ddwaf_object_string(&value, "value");
-        ddwaf_object_map_add(&ephemeral, "server.request.body", &value);
+        ddwaf_object ephemeral;
+        ddwaf_object_set_map(&ephemeral, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&ephemeral, STRL("server.request.body"), alloc), STRL("value"),
+            alloc);
 
         ddwaf_object out;
         ASSERT_EQ(ddwaf_context_eval(context, &persistent, &ephemeral, true, &out, LONG_TIME),
@@ -881,15 +881,17 @@ TEST(TestExtractSchemaIntegration, PreprocessorWithEphemeralMapping)
                                    }}}}});
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
     }
 
     {
-        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
-        ddwaf_object_string(&value, "value");
-        ddwaf_object_map_add(&ephemeral, "server.request.body", &value);
+        ddwaf_object ephemeral;
+        ddwaf_object_set_map(&ephemeral, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&ephemeral, STRL("server.request.body"), alloc), STRL("value"),
+            alloc);
 
         ddwaf_object out;
         ASSERT_EQ(
@@ -910,9 +912,9 @@ TEST(TestExtractSchemaIntegration, PreprocessorWithEphemeralMapping)
                                    }}}}});
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
     }
 
     ddwaf_context_destroy(context);
@@ -921,11 +923,12 @@ TEST(TestExtractSchemaIntegration, PreprocessorWithEphemeralMapping)
 
 TEST(TestExtractSchemaIntegration, ProcessorEphemeralExpression)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("processor.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
@@ -936,21 +939,23 @@ TEST(TestExtractSchemaIntegration, ProcessorEphemeralExpression)
     EXPECT_TRUE(address_set.contains("server.request.query"));
     EXPECT_TRUE(address_set.contains("waf.context.processor"));
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object value;
-
     {
-        ddwaf_object persistent = DDWAF_OBJECT_MAP;
-        ddwaf_object_string(&value, "value");
-        ddwaf_object_map_add(&persistent, "server.request.query", &value);
+        ddwaf_object persistent;
+        ddwaf_object_set_map(&persistent, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&persistent, STRL("server.request.query"), alloc),
+            STRL("value"), alloc);
 
-        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
-        ddwaf_object settings = DDWAF_OBJECT_MAP;
-        ddwaf_object_bool(&value, true);
-        ddwaf_object_map_add(&settings, "extract-schema", &value);
-        ddwaf_object_map_add(&ephemeral, "waf.context.processor", &settings);
+        ddwaf_object ephemeral;
+        ddwaf_object_set_map(&ephemeral, 1, alloc);
+
+        auto *settings = ddwaf_object_insert_key(&ephemeral, STRL("waf.context.processor"), alloc);
+        ddwaf_object_set_map(settings, 1, alloc);
+        ddwaf_object_set_bool(
+            ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
         ddwaf_object out;
         ASSERT_EQ(
@@ -959,18 +964,20 @@ TEST(TestExtractSchemaIntegration, ProcessorEphemeralExpression)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.query.schema":[8]})");
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
     }
 
     {
-        ddwaf_object persistent = DDWAF_OBJECT_MAP;
-        ddwaf_object_string(&value, "value");
-        ddwaf_object_map_add(&persistent, "server.request.body", &value);
+        ddwaf_object persistent;
+        ddwaf_object_set_map(&persistent, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&persistent, STRL("server.request.body"), alloc), STRL("value"),
+            alloc);
 
         ddwaf_object out;
         ASSERT_EQ(
@@ -979,17 +986,19 @@ TEST(TestExtractSchemaIntegration, ProcessorEphemeralExpression)
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
     }
 
     {
-        ddwaf_object ephemeral = DDWAF_OBJECT_MAP;
-        ddwaf_object settings = DDWAF_OBJECT_MAP;
-        ddwaf_object_bool(&value, true);
-        ddwaf_object_map_add(&settings, "extract-schema", &value);
-        ddwaf_object_map_add(&ephemeral, "waf.context.processor", &settings);
+        ddwaf_object ephemeral;
+        ddwaf_object_set_map(&ephemeral, 1, alloc);
+
+        auto *settings = ddwaf_object_insert_key(&ephemeral, STRL("waf.context.processor"), alloc);
+        ddwaf_object_set_map(settings, 1, alloc);
+        ddwaf_object_set_bool(
+            ddwaf_object_insert_key(settings, STRL("extract-schema"), alloc), true);
 
         ddwaf_object out;
         ASSERT_EQ(
@@ -1010,12 +1019,12 @@ TEST(TestExtractSchemaIntegration, ProcessorEphemeralExpression)
                                    }}}}});
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         auto schema = test::object_to_json(*attributes);
         EXPECT_STR(schema, R"({"server.request.body.schema":[8]})");
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
     }
 
     ddwaf_context_destroy(context);

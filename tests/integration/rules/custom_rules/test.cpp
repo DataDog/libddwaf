@@ -16,6 +16,7 @@ constexpr std::string_view base_dir = "integration/rules/custom_rules/";
 // Custom rules can be used instead of base rules
 TEST(TestCustomRulesIntegration, InitWithoutBaseRules)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("custom_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -23,26 +24,29 @@ TEST(TestCustomRulesIntegration, InitWithoutBaseRules)
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "custom_rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("custom_rule1"));
 
         EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
     }
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value2", ddwaf_object_string(&tmp, "custom_rule2"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value2"), alloc), STRL("custom_rule2"));
 
         EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -54,6 +58,7 @@ TEST(TestCustomRulesIntegration, InitWithoutBaseRules)
 // Custom rules can work alongside base rules
 TEST(TestCustomRulesIntegration, InitWithBaseRules)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -61,26 +66,29 @@ TEST(TestCustomRulesIntegration, InitWithBaseRules)
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
         EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
     }
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value2", ddwaf_object_string(&tmp, "custom_rule2"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value2"), alloc), STRL("custom_rule2"));
 
         EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -92,6 +100,7 @@ TEST(TestCustomRulesIntegration, InitWithBaseRules)
 // Regular custom rules have precedence over regular base rules
 TEST(TestCustomRulesIntegration, RegularCustomRulesPrecedence)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -99,18 +108,19 @@ TEST(TestCustomRulesIntegration, RegularCustomRulesPrecedence)
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value3", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value3"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -123,7 +133,7 @@ TEST(TestCustomRulesIntegration, RegularCustomRulesPrecedence)
                                    .op_value = "custom_rule",
                                    .highlight = "custom_rule"sv,
                                    .args = {{.value = "custom_rule"sv, .address = "value3"}}}}});
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     ddwaf_context_destroy(context1);
@@ -132,6 +142,7 @@ TEST(TestCustomRulesIntegration, RegularCustomRulesPrecedence)
 // Priority custom rules have precedence over priority base rules
 TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -139,18 +150,19 @@ TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value4", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value4"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -168,7 +180,7 @@ TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     ddwaf_context_destroy(context1);
@@ -177,6 +189,7 @@ TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
 // Global rules precedence test Priority Custom > Priority Base > Custom > Base
 TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -184,18 +197,19 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -212,7 +226,7 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     ddwaf_context_destroy(context1);
@@ -221,6 +235,7 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
 // Custom rules can be updated when base rules exist
 TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_config config{{nullptr, nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
@@ -228,7 +243,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
         auto rule = read_file<ddwaf_object>("custom_rules_base_rules_only.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("base_rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
@@ -238,26 +253,27 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
         auto rule = read_file<ddwaf_object>("custom_rules.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("custom_rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
     ASSERT_NE(context2, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle2);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -274,12 +290,14 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -296,7 +314,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     ddwaf_context_destroy(context1);
@@ -308,6 +326,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
 // Custom rules can be updated when custom rules already exist
 TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_config config{{nullptr, nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
@@ -315,7 +334,7 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
         auto rule = read_file<ddwaf_object>("custom_rules.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("custom_rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
@@ -326,26 +345,27 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
             R"({custom_rules: [{id: custom_rule5, name: custom_rule5, tags: {type: flow5, category: category5}, conditions: [{operator: match_regex, parameters: {inputs: [{address: value34}], regex: custom_rule}}]}]})");
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("custom_rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
     ASSERT_NE(context2, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle2);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -362,12 +382,14 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -381,7 +403,7 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
                                    .highlight = "custom_rule"sv,
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     ddwaf_context_destroy(context1);
@@ -393,13 +415,15 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
 // Remove all custom rules when no other rules are available
 TEST(TestCustomRulesIntegration, UpdateWithEmptyRules)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     ddwaf_config config{{nullptr, nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     auto rule = read_file<ddwaf_object>("custom_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_builder_add_or_update_config(builder, LSTRARG("custom_rules"), &rule, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
@@ -417,6 +441,7 @@ TEST(TestCustomRulesIntegration, UpdateWithEmptyRules)
 // Remove all custom rules when base rules are available
 TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_config config{{nullptr, nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
@@ -424,14 +449,14 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
         auto rule = read_file<ddwaf_object>("custom_rules_base_rules_only.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("base_rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     {
         auto rule = read_file<ddwaf_object>("custom_rules.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("custom_rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
     ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
@@ -440,20 +465,21 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
     ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
     ASSERT_NE(context2, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle2);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -470,12 +496,14 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -492,7 +520,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     ddwaf_context_destroy(context1);
@@ -504,6 +532,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
 // Ensure that existing custom rules are unaffected by overrides
 TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_config config{{nullptr, nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
@@ -511,7 +540,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
         auto rule = read_file<ddwaf_object>("custom_rules.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("custom_rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
@@ -522,26 +551,27 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
             R"({rules_override: [{rules_target: [{tags: {category: category4}}], enabled: false}]})");
         ASSERT_TRUE(overrides.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
     }
 
     ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
     ASSERT_NE(context2, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle2);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -558,12 +588,14 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -580,7 +612,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     ddwaf_context_destroy(context1);
@@ -592,6 +624,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
 // Ensure that custom rules are unaffected by overrides after an update
 TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_config config{{nullptr, nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
@@ -599,7 +632,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
         auto rule = read_file<ddwaf_object>("custom_rules_base_rules_only.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("base_rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
@@ -610,7 +643,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
             R"({rules_override: [{rules_target: [{tags: {category: category4}}], enabled: false}]})");
         ASSERT_TRUE(overrides.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
     }
 
     ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
@@ -620,19 +653,19 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
         auto rule = read_file<ddwaf_object>("custom_rules.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("custom_rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle3 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle3, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
     ASSERT_NE(context2, nullptr);
 
-    ddwaf_context context3 = ddwaf_context_init(handle3);
+    ddwaf_context context3 = ddwaf_context_init(handle3, alloc);
     ASSERT_NE(context3, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -640,10 +673,11 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle3);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value4", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value4"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -660,20 +694,24 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value4", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value4"), alloc), STRL("custom_rule"));
 
         EXPECT_EQ(
             ddwaf_context_eval(context2, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
     }
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value4", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value4"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -690,7 +728,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     ddwaf_context_destroy(context1);
@@ -703,6 +741,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
 // Ensure that existing custom rules are unaffected by overrides
 TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_config config{{nullptr, nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
@@ -710,7 +749,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
         auto rule = read_file<ddwaf_object>("custom_rules_and_rules.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
@@ -721,26 +760,27 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
             R"({exclusions: [{id: custom_rule4_exclude, rules_target: [{rule_id: custom_rule4}]}]})");
         ASSERT_TRUE(exclusions.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusions"), &exclusions, nullptr);
-        ddwaf_object_free(&exclusions);
+        ddwaf_object_destroy(&exclusions, alloc);
     }
 
     ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
     ASSERT_NE(context2, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle1);
     ddwaf_destroy(handle2);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -757,12 +797,14 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -779,7 +821,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     ddwaf_context_destroy(context1);
@@ -791,6 +833,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
 // Ensure that custom rules are affected by overrides after an update
 TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_config config{{nullptr, nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
@@ -798,7 +841,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
         auto rule = read_file<ddwaf_object>("custom_rules_base_rules_only.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("base_rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
@@ -809,7 +852,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
             R"({exclusions: [{id: custom_rule4_exclude, rules_target: [{tags: {category: category4}}]}]})");
         ASSERT_TRUE(exclusions.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusions"), &exclusions, nullptr);
-        ddwaf_object_free(&exclusions);
+        ddwaf_object_destroy(&exclusions, alloc);
     }
 
     ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
@@ -819,19 +862,19 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
         auto rule = read_file<ddwaf_object>("custom_rules.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("custom_rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle3 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle3, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
     ASSERT_NE(context2, nullptr);
 
-    ddwaf_context context3 = ddwaf_context_init(handle3);
+    ddwaf_context context3 = ddwaf_context_init(handle3, alloc);
     ASSERT_NE(context3, nullptr);
 
     // Destroying the handle should not invalidate it
@@ -839,10 +882,11 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
     ddwaf_destroy(handle2);
     ddwaf_destroy(handle3);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -862,12 +906,14 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
         EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
                                                    {"type", "auto"}}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -884,12 +930,14 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
                                        .address = "value34",
                                    }}}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value34", ddwaf_object_string(&tmp, "custom_rule"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
         EXPECT_EQ(
@@ -906,7 +954,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
                                        .address = "value34",
                                    }}}}});
 
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     ddwaf_context_destroy(context1);

@@ -15,43 +15,45 @@ constexpr std::string_view base_dir = "integration/rules/attributes/";
 
 TEST(TestRuleAttributesIntegration, SingleValueOutputNoEvent)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
         ddwaf_object result;
         EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, &result, LONG_TIME),
             DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
         const auto *events = ddwaf_object_find(&result, STRL("events"));
         EXPECT_NE(events, nullptr);
-        EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-        EXPECT_EQ(ddwaf_object_size(events), 0);
+        EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
-        EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         const auto *tag = ddwaf_object_find(attributes, STRL("result.rule1"));
         EXPECT_NE(tag, nullptr);
-        EXPECT_TRUE((ddwaf_object_type(tag) & DDWAF_OBJ_STRING) != 0);
+        EXPECT_TRUE((ddwaf_object_get_type(tag) & DDWAF_OBJ_STRING) != 0);
 
         std::size_t length;
         const auto *str = ddwaf_object_get_string(tag, &length);
@@ -63,7 +65,7 @@ TEST(TestRuleAttributesIntegration, SingleValueOutputNoEvent)
         EXPECT_NE(keep, nullptr);
         EXPECT_FALSE(ddwaf_object_get_bool(keep));
 
-        ddwaf_object_free(&result);
+        ddwaf_object_destroy(&result, alloc);
     }
 
     ddwaf_context_destroy(context1);
@@ -71,29 +73,31 @@ TEST(TestRuleAttributesIntegration, SingleValueOutputNoEvent)
 
 TEST(TestRuleAttributesIntegration, SingleValueOutputAndEvent)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value2", ddwaf_object_string(&tmp, "rule2"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value2"), alloc), STRL("rule2"));
 
         ddwaf_object result;
         EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, &result, LONG_TIME),
             DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
         EXPECT_EVENTS(result, {.id = "rule2",
                                   .name = "rule2",
@@ -105,12 +109,12 @@ TEST(TestRuleAttributesIntegration, SingleValueOutputAndEvent)
 
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
-        EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         const auto *tag = ddwaf_object_find(attributes, STRL("result.rule2"));
         EXPECT_NE(tag, nullptr);
-        EXPECT_TRUE((ddwaf_object_type(tag) & DDWAF_OBJ_STRING) != 0);
+        EXPECT_TRUE((ddwaf_object_get_type(tag) & DDWAF_OBJ_STRING) != 0);
 
         std::size_t length;
         const auto *str = ddwaf_object_get_string(tag, &length);
@@ -122,7 +126,7 @@ TEST(TestRuleAttributesIntegration, SingleValueOutputAndEvent)
         EXPECT_NE(keep, nullptr);
         EXPECT_FALSE(ddwaf_object_get_bool(keep));
 
-        ddwaf_object_free(&result);
+        ddwaf_object_destroy(&result, alloc);
     }
 
     ddwaf_context_destroy(context1);
@@ -130,43 +134,45 @@ TEST(TestRuleAttributesIntegration, SingleValueOutputAndEvent)
 
 TEST(TestRuleAttributesIntegration, SingleTargetOutputNoEvent)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value3", ddwaf_object_string(&tmp, "rule3"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value3"), alloc), STRL("rule3"));
 
         ddwaf_object result;
         EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, &result, LONG_TIME),
             DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
         const auto *events = ddwaf_object_find(&result, STRL("events"));
         EXPECT_NE(events, nullptr);
-        EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-        EXPECT_EQ(ddwaf_object_size(events), 0);
+        EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
-        EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         const auto *tag = ddwaf_object_find(attributes, STRL("result.rule3"));
         EXPECT_NE(tag, nullptr);
-        EXPECT_TRUE((ddwaf_object_type(tag) & DDWAF_OBJ_STRING) != 0);
+        EXPECT_TRUE((ddwaf_object_get_type(tag) & DDWAF_OBJ_STRING) != 0);
 
         std::size_t length;
         const auto *str = ddwaf_object_get_string(tag, &length);
@@ -178,7 +184,7 @@ TEST(TestRuleAttributesIntegration, SingleTargetOutputNoEvent)
         EXPECT_NE(keep, nullptr);
         EXPECT_FALSE(ddwaf_object_get_bool(keep));
 
-        ddwaf_object_free(&result);
+        ddwaf_object_destroy(&result, alloc);
     }
 
     ddwaf_context_destroy(context1);
@@ -186,65 +192,67 @@ TEST(TestRuleAttributesIntegration, SingleTargetOutputNoEvent)
 
 TEST(TestRuleAttributesIntegration, MultipleValuesOutputNoEvent)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value4", ddwaf_object_string(&tmp, "rule4"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value4"), alloc), STRL("rule4"));
 
         ddwaf_object result;
         EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, &result, LONG_TIME),
             DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
         const auto *events = ddwaf_object_find(&result, STRL("events"));
         EXPECT_NE(events, nullptr);
-        EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-        EXPECT_EQ(ddwaf_object_size(events), 0);
+        EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
-        EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(attributes), 4);
+        EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 4);
 
         {
             const auto *tag = ddwaf_object_find(attributes, STRL("rule4.int64"));
             EXPECT_NE(tag, nullptr);
-            EXPECT_EQ(ddwaf_object_type(tag), DDWAF_OBJ_SIGNED);
+            EXPECT_EQ(ddwaf_object_get_type(tag), DDWAF_OBJ_SIGNED);
             EXPECT_EQ(ddwaf_object_get_signed(tag), -200);
         }
 
         {
             const auto *tag = ddwaf_object_find(attributes, STRL("rule4.uint64"));
             EXPECT_NE(tag, nullptr);
-            EXPECT_EQ(ddwaf_object_type(tag), DDWAF_OBJ_UNSIGNED);
+            EXPECT_EQ(ddwaf_object_get_type(tag), DDWAF_OBJ_UNSIGNED);
             EXPECT_EQ(ddwaf_object_get_unsigned(tag), 200);
         }
 
         {
             const auto *tag = ddwaf_object_find(attributes, STRL("rule4.double"));
             EXPECT_NE(tag, nullptr);
-            EXPECT_EQ(ddwaf_object_type(tag), DDWAF_OBJ_FLOAT);
+            EXPECT_EQ(ddwaf_object_get_type(tag), DDWAF_OBJ_FLOAT);
             EXPECT_EQ(ddwaf_object_get_float(tag), 200.22);
         }
 
         {
             const auto *tag = ddwaf_object_find(attributes, STRL("rule4.bool"));
             EXPECT_NE(tag, nullptr);
-            EXPECT_EQ(ddwaf_object_type(tag), DDWAF_OBJ_BOOL);
+            EXPECT_EQ(ddwaf_object_get_type(tag), DDWAF_OBJ_BOOL);
             EXPECT_TRUE(ddwaf_object_get_bool(tag));
         }
 
@@ -252,7 +260,7 @@ TEST(TestRuleAttributesIntegration, MultipleValuesOutputNoEvent)
         EXPECT_NE(keep, nullptr);
         EXPECT_FALSE(ddwaf_object_get_bool(keep));
 
-        ddwaf_object_free(&result);
+        ddwaf_object_destroy(&result, alloc);
     }
 
     ddwaf_context_destroy(context1);
@@ -260,43 +268,45 @@ TEST(TestRuleAttributesIntegration, MultipleValuesOutputNoEvent)
 
 TEST(TestRuleAttributesIntegration, AttributesWithActions)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value5", ddwaf_object_string(&tmp, "rule5"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value5"), alloc), STRL("rule5"));
 
         ddwaf_object result;
         EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, &result, LONG_TIME),
             DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
         const auto *events = ddwaf_object_find(&result, STRL("events"));
         EXPECT_NE(events, nullptr);
-        EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-        EXPECT_EQ(ddwaf_object_size(events), 0);
+        EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
-        EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         const auto *tag = ddwaf_object_find(attributes, STRL("result.rule5"));
         EXPECT_NE(tag, nullptr);
-        EXPECT_TRUE((ddwaf_object_type(tag) & DDWAF_OBJ_STRING) != 0);
+        EXPECT_TRUE((ddwaf_object_get_type(tag) & DDWAF_OBJ_STRING) != 0);
 
         std::size_t length;
         const auto *str = ddwaf_object_get_string(tag, &length);
@@ -310,13 +320,13 @@ TEST(TestRuleAttributesIntegration, AttributesWithActions)
 
         const auto *actions = ddwaf_object_find(&result, STRL("actions"));
         EXPECT_NE(actions, nullptr);
-        EXPECT_EQ(ddwaf_object_type(actions), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(actions), 1);
+        EXPECT_EQ(ddwaf_object_get_type(actions), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(actions), 1);
 
         const auto *action = ddwaf_object_find(actions, STRL("block_request"));
         EXPECT_NE(action, nullptr);
 
-        ddwaf_object_free(&result);
+        ddwaf_object_destroy(&result, alloc);
     }
 
     ddwaf_context_destroy(context1);
@@ -324,45 +334,48 @@ TEST(TestRuleAttributesIntegration, AttributesWithActions)
 
 TEST(TestRuleAttributesIntegration, MultipleAttributesAndActions)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value5", ddwaf_object_string(&tmp, "rule5"));
-        ddwaf_object_map_add(&parameter, "value6", ddwaf_object_string(&tmp, "rule6"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 2, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value5"), alloc), STRL("rule5"));
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value6"), alloc), STRL("rule6"));
 
         ddwaf_object result;
         EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, &result, LONG_TIME),
             DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
         const auto *events = ddwaf_object_find(&result, STRL("events"));
         EXPECT_NE(events, nullptr);
-        EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-        EXPECT_EQ(ddwaf_object_size(events), 0);
+        EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
-        EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(attributes), 2);
+        EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 2);
 
         {
             const auto *tag = ddwaf_object_find(attributes, STRL("result.rule5"));
             EXPECT_NE(tag, nullptr);
-            EXPECT_TRUE((ddwaf_object_type(tag) & DDWAF_OBJ_STRING) != 0);
+            EXPECT_TRUE((ddwaf_object_get_type(tag) & DDWAF_OBJ_STRING) != 0);
 
             std::size_t length;
             const auto *str = ddwaf_object_get_string(tag, &length);
@@ -374,7 +387,7 @@ TEST(TestRuleAttributesIntegration, MultipleAttributesAndActions)
         {
             const auto *tag = ddwaf_object_find(attributes, STRL("result.rule6"));
             EXPECT_NE(tag, nullptr);
-            EXPECT_TRUE((ddwaf_object_type(tag) & DDWAF_OBJ_STRING) != 0);
+            EXPECT_TRUE((ddwaf_object_get_type(tag) & DDWAF_OBJ_STRING) != 0);
 
             std::size_t length;
             const auto *str = ddwaf_object_get_string(tag, &length);
@@ -389,19 +402,19 @@ TEST(TestRuleAttributesIntegration, MultipleAttributesAndActions)
 
         const auto *actions = ddwaf_object_find(&result, STRL("actions"));
         EXPECT_NE(actions, nullptr);
-        EXPECT_EQ(ddwaf_object_type(actions), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(actions), 2);
+        EXPECT_EQ(ddwaf_object_get_type(actions), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(actions), 2);
 
         const auto *block_action = ddwaf_object_find(actions, STRL("block_request"));
         EXPECT_NE(block_action, nullptr);
 
         const auto *stack_action = ddwaf_object_find(actions, STRL("generate_stack"));
         EXPECT_NE(stack_action, nullptr);
-        EXPECT_EQ(ddwaf_object_type(stack_action), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_type(stack_action), DDWAF_OBJ_MAP);
 
         EXPECT_NE(ddwaf_object_find(stack_action, STRL("stack_id")), nullptr);
 
-        ddwaf_object_free(&result);
+        ddwaf_object_destroy(&result, alloc);
     }
 
     ddwaf_context_destroy(context1);
@@ -409,43 +422,45 @@ TEST(TestRuleAttributesIntegration, MultipleAttributesAndActions)
 
 TEST(TestRuleAttributesIntegration, AttributesAndMonitorRuleFilter)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value7", ddwaf_object_string(&tmp, "rule7"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value7"), alloc), STRL("rule7"));
 
         ddwaf_object result;
         EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, &result, LONG_TIME),
             DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
         const auto *events = ddwaf_object_find(&result, STRL("events"));
         EXPECT_NE(events, nullptr);
-        EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-        EXPECT_EQ(ddwaf_object_size(events), 0);
+        EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
-        EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         const auto *tag = ddwaf_object_find(attributes, STRL("result.rule7"));
         EXPECT_NE(tag, nullptr);
-        EXPECT_TRUE((ddwaf_object_type(tag) & DDWAF_OBJ_STRING) != 0);
+        EXPECT_TRUE((ddwaf_object_get_type(tag) & DDWAF_OBJ_STRING) != 0);
 
         std::size_t length;
         const auto *str = ddwaf_object_get_string(tag, &length);
@@ -459,10 +474,10 @@ TEST(TestRuleAttributesIntegration, AttributesAndMonitorRuleFilter)
 
         const auto *actions = ddwaf_object_find(&result, STRL("actions"));
         EXPECT_NE(actions, nullptr);
-        EXPECT_EQ(ddwaf_object_type(actions), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(actions), 0);
+        EXPECT_EQ(ddwaf_object_get_type(actions), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(actions), 0);
 
-        ddwaf_object_free(&result);
+        ddwaf_object_destroy(&result, alloc);
     }
 
     ddwaf_context_destroy(context1);
@@ -470,43 +485,45 @@ TEST(TestRuleAttributesIntegration, AttributesAndMonitorRuleFilter)
 
 TEST(TestRuleAttributesIntegration, AttributesAndBlockingRuleFilter)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value8", ddwaf_object_string(&tmp, "rule8"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value8"), alloc), STRL("rule8"));
 
         ddwaf_object result;
         EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, &result, LONG_TIME),
             DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
         const auto *events = ddwaf_object_find(&result, STRL("events"));
         EXPECT_NE(events, nullptr);
-        EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-        EXPECT_EQ(ddwaf_object_size(events), 0);
+        EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
-        EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         const auto *tag = ddwaf_object_find(attributes, STRL("result.rule8"));
         EXPECT_NE(tag, nullptr);
-        EXPECT_TRUE((ddwaf_object_type(tag) & DDWAF_OBJ_STRING) != 0);
+        EXPECT_TRUE((ddwaf_object_get_type(tag) & DDWAF_OBJ_STRING) != 0);
 
         std::size_t length;
         const auto *str = ddwaf_object_get_string(tag, &length);
@@ -520,13 +537,13 @@ TEST(TestRuleAttributesIntegration, AttributesAndBlockingRuleFilter)
 
         const auto *actions = ddwaf_object_find(&result, STRL("actions"));
         EXPECT_NE(actions, nullptr);
-        EXPECT_EQ(ddwaf_object_type(actions), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(actions), 1);
+        EXPECT_EQ(ddwaf_object_get_type(actions), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(actions), 1);
 
         const auto *action = ddwaf_object_find(actions, STRL("block_request"));
         EXPECT_NE(action, nullptr);
 
-        ddwaf_object_free(&result);
+        ddwaf_object_destroy(&result, alloc);
     }
 
     ddwaf_context_destroy(context1);
@@ -534,91 +551,97 @@ TEST(TestRuleAttributesIntegration, AttributesAndBlockingRuleFilter)
 
 TEST(TestRuleAttributesIntegration, AttributesAndEphemeralMatches)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object tmp;
     {
         // No Match
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule8"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule8"));
 
         ddwaf_object result;
         EXPECT_EQ(
             ddwaf_context_eval(context1, nullptr, &parameter, true, &result, LONG_TIME), DDWAF_OK);
 
-        EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
         const auto *events = ddwaf_object_find(&result, STRL("events"));
         EXPECT_NE(events, nullptr);
-        EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-        EXPECT_EQ(ddwaf_object_size(events), 0);
+        EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
-        EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
-        ddwaf_object_free(&result);
+        ddwaf_object_destroy(&result, alloc);
     }
 
     {
         // The first match should contain attributes
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
         ddwaf_object result;
         EXPECT_EQ(ddwaf_context_eval(context1, nullptr, &parameter, true, &result, LONG_TIME),
             DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
         const auto *events = ddwaf_object_find(&result, STRL("events"));
         EXPECT_NE(events, nullptr);
-        EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-        EXPECT_EQ(ddwaf_object_size(events), 0);
+        EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
-        EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
-        ddwaf_object_free(&result);
+        ddwaf_object_destroy(&result, alloc);
     }
 
     {
         // The second time around there should be no match as the rules generates no
         // events and the attributes have already been provided
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
         ddwaf_object result;
         EXPECT_EQ(
             ddwaf_context_eval(context1, nullptr, &parameter, true, &result, LONG_TIME), DDWAF_OK);
 
-        EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
         const auto *events = ddwaf_object_find(&result, STRL("events"));
         EXPECT_NE(events, nullptr);
-        EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-        EXPECT_EQ(ddwaf_object_size(events), 0);
+        EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
-        EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
-        ddwaf_object_free(&result);
+        ddwaf_object_destroy(&result, alloc);
     }
 
     ddwaf_context_destroy(context1);
@@ -626,54 +649,58 @@ TEST(TestRuleAttributesIntegration, AttributesAndEphemeralMatches)
 
 TEST(TestRuleAttributesIntegration, AttributesEventsAndEphemeralMatches)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context1, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object tmp;
     {
         // No Match
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value2", ddwaf_object_string(&tmp, "rule8"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value2"), alloc), STRL("rule8"));
 
         ddwaf_object result;
         EXPECT_EQ(
             ddwaf_context_eval(context1, nullptr, &parameter, true, &result, LONG_TIME), DDWAF_OK);
 
-        EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
         const auto *events = ddwaf_object_find(&result, STRL("events"));
         EXPECT_NE(events, nullptr);
-        EXPECT_EQ(ddwaf_object_type(events), DDWAF_OBJ_ARRAY);
-        EXPECT_EQ(ddwaf_object_size(events), 0);
+        EXPECT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(events), 0);
 
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
-        EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
-        ddwaf_object_free(&result);
+        ddwaf_object_destroy(&result, alloc);
     }
 
     {
         // The first match should contain attributes
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value2", ddwaf_object_string(&tmp, "rule2"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value2"), alloc), STRL("rule2"));
 
         ddwaf_object result;
         EXPECT_EQ(ddwaf_context_eval(context1, nullptr, &parameter, true, &result, LONG_TIME),
             DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
         EXPECT_EVENTS(result, {.id = "rule2",
                                   .name = "rule2",
@@ -688,22 +715,24 @@ TEST(TestRuleAttributesIntegration, AttributesEventsAndEphemeralMatches)
 
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
-        EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
-        ddwaf_object_free(&result);
+        ddwaf_object_destroy(&result, alloc);
     }
 
     {
         // The second match should contain an event but no attributes
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value2", ddwaf_object_string(&tmp, "rule2"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value2"), alloc), STRL("rule2"));
 
         ddwaf_object result;
         EXPECT_EQ(ddwaf_context_eval(context1, nullptr, &parameter, true, &result, LONG_TIME),
             DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_object_type(&result), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
         EXPECT_EVENTS(result, {.id = "rule2",
                                   .name = "rule2",
@@ -718,10 +747,10 @@ TEST(TestRuleAttributesIntegration, AttributesEventsAndEphemeralMatches)
 
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
-        EXPECT_EQ(ddwaf_object_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_size(attributes), 0);
+        EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
-        ddwaf_object_free(&result);
+        ddwaf_object_destroy(&result, alloc);
     }
 
     ddwaf_context_destroy(context1);

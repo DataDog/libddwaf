@@ -59,6 +59,8 @@ const char *value_regex{R"((?i)(?:p(?:ass)?w(?:or)?d|pass(?:[_-]?phrase)?|secret
 
 int main(int argc, char *argv[])
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     auto args = parse_args(argc, argv);
 
     bool verbose = false;
@@ -89,7 +91,7 @@ int main(int argc, char *argv[])
             std::cout << "Failed to add configuration: " << config << '\n';
         }
 
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
@@ -99,7 +101,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     if (context == nullptr) {
         ddwaf_destroy(handle);
         std::cout << "Failed to initialise context\n";
@@ -120,18 +122,18 @@ int main(int argc, char *argv[])
         auto ephemeral_input = input["ephemeral"];
         if (!persistent_input.IsDefined() && !ephemeral_input.IsDefined()) {
             persistent = input.as<ddwaf_object>();
-            ddwaf_object_map(&ephemeral);
+            ddwaf_object_set_map(&ephemeral, 0, alloc);
         } else {
             if (input["persistent"].IsDefined()) {
                 persistent = input["persistent"].as<ddwaf_object>();
             } else {
-                ddwaf_object_map(&persistent);
+                ddwaf_object_set_map(&persistent, 0, alloc);
             }
 
             if (input["ephemeral"].IsDefined()) {
                 ephemeral = input["ephemeral"].as<ddwaf_object>();
             } else {
-                ddwaf_object_map(&ephemeral);
+                ddwaf_object_set_map(&ephemeral, 0, alloc);
             }
         }
 
@@ -147,7 +149,7 @@ int main(int argc, char *argv[])
             out << object_to_yaml(ret);
             std::cout << '\n';
         }
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, ddwaf_get_default_allocator());
     }
 
     ddwaf_context_destroy(context);

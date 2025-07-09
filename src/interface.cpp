@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <chrono>
-#include <cinttypes>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -29,6 +28,7 @@
 #include "object.hpp"
 #include "object_store.hpp"
 #include "object_type.hpp"
+#include "pointer.hpp"
 #include "re2.h"
 #include "ruleset_info.hpp"
 #include "utils.hpp"
@@ -153,9 +153,6 @@ std::shared_ptr<ddwaf::match_obfuscator> obfuscator_from_config(const ddwaf_conf
     return std::make_shared<ddwaf::match_obfuscator>(key_regex, value_regex);
 }
 
-// Maximum number of characters required to represent a 64 bit integer as a string
-// 20 bytes for UINT64_MAX or INT64_MIN + null byte
-constexpr size_t UINT64_CHARS = 21;
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
 detail::object *to_ptr(ddwaf_object *ptr) { return reinterpret_cast<detail::object *>(ptr); }
 const detail::object *to_ptr(const ddwaf_object *ptr)
@@ -172,6 +169,19 @@ borrowed_object to_borrowed(ddwaf_object *ptr)
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     return borrowed_object{reinterpret_cast<detail::object *>(ptr)};
 }
+
+borrowed_object to_borrowed(ddwaf_object *ptr, nonnull_ptr<memory::memory_resource> alloc)
+{
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    return borrowed_object{reinterpret_cast<detail::object *>(ptr), alloc};
+}
+
+memory::memory_resource *to_alloc_ptr(ddwaf_allocator alloc)
+{
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    return reinterpret_cast<memory::memory_resource *>(alloc);
+}
+
 } // namespace
 
 // explicit instantiation declaration to suppress warning
@@ -192,7 +202,7 @@ ddwaf::waf *ddwaf_init(
             }
 
             ddwaf::ruleset_info ri;
-            const ddwaf::scope_exit on_exit([&]() { to_ref(diagnostics) = ri.to_object().move(); });
+            const ddwaf::scope_exit on_exit([&]() { to_borrowed(diagnostics) = ri.to_object(); });
             builder.add_or_update("default", input, ri);
             return new ddwaf::waf{builder.build()};
         }
@@ -254,11 +264,11 @@ const char *const *ddwaf_known_actions(ddwaf::waf *handle, uint32_t *size)
     return action_types.data();
 }
 
-ddwaf_context ddwaf_context_init(ddwaf::waf *handle)
+ddwaf_context ddwaf_context_init(ddwaf::waf *handle, ddwaf_allocator output_alloc)
 {
     try {
-        if (handle != nullptr) {
-            return handle->create_context();
+        if (handle != nullptr && output_alloc != nullptr) {
+            return handle->create_context(to_alloc_ptr(output_alloc));
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());
@@ -312,7 +322,7 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *persisten
 
         auto [code, res] = context->eval(timeout);
         if (result != nullptr) {
-            to_ref(result) = res.move();
+            to_borrowed(result) = std::move(res);
         }
         return code ? DDWAF_MATCH : DDWAF_OK;
     } catch (const std::exception &e) {
@@ -379,7 +389,7 @@ bool ddwaf_builder_add_or_update_config(ddwaf::waf_builder *builder, const char 
         }
 
         ddwaf::ruleset_info ri;
-        const ddwaf::scope_exit on_exit([&]() { to_ref(diagnostics) = ri.to_object().move(); });
+        const ddwaf::scope_exit on_exit([&]() { to_borrowed(diagnostics) = ri.to_object(); });
         return builder->add_or_update({path, path_len}, input, ri);
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());
@@ -445,12 +455,9 @@ uint32_t ddwaf_builder_get_config_paths(
         }
 
         if (paths != nullptr) {
-            ddwaf_object_array(paths);
-            for (const auto &value : config_paths) {
-                ddwaf_object tmp{};
-                ddwaf_object_array_add(
-                    paths, ddwaf_object_stringl(&tmp, value.data(), value.size()));
-            }
+            auto object = owned_object::make_array(config_paths.size());
+            for (const auto &value : config_paths) { object.emplace_back(value); }
+            to_borrowed(paths) = std::move(object);
         }
         return config_paths.size();
     } catch (const std::exception &e) {
@@ -464,215 +471,213 @@ uint32_t ddwaf_builder_get_config_paths(
 
 void ddwaf_builder_destroy(ddwaf_builder builder) { delete builder; }
 
-ddwaf_object *ddwaf_object_invalid(ddwaf_object *object)
+ddwaf_allocator ddwaf_get_default_allocator() { return memory::get_default_resource(); }
+
+ddwaf_object *ddwaf_object_set_invalid(ddwaf_object *object)
 {
     if (object == nullptr) {
         return nullptr;
     }
 
-    to_ref(object) = owned_object{}.move();
+    to_borrowed(object) = owned_object{};
 
     return object;
 }
 
-ddwaf_object *ddwaf_object_null(ddwaf_object *object)
+ddwaf_object *ddwaf_object_set_null(ddwaf_object *object)
 {
     if (object == nullptr) {
         return nullptr;
     }
 
-    to_ref(object) = owned_object::make_null().move();
+    to_borrowed(object) = owned_object::make_null();
 
     return object;
 }
 
-ddwaf_object *ddwaf_object_string(ddwaf_object *object, const char *string)
+ddwaf_object *ddwaf_object_null(ddwaf_object *object) { return ddwaf_object_set_null(object); }
+
+ddwaf_object *ddwaf_object_set_string(
+    ddwaf_object *object, const char *string, uint32_t length, ddwaf_allocator alloc)
+{
+    if (object == nullptr || string == nullptr || alloc == nullptr) {
+        return nullptr;
+    }
+    to_borrowed(object) = owned_object{string, length, to_alloc_ptr(alloc)};
+    return object;
+}
+
+ddwaf_object *ddwaf_object_set_string_nocopy(
+    ddwaf_object *object, const char *string, uint32_t length)
 {
     if (object == nullptr || string == nullptr) {
         return nullptr;
     }
-    to_ref(object) = owned_object{string}.move();
+    to_borrowed(object) = owned_object::make_string_nocopy(string, length);
     return object;
 }
 
-ddwaf_object *ddwaf_object_stringl(ddwaf_object *object, const char *string, size_t length)
+ddwaf_object *ddwaf_object_set_string_literal(
+    ddwaf_object *object, const char *string, uint32_t length)
 {
     if (object == nullptr || string == nullptr) {
         return nullptr;
     }
-
-    to_ref(object) = owned_object{string, static_cast<uint32_t>(length)}.move();
+    to_borrowed(object) = owned_object::make_string_literal(string, length);
     return object;
 }
 
-ddwaf_object *ddwaf_object_stringl_nc(ddwaf_object *object, const char *string, size_t length)
-{
-    if (object == nullptr || string == nullptr) {
-        return nullptr;
-    }
-
-    to_ref(object) = owned_object::make_string_nocopy(string, static_cast<uint32_t>(length)).move();
-    return object;
-}
-
-// TODO: deprecate
-ddwaf_object *ddwaf_object_string_from_signed(ddwaf_object *object, int64_t value)
+ddwaf_object *ddwaf_object_set_unsigned(ddwaf_object *object, uint64_t value)
 {
     if (object == nullptr) {
         return nullptr;
     }
 
-    // INT64_MIN is 20 char long
-    char container[UINT64_CHARS] = {0};
-    const auto length = static_cast<std::size_t>(
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
-        snprintf(container, sizeof(container), "%" PRId64, value));
-
-    return ddwaf_object_stringl(object, container, length);
-}
-
-// TODO: deprecate
-ddwaf_object *ddwaf_object_string_from_unsigned(ddwaf_object *object, uint64_t value)
-{
-    if (object == nullptr) {
-        return nullptr;
-    }
-
-    // UINT64_MAX is 20 char long
-    char container[UINT64_CHARS] = {0};
-
-    const auto length = static_cast<size_t>(
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
-        snprintf(container, sizeof(container), "%" PRIu64, value));
-
-    return ddwaf_object_stringl(object, container, length);
+    to_borrowed(object) = owned_object{value};
+    return object;
 }
 
 ddwaf_object *ddwaf_object_unsigned(ddwaf_object *object, uint64_t value)
 {
+    return ddwaf_object_set_unsigned(object, value);
+}
+
+ddwaf_object *ddwaf_object_set_signed(ddwaf_object *object, int64_t value)
+{
     if (object == nullptr) {
         return nullptr;
     }
 
-    to_ref(object) = owned_object{value}.move();
+    to_borrowed(object) = owned_object{value};
     return object;
 }
 
 ddwaf_object *ddwaf_object_signed(ddwaf_object *object, int64_t value)
 {
+    return ddwaf_object_set_signed(object, value);
+}
+
+ddwaf_object *ddwaf_object_set_bool(ddwaf_object *object, bool value)
+{
     if (object == nullptr) {
         return nullptr;
     }
-
-    to_ref(object) = owned_object{value}.move();
+    to_borrowed(object) = owned_object{value};
     return object;
 }
 
 ddwaf_object *ddwaf_object_bool(ddwaf_object *object, bool value)
 {
+    return ddwaf_object_set_bool(object, value);
+}
+
+ddwaf_object *ddwaf_object_set_float(ddwaf_object *object, double value)
+{
     if (object == nullptr) {
         return nullptr;
     }
-    to_ref(object) = owned_object{value}.move();
+    to_borrowed(object) = owned_object{value};
     return object;
 }
 
 ddwaf_object *ddwaf_object_float(ddwaf_object *object, double value)
 {
-    if (object == nullptr) {
+    return ddwaf_object_set_float(object, value);
+}
+
+ddwaf_object *ddwaf_object_set_array(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc)
+{
+    if (object == nullptr || alloc == nullptr) {
         return nullptr;
     }
-    to_ref(object) = owned_object{value}.move();
+    to_borrowed(object) = owned_object::make_array(capacity, to_alloc_ptr(alloc));
     return object;
 }
 
-ddwaf_object *ddwaf_object_array(ddwaf_object *object)
+ddwaf_object *ddwaf_object_set_map(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc)
 {
-    if (object == nullptr) {
-        return nullptr;
-    }
-    to_ref(object) = owned_object::make_array().move();
-    return object;
-}
-
-ddwaf_object *ddwaf_object_map(ddwaf_object *object)
-{
-    if (object == nullptr) {
+    if (object == nullptr || alloc == nullptr) {
         return nullptr;
     }
 
-    to_ref(object) = owned_object::make_map().move();
+    to_borrowed(object) = owned_object::make_map(capacity, to_alloc_ptr(alloc));
     return object;
 }
 
-bool ddwaf_object_array_add(ddwaf_object *array, ddwaf_object *object)
+ddwaf_object *ddwaf_object_insert(ddwaf_object *array, ddwaf_allocator alloc)
 {
-    if (array == nullptr || array->type != DDWAF_OBJ_ARRAY || object == nullptr) {
-        return false;
+    if (array == nullptr || array->type != DDWAF_OBJ_ARRAY || alloc == nullptr) {
+        return nullptr;
     }
 
     try {
-        to_borrowed(array).emplace_back(owned_object{to_ref(object)});
-        return true;
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        return reinterpret_cast<ddwaf_object *>(
+            to_borrowed(array, to_alloc_ptr(alloc)).emplace_back({}).ptr());
     } catch (...) {} // NOLINT(bugprone-empty-catch)
-    return false;
+    return nullptr;
 }
-
-bool ddwaf_object_map_add(ddwaf_object *map, const char *key, ddwaf_object *object)
+ddwaf_object *ddwaf_object_insert_key(
+    ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc)
 {
-    if (map == nullptr || map->type != DDWAF_OBJ_MAP || key == nullptr || object == nullptr) {
-        return false;
+    if (map == nullptr || map->type != DDWAF_OBJ_MAP || alloc == nullptr) {
+        return nullptr;
     }
 
     try {
-        to_borrowed(map).emplace(std::string_view{key}, owned_object{to_ref(object)});
-        return true;
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        return reinterpret_cast<ddwaf_object *>(
+            to_borrowed(map, to_alloc_ptr(alloc)).emplace(std::string_view{key, length}, {}).ptr());
     } catch (...) {} // NOLINT(bugprone-empty-catch)
-    return false;
+    return nullptr;
 }
 
-bool ddwaf_object_map_addl(ddwaf_object *map, const char *key, size_t length, ddwaf_object *object)
+ddwaf_object *ddwaf_object_insert_key_nocopy(
+    ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc)
 {
-    if (map == nullptr || map->type != DDWAF_OBJ_MAP || key == nullptr || object == nullptr) {
-        return false;
+    if (map == nullptr || map->type != DDWAF_OBJ_MAP || alloc == nullptr) {
+        return nullptr;
     }
 
     try {
-        to_borrowed(map).emplace(std::string_view{key, length}, owned_object{to_ref(object)});
-        return true;
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        return reinterpret_cast<ddwaf_object *>(
+            to_borrowed(map, to_alloc_ptr(alloc))
+                .emplace(owned_object::make_string_nocopy(key, length), {})
+                .ptr());
     } catch (...) {} // NOLINT(bugprone-empty-catch)
-    return false;
+    return nullptr;
 }
 
-bool ddwaf_object_map_addl_nc(
-    ddwaf_object *map, const char *key, size_t length, ddwaf_object *object)
+ddwaf_object *ddwaf_object_insert_literal_key(
+    ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc)
 {
-    if (map == nullptr || map->type != DDWAF_OBJ_MAP || key == nullptr || object == nullptr) {
-        return false;
+    if (map == nullptr || map->type != DDWAF_OBJ_MAP || alloc == nullptr) {
+        return nullptr;
     }
 
     try {
-        to_borrowed(map).emplace(
-            owned_object::make_string_nocopy(key, static_cast<uint32_t>(length)),
-            owned_object{to_ref(object)});
-        return true;
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        return reinterpret_cast<ddwaf_object *>(
+            to_borrowed(map, to_alloc_ptr(alloc))
+                .emplace(owned_object::make_string_literal(key, length), {})
+                .ptr());
     } catch (...) {} // NOLINT(bugprone-empty-catch)
-    return false;
+    return nullptr;
 }
 
-// NOLINTNEXTLINE(misc-no-recursion)
-void ddwaf_object_free(ddwaf_object *object)
+void ddwaf_object_destroy(ddwaf_object *object, ddwaf_allocator alloc)
 {
     if (object == nullptr) {
         return;
     }
 
-    detail::object_destroy(to_ref(object), memory::get_default_resource());
+    detail::object_destroy(to_ref(object), to_alloc_ptr(alloc));
 
-    ddwaf_object_invalid(object);
+    ddwaf_object_set_invalid(object);
 }
 
-DDWAF_OBJ_TYPE ddwaf_object_type(const ddwaf_object *object)
+DDWAF_OBJ_TYPE ddwaf_object_get_type(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     if (!view.has_value()) {
@@ -682,7 +687,7 @@ DDWAF_OBJ_TYPE ddwaf_object_type(const ddwaf_object *object)
     return static_cast<DDWAF_OBJ_TYPE>(view.type());
 }
 
-size_t ddwaf_object_size(const ddwaf_object *object)
+size_t ddwaf_object_get_size(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     if (!view.has_value() || !view.is_container()) {
@@ -692,7 +697,7 @@ size_t ddwaf_object_size(const ddwaf_object *object)
     return view.size();
 }
 
-size_t ddwaf_object_length(const ddwaf_object *object)
+size_t ddwaf_object_get_length(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     if (!view.has_value() || !view.is_string()) {
@@ -785,14 +790,61 @@ const ddwaf_object *ddwaf_object_find(const ddwaf_object *object, const char *ke
     return reinterpret_cast<const ddwaf_object *>(view.find(std::string_view{key, length}).ptr());
 }
 
-ddwaf_object *ddwaf_object_clone(const ddwaf_object *source, ddwaf_object *destination)
+ddwaf_object *ddwaf_object_clone(
+    const ddwaf_object *source, ddwaf_object *destination, ddwaf_allocator alloc)
 {
     const object_view view{to_ptr(source)};
     if (!view.has_value()) {
         return nullptr;
     }
 
-    to_ref(destination) = view.clone().move();
+    to_borrowed(destination) = view.clone(to_alloc_ptr(alloc));
     return destination;
+}
+
+bool ddwaf_object_is_invalid(const ddwaf_object *object)
+{
+    const object_view view{to_ptr(object)};
+    return view.has_value() && view.is_invalid();
+}
+bool ddwaf_object_is_null(const ddwaf_object *object)
+{
+    const object_view view{to_ptr(object)};
+    return view.has_value() && view.type() == object_type::null;
+}
+bool ddwaf_object_is_bool(const ddwaf_object *object)
+{
+    const object_view view{to_ptr(object)};
+    return view.has_value() && view.type() == object_type::boolean;
+}
+bool ddwaf_object_is_signed(const ddwaf_object *object)
+{
+    const object_view view{to_ptr(object)};
+    return view.has_value() && view.type() == object_type::int64;
+}
+bool ddwaf_object_is_unsigned(const ddwaf_object *object)
+{
+    const object_view view{to_ptr(object)};
+    return view.has_value() && view.type() == object_type::uint64;
+}
+bool ddwaf_object_is_float(const ddwaf_object *object)
+{
+    const object_view view{to_ptr(object)};
+    return view.has_value() && view.type() == object_type::float64;
+}
+bool ddwaf_object_is_string(const ddwaf_object *object)
+{
+    const object_view view{to_ptr(object)};
+    return view.has_value() && view.is_string();
+}
+bool ddwaf_object_is_array(const ddwaf_object *object)
+{
+    const object_view view{to_ptr(object)};
+    return view.has_value() && view.is_array();
+}
+bool ddwaf_object_is_map(const ddwaf_object *object)
+{
+    const object_view view{to_ptr(object)};
+    return view.has_value() && view.is_map();
 }
 }

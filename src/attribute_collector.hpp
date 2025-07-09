@@ -39,8 +39,8 @@ public:
     {}
     attribute_collector(const attribute_collector &) = delete;
     attribute_collector &operator=(const attribute_collector &) = delete;
-    attribute_collector(attribute_collector &&other) noexcept = delete;
-    attribute_collector &operator=(attribute_collector &&other) noexcept = delete;
+    attribute_collector(attribute_collector &&other) noexcept = default;
+    attribute_collector &operator=(attribute_collector &&other) noexcept = default;
     ~attribute_collector() = default;
 
     template <typename T> bool insert(std::string_view key, T &&value)

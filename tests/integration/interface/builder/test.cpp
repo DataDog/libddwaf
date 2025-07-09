@@ -16,6 +16,7 @@ constexpr std::string_view base_dir = "integration/interface/builder/";
 
 TEST(TestEngineBuilderFunctional, EmptyConfig)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto config = yaml_to_object<ddwaf_object>("{}");
     ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
 
@@ -23,7 +24,7 @@ TEST(TestEngineBuilderFunctional, EmptyConfig)
     ASSERT_NE(builder, nullptr);
 
     ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr);
-    ddwaf_object_free(&config);
+    ddwaf_object_destroy(&config, alloc);
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_EQ(handle, nullptr);
@@ -33,6 +34,7 @@ TEST(TestEngineBuilderFunctional, EmptyConfig)
 
 TEST(TestEngineBuilderFunctional, BaseRules)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
     ASSERT_NE(builder, nullptr);
 
@@ -41,7 +43,7 @@ TEST(TestEngineBuilderFunctional, BaseRules)
         auto config = read_file<ddwaf_object>("base_rules_1.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr);
-        ddwaf_object_free(&config);
+        ddwaf_object_destroy(&config, alloc);
     }
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
@@ -49,13 +51,12 @@ TEST(TestEngineBuilderFunctional, BaseRules)
 
     // Test that the rules work
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object tmp;
         ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&root, STRL("value1"), alloc), STRL("rule1"), alloc);
         EXPECT_EQ(
             ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
@@ -68,7 +69,7 @@ TEST(TestEngineBuilderFunctional, BaseRules)
         auto config = read_file<ddwaf_object>("base_rules_2.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr);
-        ddwaf_object_free(&config);
+        ddwaf_object_destroy(&config, alloc);
     }
 
     handle = ddwaf_builder_build_instance(builder);
@@ -76,17 +77,17 @@ TEST(TestEngineBuilderFunctional, BaseRules)
 
     // Test that the old rules don't work and new ones do
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object tmp;
         ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&root, STRL("value1"), alloc), STRL("rule1"), alloc);
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value2", ddwaf_object_string(&tmp, "rule2"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&root, STRL("value2"), alloc), STRL("rule2"), alloc);
         EXPECT_EQ(
             ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
@@ -104,6 +105,7 @@ TEST(TestEngineBuilderFunctional, BaseRules)
 
 TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
     ASSERT_NE(builder, nullptr);
 
@@ -112,7 +114,7 @@ TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
         auto config = read_file<ddwaf_object>("base_rules_1.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules1"), &config, nullptr);
-        ddwaf_object_free(&config);
+        ddwaf_object_destroy(&config, alloc);
     }
 
     // Add the second config with duplicate rule 1
@@ -120,7 +122,7 @@ TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
         auto config = read_file<ddwaf_object>("base_rules_1_2_duplicate.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules2"), &config, nullptr);
-        ddwaf_object_free(&config);
+        ddwaf_object_destroy(&config, alloc);
     }
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
@@ -128,18 +130,18 @@ TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
 
     // Test that both rules work
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object tmp;
         ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&root, STRL("value1"), alloc), STRL("rule1"), alloc);
         EXPECT_EQ(
             ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value2", ddwaf_object_string(&tmp, "rule2"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&root, STRL("value2"), alloc), STRL("rule2"), alloc);
         EXPECT_EQ(
             ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
@@ -154,18 +156,18 @@ TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
 
     // Test that only the remaining rule works
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object tmp;
         ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&root, STRL("value1"), alloc), STRL("rule1"), alloc);
         EXPECT_EQ(
             ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value2", ddwaf_object_string(&tmp, "rule2"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&root, STRL("value2"), alloc), STRL("rule2"), alloc);
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
@@ -180,6 +182,7 @@ TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
 
 TEST(TestEngineBuilderFunctional, CustomRules)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
     ASSERT_NE(builder, nullptr);
 
@@ -188,7 +191,7 @@ TEST(TestEngineBuilderFunctional, CustomRules)
         auto config = read_file<ddwaf_object>("custom_rules_1.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr);
-        ddwaf_object_free(&config);
+        ddwaf_object_destroy(&config, alloc);
     }
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
@@ -196,13 +199,12 @@ TEST(TestEngineBuilderFunctional, CustomRules)
 
     // Test that the rules work
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object tmp;
         ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&root, STRL("value1"), alloc), STRL("rule1"), alloc);
         EXPECT_EQ(
             ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 
@@ -215,7 +217,7 @@ TEST(TestEngineBuilderFunctional, CustomRules)
         auto config = read_file<ddwaf_object>("custom_rules_2.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr);
-        ddwaf_object_free(&config);
+        ddwaf_object_destroy(&config, alloc);
     }
 
     handle = ddwaf_builder_build_instance(builder);
@@ -223,17 +225,17 @@ TEST(TestEngineBuilderFunctional, CustomRules)
 
     // Test that the old rules don't work and new ones do
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
 
-        ddwaf_object tmp;
         ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&root, STRL("value1"), alloc), STRL("rule1"), alloc);
         EXPECT_EQ(ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
 
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "value2", ddwaf_object_string(&tmp, "rule2"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&root, STRL("value2"), alloc), STRL("rule2"), alloc);
         EXPECT_EQ(
             ddwaf_context_eval(context, &root, nullptr, true, nullptr, LONG_TIME), DDWAF_MATCH);
 

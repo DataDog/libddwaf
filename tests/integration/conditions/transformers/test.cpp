@@ -14,6 +14,8 @@ constexpr std::string_view base_dir = "integration/conditions/transformers/";
 
 TEST(TestConditionTransformersIntegration, GlobalTransformer)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("global_transformer.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -21,15 +23,15 @@ TEST(TestConditionTransformersIntegration, GlobalTransformer)
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    ddwaf_object tmp;
+    ddwaf_object_destroy(&rule, alloc);
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1_0", ddwaf_object_string(&tmp, "RULE1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value1_0"), alloc), STRL("RULE1"), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -38,11 +40,13 @@ TEST(TestConditionTransformersIntegration, GlobalTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1_1", ddwaf_object_string(&tmp, "RULE1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value1_1"), alloc), STRL("RULE1"), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -51,11 +55,13 @@ TEST(TestConditionTransformersIntegration, GlobalTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value2_0", ddwaf_object_string(&tmp, "  RULE2    "));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&parameter, STRL("value2_0"), alloc),
+            STRL("  RULE2    "), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -64,11 +70,13 @@ TEST(TestConditionTransformersIntegration, GlobalTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value2_1", ddwaf_object_string(&tmp, "      RULE2   "));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&parameter, STRL("value2_1"), alloc),
+            STRL("      RULE2   "), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -81,6 +89,8 @@ TEST(TestConditionTransformersIntegration, GlobalTransformer)
 
 TEST(TestConditionTransformersIntegration, GlobalTransformerKeysOnly)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("global_transformer.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -88,17 +98,18 @@ TEST(TestConditionTransformersIntegration, GlobalTransformerKeysOnly)
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    ddwaf_object tmp;
+    ddwaf_object_destroy(&rule, alloc);
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&map, "RULE3", ddwaf_object_string(&tmp, "randomvalue"));
-        ddwaf_object_map_add(&parameter, "value3_0", &map);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+
+        auto *map = ddwaf_object_insert_key(&parameter, STRL("value3_0"), alloc);
+        ddwaf_object_set_map(map, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(map, STRL("RULE3"), alloc), STRL("randomvalue"), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -107,13 +118,15 @@ TEST(TestConditionTransformersIntegration, GlobalTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&map, "key", ddwaf_object_string(&tmp, "RULE3"));
-        ddwaf_object_map_add(&parameter, "value3_0", &map);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *map = ddwaf_object_insert_key(&parameter, STRL("value3_0"), alloc);
+        ddwaf_object_set_map(map, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(map, STRL("key"), alloc), STRL("RULE3"), alloc);
 
         EXPECT_EQ(
             ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
@@ -122,13 +135,15 @@ TEST(TestConditionTransformersIntegration, GlobalTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&map, "key", ddwaf_object_string(&tmp, "RULE3"));
-        ddwaf_object_map_add(&parameter, "value3_1", &map);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *map = ddwaf_object_insert_key(&parameter, STRL("value3_1"), alloc);
+        ddwaf_object_set_map(map, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(map, STRL("key"), alloc), STRL("RULE3"), alloc);
 
         EXPECT_EQ(
             ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
@@ -137,13 +152,15 @@ TEST(TestConditionTransformersIntegration, GlobalTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&map, "RULE3", ddwaf_object_string(&tmp, "randomvalue"));
-        ddwaf_object_map_add(&parameter, "value3_1", &map);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *map = ddwaf_object_insert_key(&parameter, STRL("value3_1"), alloc);
+        ddwaf_object_set_map(map, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(map, STRL("RULE3"), alloc), STRL("randomvalue"), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -156,6 +173,8 @@ TEST(TestConditionTransformersIntegration, GlobalTransformerKeysOnly)
 
 TEST(TestConditionTransformersIntegration, InputTransformer)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("input_transformer.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -163,15 +182,15 @@ TEST(TestConditionTransformersIntegration, InputTransformer)
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    ddwaf_object tmp;
+    ddwaf_object_destroy(&rule, alloc);
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1_0", ddwaf_object_string(&tmp, "RULE1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value1_0"), alloc), STRL("RULE1"), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -180,11 +199,13 @@ TEST(TestConditionTransformersIntegration, InputTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1_1", ddwaf_object_string(&tmp, "RULE1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value1_1"), alloc), STRL("RULE1"), alloc);
 
         EXPECT_EQ(
             ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
@@ -193,11 +214,13 @@ TEST(TestConditionTransformersIntegration, InputTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value2_0", ddwaf_object_string(&tmp, "  RULE2    "));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&parameter, STRL("value2_0"), alloc),
+            STRL("  RULE2    "), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -206,11 +229,13 @@ TEST(TestConditionTransformersIntegration, InputTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value2_1", ddwaf_object_string(&tmp, "      RULE2   "));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&parameter, STRL("value2_1"), alloc),
+            STRL("      RULE2   "), alloc);
 
         EXPECT_EQ(
             ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
@@ -223,6 +248,8 @@ TEST(TestConditionTransformersIntegration, InputTransformer)
 
 TEST(TestConditionTransformersIntegration, InputTransformerKeysOnly)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("input_transformer.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -230,17 +257,17 @@ TEST(TestConditionTransformersIntegration, InputTransformerKeysOnly)
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    ddwaf_object tmp;
+    ddwaf_object_destroy(&rule, alloc);
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&map, "RULE3", ddwaf_object_string(&tmp, "randomvalue"));
-        ddwaf_object_map_add(&parameter, "value3_0", &map);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *map = ddwaf_object_insert_key(&parameter, STRL("value3_0"), alloc);
+        ddwaf_object_set_map(map, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(map, STRL("RULE3"), alloc), STRL("randomvalue"), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -249,13 +276,15 @@ TEST(TestConditionTransformersIntegration, InputTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&map, "key", ddwaf_object_string(&tmp, "RULE3"));
-        ddwaf_object_map_add(&parameter, "value3_0", &map);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *map = ddwaf_object_insert_key(&parameter, STRL("value3_0"), alloc);
+        ddwaf_object_set_map(map, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(map, STRL("key"), alloc), STRL("RULE3"), alloc);
 
         EXPECT_EQ(
             ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
@@ -264,13 +293,15 @@ TEST(TestConditionTransformersIntegration, InputTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&map, "key", ddwaf_object_string(&tmp, "RULE3"));
-        ddwaf_object_map_add(&parameter, "value3_1", &map);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *map = ddwaf_object_insert_key(&parameter, STRL("value3_1"), alloc);
+        ddwaf_object_set_map(map, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(map, STRL("key"), alloc), STRL("RULE3"), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -279,13 +310,15 @@ TEST(TestConditionTransformersIntegration, InputTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&map, "RULE3", ddwaf_object_string(&tmp, "randomvalue"));
-        ddwaf_object_map_add(&parameter, "value3_1", &map);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *map = ddwaf_object_insert_key(&parameter, STRL("value3_1"), alloc);
+        ddwaf_object_set_map(map, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(map, STRL("RULE3"), alloc), STRL("randomvalue"), alloc);
 
         EXPECT_EQ(
             ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
@@ -298,6 +331,8 @@ TEST(TestConditionTransformersIntegration, InputTransformerKeysOnly)
 
 TEST(TestConditionTransformersIntegration, OverlappingTransformer)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("overlapping_transformers.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -305,15 +340,15 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    ddwaf_object tmp;
+    ddwaf_object_destroy(&rule, alloc);
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1_0", ddwaf_object_string(&tmp, " RULE1 "));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value1_0"), alloc), STRL(" RULE1 "), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -322,11 +357,13 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1_0", ddwaf_object_string(&tmp, "    rule1 "));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&parameter, STRL("value1_0"), alloc),
+            STRL("    rule1 "), alloc);
 
         EXPECT_EQ(
             ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
@@ -335,11 +372,13 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1_1", ddwaf_object_string(&tmp, " rule1 "));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value1_1"), alloc), STRL(" rule1 "), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -348,11 +387,13 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1_1", ddwaf_object_string(&tmp, " RULE1 "));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&parameter, STRL("value1_1"), alloc), STRL(" RULE1 "), alloc);
 
         EXPECT_EQ(
             ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
@@ -361,11 +402,13 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1_2", ddwaf_object_string(&tmp, "   rule1   "));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&parameter, STRL("value1_2"), alloc),
+            STRL("   rule1   "), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -374,11 +417,13 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1_2", ddwaf_object_string(&tmp, "  RULE1   "));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&parameter, STRL("value1_2"), alloc),
+            STRL("  RULE1   "), alloc);
 
         EXPECT_EQ(
             ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
@@ -387,11 +432,13 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1_3", ddwaf_object_string(&tmp, "    RULE1   "));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string(ddwaf_object_insert_key(&parameter, STRL("value1_3"), alloc),
+            STRL("    RULE1   "), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -404,6 +451,8 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformer)
 
 TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("overlapping_transformers.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
@@ -411,16 +460,17 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    ddwaf_object tmp;
+    ddwaf_object_destroy(&rule, alloc);
     /*    {*/
-    /*ddwaf_context context = ddwaf_context_init(handle);*/
+    /*ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());*/
     /*ASSERT_NE(context, nullptr);*/
 
-    /*ddwaf_object parameter = DDWAF_OBJECT_MAP;*/
-    /*ddwaf_object map = DDWAF_OBJECT_MAP;*/
-    /*ddwaf_object_map_add(&map, "rule2", ddwaf_object_string(&tmp, "value"));*/
+    /*ddwaf_object parameter;
+ddwaf_object_set_map(&parameter, 1, alloc);*/
+    /*ddwaf_object map;
+ddwaf_object_set_map(&map, 1, alloc);*/
+    /*ddwaf_object_set_string(ddwaf_object_insert_key(&map, STRL("rule2"), alloc), STRL("value"),
+     * alloc);*/
     /*ddwaf_object_map_add(&parameter, "value2_0", &map);*/
 
     /*EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME),
@@ -430,13 +480,15 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
     /*}*/
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&map, "rule2", ddwaf_object_string(&tmp, "value"));
-        ddwaf_object_map_add(&parameter, "value2_1", &map);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *map = ddwaf_object_insert_key(&parameter, STRL("value2_1"), alloc);
+        ddwaf_object_set_map(map, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(map, STRL("rule2"), alloc), STRL("value"), alloc);
 
         EXPECT_EQ(
             ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
@@ -445,13 +497,15 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&map, "value", ddwaf_object_string(&tmp, "rule2"));
-        ddwaf_object_map_add(&parameter, "value2_1", &map);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *map = ddwaf_object_insert_key(&parameter, STRL("value2_1"), alloc);
+        ddwaf_object_set_map(map, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(map, STRL("value"), alloc), STRL("rule2"), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -460,13 +514,15 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&map, "value", ddwaf_object_string(&tmp, "RULE2"));
-        ddwaf_object_map_add(&parameter, "value2_1", &map);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *map = ddwaf_object_insert_key(&parameter, STRL("value2_1"), alloc);
+        ddwaf_object_set_map(map, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(map, STRL("value"), alloc), STRL("RULE2"), alloc);
 
         EXPECT_EQ(
             ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
@@ -475,13 +531,15 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&map, "value", ddwaf_object_string(&tmp, "RULE2"));
-        ddwaf_object_map_add(&parameter, "value2_2", &map);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *map = ddwaf_object_insert_key(&parameter, STRL("value2_2"), alloc);
+        ddwaf_object_set_map(map, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(map, STRL("value"), alloc), STRL("RULE2"), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -490,13 +548,15 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&map, "rule2", ddwaf_object_string(&tmp, "value"));
-        ddwaf_object_map_add(&parameter, "value2_2", &map);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *map = ddwaf_object_insert_key(&parameter, STRL("value2_2"), alloc);
+        ddwaf_object_set_map(map, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(map, STRL("rule2"), alloc), STRL("value"), alloc);
 
         EXPECT_EQ(
             ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
@@ -505,13 +565,15 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&map, "rule2", ddwaf_object_string(&tmp, "value"));
-        ddwaf_object_map_add(&parameter, "value2_3", &map);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *map = ddwaf_object_insert_key(&parameter, STRL("value2_3"), alloc);
+        ddwaf_object_set_map(map, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(map, STRL("rule2"), alloc), STRL("value"), alloc);
 
         EXPECT_EQ(
             ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
@@ -520,13 +582,15 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&map, "value", ddwaf_object_string(&tmp, "rule2"));
-        ddwaf_object_map_add(&parameter, "value2_3", &map);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *map = ddwaf_object_insert_key(&parameter, STRL("value2_3"), alloc);
+        ddwaf_object_set_map(map, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(map, STRL("value"), alloc), STRL("rule2"), alloc);
 
         EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME),
             DDWAF_MATCH);
@@ -535,13 +599,15 @@ TEST(TestConditionTransformersIntegration, OverlappingTransformerKeysOnly)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&map, "value", ddwaf_object_string(&tmp, "RULE2"));
-        ddwaf_object_map_add(&parameter, "value2_3", &map);
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        auto *map = ddwaf_object_insert_key(&parameter, STRL("value2_3"), alloc);
+        ddwaf_object_set_map(map, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(map, STRL("value"), alloc), STRL("RULE2"), alloc);
 
         EXPECT_EQ(
             ddwaf_context_eval(context, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);

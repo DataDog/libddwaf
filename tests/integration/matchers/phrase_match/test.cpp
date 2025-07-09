@@ -14,19 +14,20 @@ constexpr std::string_view base_dir = "integration/matchers/phrase_match/";
 
 TEST(TestPhraseMatchMatcherIntegration, Match)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("phrase_match.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object value;
-    ddwaf_object_string(&value, "string00");
-    ddwaf_object_map_add(&map, "input1", &value);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("input1"), alloc), STRL("string00"));
 
     ddwaf_object out;
     ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -42,27 +43,28 @@ TEST(TestPhraseMatchMatcherIntegration, Match)
                                    .address = "input1",
                                }}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestPhraseMatchMatcherIntegration, MatchWordBound)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("phrase_match.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object value;
-        ddwaf_object_string(&value, "string01;");
-        ddwaf_object_map_add(&map, "input2", &value);
+        ddwaf_object map;
+        ddwaf_object_set_map(&map, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&map, STRL("input2"), alloc), STRL("string01;"));
 
         ddwaf_object out;
         ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
@@ -78,25 +80,25 @@ TEST(TestPhraseMatchMatcherIntegration, MatchWordBound)
                                        .address = "input2",
                                    }}}}});
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
         ASSERT_NE(context, nullptr);
 
-        ddwaf_object map = DDWAF_OBJECT_MAP;
-        ddwaf_object value;
-        ddwaf_object_string(&value, "string010");
-        ddwaf_object_map_add(&map, "input2", &value);
+        ddwaf_object map;
+        ddwaf_object_set_map(&map, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&map, STRL("input2"), alloc), STRL("string010"));
 
         ddwaf_object out;
         ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
-        ddwaf_object_free(&out);
+        ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
     }
 

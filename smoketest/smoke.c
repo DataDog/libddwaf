@@ -6,57 +6,60 @@
 #include <string.h>
 #include <math.h>
 
-static ddwaf_object *prepare_rule() {
-    ddwaf_object *ret = malloc(sizeof *ret);
-    ddwaf_object_map(ret);
+#define STRL(value) value, sizeof(value) - 1
 
-    ddwaf_object version;
-    ddwaf_object_map_add(ret, "version", ddwaf_object_string(&version, "2.1"));
+static ddwaf_object prepare_rule(ddwaf_allocator alloc) {
+    ddwaf_object ret;
+    ddwaf_object_set_map(&ret, 2, alloc);
 
-    ddwaf_object events;
-    ddwaf_object_array(&events);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&ret, STRL("version"), alloc), STRL("2.1"));
 
-    ddwaf_object event;
-    ddwaf_object_map(&event);
+    ddwaf_object *rules = ddwaf_object_insert_key(&ret, STRL("rules"), alloc);
+    ddwaf_object_set_array(rules, 1, alloc);
 
-#define DDSTR(str) (ddwaf_object_string(&(ddwaf_object){0}, str ""))
+    ddwaf_object *rule = ddwaf_object_insert(rules, alloc);
+    ddwaf_object_set_map(rule, 5, alloc);
 
-    ddwaf_object_map_add(&event, "id", DDSTR("arachni_rule"));
-    ddwaf_object_map_add(&event, "name", DDSTR("Arachni"));
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(rule, STRL("id"), alloc), STRL("arachni_rule"), alloc);
 
-    ddwaf_object conditions;
-    ddwaf_object_array(&conditions);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(rule, STRL("name"), alloc), STRL("Arachni"), alloc);
 
-    ddwaf_object condition;
-    ddwaf_object_map(&condition);
+    ddwaf_object *conditions = ddwaf_object_insert_key(rule, STRL("conditions"), alloc);
+    ddwaf_object_set_array(conditions, 1, alloc);
 
-    ddwaf_object_map_add(&condition, "operator", DDSTR("match_regex"));
+    ddwaf_object *condition = ddwaf_object_insert(conditions, alloc);
+    ddwaf_object_set_map(condition, 2, alloc);
 
-    ddwaf_object parameters;
-    ddwaf_object_map(&parameters);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(condition, STRL("operator"), alloc), STRL("match_regex"), alloc);
 
-    ddwaf_object inputs;
-    ddwaf_object_array(&inputs);
-    ddwaf_object key;
-    ddwaf_object_map(&key);
-    ddwaf_object_map_add(&key, "address", DDSTR("key"));
-    ddwaf_object_array_add(&inputs, &key);
-    ddwaf_object_map_add(&parameters, "inputs", &inputs);
-    ddwaf_object_map_add(&parameters, "regex", DDSTR("Arachni"));
-    ddwaf_object_map_add(&condition, "parameters", &parameters);
+    ddwaf_object *parameters = ddwaf_object_insert_key(condition, STRL("parameters"), alloc);
+    ddwaf_object_set_map(parameters, 2, alloc);
 
-    ddwaf_object_array_add(&conditions, &condition);
-    ddwaf_object_map_add(&event, "conditions", &conditions);
+    ddwaf_object *inputs = ddwaf_object_insert_key(parameters, STRL("inputs"), alloc);
+    ddwaf_object_set_array(inputs, 1, alloc);
 
-    ddwaf_object tags;
-    ddwaf_object_map(&tags);
-    ddwaf_object_map_add(&tags, "type", DDSTR("arachni_detection"));
-    ddwaf_object_map_add(&event, "tags", &tags);
+    ddwaf_object *key = ddwaf_object_insert(inputs, alloc);
+    ddwaf_object_set_map(key, 1, alloc);
 
-    ddwaf_object_map_add(&event, "action", DDSTR("record"));
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(key, STRL("address"), alloc), STRL("key"), alloc);
 
-    ddwaf_object_array_add(&events, &event);
-    ddwaf_object_map_add(ret, "rules", &events);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(parameters, STRL("regex"), alloc), STRL("Arachni"), alloc);
+
+    ddwaf_object *tags = ddwaf_object_insert_key(rule, STRL("tags"), alloc);
+    ddwaf_object_set_map(tags, 1, alloc);
+    ddwaf_object_set_string(
+            ddwaf_object_insert_key(tags, STRL("type"), alloc), STRL("arachni_detection"), alloc);
+
+
+    ddwaf_object *actions = ddwaf_object_insert_key(rule, STRL("actions"), alloc);
+    ddwaf_object_set_array(actions, 1, alloc);
+    ddwaf_object_set_string(ddwaf_object_insert(actions, alloc), STRL("record"), alloc);
 
     return ret;
 }
@@ -176,13 +179,13 @@ static void _hstring_write_pwargs(hstring *str, size_t depth,
     }
     case DDWAF_OBJ_ARRAY: {
         HSTRING_APPEND_CONST(str, "<ARRAY>\n");
-        for (size_t i = 0; i < ddwaf_object_size(pwargs); i++) {
+        for (size_t i = 0; i < ddwaf_object_get_size(pwargs); i++) {
             _hstring_write_pwargs(str, depth + 1, ddwaf_object_at_value(pwargs, i));
         }
         break;
     case DDWAF_OBJ_MAP: {
         HSTRING_APPEND_CONST(str, "<MAP>\n");
-        for (size_t i = 0; i < ddwaf_object_size(pwargs); i++) {
+        for (size_t i = 0; i < ddwaf_object_get_size(pwargs); i++) {
             const ddwaf_object *key = ddwaf_object_at_key(pwargs, i);
             size_t key_len;
             const char *key_data = ddwaf_object_get_string(key, &key_len);
@@ -221,10 +224,12 @@ int main() {
 
     ddwaf_set_log_cb(log_cb, DDWAF_LOG_DEBUG);
 
-    ddwaf_object *rule = prepare_rule();
-    dump(rule);
+    ddwaf_allocator alloc = ddwaf_get_default_allocator();
 
-    ddwaf_handle handle = ddwaf_init(rule, NULL, NULL);
+    ddwaf_object rule = prepare_rule(alloc);
+    dump(&rule);
+
+    ddwaf_handle handle = ddwaf_init(&rule, NULL, NULL);
     if (!handle) {
         puts("handle is null");
         return 1;
@@ -244,28 +249,29 @@ int main() {
         puts(actions[i]);
     }
 
-
-    ddwaf_context ctx = ddwaf_context_init(handle);
+    ddwaf_context ctx = ddwaf_context_init(handle, alloc);
     if (!ctx) {
         puts("ctx is null");
         return 1;
     }
 
     ddwaf_object data;
-    ddwaf_object_map(&data);
-    ddwaf_object_map_add(&data, "key", DDSTR("Arachni"));
+    ddwaf_object_set_map(&data, 1, alloc);
+
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&data, STRL("key"), alloc), STRL("Arachni"), alloc);
 
     ddwaf_object result = {0};
     ddwaf_context_eval(ctx, &data, NULL, true, &result, (uint32_t)-1);
     
 
     const ddwaf_object *events = ddwaf_object_find(&result, "events", sizeof("events") - 1);
-    if (ddwaf_object_size(events) == 0) {
+    if (ddwaf_object_get_size(events) == 0) {
         puts("result is empty");
         return 1;
     }
     puts("result is valid");
-    ddwaf_object_free(&result);
+    ddwaf_object_destroy(&result, alloc);
 
     return 0;
 }

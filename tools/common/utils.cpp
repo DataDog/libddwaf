@@ -23,68 +23,69 @@ using namespace std::literals;
 namespace YAML {
 
 namespace {
+
 // NOLINTNEXTLINE(misc-no-recursion)
-ddwaf_object yaml_to_object(const Node& node)
+void node_to_ddwaf_object(ddwaf_object *root, const Node &node)
 {
-    switch (node.Type())
-    {
-        case NodeType::Sequence:
-        {
-            ddwaf_object arg{};
-            ddwaf_object_array(&arg);
-            for (auto it = node.begin(); it != node.end(); ++it)
-            {
-                ddwaf_object child = yaml_to_object(*it);
-                ddwaf_object_array_add(&arg, &child);
-            }
-            return arg;
+    auto *alloc = ddwaf_get_default_allocator();
+    switch (node.Type()) {
+    case NodeType::Sequence: {
+        ddwaf_object_set_array(root, node.size(), alloc);
+        for (auto it = node.begin(); it != node.end(); ++it) {
+            auto *child = ddwaf_object_insert(root, alloc);
+            node_to_ddwaf_object(child, *it);
         }
-        case NodeType::Map:
-        {
-            ddwaf_object arg{};
-            ddwaf_object_map(&arg);
-            for (auto it = node.begin(); it != node.end(); ++it)
-            {
-                auto key    = it->first.as<std::string>();
-                ddwaf_object child = yaml_to_object(it->second);
-                ddwaf_object_map_addl(&arg, key.c_str(), key.size(), &child);
-            }
-            return arg;
+        return;
+    }
+    case NodeType::Map: {
+        ddwaf_object_set_map(root, node.size(), alloc);
+        for (auto it = node.begin(); it != node.end(); ++it) {
+            auto key = it->first.as<std::string>();
+            auto *child = ddwaf_object_insert_key(root, key.data(), key.size(), alloc);
+            node_to_ddwaf_object(child, it->second);
         }
-        case NodeType::Scalar:
-        {
-            ddwaf_object arg{};
-            if (node.Tag() == "?") {
-                try {
-                    ddwaf_object_unsigned(&arg, node.as<uint64_t>());
-                    return arg;
-                } catch (...) {}
+        return;
+    }
+    case NodeType::Scalar: {
+        const std::string &value = node.Scalar();
 
-                try {
-                    ddwaf_object_signed(&arg, node.as<int64_t>());
-                    return arg;
-                } catch (...) {}
+        if (node.Tag() == "?") {
+            try {
+                ddwaf_object_set_unsigned(root, node.as<uint64_t>());
+                return;
+            } catch (...) {}
 
-                try {
-                    ddwaf_object_float(&arg, node.as<double>());
-                    return arg;
-                } catch (...) {}
+            try {
+                ddwaf_object_set_signed(root, node.as<int64_t>());
+                return;
+            } catch (...) {}
 
-                try {
-                    ddwaf_object_bool(&arg, node.as<bool>());
-                    return arg;
-                } catch (...) {}
-            }
+            try {
+                ddwaf_object_set_float(root, node.as<double>());
+                return;
+            } catch (...) {}
 
-            const std::string &value = node.Scalar();
-            ddwaf_object_stringl(&arg, value.c_str(), value.size());
-            return arg;
+            try {
+                if (!value.empty() && value[0] != 'Y' && value[0] != 'y' && value[0] != 'n' &&
+                    value[0] != 'N') {
+                    // Skip the yes / no variants of boolean
+                    ddwaf_object_set_bool(root, node.as<bool>());
+                    return;
+                }
+            } catch (...) {}
         }
-        case NodeType::Null:
-        case NodeType::Undefined:
-            ddwaf_object arg{};
-            ddwaf_object_invalid(&arg);
-            return arg;
+
+        ddwaf_object_set_string(root, value.data(), value.size(), alloc);
+        return;
+    }
+    case NodeType::Null: {
+        ddwaf_object_set_null(root);
+        return;
+    }
+    case NodeType::Undefined: {
+        ddwaf_object_set_invalid(root);
+        return;
+    }
     }
 
     throw parsing_error("Invalid YAML node type");
@@ -93,7 +94,9 @@ ddwaf_object yaml_to_object(const Node& node)
 } // namespace
 
 ddwaf_object as_if<ddwaf_object, void>::operator()() const {
-    return yaml_to_object(node); 
+    ddwaf_object object;
+    node_to_ddwaf_object(&object, node);
+    return object;
 }
 
 } // namespace YAML
@@ -118,13 +121,13 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
     case DDWAF_OBJ_STRING:
     case DDWAF_OBJ_SMALL_STRING:
     case DDWAF_OBJ_LITERAL_STRING:
-        output = std::string{ddwaf_object_get_string(&obj, nullptr), ddwaf_object_length(&obj)};
+        output = std::string{ddwaf_object_get_string(&obj, nullptr), ddwaf_object_get_length(&obj)};
         break;
     case DDWAF_OBJ_MAP:
         output = YAML::Load("{}");
         for (unsigned i = 0; i < obj.via.map.size; i++) {
             const auto *child = ddwaf_object_at_key(&obj, i);
-            std::string key{ddwaf_object_get_string(child, nullptr), ddwaf_object_length(child)};
+            std::string key{ddwaf_object_get_string(child, nullptr), ddwaf_object_get_length(child)};
 
             YAML::Node value;
             object_to_yaml_helper(*ddwaf_object_at_value(&obj, i), value);
@@ -156,60 +159,57 @@ YAML::Node object_to_yaml(const ddwaf_object &obj)
     return root;
 }
 
-
 template <typename T>
 // NOLINTNEXTLINE(misc-no-recursion)
 void json_to_object_helper(ddwaf_object *object, T &doc)
     requires std::is_same_v<rapidjson::Document, T> || std::is_same_v<rapidjson::Value, T>
 {
+    auto *alloc = ddwaf_get_default_allocator();
     switch (doc.GetType()) {
     case rapidjson::kFalseType:
-        ddwaf_object_bool(object, false);
+        ddwaf_object_set_bool(object, false);
         break;
     case rapidjson::kTrueType:
-        ddwaf_object_bool(object, true);
+        ddwaf_object_set_bool(object, true);
         break;
     case rapidjson::kObjectType: {
-        ddwaf_object_map(object);
+        ddwaf_object_set_map(object, doc.MemberCount(), alloc);
         for (auto &kv : doc.GetObject()) {
-            ddwaf_object element{};
-            json_to_object_helper(&element, kv.value);
+            const std::string_view key = kv.name.GetString();
+            auto *element = ddwaf_object_insert_key(object, key.data(), key.length(), alloc);
 
-            std::string_view const key = kv.name.GetString();
-            ddwaf_object_map_addl(object, key.data(), key.length(), &element);
+            json_to_object_helper(element, kv.value);
         }
         break;
     }
     case rapidjson::kArrayType: {
-        ddwaf_object_array(object);
+        ddwaf_object_set_array(object, doc.Size(), alloc);
         for (auto &v : doc.GetArray()) {
-            ddwaf_object element{};
-            json_to_object_helper(&element, v);
-
-            ddwaf_object_array_add(object, &element);
+            auto *element = ddwaf_object_insert(object, alloc);
+            json_to_object_helper(element, v);
         }
         break;
     }
     case rapidjson::kStringType: {
-        std::string_view const str = doc.GetString();
-        ddwaf_object_stringl(object, str.data(), str.size());
+        const std::string_view str = doc.GetString();
+        ddwaf_object_set_string(object, str.data(), str.size(), alloc);
         break;
     }
     case rapidjson::kNumberType: {
         if (doc.IsInt64()) {
-            ddwaf_object_signed(object, doc.GetInt64());
+            ddwaf_object_set_signed(object, doc.GetInt64());
         } else if (doc.IsUint64()) {
-            ddwaf_object_unsigned(object, doc.GetUint64());
+            ddwaf_object_set_unsigned(object, doc.GetUint64());
         } else if (doc.IsDouble()) {
-            ddwaf_object_float(object, doc.GetDouble());
+            ddwaf_object_set_float(object, doc.GetDouble());
         }
         break;
     }
     case rapidjson::kNullType:
-        ddwaf_object_null(object);
+        ddwaf_object_set_null(object);
         break;
     default:
-        ddwaf_object_invalid(object);
+        ddwaf_object_set_invalid(object);
         break;
     }
 }
@@ -227,6 +227,7 @@ ddwaf_object json_to_object(const std::string &json)
     json_to_object_helper(&output, doc);
     return output;
 }
+
 namespace {
 class string_buffer {
 public:
