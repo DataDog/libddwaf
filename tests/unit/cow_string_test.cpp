@@ -7,7 +7,7 @@
 #include <cow_string.hpp>
 #include <stdexcept>
 
-#include "transformer_utils.hpp"
+#include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
 
@@ -26,19 +26,6 @@ TEST(TestCoWString, ConstRead)
     EXPECT_NE(str.data(), nullptr);
 }
 
-TEST(TestCoWString, ConstReadMutableBuffer)
-{
-    std::string original{"value"};
-    auto str = cow_string::from_mutable_buffer(original.data(), original.size());
-    EXPECT_TRUE(str.modified());
-
-    EXPECT_EQ(original.length(), str.length());
-    for (size_t i = 0; i < original.length(); ++i) { EXPECT_EQ(original[i], str.at(i)); }
-
-    EXPECT_TRUE(str.modified());
-    EXPECT_EQ(str.data(), original.data());
-}
-
 TEST(TestCoWString, NonConstRead)
 {
     constexpr std::string_view original = "value";
@@ -52,19 +39,6 @@ TEST(TestCoWString, NonConstRead)
     EXPECT_NE(str.data(), nullptr);
 }
 
-TEST(TestCoWString, NonConstReadMutableBuffer)
-{
-    std::string original{"value"};
-    auto str = cow_string::from_mutable_buffer(original.data(), original.size());
-    EXPECT_TRUE(str.modified());
-
-    EXPECT_EQ(original.length(), str.length());
-    for (size_t i = 0; i < original.length(); ++i) { EXPECT_EQ(original[i], str[i]); }
-
-    EXPECT_TRUE(str.modified());
-    EXPECT_EQ(str.data(), original.data());
-}
-
 TEST(TestCoWString, TruncateUnmodified)
 {
     cow_string str("value");
@@ -75,21 +49,6 @@ TEST(TestCoWString, TruncateUnmodified)
 
     EXPECT_EQ(str.length(), 4);
     EXPECT_STR(str, "valu");
-}
-
-TEST(TestCoWString, TruncateUnmodifiedMutableBuffer)
-{
-    std::string original{"value"};
-    auto str = cow_string::from_mutable_buffer(original.data(), original.size());
-
-    EXPECT_EQ(str.length(), 5);
-    EXPECT_TRUE(str.modified());
-
-    str.truncate(4);
-
-    EXPECT_EQ(str.length(), 4);
-    EXPECT_STR(str, "valu");
-    EXPECT_EQ(str.data(), original.data());
 }
 
 TEST(TestCoWString, WriteAndTruncate)
@@ -107,24 +66,6 @@ TEST(TestCoWString, WriteAndTruncate)
     EXPECT_STR(str, "vale");
 }
 
-TEST(TestCoWString, WriteAndTruncateMutableBuffer)
-{
-    std::string original{"value"};
-    auto str = cow_string::from_mutable_buffer(original.data(), original.size());
-
-    EXPECT_EQ(str.length(), 5);
-    EXPECT_TRUE(str.modified());
-
-    str[3] = 'e';
-    EXPECT_TRUE(str.modified());
-    EXPECT_NE(str.data(), nullptr);
-
-    str.truncate(4);
-    EXPECT_EQ(str.length(), 4);
-    EXPECT_STR(str, "vale");
-    EXPECT_EQ(str.data(), original.data());
-}
-
 TEST(TestCoWString, EmptyString)
 {
     cow_string str("");
@@ -133,8 +74,8 @@ TEST(TestCoWString, EmptyString)
 
     str.truncate(str.length());
     EXPECT_EQ(str.length(), 0);
-    EXPECT_TRUE(str.modified());
-    EXPECT_NE(str.data(), nullptr);
+    EXPECT_FALSE(str.modified());
+    EXPECT_EQ(str.data(), nullptr);
     EXPECT_STR(str, "");
 }
 
@@ -150,7 +91,7 @@ TEST(TestCoWString, WriteAndMove)
     EXPECT_TRUE(str.modified());
     EXPECT_NE(str.data(), nullptr);
 
-    auto [buffer, length] = str.move();
+    auto [buffer, length, alloc] = str.move();
     EXPECT_STR((std::string_view{buffer, length}), "valee");
     EXPECT_EQ(length, 5);
 
@@ -167,7 +108,7 @@ TEST(TestCoWString, MoveUnmodified)
     EXPECT_EQ(str.length(), 5);
     EXPECT_FALSE(str.modified());
 
-    auto [buffer, length] = str.move();
+    auto [buffer, length, alloc] = str.move();
     EXPECT_STR((std::string_view{buffer, length}), "value");
     EXPECT_EQ(length, 5);
     str.alloc()->deallocate(buffer, length, alignof(char));
@@ -185,7 +126,7 @@ TEST(TestCoWString, MoveAfterTruncate)
 
     str.truncate(4);
 
-    auto [buffer, length] = str.move();
+    auto [buffer, length, alloc] = str.move();
     EXPECT_STR((std::string_view{buffer, length}), "valu");
     EXPECT_EQ(length, 4);
     str.alloc()->deallocate(buffer, length, alignof(char));

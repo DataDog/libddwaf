@@ -374,14 +374,16 @@ bool normalize_string(cow_string &str)
         // Compile the scratch pads into the final normalized string
         for (const ScratchpadChunk &chunk : scratchPad) { new_length += chunk.used; }
 
-        // NOLINTNEXTLINE(misc-include-cleaner)
-        static auto *alloc = memory::get_default_resource();
-        new_buffer = static_cast<char *>(alloc->allocate(new_length, alignof(char)));
+        if (new_length > 0) {
+            // NOLINTNEXTLINE(misc-include-cleaner)
+            static auto *alloc = memory::get_default_resource();
+            new_buffer = static_cast<char *>(alloc->allocate(new_length, alignof(char)));
 
-        uint64_t writeIndex = 0;
-        for (const ScratchpadChunk &chunk : scratchPad) {
-            memcpy(&new_buffer[writeIndex], chunk.scratchpad, chunk.used);
-            writeIndex += chunk.used;
+            uint64_t writeIndex = 0;
+            for (const ScratchpadChunk &chunk : scratchPad) {
+                memcpy(&new_buffer[writeIndex], chunk.scratchpad, chunk.used);
+                writeIndex += chunk.used;
+            }
         }
 
         str.replace_buffer(new_buffer, new_length, new_length);

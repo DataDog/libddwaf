@@ -18,7 +18,9 @@
 #include <vector>
 
 #include "json_utils.hpp"
+#include "memory_resource.hpp"
 #include "object.hpp"
+#include "pointer.hpp"
 
 namespace ddwaf {
 
@@ -63,7 +65,10 @@ struct string_view_stream {
 class object_reader_handler
     : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, object_reader_handler> {
 public:
-    object_reader_handler() { stack_.reserve(max_depth + 1); }
+    explicit object_reader_handler(nonnull_ptr<memory::memory_resource> alloc) : alloc_(alloc)
+    {
+        stack_.reserve(max_depth + 1);
+    }
     ~object_reader_handler() = default;
     object_reader_handler(object_reader_handler &&) = delete;
     object_reader_handler(const object_reader_handler &) = delete;
@@ -150,7 +155,7 @@ public:
 
         assert(key_.is_invalid());
 
-        key_ = owned_object::make_string(str, length);
+        key_ = owned_object::make_string(str, length, alloc_);
 
         return true;
     }
@@ -162,7 +167,7 @@ public:
             return true;
         }
 
-        return emplace(owned_object::make_map());
+        return emplace(owned_object::make_map(0, alloc_));
     }
 
     // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
@@ -183,7 +188,7 @@ public:
             return true;
         }
 
-        return emplace(owned_object::make_array());
+        return emplace(owned_object::make_array(0, alloc_));
     }
 
     // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
@@ -234,6 +239,7 @@ private:
         return true;
     }
 
+    nonnull_ptr<memory::memory_resource> alloc_{memory::get_default_resource()};
     owned_object root_;
     std::vector<borrowed_object> stack_;
 
@@ -244,9 +250,9 @@ private:
     static constexpr std::size_t max_depth = 20;
 };
 
-owned_object json_to_object(std::string_view json)
+owned_object json_to_object(std::string_view json, nonnull_ptr<memory::memory_resource> alloc)
 {
-    object_reader_handler handler;
+    object_reader_handler handler{alloc};
     string_view_stream ss(json);
 
     rapidjson::Reader reader;

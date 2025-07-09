@@ -78,14 +78,14 @@ attribute_collector::collection_state attribute_collector::collect_helper(const 
     }
 
     if (resolved.is_scalar()) {
-        insert_helper(attribute_key, resolved.clone());
+        insert_helper(attribute_key, resolved.clone(attributes_.alloc()));
         return collection_state::success;
     }
 
     if (resolved.is_array() && !resolved.empty()) {
         auto candidate = resolved.at_value(0);
         if (candidate.is_scalar()) {
-            insert_helper(attribute_key, candidate.clone());
+            insert_helper(attribute_key, candidate.clone(attributes_.alloc()));
             return collection_state::success;
         }
     }

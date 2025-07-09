@@ -16,6 +16,7 @@
 #include "exclusion/rule_filter.hpp"
 #include "memory_resource.hpp"
 #include "obfuscator.hpp"
+#include "pointer.hpp"
 #include "ruleset.hpp"
 
 namespace ddwaf {
@@ -26,10 +27,12 @@ class context {
 public:
     using attribute = object_store::attribute;
 
-    explicit context(std::shared_ptr<ruleset> ruleset)
-        : ruleset_(std::move(ruleset)), preprocessors_(*ruleset_->preprocessors),
-          postprocessors_(*ruleset_->postprocessors), rule_filters_(*ruleset_->rule_filters),
-          input_filters_(*ruleset_->input_filters), rule_matchers_(*ruleset_->rule_matchers),
+    explicit context(std::shared_ptr<ruleset> ruleset,
+        nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
+        : output_alloc_(output_alloc), ruleset_(std::move(ruleset)), collector_(output_alloc),
+          preprocessors_(*ruleset_->preprocessors), postprocessors_(*ruleset_->postprocessors),
+          rule_filters_(*ruleset_->rule_filters), input_filters_(*ruleset_->input_filters),
+          rule_matchers_(*ruleset_->rule_matchers),
           exclusion_matchers_(*ruleset_->exclusion_matchers), actions_(*ruleset_->actions),
           obfuscator_(*ruleset_->obfuscator)
     {
@@ -100,7 +103,9 @@ protected:
         return false;
     }
 
-    memory::memory_resource *alloc{memory::get_default_resource()};
+    // This memory resource is used primarily for the allocation of memory
+    // which will be returned to the user.
+    nonnull_ptr<memory::memory_resource> output_alloc_;
 
     std::shared_ptr<ruleset> ruleset_;
     ddwaf::object_store store_;
@@ -137,11 +142,12 @@ protected:
 
 class context_wrapper {
 public:
-    explicit context_wrapper(std::shared_ptr<ruleset> ruleset)
+    explicit context_wrapper(std::shared_ptr<ruleset> ruleset,
+        nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
     {
         memory::memory_resource_guard guard(&mr_);
         ctx_ = static_cast<context *>(mr_.allocate(sizeof(context), alignof(context)));
-        new (ctx_) context{std::move(ruleset)};
+        new (ctx_) context{std::move(ruleset), output_alloc};
     }
 
     ~context_wrapper()
@@ -159,7 +165,7 @@ public:
     bool insert(owned_object data, context::attribute attr = context::attribute::none) noexcept
     {
         memory::memory_resource_guard guard(&mr_);
-        return ctx_->insert(std::forward<owned_object>(data), attr);
+        return ctx_->insert(std::move(data), attr);
     }
 
     bool insert(map_view data, context::attribute attr = context::attribute::none) noexcept
@@ -176,6 +182,9 @@ public:
 
 protected:
     context *ctx_;
+    // This memory resource is primarily used for non-ephemeral allocations within the context
+    // itself, such as for caching purposes of finite elements. This has the advantage of
+    // improving the context destruction and memory deallocation performance.
     memory::monotonic_buffer_resource mr_;
 };
 
