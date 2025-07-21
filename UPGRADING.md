@@ -27,7 +27,7 @@ Where each of the fields has the following description:
 - `keep`: a new field which specifies whether the data provided must override sampling.
 - `duration`: formerly `ddwaf_result::total_runtime`, provides the duration in nanoseconds of the current call to `ddwaf_run`.
 - `events`: formerly `ddwaf_result::events`, consists in an array of events generated as a result of the rule evaluation process.
-- `actions`: formerly `ddwaf_result`::actions, consists in a map of the actions, and their parameters, generated as a result of the rule evaluation process.
+- `actions`: formerly `ddwaf_result::actions`, consists in a map of the actions, and their parameters, generated as a result of the rule evaluation process.
 - `attributes`: formerly `ddwaf_result::derivatives`, consists in a map of all generated attributes, such as schemas, fingerprints or rule attributes.
 
 In addition, the function `ddwaf_object_find` has been introduced to simplify the process of finding keys from an object of type map, although since maps are simple key-value arrays the operation has O(n) complexity. As a consequence it's only recommended for testing purposes.
