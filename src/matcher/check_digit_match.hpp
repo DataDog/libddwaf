@@ -27,18 +27,18 @@ inline check_digit_algorithm cda_from_string(std::string_view str)
 // Exposed for testing
 bool is_luhn_identifier(std::string_view str);
 
-class check_digit_identifier : public base_impl<check_digit_identifier> {
+class check_digit_match : public base_impl<check_digit_match> {
 public:
-    static constexpr std::string_view matcher_name = "check_digit_identifier";
-    static constexpr std::string_view negated_matcher_name = "!check_digit_identifier";
+    static constexpr std::string_view matcher_name = "check_digit_match";
+    static constexpr std::string_view negated_matcher_name = "!check_digit_match";
 
-    check_digit_identifier(check_digit_algorithm cda, const std::string &regex_str,
+    check_digit_match(check_digit_algorithm cda, const std::string &regex_str,
         std::size_t minLength, bool case_sensitive);
-    ~check_digit_identifier() override = default;
-    check_digit_identifier(const check_digit_identifier &) = delete;
-    check_digit_identifier(check_digit_identifier &&) noexcept = default;
-    check_digit_identifier &operator=(const check_digit_identifier &) = delete;
-    check_digit_identifier &operator=(check_digit_identifier &&) noexcept = default;
+    ~check_digit_match() override = default;
+    check_digit_match(const check_digit_match &) = delete;
+    check_digit_match(check_digit_match &&) noexcept = default;
+    check_digit_match &operator=(const check_digit_match &) = delete;
+    check_digit_match &operator=(check_digit_match &&) noexcept = default;
 
 protected:
     [[nodiscard]] std::string_view to_string_impl() const { return regex->pattern(); }
@@ -53,7 +53,7 @@ protected:
     std::unique_ptr<re2::RE2> regex{nullptr};
     std::size_t min_length;
 
-    friend class base_impl<check_digit_identifier>;
+    friend class base_impl<check_digit_match>;
 };
 
 } // namespace ddwaf::matcher

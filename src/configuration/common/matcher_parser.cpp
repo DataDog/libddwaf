@@ -22,6 +22,7 @@
 #include "configuration/common/raw_configuration.hpp"
 #include "ddwaf.h"
 #include "matcher/base.hpp"
+#include "matcher/check_digit_match.hpp"
 #include "matcher/equals.hpp"
 #include "matcher/exact_match.hpp"
 #include "matcher/greater_than.hpp"
@@ -213,6 +214,26 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::hi
     std::unique_ptr<matcher::base> matcher = std::make_unique<matcher::hidden_ascii_match>();
 
     return {std::string{}, std::move(matcher)};
+}
+
+template <>
+std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::check_digit_match>(
+    const raw_configuration::map &params)
+{
+    raw_configuration::map options;
+
+    auto algo = matcher::cda_from_string(at<std::string_view>(params, "regex"));
+    auto regex = at<std::string>(params, "regex");
+    options = at<raw_configuration::map>(params, "options", options);
+
+    auto case_sensitive = at<bool>(options, "case_sensitive", false);
+    auto min_length = at<int64_t>(options, "min_length", 0);
+    if (min_length < 0) {
+        throw ddwaf::parsing_error("min_length is a negative number");
+    }
+
+    return {std::string{},
+        std::make_unique<matcher::check_digit_match>(algo, regex, min_length, case_sensitive)};
 }
 
 } // namespace ddwaf

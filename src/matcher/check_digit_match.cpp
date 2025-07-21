@@ -12,7 +12,7 @@
 
 #include "configuration/common/parser_exception.hpp"
 #include "dynamic_string.hpp"
-#include "matcher/check_digit_identifier.hpp"
+#include "matcher/check_digit_match.hpp"
 #include "re2.h"
 #include "utils.hpp"
 
@@ -65,8 +65,8 @@ bool is_luhn_identifier(std::string_view str)
     return computed_digit == check_digit;
 }
 
-check_digit_identifier::check_digit_identifier(check_digit_algorithm cda,
-    const std::string &regex_str, std::size_t minLength, bool case_sensitive)
+check_digit_match::check_digit_match(check_digit_algorithm cda, const std::string &regex_str,
+    std::size_t minLength, bool case_sensitive)
     : cda_(cda), min_length(minLength)
 {
     constexpr unsigned regex_max_mem = 512 * 1024;
@@ -83,7 +83,7 @@ check_digit_identifier::check_digit_identifier(check_digit_algorithm cda,
     }
 }
 
-std::pair<bool, dynamic_string> check_digit_identifier::match_impl(std::string_view pattern) const
+std::pair<bool, dynamic_string> check_digit_match::match_impl(std::string_view pattern) const
 {
     if (pattern.data() == nullptr || !regex->ok() || pattern.size() < min_length) {
         return {false, {}};
