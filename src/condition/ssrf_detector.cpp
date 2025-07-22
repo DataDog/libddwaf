@@ -19,11 +19,11 @@
 #include "condition/match_iterator.hpp"
 #include "condition/ssrf_detector.hpp"
 #include "condition/structured_condition.hpp"
-#include "ddwaf.h"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "log.hpp"
 #include "matcher/ip_match.hpp"
+#include "object.hpp"
 #include "uri_utils.hpp"
 #include "utils.hpp"
 
@@ -150,8 +150,8 @@ bool detect_parameter_injection(
     return false;
 }
 
-ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
+ssrf_result ssrf_impl(const uri_decomposed &uri, object_view params,
+    const exclusion::object_set_ref &objects_excluded,
     const std::unique_ptr<matcher::ip_match> &dangerous_ip_matcher,
     const std::unordered_set<std::string_view> &authorised_scheme_set, ddwaf::timer &deadline)
 {
@@ -167,7 +167,7 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
 
     std::optional<ssrf_result> parameter_injection;
 
-    match_iterator<min_str_len> it{uri.raw, &params, objects_excluded, limits};
+    match_iterator<min_str_len> it{uri.raw, params, objects_excluded};
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
@@ -257,9 +257,8 @@ ssrf_detector::ssrf_detector(std::vector<condition_parameter> args)
 {}
 
 eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri,
-    const variadic_argument<const ddwaf_object *> &params, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline) const
+    const variadic_argument<object_view> &params, condition_cache &cache,
+    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     auto decomposed = uri_parse(uri.value);
     if (!decomposed.has_value()) {
@@ -267,8 +266,8 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
     }
 
     for (const auto &param : params) {
-        auto res = ssrf_impl(*decomposed, *param.value, objects_excluded, limits,
-            dangerous_ip_matcher_, authorised_schemes_, deadline);
+        auto res = ssrf_impl(*decomposed, param.value, objects_excluded, dangerous_ip_matcher_,
+            authorised_schemes_, deadline);
         if (res.has_value()) {
             const std::vector<std::string> uri_kp{uri.key_path.begin(), uri.key_path.end()};
             const bool ephemeral = uri.ephemeral || param.ephemeral;
