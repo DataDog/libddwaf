@@ -40,13 +40,13 @@ jobs:
 
       - name: Install clang-{tidy,format}
         run: |
-          sudo .github/workflows/scripts/llvm.sh 17
-          sudo apt-get install -y clang-17 clang++-17
+          sudo .github/workflows/scripts/llvm.sh 19
+          sudo apt-get install -y clang-19 clang++-19
 
       - name: CMake
         env:
-          CC: clang-17
-          CXX: clang++-17
+          CC: clang-19
+          CXX: clang++-19
         run: |
           cmake .. -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_CXX_FLAGS="-fsanitize=address,leak,undefined -DASAN_BUILD" \
