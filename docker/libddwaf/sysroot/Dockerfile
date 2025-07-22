@@ -38,7 +38,7 @@ RUN cd llvm-project-${LLVM_VERSION}.src && mkdir -p build && cd build && \
     ninja -v install-unwind install-cxxabi install-cxx
 
 RUN cd /usr/lib && ln -s gcc/*/*/ resource_dir
-RUN cd /usr/lib && ln -s $(find . -name "libclang_rt.builtins-*.a") libclang_rt.builtins.a
+RUN cd /usr/lib && ln -s $(find . -name 'libclang_rt.builtins-*.a' -print -quit) libclang_rt.builtins.a
 
 RUN rm -rf /llvm-project-${LLVM_VERSION}.src
 RUN rm -f llvm-project-${LLVM_VERSION}.src.tar.xz
