@@ -647,6 +647,9 @@ bool ddwaf_object_map_addl(ddwaf_object *map, const char *key, size_t length, dd
  **/
 bool ddwaf_object_map_addl_nc(ddwaf_object *map, const char *key, size_t length, ddwaf_object *object);
 
+
+bool ddwaf_object_from_json(ddwaf_object *output, const char *json_str, size_t length);
+
 /**
  * ddwaf_object_type
  *
