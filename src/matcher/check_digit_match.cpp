@@ -45,6 +45,10 @@ bool is_luhn_identifier(std::string_view str)
         break;
     }
 
+    if (i == 0) {
+        return false;
+    }
+
     unsigned total = 0;
     unsigned count = 0;
     for (i -= 1; i > 0; --i) {
