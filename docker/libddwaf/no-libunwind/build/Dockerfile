@@ -1,4 +1,4 @@
-FROM datadog/libddwaf:llvm-19 AS libddwaf_build
+FROM datadog/libddwaf:llvm-19-no-libunwind AS libddwaf_build
 
 ARG ARCH
 
@@ -8,7 +8,7 @@ RUN mkdir -p build
 RUN cd build && cmake \
     -G Ninja \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-    -DCMAKE_TOOLCHAIN_FILE=/libddwaf/docker/libddwaf/sysroot/Toolchain-no-libunwind.cmake.${ARCH} \
+    -DCMAKE_TOOLCHAIN_FILE=/libddwaf/docker/libddwaf/no-libunwind/sysroot/Toolchain.cmake.${ARCH} \
     -DLIBDDWAF_ENABLE_LTO=ON \
     -DLIBDDWAF_BUILD_SHARED=OFF \
     ../libddwaf && ninja
@@ -25,7 +25,7 @@ RUN cd /build && \
     mv libddwaf-combined.a libddwaf.a
 
 # Strip archive
-RUN cd /build && stripcmd=$(egrep -o "/usr/bin/[a-z0-9\_-]*-strip" /libddwaf/docker/libddwaf/sysroot/Toolchain-no-libunwind.cmake.${ARCH}) ; $stripcmd -x -S libddwaf.a -o libddwaf.a.stripped
+RUN cd /build && stripcmd=$(egrep -o "/usr/bin/[a-z0-9\_-]*-strip" /libddwaf/docker/libddwaf/no-libunwind/sysroot/Toolchain.cmake.${ARCH}) ; $stripcmd -x -S libddwaf.a -o libddwaf.a.stripped
 
 RUN cd /build && ninja -v package && \
     new_name=$(ls libddwaf-*.tar.gz | head -n1 | sed -e "s/\(libddwaf-[\.0-9]*\(-\(alpha\|beta\|rc\)[0-9]\)\?\)-linux-\([_a-zA-Z0-9]*\)\(-[a-zA-Z0-9]*\)\?\.tar.gz/\1-\4-linux-musl-no-libunwind\5.tar.gz/g") ; \
