@@ -661,7 +661,8 @@ bool ddwaf_object_map_addl_nc(ddwaf_object *map, const char *key, size_t length,
  * @return The success or failure of the operation.
  *
  * @note The output object must be freed by the caller using ddwaf_object_free.
- * @note If parsing fails, the output object will be left in an undefined state.
+ * @note If parsing fails, the output object will be left in an undefined state
+ *       and must not be freed.
  * @note The provided JSON string is owned by the caller.
  **/
 bool ddwaf_object_from_json(ddwaf_object *output, const char *json_str, uint32_t length);

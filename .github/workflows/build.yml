@@ -258,13 +258,9 @@ jobs:
         target:
           - arch: x86_64
             platform: linux/amd64
-            runner: ubuntu-latest
-            package: libddwaf-x86_64-linux-musl-no-libunwind
           - arch: aarch64
             platform: linux/arm64
-            runner: arm-4core-linux-arm-limited
-            package: libddwaf-aarch64-linux-musl-no-libunwind
-    runs-on: ${{ matrix.target.runner }}
+    runs-on: ${{ matrix.target.arch == 'x86_64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -279,7 +275,7 @@ jobs:
         run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target.package }}
+          name: libddwaf-${{ matrix.target.arch }}-linux-musl-no-libunwind
           path: |
             packages/*.tar.gz
             packages/*.sha256
