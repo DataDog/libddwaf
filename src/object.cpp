@@ -342,7 +342,7 @@ bool ddwaf_object_from_json(ddwaf_object *output, const char *json_str, size_t l
 
     try {
         *output = ddwaf::json_to_object({json_str, length});
-        return true;
+        return output->type != DDWAF_OBJ_INVALID;
     } catch (...) {} // NOLINT(bugprone-empty-catch)
 
     return false;

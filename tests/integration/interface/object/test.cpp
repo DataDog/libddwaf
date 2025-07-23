@@ -651,6 +651,66 @@ TEST(TestObject, FromJsonInvalidCases)
     // Test empty string (should fail)
     const char *empty_json = "";
     EXPECT_FALSE(ddwaf_object_from_json(&object, empty_json, strlen(empty_json)));
+
+    // Test invalid JSON syntax
+    const char *invalid_json1 = R"({"invalid": json,})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json1, strlen(invalid_json1)));
+
+    // Test malformed JSON - unclosed string
+    const char *malformed_json1 = R"({"unclosed": "string)";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, malformed_json1, strlen(malformed_json1)));
+
+    // Test malformed JSON - unclosed object
+    const char *malformed_json2 = R"({"key": "value")";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, malformed_json2, strlen(malformed_json2)));
+
+    // Test malformed JSON - unclosed array
+    const char *malformed_json3 = R"([1, 2, 3)";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, malformed_json3, strlen(malformed_json3)));
+
+    // Test invalid JSON - missing quotes around key
+    const char *invalid_json2 = R"({key: "value"})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json2, strlen(invalid_json2)));
+
+    // Test invalid JSON - trailing comma in object
+    const char *invalid_json3 = R"({"key": "value",})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json3, strlen(invalid_json3)));
+
+    // Test invalid JSON - trailing comma in array
+    const char *invalid_json4 = R"([1, 2, 3,])";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json4, strlen(invalid_json4)));
+
+    // Test invalid JSON - single quotes instead of double quotes
+    const char *invalid_json5 = R"({'key': 'value'})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json5, strlen(invalid_json5)));
+
+    // Test invalid JSON - undefined value
+    const char *invalid_json6 = R"({"key": undefined})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json6, strlen(invalid_json6)));
+
+    // Test invalid JSON - comment (not allowed in JSON)
+    const char *invalid_json7 = R"({"key": "value" /* comment */})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json7, strlen(invalid_json7)));
+
+    // Test invalid JSON - multiple values at root level
+    const char *invalid_json8 = R"({"key1": "value1"} {"key2": "value2"})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json8, strlen(invalid_json8)));
+
+    // Test invalid JSON - missing value
+    const char *invalid_json9 = R"({"key":})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json9, strlen(invalid_json9)));
+
+    // Test invalid JSON - missing colon
+    const char *invalid_json10 = R"({"key" "value"})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json10, strlen(invalid_json10)));
+
+    // Test invalid JSON - invalid escape sequence
+    const char *invalid_json11 = R"({"key": "invalid\escape"})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json11, strlen(invalid_json11)));
+
+    // Test truncated JSON
+    const char *truncated_json = R"({"key": "val)";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, truncated_json, strlen(truncated_json)));
 }
 
 TEST(TestObject, FromJsonEmptyContainers)
