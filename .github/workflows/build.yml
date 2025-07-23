@@ -365,6 +365,7 @@ jobs:
       - name: Uncompress Candidate
         run: |
           mkdir -p ./candidate ; cd ./candidate
+          find ../candidate-artifacts -name "*no-libunwind*.tar.gz" -exec rm {} \;
           find ../candidate-artifacts -name "*.tar.gz" -exec tar xvzf {} \;
           find . -maxdepth 1 -mindepth 1 -type d | while read file; do
             base=$(basename "$file" | sed "s@libddwaf-[0-9]*\.[0-9]*\.[0-9]*\(-\(alpha\|beta\)[0-9]*\)*-\([^-]*-[^-/]*\).*@\3@g")
@@ -383,6 +384,7 @@ jobs:
       - name: Uncompress Baseline
         run: |
           mkdir -p ./baseline ; cd ./baseline
+          find ../baseline-artifacts -name "*no-libunwind*.tar.gz" -exec rm {} \;
           find ../baseline-artifacts -name "*.tar.gz" -exec tar xvzf {} \;
           find . -maxdepth 1 -mindepth 1 -type d | while read file; do
             base=$(basename "$file" | sed "s@libddwaf-[0-9]*\.[0-9]*\.[0-9]*\(-\(alpha\|beta\)[0-9]*\)*-\([^-]*-[^-/]*\).*@\3@g")

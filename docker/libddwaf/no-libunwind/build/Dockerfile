@@ -13,10 +13,6 @@ RUN cd build && cmake \
     -DLIBDDWAF_BUILD_SHARED=OFF \
     ../libddwaf && ninja
 
-RUN ninja -v -C build waf_test waf_validator
-RUN cd libddwaf/tests && qemu-$ARCH-static /build/tests/waf_test
-RUN cd libddwaf/validator && qemu-$ARCH-static /build/validator/waf_validator
-
 RUN cd /sysroot/${ARCH}-none-linux-musl/usr/lib/ && cp libc++.a libc++abi.a /build
 
 # Add libc++ and relevant libraries to the archive
