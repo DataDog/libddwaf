@@ -222,7 +222,7 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::ch
 {
     raw_configuration::map options;
 
-    auto algo = matcher::cda_from_string(at<std::string_view>(params, "regex"));
+    auto algo = matcher::cda_from_string(at<std::string_view>(params, "algorithm"));
     auto regex = at<std::string>(params, "regex");
     options = at<raw_configuration::map>(params, "options", options);
 
