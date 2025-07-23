@@ -208,11 +208,11 @@ jobs:
             package: libddwaf-i386-linux-musl
           - arch: aarch64
             platform: linux/arm64
-            runner: arm-4core-linux-arm-limited
+            runner: ubuntu-24.04-arm
             package: libddwaf-aarch64-linux-musl
           - arch: armv7
             platform: linux/arm/v7
-            runner: arm-4core-linux-arm-limited
+            runner: ubuntu-24.04-arm
             package: libddwaf-armv7-linux-musl
     runs-on: ${{ matrix.target.runner }}
     steps:
