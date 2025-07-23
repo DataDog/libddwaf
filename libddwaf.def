@@ -29,6 +29,7 @@ EXPORTS
   ddwaf_object_map_add
   ddwaf_object_map_addl
   ddwaf_object_map_addl_nc
+  ddwaf_object_from_json
   ddwaf_object_type
   ddwaf_object_size
   ddwaf_object_length

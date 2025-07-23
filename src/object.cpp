@@ -12,6 +12,7 @@
 #include <string_view>
 
 #include "ddwaf.h"
+#include "json_utils.hpp"
 #include "log.hpp"
 #include "utils.hpp"
 
@@ -331,6 +332,20 @@ bool ddwaf_object_map_addl_nc(
     object->parameterNameLength = length;
 
     return ddwaf_object_insert(map, *object);
+}
+
+bool ddwaf_object_from_json(ddwaf_object *output, const char *json_str, uint32_t length)
+{
+    if (output == nullptr || json_str == nullptr || length == 0) {
+        return false;
+    }
+
+    try {
+        *output = ddwaf::json_to_object({json_str, length});
+        return output->type != DDWAF_OBJ_INVALID;
+    } catch (...) {} // NOLINT(bugprone-empty-catch)
+
+    return false;
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
