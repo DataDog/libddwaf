@@ -259,6 +259,39 @@ jobs:
             packages/*.tar.gz
             packages/*.sha256
 
+  linux-musl-build-no-libunwind:
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - arch: x86_64
+            platform: linux/amd64
+            runner: ubuntu-latest
+            package: libddwaf-x86_64-linux-musl-no-libunwind
+          - arch: aarch64
+            platform: linux/arm64
+            runner: arm-4core-linux-arm-limited
+            package: libddwaf-aarch64-linux-musl-no-libunwind
+    runs-on: ${{ matrix.target.runner }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          submodules: recursive
+      - uses: docker/setup-buildx-action@v3
+        id: buildx
+        with:
+          install: true
+      - run: docker build --progress=plain --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/build-no-libunwind/Dockerfile -o packages .
+      - name: Generate Package sha256
+        working-directory: packages
+        run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target.package }}
+          path: |
+            packages/*.tar.gz
+            packages/*.sha256
+
   package-nuget:
     needs: [ windows-builds, macos-universal-package, linux-musl-build]
     runs-on: ubuntu-latest
