@@ -1,4 +1,4 @@
-FROM datadog/libddwaf:toolchain AS libddwaf_build
+FROM datadog/libddwaf:llvm-19 AS libddwaf_build
 
 ARG ARCH
 
@@ -21,7 +21,7 @@ RUN cd /sysroot/${ARCH}-none-linux-musl/usr/lib/ && cp libc++.a libc++abi.a libu
 
 # Add libc++ and relevant libraries to the archive
 RUN cd /build && \
-    printf "create libddwaf-combined.a\naddlib libddwaf.a\naddlib libc++.a\naddlib libc++abi.a\naddlib libunwind.a\nsave\nend" | llvm-ar-16 -M && \
+    printf "create libddwaf-combined.a\naddlib libddwaf.a\naddlib libc++.a\naddlib libc++abi.a\naddlib libunwind.a\nsave\nend" | llvm-ar-19 -M && \
     mv libddwaf-combined.a libddwaf.a
 
 # Strip archive
