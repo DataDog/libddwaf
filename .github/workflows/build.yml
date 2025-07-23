@@ -167,7 +167,7 @@ jobs:
             ${{ github.workspace }}/packages/*.sha256
 
   docker-builds:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -200,26 +200,18 @@ jobs:
         target:
           - arch: x86_64
             platform: linux/amd64
-            runner: ubuntu-latest
-            package: libddwaf-x86_64-linux-musl
           - arch: i386
             platform: linux/386
-            runner: ubuntu-latest
-            package: libddwaf-i386-linux-musl
           - arch: aarch64
             platform: linux/arm64
-            runner: arm-4core-linux-arm-limited
-            package: libddwaf-aarch64-linux-musl
           - arch: armv7
             platform: linux/arm/v7
-            runner: arm-4core-linux-arm-limited
-            package: libddwaf-armv7-linux-musl
-    runs-on: ${{ matrix.target.runner }}
+    runs-on: ${{ (matrix.target.arch == 'x86_64' || matrix.target.arch == 'i386') && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           submodules: recursive
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
         id: buildx
         with:
           install: true
@@ -254,14 +246,14 @@ jobs:
         run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target.package }}
+          name: libddwaf-${{ matrix.target.arch }}-linux-musl
           path: |
             packages/*.tar.gz
             packages/*.sha256
 
   package-nuget:
     needs: [ windows-builds, macos-universal-package, linux-musl-build]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
@@ -317,7 +309,7 @@ jobs:
 
   compare-artifacts:
     needs: [ windows-builds, macos-universal-package, linux-musl-build]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: ${{ github.event_name == 'pull_request' }}
     permissions:
       pull-requests: write
@@ -385,7 +377,7 @@ jobs:
 
   release:
     needs: [ windows-builds, macos-build, docker-builds, linux-musl-build, package-nuget]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
