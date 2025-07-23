@@ -38,15 +38,15 @@ jobs:
         if: matrix.arch == 'arm64'
         run: sudo apt update ; sudo apt install -y cmake git make curl
 
-      - name: Install clang-{tidy,format}
+      - name: Install clang and clang++
         run: |
-          sudo .github/workflows/scripts/llvm.sh 17
-          sudo apt-get install -y clang-17 clang++-17
+          sudo .github/workflows/scripts/llvm.sh 19
+          sudo apt-get install -y clang-19 clang++-19
 
       - name: CMake
         env:
-          CC: clang-17
-          CXX: clang++-17
+          CC: clang-19
+          CXX: clang++-19
         run: |
           cmake .. -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_CXX_FLAGS="-fsanitize=address,leak,undefined -DASAN_BUILD" \
@@ -257,7 +257,7 @@ jobs:
       - name: Create directories
         run: mkdir Debug
 
-      - name: Install clang-{tidy,format}
+      - name: Install clang tidy and format
         run: |
           DEBIAN_FRONTEND="noninteractive" sudo apt-get -y remove python3-lldb-14
           sudo .github/workflows/scripts/llvm.sh 17
