@@ -334,7 +334,7 @@ bool ddwaf_object_map_addl_nc(
     return ddwaf_object_insert(map, *object);
 }
 
-bool ddwaf_object_from_json(ddwaf_object *output, const char *json_str, size_t length)
+bool ddwaf_object_from_json(ddwaf_object *output, const char *json_str, uint32_t length)
 {
     if (output == nullptr || json_str == nullptr || length == 0) {
         return false;
