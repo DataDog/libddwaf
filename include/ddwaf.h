@@ -647,7 +647,22 @@ bool ddwaf_object_map_addl(ddwaf_object *map, const char *key, size_t length, dd
  **/
 bool ddwaf_object_map_addl_nc(ddwaf_object *map, const char *key, size_t length, ddwaf_object *object);
 
-
+/**
+ * ddwaf_object_from_json
+ *
+ * Creates a ddwaf_object from a JSON string. The JSON will be parsed and converted
+ * into the appropriate ddwaf_object structure, supporting all JSON types including
+ * objects, arrays, strings, numbers, booleans, and null values.
+ *
+ * @param output Object to populate with the parsed JSON data. (nonnull)
+ * @param json_str The JSON string to parse. (nonnull)
+ * @param length Length of the JSON string.
+ *
+ * @return The success or failure of the operation.
+ *
+ * @note The output object must be freed by the caller using ddwaf_object_free.
+ * @note If parsing fails, the output object will be left in an undefined state.
+ **/
 bool ddwaf_object_from_json(ddwaf_object *output, const char *json_str, size_t length);
 
 /**
