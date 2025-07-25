@@ -23,10 +23,10 @@ struct ssrf_sample {
     std::vector<std::string> key_path{};
 };
 
-void match_path_and_input(
-    const std::vector<std::pair<std::string, ssrf_sample>> &samples, bool match = true)
+void match_path_and_input(const std::vector<std::pair<std::string, ssrf_sample>> &samples,
+    bool match = true, const ssrf_opts &opts = {})
 {
-    ssrf_detector cond{{gen_param_def("server.io.net.url", "server.request.query")}};
+    ssrf_detector cond{{gen_param_def("server.io.net.url", "server.request.query")}, opts};
 
     for (const auto &[path, sample] : samples) {
         ddwaf_object tmp;
@@ -149,26 +149,33 @@ TEST(TestSSRFDetector, NoMatch)
 
 TEST(TestSSRFDetector, MatchParameterInjection)
 {
-    match_path_and_input({
-        {"https://blabla.com/random/../with?param=value", {.yaml = "../with"}},
-        {"https://blabla.com/random/with%2fdodgy/characters?param=value", {.yaml = "with%2fdodgy"}},
-        {"https://blabla.com/random/with%2Fdodgy/characters?param=value", {.yaml = "with%2Fdodgy"}},
-        {"https://blabla.com/random/with%5cdodgy/characters?param=value", {.yaml = "with%5cdodgy"}},
-        {"https://blabla.com/random/with%5Cdodgy/characters?param=value", {.yaml = "with%5Cdodgy"}},
-        {"https://blabla.com/random/..falsestart.something/../with?param=value",
-            {.yaml = "..falsestart.something/../with"}},
-        {"https://blabla.com/path?name=param&name2=param2", {.yaml = "param&name2=param2"}},
-        {"https://blabla.com/path?name=param&name2=param2", {.yaml = "name=param&name2=param2"}},
-        {"https://blabla.com/path?name=param&auth=43", {.yaml = "param&auth"}},
-        {"https://blabla.com/random/path?name=name2&value=/legit",
-            {.yaml = "path?name=name2&value="}},
-        {"a://b/c/d?e=f&g=h", {.yaml = "d?e=f&g="}},
-        {"http://core-goals/v1/projects/42/goals?projectId=42&",
-            {.yaml = R"(/v1/projects/42/goals?)"}},
-        {"https://internal-website/path/to/stuffs?bla=42", {.yaml = "/path/to/stuffs?"}},
-        //{"http://0:8000/composer/send_email?to=orange@chroot.org&url=http://127.0.0.1:6379/%0D%0ASET",
-        //{.yaml="http://127.0.0.1:6379/%0D%0ASET"}},
-    });
+    match_path_and_input(
+        {
+            {"https://blabla.com/random/../with?param=value", {.yaml = "../with"}},
+            {"https://blabla.com/random/with%2fdodgy/characters?param=value",
+                {.yaml = "with%2fdodgy"}},
+            {"https://blabla.com/random/with%2Fdodgy/characters?param=value",
+                {.yaml = "with%2Fdodgy"}},
+            {"https://blabla.com/random/with%5cdodgy/characters?param=value",
+                {.yaml = "with%5cdodgy"}},
+            {"https://blabla.com/random/with%5Cdodgy/characters?param=value",
+                {.yaml = "with%5Cdodgy"}},
+            {"https://blabla.com/random/..falsestart.something/../with?param=value",
+                {.yaml = "..falsestart.something/../with"}},
+            {"https://blabla.com/path?name=param&name2=param2", {.yaml = "param&name2=param2"}},
+            {"https://blabla.com/path?name=param&name2=param2",
+                {.yaml = "name=param&name2=param2"}},
+            {"https://blabla.com/path?name=param&auth=43", {.yaml = "param&auth"}},
+            {"https://blabla.com/random/path?name=name2&value=/legit",
+                {.yaml = "path?name=name2&value="}},
+            {"a://b/c/d?e=f&g=h", {.yaml = "d?e=f&g="}},
+            {"http://core-goals/v1/projects/42/goals?projectId=42&",
+                {.yaml = R"(/v1/projects/42/goals?)"}},
+            {"https://internal-website/path/to/stuffs?bla=42", {.yaml = "/path/to/stuffs?"}},
+            //{"http://0:8000/composer/send_email?to=orange@chroot.org&url=http://127.0.0.1:6379/%0D%0ASET",
+            //{.yaml="http://127.0.0.1:6379/%0D%0ASET"}},
+        },
+        true, ssrf_opts{.path_inspection = true, .query_inspection = true});
 }
 
 TEST(TestSSRFDetector, NoMatchPotentialFalsePositives)
