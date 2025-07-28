@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "condition/scalar_condition.hpp"
+#include "condition/scalar_negated_condition.hpp"
 #include "exception.hpp"
 #include "matcher/regex_match.hpp"
 #include "utils.hpp"

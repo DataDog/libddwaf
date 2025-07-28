@@ -6,6 +6,7 @@
 #pragma once
 
 #include "condition/scalar_condition.hpp"
+#include "condition/scalar_negated_condition.hpp"
 #include "expression.hpp"
 #include "matcher/base.hpp"
 #include "radixlib.h"

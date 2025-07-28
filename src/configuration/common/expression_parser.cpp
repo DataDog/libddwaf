@@ -15,6 +15,7 @@
 #include "condition/exists.hpp"
 #include "condition/lfi_detector.hpp"
 #include "condition/scalar_condition.hpp"
+#include "condition/scalar_negated_condition.hpp"
 #include "condition/shi_detector.hpp"
 #include "condition/sqli_detector.hpp"
 #include "condition/ssrf_detector.hpp"
