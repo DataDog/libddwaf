@@ -19,7 +19,7 @@
 #include "log.hpp"
 #include "matcher/base.hpp"
 #include "object_store.hpp"
-#include "scalar_condition.hpp"
+#include "scalar_negated_condition.hpp"
 #include "transformer/base.hpp"
 #include "transformer/manager.hpp"
 #include "utils.hpp"
@@ -30,10 +30,12 @@ namespace ddwaf {
 
 namespace {
 
-template <typename Iterator>
-std::optional<condition_match> eval_object(Iterator &it, std::string_view address, bool ephemeral,
+template <typename ResultType, typename Iterator>
+ResultType eval_object(Iterator &it, std::string_view address, bool ephemeral,
     const matcher::base &matcher, const std::span<const transformer_id> &transformers,
     const object_limits &limits)
+    requires(std::is_same_v<ResultType, bool> ||
+             std::is_same_v<ResultType, std::optional<condition_match>>)
 {
     // The iterator is guaranteed to be valid at this point, which means the
     // object pointer should not be nullptr
@@ -59,8 +61,12 @@ std::optional<condition_match> eval_object(Iterator &it, std::string_view addres
 
                 DDWAF_TRACE("Target {} matched parameter value {}", address, highlight);
 
-                return {{{{"input"sv, object_to_string(dst), address, it.get_current_path()}},
-                    {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
+                if constexpr (std::is_same_v<ResultType, bool>) {
+                    return true;
+                } else {
+                    return {{{{"input"sv, object_to_string(dst), address, it.get_current_path()}},
+                        {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
+                }
             }
         }
     }
@@ -72,14 +78,20 @@ std::optional<condition_match> eval_object(Iterator &it, std::string_view addres
 
     DDWAF_TRACE("Target {} matched parameter value {}", address, highlight);
 
-    return {{{{"input"sv, object_to_string(src), address, it.get_current_path()}},
-        {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
+    if constexpr (std::is_same_v<ResultType, bool>) {
+        return true;
+    } else {
+        return {{{{"input"sv, object_to_string(src), address, it.get_current_path()}},
+            {std::move(highlight)}, matcher.name(), matcher.to_string(), ephemeral}};
+    }
 }
 
-template <typename Iterator>
-std::optional<condition_match> eval_target(Iterator &it, std::string_view address, bool ephemeral,
+template <typename ResultType, typename Iterator>
+ResultType eval_target(Iterator &it, std::string_view address, bool ephemeral,
     const matcher::base &matcher, const std::span<const transformer_id> &transformers,
     const object_limits &limits, ddwaf::timer &deadline)
+    requires(std::is_same_v<ResultType, bool> ||
+             std::is_same_v<ResultType, std::optional<condition_match>>)
 {
     for (; it; ++it) {
         if (deadline.expired()) {
@@ -90,7 +102,7 @@ std::optional<condition_match> eval_target(Iterator &it, std::string_view addres
             continue;
         }
 
-        auto match = eval_object(it, address, ephemeral, matcher, transformers, limits);
+        auto match = eval_object<ResultType>(it, address, ephemeral, matcher, transformers, limits);
         if (match) {
             // If this target matched, we can stop processing
             return match;
@@ -117,51 +129,54 @@ const matcher::base *get_matcher(const std::unique_ptr<matcher::base> &matcher,
 
 } // namespace
 
-eval_result scalar_condition::eval(condition_cache &cache, const object_store &store,
+eval_result scalar_negated_condition::eval(condition_cache &cache, const object_store &store,
     const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
     const object_limits &limits, ddwaf::timer &deadline) const
 {
+    if (deadline.expired()) {
+        throw ddwaf::timeout_exception();
+    }
+
     const auto *matcher = get_matcher(matcher_, data_id_, dynamic_matchers);
     if (matcher == nullptr) {
         return {};
     }
 
-    if (cache.targets.size() != targets_.size()) {
-        cache.targets.assign(targets_.size(), nullptr);
+    if (cache.targets.size() != 1) {
+        cache.targets.assign(1, nullptr);
     }
 
-    for (unsigned i = 0; i < targets_.size(); ++i) {
-        if (deadline.expired()) {
-            throw ddwaf::timeout_exception();
-        }
+    auto [object, attr] = store.get_target(target_.index);
+    if (object == nullptr || object == cache.targets[0]) {
+        return {};
+    }
 
-        const auto &target = targets_[i];
-        auto [object, attr] = store.get_target(target.index);
-        if (object == nullptr || object == cache.targets[i]) {
-            continue;
-        }
+    const bool ephemeral = (attr == object_store::attribute::ephemeral);
+    if (!ephemeral) {
+        cache.targets[0] = object;
+    }
 
-        const bool ephemeral = (attr == object_store::attribute::ephemeral);
-        if (!ephemeral) {
-            cache.targets[i] = object;
-        }
+    bool match = false;
+    if (target_.source == data_source::keys) {
+        object::key_iterator it(object, target_.key_path, objects_excluded, limits);
+        match = eval_target<bool>(
+            it, target_.name, ephemeral, *matcher, target_.transformers, limits, deadline);
+    } else {
+        object::value_iterator it(object, target_.key_path, objects_excluded, limits);
+        match = eval_target<bool>(
+            it, target_.name, ephemeral, *matcher, target_.transformers, limits, deadline);
+    }
 
-        std::optional<condition_match> match;
-        // TODO: iterators could be cached to avoid reinitialisation
-        if (target.source == data_source::keys) {
-            object::key_iterator it(object, target.key_path, objects_excluded, limits);
-            match = eval_target(
-                it, target.name, ephemeral, *matcher, target.transformers, limits, deadline);
-        } else {
-            object::value_iterator it(object, target.key_path, objects_excluded, limits);
-            match = eval_target(
-                it, target.name, ephemeral, *matcher, target.transformers, limits, deadline);
-        }
-
-        if (match.has_value()) {
-            cache.match = std::move(match);
-            return {.outcome = true, .ephemeral = ephemeral};
-        }
+    if (!match) {
+        cache.match = {{.args = {{.name = "input"sv,
+                            .resolved = object_to_string(*object),
+                            .address = target_.name,
+                            .key_path = {target_.key_path.begin(), target_.key_path.end()}}},
+            .highlights = {},
+            .operator_name = matcher->negated_name(),
+            .operator_value = matcher->to_string(),
+            .ephemeral = ephemeral}};
+        return {.outcome = true, .ephemeral = ephemeral};
     }
 
     return {.outcome = false, .ephemeral = false};
