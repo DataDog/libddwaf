@@ -1,0 +1,28 @@
+{
+  name: "Default forbidden IPs overridden through policy",
+  runs: [
+    {
+      persistent-input: {
+        server.io.net.url.1: "https://10.5.5.5/somewhere/in/the/app",
+        server.request.body: "10.5.5.5"
+      },
+      rules: [
+        {
+          "ssrf-001": [
+            {
+              resource: {
+                address: "server.io.net.url.1",
+                value: "https://10.5.5.5/somewhere/in/the/app"
+              },
+              params: {
+                address: "server.request.body",
+                value: "10.5.5.5"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

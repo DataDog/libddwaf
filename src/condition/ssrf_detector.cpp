@@ -22,6 +22,7 @@
 #include "ddwaf.h"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
+#include "ip_utils.hpp"
 #include "log.hpp"
 #include "matcher/ip_match.hpp"
 #include "uri_utils.hpp"
@@ -153,8 +154,12 @@ bool is_allowed_uri(const uri_decomposed &uri,
         return false;
     };
 
+    const auto is_forbidden_ip = [&](const std::optional<ipaddr> &ip) {
+        return ip.has_value() && forbidden_ip_matcher->match_ip(ip.value());
+    };
+
     return allowed_scheme_set.contains(uri.scheme) && !is_forbidden_domain(uri.authority.host) &&
-           !forbidden_ip_matcher->match_ip(uri.authority.host_ip.value());
+           !is_forbidden_ip(uri.authority.host_ip);
 }
 
 ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
@@ -166,11 +171,7 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
     static constexpr std::size_t min_str_len = 4;
 
     std::string_view forbidden_domain = {};
-    if (opts.enforce_policy_without_injection) {
-        if (!is_allowed_uri(uri, forbidden_ip_matcher, allowed_scheme_set, forbidden_domains)) {
-            return {{{}, {}}};
-        }
-    } else {
+    if (!opts.enforce_policy_without_injection) {
         for (const auto &domain : forbidden_domains) {
             if (uri.authority.host.ends_with(domain)) {
                 forbidden_domain = domain;
@@ -189,8 +190,11 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
 
         const auto [param, param_index] = *it;
 
-        if (opts.forbid_full_url_injection && uri.raw == param) {
-            return {{std::string(param), it.get_current_path()}};
+        if (uri.raw == param) {
+            if (opts.forbid_full_url_injection) {
+                return {{std::string(param), it.get_current_path()}};
+            }
+            return {};
         }
 
         // Verify if the injected param intereferes with the authority:
@@ -269,8 +273,8 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, const ddwaf_object &params,
 
 } // namespace
 
-ssrf_detector::ssrf_detector(std::vector<condition_parameter> args, const ssrf_opts &opts)
-    : base_impl<ssrf_detector>(std::move(args)), opts_(opts),
+ssrf_detector::ssrf_detector(std::vector<condition_parameter> args)
+    : base_impl<ssrf_detector>(std::move(args)),
       forbidden_ip_matcher_(std::make_unique<matcher::ip_match>(default_forbidden_ips)),
       allowed_schemes_(default_allowed_schemes.begin(), default_allowed_schemes.end()),
       forbidden_domains_(default_forbidden_domains.begin(), default_forbidden_domains.end())
@@ -294,6 +298,26 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
     auto decomposed = uri_parse(uri.value);
     if (!decomposed.has_value()) {
         return {};
+    }
+
+    if (opts_.enforce_policy_without_injection &&
+        !is_allowed_uri(*decomposed, forbidden_ip_matcher_, allowed_schemes_, forbidden_domains_)) {
+        const std::vector<std::string> uri_kp{uri.key_path.begin(), uri.key_path.end()};
+
+        DDWAF_TRACE("URI {} matched parameter policy", uri.value);
+
+        cache.match = condition_match{
+            .args = {{.name = "resource"sv,
+                         .resolved = std::string{uri.value},
+                         .address = uri.address,
+                         .key_path = uri_kp},
+                {.name = "params"sv, .resolved = {}, .address = {}, .key_path = {}}},
+            .highlights = {decomposed->scheme_and_authority},
+            .operator_name = "ssrf_detector",
+            .operator_value = {},
+            .ephemeral = uri.ephemeral};
+
+        return {.outcome = true, .ephemeral = uri.ephemeral};
     }
 
     for (const auto &param : params) {

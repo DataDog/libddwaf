@@ -154,13 +154,15 @@ auto build_versioned_condition<ssrf_detector>(std::string_view operator_name, un
     const ssrf_opts opts{.authority_inspection = at<bool>(options, "authority-inspection", true),
         .path_inspection = at<bool>(options, "path-inspection", false),
         .query_inspection = at<bool>(options, "query-inspection", false),
-        .forbid_full_url_injection = at<bool>(options, "forbid-full-url-injection", true),
+        .forbid_full_url_injection = at<bool>(options, "forbid-full-url-injection", false),
         .enforce_policy_without_injection =
             at<bool>(options, "enforce-policy-without-injection", false)};
 
+    auto policy = at<raw_configuration::map>(params, "policy", {});
+
     std::vector<std::string> allowed_schemes;
-    auto it = params.find("allowed-schemes");
-    if (it == params.end()) {
+    auto it = policy.find("allowed-schemes");
+    if (it == policy.end()) {
         allowed_schemes = {ssrf_detector::default_allowed_schemes.begin(),
             ssrf_detector::default_allowed_schemes.end()};
     } else {
@@ -168,8 +170,8 @@ auto build_versioned_condition<ssrf_detector>(std::string_view operator_name, un
     }
 
     std::vector<std::string> forbidden_domains;
-    it = params.find("forbidden-domains");
-    if (it == params.end()) {
+    it = policy.find("forbidden-domains");
+    if (it == policy.end()) {
         forbidden_domains = {ssrf_detector::default_forbidden_domains.begin(),
             ssrf_detector::default_forbidden_domains.end()};
     } else {
@@ -177,8 +179,8 @@ auto build_versioned_condition<ssrf_detector>(std::string_view operator_name, un
     }
 
     std::vector<std::string_view> forbidden_ips;
-    it = params.find("forbidden-ips");
-    if (it == params.end()) {
+    it = policy.find("forbidden-ips");
+    if (it == policy.end()) {
         forbidden_ips = {ssrf_detector::default_forbidden_ips.begin(),
             ssrf_detector::default_forbidden_ips.end()};
     } else {
