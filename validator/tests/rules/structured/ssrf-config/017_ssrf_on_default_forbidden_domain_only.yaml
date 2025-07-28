@@ -3,7 +3,7 @@
   runs: [
     {
       persistent-input: {
-        server.io.net.url.4: "https://localhost.me/somewhere/in/the/app",
+        server.io.net.url.4: "https://localtest.me/somewhere/in/the/app",
         server.request.body: ""
       },
       rules: [
@@ -12,9 +12,9 @@
             {
               resource: {
                 address: "server.io.net.url.4",
-                value: "https://localhost.me/somewhere/in/the/app"
+                value: "https://localtest.me/somewhere/in/the/app"
               },
-              highlight: "https://localhost.me/somewhere/in/the/app"
+              highlight: "https://localtest.me/somewhere/in/the/app"
             }
           ]
         }

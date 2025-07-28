@@ -29,7 +29,7 @@ rules:
             allowed-schemes: [gopher]
             forbidden-domains: [example.com]
             forbidden-ips: [10.5.5.5]
-        operator: ssrf_detector@v1
+        operator: ssrf_detector@v3
   - id: ssrf-002
     name: SSRF Exploit detection with path, query but no authority inspection
     tags:
@@ -54,7 +54,7 @@ rules:
             forbid-full-url-injection: false
             enforce-policy-without-injection: false
           policy: {}
-        operator: ssrf_detector@v1
+        operator: ssrf_detector@v3
   - id: ssrf-003
     name: SSRF Exploit detection with full URL injection
     tags:
@@ -74,7 +74,7 @@ rules:
             - address: graphql.server.resolver
           options:
             forbid-full-url-injection: true
-        operator: ssrf_detector@v1
+        operator: ssrf_detector@v3
   - id: ssrf-004
     name: SSRF Exploit detection policy enforcement
     tags:
@@ -94,7 +94,7 @@ rules:
             - address: graphql.server.resolver
           options:
             enforce-policy-without-injection: true
-        operator: ssrf_detector@v1
+        operator: ssrf_detector@v3
   - id: ssrf-005
     name: SSRF Exploit detection everything disabled
     tags:
@@ -122,4 +122,4 @@ rules:
             allowed-schemes: []
             forbidden-domains: []
             forbidden-ips: []
-        operator: ssrf_detector@v1
+        operator: ssrf_detector@v3

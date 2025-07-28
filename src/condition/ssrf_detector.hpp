@@ -38,16 +38,9 @@ public:
         "127.0.0.1/32", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", "::1/128",
         "fc00::/7", "fe80::/10", "2001:db8:1234:1a00::/56"};
 
-    static constexpr std::array<std::string_view, 10> default_forbidden_domains{
-        "metadata.google",
-        "burpcollaborator.net",
-        ".local",
-        ".internal",
-        "ram.aliyuncs.com",
-        "ifconfig.pro",
-        "localhost",
-        "localtest.me",
-    };
+    static constexpr std::array<std::string_view, 8> default_forbidden_domains{"metadata.google",
+        "burpcollaborator.net", ".local", ".internal", "ram.aliyuncs.com", "ifconfig.pro",
+        "localhost", "localtest.me"};
 
     static constexpr std::array<std::string_view, 4> default_allowed_schemes{
         "https", "http", "ftps", "ftp"};
