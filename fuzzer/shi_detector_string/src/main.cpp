@@ -2,27 +2,28 @@
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2021 Datadog, Inc.
+// Copyright 2025 Datadog, Inc.
 
 #include <cstdint>
 #include <random>
-
+#include "../common/afl_wrapper.hpp"
+#include "../common/utils.hpp"
 #include "condition/shi_detector.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf_afl;
 using namespace std::literals;
 
 extern "C" size_t LLVMFuzzerMutate(uint8_t *Data, size_t Size, size_t MaxSize);
 
-extern "C" int LLVMFuzzerInitialize(const int * /*argc*/, char *** /*argv*/)
-{
-    ddwaf::memory::set_local_memory_resource(std::pmr::new_delete_resource());
-    return 0;
+template <typename... Args> 
+std::vector<condition_parameter> gen_param_def(Args... addresses) {
+    return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
 }
 
-template <typename... Args> std::vector<condition_parameter> gen_param_def(Args... addresses)
-{
-    return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
+extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv) {
+    ddwaf::memory::set_local_memory_resource(std::pmr::new_delete_resource());
+    return 0;
 }
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
@@ -81,12 +82,18 @@ std::size_t serialize(uint8_t *Data, std::string_view resource, std::string_view
 
 extern "C" size_t LLVMFuzzerCustomMutator(
     // NOLINTNEXTLINE
-    uint8_t *Data, size_t Size, [[maybe_unused]] size_t MaxSize, [[maybe_unused]] unsigned int Seed)
+    uint8_t *Data, size_t Size, [[maybe_unused]] size_t MaxSize, unsigned int Seed)
 {
-    static thread_local std::random_device dev;
-    static thread_local std::mt19937 rng(dev());
+    static thread_local std::mt19937 rng;
+    rng.seed(Seed);
 
     auto [resource, param] = deserialize(Data, Size);
+    
+    // if deserialize failed, fall back to default mutation
+    if (resource.empty() && param.empty()) {
+        return LLVMFuzzerMutate(Data, Size, MaxSize);
+    }
+    
     MaxSize -= sizeof(std::size_t) * 2;
 
     std::string resource_buffer{resource.begin(), resource.end()};
@@ -97,6 +104,11 @@ extern "C" size_t LLVMFuzzerCustomMutator(
         resource.size(), resource_buffer.size());
     resource_buffer.resize(new_size);
 
+    // avoid division by zero
+    if (new_size == 0) {
+        return LLVMFuzzerMutate(Data, Size, MaxSize);
+    }
+
     auto param_idx = rng() % new_size;
     auto param_size = 1 + rng() % (new_size - param_idx);
 
@@ -104,11 +116,15 @@ extern "C" size_t LLVMFuzzerCustomMutator(
     return serialize(Data, resource_buffer, param_buffer);
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
-{
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
-    auto [resource, param] = deserialize(bytes, size);
+    auto [resource, param] = deserialize(data, size);
+    
+    // if deserialize failed, just return (no-op for invalid input)
+    if (resource.empty() && param.empty()) {
+        return 0;
+    }
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -116,14 +132,21 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     ddwaf_object_map_add(&root, "server.sys.shell.cmd",
         ddwaf_object_stringl(&tmp, resource.data(), resource.size()));
     ddwaf_object_map_add(
-        &root, "server.request.query", ddwaf_object_stringl(&tmp, param.data(), param.size()));
+        &root, "server.request.query", 
+        ddwaf_object_stringl(&tmp, param.data(), param.size())
+    );
 
     object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    (void)cond.eval(cache, store, {}, {}, {}, deadline);
+    auto result = cond.eval(cache, store, {}, {}, {}, deadline);
+
+    prevent_optimization(result);
 
     return 0;
 }
+
+// Create AFL++ main function with initialization
+AFL_FUZZ_TARGET_WITH_INIT("shi_detector_string_fuzz", LLVMFuzzerTestOneInput, LLVMFuzzerInitialize) 

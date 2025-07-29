@@ -2,27 +2,28 @@
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2021 Datadog, Inc.
+// Copyright 2025 Datadog, Inc.
 
 #include <cstdint>
 #include <random>
-
+#include "../common/afl_wrapper.hpp"
+#include "../common/utils.hpp"
 #include "condition/shi_detector.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf_afl;
 using namespace std::literals;
 
 extern "C" size_t LLVMFuzzerMutate(uint8_t *Data, size_t Size, size_t MaxSize);
 
-extern "C" int LLVMFuzzerInitialize(const int * /*argc*/, char *** /*argv*/)
-{
-    ddwaf::memory::set_local_memory_resource(std::pmr::new_delete_resource());
-    return 0;
+template <typename... Args> 
+std::vector<condition_parameter> gen_param_def(Args... addresses) {
+    return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
 }
 
-template <typename... Args> std::vector<condition_parameter> gen_param_def(Args... addresses)
-{
-    return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
+extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv) {
+    ddwaf::memory::set_local_memory_resource(std::pmr::new_delete_resource());
+    return 0;
 }
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
@@ -181,32 +182,40 @@ extern "C" size_t LLVMFuzzerCustomMutator(
     return serializer{Data}.serialize(new_resource, param_buffer);
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
-{
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
-    auto [resource, param] = deserialize(bytes, size);
+    auto [resource, param] = deserialize(data, size);
 
     ddwaf_object root;
     ddwaf_object tmp;
     ddwaf_object array;
     ddwaf_object_map(&root);
-
     ddwaf_object_array(&array);
     for (auto arg : resource) {
         ddwaf_object_array_add(&array, ddwaf_object_stringl(&tmp, arg.data(), arg.size()));
     }
 
+    // Add shell command array
     ddwaf_object_map_add(&root, "server.sys.shell.cmd", &array);
+    
+    // Add request query parameter
     ddwaf_object_map_add(
-        &root, "server.request.query", ddwaf_object_stringl(&tmp, param.data(), param.size()));
+        &root, "server.request.query", 
+        ddwaf_object_stringl(&tmp, param.data(), param.size())
+    );
 
     object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    (void)cond.eval(cache, store, {}, {}, {}, deadline);
+    auto result = cond.eval(cache, store, {}, {}, {}, deadline);
+
+    prevent_optimization(result);
 
     return 0;
 }
+
+// Create AFL++ main function with initialization
+AFL_FUZZ_TARGET_WITH_INIT("shi_detector_array_fuzz", LLVMFuzzerTestOneInput, LLVMFuzzerInitialize) 
