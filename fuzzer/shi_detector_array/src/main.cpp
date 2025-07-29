@@ -2,27 +2,29 @@
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2021 Datadog, Inc.
+// Copyright 2025 Datadog, Inc.
 
+#include "../common/afl_wrapper.hpp"
+#include "../common/utils.hpp"
+#include "condition/shi_detector.hpp"
 #include <cstdint>
 #include <random>
 
-#include "condition/shi_detector.hpp"
-
 using namespace ddwaf;
+using namespace ddwaf_afl;
 using namespace std::literals;
 
 extern "C" size_t LLVMFuzzerMutate(uint8_t *Data, size_t Size, size_t MaxSize);
 
-extern "C" int LLVMFuzzerInitialize(const int * /*argc*/, char *** /*argv*/)
-{
-    ddwaf::memory::set_local_memory_resource(std::pmr::new_delete_resource());
-    return 0;
-}
-
 template <typename... Args> std::vector<condition_parameter> gen_param_def(Args... addresses)
 {
     return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
+}
+
+extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
+{
+    ddwaf::memory::set_local_memory_resource(std::pmr::new_delete_resource());
+    return 0;
 }
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
@@ -33,7 +35,14 @@ std::pair<std::vector<std::string_view>, std::string_view> deserialize(
         return {};
     }
 
-    const auto resource_size = *reinterpret_cast<const std::size_t *>(data);
+    std::size_t resource_size;
+    std::memcpy(&resource_size, data, sizeof(std::size_t));
+
+    // Cap resource_size to prevent excessive memory allocation
+    constexpr std::size_t MAX_RESOURCE_SIZE = 128 * 1024; // 128k elements
+    if (resource_size > MAX_RESOURCE_SIZE) {
+        return {};
+    }
 
     data += sizeof(std::size_t);
     size -= sizeof(std::size_t);
@@ -46,7 +55,12 @@ std::pair<std::vector<std::string_view>, std::string_view> deserialize(
     resource.reserve(resource_size);
 
     for (std::size_t i = 0; i < resource_size; ++i) {
-        const auto arg_size = *reinterpret_cast<const std::size_t *>(data);
+        if (size < sizeof(std::size_t)) {
+            return {};
+        }
+
+        std::size_t arg_size;
+        std::memcpy(&arg_size, data, sizeof(std::size_t));
         data += sizeof(std::size_t);
         size -= sizeof(std::size_t);
 
@@ -65,7 +79,8 @@ std::pair<std::vector<std::string_view>, std::string_view> deserialize(
         return {};
     }
 
-    const auto param_size = *reinterpret_cast<const std::size_t *>(data);
+    std::size_t param_size;
+    std::memcpy(&param_size, data, sizeof(std::size_t));
     data += sizeof(std::size_t);
     size -= sizeof(std::size_t);
 
@@ -181,23 +196,31 @@ extern "C" size_t LLVMFuzzerCustomMutator(
     return serializer{Data}.serialize(new_resource, param_buffer);
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
+    // Limit payload size to 128KB to prevent excessive memory usage
+    constexpr size_t MAX_PAYLOAD_SIZE = 128 * 1024;
+    if (size > MAX_PAYLOAD_SIZE) {
+        return 0;
+    }
+
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
-    auto [resource, param] = deserialize(bytes, size);
+    auto [resource, param] = deserialize(data, size);
 
     ddwaf_object root;
     ddwaf_object tmp;
     ddwaf_object array;
     ddwaf_object_map(&root);
-
     ddwaf_object_array(&array);
     for (auto arg : resource) {
         ddwaf_object_array_add(&array, ddwaf_object_stringl(&tmp, arg.data(), arg.size()));
     }
 
+    // Add shell command array
     ddwaf_object_map_add(&root, "server.sys.shell.cmd", &array);
+
+    // Add request query parameter
     ddwaf_object_map_add(
         &root, "server.request.query", ddwaf_object_stringl(&tmp, param.data(), param.size()));
 
@@ -206,7 +229,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    (void)cond.eval(cache, store, {}, {}, {}, deadline);
+    auto result = cond.eval(cache, store, {}, {}, {}, deadline);
+
+    prevent_optimization(result);
 
     return 0;
 }
+
+// Create AFL++ main function with initialization
+AFL_FUZZ_TARGET_WITH_INIT("shi_detector_array_fuzz", LLVMFuzzerTestOneInput, LLVMFuzzerInitialize)

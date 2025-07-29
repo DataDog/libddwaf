@@ -2,55 +2,67 @@
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2021 Datadog, Inc.
+// Copyright 2025 Datadog, Inc.
 
-#include <cstdint>
-
+#include "../common/afl_wrapper.hpp"
+#include "../common/utils.hpp"
 #include "tokenizer/generic_sql.hpp"
 #include "tokenizer/mysql.hpp"
 #include "tokenizer/pgsql.hpp"
-#include "tokenizer/sql_base.hpp"
 #include "tokenizer/sqlite.hpp"
+#include <cstdint>
 
-ddwaf::sql_dialect dialect = ddwaf::sql_dialect::generic;
+using namespace ddwaf_afl;
 
-extern "C" int LLVMFuzzerInitialize(const int *argc, char ***argv)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    for (int i = 0; i < *argc; i++) {
-        std::string_view arg = (*argv)[i];
-        if (arg.starts_with("--dialect=")) {
-            dialect = ddwaf::sql_dialect_from_type(arg.substr(sizeof("--dialect=") - 1));
-            break;
-        }
+    // Need at least one byte to determine tokenizer type
+    if (size == 0) {
+        return 0;
     }
-    return 0;
-}
 
-template <typename T> [[clang::optnone]] void tokenize(std::string_view query)
-{
-    T tokenizer(query);
-    auto tokens = tokenizer.tokenize();
-    // Force the compiler to not optimize away tokens
-    // NOLINTNEXTLINE(hicpp-no-assembler)
-    asm volatile("" : "+m"(tokens) : : "memory");
-}
+    // Use first byte to select tokenizer type (modulo 4 for 4 tokenizers)
+    uint8_t tokenizer_type = data[0] % 4;
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
-{
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    std::string_view query{reinterpret_cast<const char *>(bytes), size};
-    switch (dialect) {
-    case ddwaf::sql_dialect::mysql:
-        tokenize<ddwaf::mysql_tokenizer>(query);
+    // Convert remaining input to string_view for tokenization
+    auto query = bytes_to_string_view(data + 1, size - 1);
+
+    std::vector<ddwaf::sql_token> tokens;
+
+    // Create appropriate SQL tokenizer based on the first byte
+    switch (tokenizer_type) {
+    case 0: {
+        ddwaf::generic_sql_tokenizer tokenizer(query);
+        tokens = tokenizer.tokenize();
         break;
-    case ddwaf::sql_dialect::pgsql:
-        tokenize<ddwaf::pgsql_tokenizer>(query);
+    }
+    case 1: {
+        ddwaf::mysql_tokenizer tokenizer(query);
+        tokens = tokenizer.tokenize();
         break;
-    case ddwaf::sql_dialect::sqlite:
-        tokenize<ddwaf::sqlite_tokenizer>(query);
+    }
+    case 2: {
+        ddwaf::pgsql_tokenizer tokenizer(query);
+        tokens = tokenizer.tokenize();
         break;
+    }
+    case 3: {
+        ddwaf::sqlite_tokenizer tokenizer(query);
+        tokens = tokenizer.tokenize();
+        break;
+    }
     default:
-        tokenize<ddwaf::generic_sql_tokenizer>(query);
+        // This should never happen due to modulo 4, but just in case we crash.
+        // TODO: find a way to avoid the fuzzer to silently never cover a new tokenizer if one is
+        // added.
+        __builtin_trap();
     }
+
+    // Prevent compiler optimization
+    prevent_optimization(tokens);
+
     return 0;
 }
+
+// Create AFL++ main function
+AFL_FUZZ_TARGET("sql_tokenizer_fuzz", LLVMFuzzerTestOneInput)

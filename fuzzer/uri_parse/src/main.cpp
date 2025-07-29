@@ -2,18 +2,24 @@
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2021 Datadog, Inc.
+// Copyright 2025 Datadog, Inc.
 
+#include "../common/afl_wrapper.hpp"
+#include "../common/utils.hpp"
+#include "uri_utils.hpp"
 #include <cstdint>
 
-#include "uri_utils.hpp"
+using namespace ddwaf_afl;
 
-extern "C" int LLVMFuzzerInitialize(const int * /*argc*/, char *** /*argv*/) { return 0; }
-
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    std::string_view uri_raw{reinterpret_cast<const char *>(bytes), size};
-    ddwaf::uri_parse(uri_raw);
+    auto uri_raw = bytes_to_string_view(data, size);
+    auto result = ddwaf::uri_parse(uri_raw);
+
+    prevent_optimization(result);
+
     return 0;
 }
+
+// Create AFL++ main function
+AFL_FUZZ_TARGET("uri_parse_fuzz", LLVMFuzzerTestOneInput)

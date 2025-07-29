@@ -15,6 +15,7 @@
 #include <thread>
 #include <vector>
 
+#include "../common/afl_wrapper.hpp"
 #include "helpers.hpp"
 #include "interface.hpp"
 #include "object_builder.hpp"
@@ -127,3 +128,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     runner->push(args, ephemeral, timeLeftInUs);
     return 0;
 }
+
+// Create AFL++ main function with initialization
+AFL_FUZZ_TARGET_WITH_INIT("global_fuzz", LLVMFuzzerTestOneInput, LLVMFuzzerInitialize)

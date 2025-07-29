@@ -5,129 +5,206 @@ on:
     branches:
       - "**"
   push:
-    branches: [ master ]
+    branches: [master]
     tags:
       - "*"
   schedule:
-    - cron:  30 0 * * *
+    - cron: 30 0 * * *
   workflow_dispatch:
     inputs:
       duration:
-        description: 'Duration of the fuzzing run in seconds'
+        description: "Duration of the fuzzing run in seconds"
         required: true
         default: "60"
         type: string
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
 jobs:
-  # TODO: build all fuzzers first, then run independently
-  global-fuzzer:
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      fuzzers: ${{ steps.list-fuzzers.outputs.fuzzers }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Install deps
+      - name: Install AFL++ and dependencies
         run: |
-          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y remove python3-lldb-14
-          sudo .github/workflows/scripts/llvm.sh 17
-          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y install libfuzzer-17-dev
+          # Add LLVM repository
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+          echo 'deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-19 main' | sudo tee /etc/apt/sources.list.d/llvm-toolchain.list
+          sudo apt-get update
 
-      - name: Build
-        run: ./fuzzer/global/build.sh
+          # Install dependencies matching your Dockerfile
+          sudo apt-get install -y \
+            build-essential cmake git curl python3 python3-pip \
+            llvm-19 llvm-19-dev llvm-19-tools clang-19 lld-19 \
+            libc++-19-dev libc++abi-19-dev ninja-build \
+            libssl-dev libcurl4-openssl-dev zlib1g-dev xxd
 
-      - name: Run fuzzer
-        run: ./fuzzer/global/run.sh ${{ github.event.inputs.duration }}
+          # Set up clang alternatives
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-19 100
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-19 100
+          sudo update-alternatives --install /usr/bin/llvm-config llvm-config /usr/bin/llvm-config-19 100
 
-      - name: Log
-        if: ${{ always() }}
-        run: grep -v -f fuzzer/global/scripts/report-negative-patterns.txt fuzzer/global/fuzz-*.log
+      - name: Install AFL++
+        run: |
+          git clone https://github.com/AFLplusplus/AFLplusplus.git /tmp/AFLplusplus
+          cd /tmp/AFLplusplus
+          git checkout b89727bea903aec80d003b6764fb53c232d33d95
+          make -j$(nproc) all
+          sudo make install
 
-      - name: Show coverage
-        run: ./fuzzer/global/scripts/show_coverage.sh 40 || true
+      - name: Install afl-cov-fast
+        run: |
+          git clone --recursive https://github.com/airbus-seclab/afl-cov-fast.git /opt/afl-cov-fast
+          cd /opt/afl-cov-fast
+          git checkout 7a96b578bb227e874bf75f8cb759e8ac2b180453
+          pip3 install -r requirements.txt
 
-      - name: Compress artifact
-        if: ${{ always() }}
-        run: tar -czvf fuzzing.tar.gz fuzzer/global/
+      - name: Create workspace and build
+        env:
+          CC: afl-clang-lto
+          CXX: afl-clang-lto++
+          AFL_USE_ASAN: 1
+        run: |
+          # Create /workspace and copy everything there
+          sudo mkdir -p /workspace
+          sudo cp -r . /workspace/
+          sudo chown -R $(whoami):$(whoami) /workspace
+          cd /workspace
 
-      - name: Artifact
+          # Run the build script logic directly
+          python3 fuzzer/global/scripts/build_corpus.py
+
+          mkdir -p build
+          cd build
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=${CC} \
+            -DCMAKE_CXX_COMPILER=${CXX} \
+            -DCMAKE_C_FLAGS="-fsanitize=address -fno-omit-frame-pointer -O3 -g -fprofile-instr-generate -fcoverage-mapping" \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address -fno-omit-frame-pointer -O3 -g -fprofile-instr-generate -fcoverage-mapping"
+          make -j$(nproc)
+
+          cd ../fuzzer
+          mkdir -p build
+          cd build
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DLIBDDWAF_BUILD_FUZZER=ON \
+            -DCMAKE_C_COMPILER=${CC} \
+            -DCMAKE_CXX_COMPILER=${CXX} \
+            -DCMAKE_C_FLAGS="-fsanitize=address -fno-omit-frame-pointer -O3 -g -fprofile-instr-generate -fcoverage-mapping" \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address -fno-omit-frame-pointer -O3 -g -fprofile-instr-generate -fcoverage-mapping"
+          make -j$(nproc)
+
+      - name: List available fuzzers
+        id: list-fuzzers
+        run: |
+          fuzzers=$(grep -A 20 "ALL_FUZZERS=(" fuzzer/docker/run_fuzzers.sh | grep -E '^\s*"[^"]*"' | sed 's/.*"\([^"]*\)".*/\1/' | jq -R -s -c 'split("\n")[:-1]')
+          echo "fuzzers=$fuzzers" >> $GITHUB_OUTPUT
+          echo "Found fuzzers: $fuzzers"
+
+      - name: Package AFL++ and coverage tools
+        run: |
+          # Create AFL++ package
+          mkdir -p /tmp/afl-package/bin
+          mkdir -p /tmp/afl-package/opt
+
+          # Package AFL++ binaries
+          cp /usr/local/bin/afl-* /tmp/afl-package/bin/ 2>/dev/null || true
+          cp /opt/AFLplusplus/afl-* /tmp/afl-package/bin/ 2>/dev/null || true
+
+          # Package afl-cov-fast
+          cp -r /opt/afl-cov-fast /tmp/afl-package/opt/
+
+          echo "AFL++ binaries:"
+          ls -la /tmp/afl-package/bin/
+          echo "Coverage tools:"
+          ls -la /tmp/afl-package/opt/
+
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
-        if: ${{ always() }}
         with:
-          name: fuzzing-data
-          path: fuzzing.tar.gz
-  local-fuzzer:
+          name: fuzzer-binaries
+          path: |
+            /workspace/fuzzer/build/*_fuzz
+            /workspace/build/
+            /workspace/fuzzer/global/scripts/
+          retention-days: 1
+
+      - name: Upload AFL++ binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: afl-binaries
+          path: /tmp/afl-package/
+          retention-days: 1
+
+  fuzzing:
+    needs: build
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        variant:
-          - fuzzer: uri_parse
-            params: ""
-          - fuzzer: ssrf_detector
-            params: ""
-          - fuzzer: lfi_detector
-            params: ""
-          - fuzzer: sql_tokenizer
-            params: "--dialect=mysql"
-          - fuzzer: sql_tokenizer
-            params: "--dialect=postgresql"
-          - fuzzer: sql_tokenizer
-            params: "--dialect=sqlite"
-          - fuzzer: sql_tokenizer
-            params: "--dialect=standard"
-          - fuzzer: sqli_detector
-            params: "--dialect=mysql"
-          - fuzzer: sqli_detector
-            params: "--dialect=postgresql"
-          - fuzzer: sqli_detector
-            params: "--dialect=sqlite"
-          - fuzzer: sqli_detector
-            params: "--dialect=standard"
-          - fuzzer: shell_tokenizer
-            params: ""
-          - fuzzer: shi_detector_string
-            params: ""
-          - fuzzer: shi_detector_array
-            params: ""
-          - fuzzer: cmdi_detector
-            params: ""
-          - fuzzer: sha256
-            params: ""
-          - fuzzer: http_endpoint_fingerprint
-            params: ""
-          - fuzzer: http_header_fingerprint
-            params: ""
-          - fuzzer: http_network_fingerprint
-            params: ""
-          - fuzzer: session_fingerprint
-            params: ""
-          - fuzzer: jwt_decode
-            params: ""
+        fuzzer: ${{ fromJson(needs.build.outputs.fuzzers) }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Install deps
+      - name: Install runtime dependencies
         run: |
-          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y remove python3-lldb-14
-          sudo .github/workflows/scripts/llvm.sh 17
-          DEBIAN_FRONTEND="noninteractive" sudo apt-get -y install libfuzzer-17-dev
+          # Add LLVM repository
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+          echo 'deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-19 main' | sudo tee /etc/apt/sources.list.d/llvm-toolchain.list
+          sudo apt-get update
 
-      - name: Build
-        env:
-          CC: clang-17
-          CXX: clang++-17
+          # Install only runtime dependencies (no build tools needed)
+          sudo apt-get install -y \
+            llvm-19 llvm-19-tools python3 python3-pip
+
+      - name: Download AFL++ binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: afl-binaries
+          path: /tmp/afl-package
+
+      - name: Install AFL++ binaries and coverage tools
         run: |
-          mkdir build ; cd build
-          cmake -DCMAKE_VERBOSE_MAKEFILE=1 -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
-          make -j $(nproc) ${{ matrix.variant.fuzzer }}_fuzzer
-          cp fuzzer/${{ matrix.variant.fuzzer }}_fuzzer ../fuzzer/${{ matrix.variant.fuzzer }}
+          # Install AFL++ binaries
+          sudo cp /tmp/afl-package/bin/* /usr/local/bin/
+          sudo chmod +x /usr/local/bin/afl-*
+
+          # Install afl-cov-fast
+          sudo cp -r /tmp/afl-package/opt/afl-cov-fast /opt/
+          cd /opt/afl-cov-fast
+          pip3 install -r requirements.txt
+
+          afl-fuzz --help || echo "AFL++ installed successfully"
+
+      - name: Setup workspace and download artifacts
+        run: |
+          sudo mkdir -p /workspace
+          sudo cp -r . /workspace/
+          sudo chown -R $(whoami):$(whoami) /workspace
+          sudo chown -R $(whoami):$(whoami) /opt
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: fuzzer-binaries
+          path: /workspace
 
       - name: Run fuzzer
+        env:
+          AFL_SKIP_CPUFREQ: 1
+          AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES: 1
+          AFL_FAST_CAL: 1
         run: |
-          cd fuzzer/${{ matrix.variant.fuzzer }}
-          ./${{ matrix.variant.fuzzer }}_fuzzer ${{ matrix.variant.params }} -max_total_time=${{ github.event.inputs.duration || 300 }} corpus/
+          cd /workspace
+          chmod +x fuzzer/build/*_fuzz 2>/dev/null || true
+          ./fuzzer/docker/run_fuzzers.sh ${{ matrix.fuzzer }}

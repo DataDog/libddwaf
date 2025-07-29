@@ -4,7 +4,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "../common/afl_wrapper.hpp"
 #include <cstdint>
+#include <cstring>
 #include <random>
 
 #include "condition/cmdi_detector.hpp"
@@ -33,20 +35,28 @@ std::pair<std::vector<std::string_view>, std::string_view> deserialize(
         return {};
     }
 
-    const auto resource_size = *reinterpret_cast<const std::size_t *>(data);
+    std::size_t resource_size;
+    std::memcpy(&resource_size, data, sizeof(std::size_t));
+
+    // Cap resource_size to prevent excessive memory allocation
+    constexpr std::size_t MAX_RESOURCE_SIZE = 128 * 1024; // 128k elements
+    if (resource_size > MAX_RESOURCE_SIZE) {
+        return {};
+    }
 
     data += sizeof(std::size_t);
     size -= sizeof(std::size_t);
-
-    if (size < sizeof(std::size_t)) {
-        return {};
-    }
 
     std::vector<std::string_view> resource;
     resource.reserve(resource_size);
 
     for (std::size_t i = 0; i < resource_size; ++i) {
-        const auto arg_size = *reinterpret_cast<const std::size_t *>(data);
+        if (size < sizeof(std::size_t)) {
+            return {};
+        }
+
+        std::size_t arg_size;
+        std::memcpy(&arg_size, data, sizeof(std::size_t));
         data += sizeof(std::size_t);
         size -= sizeof(std::size_t);
 
@@ -65,7 +75,8 @@ std::pair<std::vector<std::string_view>, std::string_view> deserialize(
         return {};
     }
 
-    const auto param_size = *reinterpret_cast<const std::size_t *>(data);
+    std::size_t param_size;
+    std::memcpy(&param_size, data, sizeof(std::size_t));
     data += sizeof(std::size_t);
     size -= sizeof(std::size_t);
 
@@ -183,6 +194,12 @@ extern "C" size_t LLVMFuzzerCustomMutator(
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 {
+    // Limit payload size to 128KB to prevent excessive memory usage
+    constexpr size_t MAX_PAYLOAD_SIZE = 128 * 1024;
+    if (size > MAX_PAYLOAD_SIZE) {
+        return 0;
+    }
+
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
     auto [resource, param] = deserialize(bytes, size);
@@ -210,3 +227,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 
     return 0;
 }
+
+// Create AFL++ main function with initialization
+AFL_FUZZ_TARGET_WITH_INIT("cmdi_detector_fuzz", LLVMFuzzerTestOneInput, LLVMFuzzerInitialize)

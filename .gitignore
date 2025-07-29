@@ -14,9 +14,9 @@ perf/test_files/breakdown.numbers
 
 /fuzzer/global/build
 /fuzzer/global/venv
-/fuzzer/global/corpus
 
 /fuzzer/global/sample_rules.yml
+/fuzzer/e2e/src/ruleset/sample_rules.json
 /fuzzer/global/sample_dict.txt
 /fuzzer/global/fuzzer
 /fuzzer/global/libddwaf.a
@@ -27,8 +27,9 @@ perf/test_files/breakdown.numbers
 /fuzzer/global/fuzz-*.log
 /fuzzer/global/results/crash-*
 
-/fuzzer/*/corpus/*
-!/fuzzer/*/corpus/corpus-*
+# Usual folders for testing afl fuzzers
+o/
+i/
 
 /src/version.hpp
 /tests/common/base_path.hpp
