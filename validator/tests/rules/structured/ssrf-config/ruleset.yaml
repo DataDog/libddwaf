@@ -1,0 +1,125 @@
+version: "2.2"
+metadata:
+  rules_version: 1.8.0
+rules:
+  - id: ssrf-001
+    name: SSRF Exploit detection with overridden policy
+    tags:
+      type: ssrf
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - parameters:
+          resource:
+            - address: server.io.net.url.1
+          params:
+            - address: server.request.query
+            - address: server.request.body
+            - address: server.request.path_params
+            - address: grpc.server.request.message
+            - address: graphql.server.all_resolvers
+            - address: graphql.server.resolver
+          options:
+            authority-inspection: true
+            path-inspection: false
+            query-inspection: false
+            forbid-full-url-injection: false
+            enforce-policy-without-injection: false
+          policy:
+            allowed-schemes: [gopher]
+            forbidden-domains: [example.com]
+            forbidden-ips: [10.5.5.5]
+        operator: ssrf_detector@v3
+  - id: ssrf-002
+    name: SSRF Exploit detection with path, query but no authority inspection
+    tags:
+      type: ssrf
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - parameters:
+          resource:
+            - address: server.io.net.url.2
+          params:
+            - address: server.request.query
+            - address: server.request.body
+            - address: server.request.path_params
+            - address: grpc.server.request.message
+            - address: graphql.server.all_resolvers
+            - address: graphql.server.resolver
+          options:
+            authority-inspection: false
+            path-inspection: true
+            query-inspection: true
+            forbid-full-url-injection: false
+            enforce-policy-without-injection: false
+          policy: {}
+        operator: ssrf_detector@v3
+  - id: ssrf-003
+    name: SSRF Exploit detection with full URL injection
+    tags:
+      type: ssrf
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - parameters:
+          resource:
+            - address: server.io.net.url.3
+          params:
+            - address: server.request.query
+            - address: server.request.body
+            - address: server.request.path_params
+            - address: grpc.server.request.message
+            - address: graphql.server.all_resolvers
+            - address: graphql.server.resolver
+          options:
+            forbid-full-url-injection: true
+        operator: ssrf_detector@v3
+  - id: ssrf-004
+    name: SSRF Exploit detection policy enforcement
+    tags:
+      type: ssrf
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - parameters:
+          resource:
+            - address: server.io.net.url.4
+          params:
+            - address: server.request.query
+            - address: server.request.body
+            - address: server.request.path_params
+            - address: grpc.server.request.message
+            - address: graphql.server.all_resolvers
+            - address: graphql.server.resolver
+          options:
+            enforce-policy-without-injection: true
+        operator: ssrf_detector@v3
+  - id: ssrf-005
+    name: SSRF Exploit detection everything disabled
+    tags:
+      type: ssrf
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - parameters:
+          resource:
+            - address: server.io.net.url.5
+          params:
+            - address: server.request.query
+            - address: server.request.body
+            - address: server.request.path_params
+            - address: grpc.server.request.message
+            - address: graphql.server.all_resolvers
+            - address: graphql.server.resolver
+          options:
+            authority-inspection: false
+            path-inspection: false
+            query-inspection: false
+            forbid-full-url-injection: false
+            enforce-policy-without-injection: false
+          policy: 
+            allowed-schemes: []
+            forbidden-domains: []
+            forbidden-ips: []
+        operator: ssrf_detector@v3

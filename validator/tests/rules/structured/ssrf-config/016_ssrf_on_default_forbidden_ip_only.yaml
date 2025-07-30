@@ -1,0 +1,25 @@
+{
+  name: "Forbidden IP enforced by policy only",
+  runs: [
+    {
+      persistent-input: {
+        server.io.net.url.4: "https://169.254.169.254/somewhere/in/the/app",
+        server.request.body: ""
+      },
+      rules: [
+        {
+          "ssrf-004": [
+            {
+              resource: {
+                address: "server.io.net.url.4",
+                value: "https://169.254.169.254/somewhere/in/the/app"
+              },
+              highlight: "https://169.254.169.254/somewhere/in/the/app"
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

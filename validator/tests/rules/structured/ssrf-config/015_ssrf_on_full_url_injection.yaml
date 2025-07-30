@@ -1,0 +1,28 @@
+{
+  name: "SSRF on full URL injection",
+  runs: [
+    {
+      persistent-input: {
+        server.io.net.url.3: "https://safe-url.com/somewhere/in/the/app",
+        server.request.body: "https://safe-url.com/somewhere/in/the/app"
+      },
+      rules: [
+        {
+          "ssrf-003": [
+            {
+              resource: {
+                address: "server.io.net.url.3",
+                value: "https://safe-url.com/somewhere/in/the/app"
+              },
+              params: {
+                address: "server.request.body",
+                value: "https://safe-url.com/somewhere/in/the/app"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  name: "Forbidden domain enforced by policy only",
+  runs: [
+    {
+      persistent-input: {
+        server.io.net.url.4: "https://localtest.me/somewhere/in/the/app",
+        server.request.body: ""
+      },
+      rules: [
+        {
+          "ssrf-004": [
+            {
+              resource: {
+                address: "server.io.net.url.4",
+                value: "https://localtest.me/somewhere/in/the/app"
+              },
+              highlight: "https://localtest.me/somewhere/in/the/app"
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}
