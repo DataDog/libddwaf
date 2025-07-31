@@ -461,7 +461,7 @@ TEST(TestObject, FromJsonArray)
     // Check second element (string)
     const auto *elem1 = ddwaf_object_at_value(&object, 1);
     ASSERT_NE(elem1, nullptr);
-    EXPECT_EQ(ddwaf_object_get_type(elem1), DDWAF_OBJ_STRING);
+    EXPECT_TRUE(ddwaf_object_is_string(elem1));
     EXPECT_STREQ(ddwaf_object_get_string(elem1, nullptr), "hello");
 
     // Check third element (boolean)
@@ -492,7 +492,7 @@ TEST(TestObject, FromJsonObject)
     // Check name field
     const auto *name_obj = ddwaf_object_find(&object, STRL("name"));
     ASSERT_NE(name_obj, nullptr);
-    EXPECT_EQ(ddwaf_object_get_type(name_obj), DDWAF_OBJ_STRING);
+    EXPECT_TRUE(ddwaf_object_is_string(name_obj));
     EXPECT_STREQ(ddwaf_object_get_string(name_obj, nullptr), "John");
 
     // Check age field
