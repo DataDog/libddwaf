@@ -3,13 +3,14 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
-#include <utility>
-#include <variant>
 
 #include "clock.hpp"
 #include "condition/base.hpp"
@@ -30,20 +31,18 @@ using namespace std::literals;
 namespace ddwaf {
 
 // Support for key path, only raise an event when there key path is actually present
-// When using key paths containing a scalar or a single-value array, report the value that didn't match
-// Ignore "unevaluated" non-matches (e,g. string shorter than min_length on match_regex)
+// When using key paths containing a scalar or a single-value array, report the value that didn't
+// match Ignore "unevaluated" non-matches (e,g. string shorter than min_length on match_regex)
 namespace {
 
-// Types to represent:
-// - No evaluation was performed - unknown_type
-// - Evaluation was performed but there was no match - no_match_type
-struct unknown_type {};
-struct no_match_type {};
-
-using result_type = std::variant<unknown_type, no_match_type, condition_match>;
+enum class match_status : uint8_t {
+    unknown,  // No data could be evaluated
+    no_match, // Data was evaluated but there was no match
+    match     // Data was evaluated and there was a match
+};
 
 template <typename Iterator>
-bool eval_object(Iterator &it, std::string_view address, const matcher::base &matcher,
+match_status eval_object(Iterator &it, std::string_view address, const matcher::base &matcher,
     const std::span<const transformer_id> &transformers, const object_limits &limits)
 {
     // The iterator is guaranteed to be valid at this point, which means the
@@ -52,7 +51,7 @@ bool eval_object(Iterator &it, std::string_view address, const matcher::base &ma
 
     if (src.type == DDWAF_OBJ_STRING) {
         if (src.stringValue == nullptr) {
-            return {};
+            return match_status::no_match;
         }
 
         src.nbEntries = find_string_cutoff(src.stringValue, src.nbEntries, limits);
@@ -65,29 +64,32 @@ bool eval_object(Iterator &it, std::string_view address, const matcher::base &ma
             if (transformed) {
                 auto [res, highlight] = matcher.match(dst);
                 if (!res) {
-                    return {};
+                    return match_status::no_match;
                 }
 
                 DDWAF_TRACE("Target {} matched parameter value {}", address, highlight);
 
-                return true;
+                return match_status::match;
             }
         }
     }
 
     auto [res, highlight] = matcher.match(src);
     if (!res) {
-        return {};
+        return match_status::no_match;
     }
 
     DDWAF_TRACE("Target {} matched parameter value {}", address, highlight);
 
-    return true;
+    return match_status::match;
 }
 
 template <typename Iterator>
-bool eval_target(Iterator &it, std::string_view address, const matcher::base &matcher, const std::span<const transformer_id> &transformers, const object_limits &limits, ddwaf::timer &deadline)
+match_status eval_target(Iterator &it, std::string_view address, const matcher::base &matcher,
+    const std::span<const transformer_id> &transformers, const object_limits &limits,
+    ddwaf::timer &deadline)
 {
+    auto status = match_status::unknown;
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
@@ -97,14 +99,14 @@ bool eval_target(Iterator &it, std::string_view address, const matcher::base &ma
             continue;
         }
 
-        auto match = eval_object(it, address, matcher, transformers, limits);
-        if (match) {
+        status = eval_object(it, address, matcher, transformers, limits);
+        if (status == match_status::match) {
             // If this target matched, we can stop processing
-            return match;
+            break;
         }
     }
 
-    return {};
+    return status;
 }
 
 const matcher::base *get_matcher(const std::unique_ptr<matcher::base> &matcher,
@@ -145,7 +147,7 @@ const ddwaf_object *find_key(
     return nullptr;
 }
 
-const ddwaf_object* find_key_path(const ddwaf_object *root, std::span<const std::string> key_path,
+const ddwaf_object *find_key_path(const ddwaf_object *root, std::span<const std::string> key_path,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits)
 {
     if (key_path.empty()) {
@@ -171,7 +173,6 @@ const ddwaf_object* find_key_path(const ddwaf_object *root, std::span<const std:
 
     return nullptr;
 }
-
 
 } // namespace
 
@@ -202,12 +203,12 @@ eval_result scalar_negated_condition::eval(condition_cache &cache, const object_
         cache.targets[0] = object;
     }
 
-    bool match = false;
     if (target_.source == data_source::keys) {
         object::key_iterator it(object, target_.key_path, objects_excluded, limits);
-        match = eval_target(it, target_.name, *matcher, target_.transformers, limits, deadline);
+        auto status =
+            eval_target(it, target_.name, *matcher, target_.transformers, limits, deadline);
 
-        if (!match) {
+        if (status == match_status::no_match) {
             cache.match = {{.args = {{.name = "input"sv,
                                 .resolved = {},
                                 .address = target_.name,
@@ -219,13 +220,32 @@ eval_result scalar_negated_condition::eval(condition_cache &cache, const object_
             return {.outcome = true, .ephemeral = ephemeral};
         }
     } else {
-        const auto *target_object = find_key_path(object, target_.key_path, objects_excluded, limits);
+        const auto *target_object =
+            find_key_path(object, target_.key_path, objects_excluded, limits);
         if (target_object == nullptr) {
             return {.outcome = false, .ephemeral = false};
         }
 
-        object::value_iterator it(object, target_.key_path, objects_excluded, limits);
-        match = eval_target(it, target_.name, *matcher, target_.transformers, limits, deadline);
+        object::value_iterator it(object, {}, objects_excluded, limits);
+        auto status =
+            eval_target(it, target_.name, *matcher, target_.transformers, limits, deadline);
+
+        if (status == match_status::no_match) {
+            // For display purpose, treat single-value arrays as scalars
+            if (target_object->type == DDWAF_OBJ_ARRAY && target_object->nbEntries == 1) {
+                target_object = &target_object->array[0];
+            }
+
+            cache.match = {{.args = {{.name = "input"sv,
+                                .resolved = object_to_string(*target_object),
+                                .address = target_.name,
+                                .key_path = {target_.key_path.begin(), target_.key_path.end()}}},
+                .highlights = {},
+                .operator_name = matcher->negated_name(),
+                .operator_value = matcher->to_string(),
+                .ephemeral = ephemeral}};
+            return {.outcome = true, .ephemeral = ephemeral};
+        }
     }
 
     return {.outcome = false, .ephemeral = false};

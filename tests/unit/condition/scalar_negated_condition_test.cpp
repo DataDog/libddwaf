@@ -84,13 +84,13 @@ TEST(TestScalarNegatedCondition, Timeout)
 
 TEST(TestScalarNegatedCondition, SimpleMatch)
 {
-    scalar_negated_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
+    scalar_negated_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
     ddwaf_object tmp;
     ddwaf_object root;
     ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_string(&tmp, "bye"));
 
     object_store store;
     store.insert(root);
@@ -104,7 +104,7 @@ TEST(TestScalarNegatedCondition, SimpleMatch)
 
 TEST(TestScalarNegatedCondition, CachedMatch)
 {
-    scalar_negated_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
+    scalar_negated_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
     ddwaf::timer deadline{2s};
@@ -113,7 +113,7 @@ TEST(TestScalarNegatedCondition, CachedMatch)
     ddwaf_object tmp;
     ddwaf_object root;
     ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_string(&tmp, "bye"));
 
     {
         object_store store;
@@ -164,13 +164,13 @@ TEST(TestScalarNegatedCondition, SimpleMatchOnKeys)
 
 TEST(TestScalarNegatedCondition, SimpleEphemeralMatch)
 {
-    scalar_negated_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
+    scalar_negated_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
     ddwaf_object tmp;
     ddwaf_object root;
     ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_invalid(&tmp));
+    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_string(&tmp, "bye"));
 
     object_store store;
     {
