@@ -57,7 +57,7 @@ public:
 protected:
     void remove_config(const configuration_change_spec &cfg);
 
-    static void load(
+    static bool load(
         raw_configuration::map &root, configuration_collector &collector, base_ruleset_info &info);
 
     std::unordered_map<std::string, configuration_change_spec> configs_;

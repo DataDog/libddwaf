@@ -22,7 +22,7 @@ TEST(TestEngineBuilderFunctional, EmptyConfig)
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
     ASSERT_NE(builder, nullptr);
 
-    ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr);
+    ASSERT_TRUE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
     ddwaf_object_free(&config);
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
@@ -40,7 +40,8 @@ TEST(TestEngineBuilderFunctional, BaseRules)
     {
         auto config = read_file("base_rules_1.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
-        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr);
+        ASSERT_TRUE(
+            ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr));
         ddwaf_object_free(&config);
     }
 
@@ -66,7 +67,8 @@ TEST(TestEngineBuilderFunctional, BaseRules)
         ddwaf_destroy(handle);
         auto config = read_file("base_rules_2.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
-        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr);
+        ASSERT_TRUE(
+            ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr));
         ddwaf_object_free(&config);
     }
 
@@ -109,7 +111,8 @@ TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
     {
         auto config = read_file("base_rules_1.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
-        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules1"), &config, nullptr);
+        ASSERT_TRUE(
+            ddwaf_builder_add_or_update_config(builder, LSTRARG("rules1"), &config, nullptr));
         ddwaf_object_free(&config);
     }
 
@@ -117,7 +120,8 @@ TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
     {
         auto config = read_file("base_rules_1_2_duplicate.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
-        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules2"), &config, nullptr);
+        ASSERT_TRUE(
+            ddwaf_builder_add_or_update_config(builder, LSTRARG("rules2"), &config, nullptr));
         ddwaf_object_free(&config);
     }
 
@@ -182,7 +186,8 @@ TEST(TestEngineBuilderFunctional, CustomRules)
     {
         auto config = read_file("custom_rules_1.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
-        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr);
+        ASSERT_TRUE(
+            ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr));
         ddwaf_object_free(&config);
     }
 
@@ -208,7 +213,8 @@ TEST(TestEngineBuilderFunctional, CustomRules)
         ddwaf_destroy(handle);
         auto config = read_file("custom_rules_2.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
-        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr);
+        ASSERT_TRUE(
+            ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr));
         ddwaf_object_free(&config);
     }
 

@@ -19,6 +19,8 @@ namespace ddwaf {
 
 inline std::string index_to_id(unsigned idx) { return "index:" + to_string<std::string>(idx); }
 
+enum class ruleset_info_state : uint8_t { indeterminate, invalid, valid };
+
 class base_ruleset_info {
 public:
     class base_section_info {
@@ -63,6 +65,7 @@ public:
         }
         virtual void add_failed(
             std::string_view id, parser_error_severity sev, std::string_view error) = 0;
+        [[nodiscard]] virtual ruleset_info_state state() const noexcept = 0;
     };
 
     base_ruleset_info() = default;
@@ -75,6 +78,7 @@ public:
     virtual base_section_info &add_section(std::string_view section) = 0;
     virtual void set_ruleset_version(std::string_view version) = 0;
     virtual void set_error(std::string error) = 0;
+    [[nodiscard]] virtual ruleset_info_state state() const noexcept = 0;
 
     virtual void to_object(ddwaf_object &output) = 0;
 };
@@ -96,6 +100,10 @@ public:
             std::string_view /*error*/) override
         {}
         void add_skipped(std::string_view /*id*/) override {}
+        [[nodiscard]] ruleset_info_state state() const noexcept override
+        {
+            return ruleset_info_state::indeterminate;
+        };
     };
 
     null_ruleset_info() = default;
@@ -113,6 +121,10 @@ public:
 
     void set_ruleset_version(std::string_view /*version*/) override{};
     void set_error(std::string /*error*/) override {}
+    [[nodiscard]] ruleset_info_state state() const noexcept override
+    {
+        return ruleset_info_state::indeterminate;
+    };
 
     void to_object(ddwaf_object & /*output*/) override{};
 };
@@ -178,6 +190,20 @@ public:
             }
         }
 
+        [[nodiscard]] ruleset_info_state state() const noexcept override
+        {
+            //  The section is valid if there are no errors and
+            if (error_.empty() && ddwaf_object_size(&loaded_) > 0) {
+                return ruleset_info_state::valid;
+            }
+
+            if (!error_.empty() || ddwaf_object_size(&failed_) > 0) {
+                return ruleset_info_state::invalid;
+            }
+
+            return ruleset_info_state::indeterminate;
+        }
+
     protected:
         std::string error_;
         /** Array of loaded elements */
@@ -241,6 +267,22 @@ public:
     }
 
     void set_error(std::string error) override { error_ = std::move(error); }
+
+    [[nodiscard]] ruleset_info_state state() const noexcept override
+    {
+        auto final_state = ruleset_info_state::indeterminate;
+        for (const auto &[_, section] : sections_) {
+            switch (section.state()) {
+            case ruleset_info_state::valid:
+                return ruleset_info_state::valid;
+            case ruleset_info_state::invalid:
+                final_state = ruleset_info_state::invalid;
+            default:
+                break;
+            }
+        }
+        return final_state;
+    }
 
 protected:
     std::string ruleset_version_;
