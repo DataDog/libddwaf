@@ -20,8 +20,8 @@
 #include "iterator.hpp"
 #include "log.hpp"
 #include "matcher/base.hpp"
+#include "negated_scalar_condition.hpp"
 #include "object_store.hpp"
-#include "scalar_negated_condition.hpp"
 #include "transformer/base.hpp"
 #include "transformer/manager.hpp"
 #include "utils.hpp"
@@ -176,7 +176,7 @@ const ddwaf_object *find_key_path(const ddwaf_object *root, std::span<const std:
 
 } // namespace
 
-eval_result scalar_negated_condition::eval(condition_cache &cache, const object_store &store,
+eval_result negated_scalar_condition::eval(condition_cache &cache, const object_store &store,
     const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
     const object_limits &limits, ddwaf::timer &deadline) const
 {

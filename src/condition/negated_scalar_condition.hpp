@@ -10,9 +10,9 @@
 
 namespace ddwaf {
 
-class scalar_negated_condition : public base_condition {
+class negated_scalar_condition : public base_condition {
 public:
-    scalar_negated_condition(std::unique_ptr<matcher::base> &&matcher, std::string data_id,
+    negated_scalar_condition(std::unique_ptr<matcher::base> &&matcher, std::string data_id,
         std::vector<condition_parameter> args)
         : matcher_(std::move(matcher)), data_id_(std::move(data_id))
     {

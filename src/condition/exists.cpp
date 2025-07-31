@@ -115,7 +115,7 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-[[nodiscard]] eval_result exists_negated_condition::eval_impl(
+[[nodiscard]] eval_result negated_exists_condition::eval_impl(
     const unary_argument<const ddwaf_object *> &input, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer & /*deadline*/) const

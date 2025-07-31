@@ -4,7 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "condition/scalar_negated_condition.hpp"
+#include "condition/negated_scalar_condition.hpp"
 #include "exception.hpp"
 #include "matcher/regex_match.hpp"
 #include "utils.hpp"
@@ -21,32 +21,32 @@ template <typename... Args> condition_parameter gen_variadic_param(Args... addre
     return {{{std::string{addresses}, get_target_index(addresses)}...}};
 }
 
-TEST(TestScalarNegatedCondition, VariadicTargetInConstructor)
+TEST(TestNegatedScalarCondition, VariadicTargetInConstructor)
 {
-    EXPECT_THROW((scalar_negated_condition{std::make_unique<matcher::regex_match>(".*", 0, true),
+    EXPECT_THROW((negated_scalar_condition{std::make_unique<matcher::regex_match>(".*", 0, true),
                      {}, {gen_variadic_param("server.request.uri.raw", "server.request.query")}}),
         std::invalid_argument);
 }
 
-TEST(TestScalarNegatedCondition, TooManyAddressesInConstructor)
+TEST(TestNegatedScalarCondition, TooManyAddressesInConstructor)
 {
     EXPECT_THROW(
-        (scalar_negated_condition{std::make_unique<matcher::regex_match>(".*", 0, true), {},
+        (negated_scalar_condition{std::make_unique<matcher::regex_match>(".*", 0, true), {},
             {gen_variadic_param("server.request.uri.raw"),
                 gen_variadic_param("server.request.query")}}),
         std::invalid_argument);
 }
 
-TEST(TestScalarNegatedCondition, NoAddressesInConstructor)
+TEST(TestNegatedScalarCondition, NoAddressesInConstructor)
 {
     EXPECT_THROW(
-        (scalar_negated_condition{std::make_unique<matcher::regex_match>(".*", 0, true), {}, {}}),
+        (negated_scalar_condition{std::make_unique<matcher::regex_match>(".*", 0, true), {}, {}}),
         std::invalid_argument);
 }
 
-TEST(TestScalarNegatedCondition, NoMatch)
+TEST(TestNegatedScalarCondition, NoMatch)
 {
-    scalar_negated_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
+    negated_scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
     ddwaf_object tmp;
@@ -64,9 +64,9 @@ TEST(TestScalarNegatedCondition, NoMatch)
     ASSERT_FALSE(res.ephemeral);
 }
 
-TEST(TestScalarNegatedCondition, Timeout)
+TEST(TestNegatedScalarCondition, Timeout)
 {
-    scalar_negated_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
+    negated_scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
     ddwaf_object tmp;
@@ -82,9 +82,9 @@ TEST(TestScalarNegatedCondition, Timeout)
     EXPECT_THROW(cond.eval(cache, store, {}, {}, {}, deadline), ddwaf::timeout_exception);
 }
 
-TEST(TestScalarNegatedCondition, SimpleMatch)
+TEST(TestNegatedScalarCondition, SimpleMatch)
 {
-    scalar_negated_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
+    negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
     ddwaf_object tmp;
@@ -102,9 +102,9 @@ TEST(TestScalarNegatedCondition, SimpleMatch)
     ASSERT_FALSE(res.ephemeral);
 }
 
-TEST(TestScalarNegatedCondition, CachedMatch)
+TEST(TestNegatedScalarCondition, CachedMatch)
 {
-    scalar_negated_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
+    negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
     ddwaf::timer deadline{2s};
@@ -136,12 +136,12 @@ TEST(TestScalarNegatedCondition, CachedMatch)
     ddwaf_object_free(&root);
 }
 
-TEST(TestScalarNegatedCondition, SimpleMatchOnKeys)
+TEST(TestNegatedScalarCondition, SimpleMatchOnKeys)
 {
     auto target = gen_variadic_param("server.request.uri.raw");
     target.targets[0].source = data_source::keys;
 
-    scalar_negated_condition cond{
+    negated_scalar_condition cond{
         std::make_unique<matcher::regex_match>("hello", 0, true), {}, {std::move(target)}};
 
     ddwaf_object tmp;
@@ -162,9 +162,9 @@ TEST(TestScalarNegatedCondition, SimpleMatchOnKeys)
     ASSERT_FALSE(res.ephemeral);
 }
 
-TEST(TestScalarNegatedCondition, SimpleEphemeralMatch)
+TEST(TestNegatedScalarCondition, SimpleEphemeralMatch)
 {
-    scalar_negated_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
+    negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
     ddwaf_object tmp;

@@ -60,7 +60,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/condition/sqli_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/ssrf_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/scalar_condition.cpp
-    ${libddwaf_SOURCE_DIR}/src/condition/scalar_negated_condition.cpp
+    ${libddwaf_SOURCE_DIR}/src/condition/negated_scalar_condition.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/shi_common.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/shi_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/cmdi_detector.cpp
