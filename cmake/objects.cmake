@@ -5,6 +5,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/context_allocator.cpp
     ${libddwaf_SOURCE_DIR}/src/serializer.cpp
     ${libddwaf_SOURCE_DIR}/src/object.cpp
+    ${libddwaf_SOURCE_DIR}/src/object_helpers.cpp
     ${libddwaf_SOURCE_DIR}/src/object_store.cpp
     ${libddwaf_SOURCE_DIR}/src/module.cpp
     ${libddwaf_SOURCE_DIR}/src/expression.cpp
@@ -15,7 +16,6 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/obfuscator.cpp
     ${libddwaf_SOURCE_DIR}/src/uri_utils.cpp
     ${libddwaf_SOURCE_DIR}/src/json_utils.cpp
-    ${libddwaf_SOURCE_DIR}/src/utils.cpp
     ${libddwaf_SOURCE_DIR}/src/platform.cpp
     ${libddwaf_SOURCE_DIR}/src/sha256.cpp
     ${libddwaf_SOURCE_DIR}/src/uuid.cpp

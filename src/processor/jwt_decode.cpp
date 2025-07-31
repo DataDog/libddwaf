@@ -11,6 +11,7 @@
 #include "cow_string.hpp"
 #include "ddwaf.h"
 #include "json_utils.hpp"
+#include "object_helpers.hpp"
 #include "object_store.hpp"
 #include "processor/base.hpp"
 #include "transformer/base64_decode.hpp"
@@ -79,7 +80,7 @@ std::string_view find_token(const ddwaf_object &root, std::span<const std::strin
 {
     const ddwaf_object *object = &root;
     if (!key_path.empty()) {
-        object = object::find_key_path(root, key_path);
+        object = object::find_key_path(object, key_path, {}, {});
         if (object == nullptr) {
             return {};
         }

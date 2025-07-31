@@ -3,8 +3,6 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-#include <algorithm>
-#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -21,6 +19,7 @@
 #include "log.hpp"
 #include "matcher/base.hpp"
 #include "negated_scalar_condition.hpp"
+#include "object_helpers.hpp"
 #include "object_store.hpp"
 #include "transformer/base.hpp"
 #include "transformer/manager.hpp"
@@ -124,56 +123,6 @@ const matcher::base *get_matcher(const std::unique_ptr<matcher::base> &matcher,
     return nullptr;
 }
 
-// TODO Refactor from exists
-const ddwaf_object *find_key(
-    const ddwaf_object &parent, std::string_view key, const object_limits &limits)
-{
-    const std::size_t size =
-        std::min(static_cast<uint32_t>(parent.nbEntries), limits.max_container_size);
-    for (std::size_t i = 0; i < size; ++i) {
-        const auto &child = parent.array[i];
-
-        if (child.parameterName == nullptr) [[unlikely]] {
-            continue;
-        }
-        const std::string_view child_key{
-            child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
-
-        if (key == child_key) {
-            return &child;
-        }
-    }
-
-    return nullptr;
-}
-
-const ddwaf_object *find_key_path(const ddwaf_object *root, std::span<const std::string> key_path,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits)
-{
-    if (key_path.empty()) {
-        return root;
-    }
-
-    if (root->type == DDWAF_OBJ_MAP) {
-        auto it = key_path.begin();
-        while ((root = find_key(*root, *it, limits)) != nullptr) {
-            if (objects_excluded.contains(root)) {
-                break;
-            }
-
-            if (++it == key_path.end()) {
-                return root;
-            }
-
-            if (root->type != DDWAF_OBJ_MAP) {
-                break;
-            }
-        }
-    }
-
-    return nullptr;
-}
-
 } // namespace
 
 eval_result negated_scalar_condition::eval(condition_cache &cache, const object_store &store,
@@ -221,7 +170,7 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
         }
     } else {
         const auto *target_object =
-            find_key_path(object, target_.key_path, objects_excluded, limits);
+            object::find_key_path(object, target_.key_path, objects_excluded, limits);
         if (target_object == nullptr) {
             return {.outcome = false, .ephemeral = false};
         }
