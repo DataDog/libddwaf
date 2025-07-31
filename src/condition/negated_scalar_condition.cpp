@@ -29,19 +29,16 @@ using namespace std::literals;
 
 namespace ddwaf {
 
-// Support for key path, only raise an event when there key path is actually present
-// When using key paths containing a scalar or a single-value array, report the value that didn't
-// match Ignore "unevaluated" non-matches (e,g. string shorter than min_length on match_regex)
 namespace {
 
-enum class match_status : uint8_t {
+enum class match_result : uint8_t {
     unknown,  // No data could be evaluated
     no_match, // Data was evaluated but there was no match
     match     // Data was evaluated and there was a match
 };
 
 template <typename Iterator>
-match_status eval_object(Iterator &it, std::string_view address, const matcher::base &matcher,
+match_result eval_object(Iterator &it, std::string_view address, const matcher::base &matcher,
     const std::span<const transformer_id> &transformers, const object_limits &limits)
 {
     // The iterator is guaranteed to be valid at this point, which means the
@@ -50,7 +47,7 @@ match_status eval_object(Iterator &it, std::string_view address, const matcher::
 
     if (src.type == DDWAF_OBJ_STRING) {
         if (src.stringValue == nullptr) {
-            return match_status::no_match;
+            return match_result::no_match;
         }
 
         src.nbEntries = find_string_cutoff(src.stringValue, src.nbEntries, limits);
@@ -63,32 +60,35 @@ match_status eval_object(Iterator &it, std::string_view address, const matcher::
             if (transformed) {
                 auto [res, highlight] = matcher.match(dst);
                 if (!res) {
-                    return match_status::no_match;
+                    return match_result::no_match;
                 }
 
                 DDWAF_TRACE("Target {} matched parameter value {}", address, highlight);
 
-                return match_status::match;
+                return match_result::match;
             }
         }
     }
 
     auto [res, highlight] = matcher.match(src);
     if (!res) {
-        return match_status::no_match;
+        return match_result::no_match;
     }
 
     DDWAF_TRACE("Target {} matched parameter value {}", address, highlight);
 
-    return match_status::match;
+    return match_result::match;
 }
 
 template <typename Iterator>
-match_status eval_target(Iterator &it, std::string_view address, const matcher::base &matcher,
+match_result eval_target(Iterator &it, std::string_view address, const matcher::base &matcher,
     const std::span<const transformer_id> &transformers, const object_limits &limits,
     ddwaf::timer &deadline)
 {
-    auto status = match_status::unknown;
+    // We start with the assumption that the object can't be evaluated,
+    // but the moment a single value within the object is compatible
+    // we either report match or no_match.
+    auto result = match_result::unknown;
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
@@ -98,14 +98,14 @@ match_status eval_target(Iterator &it, std::string_view address, const matcher::
             continue;
         }
 
-        status = eval_object(it, address, matcher, transformers, limits);
-        if (status == match_status::match) {
+        result = eval_object(it, address, matcher, transformers, limits);
+        if (result == match_result::match) {
             // If this target matched, we can stop processing
             break;
         }
     }
 
-    return status;
+    return result;
 }
 
 const matcher::base *get_matcher(const std::unique_ptr<matcher::base> &matcher,
@@ -152,12 +152,29 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
         cache.targets[0] = object;
     }
 
+    const auto *target_object =
+        object::find_key_path(object, target_.key_path, objects_excluded, limits);
+    if (target_object == nullptr) {
+        return {.outcome = false, .ephemeral = false};
+    }
+
+    // The goal is to determine if the object can be evaluated and if there's a match
+    //   - If the object can't be evaluated due to containing incompatible types, we don't
+    //     consider this a negated match, so we return false
+    //   - If the object can be evaluated and it results in a match, we return false
+    //   - If the object can be evaluated and it doesn't result in a match, we return true
     if (target_.source == data_source::keys) {
-        object::key_iterator it(object, target_.key_path, objects_excluded, limits);
-        auto status =
+        // If the object within the key path is not a map, we consider this an
+        // object which can't be evaluated
+        if (target_object->type != DDWAF_OBJ_MAP) {
+            return {.outcome = false, .ephemeral = false};
+        }
+
+        object::key_iterator it(target_object, {}, objects_excluded, limits);
+        auto result =
             eval_target(it, target_.name, *matcher, target_.transformers, limits, deadline);
 
-        if (status == match_status::no_match) {
+        if (result == match_result::no_match) {
             cache.match = {{.args = {{.name = "input"sv,
                                 .resolved = {},
                                 .address = target_.name,
@@ -169,17 +186,13 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
             return {.outcome = true, .ephemeral = ephemeral};
         }
     } else {
-        const auto *target_object =
-            object::find_key_path(object, target_.key_path, objects_excluded, limits);
-        if (target_object == nullptr) {
-            return {.outcome = false, .ephemeral = false};
-        }
-
-        object::value_iterator it(object, {}, objects_excluded, limits);
-        auto status =
+        object::value_iterator it(target_object, {}, objects_excluded, limits);
+        auto result =
             eval_target(it, target_.name, *matcher, target_.transformers, limits, deadline);
 
-        if (status == match_status::no_match) {
+        // If the result is unknown, we assume the contents of the object couldn't be
+        // evaluated
+        if (result == match_result::no_match) {
             // For display purpose, treat single-value arrays as scalars
             if (target_object->type == DDWAF_OBJ_ARRAY && target_object->nbEntries == 1) {
                 target_object = &target_object->array[0];
