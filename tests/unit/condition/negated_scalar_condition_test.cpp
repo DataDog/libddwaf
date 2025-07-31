@@ -100,6 +100,337 @@ TEST(TestNegatedScalarCondition, SimpleMatch)
     auto res = cond.eval(cache, store, {}, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
+
+    // Ensure the resolved value is the single one that didn't match
+    ASSERT_TRUE(cache.match.has_value());
+    EXPECT_STR(cache.match->args[0].resolved, "bye");
+    EXPECT_STR(cache.match->highlights[0], "bye");
+}
+
+TEST(TestNegatedScalarCondition, SimpleMatchWithKeyPath)
+{
+    negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
+        {{{{.name = "server.request.uri.raw"s,
+            .index = get_target_index("server.request.uri.raw"),
+            .key_path = {"path", "to", "object"}}}}}};
+
+    ddwaf_object tmp;
+    ddwaf_object object;
+    ddwaf_object_map(&object);
+    ddwaf_object_map_add(&object, "object", ddwaf_object_string(&tmp, "bye"));
+
+    ddwaf_object to;
+    ddwaf_object_map(&to);
+    ddwaf_object_map_add(&to, "to", &object);
+
+    ddwaf_object path;
+    ddwaf_object_map(&path);
+    ddwaf_object_map_add(&path, "path", &to);
+
+    ddwaf_object root;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.uri.raw", &path);
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    ASSERT_TRUE(res.outcome);
+    ASSERT_FALSE(res.ephemeral);
+
+    // Ensure the resolved value is the single one that didn't match
+    ASSERT_TRUE(cache.match.has_value());
+    EXPECT_STR(cache.match->args[0].resolved, "bye");
+    EXPECT_EQ(cache.match->args[0].key_path.size(), 3);
+    EXPECT_STR(cache.match->highlights[0], "bye");
+}
+
+TEST(TestNegatedScalarCondition, SingleValueArrayMatch)
+{
+    negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
+        {gen_variadic_param("server.request.uri.raw")}};
+
+    ddwaf_object tmp;
+    ddwaf_object array;
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "bye"));
+    ddwaf_object root;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.uri.raw", &array);
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    ASSERT_TRUE(res.outcome);
+    ASSERT_FALSE(res.ephemeral);
+
+    // Ensure the resolved value is the single one that didn't match
+    ASSERT_TRUE(cache.match.has_value());
+    EXPECT_STR(cache.match->args[0].resolved, "bye");
+    EXPECT_EQ(cache.match->args[0].key_path.size(), 0);
+    EXPECT_STR(cache.match->highlights[0], "bye");
+}
+
+TEST(TestNegatedScalarCondition, SingleValueArrayMatchWithKeyPath)
+{
+    negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
+        {{{{.name = "server.request.uri.raw"s,
+            .index = get_target_index("server.request.uri.raw"),
+            .key_path = {"path", "to", "object"}}}}}};
+
+    ddwaf_object tmp;
+
+    ddwaf_object array;
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "bye"));
+
+    ddwaf_object object;
+    ddwaf_object_map(&object);
+    ddwaf_object_map_add(&object, "object", &array);
+
+    ddwaf_object to;
+    ddwaf_object_map(&to);
+    ddwaf_object_map_add(&to, "to", &object);
+
+    ddwaf_object path;
+    ddwaf_object_map(&path);
+    ddwaf_object_map_add(&path, "path", &to);
+
+    ddwaf_object root;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.uri.raw", &path);
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    ASSERT_TRUE(res.outcome);
+    ASSERT_FALSE(res.ephemeral);
+
+    // Ensure the resolved value is the single one that didn't match
+    ASSERT_TRUE(cache.match.has_value());
+    EXPECT_STR(cache.match->args[0].resolved, "bye");
+    EXPECT_EQ(cache.match->args[0].key_path.size(), 3);
+    EXPECT_STR(cache.match->highlights[0], "bye");
+}
+
+TEST(TestNegatedScalarCondition, MultiValueArrayMatch)
+{
+    negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
+        {gen_variadic_param("server.request.uri.raw")}};
+
+    ddwaf_object tmp;
+    ddwaf_object array;
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "bye"));
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "greetings"));
+    ddwaf_object root;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.uri.raw", &array);
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    ASSERT_TRUE(res.outcome);
+    ASSERT_FALSE(res.ephemeral);
+
+    // Ensure the resolved value is the single one that didn't match
+    ASSERT_TRUE(cache.match.has_value());
+    EXPECT_STR(cache.match->args[0].resolved, "");
+    EXPECT_EQ(cache.match->args[0].key_path.size(), 0);
+    EXPECT_TRUE(cache.match->highlights.empty());
+}
+
+TEST(TestNegatedScalarCondition, MultiValueArrayMatchWithKeyPath)
+{
+    negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
+        {{{{.name = "server.request.uri.raw"s,
+            .index = get_target_index("server.request.uri.raw"),
+            .key_path = {"path", "to", "object"}}}}}};
+
+    ddwaf_object tmp;
+
+    ddwaf_object array;
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "bye"));
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "greetings"));
+
+    ddwaf_object object;
+    ddwaf_object_map(&object);
+    ddwaf_object_map_add(&object, "object", &array);
+
+    ddwaf_object to;
+    ddwaf_object_map(&to);
+    ddwaf_object_map_add(&to, "to", &object);
+
+    ddwaf_object path;
+    ddwaf_object_map(&path);
+    ddwaf_object_map_add(&path, "path", &to);
+
+    ddwaf_object root;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.uri.raw", &path);
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    ASSERT_TRUE(res.outcome);
+    ASSERT_FALSE(res.ephemeral);
+
+    // Ensure the resolved value is the single one that didn't match
+    ASSERT_TRUE(cache.match.has_value());
+    EXPECT_STR(cache.match->args[0].resolved, "");
+    EXPECT_EQ(cache.match->args[0].key_path.size(), 3);
+    EXPECT_TRUE(cache.match->highlights.empty());
+}
+
+TEST(TestNegatedScalarCondition, ExcludedRootObject)
+{
+    auto target_index = get_target_index("server.request.uri.raw");
+    negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
+        {{{{.name = "server.request.uri.raw"s,
+            .index = target_index,
+            .key_path = {"path", "to", "object"}}}}}};
+
+    std::unordered_set<const ddwaf_object *> excluded_objects;
+
+    ddwaf_object tmp;
+
+    ddwaf_object array;
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "bye"));
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "greetings"));
+
+    ddwaf_object object;
+    ddwaf_object_map(&object);
+    ddwaf_object_map_add(&object, "object", &array);
+
+    ddwaf_object to;
+    ddwaf_object_map(&to);
+    ddwaf_object_map_add(&to, "to", &object);
+
+    ddwaf_object path;
+    ddwaf_object_map(&path);
+    ddwaf_object_map_add(&path, "path", &to);
+
+    ddwaf_object root;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.uri.raw", &path);
+
+    object_store store;
+    store.insert(root);
+
+    excluded_objects.emplace(store.get_target(target_index).first);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(
+        cache, store, {.persistent = excluded_objects, .ephemeral = {}}, {}, {}, deadline);
+    ASSERT_FALSE(res.outcome);
+    ASSERT_FALSE(res.ephemeral);
+}
+
+TEST(TestNegatedScalarCondition, ExcludedIntermediateObject)
+{
+    negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
+        {{{{.name = "server.request.uri.raw"s,
+            .index = get_target_index("server.request.uri.raw"),
+            .key_path = {"path", "to", "object"}}}}}};
+
+    std::unordered_set<const ddwaf_object *> excluded_objects;
+
+    ddwaf_object tmp;
+
+    ddwaf_object array;
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "bye"));
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "greetings"));
+
+    ddwaf_object object;
+    ddwaf_object_map(&object);
+    ddwaf_object_map_add(&object, "object", &array);
+
+    ddwaf_object to;
+    ddwaf_object_map(&to);
+    ddwaf_object_map_add(&to, "to", &object);
+
+    excluded_objects.emplace(&to.array[0]);
+
+    ddwaf_object path;
+    ddwaf_object_map(&path);
+    ddwaf_object_map_add(&path, "path", &to);
+
+    ddwaf_object root;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.uri.raw", &path);
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(
+        cache, store, {.persistent = excluded_objects, .ephemeral = {}}, {}, {}, deadline);
+    ASSERT_FALSE(res.outcome);
+    ASSERT_FALSE(res.ephemeral);
+}
+
+TEST(TestNegatedScalarCondition, ExcludedFinalObject)
+{
+    auto target_index = get_target_index("server.request.uri.raw");
+    negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
+        {{{{.name = "server.request.uri.raw"s,
+            .index = target_index,
+            .key_path = {"path", "to", "object"}}}}}};
+
+    std::unordered_set<const ddwaf_object *> excluded_objects;
+
+    ddwaf_object tmp;
+
+    ddwaf_object array;
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "bye"));
+
+    excluded_objects.emplace(&array.array[0]);
+
+    ddwaf_object object;
+    ddwaf_object_map(&object);
+    ddwaf_object_map_add(&object, "object", &array);
+
+    ddwaf_object to;
+    ddwaf_object_map(&to);
+    ddwaf_object_map_add(&to, "to", &object);
+
+    ddwaf_object path;
+    ddwaf_object_map(&path);
+    ddwaf_object_map_add(&path, "path", &to);
+
+    ddwaf_object root;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.uri.raw", &path);
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(
+        cache, store, {.persistent = excluded_objects, .ephemeral = {}}, {}, {}, deadline);
+    ASSERT_FALSE(res.outcome);
+    ASSERT_FALSE(res.ephemeral);
 }
 
 TEST(TestNegatedScalarCondition, CachedMatch)

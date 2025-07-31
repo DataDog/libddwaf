@@ -120,6 +120,10 @@ const ddwaf_object *find_key(
 const ddwaf_object *find_key_path(const ddwaf_object *root, std::span<const std::string> key_path,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits)
 {
+    if (objects_excluded.contains(root)) {
+        return nullptr;
+    }
+
     if (key_path.empty()) {
         return root;
     }

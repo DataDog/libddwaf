@@ -9,10 +9,13 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
+#include <vector>
 
 #include "clock.hpp"
 #include "condition/base.hpp"
 #include "ddwaf.h"
+#include "dynamic_string.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
@@ -197,12 +200,18 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
             if (target_object->type == DDWAF_OBJ_ARRAY && target_object->nbEntries == 1) {
                 target_object = &target_object->array[0];
             }
+            std::vector<dynamic_string> highlights;
+
+            auto resolved = object_to_string(*target_object);
+            if (!resolved.empty()) {
+                highlights.emplace_back(resolved);
+            }
 
             cache.match = {{.args = {{.name = "input"sv,
-                                .resolved = object_to_string(*target_object),
+                                .resolved = std::move(resolved),
                                 .address = target_.name,
                                 .key_path = {target_.key_path.begin(), target_.key_path.end()}}},
-                .highlights = {},
+                .highlights = std::move(highlights),
                 .operator_name = matcher->negated_name(),
                 .operator_value = matcher->to_string(),
                 .ephemeral = ephemeral}};
