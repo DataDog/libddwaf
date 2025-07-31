@@ -344,4 +344,336 @@ TEST(TestObjectIntegration, FindEmptyMap)
     ddwaf_object_destroy(&map, alloc);
 }
 
+TEST(TestObject, FromJsonString)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_object object;
+    const char *json = R"("hello world")";
+
+    EXPECT_TRUE(ddwaf_object_from_json(&object, json, strlen(json), alloc));
+    EXPECT_TRUE(ddwaf_object_is_string(&object));
+    EXPECT_STREQ(ddwaf_object_get_string(&object, nullptr), "hello world");
+    EXPECT_EQ(ddwaf_object_get_length(&object), 11);
+
+    ddwaf_object_destroy(&object, alloc);
+}
+
+TEST(TestObject, FromJsonSignedInteger)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_object object;
+    const char *json = "-123456789";
+
+    EXPECT_TRUE(ddwaf_object_from_json(&object, json, strlen(json), alloc));
+    EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_SIGNED);
+    EXPECT_EQ(ddwaf_object_get_signed(&object), -123456789);
+
+    ddwaf_object_destroy(&object, alloc);
+}
+
+TEST(TestObject, FromJsonUnsignedInteger)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_object object;
+    const char *json = "18446744073709551615"; // UINT64_MAX
+
+    EXPECT_TRUE(ddwaf_object_from_json(&object, json, strlen(json), alloc));
+    EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_UNSIGNED);
+    EXPECT_EQ(ddwaf_object_get_unsigned(&object), UINT64_MAX);
+
+    ddwaf_object_destroy(&object, alloc);
+}
+
+TEST(TestObject, FromJsonFloat)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_object object;
+    const char *json = "3.14159";
+
+    EXPECT_TRUE(ddwaf_object_from_json(&object, json, strlen(json), alloc));
+    EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_FLOAT);
+    EXPECT_DOUBLE_EQ(ddwaf_object_get_float(&object), 3.14159);
+
+    ddwaf_object_destroy(&object, alloc);
+}
+
+TEST(TestObject, FromJsonBoolean)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    {
+        ddwaf_object object;
+        const char *json = "true";
+
+        EXPECT_TRUE(ddwaf_object_from_json(&object, json, strlen(json), alloc));
+        EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_BOOL);
+        EXPECT_TRUE(ddwaf_object_get_bool(&object));
+
+        ddwaf_object_destroy(&object, alloc);
+    }
+
+    {
+        ddwaf_object object;
+        const char *json = "false";
+
+        EXPECT_TRUE(ddwaf_object_from_json(&object, json, strlen(json), alloc));
+        EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_BOOL);
+        EXPECT_FALSE(ddwaf_object_get_bool(&object));
+
+        ddwaf_object_destroy(&object, alloc);
+    }
+}
+
+TEST(TestObject, FromJsonNull)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_object object;
+    const char *json = "null";
+
+    EXPECT_TRUE(ddwaf_object_from_json(&object, json, strlen(json), alloc));
+    EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_NULL);
+
+    ddwaf_object_destroy(&object, alloc);
+}
+
+TEST(TestObject, FromJsonArray)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_object object;
+    const char *json = R"([1, "hello", true, null])";
+
+    EXPECT_TRUE(ddwaf_object_from_json(&object, json, strlen(json), alloc));
+    EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_ARRAY);
+    EXPECT_EQ(ddwaf_object_get_size(&object), 4);
+
+    // Check first element (number)
+    const auto *elem0 = ddwaf_object_at_value(&object, 0);
+    ASSERT_NE(elem0, nullptr);
+    EXPECT_EQ(ddwaf_object_get_type(elem0), DDWAF_OBJ_UNSIGNED);
+    EXPECT_EQ(ddwaf_object_get_unsigned(elem0), 1);
+
+    // Check second element (string)
+    const auto *elem1 = ddwaf_object_at_value(&object, 1);
+    ASSERT_NE(elem1, nullptr);
+    EXPECT_EQ(ddwaf_object_get_type(elem1), DDWAF_OBJ_STRING);
+    EXPECT_STREQ(ddwaf_object_get_string(elem1, nullptr), "hello");
+
+    // Check third element (boolean)
+    const auto *elem2 = ddwaf_object_at_value(&object, 2);
+    ASSERT_NE(elem2, nullptr);
+    EXPECT_EQ(ddwaf_object_get_type(elem2), DDWAF_OBJ_BOOL);
+    EXPECT_TRUE(ddwaf_object_get_bool(elem2));
+
+    // Check fourth element (null)
+    const auto *elem3 = ddwaf_object_at_value(&object, 3);
+    ASSERT_NE(elem3, nullptr);
+    EXPECT_EQ(ddwaf_object_get_type(elem3), DDWAF_OBJ_NULL);
+
+    ddwaf_object_destroy(&object, alloc);
+}
+
+TEST(TestObject, FromJsonObject)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_object object;
+    const char *json = R"({"name": "John", "age": 30, "active": true})";
+
+    EXPECT_TRUE(ddwaf_object_from_json(&object, json, strlen(json), alloc));
+    EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_MAP);
+    EXPECT_EQ(ddwaf_object_get_size(&object), 3);
+
+    // Check name field
+    const auto *name_obj = ddwaf_object_find(&object, STRL("name"));
+    ASSERT_NE(name_obj, nullptr);
+    EXPECT_EQ(ddwaf_object_get_type(name_obj), DDWAF_OBJ_STRING);
+    EXPECT_STREQ(ddwaf_object_get_string(name_obj, nullptr), "John");
+
+    // Check age field
+    const auto *age_obj = ddwaf_object_find(&object, STRL("age"));
+    ASSERT_NE(age_obj, nullptr);
+    EXPECT_EQ(ddwaf_object_get_type(age_obj), DDWAF_OBJ_UNSIGNED);
+    EXPECT_EQ(ddwaf_object_get_unsigned(age_obj), 30);
+
+    // Check active field
+    const auto *active_obj = ddwaf_object_find(&object, STRL("active"));
+    ASSERT_NE(active_obj, nullptr);
+    EXPECT_EQ(ddwaf_object_get_type(active_obj), DDWAF_OBJ_BOOL);
+    EXPECT_TRUE(ddwaf_object_get_bool(active_obj));
+
+    ddwaf_object_destroy(&object, alloc);
+}
+
+TEST(TestObject, FromJsonNestedStructure)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_object object;
+    const char *json = R"({
+        "user": {
+            "name": "Alice",
+            "preferences": {
+                "theme": "dark",
+                "notifications": true
+            }
+        },
+        "scores": [95, 87, 92],
+        "metadata": null
+    })";
+
+    EXPECT_TRUE(ddwaf_object_from_json(&object, json, strlen(json), alloc));
+    EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_MAP);
+
+    // Check user object
+    const auto *user_obj = ddwaf_object_find(&object, STRL("user"));
+    ASSERT_NE(user_obj, nullptr);
+    EXPECT_EQ(ddwaf_object_get_type(user_obj), DDWAF_OBJ_MAP);
+
+    // Check nested name
+    const auto *name_obj = ddwaf_object_find(user_obj, STRL("name"));
+    ASSERT_NE(name_obj, nullptr);
+    EXPECT_STREQ(ddwaf_object_get_string(name_obj, nullptr), "Alice");
+
+    // Check preferences object
+    const auto *prefs_obj = ddwaf_object_find(user_obj, STRL("preferences"));
+    ASSERT_NE(prefs_obj, nullptr);
+    EXPECT_EQ(ddwaf_object_get_type(prefs_obj), DDWAF_OBJ_MAP);
+
+    // Check theme in preferences
+    const auto *theme_obj = ddwaf_object_find(prefs_obj, STRL("theme"));
+    ASSERT_NE(theme_obj, nullptr);
+    EXPECT_STREQ(ddwaf_object_get_string(theme_obj, nullptr), "dark");
+
+    // Check scores array
+    const auto *scores_obj = ddwaf_object_find(&object, STRL("scores"));
+    ASSERT_NE(scores_obj, nullptr);
+    EXPECT_EQ(ddwaf_object_get_type(scores_obj), DDWAF_OBJ_ARRAY);
+    EXPECT_EQ(ddwaf_object_get_size(scores_obj), 3);
+
+    // Check first score
+    const auto *score0 = ddwaf_object_at_value(scores_obj, 0);
+    ASSERT_NE(score0, nullptr);
+    EXPECT_EQ(ddwaf_object_get_unsigned(score0), 95);
+
+    // Check metadata (null)
+    const auto *metadata_obj = ddwaf_object_find(&object, STRL("metadata"));
+    ASSERT_NE(metadata_obj, nullptr);
+    EXPECT_EQ(ddwaf_object_get_type(metadata_obj), DDWAF_OBJ_NULL);
+
+    ddwaf_object_destroy(&object, alloc);
+}
+
+TEST(TestObject, FromJsonInvalidCases)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_object object;
+
+    // Test null parameters
+    EXPECT_FALSE(ddwaf_object_from_json(nullptr, "{}", 2, alloc));
+    EXPECT_FALSE(ddwaf_object_from_json(&object, nullptr, 2, alloc));
+
+    // Test zero length
+    EXPECT_FALSE(ddwaf_object_from_json(&object, "{}", 0, alloc));
+
+    // Test empty string (should fail)
+    const char *empty_json = "";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, empty_json, strlen(empty_json), alloc));
+
+    // Test invalid JSON syntax
+    const char *invalid_json1 = R"({"invalid": json,})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json1, strlen(invalid_json1), alloc));
+
+    // Test malformed JSON - unclosed string
+    const char *malformed_json1 = R"({"unclosed": "string)";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, malformed_json1, strlen(malformed_json1), alloc));
+
+    // Test malformed JSON - unclosed object
+    const char *malformed_json2 = R"({"key": "value")";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, malformed_json2, strlen(malformed_json2), alloc));
+
+    // Test malformed JSON - unclosed array
+    const char *malformed_json3 = R"([1, 2, 3)";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, malformed_json3, strlen(malformed_json3), alloc));
+
+    // Test invalid JSON - missing quotes around key
+    const char *invalid_json2 = R"({key: "value"})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json2, strlen(invalid_json2), alloc));
+
+    // Test invalid JSON - trailing comma in object
+    const char *invalid_json3 = R"({"key": "value",})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json3, strlen(invalid_json3), alloc));
+
+    // Test invalid JSON - trailing comma in array
+    const char *invalid_json4 = R"([1, 2, 3,])";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json4, strlen(invalid_json4), alloc));
+
+    // Test invalid JSON - single quotes instead of double quotes
+    const char *invalid_json5 = R"({'key': 'value'})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json5, strlen(invalid_json5), alloc));
+
+    // Test invalid JSON - undefined value
+    const char *invalid_json6 = R"({"key": undefined})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json6, strlen(invalid_json6), alloc));
+
+    // Test invalid JSON - comment (not allowed in JSON)
+    const char *invalid_json7 = R"({"key": "value" /* comment */})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json7, strlen(invalid_json7), alloc));
+
+    // Test invalid JSON - multiple values at root level
+    const char *invalid_json8 = R"({"key1": "value1"} {"key2": "value2"})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json8, strlen(invalid_json8), alloc));
+
+    // Test invalid JSON - missing value
+    const char *invalid_json9 = R"({"key":})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json9, strlen(invalid_json9), alloc));
+
+    // Test invalid JSON - missing colon
+    const char *invalid_json10 = R"({"key" "value"})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json10, strlen(invalid_json10), alloc));
+
+    // Test invalid JSON - invalid escape sequence
+    const char *invalid_json11 = R"({"key": "invalid\escape"})";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, invalid_json11, strlen(invalid_json11), alloc));
+
+    // Test truncated JSON
+    const char *truncated_json = R"({"key": "val)";
+    EXPECT_FALSE(ddwaf_object_from_json(&object, truncated_json, strlen(truncated_json), alloc));
+}
+
+TEST(TestObject, FromJsonEmptyContainers)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    {
+        // Empty array
+        ddwaf_object object;
+        const char *json = "[]";
+
+        EXPECT_TRUE(ddwaf_object_from_json(&object, json, strlen(json), alloc));
+        EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&object), 0);
+
+        ddwaf_object_destroy(&object, alloc);
+    }
+
+    {
+        // Empty object
+        ddwaf_object object;
+        const char *json = "{}";
+
+        EXPECT_TRUE(ddwaf_object_from_json(&object, json, strlen(json), alloc));
+        EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(&object), 0);
+
+        ddwaf_object_destroy(&object, alloc);
+    }
+}
+
 } // namespace

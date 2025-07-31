@@ -27,6 +27,7 @@ EXPORTS
   ddwaf_object_set_string_literal
   ddwaf_object_set_array
   ddwaf_object_set_map
+  ddwaf_object_from_json
   ddwaf_object_insert
   ddwaf_object_insert_key
   ddwaf_object_insert_key_nocopy

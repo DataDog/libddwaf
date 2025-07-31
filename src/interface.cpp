@@ -22,6 +22,7 @@
 #include "configuration/common/raw_configuration.hpp"
 #include "context.hpp"
 #include "ddwaf.h"
+#include "json_utils.hpp"
 #include "log.hpp"
 #include "memory_resource.hpp"
 #include "obfuscator.hpp"
@@ -604,6 +605,22 @@ ddwaf_object *ddwaf_object_set_map(ddwaf_object *object, uint16_t capacity, ddwa
     return object;
 }
 
+bool ddwaf_object_from_json(
+    ddwaf_object *output, const char *json_str, uint32_t length, ddwaf_allocator alloc)
+{
+    if (output == nullptr || json_str == nullptr || length == 0) {
+        return false;
+    }
+
+    try {
+        auto borrowed = to_borrowed(output);
+        borrowed = json_to_object({json_str, length}, to_alloc_ptr(alloc));
+        return borrowed.is_valid();
+    } catch (...) {} // NOLINT(bugprone-empty-catch)
+
+    return false;
+}
+
 ddwaf_object *ddwaf_object_insert(ddwaf_object *array, ddwaf_allocator alloc)
 {
     if (array == nullptr || array->type != DDWAF_OBJ_ARRAY || alloc == nullptr) {
@@ -668,7 +685,7 @@ ddwaf_object *ddwaf_object_insert_literal_key(
 
 void ddwaf_object_destroy(ddwaf_object *object, ddwaf_allocator alloc)
 {
-    if (object == nullptr) {
+    if (object == nullptr || alloc == nullptr) {
         return;
     }
 
