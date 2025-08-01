@@ -23,6 +23,7 @@
 #include "exclusion/common.hpp"
 #include "exclusion/object_filter.hpp"
 #include "log.hpp"
+#include "ruleset_info.hpp"
 #include "semver.hpp"
 #include "target_address.hpp"
 #include "version.hpp"
@@ -112,7 +113,7 @@ rule_filter_spec parse_rule_filter(const raw_configuration::map &filter)
 } // namespace
 
 void parse_filters(const raw_configuration::vector &filter_array, configuration_collector &cfg,
-    base_section_info &info)
+    ruleset_info::section_info &info)
 {
     for (unsigned i = 0; i < filter_array.size(); i++) {
         const auto &node_param = filter_array[i];

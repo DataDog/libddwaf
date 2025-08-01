@@ -33,7 +33,7 @@
 namespace ddwaf {
 
 bool configuration_manager::load(
-    raw_configuration::map &root, configuration_collector &collector, base_ruleset_info &info)
+    raw_configuration::map &root, configuration_collector &collector, ruleset_info &info)
 {
     auto metadata = at<raw_configuration::map>(root, "metadata", {});
     auto rules_version = at<std::string_view>(metadata, "rules_version", {});
@@ -268,7 +268,7 @@ void configuration_manager::remove_config(const configuration_change_spec &cfg)
 }
 
 bool configuration_manager::add_or_update(
-    const std::string &path, raw_configuration &root, base_ruleset_info &info)
+    const std::string &path, raw_configuration &root, ruleset_info &info)
 {
     try {
         raw_configuration::map root_map = static_cast<raw_configuration::map>(root);

@@ -27,7 +27,7 @@ public:
     configuration_manager &operator=(configuration_manager &&) = delete;
     configuration_manager &operator=(const configuration_manager &) = delete;
 
-    bool add_or_update(const std::string &path, raw_configuration &root, base_ruleset_info &info);
+    bool add_or_update(const std::string &path, raw_configuration &root, ruleset_info &info);
     bool remove(const std::string &path);
 
     std::pair<const configuration_spec &, change_set> consolidate();
@@ -58,7 +58,7 @@ protected:
     void remove_config(const configuration_change_spec &cfg);
 
     static bool load(
-        raw_configuration::map &root, configuration_collector &collector, base_ruleset_info &info);
+        raw_configuration::map &root, configuration_collector &collector, ruleset_info &info);
 
     std::unordered_map<std::string, configuration_change_spec> configs_;
     configuration_spec global_config_;
