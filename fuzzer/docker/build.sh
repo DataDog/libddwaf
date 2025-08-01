@@ -30,7 +30,7 @@ make -j$(nproc)
 echo "Building AFL++ fuzzers..."
 
 # Build individual AFL++ fuzzers
-cd /workspace/fuzz
+cd /workspace/fuzzer
 mkdir -p build
 cd build
 

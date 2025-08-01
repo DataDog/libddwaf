@@ -19,6 +19,7 @@ RUN apt-get install -y \
     cmake \
     git \
     curl \
+    vim \
     python3 \
     python3-pip \
     llvm-19 \

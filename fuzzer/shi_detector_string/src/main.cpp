@@ -5,6 +5,7 @@
 // Copyright 2025 Datadog, Inc.
 
 #include <cstdint>
+#include <cstring>
 #include <random>
 #include "../common/afl_wrapper.hpp"
 #include "../common/utils.hpp"
@@ -33,7 +34,8 @@ std::pair<std::string_view, std::string_view> deserialize(const uint8_t *data, s
         return {};
     }
 
-    const auto resource_size = *reinterpret_cast<const std::size_t *>(data);
+    std::size_t resource_size;
+    std::memcpy(&resource_size, data, sizeof(std::size_t));
     data += sizeof(std::size_t);
     size -= sizeof(std::size_t);
 
@@ -49,7 +51,8 @@ std::pair<std::string_view, std::string_view> deserialize(const uint8_t *data, s
         return {};
     }
 
-    const auto param_size = *reinterpret_cast<const std::size_t *>(data);
+    std::size_t param_size;
+    std::memcpy(&param_size, data, sizeof(std::size_t));
     data += sizeof(std::size_t);
     size -= sizeof(std::size_t);
 
