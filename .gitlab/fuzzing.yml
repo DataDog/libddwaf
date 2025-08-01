@@ -1,0 +1,37 @@
+variables:
+  # Use the same base image as benchmarks as we know it should be able to build the fuzzers
+  BASE_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:libddwaf
+
+run-fuzzing:
+  stage: fuzzing
+  when: manual
+  tags: ["runner:apm-k8s-tweaked-metal"]
+  image: $BASE_CI_IMAGE
+  timeout: 30m
+  before_script: |
+    VAULT_VERSION=1.20.1
+    wget https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip
+    unzip vault_${VAULT_VERSION}_linux_amd64.zip
+    mv vault /usr/bin/vault
+    chmod +x /usr/bin/vault
+    export PATH=/usr/bin:$PATH
+  script: |
+    echo "Starting fuzzing infrastructure setup..."
+    echo "Current commit: $CI_COMMIT_SHA"
+    echo "Current branch: $CI_COMMIT_REF_NAME"
+    echo "Current working directory: $(pwd)"
+
+    # Copy source code to /workspace where the build scripts expect it
+    mkdir -p /workspace
+    cp -r . /workspace/
+    cd /workspace
+
+    apt-get update && apt-get install -y python3-pip
+    python3 -m pip install requests
+    python3 ci/scripts/fuzz_infra.py
+    echo "✅ Fuzzing setup completed successfully"
+
+  # Only run on certain conditions to avoid wasting resources
+  # only:
+  #   refs:
+  #     - master
