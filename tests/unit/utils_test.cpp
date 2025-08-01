@@ -6,6 +6,7 @@
 
 #include <unordered_map>
 
+#include "object_helpers.hpp"
 #include "utils.hpp"
 
 #include "common/gtest_utils.hpp"

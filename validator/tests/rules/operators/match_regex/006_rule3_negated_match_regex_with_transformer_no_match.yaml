@@ -1,0 +1,11 @@
+{
+  name: "Basic run with negated match_regex operator and transformer and no match",
+  runs: [
+    {
+      persistent-input: {
+        rule3-input: "ARACHNI"
+      },
+      code: ok
+    }
+  ]
+}

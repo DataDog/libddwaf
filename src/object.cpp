@@ -14,7 +14,7 @@
 #include "ddwaf.h"
 #include "json_utils.hpp"
 #include "log.hpp"
-#include "utils.hpp"
+#include "object_helpers.hpp"
 
 extern "C" {
 namespace {

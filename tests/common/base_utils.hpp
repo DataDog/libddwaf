@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 #pragma once
 
+#include "condition/negated_scalar_condition.hpp"
 #include "condition/scalar_condition.hpp"
 #include "expression.hpp"
 #include "matcher/base.hpp"
@@ -59,7 +60,7 @@ public:
                 std::make_unique<scalar_condition>(std::make_unique<T>(std::forward<Args>(args)...),
                     std::string{}, std::move(arguments_)));
         } else {
-            conditions_.emplace_back(std::make_unique<scalar_negated_condition>(
+            conditions_.emplace_back(std::make_unique<negated_scalar_condition>(
                 std::make_unique<T>(std::forward<Args>(args)...), std::string{},
                 std::move(arguments_)));
         }
@@ -73,7 +74,7 @@ public:
             conditions_.emplace_back(std::make_unique<scalar_condition>(
                 std::unique_ptr<matcher::base>{}, std::move(data_id), std::move(arguments_)));
         } else {
-            conditions_.emplace_back(std::make_unique<scalar_negated_condition>(
+            conditions_.emplace_back(std::make_unique<negated_scalar_condition>(
                 std::unique_ptr<matcher::base>{}, std::move(data_id), std::move(arguments_)));
         }
     }

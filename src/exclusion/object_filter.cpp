@@ -15,6 +15,7 @@
 #include "exclusion/common.hpp"
 #include "exclusion/object_filter.hpp"
 #include "log.hpp"
+#include "object_helpers.hpp"
 #include "object_store.hpp"
 #include "utils.hpp"
 
