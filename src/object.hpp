@@ -482,7 +482,7 @@ public:
 
     [[nodiscard]] object_view find(std::string_view expected_key) const noexcept
     {
-        assert(obj_ != nullptr && type() == object_type::map && obj_->via.map.ptr != nullptr);
+        assert(obj_ != nullptr && type() == object_type::map);
 
         for (std::size_t i = 0; i < size(); ++i) {
             auto [key, value] = at(i);
@@ -501,6 +501,32 @@ public:
         for (auto it = key_path.begin(); current.has_value() && it != key_path.end(); ++it) {
             root = current;
             if (!root.is_map()) {
+                return {};
+            }
+
+            current = {};
+            for (std::size_t i = 0; i < root.size(); ++i) {
+                const auto &[key, child] = root.at(i);
+
+                auto child_key = key.as<std::string_view>();
+                if (*it == child_key) {
+                    current = child;
+                    break;
+                }
+            }
+        }
+        return current;
+    }
+
+    template <typename T>
+    object_view find_key_path(std::span<const std::string> key_path, const T &exclusion)
+    {
+        auto root = *this;
+        auto current = root;
+        for (auto it = key_path.begin(); current.has_value() && it != key_path.end(); ++it) {
+            root = current;
+
+            if (exclusion.contains(root) || !root.is_map()) {
                 return {};
             }
 

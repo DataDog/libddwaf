@@ -3,11 +3,9 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string>
-#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -27,19 +25,6 @@ namespace {
 
 enum class search_outcome : uint8_t { found, not_found, unknown };
 
-object_view find_key(object_view parent, std::string_view key)
-{
-    for (std::size_t i = 0; i < parent.size(); ++i) {
-        const auto &[child_key, value] = parent.at(i);
-
-        if (key == child_key.as<std::string_view>()) {
-            return value;
-        }
-    }
-
-    return nullptr;
-}
-
 search_outcome exists(object_view root, std::span<const std::string> key_path,
     const exclusion::object_set_ref &objects_excluded)
 {
@@ -54,7 +39,7 @@ search_outcome exists(object_view root, std::span<const std::string> key_path,
 
     auto it = key_path.begin();
 
-    while ((root = find_key(root, *it)).has_value()) {
+    while ((root = root.find(*it)).has_value()) {
         if (objects_excluded.contains(root)) {
             // We found the next root but it has been excluded, so we
             // can't know for sure if the required key path exists
@@ -102,7 +87,7 @@ search_outcome exists(object_view root, std::span<const std::string> key_path,
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-[[nodiscard]] eval_result exists_negated_condition::eval_impl(
+[[nodiscard]] eval_result negated_exists_condition::eval_impl(
     const unary_argument<object_view> &input, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, ddwaf::timer & /*deadline*/) const
 {

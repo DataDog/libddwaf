@@ -171,9 +171,9 @@ TEST(TestExistsCondition, MultipleAddressesAndKeyPaths)
     validate_address("usr.session_id", {}, false);
 }
 
-TEST(TestExistsNegatedCondition, KeyPathAvailable)
+TEST(TestNegatedExistsCondition, KeyPathAvailable)
 {
-    exists_negated_condition cond{{{{{{"server.request.uri_raw",
+    negated_exists_condition cond{{{{{{"server.request.uri_raw",
         get_target_index("server.request.uri_raw"), {"path", "to", "object"}}}}}}};
 
     auto root = object_builder::map({{"server.request.uri_raw",
@@ -189,9 +189,9 @@ TEST(TestExistsNegatedCondition, KeyPathAvailable)
     ASSERT_FALSE(res.outcome);
 }
 
-TEST(TestExistsNegatedCondition, KeyPathNotAvailable)
+TEST(TestNegatedExistsCondition, KeyPathNotAvailable)
 {
-    exists_negated_condition cond{{{{{{"server.request.uri_raw",
+    negated_exists_condition cond{{{{{{"server.request.uri_raw",
         get_target_index("server.request.uri_raw"), {"path", "to", "object"}}}}}}};
 
     auto root = object_builder::map({{"server.request.uri_raw",
@@ -205,9 +205,9 @@ TEST(TestExistsNegatedCondition, KeyPathNotAvailable)
     ASSERT_TRUE(res.outcome);
 }
 
-TEST(TestExistsNegatedCondition, KeyPathAvailableButExcluded)
+TEST(TestNegatedExistsCondition, KeyPathAvailableButExcluded)
 {
-    exists_negated_condition cond{{{{{{"server.request.uri_raw",
+    negated_exists_condition cond{{{{{{"server.request.uri_raw",
         get_target_index("server.request.uri_raw"), {"path", "to", "object"}}}}}}};
 
     auto root = object_builder::map({{"server.request.uri_raw",

@@ -73,7 +73,7 @@ TEST(TestExpression, SimpleNegatedMatch)
     EXPECT_FALSE(matches[0].ephemeral);
     EXPECT_MATCHES(matches, {.op = "!match_regex",
                                 .op_value = ".*",
-                                .highlight = ""sv,
+                                .highlight = "val"sv,
                                 .args = {{
                                     .value = "val"sv,
                                     .address = "server.request.query",

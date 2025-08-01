@@ -28,12 +28,12 @@ protected:
     friend class base_impl<exists_condition>;
 };
 
-class exists_negated_condition : public base_impl<exists_negated_condition> {
+class negated_exists_condition : public base_impl<negated_exists_condition> {
 public:
     static constexpr std::array<std::string_view, 1> param_names{"inputs"};
 
-    explicit exists_negated_condition(std::vector<condition_parameter> args)
-        : base_impl<exists_negated_condition>(std::move(args))
+    explicit negated_exists_condition(std::vector<condition_parameter> args)
+        : base_impl<negated_exists_condition>(std::move(args))
     {}
 
 protected:
@@ -41,7 +41,7 @@ protected:
         condition_cache &cache, const exclusion::object_set_ref &objects_excluded,
         ddwaf::timer & /*deadline*/) const;
 
-    friend class base_impl<exists_negated_condition>;
+    friend class base_impl<negated_exists_condition>;
 };
 
 } // namespace ddwaf
