@@ -1,5 +1,24 @@
 # libddwaf release
 
+## v1.27.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+### New features
+
+### Release changelog
+#### Changes
+- Add helper for object creation from JSON string ([#430](https://github.com/DataDog/libddwaf/pull/430))
+- SSRF Operator Configuration ([#434](https://github.com/DataDog/libddwaf/pull/434))
+- Accept empty and inconsequential configurations ([#437](https://github.com/DataDog/libddwaf/pull/437))
+
+#### Fixes
+- Negated operator fixes & improvements ([#435](https://github.com/DataDog/libddwaf/pull/435))
+
+#### Miscellaneous
+- Fix typo in doc-string ([#424](https://github.com/DataDog/libddwaf/pull/424))
+- Fix markdown typo in UPGRADING.md ([#429](https://github.com/DataDog/libddwaf/pull/429))
+- Update linux builds and tests to use LLVM-19 ([#431](https://github.com/DataDog/libddwaf/pull/431))
+- Use github-provided ubuntu arm64 runner ([#433](https://github.com/DataDog/libddwaf/pull/433))
+
 ## v1.26.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 ### New features
@@ -7,6 +26,8 @@
 This release introduces a new operator, `hidden_ascii_match`, designed to detect hidden ASCII characters within arbitrary text inputs. Hidden ASCII refers specifically to characters found within the Unicode range [U+E0000, U+E007F]. This Unicode block was initially defined to provide non-printable mappings of standard ASCII characters, effectively allowing ASCII data to be embedded invisibly within text.
 
 Hidden ASCII characters have been increasingly leveraged to inject concealed instructions into prompts provided to LLMs, manipulating their behavior without explicit visibility to users or systems. The introduction of the `hidden_ascii_match` operator represents the first step toward a deterministic AI security strategy, proactively identifying and flagging these character sequences to support the effective monitoring and mitigation of potential Unicode-based prompt injection exploits.
+
+### Release changelog
 
 #### Changes
 - Hidden ASCII Matcher ([#411](https://github.com/DataDog/libddwaf/pull/411))
