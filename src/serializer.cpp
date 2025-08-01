@@ -19,6 +19,7 @@
 #include "condition/base.hpp"
 #include "ddwaf.h"
 #include "obfuscator.hpp"
+#include "object_helpers.hpp"
 #include "object_store.hpp"
 #include "rule.hpp"
 #include "serializer.hpp"

@@ -14,6 +14,7 @@
 #include "condition/cmdi_detector.hpp"
 #include "condition/exists.hpp"
 #include "condition/lfi_detector.hpp"
+#include "condition/negated_scalar_condition.hpp"
 #include "condition/scalar_condition.hpp"
 #include "condition/shi_detector.hpp"
 #include "condition/sqli_detector.hpp"
@@ -236,12 +237,12 @@ std::shared_ptr<expression> parse_expression(const raw_configuration::vector &co
             conditions.emplace_back(std::make_unique<exists_condition>(std::move(arguments)));
         } else if (operator_name == "!exists") {
             auto arguments =
-                parse_arguments<exists_negated_condition>(params, source, transformers);
+                parse_arguments<negated_exists_condition>(params, source, transformers);
             conditions.emplace_back(
-                std::make_unique<exists_negated_condition>(std::move(arguments)));
+                std::make_unique<negated_exists_condition>(std::move(arguments)));
         } else if (operator_name.starts_with('!')) {
             conditions.emplace_back(
-                build_condition<scalar_negated_condition, matcher::ip_match, matcher::exact_match,
+                build_condition<negated_scalar_condition, matcher::ip_match, matcher::exact_match,
                     matcher::regex_match, matcher::phrase_match, matcher::equals<>>(
                     operator_name.substr(1), params, source, transformers));
         } else {
