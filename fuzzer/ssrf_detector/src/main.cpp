@@ -82,10 +82,9 @@ std::size_t serialize(uint8_t *Data, std::string_view resource, std::string_view
 
 // NOLINTNEXTLINE
 extern "C" size_t LLVMFuzzerCustomMutator(
-    uint8_t *Data, size_t Size, [[maybe_unused]] size_t MaxSize, [[maybe_unused]] unsigned int Seed)
+    uint8_t *Data, size_t Size, [[maybe_unused]] size_t MaxSize, unsigned int Seed)
 {
-    static thread_local std::random_device dev;
-    static thread_local std::mt19937 rng(dev());
+    static thread_local std::mt19937 rng(Seed);
 
     auto [resource, param] = deserialize(Data, Size);
     MaxSize -= sizeof(std::size_t) * 2;
