@@ -103,15 +103,12 @@ ddwaf::waf *ddwaf_init(
                 limits_from_config(config), free_fn, obfuscator_from_config(config));
 
             ddwaf::raw_configuration input = *ruleset;
-            if (diagnostics == nullptr) {
-                ddwaf::null_ruleset_info ri;
-
-                builder.add_or_update("default", input, ri);
-                return new ddwaf::waf{builder.build()};
-            }
-
             ddwaf::ruleset_info ri;
-            const ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });
+            const ddwaf::scope_exit on_exit([&]() {
+                if (diagnostics != nullptr) {
+                    ri.to_object(*diagnostics);
+                }
+            });
             builder.add_or_update("default", input, ri);
             return new ddwaf::waf{builder.build()};
         }
@@ -280,13 +277,12 @@ bool ddwaf_builder_add_or_update_config(ddwaf::waf_builder *builder, const char 
     try {
         auto input = static_cast<ddwaf::raw_configuration>(*config);
 
-        if (diagnostics == nullptr) {
-            ddwaf::null_ruleset_info ri;
-            return builder->add_or_update({path, path_len}, input, ri);
-        }
-
         ddwaf::ruleset_info ri;
-        const ddwaf::scope_exit on_exit([&]() { ri.to_object(*diagnostics); });
+        const ddwaf::scope_exit on_exit([&]() {
+            if (diagnostics != nullptr) {
+                ri.to_object(*diagnostics);
+            }
+        });
         return builder->add_or_update({path, path_len}, input, ri);
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());

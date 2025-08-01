@@ -14,6 +14,6 @@
 namespace ddwaf {
 
 void parse_processors(const raw_configuration::vector &processor_array,
-    configuration_collector &cfg, ruleset_info::base_section_info &info);
+    configuration_collector &cfg, ruleset_info::section_info &info);
 
 } // namespace ddwaf

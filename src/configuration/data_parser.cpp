@@ -18,6 +18,7 @@
 #include "configuration/common/raw_configuration.hpp"
 #include "configuration/data_parser.hpp"
 #include "log.hpp"
+#include "ruleset_info.hpp"
 #include "uuid.hpp"
 
 namespace ddwaf {
@@ -53,8 +54,8 @@ data_type data_type_from_string(std::string_view str_type)
     return data_type::unknown;
 }
 
-void parse_data(
-    const raw_configuration::vector &data_array, base_section_info &info, auto &&emplace_fn)
+void parse_data(const raw_configuration::vector &data_array, ruleset_info::section_info &info,
+    auto &&emplace_fn)
 {
     for (unsigned i = 0; i < data_array.size(); ++i) {
         const ddwaf::raw_configuration object = data_array[i];
@@ -92,7 +93,7 @@ void parse_data(
 } // namespace
 
 void parse_rule_data(const raw_configuration::vector &data_array, configuration_collector &cfg,
-    base_section_info &info)
+    ruleset_info::section_info &info)
 {
     parse_data(data_array, info,
         [&cfg](std::string &&data_id, std::string &&id, data_type type,
@@ -102,7 +103,7 @@ void parse_rule_data(const raw_configuration::vector &data_array, configuration_
 }
 
 void parse_exclusion_data(const raw_configuration::vector &data_array, configuration_collector &cfg,
-    base_section_info &info)
+    ruleset_info::section_info &info)
 {
     parse_data(data_array, info,
         [&cfg](std::string &&data_id, std::string &&id, data_type type,
