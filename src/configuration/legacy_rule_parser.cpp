@@ -31,6 +31,7 @@
 #include "matcher/phrase_match.hpp"
 #include "matcher/regex_match.hpp"
 #include "rule.hpp"
+#include "ruleset_info.hpp"
 #include "target_address.hpp"
 #include "transformer/base.hpp"
 
@@ -127,7 +128,7 @@ std::shared_ptr<expression> parse_expression(
 } // namespace
 
 void parse_legacy_rules(const raw_configuration::vector &rule_array, configuration_collector &cfg,
-    base_section_info &info)
+    ruleset_info::section_info &info)
 {
     for (unsigned i = 0; i < rule_array.size(); ++i) {
         std::string id;

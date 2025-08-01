@@ -24,6 +24,7 @@
 #include "object.hpp"
 #include "object_type.hpp"
 #include "rule.hpp"
+#include "ruleset_info.hpp"
 #include "semver.hpp"
 #include "target_address.hpp"
 #include "transformer/base.hpp"
@@ -123,7 +124,7 @@ rule_spec parse_rule(raw_configuration::map &rule, core_rule::source_type source
 }
 
 void parse_rules(const raw_configuration::vector &rule_array, configuration_collector &cfg,
-    base_section_info &info, core_rule::source_type source)
+    ruleset_info::section_info &info, core_rule::source_type source)
 {
     for (unsigned i = 0; i < rule_array.size(); ++i) {
         std::string id;
@@ -175,13 +176,13 @@ void parse_rules(const raw_configuration::vector &rule_array, configuration_coll
 } // namespace
 
 void parse_base_rules(const raw_configuration::vector &rule_array, configuration_collector &cfg,
-    base_section_info &info)
+    ruleset_info::section_info &info)
 {
     parse_rules(rule_array, cfg, info, core_rule::source_type::base);
 }
 
 void parse_user_rules(const raw_configuration::vector &rule_array, configuration_collector &cfg,
-    base_section_info &info)
+    ruleset_info::section_info &info)
 {
     parse_rules(rule_array, cfg, info, core_rule::source_type::user);
 }

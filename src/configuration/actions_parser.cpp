@@ -18,6 +18,7 @@
 #include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
 #include "log.hpp"
+#include "ruleset_info.hpp"
 #include "uri_utils.hpp"
 
 namespace ddwaf {
@@ -87,7 +88,7 @@ void validate_and_add_redirect(auto &cfg, auto id, auto &type, auto &parameters)
 } // namespace
 
 void parse_actions(const raw_configuration::vector &actions_array, configuration_collector &cfg,
-    base_section_info &info)
+    ruleset_info::section_info &info)
 {
     for (unsigned i = 0; i < actions_array.size(); i++) {
         const auto &node_param = actions_array[i];

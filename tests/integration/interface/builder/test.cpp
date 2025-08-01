@@ -14,21 +14,178 @@ namespace {
 
 constexpr std::string_view base_dir = "integration/interface/builder/";
 
+TEST(TestEngineBuilderFunctional, InvalidConfigType)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    auto config = yaml_to_object<ddwaf_object>("[]");
+    ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ASSERT_NE(builder, nullptr);
+
+    ASSERT_FALSE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
+    ddwaf_object_destroy(&config, alloc);
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
+    ASSERT_EQ(handle, nullptr);
+
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestEngineBuilderFunctional, InvalidSectionType)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    auto config = yaml_to_object<ddwaf_object>("{rules: {}}");
+    ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ASSERT_NE(builder, nullptr);
+
+    ASSERT_FALSE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
+    ddwaf_object_destroy(&config, alloc);
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
+    ASSERT_EQ(handle, nullptr);
+
+    ddwaf_builder_destroy(builder);
+}
+
 TEST(TestEngineBuilderFunctional, EmptyConfig)
 {
     auto *alloc = ddwaf_get_default_allocator();
+
     auto config = yaml_to_object<ddwaf_object>("{}");
     ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
 
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
     ASSERT_NE(builder, nullptr);
 
-    ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr);
+    ASSERT_TRUE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
     ddwaf_object_destroy(&config, alloc);
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_EQ(handle, nullptr);
 
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestEngineBuilderFunctional, ConfigWithAllSkippedItems)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    auto config = read_file<ddwaf_object>("all_skipped_items.yaml", base_dir);
+    ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ASSERT_NE(builder, nullptr);
+
+    ASSERT_TRUE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
+    ddwaf_object_destroy(&config, alloc);
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
+    ASSERT_EQ(handle, nullptr);
+
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestEngineBuilderFunctional, ConfigWithNoItemsButMultipleSections)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    auto config = read_file<ddwaf_object>("multiple_sections_empty_config.yaml", base_dir);
+    ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ASSERT_NE(builder, nullptr);
+
+    ASSERT_TRUE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
+    ddwaf_object_destroy(&config, alloc);
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
+    ASSERT_EQ(handle, nullptr);
+
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestEngineBuilderFunctional, AllLoadableItemsFailedSingleSection)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    auto config =
+        read_file<ddwaf_object>("multiple_sections_one_with_invalid_items.yaml", base_dir);
+    ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ASSERT_NE(builder, nullptr);
+
+    ASSERT_FALSE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
+    ddwaf_object_destroy(&config, alloc);
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
+    ASSERT_EQ(handle, nullptr);
+
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestEngineBuilderFunctional, AllLoadableItemsFailedMultipleSection)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    auto config = read_file<ddwaf_object>("multiple_empty_sections_invalid_items.yaml", base_dir);
+    ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ASSERT_NE(builder, nullptr);
+
+    ASSERT_FALSE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
+    ddwaf_object_destroy(&config, alloc);
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
+    ASSERT_EQ(handle, nullptr);
+
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestEngineBuilderFunctional, OneLoadedItemEverythingElseFailed)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    auto config =
+        read_file<ddwaf_object>("multiple_empty_sections_invalid_and_valid_items.yaml", base_dir);
+    ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ASSERT_NE(builder, nullptr);
+
+    ASSERT_TRUE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
+    ddwaf_object_destroy(&config, alloc);
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle, nullptr);
+
+    ddwaf_destroy(handle);
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestEngineBuilderFunctional, InvalidSectionAndLoadableItems)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    auto config = read_file<ddwaf_object>("invalid_section_and_loadable_items.yaml", base_dir);
+    ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ASSERT_NE(builder, nullptr);
+
+    ASSERT_TRUE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
+    ddwaf_object_destroy(&config, alloc);
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle, nullptr);
+
+    ddwaf_destroy(handle);
     ddwaf_builder_destroy(builder);
 }
 
@@ -42,7 +199,8 @@ TEST(TestEngineBuilderFunctional, BaseRules)
     {
         auto config = read_file<ddwaf_object>("base_rules_1.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
-        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr);
+        ASSERT_TRUE(
+            ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr));
         ddwaf_object_destroy(&config, alloc);
     }
 
@@ -68,7 +226,8 @@ TEST(TestEngineBuilderFunctional, BaseRules)
         ddwaf_destroy(handle);
         auto config = read_file<ddwaf_object>("base_rules_2.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
-        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr);
+        ASSERT_TRUE(
+            ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr));
         ddwaf_object_destroy(&config, alloc);
     }
 
@@ -113,7 +272,8 @@ TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
     {
         auto config = read_file<ddwaf_object>("base_rules_1.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
-        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules1"), &config, nullptr);
+        ASSERT_TRUE(
+            ddwaf_builder_add_or_update_config(builder, LSTRARG("rules1"), &config, nullptr));
         ddwaf_object_destroy(&config, alloc);
     }
 
@@ -121,7 +281,8 @@ TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
     {
         auto config = read_file<ddwaf_object>("base_rules_1_2_duplicate.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
-        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules2"), &config, nullptr);
+        ASSERT_TRUE(
+            ddwaf_builder_add_or_update_config(builder, LSTRARG("rules2"), &config, nullptr));
         ddwaf_object_destroy(&config, alloc);
     }
 
@@ -190,7 +351,8 @@ TEST(TestEngineBuilderFunctional, CustomRules)
     {
         auto config = read_file<ddwaf_object>("custom_rules_1.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
-        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr);
+        ASSERT_TRUE(
+            ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr));
         ddwaf_object_destroy(&config, alloc);
     }
 
@@ -216,7 +378,9 @@ TEST(TestEngineBuilderFunctional, CustomRules)
         ddwaf_destroy(handle);
         auto config = read_file<ddwaf_object>("custom_rules_2.yaml", base_dir);
         ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
-        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr);
+        ASSERT_TRUE(
+            ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr));
+
         ddwaf_object_destroy(&config, alloc);
     }
 

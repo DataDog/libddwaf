@@ -18,39 +18,47 @@ namespace ddwaf {
 
 inline std::string index_to_id(unsigned idx) { return "index:" + to_string<std::string>(idx); }
 
-class base_ruleset_info {
+enum class ruleset_info_state : uint8_t { empty, invalid, valid };
+
+class ruleset_info {
 public:
-    class base_section_info {
+    class section_info {
     public:
-        base_section_info() = default;
-        virtual ~base_section_info() = default;
-        base_section_info(const base_section_info &) = delete;
-        base_section_info(base_section_info &&) noexcept = default;
-        base_section_info &operator=(const base_section_info &) = delete;
-        base_section_info &operator=(base_section_info &&) noexcept = delete;
+        section_info()
+            : loaded_(owned_object::make_array()), failed_(owned_object::make_array()),
+              skipped_(owned_object::make_array()), errors_(owned_object::make_map()),
+              warnings_(owned_object::make_map())
+        {}
 
-        virtual void set_error(std::string_view error) = 0;
+        ~section_info() = default;
 
-        virtual void add_loaded(unsigned index)
+        section_info(const section_info &) = delete;
+        section_info(section_info &&) noexcept = default;
+        section_info &operator=(const section_info &) = delete;
+        section_info &operator=(section_info &&) noexcept = delete;
+
+        void set_error(std::string_view error) { error_ = error; }
+        void add_loaded(std::string_view id);
+        void add_failed(std::string_view id, parser_error_severity sev, std::string_view error);
+        void add_skipped(std::string_view id);
+
+        void add_loaded(unsigned index)
         {
             auto id_str = index_to_id(index);
             add_loaded(id_str);
         }
-        virtual void add_loaded(std::string_view id) = 0;
-
-        virtual void add_skipped(unsigned index)
+        void add_skipped(unsigned index)
         {
             auto id_str = index_to_id(index);
             add_skipped(id_str);
         }
-        virtual void add_skipped(std::string_view id) = 0;
 
-        virtual void add_failed(unsigned index, parser_error_severity sev, std::string_view error)
+        void add_failed(unsigned index, parser_error_severity sev, std::string_view error)
         {
             auto id_str = index_to_id(index);
             add_failed(id_str, sev, error);
         }
-        virtual void add_failed(
+        void add_failed(
             unsigned index, std::string_view id, parser_error_severity sev, std::string_view error)
         {
             if (id.empty()) {
@@ -60,85 +68,6 @@ public:
                 add_failed(id, sev, error);
             }
         }
-        virtual void add_failed(
-            std::string_view id, parser_error_severity sev, std::string_view error) = 0;
-    };
-
-    base_ruleset_info() = default;
-    virtual ~base_ruleset_info() = default;
-    base_ruleset_info(const base_ruleset_info &) = delete;
-    base_ruleset_info(base_ruleset_info &&) noexcept = default;
-    base_ruleset_info &operator=(const base_ruleset_info &) = delete;
-    base_ruleset_info &operator=(base_ruleset_info &&) noexcept = delete;
-
-    virtual base_section_info &add_section(std::string_view section) = 0;
-    virtual void set_ruleset_version(std::string_view version) = 0;
-    virtual void set_error(std::string error) = 0;
-
-    virtual owned_object to_object() = 0;
-};
-
-class null_ruleset_info : public base_ruleset_info {
-public:
-    class section_info : public base_ruleset_info::base_section_info {
-    public:
-        section_info() = default;
-        ~section_info() override = default;
-        section_info(const section_info &) = delete;
-        section_info(section_info &&) noexcept = default;
-        section_info &operator=(const section_info &) = delete;
-        section_info &operator=(section_info &&) noexcept = delete;
-
-        void set_error(std::string_view /*error*/) override {}
-        void add_loaded(std::string_view /*id*/) override {}
-        void add_failed(std::string_view /*id*/, parser_error_severity /*sev*/,
-            std::string_view /*error*/) override
-        {}
-        void add_skipped(std::string_view /*id*/) override {}
-    };
-
-    null_ruleset_info() = default;
-    ~null_ruleset_info() override = default;
-    null_ruleset_info(const null_ruleset_info &) = delete;
-    null_ruleset_info(null_ruleset_info &&) noexcept = default;
-    null_ruleset_info &operator=(const null_ruleset_info &) = delete;
-    null_ruleset_info &operator=(null_ruleset_info &&) noexcept = delete;
-
-    base_section_info &add_section(std::string_view /*section*/) override
-    {
-        static section_info section;
-        return section;
-    }
-
-    void set_ruleset_version(std::string_view /*version*/) override{};
-    void set_error(std::string /*error*/) override {}
-
-    owned_object to_object() override { return {}; };
-};
-
-class ruleset_info : public base_ruleset_info {
-public:
-    class section_info : public base_ruleset_info::base_section_info {
-    public:
-        section_info()
-            : loaded_(owned_object::make_array()), failed_(owned_object::make_array()),
-              skipped_(owned_object::make_array()), errors_(owned_object::make_map()),
-              warnings_(owned_object::make_map())
-        {}
-
-        ~section_info() override = default;
-
-        section_info(const section_info &) = delete;
-        section_info(section_info &&) noexcept = default;
-        section_info &operator=(const section_info &) = delete;
-        section_info &operator=(section_info &&) noexcept = delete;
-
-        void set_error(std::string_view error) override { error_ = error; }
-        void add_loaded(std::string_view id) override;
-        void add_failed(
-            std::string_view id, parser_error_severity sev, std::string_view error) override;
-        void add_skipped(std::string_view id) override;
-
         // This matcher effectively moves the contents
         owned_object to_object()
         {
@@ -157,6 +86,20 @@ public:
                 warning_obj_cache_.clear();
             }
             return output;
+        }
+
+        [[nodiscard]] ruleset_info_state state() const noexcept
+        {
+            //  The section is valid if there are no errors and
+            if (error_.empty() && loaded_.size() > 0) {
+                return ruleset_info_state::valid;
+            }
+
+            if (!error_.empty() || failed_.size() > 0) {
+                return ruleset_info_state::invalid;
+            }
+
+            return ruleset_info_state::empty;
         }
 
     protected:
@@ -178,23 +121,23 @@ public:
     };
 
     ruleset_info() = default;
-    ~ruleset_info() override = default;
+    ~ruleset_info() = default;
 
     ruleset_info(const ruleset_info &) = delete;
     ruleset_info(ruleset_info &&) noexcept = default;
     ruleset_info &operator=(const ruleset_info &) = delete;
     ruleset_info &operator=(ruleset_info &&) noexcept = delete;
 
-    base_section_info &add_section(std::string_view section) override
+    section_info &add_section(std::string_view section)
     {
         auto [it, res] = sections_.emplace(section, section_info{});
         return it->second;
     }
 
-    void set_ruleset_version(std::string_view version) override { ruleset_version_ = version; }
+    void set_ruleset_version(std::string_view version) { ruleset_version_ = version; }
 
-    // This matcher effectively moves the contents
-    owned_object to_object() override
+    // This method effectively moves the contents
+    owned_object to_object()
     {
         auto output = owned_object::make_map();
         if (!error_.empty()) {
@@ -212,7 +155,28 @@ public:
         return output;
     }
 
-    void set_error(std::string error) override { error_ = std::move(error); }
+    void set_error(std::string error) { error_ = std::move(error); }
+
+    [[nodiscard]] ruleset_info_state state() const noexcept
+    {
+        if (!error_.empty()) {
+            return ruleset_info_state::invalid;
+        }
+
+        auto final_state = ruleset_info_state::empty;
+        for (const auto &[_, section] : sections_) {
+            switch (section.state()) {
+            case ruleset_info_state::valid:
+                return ruleset_info_state::valid;
+            case ruleset_info_state::invalid:
+                final_state = ruleset_info_state::invalid;
+                break;
+            default:
+                break;
+            }
+        }
+        return final_state;
+    }
 
 protected:
     std::string ruleset_version_;

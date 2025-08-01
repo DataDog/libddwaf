@@ -1,0 +1,36 @@
+version: '2.1'
+exclusions:
+  - max_version: 0.1.1
+    rules_target:
+      - rule_id: 1
+    on_match: monitor
+rules: 
+  - id: 1
+    name: rule1
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value1
+          regex: rule1
+custom_rules:
+  - name: rule1
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value1
+          regex: rule1
+processors: []
+rules_override: []
+processor_override: []
+rules_data: []
+exclusion_data: []
+actions: []
+scanners: []

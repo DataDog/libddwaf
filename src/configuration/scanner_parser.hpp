@@ -14,6 +14,6 @@
 namespace ddwaf {
 
 void parse_scanners(const raw_configuration::vector &scanner_array, configuration_collector &cfg,
-    ruleset_info::base_section_info &info);
+    ruleset_info::section_info &info);
 
 } // namespace ddwaf

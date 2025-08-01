@@ -10,9 +10,6 @@
 
 #include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
-#include "ruleset_info.hpp"
-
-using base_section_info = ddwaf::base_ruleset_info::base_section_info;
 
 namespace ddwaf {
 

@@ -76,7 +76,7 @@ std::vector<processor_mapping> parse_processor_mappings(
 } // namespace
 
 void parse_processors(const raw_configuration::vector &processor_array,
-    configuration_collector &cfg, ruleset_info::base_section_info &info)
+    configuration_collector &cfg, ruleset_info::section_info &info)
 {
     for (unsigned i = 0; i < processor_array.size(); i++) {
         const auto &node_param = processor_array[i];
