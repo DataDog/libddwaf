@@ -27,7 +27,7 @@ public:
     configuration_manager &operator=(configuration_manager &&) = delete;
     configuration_manager &operator=(const configuration_manager &) = delete;
 
-    bool add_or_update(const std::string &path, raw_configuration &root, base_ruleset_info &info);
+    bool add_or_update(const std::string &path, raw_configuration &root, ruleset_info &info);
     bool remove(const std::string &path);
 
     std::pair<const configuration_spec &, change_set> consolidate();
@@ -57,8 +57,14 @@ public:
 protected:
     void remove_config(const configuration_change_spec &cfg);
 
-    static void load(
-        raw_configuration::map &root, configuration_collector &collector, base_ruleset_info &info);
+    // This function returns:
+    //  - true: when the configuration was fully or partially loaded, this
+    //          will also be the return value when the configuration is empty or
+    //          inconsequential, i.e. no element can be loaded due to compat
+    //  - false: when no elements within the configuration could be loaded due
+    //           to errors. This implies that the configuration must be rejected
+    static bool load(
+        raw_configuration::map &root, configuration_collector &collector, ruleset_info &info);
 
     std::unordered_map<std::string, configuration_change_spec> configs_;
     configuration_spec global_config_;
