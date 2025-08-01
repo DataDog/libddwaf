@@ -1,0 +1,29 @@
+{
+  name: "SSRF due to query inspection",
+  runs: [
+    {
+      persistent-input: {
+        server.io.net.url.2: "https://google.com/somewhere/?param=value&something=somethingelse",
+        server.request.body: "value&something=somethingelse"
+      },
+      rules: [
+        {
+          "ssrf-002": [
+            {
+              resource: {
+                address: "server.io.net.url.2",
+                value: "https://google.com/somewhere/?param=value&something=somethingelse",
+              },
+              params: {
+                address: "server.request.body",
+                value: "value&something=somethingelse"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+
+    }
+  ]
+}

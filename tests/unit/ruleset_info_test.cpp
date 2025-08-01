@@ -231,24 +231,4 @@ TEST(TestRulesetInfo, SectionErrorRulesetInfo)
     ddwaf_object_free(&root);
 }
 
-TEST(TestRulesetInfo, NullRulesetInfo)
-{
-    // This test just verifies there are no side-effects to the null ruleset info
-    null_ruleset_info info;
-    info.set_ruleset_version("1.2.3");
-
-    {
-        auto &section = info.add_section("rules");
-        section.add_loaded("loaded");
-        section.add_failed("failed", parser_error_severity::error, "error");
-    }
-
-    {
-        auto &section = info.add_section("exclusions");
-        section.add_loaded("loaded");
-        section.add_failed("failed", parser_error_severity::error, "error");
-    }
-
-    EXPECT_TRUE(true);
-}
 } // namespace

@@ -1,0 +1,29 @@
+{
+  name: "Default allowed schemes overridden through policy",
+  runs: [
+    {
+      persistent-input: {
+        server.io.net.url.1: "https://whatever.net/somewhere/in/the/app",
+        server.request.body: "https:"
+      },
+      rules: [
+        {
+          "ssrf-001": [
+            {
+              resource: {
+                address: "server.io.net.url.1",
+                value: "https://whatever.net/somewhere/in/the/app"
+              },
+              params: {
+                address: "server.request.body",
+                value: "https:"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+
+    }
+  ]
+}

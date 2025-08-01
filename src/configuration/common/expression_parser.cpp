@@ -140,6 +140,58 @@ auto build_versioned_condition(std::string_view operator_name, unsigned version,
     return std::make_unique<Condition>(std::move(arguments));
 }
 
+template <>
+auto build_versioned_condition<ssrf_detector>(std::string_view operator_name, unsigned version,
+    const raw_configuration::map &params, data_source source,
+    const std::vector<transformer_id> &transformers)
+{
+    if (version > ssrf_detector::version) {
+        throw unsupported_operator_version(operator_name, version, ssrf_detector::version);
+    }
+
+    auto options = at<raw_configuration::map>(params, "options", {});
+
+    const ssrf_opts opts{.authority_inspection = at<bool>(options, "authority-inspection", true),
+        .path_inspection = at<bool>(options, "path-inspection", false),
+        .query_inspection = at<bool>(options, "query-inspection", false),
+        .forbid_full_url_injection = at<bool>(options, "forbid-full-url-injection", false),
+        .enforce_policy_without_injection =
+            at<bool>(options, "enforce-policy-without-injection", false)};
+
+    auto policy = at<raw_configuration::map>(params, "policy", {});
+
+    std::vector<std::string> allowed_schemes;
+    auto it = policy.find("allowed-schemes");
+    if (it == policy.end()) {
+        allowed_schemes = {ssrf_detector::default_allowed_schemes.begin(),
+            ssrf_detector::default_allowed_schemes.end()};
+    } else {
+        allowed_schemes = static_cast<std::vector<std::string>>(it->second);
+    }
+
+    std::vector<std::string> forbidden_domains;
+    it = policy.find("forbidden-domains");
+    if (it == policy.end()) {
+        forbidden_domains = {ssrf_detector::default_forbidden_domains.begin(),
+            ssrf_detector::default_forbidden_domains.end()};
+    } else {
+        forbidden_domains = static_cast<std::vector<std::string>>(it->second);
+    }
+
+    std::vector<std::string_view> forbidden_ips;
+    it = policy.find("forbidden-ips");
+    if (it == policy.end()) {
+        forbidden_ips = {ssrf_detector::default_forbidden_ips.begin(),
+            ssrf_detector::default_forbidden_ips.end()};
+    } else {
+        forbidden_ips = static_cast<std::vector<std::string_view>>(it->second);
+    }
+
+    auto arguments = parse_arguments<ssrf_detector>(params, source, transformers);
+    return std::make_unique<ssrf_detector>(std::move(arguments), opts, std::move(allowed_schemes),
+        std::move(forbidden_domains), forbidden_ips);
+}
+
 } // namespace
 
 std::shared_ptr<expression> parse_expression(const raw_configuration::vector &conditions_array,

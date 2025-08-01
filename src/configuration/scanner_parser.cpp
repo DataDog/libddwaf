@@ -44,7 +44,7 @@ std::unique_ptr<matcher::base> parse_scanner_matcher(const raw_configuration::ma
 } // namespace
 
 void parse_scanners(const raw_configuration::vector &scanner_array, configuration_collector &cfg,
-    ruleset_info::base_section_info &info)
+    ruleset_info::section_info &info)
 {
     for (unsigned i = 0; i < scanner_array.size(); i++) {
         const auto &node_param = scanner_array[i];

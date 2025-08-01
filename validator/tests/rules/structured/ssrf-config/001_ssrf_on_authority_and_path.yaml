@@ -1,0 +1,28 @@
+{
+  name: "Basic SSRF injection within authority and path",
+  runs: [
+    {
+      persistent-input: {
+        server.io.net.url.1: "https://169.254.169.254/somewhere/in/the/app",
+        server.request.body: "169.254.169.254/somewhere/in/the/app"
+      },
+      rules: [
+        {
+          "ssrf-001": [
+            {
+              resource: {
+                address: "server.io.net.url.1",
+                value: "https://169.254.169.254/somewhere/in/the/app"
+              },
+              params: {
+                address: "server.request.body",
+                value: "169.254.169.254/somewhere/in/the/app"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}
