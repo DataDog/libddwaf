@@ -18,7 +18,7 @@ namespace ddwaf {
 
 inline std::string index_to_id(unsigned idx) { return "index:" + to_string<std::string>(idx); }
 
-enum class ruleset_info_state : uint8_t { indeterminate, invalid, valid };
+enum class ruleset_info_state : uint8_t { empty, invalid, valid };
 
 class ruleset_info {
 public:
@@ -117,7 +117,7 @@ public:
                 return ruleset_info_state::invalid;
             }
 
-            return ruleset_info_state::indeterminate;
+            return ruleset_info_state::empty;
         }
 
     protected:
@@ -190,7 +190,7 @@ public:
             return ruleset_info_state::invalid;
         }
 
-        auto final_state = ruleset_info_state::indeterminate;
+        auto final_state = ruleset_info_state::empty;
         for (const auto &[_, section] : sections_) {
             switch (section.state()) {
             case ruleset_info_state::valid:

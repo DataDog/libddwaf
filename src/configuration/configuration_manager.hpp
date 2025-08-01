@@ -57,6 +57,12 @@ public:
 protected:
     void remove_config(const configuration_change_spec &cfg);
 
+    // This function returns:
+    //  - true: when the configuration was fully or partially loaded, this
+    //          will also be the return value when the configuration is empty or
+    //          inconsequential, i.e. no element can be loaded due to compat
+    //  - false: when no elements within the configuration could be loaded due
+    //           to errors. This implies that the configuration must be rejected
     static bool load(
         raw_configuration::map &root, configuration_collector &collector, ruleset_info &info);
 
