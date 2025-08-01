@@ -14,7 +14,6 @@
 
 #include "clock.hpp"
 #include "condition/base.hpp"
-#include "ddwaf.h"
 #include "dynamic_string.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
@@ -22,7 +21,7 @@
 #include "log.hpp"
 #include "matcher/base.hpp"
 #include "negated_scalar_condition.hpp"
-#include "object_helpers.hpp"
+#include "object.hpp"
 #include "object_store.hpp"
 #include "transformer/base.hpp"
 #include "transformer/manager.hpp"
@@ -42,26 +41,18 @@ enum class match_result : uint8_t {
 
 template <typename Iterator>
 match_result eval_object(Iterator &it, std::string_view address, const matcher::base &matcher,
-    const std::span<const transformer_id> &transformers, const object_limits &limits)
+    const std::span<const transformer_id> &transformers)
 {
     // The iterator is guaranteed to be valid at this point, which means the
     // object pointer should not be nullptr
-    ddwaf_object src = *(*it);
-
-    if (src.type == DDWAF_OBJ_STRING) {
-        if (src.stringValue == nullptr) {
-            return match_result::no_match;
-        }
-
-        src.nbEntries = find_string_cutoff(src.stringValue, src.nbEntries, limits);
+    const object_view src = *it;
+    if (src.is_string()) {
         if (!transformers.empty()) {
-            ddwaf_object dst;
-            ddwaf_object_invalid(&dst);
+            auto transformed = transformer::manager::transform(src, transformers);
 
-            auto transformed = transformer::manager::transform(src, dst, transformers);
-            const scope_exit on_exit([&dst] { ddwaf_object_free(&dst); });
             if (transformed) {
-                auto [res, highlight] = matcher.match(dst);
+                auto transformed_sv = static_cast<std::string_view>(transformed.value());
+                auto [res, highlight] = matcher.match(transformed_sv);
                 if (!res) {
                     return match_result::no_match;
                 }
@@ -85,8 +76,7 @@ match_result eval_object(Iterator &it, std::string_view address, const matcher::
 
 template <typename Iterator>
 match_result eval_target(Iterator &it, std::string_view address, const matcher::base &matcher,
-    const std::span<const transformer_id> &transformers, const object_limits &limits,
-    ddwaf::timer &deadline)
+    const std::span<const transformer_id> &transformers, ddwaf::timer &deadline)
 {
     // We start with the assumption that the object can't be evaluated,
     // but the moment a single value within the object is compatible
@@ -101,7 +91,7 @@ match_result eval_target(Iterator &it, std::string_view address, const matcher::
             continue;
         }
 
-        result = eval_object(it, address, matcher, transformers, limits);
+        result = eval_object(it, address, matcher, transformers);
         if (result == match_result::match) {
             // If this target matched, we can stop processing
             break;
@@ -130,7 +120,7 @@ const matcher::base *get_matcher(const std::unique_ptr<matcher::base> &matcher,
 
 eval_result negated_scalar_condition::eval(condition_cache &cache, const object_store &store,
     const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
-    const object_limits &limits, ddwaf::timer &deadline) const
+    ddwaf::timer &deadline) const
 {
     if (deadline.expired()) {
         throw ddwaf::timeout_exception();
@@ -146,7 +136,7 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
     }
 
     auto [object, attr] = store.get_target(target_.index);
-    if (object == nullptr || object == cache.targets[0]) {
+    if (!object.has_value() || object == cache.targets[0]) {
         return {};
     }
 
@@ -155,9 +145,8 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
         cache.targets[0] = object;
     }
 
-    const auto *target_object =
-        object::find_key_path(object, target_.key_path, objects_excluded, limits);
-    if (target_object == nullptr) {
+    auto target_object = object.find_key_path(target_.key_path, objects_excluded);
+    if (!target_object.has_value()) {
         return {.outcome = false, .ephemeral = false};
     }
 
@@ -169,13 +158,12 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
     if (target_.source == data_source::keys) {
         // If the object within the key path is not a map, we consider this an
         // object which can't be evaluated
-        if (target_object->type != DDWAF_OBJ_MAP) {
+        if (!target_object.is_map()) {
             return {.outcome = false, .ephemeral = false};
         }
 
-        object::key_iterator it(target_object, {}, objects_excluded, limits);
-        auto result =
-            eval_target(it, target_.name, *matcher, target_.transformers, limits, deadline);
+        key_iterator it(target_object, {}, objects_excluded);
+        auto result = eval_target(it, target_.name, *matcher, target_.transformers, deadline);
 
         if (result == match_result::no_match) {
             cache.match = {{.args = {{.name = "input"sv,
@@ -189,20 +177,20 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
             return {.outcome = true, .ephemeral = ephemeral};
         }
     } else {
-        object::value_iterator it(target_object, {}, objects_excluded, limits);
-        auto result =
-            eval_target(it, target_.name, *matcher, target_.transformers, limits, deadline);
+        value_iterator it(target_object, {}, objects_excluded);
+        auto result = eval_target(it, target_.name, *matcher, target_.transformers, deadline);
 
         // If the result is unknown, we assume the contents of the object couldn't be
         // evaluated
         if (result == match_result::no_match) {
             // For display purpose, treat single-value arrays as scalars
-            if (target_object->type == DDWAF_OBJ_ARRAY && target_object->nbEntries == 1) {
-                target_object = &target_object->array[0];
+            if (target_object.is_array() && target_object.size() == 1) {
+                target_object = target_object.at_value(0);
             }
             std::vector<dynamic_string> highlights;
 
-            auto resolved = object_to_string(*target_object);
+            // TODO fix conversion to dynamic_string
+            auto resolved = target_object.convert<std::string>();
             if (!resolved.empty()) {
                 highlights.emplace_back(resolved);
             }

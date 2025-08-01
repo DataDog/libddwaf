@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "context_allocator.hpp"
+#include "memory_resource.hpp"
 
 namespace ddwaf::memory {
 

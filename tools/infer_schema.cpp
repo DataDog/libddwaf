@@ -25,9 +25,9 @@ int main(int argc, char *argv[])
     std::string rule_str = read_file(argv[1]);
     auto rule = YAML::Load(rule_str).as<ddwaf_object>();
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{nullptr, nullptr}, nullptr};
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
     if (handle == nullptr) {
         std::cout << "Failed to load " << argv[1] << '\n';
         return EXIT_FAILURE;
@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 
     ddwaf_object_map(&input);
     ddwaf_object_map(&settings);
-    ddwaf_object_map_add(&settings, "extract-schema", ddwaf_object_bool(&tmp, true));
+    ddwaf_object_map_add(&settings, "extract-schema", ddwaf_object_set_bool(&tmp, true));
     ddwaf_object_map_add(&input, "waf.context.processor", &settings);
     ddwaf_object_map_add(&input, "server.request.body", &body);
 
@@ -53,15 +53,15 @@ int main(int argc, char *argv[])
     }
 
     ddwaf_result ret;
-    ddwaf_run(context, &input, nullptr, &ret, std::numeric_limits<uint32_t>::max());
-    if (ddwaf_object_size(&ret.derivatives) > 0) {
+    ddwaf_context_eval(context, &input, nullptr, &ret, std::numeric_limits<uint32_t>::max());
+    if (ddwaf_object_get_size(&ret.derivatives) > 0) {
         std::cout << object_to_json(ret.derivatives) << '\n';
     }
 
     ddwaf_result_free(&ret);
     ddwaf_context_destroy(context);
 
-    ddwaf_object_free(&input);
+    ddwaf_object_destroy(&input, alloc);
     ddwaf_destroy(handle);
 
     return EXIT_SUCCESS;

@@ -23,7 +23,6 @@
 #include "configuration/common/raw_configuration.hpp"
 #include "configuration/common/transformer_parser.hpp"
 #include "configuration/legacy_rule_parser.hpp"
-#include "ddwaf.h"
 #include "expression.hpp"
 #include "log.hpp"
 #include "matcher/base.hpp"
@@ -35,7 +34,6 @@
 #include "ruleset_info.hpp"
 #include "target_address.hpp"
 #include "transformer/base.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -64,12 +62,12 @@ std::shared_ptr<expression> parse_expression(
             lengths.reserve(list.size());
 
             for (auto &pattern : list) {
-                if (pattern.type != DDWAF_OBJ_STRING) {
-                    throw ddwaf::parsing_error("phrase_match list item not a string");
+                if (!pattern->is_string() || pattern->empty()) {
+                    throw ddwaf::parsing_error("phrase_match list item not a string or empty");
                 }
 
-                patterns.push_back(pattern.stringValue);
-                lengths.push_back((uint32_t)pattern.nbEntries);
+                patterns.push_back(pattern->data());
+                lengths.push_back(static_cast<uint32_t>(pattern->size()));
             }
 
             matcher = std::make_unique<matcher::phrase_match>(patterns, lengths);
@@ -148,7 +146,7 @@ void parse_legacy_rules(const raw_configuration::vector &rule_array, configurati
             std::vector<transformer_id> rule_transformers;
             auto transformers =
                 at<raw_configuration::vector>(node, "transformers", raw_configuration::vector());
-            if (transformers.size() > object_limits::max_transformers_per_address) {
+            if (transformers.size() > max_transformers_per_address) {
                 throw ddwaf::parsing_error("number of transformers beyond allowed limit");
             }
 
