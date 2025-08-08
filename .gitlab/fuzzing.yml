@@ -4,10 +4,14 @@ variables:
 
 run-fuzzing:
   stage: fuzzing
-  when: manual
   tags: ["runner:apm-k8s-tweaked-metal"]
   image: $BASE_CI_IMAGE
   timeout: 30m
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "master" && $CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_COMMIT_REF_NAME == "master" && $CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: manual
   before_script: |
     VAULT_VERSION=1.20.1
     wget https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip
@@ -62,8 +66,3 @@ run-fuzzing:
     python3 -m pip install requests
     python3 /workspace/ci/scripts/fuzz_infra.py
     echo "✅ Fuzzing setup completed successfully"
-
-  # Only run on certain conditions to avoid wasting resources
-  # only:
-  #   refs:
-  #     - master
