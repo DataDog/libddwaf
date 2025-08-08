@@ -11,6 +11,8 @@
 #include <cow_string.hpp>
 #include <string_view>
 
+#include "common/gtest_utils.hpp"
+
 // NOLINTBEGIN(hicpp-avoid-c-arrays,modernize-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays)
 //
 // https://stackoverflow.com/questions/33484233/
@@ -33,13 +35,13 @@ template <std::size_t N> constexpr std::array<char, N - 1> literal_to_array(cons
         {                                                                                          \
             cow_string str(std::string_view{source, sizeof(source) - 1});                          \
             EXPECT_TRUE(transformer::name::transform(str));                                        \
-            EXPECT_STREQ(str.data(), expected);                                                    \
+            EXPECT_STR(str, expected);                                                             \
         }                                                                                          \
         if constexpr (sizeof(source) > 1) {                                                        \
             std::array<char, sizeof(source) - 1> copy{literal_to_array(source)};                   \
             cow_string str(std::string_view{copy.data(), copy.size()});                            \
             EXPECT_TRUE(transformer::name::transform(str)) << "Non nul-terminated string";         \
-            EXPECT_STREQ(str.data(), expected) << "Non nul-terminated string";                     \
+            EXPECT_STR(str, expected) << "Non nul-terminated string";                              \
         }                                                                                          \
     }
 

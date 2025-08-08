@@ -16,7 +16,7 @@ namespace {
 
 TEST(TestProcessorOverrideParser, ParseOverrideWithoutTargets)
 {
-    auto object = yaml_to_object(R"([{"target":[], "scanners":[]}])");
+    auto object = yaml_to_object<owned_object>(R"([{"target":[], "scanners":[]}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -24,11 +24,10 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithoutTargets)
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processor_overrides(override_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -48,8 +47,6 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithoutTargets)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -82,7 +79,8 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithoutTargets)
 
 TEST(TestProcessorOverrideParser, ParseOverrideWithTargetByTags)
 {
-    auto object = yaml_to_object(R"([{"target":[{"tags": {"type": "value"}}], "scanners":[]}])");
+    auto object = yaml_to_object<owned_object>(
+        R"([{"target":[{"tags": {"type": "value"}}], "scanners":[]}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -90,11 +88,10 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithTargetByTags)
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processor_overrides(override_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -114,8 +111,6 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithTargetByTags)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -148,7 +143,8 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithTargetByTags)
 
 TEST(TestProcessorOverrideParser, ParseOverrideWithoutScanners)
 {
-    auto object = yaml_to_object(R"([{"target":[{"id":"extract-content"}], "scanners":[]}])");
+    auto object =
+        yaml_to_object<owned_object>(R"([{"target":[{"id":"extract-content"}], "scanners":[]}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -156,11 +152,10 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithoutScanners)
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processor_overrides(override_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -173,8 +168,6 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithoutScanners)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -214,7 +207,7 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithoutScanners)
 
 TEST(TestProcessorOverrideParser, ParseOverrideWithScannerById)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{"target":[{"id":"extract-content"}], "scanners": [{"id": "scanner-001"}]}])");
 
     configuration_spec cfg;
@@ -223,11 +216,10 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithScannerById)
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processor_overrides(override_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -240,8 +232,6 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithScannerById)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -281,7 +271,7 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithScannerById)
 
 TEST(TestProcessorOverrideParser, ParseOverrideWithScannerByTags)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{"target":[{"id":"extract-content"}], "scanners": [{"tags": {"type":"email"}}]}])");
 
     configuration_spec cfg;
@@ -290,11 +280,10 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithScannerByTags)
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processor_overrides(override_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -307,8 +296,6 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithScannerByTags)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -348,7 +335,7 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithScannerByTags)
 
 TEST(TestProcessorOverrideParser, ParseOverrideWithMultipleTargets)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{"target":[{"id":"extract-content"}, {"id": "something-else"}, {"id": "extract-headers"}], "scanners": [{"id": "scanner-001"}]}])");
 
     configuration_spec cfg;
@@ -357,11 +344,10 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithMultipleTargets)
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processor_overrides(override_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -374,8 +360,6 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithMultipleTargets)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -415,7 +399,7 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithMultipleTargets)
 
 TEST(TestProcessorOverrideParser, ParseOverrideWithMultipleTargetsAndScanners)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{"target":[{"id":"extract-content"}], "scanners": [{"id": "scanner-001"}]},{"target":[{"id": "something-else"}], "scanners": [{"tags": {"type": "value"}}]},{"target":[{"id": "extract-headers"}], "scanners": [{"id": "scanner-002"}]}])");
 
     configuration_spec cfg;
@@ -424,11 +408,10 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithMultipleTargetsAndScanners)
     ruleset_info::section_info section;
     auto override_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_processor_overrides(override_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -443,8 +426,6 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithMultipleTargetsAndScanners)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());

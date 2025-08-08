@@ -4,33 +4,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <cstdint>
 #include <string_view>
-#include <utility>
 
 #include "configuration/common/parser_exception.hpp"
-#include "ddwaf.h"
+#include "object.hpp"
 #include "ruleset_info.hpp"
 
 namespace ddwaf {
 
-namespace {
-std::pair<uint64_t, ddwaf_object *> object_map_add_helper(
-    ddwaf_object *map, std::string_view key, ddwaf_object *object)
-{
-    ddwaf_object_map_addl(map, key.data(), key.length(), object);
-    // Get the element we just added
-    const uint64_t index = map->nbEntries - 1;
-    return {index, &map->array[index]};
-}
-} // namespace
-
-void ruleset_info::section_info::add_loaded(std::string_view id)
-{
-    ddwaf_object id_str;
-    ddwaf_object_stringl(&id_str, id.data(), id.size());
-    ddwaf_object_array_add(&loaded_, &id_str);
-}
+void ruleset_info::section_info::add_loaded(std::string_view id) { loaded_.emplace_back(id); }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void ruleset_info::section_info::add_failed(
@@ -38,27 +20,20 @@ void ruleset_info::section_info::add_failed(
 {
     const auto &inserter = [](auto &id, auto &error, auto &cache, auto &diagnostics_array,
                                auto &failed_array) {
-        ddwaf_object id_str;
         auto it = cache.find(error);
         if (it == cache.end()) {
-            ddwaf_object tmp_array;
-            ddwaf_object_array(&tmp_array);
+            auto array = diagnostics_array.emplace(error, owned_object::make_array());
+            auto index = diagnostics_array.size() - 1;
 
-            auto [index, array] = object_map_add_helper(&diagnostics_array, error, &tmp_array);
+            auto key = object_view{diagnostics_array}.at_key(index);
+            cache[key.template as<std::string_view>()] = index;
 
-            const std::string_view key(array->parameterName, array->parameterNameLength);
-            cache[key] = index;
-
-            ddwaf_object_stringl(&id_str, id.data(), id.size());
-            ddwaf_object_array_add(array, &id_str);
-
+            array.emplace_back(id);
         } else {
-            ddwaf_object_stringl(&id_str, id.data(), id.size());
-            ddwaf_object_array_add(&diagnostics_array.array[it->second], &id_str);
+            diagnostics_array.at(it->second).emplace_back(id);
         }
 
-        ddwaf_object_stringl(&id_str, id.data(), id.size());
-        ddwaf_object_array_add(&failed_array, &id_str);
+        failed_array.emplace_back(id);
     };
 
     if (sev == parser_error_severity::error) {
@@ -68,11 +43,6 @@ void ruleset_info::section_info::add_failed(
     }
 }
 
-void ruleset_info::section_info::add_skipped(std::string_view id)
-{
-    ddwaf_object id_str;
-    ddwaf_object_stringl(&id_str, id.data(), id.size());
-    ddwaf_object_array_add(&skipped_, &id_str);
-}
+void ruleset_info::section_info::add_skipped(std::string_view id) { skipped_.emplace_back(id); }
 
 } // namespace ddwaf

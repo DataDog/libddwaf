@@ -83,7 +83,7 @@ class path_trie {
 public:
     class traverser {
     public:
-        enum class state { not_found, found, intermediate_node };
+        enum class state : uint8_t { not_found, found, intermediate_node };
 
         explicit traverser(const trie_node *root)
         {
@@ -237,7 +237,7 @@ inline std::ostream &operator<<(std::ostream &os, const path_trie::traverser::st
 
 class object_filter {
 public:
-    using cache_type = memory::unordered_set<ddwaf_object *>;
+    using cache_type = memory::unordered_set<object_view>;
 
     object_filter() = default;
 
@@ -250,8 +250,8 @@ public:
 
     [[nodiscard]] bool empty() const { return target_paths_.empty(); }
 
-    object_set match(const object_store &store, cache_type &cache, bool ephemeral,
-        const object_limits &limits, ddwaf::timer &deadline) const;
+    object_set match(
+        const object_store &store, cache_type &cache, bool ephemeral, ddwaf::timer &deadline) const;
 
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
