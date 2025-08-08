@@ -1,5 +1,119 @@
 # libddwaf release
 
+## v1.27.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+### New Features
+
+This release of `libddwaf` includes several new features designed to enhance usability and configurability for both users and rule writers. The following sections provide detailed descriptions of each significant addition.
+
+**Note:** This release contains **no breaking changes**.
+
+### Improved WAF Builder
+
+Although not a direct feature, the WAF builder has been improved to support empty configurations or configurations without side-effects, such as configurations lacking compatible items.
+
+### SSRF Operator Configuration
+
+New configuration settings have been introduced to provide enhanced control over the SSRF heuristic's sensitivity.
+
+**Heuristic Options:**
+
+* **`authority-inspection` (default: true):**
+
+  * When set to `true`, scans the authority component (RFC-3986::Authority) for injections.
+  * If `false`, the authority is ignored unless `enforce-policy-without-injection` is enabled, in which case the authority is checked against denylists regardless of injection.
+
+* **`path-inspection` (default: false):**
+
+  * When set to `true`, inspects the path (RFC-3986::Path) for injections.
+  * If `false`, path injections are ignored.
+
+* **`query-inspection` (default: false):**
+
+  * When set to `true`, inspects the query (RFC-3986::Query) for injections.
+  * If `false`, query injections are ignored.
+
+* **`forbid-full-url-injection` (default: false):**
+
+  * When set to `true`, injections involving a full URL are flagged as vulnerabilities.
+  * If `false`, these injections are ignored.
+
+* **`enforce-policy-without-injection` (default: false):**
+
+  * When enabled, policies are enforced irrespective of detected injections, ensuring schemes and hosts are validated against allowlists and denylists.
+  * If `false`, the policy applies only upon detecting relevant injections.
+
+**Policy Options:**
+
+* **`allowed-schemes`:** Array of allowed schemes (RFC-3986::Scheme), validated upon injection detection or when policy enforcement is active.
+* **`forbidden-domains`:** Array of forbidden domains (RFC-3986::Host), validated upon injection detection or when policy enforcement is active.
+* **`forbidden-ips`:** Array of forbidden IPv4/IPv6 addresses, evaluated similarly to `forbidden-domains`.
+
+**Example Configuration:**
+
+```yaml
+id: rasp-934-100
+name: Server-side request forgery exploit
+tags:
+  type: ssrf
+  module: rasp
+conditions:
+  - parameters:
+      resource:
+        - address: server.io.net.url
+      params:
+        - address: server.request.query
+        # Additional parameters...
+      options:
+        authority-inspection: true
+        path-inspection: false
+        query-inspection: false
+        forbid-full-url-injection: true
+        enforce-policy-without-injection: false
+      policy:
+        allowed-schemes: []
+        forbidden-domains: []
+        forbidden-ips: []
+    operator: ssrf_detector
+```
+
+### Negated Operator Improvements
+
+Negated operators (e.g. `!match_regex`) have been enhanced for greater clarity and functionality:
+
+* Negated operators now explicitly require the presence of the defined key path.
+* Evaluations must involve at least one compatible object type; for example, `!match_regex` matches only if evaluated data contains strings.
+* Non-matching values are now clearly reported when evaluating scalar or single-value arrays.
+
+These improvements ensure more precise and predictable rule behavior.
+
+### JSON to Object Helper
+
+A new helper function simplifies object creation from JSON strings:
+
+```cpp
+bool ddwaf_object_from_json(ddwaf_object *output, const char *json_str, uint32_t length);
+```
+
+* **`output`**: Pointer to the object populated with JSON content.
+* **`json_str`**: JSON data as a string.
+* **`length`**: Length of the JSON string.
+
+The function returns a boolean indicating success (`true`) or failure (`false`). Both the input string and resulting object remain owned by the caller.
+
+### Release changelog
+#### Changes
+- Add helper for object creation from JSON string ([#430](https://github.com/DataDog/libddwaf/pull/430))
+- SSRF Operator Configuration ([#434](https://github.com/DataDog/libddwaf/pull/434))
+- Negated operator fixes & improvements ([#435](https://github.com/DataDog/libddwaf/pull/435))
+- Accept empty and inconsequential configurations ([#437](https://github.com/DataDog/libddwaf/pull/437))
+
+#### Miscellaneous
+- Fix typo in doc-string ([#424](https://github.com/DataDog/libddwaf/pull/424))
+- Fix markdown typo in UPGRADING.md ([#429](https://github.com/DataDog/libddwaf/pull/429))
+- Update linux builds and tests to use LLVM-19 ([#431](https://github.com/DataDog/libddwaf/pull/431))
+- Use github-provided ubuntu arm64 runner ([#433](https://github.com/DataDog/libddwaf/pull/433))
+
 ## v1.26.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 ### New features
@@ -7,6 +121,8 @@
 This release introduces a new operator, `hidden_ascii_match`, designed to detect hidden ASCII characters within arbitrary text inputs. Hidden ASCII refers specifically to characters found within the Unicode range [U+E0000, U+E007F]. This Unicode block was initially defined to provide non-printable mappings of standard ASCII characters, effectively allowing ASCII data to be embedded invisibly within text.
 
 Hidden ASCII characters have been increasingly leveraged to inject concealed instructions into prompts provided to LLMs, manipulating their behavior without explicit visibility to users or systems. The introduction of the `hidden_ascii_match` operator represents the first step toward a deterministic AI security strategy, proactively identifying and flagging these character sequences to support the effective monitoring and mitigation of potential Unicode-based prompt injection exploits.
+
+### Release changelog
 
 #### Changes
 - Hidden ASCII Matcher ([#411](https://github.com/DataDog/libddwaf/pull/411))
