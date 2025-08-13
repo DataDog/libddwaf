@@ -1,0 +1,21 @@
+version: '2.1'
+exclusions: []
+rules: 
+  - name: rule1
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value1
+          regex: rule1
+custom_rules: []
+processors: []
+rules_override: []
+processor_override: []
+rules_data: []
+exclusion_data: []
+actions: []
+scanners: []

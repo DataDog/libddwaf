@@ -28,7 +28,7 @@ public:
     waf_builder &operator=(waf_builder &&) = delete;
     waf_builder &operator=(const waf_builder &) = delete;
 
-    bool add_or_update(const std::string &path, raw_configuration &root, base_ruleset_info &info)
+    bool add_or_update(const std::string &path, raw_configuration &root, ruleset_info &info)
     {
         return cfg_mgr_.add_or_update(path, root, info);
     }

@@ -1,0 +1,21 @@
+{
+  name: "Basic run with negated match_regex operator and transformer",
+  runs: [
+    {
+      persistent-input: {
+        rule3-input: "something else or other"
+      },
+      rules: [
+        {
+          3: [
+            {
+              address: rule3-input,
+              value: "something else or other"
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

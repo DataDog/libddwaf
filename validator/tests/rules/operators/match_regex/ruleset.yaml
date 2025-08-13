@@ -15,7 +15,7 @@ rules:
             min_length: 7
             case_sensitive: false
   - id: "2"
-    name: rule2-ip-match
+    name: rule2-not-match-regex
     tags:
       type: flow2
       category: category
@@ -25,6 +25,21 @@ rules:
           inputs:
             - address: rule2-input
           regex: "Arachni"
+          options:
+            min_length: 7
+            case_sensitive: false
+  - id: "3"
+    name: rule3-not-match-regex-with-transformer
+    tags:
+      type: flow3
+      category: category
+    conditions:
+      - operator: "!match_regex"
+        parameters:
+          inputs:
+            - address: rule3-input
+              transformers: [ lowercase ]
+          regex: "arachni"
           options:
             min_length: 7
             case_sensitive: false

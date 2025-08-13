@@ -48,46 +48,4 @@ protected:
     std::vector<condition_target> targets_;
 };
 
-class scalar_negated_condition : public base_condition {
-public:
-    scalar_negated_condition(std::unique_ptr<matcher::base> &&matcher, std::string data_id,
-        std::vector<condition_parameter> args)
-        : matcher_(std::move(matcher)), data_id_(std::move(data_id))
-    {
-        if (args.size() > 1) {
-            throw std::invalid_argument("matcher initialised with more than one argument");
-        }
-
-        if (args.empty()) {
-            throw std::invalid_argument("matcher initialised without arguments");
-        }
-
-        if (args[0].targets.size() > 1) {
-            throw std::invalid_argument("negated matchers don't support variadic arguments");
-        }
-
-        target_ = std::move(args[0].targets[0]);
-    }
-
-    eval_result eval(condition_cache &cache, const object_store &store,
-        const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
-        const object_limits &limits, ddwaf::timer &deadline) const override;
-
-    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const override
-    {
-        addresses.emplace(target_.index, target_.name);
-    }
-
-    static constexpr auto arguments()
-    {
-        return std::array<parameter_specification, 1>{
-            {{.name = "inputs", .variadic = false, .optional = false}}};
-    }
-
-protected:
-    std::unique_ptr<matcher::base> matcher_;
-    std::string data_id_;
-    condition_target target_;
-};
-
 } // namespace ddwaf

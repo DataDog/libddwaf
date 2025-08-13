@@ -55,7 +55,7 @@ processor_override_spec parse_override(const raw_configuration::map &node)
 } // namespace
 
 void parse_processor_overrides(const raw_configuration::vector &override_array,
-    configuration_collector &cfg, ruleset_info::base_section_info &info)
+    configuration_collector &cfg, ruleset_info::section_info &info)
 {
     for (unsigned i = 0; i < override_array.size(); ++i) {
         const auto &node_param = override_array[i];

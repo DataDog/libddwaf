@@ -3,12 +3,9 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-#include <algorithm>
-#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string>
-#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -19,6 +16,7 @@
 #include "ddwaf.h"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
+#include "object_helpers.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
@@ -26,28 +24,6 @@ namespace ddwaf {
 namespace {
 
 enum class search_outcome : uint8_t { found, not_found, unknown };
-
-const ddwaf_object *find_key(
-    const ddwaf_object &parent, std::string_view key, const object_limits &limits)
-{
-    const std::size_t size =
-        std::min(static_cast<uint32_t>(parent.nbEntries), limits.max_container_size);
-    for (std::size_t i = 0; i < size; ++i) {
-        const auto &child = parent.array[i];
-
-        if (child.parameterName == nullptr) [[unlikely]] {
-            continue;
-        }
-        const std::string_view child_key{
-            child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
-
-        if (key == child_key) {
-            return &child;
-        }
-    }
-
-    return nullptr;
-}
 
 search_outcome exists(const ddwaf_object *root, std::span<const std::string> key_path,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits)
@@ -65,7 +41,7 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
 
     // The parser ensures that the key path is within the limits specified by
     // the user, hence we don't need to check for depth
-    while ((root = find_key(*root, *it, limits)) != nullptr) {
+    while ((root = object::find_key(*root, *it, limits)) != nullptr) {
         if (objects_excluded.contains(root)) {
             // We found the next root but it has been excluded, so we
             // can't know for sure if the required key path exists
@@ -115,7 +91,7 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-[[nodiscard]] eval_result exists_negated_condition::eval_impl(
+[[nodiscard]] eval_result negated_exists_condition::eval_impl(
     const unary_argument<const ddwaf_object *> &input, condition_cache &cache,
     const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
     ddwaf::timer & /*deadline*/) const

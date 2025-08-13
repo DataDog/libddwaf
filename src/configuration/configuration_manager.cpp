@@ -32,8 +32,8 @@
 
 namespace ddwaf {
 
-void configuration_manager::load(
-    raw_configuration::map &root, configuration_collector &collector, base_ruleset_info &info)
+bool configuration_manager::load(
+    raw_configuration::map &root, configuration_collector &collector, ruleset_info &info)
 {
     auto metadata = at<raw_configuration::map>(root, "metadata", {});
     auto rules_version = at<std::string_view>(metadata, "rules_version", {});
@@ -64,7 +64,7 @@ void configuration_manager::load(
             }
         }
 
-        return;
+        return info.state() != ruleset_info_state::invalid;
     }
 
     auto it = root.find("actions");
@@ -231,6 +231,8 @@ void configuration_manager::load(
             section.set_error(e.what());
         }
     }
+
+    return info.state() != ruleset_info_state::invalid;
 }
 
 void configuration_manager::remove_config(const configuration_change_spec &cfg)
@@ -266,7 +268,7 @@ void configuration_manager::remove_config(const configuration_change_spec &cfg)
 }
 
 bool configuration_manager::add_or_update(
-    const std::string &path, raw_configuration &root, base_ruleset_info &info)
+    const std::string &path, raw_configuration &root, ruleset_info &info)
 {
     try {
         raw_configuration::map root_map = static_cast<raw_configuration::map>(root);
@@ -288,8 +290,7 @@ bool configuration_manager::add_or_update(
         configuration_change_spec new_config;
         configuration_collector collector{new_config, global_config_};
 
-        load(root_map, collector, info);
-        if (new_config.empty()) {
+        if (!load(root_map, collector, info)) {
             configs_.erase(it);
             return false;
         }
