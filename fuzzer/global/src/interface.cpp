@@ -10,6 +10,7 @@
 #include <utility>
 #include <yaml-cpp/yaml.h>
 
+#include "embedded_rules.hpp"
 #include "helpers.hpp"
 #include "interface.hpp"
 
@@ -84,7 +85,11 @@ ddwaf_handle init_waf()
         {R"((p(ass)?w(or)?d|pass(_?phrase)?|secret|(api_?|private_?|public_?)key)|token|consumer_?(id|key|secret)|sign(ed|ature)|bearer|authorization)",
             R"(^(?:\d[ -]*?){13,16}$)"},
         ddwaf_object_free};
-    ddwaf_object rule = file_to_object("sample_rules.yml");
+
+    // Use embedded YAML instead of loading from file
+    YAML::Node doc = YAML::Load(std::string{embedded_rules::sample_rules_yaml});
+    ddwaf_object rule = doc.as<ddwaf_object>();
+
     ddwaf_object ruleset_info;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &ruleset_info);
     ddwaf_object_free(&rule);
