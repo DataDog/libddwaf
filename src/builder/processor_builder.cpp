@@ -17,6 +17,7 @@
 #include "processor/extract_schema.hpp"
 #include "processor/fingerprint.hpp"
 #include "processor/jwt_decode.hpp"
+#include "processor/uri_parse.hpp"
 #include "scanner.hpp"
 
 namespace ddwaf {
@@ -93,6 +94,14 @@ template <> struct typed_processor_builder<jwt_decode> {
     }
 };
 
+template <> struct typed_processor_builder<uri_parse_processor> {
+    static std::unique_ptr<base_processor> build(const std::string &id, const processor_spec &spec)
+    {
+        return std::make_unique<uri_parse_processor>(
+            id, spec.expr, spec.mappings, spec.evaluate, spec.output);
+    }
+};
+
 template <typename T, typename Id, typename Spec, typename Scanners>
 concept has_build_with_scanners =
     requires(typed_processor_builder<T> b, Id id, Spec spec, Scanners scanners) {
@@ -130,6 +139,8 @@ std::unique_ptr<base_processor> processor_builder::build(const indexer<const sca
         return build_with_type<session_fingerprint>(id_, spec_, scanners);
     case processor_type::jwt_decode:
         return build_with_type<jwt_decode>(id_, spec_, scanners);
+    case processor_type::uri_parse:
+        return build_with_type<uri_parse_processor>(id_, spec_, scanners);
     default:
         break;
     }

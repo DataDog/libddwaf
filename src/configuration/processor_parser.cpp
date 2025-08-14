@@ -22,6 +22,7 @@
 #include "processor/extract_schema.hpp"
 #include "processor/fingerprint.hpp"
 #include "processor/jwt_decode.hpp"
+#include "processor/uri_parse.hpp"
 #include "ruleset_info.hpp"
 #include "semver.hpp"
 #include "target_address.hpp"
@@ -120,6 +121,8 @@ void parse_processors(const raw_configuration::vector &processor_array,
                 type = processor_type::session_fingerprint;
             } else if (generator_id == "jwt_decode") {
                 type = processor_type::jwt_decode;
+            } else if (generator_id == "uri_parse") {
+                type = processor_type::uri_parse;
             } else {
                 throw unknown_generator(generator_id);
             }
@@ -143,8 +146,10 @@ void parse_processors(const raw_configuration::vector &processor_array,
                     parse_processor_mappings(mappings_vec, http_network_fingerprint::param_names);
             } else if (type == processor_type::session_fingerprint) {
                 mappings = parse_processor_mappings(mappings_vec, session_fingerprint::param_names);
-            } else {
+            } else if (type == processor_type::jwt_decode) {
                 mappings = parse_processor_mappings(mappings_vec, jwt_decode::param_names);
+            } else {
+                mappings = parse_processor_mappings(mappings_vec, uri_parse_processor::param_names);
             }
 
             std::vector<reference_spec> scanners;
