@@ -40,9 +40,9 @@ TEST(TestActionMapperBuilder, DefaultActions)
         EXPECT_STR(action.type_str, "block_request");
 
         EXPECT_EQ(action.parameters.size(), 3);
-        EXPECT_STRV(action.parameters.at("status_code"), "403");
-        EXPECT_STRV(action.parameters.at("type"), "auto");
-        EXPECT_STRV(action.parameters.at("grpc_status_code"), "10");
+        EXPECT_STRV(std::get<std::string>(action.parameters.at("status_code")), "403");
+        EXPECT_STRV(std::get<std::string>(action.parameters.at("type")), "auto");
+        EXPECT_STRV(std::get<std::string>(action.parameters.at("grpc_status_code")), "10");
     }
 
     {
@@ -103,8 +103,8 @@ TEST(TestActionMapperBuilder, SetAction)
         EXPECT_STR(action.type_str, "redirect_request");
 
         EXPECT_EQ(action.parameters.size(), 2);
-        EXPECT_STRV(action.parameters.at("status_code"), "33");
-        EXPECT_STRV(action.parameters.at("location"), "datadoghq");
+        EXPECT_STRV(std::get<std::string>(action.parameters.at("status_code")), "33");
+        EXPECT_STRV(std::get<std::string>(action.parameters.at("location")), "datadoghq");
     }
 }
 
@@ -127,8 +127,8 @@ TEST(TestActionMapperBuilder, OverrideDefaultAction)
         EXPECT_STR(action.type_str, "redirect_request");
 
         EXPECT_EQ(action.parameters.size(), 2);
-        EXPECT_STRV(action.parameters.at("status_code"), "33");
-        EXPECT_STRV(action.parameters.at("location"), "datadoghq");
+        EXPECT_STRV(std::get<std::string>(action.parameters.at("status_code")), "33");
+        EXPECT_STRV(std::get<std::string>(action.parameters.at("location")), "datadoghq");
     }
 }
 
@@ -159,8 +159,8 @@ TEST(TestActionMapperBuilder, DuplicateDefaultAction)
         EXPECT_STR(action.type_str, "redirect_request");
 
         EXPECT_EQ(action.parameters.size(), 2);
-        EXPECT_STRV(action.parameters.at("status_code"), "33");
-        EXPECT_STRV(action.parameters.at("location"), "datadoghq");
+        EXPECT_STRV(std::get<std::string>(action.parameters.at("status_code")), "33");
+        EXPECT_STRV(std::get<std::string>(action.parameters.at("location")), "datadoghq");
     }
 }
 

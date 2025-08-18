@@ -291,8 +291,23 @@ void serialize_action(std::string_view id, ddwaf_object &action_map, const actio
     ddwaf_object_map(&param_map);
     if (type != action_type::generate_stack) {
         for (const auto &[k, v] : parameters) {
-            ddwaf_object_map_addl(
-                &param_map, k.c_str(), k.size(), ddwaf_object_stringl(&tmp, v.c_str(), v.size()));
+            ddwaf_object value;
+            if (std::holds_alternative<std::string>(v)) {
+                const auto &str = std::get<std::string>(v);
+                ddwaf_object_stringl(&value, str.data(), str.size());
+            } else if (std::holds_alternative<bool>(v)) {
+                ddwaf_object_bool(&value, std::get<bool>(v));
+            } else if (std::holds_alternative<int64_t>(v)) {
+                ddwaf_object_signed(&value, std::get<int64_t>(v));
+            } else if (std::holds_alternative<uint64_t>(v)) {
+                ddwaf_object_unsigned(&value, std::get<uint64_t>(v));
+            } else if (std::holds_alternative<double>(v)) {
+                ddwaf_object_float(&value, std::get<double>(v));
+            } else {
+                ddwaf_object_null(&value);
+            }
+
+            ddwaf_object_map_addl(&param_map, k.data(), k.size(), &value);
         }
     } else {
         ddwaf_object_map_addl(
