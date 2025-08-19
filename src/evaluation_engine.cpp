@@ -2,17 +2,16 @@
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2021 Datadog, Inc.
-#include <chrono>
+// Copyright 2025 Datadog, Inc.
+
 #include <cstddef>
-#include <cstdint>
 #include <memory>
 #include <string_view>
 #include <utility>
 #include <vector>
 
 #include "clock.hpp"
-#include "context.hpp"
+#include "evaluation_engine.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "log.hpp"
@@ -50,11 +49,11 @@ void set_context_event_address(object_store &store)
 
 } // namespace
 
-std::pair<bool, owned_object> context::eval(uint64_t timeout)
+std::pair<bool, owned_object> evaluation_engine::eval(object_store &store, timer &deadline)
 {
     // This scope ensures that all ephemeral and cached objects are removed
     // from the store at the end of the evaluation
-    auto store_cleanup_scope = store_.get_eval_scope();
+    auto storecleanup_scope = store.get_eval_scope();
     auto on_exit = scope_exit([this]() { this->exclusion_policy_.ephemeral.clear(); });
 
     result_serializer serializer(obfuscator_, actions_, output_alloc_);
@@ -62,16 +61,14 @@ std::pair<bool, owned_object> context::eval(uint64_t timeout)
     // Generate result object once relevant checks have been made
     auto [result_object, output] = serializer.initialise_result_object();
 
-    if (!store_.has_new_targets()) {
+    if (!store.has_new_targets()) {
         return {false, std::move(result_object)};
     }
-
-    ddwaf::timer deadline{std::chrono::microseconds(timeout)};
 
     try {
         // Evaluate preprocessors first in their own try-catch, if there's a
         // timeout we still need to evaluate rules unaffected by it.
-        eval_preprocessors(deadline);
+        eval_preprocessors(store, deadline);
         // NOLINTNEXTLINE(bugprone-empty-catch)
     } catch (const ddwaf::timeout_exception &) {}
 
@@ -79,36 +76,36 @@ std::pair<bool, owned_object> context::eval(uint64_t timeout)
 
     try {
         // If no rule targets are available, there is no point in evaluating them
-        const bool should_eval_rules = check_new_rule_targets();
-        const bool should_eval_filters = should_eval_rules || check_new_filter_targets();
+        const bool should_eval_rules = check_new_rule_targets(store);
+        const bool should_eval_filters = should_eval_rules || check_new_filter_targets(store);
 
         if (should_eval_filters) {
             // Filters need to be evaluated even if rules don't, otherwise it'll
             // break the current condition cache mechanism which requires knowing
             // if an address is new to this run.
-            const auto &policy = eval_filters(deadline);
+            const auto &policy = eval_filters(store, deadline);
 
             if (should_eval_rules) {
-                eval_rules(policy, results, deadline);
+                eval_rules(store, policy, results, deadline);
                 if (!results.empty()) {
-                    set_context_event_address(store_);
+                    set_context_event_address(store);
                 }
             }
         }
 
-        eval_postprocessors(deadline);
+        eval_postprocessors(store, deadline);
         // NOLINTNEXTLINE(bugprone-empty-catch)
     } catch (const ddwaf::timeout_exception &) {}
 
     // Collect pending attributes, this will check if any new attributes are
     // available (e.g. from a postprocessor) and return a map of all attributes
     // generated during this call.
-    // object::assign(result.attributes, collector_.collect_pending(store_));
-    serializer.serialize(store_, results, collector_, deadline, output);
+    // object::assign(result.attributes, collector_.collect_pending(store));
+    serializer.serialize(store, results, collector_, deadline, output);
     return {!results.empty(), std::move(result_object)};
 }
 
-void context::eval_preprocessors(ddwaf::timer &deadline)
+void evaluation_engine::eval_preprocessors(object_store &store, timer &deadline)
 {
     DDWAF_DEBUG("Evaluating preprocessors");
 
@@ -124,11 +121,11 @@ void context::eval_preprocessors(ddwaf::timer &deadline)
             it = new_it;
         }
 
-        preproc->eval(store_, collector_, it->second, output_alloc_, deadline);
+        preproc->eval(store, collector_, it->second, output_alloc_, deadline);
     }
 }
 
-void context::eval_postprocessors(ddwaf::timer &deadline)
+void evaluation_engine::eval_postprocessors(object_store &store, timer &deadline)
 {
     DDWAF_DEBUG("Evaluating postprocessors");
 
@@ -144,11 +141,11 @@ void context::eval_postprocessors(ddwaf::timer &deadline)
             it = new_it;
         }
 
-        postproc->eval(store_, collector_, it->second, output_alloc_, deadline);
+        postproc->eval(store, collector_, it->second, output_alloc_, deadline);
     }
 }
 
-exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
+exclusion::context_policy &evaluation_engine::eval_filters(object_store &store, timer &deadline)
 {
     DDWAF_DEBUG("Evaluating rule filters");
 
@@ -165,7 +162,7 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
         }
 
         rule_filter::cache_type &cache = it->second;
-        auto exclusion = filter.match(store_, cache, exclusion_matchers_, deadline);
+        auto exclusion = filter.match(store, cache, exclusion_matchers_, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 exclusion_policy_.add_rule_exclusion(
@@ -189,7 +186,7 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
         }
 
         input_filter::cache_type &cache = it->second;
-        auto exclusion = filter.match(store_, cache, exclusion_matchers_, deadline);
+        auto exclusion = filter.match(store, cache, exclusion_matchers_, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 exclusion_policy_.add_input_exclusion(rule, exclusion->objects);
@@ -200,14 +197,14 @@ exclusion::context_policy &context::eval_filters(ddwaf::timer &deadline)
     return exclusion_policy_;
 }
 
-void context::eval_rules(const exclusion::context_policy &policy, std::vector<rule_result> &results,
-    ddwaf::timer &deadline)
+void evaluation_engine::eval_rules(object_store &store, const exclusion::context_policy &policy,
+    std::vector<rule_result> &results, timer &deadline)
 {
     for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
         const auto &mod = ruleset_->rule_modules[i];
         auto &cache = rule_module_cache_[i];
 
-        auto verdict = mod.eval(results, store_, cache, policy, rule_matchers_, deadline);
+        auto verdict = mod.eval(results, store, cache, policy, rule_matchers_, deadline);
         if (verdict == rule_module::verdict_type::block) {
             break;
         }
