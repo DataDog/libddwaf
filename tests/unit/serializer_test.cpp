@@ -27,13 +27,11 @@ TEST(TestEventSerializer, SerializeNothing)
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
     serializer.serialize(store, results, collector, deadline, output);
 
     EXPECT_EVENTS(result_object, ); // This means no results
     EXPECT_ACTIONS(result_object, {});
-
-    ddwaf_object_free(&result_object);
 }
 
 TEST(TestEventSerializer, SerializeEmptyEvent)
@@ -44,7 +42,7 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
     object_store store;
     attribute_collector collector;
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
 
     std::unordered_map<std::string, std::string> tags{{"type", {}}, {"category", {}}};
     std::vector<std::string> actions;
@@ -67,8 +65,6 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
 
     EXPECT_EVENTS(result_object, {});
     EXPECT_ACTIONS(result_object, {});
-
-    ddwaf_object_free(&result_object);
 }
 
 TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
@@ -107,7 +103,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
     serializer.serialize(store, results, collector, deadline, output);
     EXPECT_EVENTS(result_object, {.id = "xasd1022",
                                      .name = "random rule",
@@ -124,8 +120,6 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     EXPECT_ACTIONS(result_object,
         {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}},
             {"monitor_request", {}}});
-
-    ddwaf_object_free(&result_object);
 }
 
 TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
@@ -185,7 +179,7 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
     serializer.serialize(store, results, collector, deadline, output);
 
     EXPECT_EVENTS(result_object, {.id = "xasd1022",
@@ -229,8 +223,6 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     EXPECT_ACTIONS(result_object,
         {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}},
             {"monitor_request", {}}});
-
-    ddwaf_object_free(&result_object);
 }
 
 TEST(TestEventSerializer, SerializeMultipleEvents)
@@ -318,7 +310,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
     serializer.serialize(store, results, collector, deadline, output);
     EXPECT_EVENTS(result_object,
         {.id = "xasd1022",
@@ -361,8 +353,6 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     EXPECT_ACTIONS(result_object,
         {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}},
             {"monitor_request", {}}, {"unknown", {}}});
-
-    ddwaf_object_free(&result_object);
 }
 
 TEST(TestEventSerializer, SerializeEventNoActions)
@@ -404,7 +394,7 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
     serializer.serialize(store, results, collector, deadline, output);
     EXPECT_EVENTS(result_object, {.id = "xasd1022",
                                      .name = "random rule",
@@ -419,8 +409,6 @@ TEST(TestEventSerializer, SerializeEventNoActions)
                                          }}}}});
 
     EXPECT_ACTIONS(result_object, {});
-
-    ddwaf_object_free(&result_object);
 }
 
 TEST(TestEventSerializer, SerializeAllTags)
@@ -463,7 +451,7 @@ TEST(TestEventSerializer, SerializeAllTags)
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
     serializer.serialize(store, results, collector, deadline, output);
     EXPECT_EVENTS(
         result_object, {.id = "xasd1022",
@@ -481,8 +469,6 @@ TEST(TestEventSerializer, SerializeAllTags)
                                }}}}});
 
     EXPECT_ACTIONS(result_object, {{"unknown", {}}});
-
-    ddwaf_object_free(&result_object);
 }
 
 TEST(TestEventSerializer, NoMonitorActions)
@@ -523,7 +509,7 @@ TEST(TestEventSerializer, NoMonitorActions)
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
     serializer.serialize(store, results, collector, deadline, output);
     EXPECT_EVENTS(
         result_object, {.id = "xasd1022",
@@ -542,8 +528,6 @@ TEST(TestEventSerializer, NoMonitorActions)
 
     // Monitor action should not be reported here
     EXPECT_ACTIONS(result_object, {});
-
-    ddwaf_object_free(&result_object);
 }
 
 TEST(TestEventSerializer, UndefinedActions)
@@ -584,7 +568,7 @@ TEST(TestEventSerializer, UndefinedActions)
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
     serializer.serialize(store, results, collector, deadline, output);
     EXPECT_EVENTS(
         result_object, {.id = "xasd1022",
@@ -603,8 +587,6 @@ TEST(TestEventSerializer, UndefinedActions)
 
     // Monitor action should not be reported here
     EXPECT_ACTIONS(result_object, {});
-
-    ddwaf_object_free(&result_object);
 }
 
 TEST(TestEventSerializer, StackTraceAction)
@@ -645,7 +627,7 @@ TEST(TestEventSerializer, StackTraceAction)
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
-    auto [result_object, output] = result_serializer::initialise_result_object();
+    auto [result_object, output] = serializer.initialise_result_object();
     serializer.serialize(store, results, collector, deadline, output);
     EXPECT_EVENTS(
         result_object, {.id = "xasd1022",
@@ -666,7 +648,7 @@ TEST(TestEventSerializer, StackTraceAction)
     std::string stack_id;
 
     {
-        auto data = ddwaf::test::object_to_json(output.events);
+        auto data = ddwaf::test::object_to_json(output.events.ref());
         YAML::Node doc = YAML::Load(data.c_str());
         auto results = doc.as<std::list<ddwaf::test::event>>();
         ASSERT_EQ(results.size(), 1);
@@ -674,7 +656,7 @@ TEST(TestEventSerializer, StackTraceAction)
     }
 
     {
-        auto data = ddwaf::test::object_to_json(output.actions);
+        auto data = ddwaf::test::object_to_json(output.actions.ref());
         YAML::Node doc = YAML::Load(data.c_str());
         auto obtained = doc.as<ddwaf::test::action_map>();
         EXPECT_TRUE(obtained.contains("generate_stack"));
@@ -683,8 +665,6 @@ TEST(TestEventSerializer, StackTraceAction)
         EXPECT_TRUE(it->second.contains("stack_id"));
         EXPECT_EQ(it->second.at("stack_id"), stack_id);
     }
-
-    ddwaf_object_free(&result_object);
 }
 
 } // namespace

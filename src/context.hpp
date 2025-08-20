@@ -9,16 +9,11 @@
 #include <memory>
 #include <utility>
 
-#include "attribute_collector.hpp"
 #include "context_allocator.hpp"
-#include "ddwaf.h"
-#include "exclusion/common.hpp"
-#include "exclusion/input_filter.hpp"
-#include "exclusion/rule_filter.hpp"
-#include "obfuscator.hpp"
-#include "rule.hpp"
+#include "evaluation_engine.hpp"
+#include "memory_resource.hpp"
+#include "pointer.hpp"
 #include "ruleset.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -26,106 +21,56 @@ using filter_mode = exclusion::filter_mode;
 
 class context {
 public:
-    using object_set = std::unordered_set<const ddwaf_object *>;
+    using attribute = object_store::attribute;
 
-    explicit context(std::shared_ptr<ruleset> ruleset)
-        : ruleset_(std::move(ruleset)), preprocessors_(*ruleset_->preprocessors),
-          postprocessors_(*ruleset_->postprocessors), rule_filters_(*ruleset_->rule_filters),
-          input_filters_(*ruleset_->input_filters), rule_matchers_(*ruleset_->rule_matchers),
-          exclusion_matchers_(*ruleset_->exclusion_matchers), actions_(*ruleset_->actions),
-          limits_(ruleset_->limits), obfuscator_(*ruleset_->obfuscator)
-    {
-        processor_cache_.reserve(
-            ruleset_->preprocessors->size() + ruleset_->postprocessors->size());
-        rule_filter_cache_.reserve(ruleset_->rule_filters->size());
-        input_filter_cache_.reserve(ruleset_->input_filters->size());
-
-        for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
-            ruleset_->rule_modules[i].init_cache(rule_module_cache_[i]);
-        }
-    }
+    explicit context(std::shared_ptr<ruleset> ruleset,
+        nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
+        : engine_(std::move(ruleset), output_alloc)
+    {}
 
     context(const context &) = delete;
     context &operator=(const context &) = delete;
-    context(context &&) = default;
+    context(context &&) = delete;
     context &operator=(context &&) = delete;
     ~context() = default;
 
-    std::pair<DDWAF_RET_CODE, ddwaf_object> run(
-        optional_ref<ddwaf_object>, optional_ref<ddwaf_object>, uint64_t);
+    bool insert(owned_object data, attribute attr = attribute::none) noexcept
+    {
+        if (!store_.insert(std::move(data), attr)) {
+            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+            return false;
+        }
+        return true;
+    }
 
-    void eval_preprocessors(ddwaf::timer &deadline);
-    void eval_postprocessors(ddwaf::timer &deadline);
-    // This function below returns a reference to an internal object,
-    // however using them this way helps with testing
-    exclusion::context_policy &eval_filters(ddwaf::timer &deadline);
-    void eval_rules(const exclusion::context_policy &policy, std::vector<rule_result> &results,
-        ddwaf::timer &deadline);
+    bool insert(map_view data, attribute attr = attribute::none) noexcept
+    {
+        if (!store_.insert(data, attr)) {
+            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+            return false;
+        }
+        return true;
+    }
+
+    std::pair<bool, owned_object> eval(uint64_t timeout)
+    {
+        timer deadline{std::chrono::microseconds(timeout)};
+        return engine_.eval(store_, deadline);
+    }
 
 protected:
-    bool is_first_run() const { return store_.empty(); }
-    bool check_new_rule_targets() const
-    {
-        // NOLINTNEXTLINE(readability-use-anyofallof)
-        for (const auto &[target, str] : ruleset_->rule_addresses) {
-            if (store_.is_new_target(target)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    bool check_new_filter_targets() const
-    {
-        // NOLINTNEXTLINE(readability-use-anyofallof)
-        for (const auto &[target, str] : ruleset_->filter_addresses) {
-            if (store_.is_new_target(target)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    std::shared_ptr<ruleset> ruleset_;
-    ddwaf::object_store store_;
-    attribute_collector collector_;
-
-    // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
-    const std::vector<std::unique_ptr<base_processor>> &preprocessors_;
-    const std::vector<std::unique_ptr<base_processor>> &postprocessors_;
-
-    const std::vector<exclusion::rule_filter> &rule_filters_;
-    const std::vector<exclusion::input_filter> &input_filters_;
-
-    const matcher_mapper &rule_matchers_;
-    const matcher_mapper &exclusion_matchers_;
-
-    const action_mapper &actions_;
-
-    const object_limits &limits_;
-    const match_obfuscator &obfuscator_;
-    // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
-
-    using input_filter = exclusion::input_filter;
-    using rule_filter = exclusion::rule_filter;
-
-    memory::unordered_map<base_processor *, processor_cache> processor_cache_;
-
-    // Caches of filters and conditions
-    memory::unordered_map<const rule_filter *, rule_filter::cache_type> rule_filter_cache_;
-    memory::unordered_map<const input_filter *, input_filter::cache_type> input_filter_cache_;
-    exclusion::context_policy exclusion_policy_;
-
-    // Cache of modules to avoid processing once a result has been obtained
-    std::array<rule_module_cache, rule_module_count> rule_module_cache_;
+    evaluation_engine engine_;
+    object_store store_;
 };
 
 class context_wrapper {
 public:
-    explicit context_wrapper(std::shared_ptr<ruleset> ruleset)
+    explicit context_wrapper(std::shared_ptr<ruleset> ruleset,
+        nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
     {
         memory::memory_resource_guard guard(&mr_);
         ctx_ = static_cast<context *>(mr_.allocate(sizeof(context), alignof(context)));
-        new (ctx_) context{std::move(ruleset)};
+        new (ctx_) context{std::move(ruleset), output_alloc};
     }
 
     ~context_wrapper()
@@ -140,16 +85,30 @@ public:
     context_wrapper &operator=(context_wrapper &&) noexcept = delete;
     context_wrapper &operator=(const context_wrapper &) = delete;
 
-    std::pair<DDWAF_RET_CODE, ddwaf_object> run(optional_ref<ddwaf_object> persistent,
-        optional_ref<ddwaf_object> ephemeral, uint64_t timeout)
+    bool insert(owned_object data, context::attribute attr = context::attribute::none) noexcept
     {
         memory::memory_resource_guard guard(&mr_);
-        return ctx_->run(persistent, ephemeral, timeout);
+        return ctx_->insert(std::move(data), attr);
+    }
+
+    bool insert(map_view data, context::attribute attr = context::attribute::none) noexcept
+    {
+        memory::memory_resource_guard guard(&mr_);
+        return ctx_->insert(data, attr);
+    }
+
+    std::pair<bool, owned_object> eval(uint64_t timeout)
+    {
+        memory::memory_resource_guard guard(&mr_);
+        return ctx_->eval(timeout);
     }
 
 protected:
     context *ctx_;
-    std::pmr::monotonic_buffer_resource mr_;
+    // This memory resource is primarily used for non-ephemeral allocations within the context
+    // itself, such as for caching purposes of finite elements. This has the advantage of
+    // improving the context destruction and memory deallocation performance.
+    memory::monotonic_buffer_resource mr_;
 };
 
 } // namespace ddwaf

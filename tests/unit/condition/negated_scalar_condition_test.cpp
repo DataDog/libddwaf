@@ -49,17 +49,14 @@ TEST(TestNegatedScalarCondition, NoMatch)
     negated_scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_string(&tmp, "hello"));
+    auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
 
     object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 }
@@ -69,17 +66,14 @@ TEST(TestNegatedScalarCondition, Timeout)
     negated_scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_string(&tmp, "hello"));
+    auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
 
     object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
-    EXPECT_THROW(cond.eval(cache, store, {}, {}, {}, deadline), ddwaf::timeout_exception);
+    EXPECT_THROW(cond.eval(cache, store, {}, {}, deadline), ddwaf::timeout_exception);
 }
 
 TEST(TestNegatedScalarCondition, SimpleMatch)
@@ -87,17 +81,14 @@ TEST(TestNegatedScalarCondition, SimpleMatch)
     negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_string(&tmp, "bye"));
+    auto root = object_builder::map({{"server.request.uri.raw", "bye"}});
 
     object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 
@@ -114,29 +105,16 @@ TEST(TestNegatedScalarCondition, SimpleMatchWithKeyPath)
             .index = get_target_index("server.request.uri.raw"),
             .key_path = {"path", "to", "object"}}}}}};
 
-    ddwaf_object tmp;
-    ddwaf_object object;
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "object", ddwaf_object_string(&tmp, "bye"));
-
-    ddwaf_object to;
-    ddwaf_object_map(&to);
-    ddwaf_object_map_add(&to, "to", &object);
-
-    ddwaf_object path;
-    ddwaf_object_map(&path);
-    ddwaf_object_map_add(&path, "path", &to);
-
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", &path);
+    auto root = object_builder::map({{"server.request.uri.raw",
+        object_builder::map(
+            {{"path", object_builder::map({{"to", object_builder::map({{"object", "bye"}})}})}})}});
 
     object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 
@@ -152,20 +130,14 @@ TEST(TestNegatedScalarCondition, SingleValueArrayMatch)
     negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    ddwaf_object tmp;
-    ddwaf_object array;
-    ddwaf_object_array(&array);
-    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "bye"));
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", &array);
+    auto root = object_builder::map({{"server.request.uri.raw", object_builder::array({"bye"})}});
 
     object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 
@@ -183,34 +155,17 @@ TEST(TestNegatedScalarCondition, SingleValueArrayMatchWithKeyPath)
             .index = get_target_index("server.request.uri.raw"),
             .key_path = {"path", "to", "object"}}}}}};
 
-    ddwaf_object tmp;
-
-    ddwaf_object array;
-    ddwaf_object_array(&array);
-    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "bye"));
-
-    ddwaf_object object;
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "object", &array);
-
-    ddwaf_object to;
-    ddwaf_object_map(&to);
-    ddwaf_object_map_add(&to, "to", &object);
-
-    ddwaf_object path;
-    ddwaf_object_map(&path);
-    ddwaf_object_map_add(&path, "path", &to);
-
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", &path);
+    auto root = object_builder::map({{"server.request.uri.raw",
+        object_builder::map({{"path",
+            object_builder::map(
+                {{"to", object_builder::map({{"object", object_builder::array({"bye"})}})}})}})}});
 
     object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 
@@ -226,21 +181,15 @@ TEST(TestNegatedScalarCondition, MultiValueArrayMatch)
     negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    ddwaf_object tmp;
-    ddwaf_object array;
-    ddwaf_object_array(&array);
-    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "bye"));
-    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "greetings"));
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", &array);
+    auto root = object_builder::map(
+        {{"server.request.uri.raw", object_builder::array({"bye", "greetings"})}});
 
     object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 
@@ -258,35 +207,17 @@ TEST(TestNegatedScalarCondition, MultiValueArrayMatchWithKeyPath)
             .index = get_target_index("server.request.uri.raw"),
             .key_path = {"path", "to", "object"}}}}}};
 
-    ddwaf_object tmp;
-
-    ddwaf_object array;
-    ddwaf_object_array(&array);
-    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "bye"));
-    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "greetings"));
-
-    ddwaf_object object;
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "object", &array);
-
-    ddwaf_object to;
-    ddwaf_object_map(&to);
-    ddwaf_object_map_add(&to, "to", &object);
-
-    ddwaf_object path;
-    ddwaf_object_map(&path);
-    ddwaf_object_map_add(&path, "path", &to);
-
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", &path);
+    auto root = object_builder::map({{"server.request.uri.raw",
+        object_builder::map({{"path",
+            object_builder::map({{"to", object_builder::map({{"object",
+                                            object_builder::array({"bye", "greetings"})}})}})}})}});
 
     object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 
@@ -305,40 +236,21 @@ TEST(TestNegatedScalarCondition, ExcludedRootObject)
             .index = target_index,
             .key_path = {"path", "to", "object"}}}}}};
 
-    std::unordered_set<const ddwaf_object *> excluded_objects;
-
-    ddwaf_object tmp;
-
-    ddwaf_object array;
-    ddwaf_object_array(&array);
-    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "bye"));
-    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "greetings"));
-
-    ddwaf_object object;
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "object", &array);
-
-    ddwaf_object to;
-    ddwaf_object_map(&to);
-    ddwaf_object_map_add(&to, "to", &object);
-
-    ddwaf_object path;
-    ddwaf_object_map(&path);
-    ddwaf_object_map_add(&path, "path", &to);
-
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", &path);
+    auto root = object_builder::map({{"server.request.uri.raw",
+        object_builder::map({{"path",
+            object_builder::map({{"to", object_builder::map({{"object",
+                                            object_builder::array({"bye", "greetings"})}})}})}})}});
 
     object_store store;
     store.insert(root);
 
+    std::unordered_set<object_view> excluded_objects;
     excluded_objects.emplace(store.get_target(target_index).first);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(
-        cache, store, {.persistent = excluded_objects, .ephemeral = {}}, {}, {}, deadline);
+    auto res =
+        cond.eval(cache, store, {.persistent = excluded_objects, .ephemeral = {}}, {}, deadline);
     ASSERT_FALSE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 }
@@ -350,40 +262,23 @@ TEST(TestNegatedScalarCondition, ExcludedIntermediateObject)
             .index = get_target_index("server.request.uri.raw"),
             .key_path = {"path", "to", "object"}}}}}};
 
-    std::unordered_set<const ddwaf_object *> excluded_objects;
+    auto root = object_builder::map({{"server.request.uri.raw",
+        object_builder::map({{"path",
+            object_builder::map({{"to", object_builder::map({{"object",
+                                            object_builder::array({"bye", "greetings"})}})}})}})}});
 
-    ddwaf_object tmp;
+    std::vector<std::string> kp{"server.request.uri.raw", "path", "to"};
 
-    ddwaf_object array;
-    ddwaf_object_array(&array);
-    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "bye"));
-    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "greetings"));
-
-    ddwaf_object object;
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "object", &array);
-
-    ddwaf_object to;
-    ddwaf_object_map(&to);
-    ddwaf_object_map_add(&to, "to", &object);
-
-    excluded_objects.emplace(&to.array[0]);
-
-    ddwaf_object path;
-    ddwaf_object_map(&path);
-    ddwaf_object_map_add(&path, "path", &to);
-
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", &path);
+    std::unordered_set<object_view> excluded_objects;
+    excluded_objects.emplace(object_view{root}.find_key_path(kp).at_value(0));
 
     object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(
-        cache, store, {.persistent = excluded_objects, .ephemeral = {}}, {}, {}, deadline);
+    auto res =
+        cond.eval(cache, store, {.persistent = excluded_objects, .ephemeral = {}}, {}, deadline);
     ASSERT_FALSE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 }
@@ -396,39 +291,22 @@ TEST(TestNegatedScalarCondition, ExcludedFinalObject)
             .index = target_index,
             .key_path = {"path", "to", "object"}}}}}};
 
-    std::unordered_set<const ddwaf_object *> excluded_objects;
+    auto root = object_builder::map({{"server.request.uri.raw",
+        object_builder::map({{"path",
+            object_builder::map(
+                {{"to", object_builder::map({{"object", object_builder::array({"bye"})}})}})}})}});
 
-    ddwaf_object tmp;
+    std::vector<std::string> kp{"server.request.uri.raw", "path", "to", "object"};
 
-    ddwaf_object array;
-    ddwaf_object_array(&array);
-    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "bye"));
-
-    excluded_objects.emplace(&array.array[0]);
-
-    ddwaf_object object;
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "object", &array);
-
-    ddwaf_object to;
-    ddwaf_object_map(&to);
-    ddwaf_object_map_add(&to, "to", &object);
-
-    ddwaf_object path;
-    ddwaf_object_map(&path);
-    ddwaf_object_map_add(&path, "path", &to);
-
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", &path);
-
+    std::unordered_set<object_view> excluded_objects;
+    excluded_objects.emplace(object_view{root}.find_key_path(kp).at_value(0));
     object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(
-        cache, store, {.persistent = excluded_objects, .ephemeral = {}}, {}, {}, deadline);
+    auto res =
+        cond.eval(cache, store, {.persistent = excluded_objects, .ephemeral = {}}, {}, deadline);
     ASSERT_FALSE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 }
@@ -441,30 +319,25 @@ TEST(TestNegatedScalarCondition, CachedMatch)
     ddwaf::timer deadline{2s};
     condition_cache cache;
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_string(&tmp, "bye"));
+    auto root = object_builder::map({{"server.request.uri.raw", "bye"}});
 
     {
         object_store store;
-        store.insert(root, object_store::attribute::none, nullptr);
+        store.insert(root, object_store::attribute::none);
 
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         ASSERT_FALSE(res.ephemeral);
     }
 
     {
         object_store store;
-        store.insert(root, object_store::attribute::none, nullptr);
+        store.insert(root, object_store::attribute::none);
 
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome);
         ASSERT_FALSE(res.ephemeral);
     }
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestNegatedScalarCondition, SimpleMatchOnKeys)
@@ -475,20 +348,15 @@ TEST(TestNegatedScalarCondition, SimpleMatchOnKeys)
     negated_scalar_condition cond{
         std::make_unique<matcher::regex_match>("hello", 0, true), {}, {std::move(target)}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object map;
-    ddwaf_object_map(&map);
-    ddwaf_object_map_add(&map, "bye", ddwaf_object_string(&tmp, "hello"));
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", &map);
+    auto root =
+        object_builder::map({{"server.request.uri.raw", object_builder::map({{"bye", "hello"}})}});
 
     object_store store;
     store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
     ASSERT_FALSE(res.ephemeral);
 }
@@ -498,20 +366,17 @@ TEST(TestNegatedScalarCondition, SimpleEphemeralMatch)
     negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.request.uri.raw", ddwaf_object_string(&tmp, "bye"));
+    auto root = object_builder::map({{"server.request.uri.raw", "bye"}});
 
     object_store store;
     {
         auto scope = store.get_eval_scope();
 
-        store.insert(root, object_store::attribute::ephemeral, nullptr);
+        store.insert(root, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         ASSERT_TRUE(res.ephemeral);
     }
@@ -519,16 +384,14 @@ TEST(TestNegatedScalarCondition, SimpleEphemeralMatch)
     {
         auto scope = store.get_eval_scope();
 
-        store.insert(root, object_store::attribute::ephemeral, nullptr);
+        store.insert(root, object_store::attribute::ephemeral);
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         ASSERT_TRUE(res.ephemeral);
     }
-
-    ddwaf_object_free(&root);
 }
 
 } // namespace
