@@ -14,6 +14,7 @@
 #include "attribute_collector.hpp"
 #include "exception.hpp"
 #include "expression.hpp"
+#include "log.hpp"
 #include "memory_resource.hpp"
 #include "object_store.hpp"
 #include "utils.hpp"
@@ -42,7 +43,7 @@ struct resolved_argument_count {
 
 struct processor_cache {
     expression::cache_type expr_cache;
-    std::unordered_set<target_index> generated;
+    std::unordered_map<target_index, evaluation_scope> generated;
 
     std::vector<resolved_argument_count> evaluated;
 
@@ -54,7 +55,7 @@ struct processor_cache {
 
 template <typename Class, typename... Args>
 function_traits<Class::param_names.size(), Class, Args...> make_eval_traits(
-    std::pair<owned_object, object_store::attribute> (Class::*)(Args...) const);
+    std::pair<owned_object, evaluation_scope> (Class::*)(Args...) const);
 
 template <typename... Ts> constexpr std::size_t count_optionals()
 {
@@ -87,6 +88,11 @@ public:
     virtual void get_addresses(std::unordered_map<target_index, std::string> &addresses) const = 0;
 
     [[nodiscard]] virtual const std::string &get_id() const = 0;
+
+    static void invalidate_subcontext_cache(processor_cache &cache)
+    {
+        expression::invalidate_subcontext_cache(cache.expr_cache);
+    }
 };
 
 template <typename Self> class structured_processor : public base_processor {
@@ -133,7 +139,7 @@ public:
             }
 
             if (store.has_target(mapping.output.index) ||
-                cache.generated.find(mapping.output.index) != cache.generated.end()) {
+                cache.generated.contains(mapping.output.index)) {
                 if constexpr (is_tuple_with_optional<tuple_type>) {
                     // When the processor has optional arguments, these should still be
                     // resolved as there could be new ones available
@@ -164,23 +170,24 @@ public:
             // the default allocator and cloned using the user-provided one.
             auto suitable_alloc = evaluate_ ? memory::get_default_resource() : alloc;
 
-            auto [object, attr] = std::apply(
+            auto [object, scope] = std::apply(
                 [&](auto &&...args) {
                     return static_cast<const Self *>(this)->eval_impl(
                         std::forward<decltype(args)>(args)..., cache, suitable_alloc, deadline);
                 },
                 std::move(args));
-            if (attr != object_store::attribute::ephemeral) {
-                // Whatever the outcome, we don't want to try and generate it again
-                cache.generated.emplace(mapping.output.index);
 
-                // We update the number of optionals evaluated so that we can
-                // eventually determine whether the processor should be called
-                // again or not. The number of optionals found should increase
-                // on every call, hence why we simply replace the value.
-                if constexpr (is_tuple_with_optional<tuple_type>) {
-                    cache.evaluated[i] = arg_count;
-                }
+            // Whatever the outcome, we don't want to try and generate it again within this scope
+            cache.generated.emplace(mapping.output.index, scope);
+
+            // TODO: fix this for subcontexts
+
+            // We update the number of optionals evaluated so that we can
+            // eventually determine whether the processor should be called
+            // again or not. The number of optionals found should increase
+            // on every call, hence why we simply replace the value.
+            if constexpr (is_tuple_with_optional<tuple_type>) {
+                cache.evaluated[i] = arg_count;
             }
 
             if (object.is_invalid()) {
@@ -193,12 +200,12 @@ public:
                     // collector using the user-provided allocator.
                     collector.insert(mapping.output.name, object.clone(alloc));
                     store.insert(
-                        mapping.output.index, mapping.output.name, std::move(object), attr);
+                        mapping.output.index, mapping.output.name, std::move(object), scope);
                 } else {
                     collector.insert(mapping.output.name, std::move(object));
                 }
             } else {
-                store.insert(mapping.output.index, mapping.output.name, std::move(object), attr);
+                store.insert(mapping.output.index, mapping.output.name, std::move(object), scope);
             }
         }
     }
@@ -261,7 +268,7 @@ protected:
             std::get<I>(args) = std::move(arg);
         } else {
             // If an optional value is not available, the resolution of said
-            // argument doesn't increase the number of arguments resolsved.
+            // argument doesn't increase the number of arguments resolved.
             // This ensures that when all arguments in a method are optional,
             // we can prevent calling it if none of the arguments are available.
             count.all += static_cast<std::size_t>(arg.has_value());

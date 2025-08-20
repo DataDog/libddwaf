@@ -15,7 +15,7 @@ namespace ddwaf {
 
 struct rule_collection_cache {
     core_rule::verdict_type type{core_rule::verdict_type::none};
-    bool ephemeral{false};
+    evaluation_scope scope{evaluation_scope::context};
 };
 
 struct rule_module_cache {
@@ -51,12 +51,22 @@ public:
     [[nodiscard]] bool may_expire() const { return policy_ == expiration_policy::expiring; }
 
     verdict_type eval(std::vector<rule_result> &results, object_store &store, cache_type &cache,
-        const exclusion::context_policy &exclusion, const matcher_mapper &dynamic_matchers,
+        const exclusion::exclusion_policy &exclusion, const matcher_mapper &dynamic_matchers,
         ddwaf::timer &deadline) const;
+
+    static void invalidate_subcontext_cache(cache_type &cache)
+    {
+        for (auto &rule_cache : cache.rules) { core_rule::invalidate_subcontext_cache(rule_cache); }
+        for (auto &[_, collection_cache] : cache.collections) {
+            if (collection_cache.scope == evaluation_scope::subcontext) {
+                collection_cache = {};
+            }
+        }
+    }
 
 protected:
     verdict_type eval_with_collections(std::vector<rule_result> &results, object_store &store,
-        cache_type &cache, const exclusion::context_policy &exclusion,
+        cache_type &cache, const exclusion::exclusion_policy &exclusion,
         const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const;
 
     ddwaf::timer &get_deadline(ddwaf::timer &deadline) const;

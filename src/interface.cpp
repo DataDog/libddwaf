@@ -276,38 +276,24 @@ ddwaf_context ddwaf_context_init(ddwaf::waf *handle, ddwaf_allocator output_allo
     return nullptr;
 }
 
-DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *persistent_data,
+DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    ddwaf_object *ephemeral_data, bool free_objects, ddwaf_object *result, uint64_t timeout)
+    bool free_objects, ddwaf_object *result, uint64_t timeout)
 {
-    if (context == nullptr || (persistent_data == nullptr && ephemeral_data == nullptr)) {
+    if (context == nullptr || data == nullptr) {
         DDWAF_WARN("Illegal WAF call: context or data was null");
         return DDWAF_ERR_INVALID_ARGUMENT;
     }
 
     try {
-        if (persistent_data != nullptr) {
+        if (data != nullptr) {
             if (free_objects) {
-                if (!context->insert(owned_object{to_ref(persistent_data)})) {
+                if (!context->insert(owned_object{to_ref(data)})) {
                     return DDWAF_ERR_INVALID_OBJECT;
                 }
             } else {
-                const object_view input{to_ref(persistent_data)};
+                const object_view input{to_ref(data)};
                 if (!input.is_map() || !context->insert(input.as<map_view>())) {
-                    return DDWAF_ERR_INVALID_OBJECT;
-                }
-            }
-        }
-
-        if (ephemeral_data != nullptr) {
-            auto attr = context::attribute::ephemeral;
-            if (free_objects) {
-                if (!context->insert(owned_object{to_ref(ephemeral_data)}, attr)) {
-                    return DDWAF_ERR_INVALID_OBJECT;
-                }
-            } else {
-                const object_view input{to_ref(ephemeral_data)};
-                if (!input.is_map() || !context->insert(input.as<map_view>(), attr)) {
                     return DDWAF_ERR_INVALID_OBJECT;
                 }
             }
@@ -315,10 +301,11 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *persisten
 
         // The timers will actually count nanoseconds, std::chrono doesn't
         // deal well with durations being beyond range.
-        constexpr uint64_t max_timeout_ms = std::chrono::nanoseconds::max().count() / 1000;
-        timeout = std::min(timeout, max_timeout_ms);
+        constexpr uint64_t max_timeout_us = std::chrono::nanoseconds::max().count() / 1000;
+        timeout = std::min(timeout, max_timeout_us);
 
-        auto [code, res] = context->eval(timeout);
+        timer deadline{std::chrono::microseconds(timeout)};
+        auto [code, res] = context->eval(deadline);
         if (result != nullptr) {
             to_borrowed(result) = std::move(res);
         }
@@ -341,6 +328,80 @@ void ddwaf_context_destroy(ddwaf_context context)
 
     try {
         delete context;
+    } catch (const std::exception &e) {
+        // catch-all to avoid std::terminate
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+}
+
+ddwaf_subcontext ddwaf_subcontext_init(ddwaf_context context)
+{
+    try {
+        if (context != nullptr) {
+            return context->create_subcontext();
+        }
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+    return nullptr;
+}
+
+DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *data,
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    bool free_objects, ddwaf_object *result, uint64_t timeout)
+{
+    if (subcontext == nullptr || data == nullptr) {
+        DDWAF_WARN("Illegal WAF call: subcontext or data was null");
+        return DDWAF_ERR_INVALID_ARGUMENT;
+    }
+
+    try {
+        if (data != nullptr) {
+            if (free_objects) {
+                if (!subcontext->insert(owned_object{to_ref(data)})) {
+                    return DDWAF_ERR_INVALID_OBJECT;
+                }
+            } else {
+                const object_view input{to_ref(data)};
+                if (!input.is_map() || !subcontext->insert(input.as<map_view>())) {
+                    return DDWAF_ERR_INVALID_OBJECT;
+                }
+            }
+        }
+
+        // The timers will actually count nanoseconds, std::chrono doesn't
+        // deal well with durations being beyond range.
+        constexpr uint64_t max_timeout_us = std::chrono::nanoseconds::max().count() / 1000;
+        timeout = std::min(timeout, max_timeout_us);
+
+        timer deadline{std::chrono::microseconds(timeout)};
+        auto [code, res] = subcontext->eval(deadline);
+        if (result != nullptr) {
+            to_borrowed(result) = std::move(res);
+        }
+        return code ? DDWAF_MATCH : DDWAF_OK;
+    } catch (const std::exception &e) {
+        // catch-all to avoid std::terminate
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+
+    return DDWAF_ERR_INTERNAL;
+}
+
+void ddwaf_subcontext_destroy(ddwaf_subcontext subcontext)
+{
+    if (subcontext == nullptr) {
+        return;
+    }
+
+    try {
+        delete subcontext;
     } catch (const std::exception &e) {
         // catch-all to avoid std::terminate
         DDWAF_ERROR("{}", e.what());

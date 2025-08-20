@@ -77,7 +77,7 @@ struct rule_event {
 
 struct rule_result {
     bool keep{false};
-    bool ephemeral{false};
+    evaluation_scope scope{evaluation_scope::context};
 
     std::optional<rule_event> event{std::nullopt};
 
@@ -164,6 +164,11 @@ public:
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
         expr_->get_addresses(addresses);
+    }
+
+    static void invalidate_subcontext_cache(cache_type &cache)
+    {
+        expression::invalidate_subcontext_cache(cache.expr_cache);
     }
 
 protected:

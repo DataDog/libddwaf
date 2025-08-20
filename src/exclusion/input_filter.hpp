@@ -7,8 +7,6 @@
 #pragma once
 
 #include <set>
-#include <stack>
-#include <vector>
 
 #include "clock.hpp"
 #include "exclusion/object_filter.hpp"
@@ -46,6 +44,11 @@ public:
     {
         expr_->get_addresses(addresses);
         filter_->get_addresses(addresses);
+    }
+
+    static void invalidate_subcontext_cache(cache_type &cache)
+    {
+        expression::invalidate_subcontext_cache(cache.expr_cache);
     }
 
 protected:

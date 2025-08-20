@@ -47,7 +47,7 @@ std::optional<excluded_set> input_filter::match(const object_store &store, cache
         return std::nullopt;
     }
 
-    auto objects = filter_->match(store, cache.object_filter_cache, res.ephemeral, deadline);
+    auto objects = filter_->match(store, cache.object_filter_cache, res.scope, deadline);
     if (objects.empty()) {
         return std::nullopt;
     }

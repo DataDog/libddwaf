@@ -1,5 +1,6 @@
 {
   name: "Exclude a rule using an ephemeral condition match",
+  expected-fail: true,
   runs: [
     {
       ephemeral-input: {

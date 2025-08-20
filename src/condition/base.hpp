@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -35,14 +34,13 @@ struct condition_match {
     std::vector<dynamic_string> highlights;
     std::string_view operator_name;
     std::string_view operator_value;
-    bool ephemeral{false};
+    evaluation_scope scope;
 };
 
 struct condition_cache {
     // Stores the pointer to the object of the i-th target of the condition,
-    // used in the previous evaluation, if said object is non-ephemeral. This
-    // ensures that the evaluation of the condition can be skipped for the same
-    // object in the future.
+    // used in the previous evaluation. This ensures that the evaluation of
+    // the condition can be skipped for the same object in the future.
     memory::vector<object_view> targets;
     std::optional<condition_match> match;
 };

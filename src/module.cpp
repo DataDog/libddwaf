@@ -26,7 +26,7 @@ using verdict_type = rule_module::verdict_type;
 
 std::pair<verdict_type, std::optional<rule_result>> eval_rule(const core_rule &rule,
     const object_store &store, core_rule::cache_type &cache,
-    const exclusion::context_policy &policy, const matcher_mapper &dynamic_matchers,
+    const exclusion::exclusion_policy &policy, const matcher_mapper &dynamic_matchers,
     ddwaf::timer &deadline)
 {
     const auto &id = rule.get_id();
@@ -91,7 +91,7 @@ ddwaf::timer &rule_module::get_deadline(ddwaf::timer &deadline) const
 }
 
 verdict_type rule_module::eval_with_collections(std::vector<rule_result> &results,
-    object_store &store, cache_type &cache, const exclusion::context_policy &exclusion,
+    object_store &store, cache_type &cache, const exclusion::exclusion_policy &exclusion,
     const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const
 {
     verdict_type final_verdict = verdict_type::none;
@@ -99,15 +99,7 @@ verdict_type rule_module::eval_with_collections(std::vector<rule_result> &result
         DDWAF_DEBUG("Evaluating collection: {}", collection.name);
         auto &collection_cache = cache.collections[collection.name];
         if (collection_cache.type >= collection.type) {
-            // If the result was cached but ephemeral, clear it. Note that this is
-            // just a workaround taking advantage of the order of evaluation of
-            // collections. Collections might be removed in the future altogether.
-            if (collection_cache.type == collection.type && collection_cache.ephemeral) {
-                collection_cache.type = core_rule::verdict_type::none;
-                collection_cache.ephemeral = false;
-            } else {
-                continue;
-            }
+            continue;
         }
 
         for (std::size_t i = collection.begin; i < collection.end; ++i) {
@@ -116,7 +108,7 @@ verdict_type rule_module::eval_with_collections(std::vector<rule_result> &result
                 eval_rule(rule, store, cache.rules[i], exclusion, dynamic_matchers, deadline);
             if (outcome.has_value()) {
                 collection_cache.type = verdict;
-                collection_cache.ephemeral = outcome->ephemeral;
+                collection_cache.scope = outcome->scope;
 
                 results.emplace_back(std::move(*outcome));
                 DDWAF_DEBUG("Found event on rule {}", rule.get_id());
@@ -134,7 +126,7 @@ verdict_type rule_module::eval_with_collections(std::vector<rule_result> &result
 }
 
 verdict_type rule_module::eval(std::vector<rule_result> &results, object_store &store,
-    cache_type &cache, const exclusion::context_policy &exclusion,
+    cache_type &cache, const exclusion::exclusion_policy &exclusion,
     const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const
 {
     auto &apt_deadline = get_deadline(deadline);

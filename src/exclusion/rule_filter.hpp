@@ -7,8 +7,6 @@
 #pragma once
 
 #include <set>
-#include <stack>
-#include <vector>
 
 #include "clock.hpp"
 #include "exclusion/common.hpp"
@@ -20,8 +18,9 @@ namespace ddwaf::exclusion {
 class rule_filter {
 public:
     struct excluded_set {
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
         const std::unordered_set<const core_rule *> &rules;
-        bool ephemeral{false};
+        evaluation_scope scope{evaluation_scope::context};
         filter_mode mode{filter_mode::none};
         std::string_view action;
     };
@@ -48,6 +47,11 @@ public:
     }
 
     std::string_view get_action() const { return action_; }
+
+    static void invalidate_subcontext_cache(cache_type &cache)
+    {
+        expression::invalidate_subcontext_cache(cache);
+    }
 
 protected:
     std::string id_;

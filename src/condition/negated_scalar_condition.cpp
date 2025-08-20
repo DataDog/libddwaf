@@ -135,19 +135,16 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
         cache.targets.assign(1, nullptr);
     }
 
-    auto [object, attr] = store.get_target(target_.index);
+    auto [object, scope] = store.get_target(target_.index);
     if (!object.has_value() || object == cache.targets[0]) {
         return {};
     }
 
-    const bool ephemeral = (attr == object_store::attribute::ephemeral);
-    if (!ephemeral) {
-        cache.targets[0] = object;
-    }
+    cache.targets[0] = object;
 
     auto target_object = object.find_key_path(target_.key_path, objects_excluded);
     if (!target_object.has_value()) {
-        return {.outcome = false, .ephemeral = false};
+        return {.outcome = false, .scope = {}};
     }
 
     // The goal is to determine if the object can be evaluated and if there's a match
@@ -159,7 +156,7 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
         // If the object within the key path is not a map, we consider this an
         // object which can't be evaluated
         if (!target_object.is_map()) {
-            return {.outcome = false, .ephemeral = false};
+            return {.outcome = false, .scope = {}};
         }
 
         key_iterator it(target_object, {}, objects_excluded);
@@ -173,8 +170,8 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
                 .highlights = {},
                 .operator_name = matcher->negated_name(),
                 .operator_value = matcher->to_string(),
-                .ephemeral = ephemeral}};
-            return {.outcome = true, .ephemeral = ephemeral};
+                .scope = scope}};
+            return {.outcome = true, .scope = scope};
         }
     } else {
         value_iterator it(target_object, {}, objects_excluded);
@@ -202,12 +199,12 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
                 .highlights = std::move(highlights),
                 .operator_name = matcher->negated_name(),
                 .operator_value = matcher->to_string(),
-                .ephemeral = ephemeral}};
-            return {.outcome = true, .ephemeral = ephemeral};
+                .scope = scope}};
+            return {.outcome = true, .scope = scope};
         }
     }
 
-    return {.outcome = false, .ephemeral = false};
+    return {.outcome = false, .scope = {}};
 }
 
 } // namespace ddwaf

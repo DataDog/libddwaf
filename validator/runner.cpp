@@ -88,14 +88,7 @@ bool test_runner::run_test(const YAML::Node &runs)
                 persistent_ptr = &persistent;
             }
 
-            ddwaf_object *ephemeral_ptr = nullptr;
-            auto ephemeral = run["ephemeral-input"].as<ddwaf_object>();
-            if (ddwaf_object_get_type(&ephemeral) != DDWAF_OBJ_INVALID) {
-                ephemeral_ptr = &ephemeral;
-            }
-
-            auto retval = ddwaf_context_eval(
-                ctx.get(), persistent_ptr, ephemeral_ptr, true, res.get(), timeout);
+            auto retval = ddwaf_context_eval(ctx.get(), persistent_ptr, true, res.get(), timeout);
 
             expect(retval, code);
             if (code == DDWAF_MATCH) {
