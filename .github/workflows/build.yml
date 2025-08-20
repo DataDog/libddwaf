@@ -32,7 +32,7 @@ jobs:
         with:
           submodules: recursive
       - name: Setup MSVC for Windows(32/64-bit)
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756
         if: matrix.os == 'windows-2022'
       - name: Setup MSVC for Windows(ARM64)
         uses: microsoft/setup-msbuild@v2
