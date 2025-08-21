@@ -94,8 +94,8 @@ void iterate_object(const path_trie::traverser &filter, object_view object,
 
 } // namespace
 
-object_set object_filter::match(
-    const object_store &store, cache_type &cache, bool ephemeral, ddwaf::timer &deadline) const
+object_set object_filter::match(const object_store &store, cache_type &cache,
+    evaluation_scope scope, ddwaf::timer &deadline) const
 {
     object_set objects_to_exclude;
     for (const auto &[target, filter] : target_paths_) {
@@ -103,16 +103,16 @@ object_set object_filter::match(
             throw ddwaf::timeout_exception();
         }
 
-        auto [object, attr] = store.get_target(target);
+        auto [object, object_scope] = store.get_target(target);
         if (!object.has_value() || cache.contains(object)) {
             continue;
         }
 
-        if (!ephemeral && attr != object_store::attribute::ephemeral) {
+        if (scope == evaluation_scope::context && object_scope != evaluation_scope::context) {
             cache.emplace(object);
-            iterate_object(filter.get_traverser(), object, objects_to_exclude.persistent);
+            iterate_object(filter.get_traverser(), object, objects_to_exclude.context);
         } else {
-            iterate_object(filter.get_traverser(), object, objects_to_exclude.ephemeral);
+            iterate_object(filter.get_traverser(), object, objects_to_exclude.subcontext);
         }
     }
 

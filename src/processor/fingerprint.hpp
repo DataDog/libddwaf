@@ -23,7 +23,7 @@ public:
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
     {}
 
-    std::pair<owned_object, object_store::attribute> eval_impl(
+    std::pair<owned_object, evaluation_scope> eval_impl(
         const unary_argument<std::string_view> &method,
         const unary_argument<std::string_view> &uri_raw, const optional_argument<map_view> &query,
         const optional_argument<map_view> &body, processor_cache &cache,
@@ -40,9 +40,9 @@ public:
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
     {}
 
-    std::pair<owned_object, object_store::attribute> eval_impl(
-        const unary_argument<map_view> &headers, processor_cache &cache,
-        nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const;
+    std::pair<owned_object, evaluation_scope> eval_impl(const unary_argument<map_view> &headers,
+        processor_cache &cache, nonnull_ptr<memory::memory_resource> alloc,
+        ddwaf::timer &deadline) const;
 };
 
 class http_network_fingerprint : public structured_processor<http_network_fingerprint> {
@@ -55,9 +55,9 @@ public:
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
     {}
 
-    std::pair<owned_object, object_store::attribute> eval_impl(
-        const unary_argument<map_view> &headers, processor_cache &cache,
-        nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const;
+    std::pair<owned_object, evaluation_scope> eval_impl(const unary_argument<map_view> &headers,
+        processor_cache &cache, nonnull_ptr<memory::memory_resource> alloc,
+        ddwaf::timer &deadline) const;
 };
 
 class session_fingerprint : public structured_processor<session_fingerprint> {
@@ -71,8 +71,7 @@ public:
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
     {}
 
-    std::pair<owned_object, object_store::attribute> eval_impl(
-        const optional_argument<map_view> &cookies,
+    std::pair<owned_object, evaluation_scope> eval_impl(const optional_argument<map_view> &cookies,
         const optional_argument<std::string_view> &session_id,
         const optional_argument<std::string_view> &user_id, processor_cache &cache,
         nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const;

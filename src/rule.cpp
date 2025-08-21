@@ -24,9 +24,10 @@ std::pair<rule_verdict, std::optional<rule_result>> core_rule::match(const objec
     cache_type &cache, const exclusion::object_set_ref &objects_excluded,
     const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const
 {
-    // We don't need to reevaluate the rule if it has already had a non-ephemeral match or,
+    // We don't need to reevaluate the rule if it has already had a  match or,
     // if it's a rule which doesn't generate events, if attributes have already been provided,
-    // as pure attribute generation rules must not be reevaluated on ephemeral matches.
+    // as pure attribute generation rules need not be reevaluated on subcontext matches.
+    // TODO: regenerate attributes on subcontext matches
     if (expression::get_result(cache.expr_cache) ||
         (cache.attributes_generated && !contains(flags_, rule_flags::generate_event))) {
         // An event was already produced, so we skip the rule
@@ -39,8 +40,8 @@ std::pair<rule_verdict, std::optional<rule_result>> core_rule::match(const objec
     }
 
     rule_result result{.keep = contains(flags_, rule_flags::keep_outcome),
-        // Rules with no event need not be evaluated again on ephemeral matche
-        .ephemeral = res.ephemeral && contains(flags_, rule_flags::generate_event),
+        .scope =
+            contains(flags_, rule_flags::generate_event) ? res.scope : evaluation_scope::context,
         .action_override = {},
         .actions = actions_,
         .attributes = !cache.attributes_generated ? attributes_ : empty_attributes};

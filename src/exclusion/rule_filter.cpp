@@ -53,7 +53,7 @@ std::optional<excluded_set> rule_filter::match(const object_store &store, cache_
         return std::nullopt;
     }
 
-    return {{.rules = rule_targets_, .ephemeral = res.ephemeral, .mode = mode_, .action = action_}};
+    return {{.rules = rule_targets_, .scope = res.scope, .mode = mode_, .action = action_}};
 }
 
 } // namespace ddwaf::exclusion

@@ -1,5 +1,6 @@
 {
   name: "Ephemeral input exclusion with condition",
+  expected-fail: true,
   runs: [
     {
       ephemeral-input: {

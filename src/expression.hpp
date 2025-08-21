@@ -50,18 +50,29 @@ public:
         matches.reserve(cache.conditions.size());
         for (auto &cond_cache : cache.conditions) {
             if (cond_cache.match.has_value()) {
-                if (cond_cache.match->ephemeral) {
-                    matches.emplace_back(std::move(cond_cache.match.value()));
-                    cond_cache.match = {};
-                } else {
-                    matches.emplace_back(cond_cache.match.value());
-                }
+                matches.emplace_back(cond_cache.match.value());
             }
         }
         return matches;
     }
 
     static bool get_result(cache_type &cache) { return cache.result; }
+
+    static void invalidate_subcontext_cache(cache_type &cache)
+    {
+        bool invalidated = false;
+        for (auto &cond_cache : cache.conditions) {
+            if (cond_cache.match.has_value() &&
+                cond_cache.match->scope == evaluation_scope::subcontext) {
+                cond_cache.match = {};
+                invalidated = true;
+            }
+        }
+
+        if (invalidated) {
+            cache.result = false;
+        }
+    }
 
     [[nodiscard]] bool empty() const { return conditions_.empty(); }
     [[nodiscard]] std::size_t size() const { return conditions_.size(); }
