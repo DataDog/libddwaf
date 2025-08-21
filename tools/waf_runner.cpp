@@ -136,17 +136,15 @@ int main(int argc, char *argv[])
         }
 
         ddwaf_object ret;
-        auto code =
             ddwaf_run(context, &persistent, &ephemeral, &ret, std::numeric_limits<uint64_t>::max());
 
-        if (code == DDWAF_MATCH) {
-            YAML::Emitter out(std::cout);
-            out.SetIndent(2);
-            out.SetMapFormat(YAML::Block);
-            out.SetSeqFormat(YAML::Block);
-            out << object_to_yaml(ret);
-            std::cout << '\n';
-        }
+        YAML::Emitter out(std::cout);
+        out.SetIndent(2);
+        out.SetMapFormat(YAML::Block);
+        out.SetSeqFormat(YAML::Block);
+        out << object_to_yaml(ret);
+        std::cout << '\n';
+
         ddwaf_object_free(&ret);
     }
 

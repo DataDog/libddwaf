@@ -176,13 +176,13 @@ TEST(TestURI, SchemeHost)
 
 TEST(TestURI, SchemeQuery)
 {
-    auto uri = ddwaf::uri_parse("http:?hello");
+    auto uri = ddwaf::uri_parse("http:?hello&other=whatever&array[]=something&bye=");
     ASSERT_TRUE(uri);
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_STRV(uri->authority.host, "");
     EXPECT_TRUE(uri->authority.userinfo.empty());
     EXPECT_TRUE(uri->authority.port.empty());
-    EXPECT_STRV(uri->query, "hello");
+    EXPECT_STRV(uri->query, "hello&other=whatever&array[]=something&bye=");
 }
 
 TEST(TestURI, SchemeFragment)
@@ -373,7 +373,7 @@ TEST(TestURI, SchemeHostQuery)
 
 TEST(TestURI, SchemeHostMalformedQuery)
 {
-    ASSERT_FALSE(ddwaf::uri_parse("http://authority?que[]ry"));
+    ASSERT_FALSE(ddwaf::uri_parse("http://authority?que<>ry"));
 }
 
 TEST(TestURI, SchemeHostPath)
