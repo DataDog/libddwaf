@@ -33,22 +33,8 @@ jobs:
 
       - name: Install AFL++ and dependencies
         run: |
-          # Add LLVM repository
-          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-          echo 'deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-19 main' | sudo tee /etc/apt/sources.list.d/llvm-toolchain.list
-          sudo apt-get update
-
-          # Install dependencies matching your Dockerfile
-          sudo apt-get install -y \
-            build-essential cmake git curl python3 python3-pip \
-            llvm-19 llvm-19-dev llvm-19-tools clang-19 lld-19 \
-            libc++-19-dev libc++abi-19-dev ninja-build \
-            libssl-dev libcurl4-openssl-dev zlib1g-dev xxd
-
-          # Set up clang alternatives
-          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-19 100
-          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-19 100
-          sudo update-alternatives --install /usr/bin/llvm-config llvm-config /usr/bin/llvm-config-19 100
+          sudo .github/workflows/scripts/llvm.sh 19
+          sudo apt-get install -y build-essential cmake git curl python3 python3-pip ninja-build libssl-dev libcurl4-openssl-dev zlib1g-dev xxd
 
       - name: Install AFL++
         run: |
@@ -84,8 +70,6 @@ jobs:
           cd build
           cmake .. \
             -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_C_COMPILER=${CC} \
-            -DCMAKE_CXX_COMPILER=${CXX} \
             -DCMAKE_C_FLAGS="-fsanitize=address -fno-omit-frame-pointer -O3 -g -fprofile-instr-generate -fcoverage-mapping" \
             -DCMAKE_CXX_FLAGS="-fsanitize=address -fno-omit-frame-pointer -O3 -g -fprofile-instr-generate -fcoverage-mapping"
           make -j$(nproc)
@@ -96,8 +80,6 @@ jobs:
           cmake .. \
             -DCMAKE_BUILD_TYPE=Debug \
             -DLIBDDWAF_BUILD_FUZZER=ON \
-            -DCMAKE_C_COMPILER=${CC} \
-            -DCMAKE_CXX_COMPILER=${CXX} \
             -DCMAKE_C_FLAGS="-fsanitize=address -fno-omit-frame-pointer -O3 -g -fprofile-instr-generate -fcoverage-mapping" \
             -DCMAKE_CXX_FLAGS="-fsanitize=address -fno-omit-frame-pointer -O3 -g -fprofile-instr-generate -fcoverage-mapping"
           make -j$(nproc)
@@ -158,14 +140,8 @@ jobs:
 
       - name: Install runtime dependencies
         run: |
-          # Add LLVM repository
-          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-          echo 'deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-19 main' | sudo tee /etc/apt/sources.list.d/llvm-toolchain.list
-          sudo apt-get update
-
           # Install only runtime dependencies (no build tools needed)
-          sudo apt-get install -y \
-            llvm-19 llvm-19-tools python3 python3-pip
+          sudo .github/workflows/scripts/llvm.sh 19
 
       - name: Download AFL++ binaries
         uses: actions/download-artifact@v4

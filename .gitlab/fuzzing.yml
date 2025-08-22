@@ -13,7 +13,7 @@ run-fuzzing:
     - if: '$CI_PIPELINE_SOURCE == "web"'
       when: manual
   before_script: |
-    VAULT_VERSION=1.20.1
+    VAULT_VERSION=1.20.2
     wget https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip
     unzip vault_${VAULT_VERSION}_linux_amd64.zip
     mv vault /usr/bin/vault
@@ -27,18 +27,8 @@ run-fuzzing:
     apt-get update
 
     # Install dependencies matching your Dockerfile
-    apt-get install -y \
-      build-essential cmake git curl python3 python3-pip \
-      llvm-19 llvm-19-dev llvm-19-tools clang-19 lld-19 \
-      libc++-19-dev libc++abi-19-dev ninja-build \
-      libssl-dev libcurl4-openssl-dev zlib1g-dev xxd
-
-    # Set up clang alternatives
-    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-19 100
-    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-19 100
-    update-alternatives --install /usr/bin/llvm-config llvm-config /usr/bin/llvm-config-19 100
-    update-alternatives --install /usr/bin/llvm-cov llvm-cov /usr/bin/llvm-cov-19 100
-    update-alternatives --install /usr/bin/llvm-ar llvm-ar /usr/bin/llvm-ar-19 100
+    .github/workflows/scripts/llvm.sh 19
+    apt-get install -y build-essential cmake git curl python3 python3-pip ninja-build libssl-dev libcurl4-openssl-dev zlib1g-dev xxd
 
     # Install AFL++
     git clone https://github.com/AFLplusplus/AFLplusplus.git /tmp/AFLplusplus

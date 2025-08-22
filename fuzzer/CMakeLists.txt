@@ -37,9 +37,7 @@ function(add_afl_fuzzer target_name source_files)
     
     # Link against necessary libraries
     target_link_libraries(${target_name} 
-        ${LIBDDWAF_BUILD_DIR}/libddwaf.a
-        lib_rapidjson
-        pthread
+        libddwaf_objects
     )
     
     # Special handling for global fuzzer - needs YAML-CPP
