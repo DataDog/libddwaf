@@ -1,0 +1,28 @@
+{
+  name: "Default forbidden domains overridden through policy",
+  runs: [
+    {
+      persistent-input: {
+        server.io.net.url.1: "https://example.com/path",
+        server.request.body: "example.com"
+      },
+      rules: [
+        {
+          "ssrf-001": [
+            {
+              resource: {
+                address: "server.io.net.url.1",
+                value: "https://example.com/path"
+              },
+              params: {
+                address: "server.request.body",
+                value: "example.com"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

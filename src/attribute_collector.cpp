@@ -12,9 +12,9 @@
 #include "attribute_collector.hpp"
 #include "ddwaf.h"
 #include "log.hpp"
+#include "object_helpers.hpp"
 #include "object_store.hpp"
 #include "target_address.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -71,7 +71,7 @@ attribute_collector::collection_state attribute_collector::collect_helper(const 
         return collection_state::unavailable;
     }
 
-    const auto *resolved = object::find_key_path(*object, input_key_path);
+    const auto *resolved = object::find_key_path(object, input_key_path, {}, {});
     if (resolved == nullptr) {
         // The key path is not expected to be provided later on, therefore
         // we mark it as failed.

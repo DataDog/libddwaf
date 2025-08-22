@@ -1,0 +1,11 @@
+version: '2.1'
+exclusions: []
+rules: []
+custom_rules: []
+processors: []
+rules_override: []
+processor_override: []
+rules_data: []
+exclusion_data: []
+actions: []
+scanners: []

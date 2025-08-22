@@ -13,6 +13,7 @@
 #include "ddwaf.h"
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
+#include "object_helpers.hpp"
 #include "utils.hpp"
 
 namespace ddwaf::object {

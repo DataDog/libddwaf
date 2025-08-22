@@ -13,6 +13,6 @@
 namespace ddwaf {
 
 void parse_rule_overrides(const raw_configuration::vector &override_array,
-    configuration_collector &cfg, ruleset_info::base_section_info &info);
+    configuration_collector &cfg, ruleset_info::section_info &info);
 
 } // namespace ddwaf

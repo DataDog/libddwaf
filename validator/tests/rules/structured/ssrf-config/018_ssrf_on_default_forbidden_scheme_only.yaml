@@ -1,0 +1,25 @@
+{
+  name: "Forbidden scheme enforced by policy only",
+  runs: [
+    {
+      persistent-input: {
+        server.io.net.url.4: "gopher://google.com/somewhere/in/the/app",
+        server.request.body: ""
+      },
+      rules: [
+        {
+          "ssrf-004": [
+            {
+              resource: {
+                address: "server.io.net.url.4",
+                value: "gopher://google.com/somewhere/in/the/app"
+              },
+              highlight: "gopher://google.com/somewhere/in/the/app"
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

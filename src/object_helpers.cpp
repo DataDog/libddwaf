@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <list>
@@ -13,6 +14,8 @@
 #include <utility>
 
 #include "ddwaf.h"
+#include "exclusion/common.hpp"
+#include "object_helpers.hpp"
 #include "utils.hpp"
 
 namespace ddwaf::object {
@@ -92,35 +95,57 @@ ddwaf_object clone(const ddwaf_object *input)
     return copy;
 }
 
-// This could eventually be delegated to the argument retriever, albeit it would
-// need to be refactored to allow for key path retrieval or not
-const ddwaf_object *find_key_path(const ddwaf_object &root, std::span<const std::string> key_path)
+const ddwaf_object *find_key(
+    const ddwaf_object &parent, std::string_view key, const object_limits &limits)
 {
-    const auto *current = &root;
-    for (auto it = key_path.begin(); current != nullptr && it != key_path.end(); ++it) {
-        const auto &root = *current;
-        if (root.type != DDWAF_OBJ_MAP) {
-            return nullptr;
+    const std::size_t size =
+        std::min(static_cast<uint32_t>(parent.nbEntries), limits.max_container_size);
+    for (std::size_t i = 0; i < size; ++i) {
+        const auto &child = parent.array[i];
+
+        if (child.parameterName == nullptr) [[unlikely]] {
+            continue;
         }
+        const std::string_view child_key{
+            child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
 
-        // Reset to search for next object in the path
-        current = nullptr;
-        for (std::size_t i = 0; i < static_cast<uint32_t>(root.nbEntries); ++i) {
-            const auto &child = root.array[i];
+        if (key == child_key) {
+            return &child;
+        }
+    }
 
-            if (child.parameterName == nullptr) [[unlikely]] {
-                continue;
+    return nullptr;
+}
+
+const ddwaf_object *find_key_path(const ddwaf_object *root, std::span<const std::string> key_path,
+    const exclusion::object_set_ref &objects_excluded, const object_limits &limits)
+{
+    if (objects_excluded.contains(root)) {
+        return nullptr;
+    }
+
+    if (key_path.empty()) {
+        return root;
+    }
+
+    if (root->type == DDWAF_OBJ_MAP) {
+        auto it = key_path.begin();
+        while ((root = find_key(*root, *it, limits)) != nullptr) {
+            if (objects_excluded.contains(root)) {
+                break;
             }
-            const std::string_view child_key{
-                child.parameterName, static_cast<std::size_t>(child.parameterNameLength)};
 
-            if (*it == child_key) {
-                current = &child;
+            if (++it == key_path.end()) {
+                return root;
+            }
+
+            if (root->type != DDWAF_OBJ_MAP) {
                 break;
             }
         }
     }
-    return current;
+
+    return nullptr;
 }
 
 void assign(ddwaf_object &dest, const ddwaf_object &source)

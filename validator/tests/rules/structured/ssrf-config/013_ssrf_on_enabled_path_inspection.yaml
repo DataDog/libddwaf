@@ -1,0 +1,29 @@
+{
+  name: "SSRF due to path inspection",
+  runs: [
+    {
+      persistent-input: {
+        server.io.net.url.2: "https://google.com/somewhere/../in/the/app",
+        server.request.body: "../in/the/app"
+      },
+      rules: [
+        {
+          "ssrf-002": [
+            {
+              resource: {
+                address: "server.io.net.url.2",
+                value: "https://google.com/somewhere/../in/the/app"
+              },
+              params: {
+                address: "server.request.body",
+                value: "../in/the/app"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+
+    }
+  ]
+}
