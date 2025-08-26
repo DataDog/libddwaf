@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Include our resource embedding function
-include(cmake/embed_resources.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/embed_resources.cmake)
 
 # Set up include directories
 include_directories(../src)
