@@ -1,0 +1,1716 @@
+{
+  "version": "2.2",
+  "rules": [
+    {
+      "id": "basic-regex-rule",
+      "name": "Basic regex matching rule",
+      "tags": {
+        "type": "security_scanner",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "operator": "match_regex",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.uri_raw"
+              },
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              }
+            ],
+            "regex": "(?i)(union.*select|select.*from|insert.*into|delete.*from|drop.*table|script.*alert|javascript:|vbscript:|onload=|onerror=|eval\\(|setTimeout\\()"
+          }
+        }
+      ],
+      "transformers": ["lowercase", "url_decode"],
+      "on_match": ["block"]
+    },
+    {
+      "id": "phrase-match-rule",
+      "name": "Phrase matching with Aho-Corasick",
+      "tags": {
+        "type": "security_scanner",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "operator": "phrase_match",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.uri_raw"
+              },
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ],
+            "list": [
+              "admin",
+              "root",
+              "passwd",
+              "shadow",
+              "config",
+              "backup",
+              "database",
+              "mysql",
+              "postgresql",
+              "oracle",
+              "mongodb",
+              "redis",
+              "memcached",
+              "elasticsearch",
+              "secret",
+              "token",
+              "key",
+              "password",
+              "credential",
+              "private",
+              "confidential",
+              "internal",
+              "staging",
+              "development",
+              "test",
+              "debug",
+              "trace",
+              "log",
+              "error",
+              "exception",
+              "exploit",
+              "payload",
+              "shellcode",
+              "backdoor",
+              "injection",
+              "xss",
+              "csrf",
+              "ssrf",
+              "lfi",
+              "rfi",
+              "sqli",
+              "traversal",
+              "bypass",
+              "evasion",
+              "obfuscation",
+              "encoding",
+              "ssl",
+              "tls",
+              "https",
+              "ssh",
+              "ftp",
+              "smtp",
+              "dns",
+              "ldap",
+              "oauth",
+              "jwt",
+              "saml"
+            ]
+          }
+        }
+      ],
+      "transformers": ["lowercase", "url_decode"],
+      "on_match": ["block"]
+    },
+    {
+      "id": "phrase-match-word-boundary-rule",
+      "name": "Phrase matching with word boundaries",
+      "tags": {
+        "type": "security_scanner",
+        "category": "sql_keywords"
+      },
+      "conditions": [
+        {
+          "operator": "phrase_match",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.db.statement"
+              }
+            ],
+            "list": [
+              "SELECT",
+              "INSERT",
+              "UPDATE",
+              "DELETE",
+              "DROP",
+              "CREATE",
+              "ALTER",
+              "TRUNCATE",
+              "UNION",
+              "JOIN",
+              "WHERE",
+              "FROM",
+              "INTO",
+              "VALUES",
+              "SET",
+              "ORDER",
+              "GROUP",
+              "HAVING",
+              "LIMIT",
+              "OFFSET",
+              "INDEX",
+              "TABLE",
+              "DATABASE",
+              "SCHEMA",
+              "VIEW",
+              "PROCEDURE",
+              "FUNCTION",
+              "TRIGGER",
+              "GRANT",
+              "REVOKE",
+              "COMMIT",
+              "ROLLBACK",
+              "EXEC",
+              "EXECUTE",
+              "CAST",
+              "CONVERT",
+              "SUBSTRING",
+              "CONCAT",
+              "LENGTH",
+              "UPPER",
+              "LOWER",
+              "TRIM",
+              "REPLACE",
+              "LIKE",
+              "REGEXP",
+              "MATCH"
+            ],
+            "enforce_word_boundary": true
+          }
+        }
+      ],
+      "transformers": ["uppercase"],
+      "on_match": ["block"]
+    },
+    {
+      "id": "xss-detector-rule",
+      "name": "XSS detection rule",
+      "tags": {
+        "type": "security_scanner",
+        "category": "xss"
+      },
+      "conditions": [
+        {
+          "operator": "is_xss",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ]
+          }
+        }
+      ],
+      "transformers": ["html_entity_decode", "url_decode"],
+      "on_match": ["block"]
+    },
+    {
+      "id": "sqli-detector-rule",
+      "name": "SQL injection detection rule",
+      "tags": {
+        "type": "security_scanner",
+        "category": "sqli"
+      },
+      "conditions": [
+        {
+          "operator": "is_sqli",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.db.statement"
+              }
+            ]
+          }
+        }
+      ],
+      "transformers": ["lowercase", "url_decode", "remove_comments"],
+      "on_match": ["block"]
+    },
+    {
+      "id": "sqli-detector-v2-rule",
+      "name": "Advanced SQL injection detection with tokenizer",
+      "tags": {
+        "type": "security_scanner",
+        "category": "sqli"
+      },
+      "conditions": [
+        {
+          "operator": "sqli_detector@v2",
+          "parameters": {
+            "resource": [
+              {
+                "address": "server.db.statement"
+              }
+            ],
+            "params": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              }
+            ],
+            "db_type": [
+              {
+                "address": "server.db.system"
+              }
+            ]
+          }
+        }
+      ],
+      "on_match": ["block"]
+    },
+    {
+      "id": "shell-injection-rule",
+      "name": "Shell injection detection with tokenizer",
+      "tags": {
+        "type": "security_scanner",
+        "category": "shell_injection"
+      },
+      "conditions": [
+        {
+          "operator": "shi_detector@v1",
+          "parameters": {
+            "resource": [
+              {
+                "address": "server.request.query"
+              }
+            ],
+            "params": [
+              {
+                "address": "server.request.body"
+              }
+            ]
+          }
+        }
+      ],
+      "on_match": ["block"]
+    },
+    {
+      "id": "exact-match-rule",
+      "name": "Exact match for common attacks",
+      "tags": {
+        "type": "security_scanner",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "operator": "exact_match",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.uri_raw"
+              },
+              {
+                "address": "server.request.query"
+              }
+            ],
+            "list": [
+              "/etc/passwd",
+              "/etc/shadow",
+              "../../../../etc/passwd",
+              "..\\..\\..\\windows\\system32\\config\\sam",
+              "SELECT * FROM users",
+              "1' OR '1'='1",
+              "<script>alert('xss')</script>",
+              "javascript:alert(1)",
+              "<?php system($_GET['cmd']); ?>",
+              "rm -rf /",
+              "cat /etc/passwd"
+            ]
+          }
+        }
+      ],
+      "on_match": ["block"]
+    },
+    {
+      "id": "ip-match-rule",
+      "name": "IP address matching rule",
+      "tags": {
+        "type": "security_scanner",
+        "category": "network_security"
+      },
+      "conditions": [
+        {
+          "operator": "ip_match",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "http.client_ip"
+              },
+              {
+                "address": "server.io.net.url"
+              }
+            ],
+            "list": [
+              "127.0.0.1",
+              "10.0.0.0/8",
+              "192.168.0.0/16",
+              "172.16.0.0/12",
+              "169.254.0.0/16",
+              "::1",
+              "fc00::/7"
+            ]
+          }
+        }
+      ],
+      "on_match": ["block"]
+    },
+    {
+      "id": "exists-rule",
+      "name": "Parameter existence check",
+      "tags": {
+        "type": "security_scanner",
+        "category": "parameter_validation"
+      },
+      "conditions": [
+        {
+          "operator": "exists",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ]
+          }
+        }
+      ],
+      "on_match": ["monitor"]
+    },
+    {
+      "id": "url-transformer-rule",
+      "name": "URL path and querystring transformer testing",
+      "tags": {
+        "type": "security_scanner",
+        "category": "url_analysis"
+      },
+      "conditions": [
+        {
+          "operator": "phrase_match",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.uri_raw"
+              },
+              {
+                "address": "server.request.query"
+              }
+            ],
+            "list": [
+              "admin",
+              "config",
+              "backup",
+              "test",
+              "debug",
+              "api",
+              "login",
+              "auth",
+              "password",
+              "secret"
+            ]
+          }
+        }
+      ],
+      "transformers": ["url_path", "url_querystring", "url_decode"],
+      "on_match": ["block"]
+    },
+    {
+      "id": "encoding-transformer-rule",
+      "name": "Various encoding transformer testing",
+      "tags": {
+        "type": "security_scanner",
+        "category": "encoding_attacks"
+      },
+      "conditions": [
+        {
+          "operator": "phrase_match",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ],
+            "list": [
+              "script",
+              "alert",
+              "eval",
+              "javascript",
+              "vbscript",
+              "onload",
+              "onerror",
+              "onclick",
+              "onmouseover",
+              "iframe",
+              "object",
+              "embed",
+              "applet",
+              "meta",
+              "link",
+              "style",
+              "img",
+              "svg",
+              "xml",
+              "xsl"
+            ]
+          }
+        }
+      ],
+      "transformers": [
+        "base64_decode",
+        "html_entity_decode",
+        "css_decode",
+        "unicode_normalize"
+      ],
+      "on_match": ["block"]
+    },
+    {
+      "id": "shell-transformer-rule",
+      "name": "Shell and command injection transformer testing",
+      "tags": {
+        "type": "security_scanner",
+        "category": "command_injection"
+      },
+      "conditions": [
+        {
+          "operator": "phrase_match",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              }
+            ],
+            "list": [
+              "bash",
+              "sh",
+              "cmd",
+              "powershell",
+              "system",
+              "exec",
+              "eval",
+              "popen",
+              "subprocess",
+              "shell_exec",
+              "passthru",
+              "proc_open",
+              "backticks",
+              "cat",
+              "ls",
+              "pwd",
+              "whoami",
+              "id",
+              "uname",
+              "netstat",
+              "ps",
+              "kill",
+              "chmod",
+              "chown",
+              "rm",
+              "mv",
+              "cp",
+              "mkdir",
+              "rmdir",
+              "wget",
+              "curl",
+              "nc",
+              "ncat",
+              "telnet",
+              "ssh",
+              "scp",
+              "rsync"
+            ]
+          }
+        }
+      ],
+      "transformers": ["shell_unescape", "remove_nulls", "compress_whitespace"],
+      "on_match": ["block"]
+    },
+    {
+      "id": "base64-encoder-rule",
+      "name": "Base64 encoding transformer testing",
+      "tags": {
+        "type": "security_scanner",
+        "category": "encoding_detection"
+      },
+      "conditions": [
+        {
+          "operator": "phrase_match",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ],
+            "list": [
+              "payload",
+              "exploit",
+              "shellcode",
+              "backdoor",
+              "trojan",
+              "malware",
+              "virus",
+              "worm",
+              "rootkit",
+              "keylogger",
+              "spyware",
+              "adware",
+              "ransomware",
+              "cryptolocker",
+              "petya",
+              "wannacry",
+              "stuxnet",
+              "conficker",
+              "zeus",
+              "banking",
+              "credential",
+              "stealer",
+              "botnet",
+              "c2",
+              "command",
+              "control"
+            ]
+          }
+        }
+      ],
+      "transformers": ["base64_encode", "compress_whitespace", "remove_nulls"],
+      "on_match": ["block"]
+    },
+    {
+      "id": "ip-data-rule",
+      "name": "Rule using IP data",
+      "tags": {
+        "type": "security_scanner",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "operator": "ip_match",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "http.client_ip"
+              }
+            ],
+            "data": "blocked_ips"
+          }
+        }
+      ],
+      "on_match": ["block_request_action"]
+    },
+    {
+      "id": "user-data-rule",
+      "name": "Rule using user data",
+      "tags": {
+        "type": "security_scanner",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "operator": "exact_match",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "usr.id"
+              }
+            ],
+            "data": "blocked_users"
+          }
+        }
+      ],
+      "on_match": ["redirect_action"]
+    },
+    {
+      "id": "comprehensive-transformer-rule",
+      "name": "Multiple transformer combination testing",
+      "tags": {
+        "type": "security_scanner",
+        "category": "comprehensive_analysis"
+      },
+      "conditions": [
+        {
+          "operator": "exact_match",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.uri_raw"
+              },
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              }
+            ],
+            "list": [
+              "test",
+              "admin",
+              "root",
+              "config",
+              "backup",
+              "debug",
+              "trace",
+              "log",
+              "error",
+              "exception",
+              "stack",
+              "dump",
+              "core",
+              "crash"
+            ]
+          }
+        }
+      ],
+      "transformers": [
+        "url_decode",
+        "html_entity_decode",
+        "css_decode",
+        "base64_decode",
+        "shell_unescape",
+        "unicode_normalize",
+        "remove_nulls",
+        "compress_whitespace",
+        "lowercase"
+      ],
+      "on_match": ["monitor"]
+    },
+    {
+      "id": "hidden-ascii-rule",
+      "name": "Hidden ASCII character detection",
+      "tags": {
+        "type": "security_scanner",
+        "category": "hidden_chars"
+      },
+      "conditions": [
+        {
+          "operator": "hidden_ascii_match",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.uri_raw"
+              },
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ]
+          }
+        }
+      ],
+      "on_match": ["block"]
+    },
+    {
+      "id": "equals-string-rule",
+      "name": "String equality matching",
+      "tags": {
+        "type": "security_scanner",
+        "category": "exact_string_match"
+      },
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.method"
+              },
+              {
+                "address": "server.request.uri_raw"
+              },
+              {
+                "address": "server.request.query"
+              }
+            ],
+            "type": "string",
+            "value": "admin"
+          }
+        }
+      ],
+      "on_match": ["block"]
+    },
+    {
+      "id": "equals-signed-int-rule",
+      "name": "Signed integer equality matching",
+      "tags": {
+        "type": "security_scanner",
+        "category": "numeric_match"
+      },
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "usr.id"
+              }
+            ],
+            "type": "signed_number",
+            "value": -1
+          }
+        }
+      ],
+      "on_match": ["block"]
+    },
+    {
+      "id": "equals-unsigned-int-rule",
+      "name": "Unsigned integer equality matching",
+      "tags": {
+        "type": "security_scanner",
+        "category": "numeric_match"
+      },
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "usr.id"
+              }
+            ],
+            "type": "unsigned_number",
+            "value": 0
+          }
+        }
+      ],
+      "on_match": ["block"]
+    },
+    {
+      "id": "equals-bool-rule",
+      "name": "Boolean equality matching",
+      "tags": {
+        "type": "security_scanner",
+        "category": "boolean_match"
+      },
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "usr.session_id"
+              }
+            ],
+            "type": "boolean",
+            "value": true
+          }
+        }
+      ],
+      "on_match": ["block"]
+    },
+    {
+      "id": "equals-float-rule",
+      "name": "Float equality matching",
+      "tags": {
+        "type": "security_scanner",
+        "category": "numeric_match"
+      },
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "usr.id"
+              }
+            ],
+            "type": "float",
+            "value": 3.14159
+          }
+        }
+      ],
+      "on_match": ["block"]
+    },
+    {
+      "id": "lower-than-signed-rule",
+      "name": "Lower than comparison for signed integers",
+      "tags": {
+        "type": "security_scanner",
+        "category": "numeric_comparison"
+      },
+      "conditions": [
+        {
+          "operator": "lower_than",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "usr.id"
+              }
+            ],
+            "type": "signed_number",
+            "value": 0
+          }
+        }
+      ],
+      "on_match": ["block"]
+    },
+    {
+      "id": "lower-than-unsigned-rule",
+      "name": "Lower than comparison for unsigned integers",
+      "tags": {
+        "type": "security_scanner",
+        "category": "numeric_comparison"
+      },
+      "conditions": [
+        {
+          "operator": "lower_than",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "usr.id"
+              }
+            ],
+            "type": "unsigned_number",
+            "value": 100
+          }
+        }
+      ],
+      "on_match": ["block"]
+    },
+    {
+      "id": "lower-than-float-rule",
+      "name": "Lower than comparison for floats",
+      "tags": {
+        "type": "security_scanner",
+        "category": "numeric_comparison"
+      },
+      "conditions": [
+        {
+          "operator": "lower_than",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "usr.id"
+              }
+            ],
+            "type": "float",
+            "value": 10.5
+          }
+        }
+      ],
+      "on_match": ["block"]
+    },
+    {
+      "id": "greater-than-signed-rule",
+      "name": "greater than comparison for signed integers",
+      "tags": {
+        "type": "security_scanner",
+        "category": "numeric_comparison"
+      },
+      "conditions": [
+        {
+          "operator": "greater_than",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "usr.id"
+              }
+            ],
+            "type": "signed_number",
+            "value": 1000
+          }
+        }
+      ],
+      "on_match": ["block"]
+    },
+    {
+      "id": "greater-than-unsigned-rule",
+      "name": "greater than comparison for unsigned integers",
+      "tags": {
+        "type": "security_scanner",
+        "category": "numeric_comparison"
+      },
+      "conditions": [
+        {
+          "operator": "greater_than",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "usr.id"
+              }
+            ],
+            "type": "unsigned_number",
+            "value": 1000
+          }
+        }
+      ],
+      "on_match": ["block"]
+    },
+    {
+      "id": "greater-than-float-rule",
+      "name": "greater than comparison for floats",
+      "tags": {
+        "type": "security_scanner",
+        "category": "numeric_comparison"
+      },
+      "conditions": [
+        {
+          "operator": "greater_than",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "usr.id"
+              }
+            ],
+            "type": "float",
+            "value": 100.5
+          }
+        }
+      ],
+      "on_match": ["block"]
+    }
+  ],
+  "processors": [
+    {
+      "id": "http-endpoint-fingerprint",
+      "generator": "http_endpoint_fingerprint",
+      "conditions": [],
+      "evaluate": true,
+      "output": true,
+      "parameters": {
+        "mappings": [
+          {
+            "method": [
+              {
+                "address": "server.request.method"
+              }
+            ],
+            "uri_raw": [
+              {
+                "address": "server.request.uri_raw"
+              }
+            ],
+            "output": "_dd.appsec.fp.http.endpoint"
+          }
+        ]
+      }
+    },
+    {
+      "id": "http-header-fingerprint",
+      "generator": "http_header_fingerprint",
+      "conditions": [],
+      "evaluate": true,
+      "output": true,
+      "parameters": {
+        "mappings": [
+          {
+            "headers": [
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ],
+            "output": "_dd.appsec.fp.http.header"
+          }
+        ]
+      }
+    },
+    {
+      "id": "http-network-fingerprint",
+      "generator": "http_network_fingerprint",
+      "conditions": [],
+      "evaluate": true,
+      "output": true,
+      "parameters": {
+        "mappings": [
+          {
+            "headers": [
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ],
+            "output": "_dd.appsec.fp.http.network"
+          }
+        ]
+      }
+    },
+    {
+      "id": "session-fingerprint",
+      "generator": "session_fingerprint",
+      "conditions": [],
+      "evaluate": true,
+      "output": true,
+      "parameters": {
+        "mappings": [
+          {
+            "cookies": [
+              {
+                "address": "server.request.cookies"
+              }
+            ],
+            "session_id": [
+              {
+                "address": "usr.session_id"
+              }
+            ],
+            "user_id": [
+              {
+                "address": "usr.id"
+              }
+            ],
+            "output": "_dd.appsec.fp.session"
+          }
+        ]
+      }
+    },
+    {
+      "id": "jwt-decode",
+      "generator": "jwt_decode",
+      "conditions": [],
+      "evaluate": true,
+      "output": true,
+      "parameters": {
+        "mappings": [
+          {
+            "jwt": [
+              {
+                "address": "server.request.headers.no_cookies",
+                "key_path": ["authorization"]
+              }
+            ],
+            "output": "_dd.appsec.jwt"
+          }
+        ]
+      }
+    },
+    {
+      "id": "jwt-decode-002",
+      "generator": "jwt_decode",
+      "conditions": [],
+      "parameters": {
+        "mappings": [
+          {
+            "inputs": [
+              {
+                "address": "server.request.headers.no_cookies",
+                "key_path": ["authorization"]
+              }
+            ],
+            "output": "server.request.jwt"
+          }
+        ]
+      },
+      "evaluate": false,
+      "output": true
+    },
+    {
+      "id": "extract-schema",
+      "generator": "extract_schema",
+      "conditions": [],
+      "evaluate": true,
+      "output": true,
+      "parameters": {
+        "mappings": [
+          {
+            "data": [
+              {
+                "address": "server.request.body"
+              }
+            ],
+            "output": "_dd.appsec.schema"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lfi-detector-rule",
+      "name": "Local File Inclusion Detection",
+      "tags": {
+        "type": "security_scanner",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "operator": "lfi_detector@v2",
+          "parameters": {
+            "resource": [
+              {
+                "address": "server.io.fs.file"
+              }
+            ],
+            "params": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              }
+            ]
+          }
+        }
+      ],
+      "on_match": ["block_request_action"]
+    },
+    {
+      "id": "cmdi-detector-rule",
+      "name": "Command Injection Detection",
+      "tags": {
+        "type": "security_scanner",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "operator": "cmdi_detector@v1",
+          "parameters": {
+            "resource": [
+              {
+                "address": "server.request.uri_raw"
+              }
+            ],
+            "params": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              }
+            ]
+          }
+        }
+      ],
+      "on_match": ["generate_stack_action"]
+    },
+    {
+      "id": "ssrf-detector-rule",
+      "name": "Server-Side Request Forgery Detection",
+      "tags": {
+        "type": "security_scanner",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "operator": "ssrf_detector@v2",
+          "parameters": {
+            "resource": [
+              {
+                "address": "server.request.uri_raw"
+              }
+            ],
+            "params": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.io.net.url"
+              }
+            ]
+          }
+        }
+      ],
+      "on_match": ["redirect_action"]
+    },
+    {
+      "id": "shell-command-array-rule",
+      "name": "Shell Command Array Detection",
+      "tags": {
+        "type": "security_scanner",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "operator": "shi_detector@v1",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.body",
+                "key_path": ["command"]
+              }
+            ]
+          }
+        }
+      ],
+      "on_match": ["block_request_action"]
+    },
+    {
+      "id": "cmdi-command-array-rule",
+      "name": "Command Injection via Array Detection",
+      "tags": {
+        "type": "security_scanner",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "operator": "cmdi_detector@v1",
+          "parameters": {
+            "resource": [
+              {
+                "address": "server.sys.exec.cmd",
+                "key_path": ["command"]
+              }
+            ],
+            "params": [
+              {
+                "address": "server.request.query"
+              }
+            ]
+          }
+        }
+      ],
+      "on_match": ["generate_stack_action"]
+    }
+  ],
+  "exclusions": [
+    {
+      "id": "health-check-exclusion",
+      "conditions": [
+        {
+          "operator": "exact_match",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.uri_raw"
+              }
+            ],
+            "list": ["/health", "/status", "/ping"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "rule-filter-bypass-exclusion",
+      "rules_target": [
+        {
+          "rule_id": "basic-regex-rule"
+        }
+      ],
+      "conditions": [
+        {
+          "operator": "exact_match",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "usr.id"
+              }
+            ],
+            "list": ["admin", "root", "system"]
+          }
+        }
+      ],
+      "on_match": "bypass"
+    },
+    {
+      "id": "rule-filter-monitor-exclusion",
+      "rules_target": [
+        {
+          "rule_id": "phrase-match-rule"
+        },
+        {
+          "rule_id": "xss-detector-rule"
+        }
+      ],
+      "conditions": [
+        {
+          "operator": "phrase_match",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ],
+            "list": ["test", "debug", "staging"]
+          }
+        }
+      ],
+      "on_match": "monitor"
+    },
+    {
+      "id": "rule-filter-by-tags-exclusion",
+      "rules_target": [
+        {
+          "tags": {
+            "type": "security_scanner",
+            "category": "attack_attempt"
+          }
+        }
+      ],
+      "conditions": [
+        {
+          "operator": "ip_match",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "http.client_ip"
+              }
+            ],
+            "list": ["127.0.0.1", "10.0.0.0/8", "192.168.0.0/16"]
+          }
+        }
+      ],
+      "on_match": "bypass"
+    },
+    {
+      "id": "unconditional-rule-filter",
+      "rules_target": [
+        {
+          "rule_id": "equals-string-rule"
+        }
+      ]
+    },
+    {
+      "id": "input-filter-simple",
+      "rules_target": [
+        {
+          "rule_id": "sqli-detector-rule"
+        }
+      ],
+      "inputs": [
+        {
+          "address": "server.request.query"
+        },
+        {
+          "address": "server.request.body"
+        }
+      ]
+    },
+    {
+      "id": "input-filter-with-key-path",
+      "rules_target": [
+        {
+          "rule_id": "phrase-match-word-boundary-rule"
+        }
+      ],
+      "inputs": [
+        {
+          "address": "server.request.headers.no_cookies",
+          "key_path": ["authorization"]
+        },
+        {
+          "address": "server.request.cookies",
+          "key_path": ["session"]
+        }
+      ]
+    },
+    {
+      "id": "input-filter-conditional",
+      "rules_target": [
+        {
+          "rule_id": "shell-injection-rule"
+        }
+      ],
+      "inputs": [
+        {
+          "address": "server.request.query"
+        }
+      ],
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "usr.id"
+              }
+            ],
+            "type": "string",
+            "value": "testuser"
+          }
+        }
+      ]
+    },
+    {
+      "id": "input-filter-wildcard",
+      "rules_target": [
+        {
+          "rule_id": "hidden-ascii-rule"
+        }
+      ],
+      "inputs": [
+        {
+          "address": "server.request.headers.no_cookies",
+          "key_path": ["*"]
+        }
+      ]
+    },
+    {
+      "id": "input-filter-nested-path",
+      "rules_target": [
+        {
+          "rule_id": "lower-than-signed-rule"
+        }
+      ],
+      "inputs": [
+        {
+          "address": "server.request.body",
+          "key_path": ["data", "user", "profile"]
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "block_request_action",
+      "type": "block_request",
+      "parameters": {
+        "status_code": 403,
+        "type": "auto",
+        "grpc_status_code": 10
+      }
+    },
+    {
+      "id": "redirect_action",
+      "type": "redirect_request",
+      "parameters": {
+        "status_code": 302,
+        "location": "https://www.datadoghq.com"
+      }
+    },
+    {
+      "id": "generate_stack_action",
+      "type": "generate_stack",
+      "parameters": {}
+    }
+  ],
+  "scanners": [
+    {
+      "id": "email_scanner",
+      "key": {
+        "operator": "match_regex",
+        "parameters": {
+          "regex": "email"
+        }
+      },
+      "tags": {
+        "type": "email",
+        "category": "pii"
+      }
+    },
+    {
+      "id": "phone_scanner",
+      "value": {
+        "operator": "match_regex",
+        "parameters": {
+          "regex": "\\+?[1-9]\\d{1,14}"
+        }
+      },
+      "tags": {
+        "type": "phone",
+        "category": "pii"
+      }
+    },
+    {
+      "id": "ssn_scanner",
+      "key": {
+        "operator": "match_regex",
+        "parameters": {
+          "regex": "ssn"
+        }
+      },
+      "value": {
+        "operator": "match_regex",
+        "parameters": {
+          "regex": "\\d{3}-\\d{2}-\\d{4}"
+        }
+      },
+      "tags": {
+        "type": "ssn",
+        "category": "pii"
+      }
+    }
+  ],
+  "rules_data": [
+    {
+      "id": "blocked_ips",
+      "type": "ip_with_expiration",
+      "data": [
+        {
+          "value": "192.168.1.100",
+          "expiration": 1735689600
+        },
+        {
+          "value": "10.0.0.50",
+          "expiration": 1735689600
+        }
+      ]
+    },
+    {
+      "id": "blocked_users",
+      "type": "data_with_expiration",
+      "data": [
+        {
+          "value": "baduser",
+          "expiration": 1735689600
+        },
+        {
+          "value": "spammer",
+          "expiration": 1735689600
+        }
+      ]
+    }
+  ],
+  "rules_override": [
+    {
+      "rules_target": [
+        {
+          "rule_id": "basic-regex-rule"
+        }
+      ],
+      "enabled": false
+    },
+    {
+      "rules_target": [
+        {
+          "tags": {
+            "type": "security_scanner"
+          }
+        }
+      ],
+      "on_match": ["redirect_action"]
+    },
+    {
+      "rules_target": [
+        {
+          "tags": {
+            "category": "attack_attempt"
+          }
+        }
+      ],
+      "enabled": false,
+      "on_match": ["generate_stack_action"]
+    }
+  ],
+  "processors_override": [
+    {
+      "target": [
+        {
+          "id": "extract-schema"
+        }
+      ],
+      "scanners": [
+        {
+          "id": "email_scanner"
+        }
+      ]
+    },
+    {
+      "target": [
+        {
+          "id": "jwt-decode"
+        }
+      ],
+      "scanners": [
+        {
+          "tags": {
+            "type": "phone"
+          }
+        }
+      ]
+    },
+    {
+      "target": [
+        {
+          "tags": {
+            "type": "fingerprint"
+          }
+        }
+      ],
+      "scanners": [
+        {
+          "id": "ssn_scanner"
+        }
+      ]
+    }
+  ]
+}

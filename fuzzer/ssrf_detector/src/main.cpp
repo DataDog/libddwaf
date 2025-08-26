@@ -2,27 +2,29 @@
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2021 Datadog, Inc.
+// Copyright 2025 Datadog, Inc.
 
+#include "../common/afl_wrapper.hpp"
+#include "../common/utils.hpp"
+#include "condition/ssrf_detector.hpp"
 #include <cstdint>
 #include <random>
 
-#include "condition/ssrf_detector.hpp"
-
 using namespace ddwaf;
+using namespace ddwaf_afl;
 using namespace std::literals;
 
 extern "C" size_t LLVMFuzzerMutate(uint8_t *Data, size_t Size, size_t MaxSize);
 
-extern "C" int LLVMFuzzerInitialize(const int * /*argc*/, char *** /*argv*/)
-{
-    ddwaf::memory::set_local_memory_resource(std::pmr::new_delete_resource());
-    return 0;
-}
-
 template <typename... Args> std::vector<condition_parameter> gen_param_def(Args... addresses)
 {
     return {{{{std::string{addresses}, get_target_index(addresses)}}}...};
+}
+
+extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
+{
+    ddwaf::memory::set_local_memory_resource(std::pmr::new_delete_resource());
+    return 0;
 }
 
 // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
@@ -32,7 +34,8 @@ std::pair<std::string_view, std::string_view> deserialize(const uint8_t *data, s
         return {};
     }
 
-    const auto resource_size = *reinterpret_cast<const std::size_t *>(data);
+    std::size_t resource_size;
+    std::memcpy(&resource_size, data, sizeof(std::size_t));
     data += sizeof(std::size_t);
     size -= sizeof(std::size_t);
 
@@ -48,7 +51,8 @@ std::pair<std::string_view, std::string_view> deserialize(const uint8_t *data, s
         return {};
     }
 
-    const auto param_size = *reinterpret_cast<const std::size_t *>(data);
+    std::size_t param_size;
+    std::memcpy(&param_size, data, sizeof(std::size_t));
     data += sizeof(std::size_t);
     size -= sizeof(std::size_t);
 
@@ -81,10 +85,9 @@ std::size_t serialize(uint8_t *Data, std::string_view resource, std::string_view
 
 // NOLINTNEXTLINE
 extern "C" size_t LLVMFuzzerCustomMutator(
-    uint8_t *Data, size_t Size, [[maybe_unused]] size_t MaxSize, [[maybe_unused]] unsigned int Seed)
+    uint8_t *Data, size_t Size, [[maybe_unused]] size_t MaxSize, unsigned int Seed)
 {
-    static thread_local std::random_device dev;
-    static thread_local std::mt19937 rng(dev());
+    static thread_local std::mt19937 rng(Seed);
 
     auto [resource, param] = deserialize(Data, Size);
     MaxSize -= sizeof(std::size_t) * 2;
@@ -100,17 +103,15 @@ extern "C" size_t LLVMFuzzerCustomMutator(
     auto param_idx = rng() % new_size;
     auto param_size = 1 + rng() % (new_size - param_idx);
 
-    // std::cout << "max_size: " << MaxSize << ", new_size: " << new_size << ", idx: " << param_idx
-    // << ", size: " << param_size << '\n';
     auto param_buffer = resource_buffer.substr(param_idx, param_size);
     return serialize(Data, resource_buffer, param_buffer);
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     ssrf_detector cond{{gen_param_def("server.io.net.url", "server.request.query")}};
 
-    auto [resource, param] = deserialize(bytes, size);
+    auto [resource, param] = deserialize(data, size);
 
     ddwaf_object root;
     ddwaf_object tmp;
@@ -125,7 +126,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    (void)cond.eval(cache, store, {}, {}, {}, deadline);
+    auto result = cond.eval(cache, store, {}, {}, {}, deadline);
+
+    prevent_optimization(result);
 
     return 0;
 }
+
+// Create AFL++ main function with initialization
+AFL_FUZZ_TARGET_WITH_INIT("ssrf_detector_fuzz", LLVMFuzzerTestOneInput, LLVMFuzzerInitialize)
