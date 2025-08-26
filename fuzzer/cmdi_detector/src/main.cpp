@@ -194,12 +194,6 @@ extern "C" size_t LLVMFuzzerCustomMutator(
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 {
-    // Limit payload size to 128KB to prevent excessive memory usage
-    constexpr size_t MAX_PAYLOAD_SIZE = 128 * 1024;
-    if (size > MAX_PAYLOAD_SIZE) {
-        return 0;
-    }
-
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
     auto [resource, param] = deserialize(bytes, size);

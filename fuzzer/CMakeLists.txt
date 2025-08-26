@@ -4,20 +4,32 @@ project(libddwaf_afl_fuzzers)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Include our resource embedding function
-include(${CMAKE_SOURCE_DIR}/cmake/embed_resources.cmake)
+# Check if we're using an AFL++ compiler for fuzzing
+# AFL++ fuzzers require afl-clang-fast, afl-clang-lto, or similar AFL-instrumented compilers
+get_filename_component(COMPILER_NAME ${CMAKE_CXX_COMPILER} NAME)
+if(NOT (COMPILER_NAME MATCHES "afl-clang" OR COMPILER_NAME MATCHES "afl\\+\\+"))
+    message(FATAL_ERROR 
+        "AFL++ fuzzer build detected but compiler '${COMPILER_NAME}' is not an AFL compiler. "
+        "For proper fuzzing instrumentation, use afl-clang-fast, afl-clang-lto, or afl-clang-lto++. "
+        "Set CC=afl-clang-lto and CXX=afl-clang-lto++ before running cmake."
+    )
+endif()
 
-# Set up include directories
-include_directories(../src)
-include_directories(../include)
-include_directories(../src/vendor)
-include_directories(../src/vendor/fmt)
-include_directories(../src/vendor/re2)
-include_directories(../src/vendor/libinjection/src)
-include_directories(../src/vendor/radixlib)
-include_directories(../src/vendor/utf8proc)
-include_directories(../src/vendor/lua-aho-corasick)
-include_directories(common)
+# Include our resource embedding function
+include(${CMAKE_SOURCE_DIR}/../cmake/embed_resources.cmake)
+
+# Include directories will be applied per-target using LIBDDWAF variables from parent project
+# Define the same variables as in objects.cmake but for the fuzzer context
+set(LIBDDWAF_PUBLIC_INCLUDES ${CMAKE_SOURCE_DIR}/../include)
+set(LIBDDWAF_PRIVATE_INCLUDES
+    ${CMAKE_SOURCE_DIR}/../src
+    ${CMAKE_SOURCE_DIR}/../src/vendor
+    ${CMAKE_SOURCE_DIR}/../src/vendor/libinjection/src/
+    ${CMAKE_SOURCE_DIR}/../src/vendor/radixlib/
+    ${CMAKE_SOURCE_DIR}/../src/vendor/lua-aho-corasick/
+    ${CMAKE_SOURCE_DIR}/../src/vendor/utf8proc/
+    ${CMAKE_SOURCE_DIR}/../src/vendor/re2/
+)
 
 # Add libddwaf as a dependency (assuming it's built in parent directory)
 set(LIBDDWAF_BUILD_DIR "${CMAKE_SOURCE_DIR}/../build")
@@ -35,9 +47,18 @@ endif()
 function(add_afl_fuzzer target_name source_files)
     add_executable(${target_name} ${source_files})
     
+    # Apply include directories to the target
+    target_include_directories(${target_name} 
+        PUBLIC ${LIBDDWAF_PUBLIC_INCLUDES}
+        PRIVATE ${LIBDDWAF_PRIVATE_INCLUDES}
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/common
+    )
+    
     # Link against necessary libraries
     target_link_libraries(${target_name} 
-        libddwaf_objects
+        ${LIBDDWAF_BUILD_DIR}/libddwaf.a
+        lib_rapidjson
+        pthread
     )
     
     # Special handling for global fuzzer - needs YAML-CPP

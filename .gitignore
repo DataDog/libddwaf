@@ -29,7 +29,7 @@ perf/test_files/breakdown.numbers
 /fuzzer/global/coverage.html
 /fuzzer/global/fuzz-*.log
 /fuzzer/global/results/crash-*
-
+default.profraw
 # AFL++ temporary files
 *.cur_input
 .afl_*
