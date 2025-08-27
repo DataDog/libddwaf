@@ -26,6 +26,9 @@ action_type action_type_from_string(std::string_view type)
     if (type == "monitor") {
         return action_type::monitor;
     }
+    if (type == "extended_data_collection") {
+        return action_type::extended_data_collection;
+    }
     // Unknown actions are valid, but provide no semantic value
     return action_type::unknown;
 }
