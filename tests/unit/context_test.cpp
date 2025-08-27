@@ -2217,7 +2217,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         test::expression_builder builder(1);
         builder.start_condition();
         builder.add_argument();
-        builder.add_target("usr_id");
+        builder.add_target("usr.id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{
@@ -2428,6 +2428,42 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         ctx.eval_rules(objects_to_exclude, results, deadline);
         EXPECT_EQ(results.size(), 0);
     }
+}
+
+TEST(TestContext, ExtendedDataCollectionAction)
+{
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
+    builder.add_target("http.headers");
+    builder.end_condition<matcher::exact_match>(std::vector<std::string_view>{"sensitive_data"});
+
+    std::unordered_map<std::string, std::string> tags{{"type", "sensitive"}, {"category", "data_collection"}};
+
+    test::ruleset_builder rbuilder;
+    auto rule = core_rule{"edc001", "extended data collection rule", std::move(tags), builder.build()};
+    rule.actions.emplace_back("extended_data_collection");
+    rbuilder.insert_base_rule(std::move(rule));
+
+    ddwaf::timer deadline{2s};
+    ddwaf::test::context ctx(rbuilder.build());
+
+    ddwaf_object root;
+    ddwaf_object tmp;
+    ddwaf_object headers;
+    ddwaf_object_map(&root);
+    ddwaf_object_map(&headers);
+    ddwaf_object_map_add(&headers, "authorization", ddwaf_object_string(&tmp, "sensitive_data"));
+    ddwaf_object_map_add(&root, "http.headers", &headers);
+    ctx.insert(root);
+
+    std::vector<rule_result> results;
+    ctx.eval_rules({}, results, deadline);
+    EXPECT_EQ(results.size(), 1);
+    EXPECT_EQ(results[0].event.rule.id, "edc001");
+    EXPECT_EQ(results[0].event.rule.name, "extended data collection rule");
+    EXPECT_EQ(results[0].actions.size(), 1);
+    EXPECT_EQ(results[0].actions[0], "extended_data_collection");
 }
 
 } // namespace
