@@ -2217,7 +2217,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
         test::expression_builder builder(1);
         builder.start_condition();
         builder.add_argument();
-        builder.add_target("usr.id");
+        builder.add_target("usr_id");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
         std::unordered_map<std::string, std::string> tags{

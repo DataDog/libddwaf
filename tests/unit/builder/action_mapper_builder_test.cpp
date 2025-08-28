@@ -23,7 +23,6 @@ TEST(TestActionMapperBuilder, TypeToString)
     EXPECT_EQ(action_type_from_string("generate_stack"), action_type::generate_stack);
     EXPECT_EQ(action_type_from_string("generate_schema"), action_type::generate_schema);
     EXPECT_EQ(action_type_from_string("monitor"), action_type::monitor);
-    EXPECT_EQ(action_type_from_string("extended_data_collection"), action_type::extended_data_collection);
 }
 
 TEST(TestActionMapperBuilder, DefaultActions)
@@ -34,7 +33,6 @@ TEST(TestActionMapperBuilder, DefaultActions)
     EXPECT_TRUE(actions.contains("stack_trace"));
     EXPECT_TRUE(actions.contains("extract_schema"));
     EXPECT_TRUE(actions.contains("monitor"));
-    EXPECT_TRUE(actions.contains("extended_data_collection"));
 
     {
         const auto &action = actions.at("block");
@@ -65,13 +63,6 @@ TEST(TestActionMapperBuilder, DefaultActions)
         const auto &action = actions.at("monitor");
         EXPECT_EQ(action.type, action_type::monitor);
         EXPECT_STR(action.type_str, "monitor");
-        EXPECT_EQ(action.parameters.size(), 0);
-    }
-
-    {
-        const auto &action = actions.at("extended_data_collection");
-        EXPECT_EQ(action.type, action_type::extended_data_collection);
-        EXPECT_STR(action.type_str, "extended_data_collection");
         EXPECT_EQ(action.parameters.size(), 0);
     }
 }
@@ -117,35 +108,6 @@ TEST(TestActionMapperBuilder, SetAction)
     }
 }
 
-TEST(TestActionMapperBuilder, ExtendedDataCollectionAction)
-{
-    action_mapper_builder builder;
-    builder.set_action("custom_edc", "extended_data_collection", 
-        {{"headers_redaction", "true"}, {"max_collected_headers", "10"}});
-
-    auto actions = builder.build();
-
-    EXPECT_TRUE(actions.contains("custom_edc"));
-    EXPECT_TRUE(actions.contains("extended_data_collection")); // Default action still exists
-
-    {
-        const auto &action = actions.at("custom_edc");
-        EXPECT_EQ(action.type, action_type::extended_data_collection);
-        EXPECT_STR(action.type_str, "extended_data_collection");
-
-        EXPECT_EQ(action.parameters.size(), 2);
-        EXPECT_STRV(action.parameters.at("headers_redaction"), "true");
-        EXPECT_STRV(action.parameters.at("max_collected_headers"), "10");
-    }
-
-    {
-        const auto &action = actions.at("extended_data_collection");
-        EXPECT_EQ(action.type, action_type::extended_data_collection);
-        EXPECT_STR(action.type_str, "extended_data_collection");
-        EXPECT_EQ(action.parameters.size(), 0);
-    }
-}
-
 TEST(TestActionMapperBuilder, OverrideDefaultAction)
 {
     action_mapper_builder builder;
@@ -167,27 +129,6 @@ TEST(TestActionMapperBuilder, OverrideDefaultAction)
         EXPECT_EQ(action.parameters.size(), 2);
         EXPECT_STRV(action.parameters.at("status_code"), "33");
         EXPECT_STRV(action.parameters.at("location"), "datadoghq");
-    }
-}
-
-TEST(TestActionMapperBuilder, OverrideExtendedDataCollectionAction)
-{
-    action_mapper_builder builder;
-    builder.set_action("extended_data_collection", "extended_data_collection", 
-        {{"headers_redaction", "false"}, {"max_collected_headers", "20"}});
-
-    auto actions = builder.build();
-
-    EXPECT_TRUE(actions.contains("extended_data_collection"));
-
-    {
-        const auto &action = actions.at("extended_data_collection");
-        EXPECT_EQ(action.type, action_type::extended_data_collection);
-        EXPECT_STR(action.type_str, "extended_data_collection");
-
-        EXPECT_EQ(action.parameters.size(), 2);
-        EXPECT_STRV(action.parameters.at("headers_redaction"), "false");
-        EXPECT_STRV(action.parameters.at("max_collected_headers"), "20");
     }
 }
 

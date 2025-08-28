@@ -58,19 +58,6 @@
       "properties": {},
       "required": [],
       "additionalProperties": true
-    },
-    "extended_data_collection": {
-      "type": "object",
-      "properties": {
-        "headers_redaction": {
-          "type": "boolean"
-        },
-        "max_collected_headers": {
-          "type": "integer"
-        }
-      },
-      "required": [],
-      "additionalProperties": true
     }
   },
   "additionalProperties": true

@@ -21,8 +21,7 @@ enum class action_type : uint8_t {
     generate_schema = 3,
     monitor = 4,
     block_request = 5,
-    extended_data_collection = 6,
-    redirect_request = 7, // Redirect must always be the last action
+    redirect_request = 6, // Redirect must always be the last action
                           // as the value is used to serve as precedence
 };
 

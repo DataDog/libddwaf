@@ -65,8 +65,6 @@ const std::map<std::string, action_parameters, std::less<>>
         {"extract_schema", {.type = action_type::generate_schema,
                                .type_str = "generate_schema",
                                .parameters = {}}},
-        {"monitor", {.type = action_type::monitor, .type_str = "monitor", .parameters = {}}},
-        {"extended_data_collection", {.type = action_type::extended_data_collection, .type_str = "extended_data_collection", .parameters = {}}}
-        };
+        {"monitor", {.type = action_type::monitor, .type_str = "monitor", .parameters = {}}}};
 
 } // namespace ddwaf
