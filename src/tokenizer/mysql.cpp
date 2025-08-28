@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 #include <cstdint>
+#include <memory>
 #include <stdexcept>
 #include <string_view>
 #include <unordered_set>
@@ -20,11 +21,10 @@ using namespace std::literals;
 
 namespace ddwaf {
 namespace {
-
 // Operators: https://dev.mysql.com/doc/refman/5.7/en/built-in-function-reference.html
 // Identifiers: https://dev.mysql.com/doc/refman/8.0/en/identifiers.html
-re2::RE2 identifier_regex(
-    R"((?i)^(?:(?P<keyword>SELECT|ALL|DISTINCT|DISTINCTROW|HIGH_PRIORITY|STRAIGHT_JOIN|SQL_SMALL_RESULT|SQL_BIG_RESULT|SQL_BUFFER_RESULT|SQL_NO_CACHE|SQL_CALC_FOUND_ROWS|FROM|PARTITION|WHERE|GROUP|WITH|ROLLUP|UNION|INTERSECT|EXCEPT|HAVING|WINDOW|ORDER|CASE|NULL|BY|ASC|DESC|LIMIT|OFFSET|ALL|AS)|(?P<binary_operator>MOD|AND|BETWEEN|BINARY|DIV|LAST_DAY|REGEXP|XOR|OR|RLIKE|SOUNDS|LIKE|NOT|IN|IS)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))");
+constexpr std::string_view identifier_regex_initialiser =
+    R"((?i)^(?:(?P<keyword>SELECT|ALL|DISTINCT|DISTINCTROW|HIGH_PRIORITY|STRAIGHT_JOIN|SQL_SMALL_RESULT|SQL_BIG_RESULT|SQL_BUFFER_RESULT|SQL_NO_CACHE|SQL_CALC_FOUND_ROWS|FROM|PARTITION|WHERE|GROUP|WITH|ROLLUP|UNION|INTERSECT|EXCEPT|HAVING|WINDOW|ORDER|CASE|NULL|BY|ASC|DESC|LIMIT|OFFSET|ALL|AS)|(?P<binary_operator>MOD|AND|BETWEEN|BINARY|DIV|LAST_DAY|REGEXP|XOR|OR|RLIKE|SOUNDS|LIKE|NOT|IN|IS)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
 
 /*
  *  https://dev.mysql.com/doc/refman/8.0/en/user-variables.html
@@ -61,14 +61,18 @@ re2::RE2 identifier_regex(
  *  By taking the (a) patterns and putting (b) just after, you end up with the regexp we use to
  *  parse the variable.
  */
-re2::RE2 variable_regex(
-    R"(^(@@?(:?`([^\\`]|\\.)*`|'([^\\']|\\.)*'|"([^\\"]|\\.)*"|[a-zA-Z0-9$_]+)(:?\.(:?`([^\\`]|\\.)*`|'([^\\']|\\.)*'|"([^\\"]|\\.)*"|[a-zA-Z0-9$_]*))*))");
+constexpr std::string_view variable_regex_initialiser =
+    R"(^(@@?(:?`([^\\`]|\\.)*`|'([^\\']|\\.)*'|"([^\\"]|\\.)*"|[a-zA-Z0-9$_]+)(:?\.(:?`([^\\`]|\\.)*`|'([^\\']|\\.)*'|"([^\\"]|\\.)*"|[a-zA-Z0-9$_]*))*))";
 
 // Number of identifier starting by a number, note that these identifiers must always have other
 // characters and can't consist only of numbers.
 // https://dev.mysql.com/doc/refman/5.7/en/identifiers.html
-re2::RE2 number_or_identifier_regex(
-    R"((?i)^(?:(?P<number>0[Xx][0-9a-fA-F](?:[0-9a-fA-F]*|_[0-9a-fA-F])*|0[Bb][01](?:[01]|_[01])*|0[Oo][0-7](?:[0-7]|_[0-7])*|(?:(?:[0-9](?:[0-9]|_[0-9])*)(?:\.[0-9](?:[0-9]|_[0-9])*)?(?:[eE][+-]?[0-9](?:[0-9]|_[0-9])*)?))|(?P<identifier>[0-9][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))");
+constexpr std::string_view number_or_identifier_regex_initialiser =
+    R"((?i)^(?:(?P<number>0[Xx][0-9a-fA-F](?:[0-9a-fA-F]*|_[0-9a-fA-F])*|0[Bb][01](?:[01]|_[01])*|0[Oo][0-7](?:[0-7]|_[0-7])*|(?:(?:[0-9](?:[0-9]|_[0-9])*)(?:\.[0-9](?:[0-9]|_[0-9])*)?(?:[eE][+-]?[0-9](?:[0-9]|_[0-9])*)?))|(?P<identifier>[0-9][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
+
+std::unique_ptr<re2::RE2> identifier_regex;
+std::unique_ptr<re2::RE2> variable_regex;
+std::unique_ptr<re2::RE2> number_or_identifier_regex;
 
 std::string_view partial_match_regex(re2::RE2 &regex, std::string_view str)
 {
@@ -84,7 +88,7 @@ std::string_view partial_match_regex(re2::RE2 &regex, std::string_view str)
 
 std::string_view extract_variable(std::string_view str)
 {
-    return partial_match_regex(variable_regex, str);
+    return partial_match_regex(*variable_regex, str);
 }
 
 } // namespace
@@ -93,18 +97,31 @@ mysql_tokenizer::mysql_tokenizer(
     std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
     : sql_tokenizer(str, std::move(skip_tokens))
 {
-    if (!identifier_regex.ok()) {
-        throw std::runtime_error(
-            "mysql identifier regex not valid: " + identifier_regex.error_arg());
-    }
+    static const bool ret = []() {
+        identifier_regex = std::make_unique<re2::RE2>(identifier_regex_initialiser);
+        variable_regex = std::make_unique<re2::RE2>(variable_regex_initialiser);
+        number_or_identifier_regex =
+            std::make_unique<re2::RE2>(number_or_identifier_regex_initialiser);
+        return identifier_regex->ok() && variable_regex->ok() && number_or_identifier_regex->ok();
+    }();
 
-    if (!variable_regex.ok()) {
-        throw std::runtime_error("mysql variable regex not valid: " + variable_regex.error_arg());
-    }
+    if (!ret) {
+        if (!identifier_regex->ok()) {
+            throw std::runtime_error(
+                "mysql identifier regex not valid: " + identifier_regex->error_arg());
+        }
 
-    if (!number_or_identifier_regex.ok()) {
-        throw std::runtime_error("mysql number of identifier regex not valid: " +
-                                 number_or_identifier_regex.error_arg());
+        if (!variable_regex->ok()) {
+            throw std::runtime_error(
+                "mysql variable regex not valid: " + variable_regex->error_arg());
+        }
+
+        if (!number_or_identifier_regex->ok()) {
+            throw std::runtime_error("mysql number of identifier regex not valid: " +
+                                     number_or_identifier_regex->error_arg());
+        }
+
+        throw std::runtime_error("unknown failure on mysql regex initialisation");
     }
 }
 
@@ -136,7 +153,7 @@ void mysql_tokenizer::tokenize_string_keyword_operator_or_identifier()
     std::string_view ident;
 
     const std::string_view ref(remaining_str.data(), remaining_str.size());
-    if (re2::RE2::PartialMatch(ref, identifier_regex, &keyword, &binary_op, &ident)) {
+    if (re2::RE2::PartialMatch(ref, *identifier_regex, &keyword, &binary_op, &ident)) {
         // At least one of the strings will contain a match
         if (!binary_op.empty()) {
             token.type = sql_token_type::binary_operator;
@@ -196,7 +213,7 @@ void mysql_tokenizer::tokenize_number_or_identifier()
     std::string_view ident;
 
     const std::string_view ref(remaining_str.data(), remaining_str.size());
-    if (re2::RE2::PartialMatch(ref, number_or_identifier_regex, &number, &ident)) {
+    if (re2::RE2::PartialMatch(ref, *number_or_identifier_regex, &number, &ident)) {
         // At least one of the strings will contain a match
         if (!number.empty()) {
             token.type = sql_token_type::number;

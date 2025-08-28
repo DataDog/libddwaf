@@ -16,7 +16,7 @@
 
 namespace ddwaf {
 
-enum class shell_token_type {
+enum class shell_token_type : uint8_t {
     unknown,
     whitespace,
     executable,
@@ -68,7 +68,7 @@ public:
     std::vector<shell_token> tokenize();
 
 protected:
-    enum class shell_scope {
+    enum class shell_scope : uint8_t {
         global,
         double_quoted_string,        // " ... "
         backtick_substitution,       // ` ... `

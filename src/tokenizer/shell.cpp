@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <ostream>
 #include <stdexcept>
 #include <string_view>
@@ -47,8 +48,10 @@ namespace {
  *      )?
  *  )
  */
-re2::RE2 redirection_regex(
-    R"((&>>?|(?:[0-9]*>(?:\||>|&[0-9]*-?)?)|(?:[0-9]*<(?:<(?:-|<)?|&[0-9]*-?|>)?)))");
+constexpr std::string_view redirection_regex_initialiser =
+    R"((&>>?|(?:[0-9]*>(?:\||>|&[0-9]*-?)?)|(?:[0-9]*<(?:<(?:-|<)?|&[0-9]*-?|>)?)))";
+
+std::unique_ptr<re2::RE2> redirection_regex;
 
 // Valid characters in a variable name
 bool is_var_char(char c) { return ddwaf::isalnum(c) || c == '_'; }
@@ -283,8 +286,13 @@ shell_tokenizer::shell_tokenizer(
 {
     shell_scope_stack_.reserve(8);
 
-    if (!redirection_regex.ok()) {
-        throw std::runtime_error("redirection regex not valid: " + redirection_regex.error_arg());
+    static const bool ret = []() {
+        redirection_regex = std::make_unique<re2::RE2>(redirection_regex_initialiser);
+        return redirection_regex->ok();
+    }();
+
+    if (!ret) {
+        throw std::runtime_error("redirection regex not valid: " + redirection_regex->error_arg());
     }
 }
 
@@ -413,7 +421,7 @@ void shell_tokenizer::tokenize_redirection()
 
     std::string_view redirection;
     const std::string_view ref(remaining_str.data(), remaining_str.size());
-    if (re2::RE2::PartialMatch(ref, redirection_regex, &redirection)) {
+    if (re2::RE2::PartialMatch(ref, *redirection_regex, &redirection)) {
         // At least one of the strings will contain a match
         if (!redirection.empty()) {
             token.str = substr(token.index, redirection.size());
@@ -440,7 +448,7 @@ void shell_tokenizer::tokenize_redirection_or_field()
 
         std::string_view redirection;
         const std::string_view ref(remaining_str.data(), remaining_str.size());
-        if (re2::RE2::PartialMatch(ref, redirection_regex, &redirection)) {
+        if (re2::RE2::PartialMatch(ref, *redirection_regex, &redirection)) {
             // At least one of the strings will contain a match
             if (!redirection.empty()) {
                 token.type = shell_token_type::redirection;

@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <memory>
-#include <ostream>
 #include <re2/re2.h>
 #include <string_view>
 #include <vector>

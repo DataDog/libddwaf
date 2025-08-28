@@ -3,6 +3,7 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <memory>
 #include <stdexcept>
 #include <string_view>
 #include <unordered_set>
@@ -19,8 +20,10 @@ using namespace std::literals;
 
 namespace ddwaf {
 namespace {
-re2::RE2 identifier_regex(
-    R"((?i)^(?:(?P<keyword>SELECT|FROM|WHERE|GROUP|OFFSET|LIMIT|DISTINCT|HAVING|ORDER|ASC|DESC|UNION|NULL|ALL|ANY|BY|AS)|(?P<binary_operator>OR|AND|BETWEEN|LIKE|IN|MOD|IS|NOT)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))");
+constexpr std::string_view identifier_regex_initialiser =
+    R"((?i)^(?:(?P<keyword>SELECT|FROM|WHERE|GROUP|OFFSET|LIMIT|DISTINCT|HAVING|ORDER|ASC|DESC|UNION|NULL|ALL|ANY|BY|AS)|(?P<binary_operator>OR|AND|BETWEEN|LIKE|IN|MOD|IS|NOT)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
+
+std::unique_ptr<re2::RE2> identifier_regex;
 
 } // namespace
 
@@ -28,8 +31,14 @@ generic_sql_tokenizer::generic_sql_tokenizer(
     std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
     : sql_tokenizer(str, std::move(skip_tokens))
 {
-    if (!identifier_regex.ok()) {
-        throw std::runtime_error("sql identifier regex not valid: " + identifier_regex.error_arg());
+    static const bool ret = []() {
+        identifier_regex = std::make_unique<re2::RE2>(identifier_regex_initialiser);
+        return identifier_regex && identifier_regex->ok();
+    }();
+
+    if (!ret) {
+        throw std::runtime_error(
+            "sql identifier regex not valid: " + identifier_regex->error_arg());
     }
 }
 
@@ -45,7 +54,7 @@ void generic_sql_tokenizer::tokenize_keyword_operator_or_identifier()
     std::string_view ident;
 
     const std::string_view ref(remaining_str.data(), remaining_str.size());
-    if (re2::RE2::PartialMatch(ref, identifier_regex, &keyword, &binary_op, &ident)) {
+    if (re2::RE2::PartialMatch(ref, *identifier_regex, &keyword, &binary_op, &ident)) {
         // At least one of the strings will contain a match
         if (!binary_op.empty()) {
             token.type = sql_token_type::binary_operator;
