@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 #include <cstdint>
+#include <memory>
 #include <stdexcept>
 #include <string_view>
 #include <unordered_set>
@@ -31,24 +32,54 @@ namespace {
  * starts or ends with an underscore, so identifiers of this form are safe against possible conflict
  * with future extensions of the standard.
  */
-re2::RE2 identifier_regex(
-    R"((?i)^(?:(?P<keyword>SELECT|FROM|WHERE|GROUP|OFFSET|LIMIT|HAVING|ORDER|PARTITION|BY|ASC|DESC|NULL)|^(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS|LIKE|NOT|IS|MOD|DIV)|^(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))");
+constexpr std::string_view identifier_regex_initialiser =
+    R"((?i)^(?:(?P<keyword>SELECT|FROM|WHERE|GROUP|OFFSET|LIMIT|HAVING|ORDER|PARTITION|BY|ASC|DESC|NULL)|^(?P<binary_operator>OR|XOR|AND|IN|BETWEEN|LIKE|REGEXP|SOUNDS|LIKE|NOT|IS|MOD|DIV)|^(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*))(?:\b|\s|$))";
 
-re2::RE2 parameter_regex(R"(^(?P<parameter>\$[0-9]+)(?:\b|\s|$))");
+constexpr std::string_view parameter_regex_initialiser(R"(^(?P<parameter>\$[0-9]+)(?:\b|\s|$))");
+
+std::unique_ptr<re2::RE2> identifier_regex;
+std::unique_ptr<re2::RE2> parameter_regex;
 
 } // namespace
+
+bool pgsql_tokenizer::initialise_regexes()
+{
+    static const bool ret = []() {
+        try {
+            bool const parent_init = sql_tokenizer<pgsql_tokenizer>::initialise_regexes();
+            identifier_regex = std::make_unique<re2::RE2>(identifier_regex_initialiser);
+            parameter_regex = std::make_unique<re2::RE2>(parameter_regex_initialiser);
+            return parent_init && identifier_regex->ok() && parameter_regex->ok();
+        } catch (...) {
+            return false;
+        }
+    }();
+
+    return ret;
+}
 
 pgsql_tokenizer::pgsql_tokenizer(
     std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
     : sql_tokenizer(str, std::move(skip_tokens))
 {
-    if (!identifier_regex.ok()) {
-        throw std::runtime_error(
-            "pgsql identifier regex not valid: " + identifier_regex.error_arg());
-    }
+    static const bool ret = []() {
+        identifier_regex = std::make_unique<re2::RE2>(identifier_regex_initialiser);
+        parameter_regex = std::make_unique<re2::RE2>(parameter_regex_initialiser);
+        return identifier_regex->ok() && parameter_regex->ok();
+    }();
 
-    if (!parameter_regex.ok()) {
-        throw std::runtime_error("pgsql parameter regex not valid: " + parameter_regex.error_arg());
+    if (!ret) {
+        if (!identifier_regex->ok()) {
+            throw std::runtime_error(
+                "pgsql identifier regex not valid: " + identifier_regex->error_arg());
+        }
+
+        if (!parameter_regex->ok()) {
+            throw std::runtime_error(
+                "pgsql parameter regex not valid: " + parameter_regex->error_arg());
+        }
+
+        throw std::runtime_error("unknown failure on pgsql regex initialisation");
     }
 }
 
@@ -100,7 +131,7 @@ void pgsql_tokenizer::tokenize_string_keyword_operator_or_identifier()
     std::string_view ident;
 
     const std::string_view ref(remaining_str.data(), remaining_str.size());
-    if (re2::RE2::PartialMatch(ref, identifier_regex, &keyword, &binary_op, &ident)) {
+    if (re2::RE2::PartialMatch(ref, *identifier_regex, &keyword, &binary_op, &ident)) {
         // At least one of the strings will contain a match
         if (!binary_op.empty()) {
             token.type = sql_token_type::binary_operator;
@@ -231,7 +262,7 @@ void pgsql_tokenizer::tokenize_dollar_string_or_identifier()
 
         std::string_view parameter;
         const std::string_view ref(str.data(), str.size());
-        if (re2::RE2::PartialMatch(ref, parameter_regex, &parameter)) {
+        if (re2::RE2::PartialMatch(ref, *parameter_regex, &parameter)) {
             if (!parameter.empty()) {
                 add_token(sql_token_type::identifier, parameter.size());
             }
