@@ -33,9 +33,11 @@ template <typename T> using optional_ref = std::optional<std::reference_wrapper<
 
 namespace ddwaf {
 
+enum class evaluation_scope : uint8_t { context = 0, subcontext = 1 };
+
 struct eval_result {
     bool outcome;
-    bool ephemeral;
+    evaluation_scope scope;
 };
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
