@@ -19,6 +19,8 @@ public:
     explicit pgsql_tokenizer(
         std::string_view str, std::unordered_set<sql_token_type> skip_tokens = {});
 
+    static bool initialise_regexes();
+
 protected:
     std::vector<sql_token> tokenize_impl();
 
