@@ -7,7 +7,6 @@
 #pragma once
 
 #include "tokenizer/base.hpp"
-#include "utils.hpp"
 #include <fmt/format.h>
 #include <ostream>
 #include <re2/re2.h>
@@ -17,9 +16,9 @@
 
 namespace ddwaf {
 
-enum class sql_dialect { generic, mysql, pgsql, oracle, sqlite, hsqldb, doctrine };
+enum class sql_dialect : uint8_t { generic, mysql, pgsql, oracle, sqlite, hsqldb, doctrine };
 
-enum class sql_token_type {
+enum class sql_token_type : uint8_t {
     unknown,
     keyword,
     identifier,
@@ -70,6 +69,8 @@ public:
         std::string_view str, std::unordered_set<sql_token_type> skip_tokens = {});
 
     std::vector<sql_token> tokenize() { return static_cast<T *>(this)->tokenize_impl(); }
+
+    static bool initialise_regexes();
 
 protected:
     std::string_view extract_unescaped_string(char quote);

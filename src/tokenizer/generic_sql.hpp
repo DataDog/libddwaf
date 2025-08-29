@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <memory>
-#include <ostream>
 #include <re2/re2.h>
 #include <string_view>
 #include <vector>
@@ -20,6 +18,8 @@ class generic_sql_tokenizer : public sql_tokenizer<generic_sql_tokenizer> {
 public:
     explicit generic_sql_tokenizer(
         std::string_view str, std::unordered_set<sql_token_type> skip_tokens = {});
+
+    static bool initialise_regexes();
 
 protected:
     std::vector<sql_token> tokenize_impl();
