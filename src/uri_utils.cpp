@@ -370,10 +370,11 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
 
             auto port_substr = uri.substr(token_begin, i - token_begin);
             if (!port_substr.empty()) {
-                if (auto [res, value] = from_string<uint16_t>(port_substr); !res) {
+                if (auto [res, value] = from_string<uint16_t>(port_substr); res) {
+                    decomposed.authority.port = value;
+                } else {
                     return std::nullopt;
                 }
-                decomposed.authority.port = port_substr;
             }
 
             if (authority_end == uri.size()) {
