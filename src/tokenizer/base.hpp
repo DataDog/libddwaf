@@ -6,9 +6,7 @@
 
 #pragma once
 
-#include "utils.hpp"
 #include <fmt/format.h>
-#include <ostream>
 #include <re2/re2.h>
 #include <string_view>
 #include <unordered_set>
