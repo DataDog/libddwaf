@@ -307,6 +307,44 @@ raw_configuration::operator std::unordered_map<std::string, std::string>() const
     return data;
 }
 
+raw_configuration::operator std::unordered_map<std::string, scalar_type>() const
+{
+    if (type != DDWAF_OBJ_MAP) {
+        throw bad_cast("map", strtype(type));
+    }
+
+    if (array == nullptr || nbEntries == 0) {
+        return {};
+    }
+
+    std::unordered_map<std::string, scalar_type> data;
+    data.reserve(nbEntries);
+    for (unsigned i = 0; i < nbEntries; i++) {
+        std::string key{
+            array[i].parameterName, static_cast<std::size_t>(array[i].parameterNameLength)};
+        switch (array[i].type) {
+        case DDWAF_OBJ_BOOL:
+            data.emplace(std::move(key), static_cast<bool>(raw_configuration(array[i])));
+            break;
+        case DDWAF_OBJ_SIGNED:
+            data.emplace(std::move(key), static_cast<int64_t>(raw_configuration(array[i])));
+            break;
+        case DDWAF_OBJ_UNSIGNED:
+            data.emplace(std::move(key), static_cast<uint64_t>(raw_configuration(array[i])));
+            break;
+        case DDWAF_OBJ_FLOAT:
+            data.emplace(std::move(key), static_cast<double>(raw_configuration(array[i])));
+            break;
+        case DDWAF_OBJ_STRING:
+            data.emplace(std::move(key), static_cast<std::string>(raw_configuration(array[i])));
+            break;
+        default:
+            throw malformed_object("item in scalar map not a valid scalar");
+        }
+    }
+    return data;
+}
+
 raw_configuration::operator semantic_version() const
 {
     if (type != DDWAF_OBJ_STRING || stringValue == nullptr) {

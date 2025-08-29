@@ -15,11 +15,12 @@
 
 #include "action_mapper.hpp"
 #include "builder/action_mapper_builder.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 
 void action_mapper_builder::set_action(const std::string &id, std::string type,
-    std::unordered_map<std::string, std::string> parameters)
+    std::unordered_map<std::string, scalar_type> parameters)
 {
     auto [it, res] =
         action_by_id_.try_emplace(id, action_parameters{.type = action_type_from_string(type),
