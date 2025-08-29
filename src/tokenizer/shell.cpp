@@ -280,18 +280,27 @@ std::ostream &operator<<(std::ostream &os, shell_token_type type)
     return os;
 }
 
+bool shell_tokenizer::initialise_regexes()
+{
+    static const bool ret = []() {
+        try {
+            redirection_regex = std::make_unique<re2::RE2>(redirection_regex_initialiser);
+            return redirection_regex->ok();
+        } catch (...) {
+            return false;
+        }
+    }();
+
+    return ret;
+}
+
 shell_tokenizer::shell_tokenizer(
     std::string_view str, std::unordered_set<shell_token_type> skip_tokens)
     : base_tokenizer(str, std::move(skip_tokens))
 {
     shell_scope_stack_.reserve(8);
 
-    static const bool ret = []() {
-        redirection_regex = std::make_unique<re2::RE2>(redirection_regex_initialiser);
-        return redirection_regex->ok();
-    }();
-
-    if (!ret) {
+    if (!initialise_regexes()) {
         throw std::runtime_error("redirection regex not valid: " + redirection_regex->error_arg());
     }
 }

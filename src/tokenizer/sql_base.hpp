@@ -70,6 +70,8 @@ public:
 
     std::vector<sql_token> tokenize() { return static_cast<T *>(this)->tokenize_impl(); }
 
+    static bool initialise_regexes();
+
 protected:
     std::string_view extract_unescaped_string(char quote);
     std::string_view extract_conforming_string(char quote);

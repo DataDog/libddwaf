@@ -27,6 +27,20 @@ constexpr std::string_view number_regex_initialiser =
 
 std::unique_ptr<re2::RE2> number_regex;
 
+bool initialise_global_statics()
+{
+    static const bool ret = []() {
+        try {
+            number_regex = std::make_unique<re2::RE2>(number_regex_initialiser);
+            return number_regex->ok();
+        } catch (...) {
+            return false;
+        }
+    }();
+
+    return ret;
+}
+
 } // namespace
 
 sql_dialect sql_dialect_from_type(std::string_view type)
@@ -165,17 +179,19 @@ std::ostream &operator<<(std::ostream &os, sql_token_type type)
     return os;
 }
 
+template <typename T> bool sql_tokenizer<T>::initialise_regexes()
+{
+    // Since this is a template class, we defer the operation to a separate
+    // function to avoid multiple initialisations
+    return initialise_global_statics();
+}
+
 template <typename T>
 sql_tokenizer<T>::sql_tokenizer(
     std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
     : base_tokenizer(str, std::move(skip_tokens))
 {
-    static const bool ret = []() {
-        number_regex = std::make_unique<re2::RE2>(number_regex_initialiser);
-        return number_regex->ok();
-    }();
-
-    if (!ret) {
+    if (!initialise_regexes()) {
         throw std::runtime_error("sql number regex not valid: " + number_regex->error_arg());
     }
 }

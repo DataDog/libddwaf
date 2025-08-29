@@ -27,16 +27,26 @@ std::unique_ptr<re2::RE2> identifier_regex;
 
 } // namespace
 
+bool generic_sql_tokenizer::initialise_regexes()
+{
+    static const bool ret = []() {
+        try {
+            bool const parent_init = sql_tokenizer<generic_sql_tokenizer>::initialise_regexes();
+            identifier_regex = std::make_unique<re2::RE2>(identifier_regex_initialiser);
+            return parent_init && identifier_regex && identifier_regex->ok();
+        } catch (...) {
+            return false;
+        }
+    }();
+
+    return ret;
+}
+
 generic_sql_tokenizer::generic_sql_tokenizer(
     std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
     : sql_tokenizer(str, std::move(skip_tokens))
 {
-    static const bool ret = []() {
-        identifier_regex = std::make_unique<re2::RE2>(identifier_regex_initialiser);
-        return identifier_regex && identifier_regex->ok();
-    }();
-
-    if (!ret) {
+    if (!initialise_regexes()) {
         throw std::runtime_error(
             "sql identifier regex not valid: " + identifier_regex->error_arg());
     }

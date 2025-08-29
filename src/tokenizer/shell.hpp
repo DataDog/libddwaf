@@ -67,6 +67,8 @@ public:
 
     std::vector<shell_token> tokenize();
 
+    static bool initialise_regexes();
+
 protected:
     enum class shell_scope : uint8_t {
         global,

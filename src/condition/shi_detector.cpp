@@ -117,7 +117,9 @@ eval_result shi_detector::eval_array(const unary_argument<const ddwaf_object *> 
 
 shi_detector::shi_detector(std::vector<condition_parameter> args)
     : base_impl<shi_detector>(std::move(args))
-{}
+{
+    shell_tokenizer::initialise_regexes();
+}
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 eval_result shi_detector::eval_impl(const unary_argument<const ddwaf_object *> &resource,
