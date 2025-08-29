@@ -13,6 +13,8 @@
 
 namespace ddwaf {
 
+static constexpr uint32_t max_transformers_per_address{10};
+
 template <typename T, typename Key = std::string>
 T at(const raw_configuration::map &map, const Key &key)
 {
