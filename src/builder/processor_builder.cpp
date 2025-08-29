@@ -42,83 +42,17 @@ std::set<const scanner *> references_to_scanners(
     return scanner_refs;
 }
 
-template <typename T> struct typed_processor_builder;
-
-template <> struct typed_processor_builder<extract_schema> {
-    static std::unique_ptr<base_processor> build(
-        const std::string &id, const processor_spec &spec, const indexer<const scanner> &scanners)
-    {
-        auto ref_scanners = references_to_scanners(spec.scanners, scanners);
-        return std::make_unique<extract_schema>(
-            id, spec.expr, spec.mappings, std::move(ref_scanners), spec.evaluate, spec.output);
-    }
-};
-
-template <> struct typed_processor_builder<http_endpoint_fingerprint> {
-    static std::unique_ptr<base_processor> build(const std::string &id, const processor_spec &spec)
-    {
-        return std::make_unique<http_endpoint_fingerprint>(
-            id, spec.expr, spec.mappings, spec.evaluate, spec.output);
-    }
-};
-
-template <> struct typed_processor_builder<http_header_fingerprint> {
-    static std::unique_ptr<base_processor> build(const std::string &id, const processor_spec &spec)
-    {
-        return std::make_unique<http_header_fingerprint>(
-            id, spec.expr, spec.mappings, spec.evaluate, spec.output);
-    }
-};
-
-template <> struct typed_processor_builder<http_network_fingerprint> {
-    static std::unique_ptr<base_processor> build(const std::string &id, const processor_spec &spec)
-    {
-        return std::make_unique<http_network_fingerprint>(
-            id, spec.expr, spec.mappings, spec.evaluate, spec.output);
-    }
-};
-
-template <> struct typed_processor_builder<session_fingerprint> {
-    static std::unique_ptr<base_processor> build(const std::string &id, const processor_spec &spec)
-    {
-        return std::make_unique<session_fingerprint>(
-            id, spec.expr, spec.mappings, spec.evaluate, spec.output);
-    }
-};
-
-template <> struct typed_processor_builder<jwt_decode> {
-    static std::unique_ptr<base_processor> build(const std::string &id, const processor_spec &spec)
-    {
-        return std::make_unique<jwt_decode>(
-            id, spec.expr, spec.mappings, spec.evaluate, spec.output);
-    }
-};
-
-template <> struct typed_processor_builder<uri_parse_processor> {
-    static std::unique_ptr<base_processor> build(const std::string &id, const processor_spec &spec)
-    {
-        return std::make_unique<uri_parse_processor>(
-            id, spec.expr, spec.mappings, spec.evaluate, spec.output);
-    }
-};
-
-template <typename T, typename Id, typename Spec, typename Scanners>
-concept has_build_with_scanners =
-    requires(typed_processor_builder<T> b, Id id, Spec spec, Scanners scanners) {
-        {
-            b.build(id, spec, scanners)
-        } -> std::same_as<std::unique_ptr<base_processor>>;
-    };
-
 template <typename T>
 [[nodiscard]] std::unique_ptr<base_processor> build_with_type(
     const std::string &id, const processor_spec &spec, const indexer<const scanner> &scanners)
     requires std::is_base_of_v<base_processor, T>
 {
-    if constexpr (has_build_with_scanners<T, decltype(id), decltype(spec), decltype(scanners)>) {
-        return typed_processor_builder<T>::build(id, spec, scanners);
+    if constexpr (std::is_same_v<T, extract_schema>) {
+        auto ref_scanners = references_to_scanners(spec.scanners, scanners);
+        return std::make_unique<extract_schema>(
+            id, spec.expr, spec.mappings, std::move(ref_scanners), spec.evaluate, spec.output);
     } else {
-        return typed_processor_builder<T>::build(id, spec);
+        return std::make_unique<T>(id, spec.expr, spec.mappings, spec.evaluate, spec.output);
     }
 }
 } // namespace

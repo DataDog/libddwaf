@@ -14,7 +14,6 @@
 #include "uri_utils.hpp"
 #include "utils.hpp"
 
-#include <cstdint>
 #include <string_view>
 #include <unordered_map>
 #include <utility>
@@ -136,11 +135,7 @@ std::pair<ddwaf_object, object_store::attribute> uri_parse_processor::eval_impl(
     ddwaf_object host = string_view_to_object(decomposed->authority.host);
 
     ddwaf_object port;
-    if (auto [res, value] = from_string<uint16_t>(decomposed->authority.port); res) {
-        ddwaf_object_unsigned(&port, value);
-    } else {
-        ddwaf_object_unsigned(&port, 0);
-    }
+    ddwaf_object_unsigned(&port, decomposed->authority.port);
 
     ddwaf_object path = string_view_to_object(decomposed->path);
     ddwaf_object query = split_query_parameters(*decomposed);
