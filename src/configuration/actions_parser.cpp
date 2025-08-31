@@ -27,23 +27,30 @@
 namespace ddwaf {
 
 namespace {
-bool validate_status_code_presence_and_type(auto &parameters, const std::string &key)
+
+bool validate_status_code_presence_and_type(
+    auto &parameters, const std::string &key, auto &&validate_fn)
 {
     auto it = parameters.find(key);
     if (it == parameters.end()) {
         return false;
     }
 
-    if (!holds_alternative<std::string>(it->second)) {
-        if (holds_alternative<int64_t>(it->second)) {
-            it->second = std::to_string(std::get<int64_t>(it->second));
-        } else if (holds_alternative<uint64_t>(it->second)) {
-            it->second = std::to_string(std::get<uint64_t>(it->second));
-        } else {
-            // Unsupported type, let's remove it
-            parameters.erase(it);
-            return false;
+    if (holds_alternative<int64_t>(it->second)) {
+        if (int64_t value = std::get<int64_t>(it->second); value >= 0) {
+            it->second = static_cast<uint64_t>(value);
         }
+    } else if (holds_alternative<std::string>(it->second)) {
+        if (auto [res, value] = from_string<uint64_t>(std::get<std::string>(it->second)); res) {
+            it->second = value;
+        }
+    }
+
+    if (!std::holds_alternative<uint64_t>(it->second) ||
+        !validate_fn(std::get<uint64_t>(it->second))) {
+        // Unsupported type, let's remove it
+        parameters.erase(it);
+        return false;
     }
 
     return true;
@@ -51,8 +58,11 @@ bool validate_status_code_presence_and_type(auto &parameters, const std::string 
 
 void validate_and_add_block(auto &cfg, auto id, auto &type, auto &parameters)
 {
-    if (!validate_status_code_presence_and_type(parameters, "status_code") ||
-        !validate_status_code_presence_and_type(parameters, "grpc_status_code") ||
+    // Accept any status code
+    auto validator = [](uint64_t /*code*/) { return true; };
+
+    if (!validate_status_code_presence_and_type(parameters, "status_code", validator) ||
+        !validate_status_code_presence_and_type(parameters, "grpc_status_code", validator) ||
         !parameters.contains("type")) {
         // If any of the parameters are missing, add the relevant default value
         // We could also avoid the above check ...
@@ -99,33 +109,12 @@ void validate_and_add_redirect(auto &cfg, auto id, auto &type, auto &parameters)
         return;
     }
 
-    it = parameters.find("status_code");
-    if (it != parameters.end()) {
-        unsigned code = 0;
-        if (std::holds_alternative<std::string>(it->second)) {
-            auto res = ddwaf::from_string<unsigned>(std::get<std::string>(it->second));
-            if (res.first) {
-                code = res.second;
-            }
-        } else if (std::holds_alternative<int64_t>(it->second) &&
-                   std::get<int64_t>(it->second) > 100 && std::get<int64_t>(it->second) < 400) {
-            code = static_cast<unsigned>(std::get<int64_t>(it->second));
-        } else if (std::holds_alternative<uint64_t>(it->second) &&
-                   std::get<uint64_t>(it->second) < 400) {
-            code = static_cast<unsigned>(std::get<uint64_t>(it->second));
-        }
+    auto validator = [](uint64_t code) {
+        return code == 301 || code == 302 || code == 303 || code == 307;
+    };
 
-        // If the code is the wrong type or invalid, it'll be caught by this check
-        // otherwise, we'll correct the type
-        if (code != 301 && code != 302 && code != 303 && code != 307) {
-            // Try to keep the original type, unless it's not worth it
-            it->second = "303";
-        } else if (!std::holds_alternative<std::string>(it->second)) {
-            // Ensure the code is consistently a string
-            it->second = std::to_string(code);
-        }
-    } else {
-        parameters.emplace("status_code", "303");
+    if (!validate_status_code_presence_and_type(parameters, "status_code", validator)) {
+        parameters.emplace("status_code", 303ULL);
     }
 
     cfg.emplace_action(

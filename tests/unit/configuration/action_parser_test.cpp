@@ -118,13 +118,13 @@ TEST(TestActionParser, SingleAction)
 
 TEST(TestActionParser, RedirectAction)
 {
-    std::vector<std::tuple<std::string, std::string, std::string>> redirections{
-        {"redirect_301", "301", "http://www.datadoghq.com"},
-        {"redirect_302", "302", "http://www.datadoghq.com"},
-        {"redirect_303", "303", "http://www.datadoghq.com"},
-        {"redirect_307", "307", "http://www.datadoghq.com"},
-        {"redirect_https", "303", "https://www.datadoghq.com"},
-        {"redirect_path", "303", "/security/appsec"},
+    std::vector<std::tuple<std::string, uint64_t, std::string>> redirections{
+        {"redirect_301", 301, "http://www.datadoghq.com"},
+        {"redirect_302", 302, "http://www.datadoghq.com"},
+        {"redirect_303", 303, "http://www.datadoghq.com"},
+        {"redirect_307", 307, "http://www.datadoghq.com"},
+        {"redirect_https", 303, "https://www.datadoghq.com"},
+        {"redirect_path", 303, "/security/appsec"},
     };
 
     std::string yaml;
@@ -184,7 +184,7 @@ TEST(TestActionParser, RedirectAction)
         EXPECT_EQ(spec.parameters.size(), 2);
 
         const auto &parameters = spec.parameters;
-        EXPECT_STR(std::get<std::string>(parameters.at("status_code")), status_code);
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("status_code")), status_code);
         EXPECT_STR(std::get<std::string>(parameters.at("location")), url);
     }
 
@@ -258,7 +258,7 @@ TEST(TestActionParser, RedirectActionInvalidStatusCode)
         EXPECT_EQ(spec.parameters.size(), 2);
 
         const auto &parameters = spec.parameters;
-        EXPECT_STR(std::get<std::string>(parameters.at("status_code")), "303");
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("status_code")), 303);
         EXPECT_STR(std::get<std::string>(parameters.at("location")), "http://www.google.com");
     }
 }
@@ -310,7 +310,7 @@ TEST(TestActionParser, RedirectActionInvalid300StatusCode)
         EXPECT_EQ(spec.parameters.size(), 2);
 
         const auto &parameters = spec.parameters;
-        EXPECT_STR(std::get<std::string>(parameters.at("status_code")), "303");
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("status_code")), 303);
         EXPECT_STR(std::get<std::string>(parameters.at("location")), "http://www.google.com");
     }
 }
@@ -362,7 +362,7 @@ TEST(TestActionParser, RedirectActionMissingStatusCode)
         EXPECT_EQ(spec.parameters.size(), 2);
 
         const auto &parameters = spec.parameters;
-        EXPECT_STR(std::get<std::string>(parameters.at("status_code")), "303");
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("status_code")), 303);
         EXPECT_STR(std::get<std::string>(parameters.at("location")), "http://www.google.com");
     }
 }
@@ -414,8 +414,8 @@ TEST(TestActionParser, RedirectActionMissingLocation)
         EXPECT_EQ(spec.parameters.size(), 3);
 
         const auto &parameters = spec.parameters;
-        EXPECT_STR(std::get<std::string>(parameters.at("status_code")), "403");
-        EXPECT_STR(std::get<std::string>(parameters.at("grpc_status_code")), "10");
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("status_code")), 403);
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("grpc_status_code")), 10);
         EXPECT_STR(std::get<std::string>(parameters.at("type")), "auto");
     }
 }
@@ -467,8 +467,8 @@ TEST(TestActionParser, RedirectActionNonHttpURL)
         EXPECT_EQ(spec.parameters.size(), 3);
 
         const auto &parameters = spec.parameters;
-        EXPECT_STR(std::get<std::string>(parameters.at("status_code")), "403");
-        EXPECT_STR(std::get<std::string>(parameters.at("grpc_status_code")), "10");
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("status_code")), 403);
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("grpc_status_code")), 10);
         EXPECT_STR(std::get<std::string>(parameters.at("type")), "auto");
     }
 }
@@ -520,8 +520,8 @@ TEST(TestActionParser, RedirectActionInvalidRelativePathURL)
         EXPECT_EQ(spec.parameters.size(), 3);
 
         const auto &parameters = spec.parameters;
-        EXPECT_STR(std::get<std::string>(parameters.at("status_code")), "403");
-        EXPECT_STR(std::get<std::string>(parameters.at("grpc_status_code")), "10");
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("status_code")), 403);
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("grpc_status_code")), 10);
         EXPECT_STR(std::get<std::string>(parameters.at("type")), "auto");
     }
 }
@@ -574,7 +574,7 @@ TEST(TestActionParser, OverrideDefaultBlockAction)
         EXPECT_EQ(spec.parameters.size(), 2);
 
         const auto &parameters = spec.parameters;
-        EXPECT_STR(std::get<std::string>(parameters.at("status_code")), "302");
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("status_code")), 302);
         EXPECT_STR(std::get<std::string>(parameters.at("location")), "http://www.google.com");
     }
 }
@@ -626,8 +626,8 @@ TEST(TestActionParser, BlockActionMissingStatusCode)
         EXPECT_EQ(spec.parameters.size(), 3);
 
         const auto &parameters = spec.parameters;
-        EXPECT_STR(std::get<std::string>(parameters.at("status_code")), "403");
-        // EXPECT_STR(std::get<std::string>(parameters.at("grpc_status_code")), "302");
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("status_code")), 403);
+        // EXPECT_EQ(std::get<uint64_t>(parameters.at("grpc_status_code")), 302);
         // EXPECT_STR(std::get<std::string>(parameters.at("type")), "auto");
     }
 }
@@ -720,8 +720,8 @@ TEST(TestActionParser, BlockActionMissingGrpcStatusCode)
         EXPECT_EQ(spec.parameters.size(), 3);
 
         const auto &parameters = spec.parameters;
-        EXPECT_STR(std::get<std::string>(parameters.at("status_code")), "302");
-        EXPECT_STR(std::get<std::string>(parameters.at("grpc_status_code")), "10");
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("status_code")), 302);
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("grpc_status_code")), 10);
         EXPECT_STR(std::get<std::string>(parameters.at("type")), "auto");
     }
 }
@@ -773,8 +773,8 @@ TEST(TestActionParser, BlockActionMissingType)
         EXPECT_EQ(spec.parameters.size(), 3);
 
         const auto &parameters = spec.parameters;
-        EXPECT_STR(std::get<std::string>(parameters.at("status_code")), "302");
-        EXPECT_STR(std::get<std::string>(parameters.at("grpc_status_code")), "11");
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("status_code")), 302);
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("grpc_status_code")), 11);
         EXPECT_STR(std::get<std::string>(parameters.at("type")), "auto");
     }
 }
@@ -825,8 +825,8 @@ TEST(TestActionParser, BlockActionMissingParameters)
         EXPECT_EQ(spec.parameters.size(), 3);
 
         const auto &parameters = spec.parameters;
-        EXPECT_STR(std::get<std::string>(parameters.at("status_code")), "403");
-        EXPECT_STR(std::get<std::string>(parameters.at("grpc_status_code")), "10");
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("status_code")), 403);
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("grpc_status_code")), 10);
         EXPECT_STR(std::get<std::string>(parameters.at("type")), "auto");
     }
 }
