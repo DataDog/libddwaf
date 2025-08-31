@@ -20,6 +20,7 @@
 #include "condition/base.hpp"
 #include "condition/match_iterator.hpp"
 #include "condition/sqli_detector.hpp"
+#include "condition/structured_condition.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "log.hpp"
