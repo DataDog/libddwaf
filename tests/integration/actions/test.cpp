@@ -45,8 +45,9 @@ TEST(TestActionsIntegration, DefaultActions)
                                        .address = "value",
                                    }}}}});
 
-        EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
-                                                   {"type", "auto"}}}});
+        EXPECT_ACTIONS(
+            res, {{"block_request",
+                     {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
         ddwaf_object_free(&res);
     }
 
@@ -93,7 +94,7 @@ TEST(TestActionsIntegration, DefaultActions)
             auto it = obtained.find("generate_stack");
             EXPECT_EQ(it->second.size(), 1);
             EXPECT_TRUE(it->second.contains("stack_id"));
-            EXPECT_EQ(it->second.at("stack_id"), stack_id);
+            EXPECT_EQ(std::get<std::string>(it->second.at("stack_id")), stack_id);
         }
 
         ddwaf_object_free(&res);
@@ -188,8 +189,9 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
                                        .address = "value",
                                    }}}}});
 
-        EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
-                                                   {"type", "auto"}}}});
+        EXPECT_ACTIONS(
+            res, {{"block_request",
+                     {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
         ddwaf_object_free(&res);
 
         ddwaf_context_destroy(context);
@@ -230,7 +232,7 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
                                    }}}}});
 
         EXPECT_ACTIONS(res,
-            {{"redirect_request", {{"location", "http://google.com"}, {"status_code", "303"}}}});
+            {{"redirect_request", {{"location", "http://google.com"}, {"status_code", 303ULL}}}});
         ddwaf_object_free(&res);
 
         ddwaf_context_destroy(context);
@@ -316,7 +318,7 @@ TEST(TestActionsIntegration, AddNewAction)
                                        .address = "value",
                                    }}}}});
 
-        EXPECT_ACTIONS(res, {{"unblock_request", {{"code", "303"}}}});
+        EXPECT_ACTIONS(res, {{"unblock_request", {{"code", 303ULL}}}});
 
         ddwaf_object_free(&res);
 
@@ -358,11 +360,51 @@ TEST(TestActionsIntegration, EmptyOrInvalidActions)
                                    .address = "value",
                                }}}}});
 
-    EXPECT_ACTIONS(res, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
+    EXPECT_ACTIONS(res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
                                                {"type", "auto"}}}});
     ddwaf_object_free(&res);
 
     ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestActionsIntegration, ActionTypes)
+{
+    auto rule = read_file("action_types.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    ddwaf_context context1 = ddwaf_context_init(handle);
+    ASSERT_NE(context1, nullptr);
+
+    ddwaf_object tmp;
+    ddwaf_object parameter = DDWAF_OBJECT_MAP;
+    ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "sanitize"));
+
+    ddwaf_object res;
+    EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
+
+    EXPECT_EVENTS(res, {.id = "sanitize-rule",
+                           .name = "sanitize-rule",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .actions = {"sanitize"},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "^sanitize",
+                               .highlight = "sanitize"sv,
+                               .args = {{
+                                   .value = "sanitize"sv,
+                                   .address = "value",
+                               }}}}});
+
+    EXPECT_ACTIONS(res, {{"sanitize_something", {{"string", "thisisastring"}, {"int64", -200},
+                                                    {"uint64", 18446744073709551615ULL},
+                                                    {"double", 22.22}, {"bool", true}}}});
+    ddwaf_object_free(&res);
+
+    ddwaf_context_destroy(context1);
     ddwaf_destroy(handle);
 }
 

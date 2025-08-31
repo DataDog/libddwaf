@@ -263,10 +263,114 @@ TEST(TestActionParser, RedirectActionInvalidStatusCode)
     }
 }
 
+TEST(TestActionParser, RedirectActionNegativeStatusCode)
+{
+    auto object = yaml_to_object(
+        R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: -303}, type: redirect_request}])");
+
+    configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
+    parse_actions(actions_array, collector, section);
+    ddwaf_object_free(&object);
+
+    {
+        raw_configuration root;
+        section.to_object(root);
+
+        auto root_map = static_cast<raw_configuration::map>(root);
+
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("redirect"), loaded.end());
+
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = at<raw_configuration::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.content, change_set::actions);
+    EXPECT_EQ(change.actions.size(), 1);
+    EXPECT_EQ(cfg.actions.size(), 1);
+
+    EXPECT_TRUE(change.actions.contains("redirect"));
+    EXPECT_TRUE(cfg.actions.contains("redirect"));
+
+    {
+        const auto &spec = cfg.actions["redirect"];
+        EXPECT_EQ(spec.type, action_type::redirect_request);
+        EXPECT_EQ(spec.type_str, "redirect_request");
+        EXPECT_EQ(spec.parameters.size(), 2);
+
+        const auto &parameters = spec.parameters;
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("status_code")), 303);
+        EXPECT_STR(std::get<std::string>(parameters.at("location")), "http://www.google.com");
+    }
+}
+
 TEST(TestActionParser, RedirectActionInvalid300StatusCode)
 {
     auto object = yaml_to_object(
         R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: 304}, type: redirect_request}])");
+
+    configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
+    parse_actions(actions_array, collector, section);
+    ddwaf_object_free(&object);
+
+    {
+        raw_configuration root;
+        section.to_object(root);
+
+        auto root_map = static_cast<raw_configuration::map>(root);
+
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("redirect"), loaded.end());
+
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = at<raw_configuration::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.content, change_set::actions);
+    EXPECT_EQ(change.actions.size(), 1);
+    EXPECT_EQ(cfg.actions.size(), 1);
+
+    EXPECT_TRUE(change.actions.contains("redirect"));
+    EXPECT_TRUE(cfg.actions.contains("redirect"));
+
+    {
+        const auto &spec = cfg.actions["redirect"];
+        EXPECT_EQ(spec.type, action_type::redirect_request);
+        EXPECT_EQ(spec.type_str, "redirect_request");
+        EXPECT_EQ(spec.parameters.size(), 2);
+
+        const auto &parameters = spec.parameters;
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("status_code")), 303);
+        EXPECT_STR(std::get<std::string>(parameters.at("location")), "http://www.google.com");
+    }
+}
+
+TEST(TestActionParser, RedirectActionStringStatusCode)
+{
+    auto object = yaml_to_object(
+        R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: "303"}, type: redirect_request}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -627,8 +731,114 @@ TEST(TestActionParser, BlockActionMissingStatusCode)
 
         const auto &parameters = spec.parameters;
         EXPECT_EQ(std::get<uint64_t>(parameters.at("status_code")), 403);
-        // EXPECT_EQ(std::get<uint64_t>(parameters.at("grpc_status_code")), 302);
-        // EXPECT_STR(std::get<std::string>(parameters.at("type")), "auto");
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("grpc_status_code")), 302);
+        EXPECT_STR(std::get<std::string>(parameters.at("type")), "auto");
+    }
+}
+
+TEST(TestActionParser, BlockActionNegativeStatusCode)
+{
+    auto object = yaml_to_object(
+        R"([{id: block, parameters: {type: "auto", grpc_status_code: -302, status_code: -10}, type: block_request}])");
+
+    configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
+    parse_actions(actions_array, collector, section);
+    ddwaf_object_free(&object);
+
+    {
+        raw_configuration root;
+        section.to_object(root);
+
+        auto root_map = static_cast<raw_configuration::map>(root);
+
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("block"), loaded.end());
+
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = at<raw_configuration::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.content, change_set::actions);
+    EXPECT_EQ(change.actions.size(), 1);
+    EXPECT_EQ(cfg.actions.size(), 1);
+
+    EXPECT_TRUE(change.actions.contains("block"));
+    EXPECT_TRUE(cfg.actions.contains("block"));
+
+    {
+        const auto &spec = cfg.actions["block"];
+        EXPECT_EQ(spec.type, action_type::block_request);
+        EXPECT_EQ(spec.type_str, "block_request");
+        EXPECT_EQ(spec.parameters.size(), 3);
+
+        const auto &parameters = spec.parameters;
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("status_code")), 403);
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("grpc_status_code")), 10);
+        EXPECT_STR(std::get<std::string>(parameters.at("type")), "auto");
+    }
+}
+
+TEST(TestActionParser, BlockActionStringStatusCode)
+{
+    auto object = yaml_to_object(
+        R"([{id: block, parameters: {type: "auto", grpc_status_code: "302", status_code: "10"}, type: block_request}])");
+
+    configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
+    parse_actions(actions_array, collector, section);
+    ddwaf_object_free(&object);
+
+    {
+        raw_configuration root;
+        section.to_object(root);
+
+        auto root_map = static_cast<raw_configuration::map>(root);
+
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("block"), loaded.end());
+
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = at<raw_configuration::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.content, change_set::actions);
+    EXPECT_EQ(change.actions.size(), 1);
+    EXPECT_EQ(cfg.actions.size(), 1);
+
+    EXPECT_TRUE(change.actions.contains("block"));
+    EXPECT_TRUE(cfg.actions.contains("block"));
+
+    {
+        const auto &spec = cfg.actions["block"];
+        EXPECT_EQ(spec.type, action_type::block_request);
+        EXPECT_EQ(spec.type_str, "block_request");
+        EXPECT_EQ(spec.parameters.size(), 3);
+
+        const auto &parameters = spec.parameters;
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("status_code")), 10);
+        EXPECT_EQ(std::get<uint64_t>(parameters.at("grpc_status_code")), 302);
+        EXPECT_STR(std::get<std::string>(parameters.at("type")), "auto");
     }
 }
 
@@ -1005,6 +1215,153 @@ TEST(TestActionParser, DuplicateAction)
 
     EXPECT_TRUE(change.actions.contains("block_1"));
     EXPECT_TRUE(cfg.actions.contains("block_1"));
+}
+
+TEST(TestActionParser, ParameterTypes)
+{
+    auto object = yaml_to_object(
+        R"([{id: sanitize, parameters: {string: thisisastring, int64: -200, uint64: 18446744073709551615, double: 22.22, bool: true}, type: new_action_type}])");
+
+    configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
+    parse_actions(actions_array, collector, section);
+    ddwaf_object_free(&object);
+
+    {
+        raw_configuration root;
+        section.to_object(root);
+
+        auto root_map = static_cast<raw_configuration::map>(root);
+
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("sanitize"), loaded.end());
+
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = at<raw_configuration::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        ddwaf_object_free(&root);
+    }
+
+    EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.content, change_set::actions);
+    EXPECT_EQ(change.actions.size(), 1);
+    EXPECT_EQ(cfg.actions.size(), 1);
+
+    EXPECT_TRUE(change.actions.contains("sanitize"));
+    EXPECT_TRUE(cfg.actions.contains("sanitize"));
+
+    auto &spec = cfg.actions.find("sanitize")->second;
+
+    auto it = spec.parameters.find("string");
+    EXPECT_NE(it, spec.parameters.end());
+    ASSERT_TRUE(std::holds_alternative<std::string>(it->second));
+    EXPECT_STR(std::get<std::string>(it->second), "thisisastring");
+
+    it = spec.parameters.find("int64");
+    EXPECT_NE(it, spec.parameters.end());
+    EXPECT_TRUE(std::holds_alternative<int64_t>(it->second));
+    EXPECT_EQ(std::get<int64_t>(it->second), -200);
+
+    it = spec.parameters.find("uint64");
+    EXPECT_NE(it, spec.parameters.end());
+    EXPECT_TRUE(std::holds_alternative<uint64_t>(it->second));
+    EXPECT_EQ(std::get<uint64_t>(it->second), std::numeric_limits<uint64_t>::max());
+
+    it = spec.parameters.find("double");
+    EXPECT_NE(it, spec.parameters.end());
+    EXPECT_TRUE(std::holds_alternative<double>(it->second));
+    EXPECT_EQ(std::get<double>(it->second), 22.22);
+
+    it = spec.parameters.find("bool");
+    EXPECT_NE(it, spec.parameters.end());
+    EXPECT_TRUE(std::holds_alternative<bool>(it->second));
+    EXPECT_EQ(std::get<bool>(it->second), true);
+}
+
+TEST(TestActionParser, InvalidParameterContainer)
+{
+    auto object = yaml_to_object(R"([{id: sanitize, parameters: [], type: new_action_type}])");
+
+    configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
+    parse_actions(actions_array, collector, section);
+    ddwaf_object_free(&object);
+
+    {
+        raw_configuration root;
+        section.to_object(root);
+
+        auto root_map = static_cast<raw_configuration::map>(root);
+
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("sanitize"), failed.end());
+
+        auto errors = at<raw_configuration::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+
+        auto it = errors.find("invalid type 'array' for key 'parameters', expected 'map'");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("sanitize"), error_rules.end());
+
+        ddwaf_object_free(&root);
+    }
+}
+
+TEST(TestActionParser, InvalidParameterType)
+{
+    auto object =
+        yaml_to_object(R"([{id: sanitize, parameters: {value: {}}, type: new_action_type}])");
+
+    configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
+    parse_actions(actions_array, collector, section);
+    ddwaf_object_free(&object);
+
+    {
+        raw_configuration root;
+        section.to_object(root);
+
+        auto root_map = static_cast<raw_configuration::map>(root);
+
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("sanitize"), failed.end());
+
+        auto errors = at<raw_configuration::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+
+        auto it = errors.find("malformed object, item in scalar map not a valid scalar");
+        EXPECT_NE(it, errors.end());
+
+        auto error_rules = static_cast<raw_configuration::string_set>(it->second);
+        EXPECT_EQ(error_rules.size(), 1);
+        EXPECT_NE(error_rules.find("sanitize"), error_rules.end());
+
+        ddwaf_object_free(&root);
+    }
 }
 
 } // namespace

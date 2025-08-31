@@ -37,7 +37,7 @@ bool validate_status_code_presence_and_type(
     }
 
     if (holds_alternative<int64_t>(it->second)) {
-        if (int64_t value = std::get<int64_t>(it->second); value >= 0) {
+        if (const int64_t value = std::get<int64_t>(it->second); value >= 0) {
             it->second = static_cast<uint64_t>(value);
         }
     } else if (holds_alternative<std::string>(it->second)) {
@@ -60,10 +60,11 @@ void validate_and_add_block(auto &cfg, auto id, auto &type, auto &parameters)
 {
     // Accept any status code
     auto validator = [](uint64_t /*code*/) { return true; };
+    auto status_code = validate_status_code_presence_and_type(parameters, "status_code", validator);
+    auto grpc_status_code =
+        validate_status_code_presence_and_type(parameters, "grpc_status_code", validator);
 
-    if (!validate_status_code_presence_and_type(parameters, "status_code", validator) ||
-        !validate_status_code_presence_and_type(parameters, "grpc_status_code", validator) ||
-        !parameters.contains("type")) {
+    if (!status_code || !grpc_status_code || !parameters.contains("type")) {
         // If any of the parameters are missing, add the relevant default value
         // We could also avoid the above check ...
         auto default_params = action_mapper_builder::get_default_action("block");

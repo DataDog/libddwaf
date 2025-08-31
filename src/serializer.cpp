@@ -303,8 +303,6 @@ void serialize_action(std::string_view id, ddwaf_object &action_map, const actio
                 ddwaf_object_unsigned(&value, std::get<uint64_t>(v));
             } else if (std::holds_alternative<double>(v)) {
                 ddwaf_object_float(&value, std::get<double>(v));
-            } else {
-                ddwaf_object_null(&value);
             }
 
             ddwaf_object_map_addl(&param_map, k.data(), k.size(), &value);
