@@ -96,7 +96,7 @@ struct data_spec {
 struct action_spec {
     action_type type;
     std::string type_str;
-    std::unordered_map<std::string, std::string> parameters;
+    std::unordered_map<std::string, scalar_type> parameters;
 };
 
 enum class change_set : uint16_t {
