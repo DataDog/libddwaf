@@ -22,7 +22,7 @@ struct uri_decomposed {
         std::string_view userinfo{};
         std::string_view host{};
         std::optional<ipaddr> host_ip{};
-        std::string_view port{};
+        uint16_t port{};
         std::string_view raw;
     } authority;
     std::string_view scheme_and_authority;

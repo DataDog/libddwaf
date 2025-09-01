@@ -20,7 +20,7 @@ TEST(TestURI, Scheme)
         EXPECT_STRV(uri->scheme, "http");
         EXPECT_TRUE(uri->authority.host.empty());
         EXPECT_TRUE(uri->authority.userinfo.empty());
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
         EXPECT_TRUE(uri->authority.raw.empty());
         EXPECT_TRUE(uri->scheme_and_authority.empty());
         EXPECT_TRUE(uri->path.empty());
@@ -34,7 +34,7 @@ TEST(TestURI, Scheme)
         EXPECT_STRV(uri->scheme, "http");
         EXPECT_TRUE(uri->authority.host.empty());
         EXPECT_TRUE(uri->authority.userinfo.empty());
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
         EXPECT_TRUE(uri->authority.raw.empty());
         EXPECT_TRUE(uri->scheme_and_authority.empty());
         EXPECT_TRUE(uri->path.empty());
@@ -60,7 +60,7 @@ TEST(TestURI, SchemeAndPath)
         EXPECT_STRV(uri->scheme, "file");
         EXPECT_TRUE(uri->authority.host.empty());
         EXPECT_TRUE(uri->authority.userinfo.empty());
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
         EXPECT_STRV(uri->path, "/usr/lib/libddwaf.so");
         EXPECT_EQ(uri->path_index, 7);
     }
@@ -71,7 +71,7 @@ TEST(TestURI, SchemeAndPath)
         EXPECT_STRV(uri->scheme, "file");
         EXPECT_TRUE(uri->authority.host.empty());
         EXPECT_TRUE(uri->authority.userinfo.empty());
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
         EXPECT_STRV(uri->path, "/usr/lib/libddwaf.so");
         EXPECT_EQ(uri->path_index, 5);
     }
@@ -82,7 +82,7 @@ TEST(TestURI, SchemeAndPath)
         EXPECT_STRV(uri->scheme, "file");
         EXPECT_TRUE(uri->authority.host.empty());
         EXPECT_TRUE(uri->authority.userinfo.empty());
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
         EXPECT_STRV(uri->path, "/../lib/libddwaf.so");
         EXPECT_EQ(uri->path_index, 5);
     }
@@ -92,7 +92,7 @@ TEST(TestURI, SchemeAndPath)
         EXPECT_STRV(uri->scheme, "file");
         EXPECT_TRUE(uri->authority.host.empty());
         EXPECT_TRUE(uri->authority.userinfo.empty());
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
         EXPECT_STRV(uri->path, "../lib/libddwaf.so");
         EXPECT_EQ(uri->path_index, 5);
     }
@@ -103,7 +103,7 @@ TEST(TestURI, SchemeAndPath)
         EXPECT_STRV(uri->scheme, "http");
         EXPECT_TRUE(uri->authority.host.empty());
         EXPECT_TRUE(uri->authority.userinfo.empty());
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
         EXPECT_STRV(uri->path, "/");
         EXPECT_TRUE(uri->fragment.empty());
     }
@@ -113,7 +113,7 @@ TEST(TestURI, SchemeAndPath)
         EXPECT_STRV(uri->scheme, "urn");
         EXPECT_TRUE(uri->authority.host.empty());
         EXPECT_TRUE(uri->authority.userinfo.empty());
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
         EXPECT_STRV(uri->path, "oasis:names:specification:docbook:dtd:xml:4.1.2");
         EXPECT_TRUE(uri->fragment.empty());
     }
@@ -124,7 +124,7 @@ TEST(TestURI, SchemeAndPath)
         EXPECT_STRV(uri->scheme, "tel");
         EXPECT_TRUE(uri->authority.host.empty());
         EXPECT_TRUE(uri->authority.userinfo.empty());
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
         EXPECT_STRV(uri->path, "+1-816-555-1212");
         EXPECT_TRUE(uri->fragment.empty());
     }
@@ -135,7 +135,7 @@ TEST(TestURI, SchemeAndPath)
         EXPECT_STRV(uri->scheme, "mailto");
         EXPECT_TRUE(uri->authority.host.empty());
         EXPECT_TRUE(uri->authority.userinfo.empty());
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
         EXPECT_STRV(uri->path, "John.Doe@example.com");
         EXPECT_TRUE(uri->fragment.empty());
     }
@@ -151,7 +151,7 @@ TEST(TestURI, SchemeHost)
         EXPECT_STRV(uri->scheme, "http");
         EXPECT_STRV(uri->authority.host, "authority");
         EXPECT_TRUE(uri->authority.userinfo.empty());
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
     }
 
     {
@@ -160,7 +160,7 @@ TEST(TestURI, SchemeHost)
         EXPECT_STRV(uri->scheme, "http");
         EXPECT_STRV(uri->authority.host, "authority.with.dots");
         EXPECT_TRUE(uri->authority.userinfo.empty());
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
     }
 
     {
@@ -170,19 +170,19 @@ TEST(TestURI, SchemeHost)
         EXPECT_EQ(uri->authority.host_index, 4);
         EXPECT_STRV(uri->authority.host, "a");
         EXPECT_TRUE(uri->authority.userinfo.empty());
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
     }
 }
 
 TEST(TestURI, SchemeQuery)
 {
-    auto uri = ddwaf::uri_parse("http:?hello");
+    auto uri = ddwaf::uri_parse("http:?hello&other=whatever&array[]=something&bye=");
     ASSERT_TRUE(uri);
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_STRV(uri->authority.host, "");
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_TRUE(uri->authority.port.empty());
-    EXPECT_STRV(uri->query, "hello");
+    EXPECT_EQ(uri->authority.port, 0);
+    EXPECT_STRV(uri->query, "hello&other=whatever&array[]=something&bye=");
 }
 
 TEST(TestURI, SchemeFragment)
@@ -192,7 +192,7 @@ TEST(TestURI, SchemeFragment)
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_STRV(uri->authority.host, "");
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_EQ(uri->authority.port, 0);
     EXPECT_STRV(uri->fragment, "hello");
 }
 
@@ -203,7 +203,7 @@ TEST(TestURI, SchemeQueryFragment)
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_STRV(uri->authority.host, "");
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_EQ(uri->authority.port, 0);
     EXPECT_STRV(uri->query, "hello");
     EXPECT_STRV(uri->fragment, "bye");
 }
@@ -216,7 +216,7 @@ TEST(TestURI, SchemeIPv4Host)
     EXPECT_STRV(uri->authority.host, "1.2.3.4");
     EXPECT_TRUE(uri->authority.host_ip);
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_EQ(uri->authority.port, 0);
 }
 
 TEST(TestURI, SchemeIPv6Host)
@@ -227,7 +227,7 @@ TEST(TestURI, SchemeIPv6Host)
     EXPECT_STRV(uri->authority.host, "200:22:11:33:44:ab:cc:bf");
     EXPECT_TRUE(uri->authority.host_ip);
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_EQ(uri->authority.port, 0);
 }
 
 TEST(TestURI, SchemeIPv6HostPort)
@@ -238,7 +238,7 @@ TEST(TestURI, SchemeIPv6HostPort)
     EXPECT_STRV(uri->authority.host, "200:22:11:33:44:ab:cc:bf");
     EXPECT_TRUE(uri->authority.host_ip);
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_STRV(uri->authority.port, "1234");
+    EXPECT_EQ(uri->authority.port, 1234);
 }
 
 TEST(TestURI, SchemeMalformedIPv6Host)
@@ -254,7 +254,7 @@ TEST(TestURI, SchemeUser)
         EXPECT_STRV(uri->scheme, "http");
         EXPECT_TRUE(uri->authority.host.empty());
         EXPECT_STRV(uri->authority.userinfo, "paco");
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
     }
 
     {
@@ -263,7 +263,7 @@ TEST(TestURI, SchemeUser)
         EXPECT_STRV(uri->scheme, "http");
         EXPECT_TRUE(uri->authority.host.empty());
         EXPECT_STRV(uri->authority.userinfo, "paco");
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
     }
 }
 
@@ -275,7 +275,7 @@ TEST(TestURI, SchemeUserPort)
         EXPECT_STRV(uri->scheme, "http");
         EXPECT_TRUE(uri->authority.host.empty());
         EXPECT_STRV(uri->authority.userinfo, "paco");
-        EXPECT_EQ(uri->authority.port, "1919");
+        EXPECT_EQ(uri->authority.port, 1919);
     }
 }
 
@@ -287,7 +287,7 @@ TEST(TestURI, SchemeUserHost)
         EXPECT_STRV(uri->scheme, "http");
         EXPECT_STRV(uri->authority.host, "authority");
         EXPECT_STRV(uri->authority.userinfo, "paco");
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
     }
 }
 
@@ -299,7 +299,7 @@ TEST(TestURI, SchemeUserHostPort)
         EXPECT_STRV(uri->scheme, "http");
         EXPECT_STRV(uri->authority.host, "authority");
         EXPECT_STRV(uri->authority.userinfo, "paco");
-        EXPECT_EQ(uri->authority.port, "1919");
+        EXPECT_EQ(uri->authority.port, 1919);
     }
 }
 
@@ -311,7 +311,7 @@ TEST(TestURI, SchemeHostPort)
         EXPECT_STRV(uri->scheme, "http");
         EXPECT_STRV(uri->authority.host, "authority");
         EXPECT_TRUE(uri->authority.userinfo.empty());
-        EXPECT_STRV(uri->authority.port, "1");
+        EXPECT_EQ(uri->authority.port, 1);
     }
 
     {
@@ -321,7 +321,7 @@ TEST(TestURI, SchemeHostPort)
         EXPECT_STRV(uri->scheme, "h");
         EXPECT_TRUE(uri->authority.host.empty());
         EXPECT_TRUE(uri->authority.userinfo.empty());
-        EXPECT_STRV(uri->authority.port, "19283");
+        EXPECT_EQ(uri->authority.port, 19283);
     }
 
     {
@@ -346,7 +346,7 @@ TEST(TestURI, SchemeHostQuery)
         EXPECT_STRV(uri->scheme, "http");
         EXPECT_STRV(uri->authority.host, "authority");
         EXPECT_TRUE(uri->authority.userinfo.empty());
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
         EXPECT_STRV(uri->query, "query");
     }
 
@@ -356,7 +356,7 @@ TEST(TestURI, SchemeHostQuery)
         EXPECT_STRV(uri->scheme, "http");
         EXPECT_STRV(uri->authority.host, "authority");
         EXPECT_TRUE(uri->authority.userinfo.empty());
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
         EXPECT_STRV(uri->query, "query");
     }
 
@@ -366,14 +366,14 @@ TEST(TestURI, SchemeHostQuery)
         EXPECT_STRV(uri->scheme, "http");
         EXPECT_STRV(uri->authority.host, "authority");
         EXPECT_TRUE(uri->authority.userinfo.empty());
-        EXPECT_TRUE(uri->authority.port.empty());
+        EXPECT_EQ(uri->authority.port, 0);
         EXPECT_STRV(uri->query, "q@uery");
     }
 }
 
 TEST(TestURI, SchemeHostMalformedQuery)
 {
-    ASSERT_FALSE(ddwaf::uri_parse("http://authority?que[]ry"));
+    ASSERT_FALSE(ddwaf::uri_parse("http://authority?que<>ry"));
 }
 
 TEST(TestURI, SchemeHostPath)
@@ -384,7 +384,7 @@ TEST(TestURI, SchemeHostPath)
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_STRV(uri->path, "/path");
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_EQ(uri->authority.port, 0);
 }
 
 TEST(TestURI, SchemeHostMalformedPath)
@@ -399,7 +399,7 @@ TEST(TestURI, SchemeHostFragment)
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_EQ(uri->authority.port, 0);
     EXPECT_STRV(uri->fragment, "f");
 }
 
@@ -415,7 +415,7 @@ TEST(TestURI, SchemeHostPortQuery)
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_STRV(uri->authority.port, "123");
+    EXPECT_EQ(uri->authority.port, 123);
     EXPECT_STRV(uri->query, "query");
 }
 
@@ -426,7 +426,7 @@ TEST(TestURI, SchemeHostPortPath)
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_STRV(uri->authority.port, "12");
+    EXPECT_EQ(uri->authority.port, 12);
     EXPECT_STRV(uri->path, "/path");
 }
 
@@ -437,7 +437,7 @@ TEST(TestURI, SchemeHostPortFragment)
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_STRV(uri->authority.port, "1");
+    EXPECT_EQ(uri->authority.port, 1);
     EXPECT_STRV(uri->fragment, "f");
 }
 
@@ -448,7 +448,7 @@ TEST(TestURI, SchemeUserHostQuery)
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_STRV(uri->authority.userinfo, "user");
-    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_EQ(uri->authority.port, 0);
     EXPECT_STRV(uri->query, "query");
 }
 
@@ -459,7 +459,7 @@ TEST(TestURI, SchemeUserHostPath)
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_STRV(uri->authority.userinfo, "us");
-    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_EQ(uri->authority.port, 0);
     EXPECT_STRV(uri->path, "/path");
 }
 
@@ -470,7 +470,7 @@ TEST(TestURI, SchemeUserHostFragment)
     EXPECT_STRV(uri->scheme, "http");
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_STRV(uri->authority.userinfo, "u");
-    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_EQ(uri->authority.port, 0);
     EXPECT_STRV(uri->fragment, "f");
 }
 
@@ -496,7 +496,7 @@ TEST(TestURI, Complete)
         EXPECT_STRV(uri->scheme, "http+s.i-a");
         EXPECT_STRV(uri->authority.host, "hello.com");
         EXPECT_STRV(uri->authority.userinfo, "user");
-        EXPECT_STRV(uri->authority.port, "1929");
+        EXPECT_EQ(uri->authority.port, 1929);
         EXPECT_STRV(uri->authority.raw, "user@hello.com:1929");
         EXPECT_STRV(uri->scheme_and_authority, "http+s.i-a://user@hello.com:1929");
         EXPECT_STRV(uri->path, "/path/to/nowhere");
@@ -511,7 +511,7 @@ TEST(TestURI, Complete)
         EXPECT_STRV(uri->scheme, "s");
         EXPECT_STRV(uri->authority.host, "h");
         EXPECT_STRV(uri->authority.userinfo, "u");
-        EXPECT_STRV(uri->authority.port, "1");
+        EXPECT_EQ(uri->authority.port, 1);
         EXPECT_STRV(uri->scheme_and_authority, "s://u@h:1");
         EXPECT_STRV(uri->path, "/p");
         EXPECT_STRV(uri->authority.raw, "u@h:1");
@@ -525,7 +525,7 @@ TEST(TestURI, RelativeRefHostPortQuery)
     EXPECT_STRV(uri->scheme, "");
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_STRV(uri->authority.port, "123");
+    EXPECT_EQ(uri->authority.port, 123);
     EXPECT_STRV(uri->query, "query");
 }
 
@@ -536,7 +536,7 @@ TEST(TestURI, RelativeRefHostPortPath)
     EXPECT_STRV(uri->scheme, "");
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_STRV(uri->authority.port, "12");
+    EXPECT_EQ(uri->authority.port, 12);
     EXPECT_STRV(uri->path, "/path");
 }
 
@@ -547,7 +547,7 @@ TEST(TestURI, RelativeRefHostPortFragment)
     EXPECT_STRV(uri->scheme, "");
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_STRV(uri->authority.port, "1");
+    EXPECT_EQ(uri->authority.port, 1);
     EXPECT_STRV(uri->fragment, "f");
 }
 
@@ -558,7 +558,7 @@ TEST(TestURI, RelativeRefUserHostQuery)
     EXPECT_STRV(uri->scheme, "");
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_STRV(uri->authority.userinfo, "user");
-    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_EQ(uri->authority.port, 0);
     EXPECT_STRV(uri->query, "query");
 }
 
@@ -569,7 +569,7 @@ TEST(TestURI, RelativeRefUserHostPath)
     EXPECT_STRV(uri->scheme, "");
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_STRV(uri->authority.userinfo, "us");
-    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_EQ(uri->authority.port, 0);
     EXPECT_STRV(uri->path, "/path");
 }
 
@@ -580,7 +580,7 @@ TEST(TestURI, RelativeRefUserHostFragment)
     EXPECT_STRV(uri->scheme, "");
     EXPECT_STRV(uri->authority.host, "authority");
     EXPECT_STRV(uri->authority.userinfo, "u");
-    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_EQ(uri->authority.port, 0);
     EXPECT_STRV(uri->fragment, "f");
 }
 
@@ -591,7 +591,7 @@ TEST(TestURI, RelativeRefAbsolutePath)
     EXPECT_STRV(uri->scheme, "");
     EXPECT_STRV(uri->authority.host, "");
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_STRV(uri->authority.port, "");
+    EXPECT_EQ(uri->authority.port, 0);
     EXPECT_STRV(uri->path, "/path");
 }
 
@@ -602,7 +602,7 @@ TEST(TestURI, RelativeRefAbsolutePathFragment)
     EXPECT_STRV(uri->scheme, "");
     EXPECT_STRV(uri->authority.host, "");
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_STRV(uri->authority.port, "");
+    EXPECT_EQ(uri->authority.port, 0);
     EXPECT_STRV(uri->path, "/path");
     EXPECT_STRV(uri->fragment, "f");
 }
@@ -614,7 +614,7 @@ TEST(TestURI, RelativeRefAbsolutePathQuery)
     EXPECT_STRV(uri->scheme, "");
     EXPECT_STRV(uri->authority.host, "");
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_STRV(uri->authority.port, "");
+    EXPECT_EQ(uri->authority.port, 0);
     EXPECT_STRV(uri->path, "/path");
     EXPECT_STRV(uri->query, "query");
 }
@@ -626,7 +626,7 @@ TEST(TestURI, RelativeRefAbsolutePathQueryFragment)
     EXPECT_STRV(uri->scheme, "");
     EXPECT_STRV(uri->authority.host, "");
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_STRV(uri->authority.port, "");
+    EXPECT_EQ(uri->authority.port, 0);
     EXPECT_STRV(uri->path, "/path");
     EXPECT_STRV(uri->query, "query");
     EXPECT_STRV(uri->fragment, "f");
@@ -639,7 +639,7 @@ TEST(TestURI, RelativeRefQuery)
     EXPECT_STRV(uri->scheme, "");
     EXPECT_STRV(uri->authority.host, "");
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_EQ(uri->authority.port, 0);
     EXPECT_STRV(uri->path, "/");
     EXPECT_STRV(uri->query, "hello");
 }
@@ -651,7 +651,7 @@ TEST(TestURI, RelativeRefFragment)
     EXPECT_STRV(uri->scheme, "");
     EXPECT_STRV(uri->authority.host, "");
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_EQ(uri->authority.port, 0);
     EXPECT_STRV(uri->path, "/");
     EXPECT_STRV(uri->fragment, "hello");
 }
@@ -663,7 +663,7 @@ TEST(TestURI, RelativeRefQueryFragment)
     EXPECT_STRV(uri->scheme, "");
     EXPECT_STRV(uri->authority.host, "");
     EXPECT_TRUE(uri->authority.userinfo.empty());
-    EXPECT_TRUE(uri->authority.port.empty());
+    EXPECT_EQ(uri->authority.port, 0);
     EXPECT_STRV(uri->path, "/");
     EXPECT_STRV(uri->query, "hello");
     EXPECT_STRV(uri->fragment, "bye");
