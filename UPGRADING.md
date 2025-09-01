@@ -1,5 +1,16 @@
 # Upgrading libddwaf
 
+## Upgrading from `1.27.x` to `1.28.0`
+
+This new version of `libddwaf` introduces no breaking changes to the API / ABI , however it does change the returned type of the following actions parameters:
+
+- Action type `block_request`:
+  - `grpc_status_code` and `status_code` are now provided as unsigned integers (`uint64_t`) rather than strings.
+- Action type `redirect_request`:
+  - `status_code` is now provided as an unsigned integer (`uint64_t`) rather than a string.
+
+The type changes specified above do not depend on the original parameter type provided in configuration, as these status codes are converted and validated internally.
+
 ## Upgrading from `1.24.x` to `1.25.0`
 
 ### Evaluation Result
