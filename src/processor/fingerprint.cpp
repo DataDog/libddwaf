@@ -26,7 +26,6 @@
 #include "log.hpp"
 #include "memory_resource.hpp"
 #include "object.hpp"
-#include "object_store.hpp"
 #include "pointer.hpp"
 #include "processor/base.hpp"
 #include "processor/fingerprint.hpp"

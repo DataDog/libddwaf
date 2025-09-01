@@ -31,7 +31,7 @@ public:
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
     {}
 
-    MOCK_METHOD((std::pair<owned_object, object_store::attribute>), eval_impl,
+    MOCK_METHOD((std::pair<owned_object, evaluation_scope>), eval_impl,
         (const unary_argument<object_view> &unary,
             const optional_argument<std::string_view> &optional,
             const variadic_argument<uint64_t> &variadic, processor_cache &,
@@ -73,8 +73,8 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
-            std::move(output), object_store::attribute::none})));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context})));
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
@@ -123,8 +123,8 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
-            std::move(output), object_store::attribute::none})));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context})));
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 

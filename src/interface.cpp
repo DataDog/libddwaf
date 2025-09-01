@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "builder/waf_builder.hpp"
+#include "clock.hpp"
 #include "configuration/common/raw_configuration.hpp"
 #include "context.hpp"
 #include "ddwaf.h"
@@ -27,7 +28,6 @@
 #include "memory_resource.hpp"
 #include "obfuscator.hpp"
 #include "object.hpp"
-#include "object_store.hpp"
 #include "object_type.hpp"
 #include "pointer.hpp"
 #include "re2.h"

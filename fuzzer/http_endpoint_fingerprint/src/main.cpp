@@ -39,14 +39,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     ddwaf::timer deadline{2s};
     auto [output, attr] = gen.eval_impl({.address = {},
                                             .key_path = {},
-                                            .ephemeral = false,
+                                            .scope = evaluation_scope::context,
                                             .value = buffer.get<std::string_view>()},
         {.address = {},
             .key_path = {},
-            .ephemeral = false,
+            .scope = evaluation_scope::context,
             .value = buffer.get<std::string_view>()},
-        {{.address = {}, .key_path = {}, .ephemeral = false, .value = query}},
-        {{.address = {}, .key_path = {}, .ephemeral = false, .value = body}}, cache,
+        {{.address = {}, .key_path = {}, .scope = evaluation_scope::context, .value = query}},
+        {{.address = {}, .key_path = {}, .scope = evaluation_scope::context, .value = body}}, cache,
         memory::get_default_resource(), deadline);
 
     return 0;

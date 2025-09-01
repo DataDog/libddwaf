@@ -58,7 +58,7 @@ TEST(TestNegatedScalarCondition, NoMatch)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
-    ASSERT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
 }
 
 TEST(TestNegatedScalarCondition, NoMatchWithKeyPath)
@@ -80,7 +80,7 @@ TEST(TestNegatedScalarCondition, NoMatchWithKeyPath)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
-    ASSERT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
 }
 
 TEST(TestNegatedScalarCondition, Timeout)
@@ -112,7 +112,7 @@ TEST(TestNegatedScalarCondition, SimpleMatch)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
-    ASSERT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
 
     // Ensure the resolved value is the single one that didn't match
     ASSERT_TRUE(cache.match.has_value());
@@ -138,7 +138,7 @@ TEST(TestNegatedScalarCondition, SimpleMatchWithKeyPath)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
-    ASSERT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
 
     // Ensure the resolved value is the single one that didn't match
     ASSERT_TRUE(cache.match.has_value());
@@ -161,7 +161,7 @@ TEST(TestNegatedScalarCondition, SingleValueArrayMatch)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
-    ASSERT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
 
     // Ensure the resolved value is the single one that didn't match
     ASSERT_TRUE(cache.match.has_value());
@@ -189,7 +189,7 @@ TEST(TestNegatedScalarCondition, SingleValueArrayMatchWithKeyPath)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
-    ASSERT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
 
     // Ensure the resolved value is the single one that didn't match
     ASSERT_TRUE(cache.match.has_value());
@@ -213,7 +213,7 @@ TEST(TestNegatedScalarCondition, MultiValueArrayMatch)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
-    ASSERT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
 
     // Ensure the resolved value is the single one that didn't match
     ASSERT_TRUE(cache.match.has_value());
@@ -241,7 +241,7 @@ TEST(TestNegatedScalarCondition, MultiValueArrayMatchWithKeyPath)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
-    ASSERT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
 
     // Ensure the resolved value is the single one that didn't match
     ASSERT_TRUE(cache.match.has_value());
@@ -272,9 +272,9 @@ TEST(TestNegatedScalarCondition, ExcludedRootObject)
     ddwaf::timer deadline{2s};
     condition_cache cache;
     auto res =
-        cond.eval(cache, store, {.persistent = excluded_objects, .ephemeral = {}}, {}, deadline);
+        cond.eval(cache, store, {.context = excluded_objects, .subcontext = {}}, {}, deadline);
     ASSERT_FALSE(res.outcome);
-    ASSERT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
 }
 
 TEST(TestNegatedScalarCondition, ExcludedIntermediateObject)
@@ -300,9 +300,9 @@ TEST(TestNegatedScalarCondition, ExcludedIntermediateObject)
     ddwaf::timer deadline{2s};
     condition_cache cache;
     auto res =
-        cond.eval(cache, store, {.persistent = excluded_objects, .ephemeral = {}}, {}, deadline);
+        cond.eval(cache, store, {.context = excluded_objects, .subcontext = {}}, {}, deadline);
     ASSERT_FALSE(res.outcome);
-    ASSERT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
 }
 
 TEST(TestNegatedScalarCondition, ExcludedFinalObject)
@@ -328,9 +328,9 @@ TEST(TestNegatedScalarCondition, ExcludedFinalObject)
     ddwaf::timer deadline{2s};
     condition_cache cache;
     auto res =
-        cond.eval(cache, store, {.persistent = excluded_objects, .ephemeral = {}}, {}, deadline);
+        cond.eval(cache, store, {.context = excluded_objects, .subcontext = {}}, {}, deadline);
     ASSERT_FALSE(res.outcome);
-    ASSERT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
 }
 
 TEST(TestNegatedScalarCondition, CachedMatch)
@@ -345,20 +345,20 @@ TEST(TestNegatedScalarCondition, CachedMatch)
 
     {
         object_store store;
-        store.insert(root, object_store::attribute::none);
+        store.insert(root);
 
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
-        ASSERT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
     }
 
     {
         object_store store;
-        store.insert(root, object_store::attribute::none);
+        store.insert(root);
 
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome);
-        ASSERT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
     }
 }
 
@@ -380,10 +380,10 @@ TEST(TestNegatedScalarCondition, SimpleMatchOnKeys)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
-    ASSERT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
 }
 
-TEST(TestNegatedScalarCondition, SimpleEphemeralMatch)
+TEST(TestNegatedScalarCondition, SimplesubcontextMatch)
 {
     negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
@@ -392,27 +392,27 @@ TEST(TestNegatedScalarCondition, SimpleEphemeralMatch)
 
     object_store store;
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() { store.clear_subcontext_objects(); }};
 
-        store.insert(root, object_store::attribute::ephemeral);
+        store.insert(root, evaluation_scope::subcontext);
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
-        ASSERT_TRUE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::subcontext);
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() { store.clear_subcontext_objects(); }};
 
-        store.insert(root, object_store::attribute::ephemeral);
+        store.insert(root, evaluation_scope::subcontext);
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
-        ASSERT_TRUE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::subcontext);
     }
 }
 

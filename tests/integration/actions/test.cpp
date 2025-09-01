@@ -34,8 +34,7 @@ TEST(TestActionsIntegration, DefaultActions)
         ddwaf_object_set_string(child, STRL("block"), alloc);
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context1, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "block-rule",
                                .name = "block-rule",
@@ -62,8 +61,7 @@ TEST(TestActionsIntegration, DefaultActions)
         ddwaf_object_set_string(child, STRL("stack_trace"), alloc);
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context1, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "stack-trace-rule",
                                .name = "stack-trace-rule",
@@ -114,8 +112,7 @@ TEST(TestActionsIntegration, DefaultActions)
         ddwaf_object_set_string(child, STRL("extract_schema"), alloc);
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context1, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "extract-schema-rule",
                                .name = "extract-schema-rule",
@@ -141,8 +138,7 @@ TEST(TestActionsIntegration, DefaultActions)
         ddwaf_object_set_string(child, STRL("unblock"), alloc);
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context1, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "unblock-rule",
                                .name = "unblock-rule",
@@ -191,8 +187,7 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
         ASSERT_NE(context, nullptr);
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "block-rule",
                                .name = "block-rule",
@@ -236,8 +231,7 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
         ASSERT_NE(context, nullptr);
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "block-rule",
                                .name = "block-rule",
@@ -287,8 +281,7 @@ TEST(TestActionsIntegration, AddNewAction)
         ASSERT_NE(context, nullptr);
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "unblock-rule",
                                .name = "unblock-rule",
@@ -330,8 +323,7 @@ TEST(TestActionsIntegration, AddNewAction)
         ASSERT_NE(context, nullptr);
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "unblock-rule",
                                .name = "unblock-rule",
@@ -376,7 +368,7 @@ TEST(TestActionsIntegration, EmptyOrInvalidActions)
     ASSERT_NE(context, nullptr);
 
     ddwaf_object res;
-    EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_EVENTS(res, {.id = "block-rule",
                            .name = "block-rule",
@@ -418,7 +410,7 @@ TEST(TestActionsIntegration, ActionTypes)
     ddwaf_object_set_string(child, STRL("sanitize"), alloc);
 
     ddwaf_object res;
-    EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
     EXPECT_EVENTS(res, {.id = "sanitize-rule",
                            .name = "sanitize-rule",

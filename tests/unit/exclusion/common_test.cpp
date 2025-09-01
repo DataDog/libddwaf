@@ -29,7 +29,7 @@ TEST(ExclusionObjectSet, PersistentOnly)
     EXPECT_TRUE(excluded.contains(root.at(0)));
 }
 
-TEST(ExclusionObjectSet, EphemeralOnly)
+TEST(ExclusionObjectSet, SubcontextOnly)
 {
     auto root = object_builder::map({{"value", "node"}});
 
@@ -39,7 +39,7 @@ TEST(ExclusionObjectSet, EphemeralOnly)
     EXPECT_TRUE(excluded.contains(root.at(0)));
 }
 
-TEST(ExclusionObjectSet, EphemeralAndPersistent)
+TEST(ExclusionObjectSet, SubcontextAndPersistent)
 {
     auto root = object_builder::map({{"first", "node"}, {"second", "node"}});
 
@@ -88,7 +88,7 @@ TEST(ExclusionObjectSetRef, PersistentOnly)
     EXPECT_TRUE(excluded.contains(root.at(0)));
 }
 
-TEST(ExclusionObjectSetRef, EphemeralOnly)
+TEST(ExclusionObjectSetRef, SubcontextOnly)
 {
     auto root = object_builder::map({{"value", "node"}});
 
@@ -99,7 +99,7 @@ TEST(ExclusionObjectSetRef, EphemeralOnly)
     EXPECT_TRUE(excluded.contains(root.at(0)));
 }
 
-TEST(ExclusionObjectSetRef, EphemeralAndPersistent)
+TEST(ExclusionObjectSetRef, SubcontextAndPersistent)
 {
     auto root = object_builder::map({{"first", "node"}, {"second", "node"}});
 

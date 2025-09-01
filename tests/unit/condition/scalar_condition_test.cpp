@@ -49,7 +49,7 @@ TEST(TestScalarCondition, NoMatch)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
-    ASSERT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
 }
 
 TEST(TestScalarCondition, Timeout)
@@ -81,7 +81,7 @@ TEST(TestScalarCondition, SimpleMatch)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
-    ASSERT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
 }
 
 TEST(TestScalarCondition, CachedMatch)
@@ -96,20 +96,20 @@ TEST(TestScalarCondition, CachedMatch)
 
     {
         object_store store;
-        store.insert(root, object_store::attribute::none);
+        store.insert(root);
 
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
-        ASSERT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
     }
 
     {
         object_store store;
-        store.insert(root, object_store::attribute::none);
+        store.insert(root);
 
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome);
-        ASSERT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
     }
 }
 
@@ -131,10 +131,10 @@ TEST(TestScalarCondition, SimpleMatchOnKeys)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
-    ASSERT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
 }
 
-TEST(TestScalarCondition, SimpleEphemeralMatch)
+TEST(TestScalarCondition, SimpleSubcontextMatch)
 {
     scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
@@ -143,27 +143,27 @@ TEST(TestScalarCondition, SimpleEphemeralMatch)
 
     object_store store;
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() { store.clear_subcontext_objects(); }};
 
-        store.insert(root.clone(), object_store::attribute::ephemeral);
+        store.insert(root.clone(), evaluation_scope::subcontext);
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
-        ASSERT_TRUE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::subcontext);
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() { store.clear_subcontext_objects(); }};
 
-        store.insert(std::move(root), object_store::attribute::ephemeral);
+        store.insert(std::move(root), evaluation_scope::subcontext);
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
-        ASSERT_TRUE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::subcontext);
     }
 }
 

@@ -237,7 +237,7 @@ inline std::ostream &operator<<(std::ostream &os, const path_trie::traverser::st
 
 class object_filter {
 public:
-    using cache_type = memory::unordered_set<object_view>;
+    using cache_type = memory::unordered_map<object_view, evaluation_scope>;
 
     object_filter() = default;
 
@@ -256,6 +256,17 @@ public:
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
         for (const auto &[index, str] : targets_) { addresses.emplace(index, str); }
+    }
+
+    static void invalidate_subcontext_cache(cache_type &cache)
+    {
+        for (auto it = cache.begin(); it != cache.end();) {
+            if (it->second == evaluation_scope::subcontext) {
+                it = cache.erase(it);
+            } else {
+                ++it;
+            }
+        }
     }
 
 protected:

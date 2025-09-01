@@ -119,7 +119,7 @@ TEST(TestShiDetectorString, ExecutablesAndRedirections)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
@@ -163,7 +163,7 @@ TEST(TestShiDetectorString, InjectionsWithinCommandSubstitution)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
@@ -200,7 +200,7 @@ TEST(TestShiDetectorString, InjectionsWithinProcessSubstitution)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
@@ -239,7 +239,7 @@ TEST(TestShiDetectorString, OffByOnePayloadsMatch)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
@@ -299,7 +299,7 @@ TEST(TestShiDetectorString, MultipleArgumentsMatch)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");

@@ -11,6 +11,7 @@
 #include "object.hpp"
 #include "object_store.hpp"
 #include "target_address.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 

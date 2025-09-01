@@ -91,6 +91,7 @@ typedef enum
 #ifndef __cplusplus
 typedef struct _ddwaf_handle* ddwaf_handle;
 typedef struct _ddwaf_context* ddwaf_context;
+typedef struct _ddwaf_subcontext* ddwaf_subcontext;
 typedef struct _ddwaf_builder* ddwaf_builder;
 typedef struct _ddwaf_allocator* ddwaf_allocator;
 #endif

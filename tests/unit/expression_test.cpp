@@ -32,11 +32,11 @@ TEST(TestExpression, SimpleMatch)
     expression::cache_type cache;
     auto res = expr->eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
-    EXPECT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
 
     auto matches = ddwaf::expression::get_matches(cache);
     EXPECT_EQ(matches.size(), 1);
-    EXPECT_FALSE(matches[0].ephemeral);
+    EXPECT_EQ(matches[0].scope, evaluation_scope::context);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = ".*",
                                 .highlight = "value"sv,
@@ -66,11 +66,11 @@ TEST(TestExpression, SimpleNegatedMatch)
     expression::cache_type cache;
     auto res = expr->eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
-    EXPECT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
 
-    auto matches = expr->get_matches(cache);
+    auto matches = ddwaf::expression::get_matches(cache);
     EXPECT_EQ(matches.size(), 1);
-    EXPECT_FALSE(matches[0].ephemeral);
+    EXPECT_EQ(matches[0].scope, evaluation_scope::context);
     EXPECT_MATCHES(matches, {.op = "!match_regex",
                                 .op_value = ".*",
                                 .highlight = "val"sv,
@@ -80,7 +80,7 @@ TEST(TestExpression, SimpleNegatedMatch)
                                 }}});
 }
 
-TEST(TestExpression, EphemeralMatch)
+TEST(TestExpression, SubcontextMatch)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -93,18 +93,18 @@ TEST(TestExpression, EphemeralMatch)
     auto root = object_builder::map({{"server.request.query", "value"}});
 
     ddwaf::object_store store;
-    store.insert(std::move(root), object_store::attribute::ephemeral);
+    store.insert(std::move(root), evaluation_scope::subcontext);
 
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
     auto res = expr->eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
-    EXPECT_TRUE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::subcontext);
 
     auto matches = ddwaf::expression::get_matches(cache);
     EXPECT_EQ(matches.size(), 1);
-    EXPECT_TRUE(matches[0].ephemeral);
+    EXPECT_EQ(matches[0].scope, evaluation_scope::subcontext);
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = ".*",
                                 .highlight = "value"sv,
@@ -129,7 +129,11 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
     expression::cache_type cache;
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            expression::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"server.request.query", "bad"}});
 
@@ -139,11 +143,15 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            expression::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"server.request.body", "value"}});
 
@@ -153,7 +161,7 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
 
         auto matches = ddwaf::expression::get_matches(cache);
         EXPECT_MATCHES(matches, {.op = "match_regex",
@@ -166,7 +174,7 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
     }
 }
 
-TEST(TestExpression, EphemeralMatchOnSecondEval)
+TEST(TestExpression, SubcontextMatchOnSecondEval)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -180,31 +188,39 @@ TEST(TestExpression, EphemeralMatchOnSecondEval)
     expression::cache_type cache;
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            expression::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"server.request.body", "bad"}});
 
-        store.insert(std::move(root), object_store::attribute::ephemeral);
+        store.insert(std::move(root), evaluation_scope::subcontext);
 
         ddwaf::timer deadline{2s};
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            expression::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"server.request.body", "value"}});
 
-        store.insert(std::move(root), object_store::attribute::ephemeral);
+        store.insert(std::move(root), evaluation_scope::subcontext);
 
         ddwaf::timer deadline{2s};
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
-        EXPECT_TRUE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::subcontext);
 
         auto matches = ddwaf::expression::get_matches(cache);
         EXPECT_MATCHES(matches, {.op = "match_regex",
@@ -217,7 +233,7 @@ TEST(TestExpression, EphemeralMatchOnSecondEval)
     }
 }
 
-TEST(TestExpression, EphemeralMatchTwoConditions)
+TEST(TestExpression, SubcontextMatchTwoConditions)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -237,7 +253,7 @@ TEST(TestExpression, EphemeralMatchTwoConditions)
 
     {
         auto root = object_builder::map({{"server.request.query", "value"}});
-        store.insert(std::move(root), object_store::attribute::ephemeral);
+        store.insert(std::move(root), evaluation_scope::subcontext);
     }
 
     {
@@ -249,9 +265,9 @@ TEST(TestExpression, EphemeralMatchTwoConditions)
 
     auto res = expr->eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
-    EXPECT_TRUE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::subcontext);
 
-    auto matches = expr->get_matches(cache);
+    auto matches = ddwaf::expression::get_matches(cache);
     EXPECT_MATCHES(matches,
         {.op = "match_regex",
             .op_value = "^value$",
@@ -269,7 +285,7 @@ TEST(TestExpression, EphemeralMatchTwoConditions)
             }}});
 }
 
-TEST(TestExpression, EphemeralMatchOnFirstConditionFirstEval)
+TEST(TestExpression, SubcontextMatchOnFirstConditionFirstEval)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -288,21 +304,27 @@ TEST(TestExpression, EphemeralMatchOnFirstConditionFirstEval)
     expression::cache_type cache;
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            expression::invalidate_subcontext_cache(cache);
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"server.request.query", "value"}});
 
-        store.insert(std::move(root), object_store::attribute::ephemeral);
+        store.insert(std::move(root), evaluation_scope::subcontext);
 
         ddwaf::timer deadline{2s};
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            expression::invalidate_subcontext_cache(cache);
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"server.request.body", "value"}});
 
@@ -312,11 +334,11 @@ TEST(TestExpression, EphemeralMatchOnFirstConditionFirstEval)
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
     }
 }
 
-TEST(TestExpression, EphemeralMatchOnFirstConditionSecondEval)
+TEST(TestExpression, SubcontextMatchOnFirstConditionSecondEval)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -335,7 +357,11 @@ TEST(TestExpression, EphemeralMatchOnFirstConditionSecondEval)
     expression::cache_type cache;
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            expression::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"server.request.body", "value"}});
 
@@ -345,21 +371,25 @@ TEST(TestExpression, EphemeralMatchOnFirstConditionSecondEval)
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            expression::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"server.request.query", "value"}});
 
-        store.insert(std::move(root), object_store::attribute::ephemeral);
+        store.insert(std::move(root), evaluation_scope::subcontext);
 
         ddwaf::timer deadline{2s};
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
-        EXPECT_TRUE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::subcontext);
     }
 }
 
@@ -377,7 +407,11 @@ TEST(TestExpression, DuplicateInput)
     ddwaf::object_store store;
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            expression::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"server.request.query", "bad"}});
 
@@ -387,11 +421,15 @@ TEST(TestExpression, DuplicateInput)
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            expression::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"server.request.query", "value"}});
 
@@ -401,11 +439,11 @@ TEST(TestExpression, DuplicateInput)
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
     }
 }
 
-TEST(TestExpression, DuplicateEphemeralInput)
+TEST(TestExpression, DuplicateSubcontextInput)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -419,31 +457,37 @@ TEST(TestExpression, DuplicateEphemeralInput)
     ddwaf::object_store store;
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            expression::invalidate_subcontext_cache(cache);
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"server.request.query", "value"}});
 
-        store.insert(std::move(root), object_store::attribute::ephemeral);
+        store.insert(std::move(root), evaluation_scope::subcontext);
 
         ddwaf::timer deadline{2s};
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
-        EXPECT_TRUE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::subcontext);
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            expression::invalidate_subcontext_cache(cache);
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"server.request.query", "value"}});
 
-        store.insert(std::move(root), object_store::attribute::ephemeral);
+        store.insert(std::move(root), evaluation_scope::subcontext);
 
         ddwaf::timer deadline{2s};
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
-        EXPECT_TRUE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::subcontext);
     }
 }
 
@@ -459,7 +503,10 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
 
     ddwaf::object_store store;
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"server.request.query", "bad"}});
 
@@ -472,7 +519,10 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"server.request.query", "value"}});
 
@@ -483,9 +533,9 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
         expression::cache_type cache;
         EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline).outcome);
 
-        auto matches = expr->get_matches(cache);
+        auto matches = ddwaf::expression::get_matches(cache);
         EXPECT_EQ(matches.size(), 1);
-        EXPECT_FALSE(matches[0].ephemeral);
+        EXPECT_EQ(matches[0].scope, evaluation_scope::context);
         EXPECT_MATCHES(matches, {.op = "match_regex",
                                     .op_value = "^value$",
                                     .highlight = "value"sv,
@@ -515,7 +565,11 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
     ddwaf::object_store store;
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            expression::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"server.request.query", "bad_value"}});
 
@@ -527,7 +581,11 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            expression::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"server.request.query", "value"}});
 
@@ -612,7 +670,11 @@ TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
     expression::cache_type cache;
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            expression::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"server.request.query", "query"}});
 
@@ -624,7 +686,11 @@ TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            expression::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map(
             {{"server.request.query", "red-herring"}, {"server.request.body", "body"}});

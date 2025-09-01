@@ -89,13 +89,13 @@ public:
     }
 
     // Internals exposed for testing
-    void eval_preprocessors(timer &deadline);
-    void eval_postprocessors(timer &deadline);
+    void eval_preprocessors(object_store &store, timer &deadline);
+    void eval_postprocessors(object_store &store, timer &deadline);
     // This function below returns a reference to an internal object,
     // however using them this way helps with testing
-    exclusion::exclusion_policy &eval_filters(timer &deadline);
-    void eval_rules(const exclusion::exclusion_policy &policy, std::vector<rule_result> &results,
-        timer &deadline);
+    exclusion::exclusion_policy &eval_filters(object_store &store, timer &deadline);
+    void eval_rules(object_store &store, const exclusion::exclusion_policy &policy,
+        std::vector<rule_result> &results, timer &deadline);
 
 protected:
     bool check_new_rule_targets() const

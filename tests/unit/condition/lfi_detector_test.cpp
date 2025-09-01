@@ -44,7 +44,7 @@ TEST(TestLFIDetector, MatchBasicUnix)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
@@ -108,7 +108,7 @@ TEST(TestLFIDetector, MatchBasicWindows)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome) << path;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_EQ(res.scope, evaluation_scope::context);
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
@@ -138,7 +138,7 @@ TEST(TestLFIDetector, MatchWithKeyPath)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
-    EXPECT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
@@ -152,7 +152,7 @@ TEST(TestLFIDetector, MatchWithKeyPath)
     EXPECT_STR(cache.match->highlights[0], "../etc/passwd");
 }
 
-TEST(TestLFIDetector, PartiallyEphemeralMatch)
+TEST(TestLFIDetector, PartiallySubcontextMatch)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
@@ -166,14 +166,14 @@ TEST(TestLFIDetector, PartiallyEphemeralMatch)
 
     {
         auto root = object_builder::map({{"server.request.query", "../../../etc/passwd"}});
-        store.insert(std::move(root), object_store::attribute::ephemeral);
+        store.insert(std::move(root), evaluation_scope::subcontext);
     }
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
-    EXPECT_TRUE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::subcontext);
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
@@ -187,7 +187,7 @@ TEST(TestLFIDetector, PartiallyEphemeralMatch)
     EXPECT_STR(cache.match->highlights[0], "../../../etc/passwd");
 }
 
-TEST(TestLFIDetector, EphemeralMatch)
+TEST(TestLFIDetector, SubcontextMatch)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
@@ -196,13 +196,13 @@ TEST(TestLFIDetector, EphemeralMatch)
     auto root = object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
         {"server.request.query", "../../../etc/passwd"}});
 
-    store.insert(std::move(root), object_store::attribute::ephemeral);
+    store.insert(std::move(root), evaluation_scope::subcontext);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
-    EXPECT_TRUE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::subcontext);
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
@@ -241,7 +241,7 @@ TEST(TestLFIDetector, NoMatchUnix)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome) << path;
-        EXPECT_FALSE(res.ephemeral) << path;
+        EXPECT_EQ(res.scope, evaluation_scope::context) << path;
         EXPECT_FALSE(cache.match);
     }
 }
@@ -280,7 +280,7 @@ TEST(TestLFIDetector, NoMatchWindows)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome) << path;
-        EXPECT_FALSE(res.ephemeral) << path;
+        EXPECT_EQ(res.scope, evaluation_scope::context) << path;
         EXPECT_FALSE(cache.match);
     }
 }
@@ -295,8 +295,8 @@ TEST(TestLFIDetector, NoMatchExcludedPath)
     auto params_map = root.emplace(
         "server.request.query", object_builder::map({{"endpoint", "../../../etc/passwd"}}));
 
-    std::unordered_set<object_view> persistent{params_map.at(0)};
-    exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
+    std::unordered_set<object_view> context{params_map.at(0)};
+    exclusion::object_set_ref exclusion{.context = context, .subcontext = {}};
 
     object_store store;
     store.insert(std::move(root));
@@ -305,7 +305,7 @@ TEST(TestLFIDetector, NoMatchExcludedPath)
     condition_cache cache;
     auto res = cond.eval(cache, store, exclusion, {}, deadline);
     EXPECT_FALSE(res.outcome);
-    EXPECT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
     EXPECT_FALSE(cache.match);
 }
 
@@ -316,8 +316,8 @@ TEST(TestLFIDetector, NoMatchExcludedAddress)
     auto root = object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
         {"server.request.query", object_builder::map({{"endpoint", "../../../etc/passwd"}})}});
 
-    std::unordered_set<object_view> persistent{root.at(1)};
-    exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
+    std::unordered_set<object_view> context{root.at(1)};
+    exclusion::object_set_ref exclusion{.context = context, .subcontext = {}};
 
     object_store store;
     store.insert(std::move(root));
@@ -326,7 +326,7 @@ TEST(TestLFIDetector, NoMatchExcludedAddress)
     condition_cache cache;
     auto res = cond.eval(cache, store, exclusion, {}, deadline);
     EXPECT_FALSE(res.outcome);
-    EXPECT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
     EXPECT_FALSE(cache.match);
 }
 
@@ -337,8 +337,8 @@ TEST(TestLFIDetector, Timeout)
     auto root = object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
         {"server.request.query", object_builder::map({{"endpoint", "../../../etc/passwd"}})}});
 
-    std::unordered_set<object_view> persistent{root.at(1)};
-    exclusion::object_set_ref exclusion{.persistent = persistent, .ephemeral = {}};
+    std::unordered_set<object_view> context{root.at(1)};
+    exclusion::object_set_ref exclusion{.context = context, .subcontext = {}};
 
     object_store store;
     store.insert(std::move(root));
@@ -347,7 +347,7 @@ TEST(TestLFIDetector, Timeout)
     condition_cache cache;
     auto res = cond.eval(cache, store, exclusion, {}, deadline);
     EXPECT_FALSE(res.outcome);
-    EXPECT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
     EXPECT_FALSE(cache.match);
 }
 
@@ -359,7 +359,7 @@ TEST(TestLFIDetector, NoParams)
         {"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
     });
 
-    exclusion::object_set_ref exclusion{.persistent = {}, .ephemeral = {}};
+    exclusion::object_set_ref exclusion{.context = {}, .subcontext = {}};
 
     object_store store;
     store.insert(std::move(root));
@@ -368,7 +368,7 @@ TEST(TestLFIDetector, NoParams)
     condition_cache cache;
     auto res = cond.eval(cache, store, exclusion, {}, deadline);
     EXPECT_FALSE(res.outcome);
-    EXPECT_FALSE(res.ephemeral);
+    EXPECT_EQ(res.scope, evaluation_scope::context);
     EXPECT_FALSE(cache.match);
 }
 

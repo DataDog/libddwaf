@@ -132,15 +132,15 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
     }
 
     if (cache.targets.size() != 1) {
-        cache.targets.assign(1, nullptr);
+        cache.targets.assign(1, {nullptr, {}});
     }
 
     auto [object, scope] = store.get_target(target_.index);
-    if (!object.has_value() || object == cache.targets[0]) {
+    if (!object.has_value() || object == cache.targets[0].first) {
         return {};
     }
 
-    cache.targets[0] = object;
+    cache.targets[0] = {object, scope};
 
     auto target_object = object.find_key_path(target_.key_path, objects_excluded);
     if (!target_object.has_value()) {

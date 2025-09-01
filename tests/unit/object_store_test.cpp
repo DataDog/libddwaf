@@ -19,7 +19,10 @@ TEST(TestObjectStore, InsertInvalidObject)
 
     object_store store;
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
         owned_object root;
 
         store.insert(std::move(root));
@@ -40,7 +43,10 @@ TEST(TestObjectStore, InsertStringObject)
 
     object_store store;
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         store.insert(owned_object::make_string("hello"));
 
@@ -60,7 +66,10 @@ TEST(TestObjectStore, InsertAndGetObject)
 
     object_store store;
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = owned_object::make_map();
         root.emplace("query", owned_object::make_string("hello"));
@@ -76,26 +85,29 @@ TEST(TestObjectStore, InsertAndGetObject)
     }
 }
 
-TEST(TestObjectStore, InsertAndGetEphemeralObject)
+TEST(TestObjectStore, InsertAndGetSubcontextObject)
 {
     auto query = get_target_index("query");
     auto url = get_target_index("url");
 
     object_store store;
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = owned_object::make_map();
         root.emplace("query", owned_object::make_string("hello"));
 
-        store.insert(std::move(root), object_store::attribute::ephemeral);
+        store.insert(std::move(root), evaluation_scope::subcontext);
 
         EXPECT_FALSE(store.empty());
         EXPECT_TRUE(store.has_new_targets());
         EXPECT_TRUE(store.is_new_target(query));
         EXPECT_FALSE(store.is_new_target(url));
         EXPECT_TRUE(store.get_target(query).first.has_value());
-        EXPECT_EQ(store.get_target(query).second, object_store::attribute::ephemeral);
+        EXPECT_EQ(store.get_target(query).second, evaluation_scope::subcontext);
         EXPECT_FALSE(store.get_target(url).first.has_value());
     }
 
@@ -130,7 +142,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     {
         auto second = owned_object::make_map();
         second.emplace("url", owned_object::make_string("hello"));
-        store.insert(std::move(second), object_store::attribute::ephemeral);
+        store.insert(std::move(second), evaluation_scope::subcontext);
     }
 
     EXPECT_FALSE(store.empty());
@@ -153,6 +165,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     EXPECT_TRUE(store.get_target(url).first.has_value());
 
     store.clear_last_batch();
+    store.clear_subcontext_objects();
 
     EXPECT_FALSE(store.empty());
     EXPECT_FALSE(store.has_new_targets());
@@ -169,7 +182,10 @@ TEST(TestObjectStore, InsertMultipleUniqueObjectBatches)
 
     object_store store;
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto first = owned_object::make_map();
         first.emplace("query", owned_object::make_string("hello"));
@@ -185,7 +201,10 @@ TEST(TestObjectStore, InsertMultipleUniqueObjectBatches)
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto second = owned_object::make_map();
         second.emplace("url", owned_object::make_string("hello"));
@@ -201,7 +220,10 @@ TEST(TestObjectStore, InsertMultipleUniqueObjectBatches)
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         owned_object third;
         store.insert(std::move(third));
@@ -221,7 +243,10 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
 
     object_store store;
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto first = owned_object::make_map();
         first.emplace("query", owned_object::make_string("hello"));
@@ -241,7 +266,10 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         // Reinsert query
         auto second = owned_object::make_map();
@@ -270,7 +298,10 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
         // Reinsert url
         auto third = owned_object::make_map();
         third.emplace("url", owned_object::make_string("bye"));
@@ -305,8 +336,7 @@ TEST(TestObjectStore, InsertSingleTargets)
     EXPECT_TRUE(store.get_target(query).first.has_value());
     EXPECT_FALSE(store.get_target(url).first.has_value());
 
-    store.insert(
-        url, "url", owned_object::make_string("hello"), object_store::attribute::ephemeral);
+    store.insert(url, "url", owned_object::make_string("hello"), evaluation_scope::subcontext);
 
     EXPECT_FALSE(store.empty());
     EXPECT_TRUE(store.has_new_targets());
@@ -316,6 +346,7 @@ TEST(TestObjectStore, InsertSingleTargets)
     EXPECT_TRUE(store.get_target(url).first.has_value());
 
     store.clear_last_batch();
+    store.clear_subcontext_objects();
 
     EXPECT_FALSE(store.empty());
     EXPECT_FALSE(store.has_new_targets());
@@ -332,7 +363,10 @@ TEST(TestObjectStore, InsertSingleTargetBatches)
 
     object_store store;
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         store.insert(query, "query", owned_object::make_string("hello"));
 
@@ -345,10 +379,12 @@ TEST(TestObjectStore, InsertSingleTargetBatches)
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
-        store.insert(
-            url, "url", owned_object::make_string("hello"), object_store::attribute::ephemeral);
+        store.insert(url, "url", owned_object::make_string("hello"), evaluation_scope::subcontext);
 
         EXPECT_FALSE(store.empty());
         EXPECT_TRUE(store.has_new_targets());
@@ -372,7 +408,10 @@ TEST(TestObjectStore, DuplicatePersistentTarget)
 
     object_store store;
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         EXPECT_TRUE(store.insert(query, "query", owned_object::make_string("hello")));
 
@@ -381,13 +420,16 @@ TEST(TestObjectStore, DuplicatePersistentTarget)
         EXPECT_TRUE(store.is_new_target(query));
 
         auto [object, attr] = store.get_target(query);
-        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_EQ(attr, evaluation_scope::context);
         EXPECT_TRUE(object.has_value());
         EXPECT_STRV(object.as<std::string_view>(), "hello");
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         EXPECT_TRUE(store.insert(query, "query", owned_object::make_string("bye")));
 
@@ -397,7 +439,7 @@ TEST(TestObjectStore, DuplicatePersistentTarget)
         EXPECT_TRUE(store.get_target(query).first.has_value());
 
         auto [object, attr] = store.get_target(query);
-        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_EQ(attr, evaluation_scope::context);
         EXPECT_TRUE(object.has_value());
         EXPECT_STRV(object.as<std::string_view>(), "bye");
     }
@@ -408,31 +450,34 @@ TEST(TestObjectStore, DuplicatePersistentTarget)
     EXPECT_TRUE(store.get_target(query).first.has_value());
 }
 
-TEST(TestObjectStore, DuplicateEphemeralTarget)
+TEST(TestObjectStore, DuplicateSubcontextTarget)
 {
     auto query = get_target_index("query");
 
     object_store store;
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
         {
-            EXPECT_TRUE(store.insert(query, "query", owned_object::make_string("hello"),
-                object_store::attribute::ephemeral));
+            EXPECT_TRUE(store.insert(
+                query, "query", owned_object::make_string("hello"), evaluation_scope::subcontext));
 
             EXPECT_FALSE(store.empty());
             EXPECT_TRUE(store.has_new_targets());
             EXPECT_TRUE(store.is_new_target(query));
 
             auto [object, attr] = store.get_target(query);
-            EXPECT_EQ(attr, object_store::attribute::ephemeral);
+            EXPECT_EQ(attr, evaluation_scope::subcontext);
             EXPECT_TRUE(object.has_value());
             EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
 
         {
-            EXPECT_TRUE(store.insert(query, "query", owned_object::make_string("bye"),
-                object_store::attribute::ephemeral));
+            EXPECT_TRUE(store.insert(
+                query, "query", owned_object::make_string("bye"), evaluation_scope::subcontext));
 
             EXPECT_FALSE(store.empty());
             EXPECT_TRUE(store.has_new_targets());
@@ -440,7 +485,7 @@ TEST(TestObjectStore, DuplicateEphemeralTarget)
             EXPECT_TRUE(store.get_target(query).first.has_value());
 
             auto [object, attr] = store.get_target(query);
-            EXPECT_EQ(attr, object_store::attribute::ephemeral);
+            EXPECT_EQ(attr, evaluation_scope::subcontext);
             EXPECT_TRUE(object.has_value());
             EXPECT_STRV(object.as<std::string_view>(), "bye");
         }
@@ -452,24 +497,27 @@ TEST(TestObjectStore, DuplicateEphemeralTarget)
     EXPECT_FALSE(store.get_target(query).first.has_value());
 }
 
-TEST(TestObjectStore, FailtoReplaceEphemeralWithPersistent)
+TEST(TestObjectStore, FailtoReplaceSubcontextWithPersistent)
 {
     auto query = get_target_index("query");
 
     object_store store;
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
         {
-            EXPECT_TRUE(store.insert(query, "query", owned_object::make_string("hello"),
-                object_store::attribute::ephemeral));
+            EXPECT_TRUE(store.insert(
+                query, "query", owned_object::make_string("hello"), evaluation_scope::subcontext));
 
             EXPECT_FALSE(store.empty());
             EXPECT_TRUE(store.has_new_targets());
             EXPECT_TRUE(store.is_new_target(query));
 
             auto [object, attr] = store.get_target(query);
-            EXPECT_EQ(attr, object_store::attribute::ephemeral);
+            EXPECT_EQ(attr, evaluation_scope::subcontext);
             EXPECT_TRUE(object.has_value());
             EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
@@ -483,7 +531,7 @@ TEST(TestObjectStore, FailtoReplaceEphemeralWithPersistent)
             EXPECT_TRUE(store.get_target(query).first.has_value());
 
             auto [object, attr] = store.get_target(query);
-            EXPECT_EQ(attr, object_store::attribute::ephemeral);
+            EXPECT_EQ(attr, evaluation_scope::subcontext);
             EXPECT_TRUE(object.has_value());
             EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
@@ -495,14 +543,17 @@ TEST(TestObjectStore, FailtoReplaceEphemeralWithPersistent)
     EXPECT_FALSE(store.get_target(query).first.has_value());
 }
 
-TEST(TestObjectStore, FailToReplacePersistentWithEphemeralSameBatch)
+TEST(TestObjectStore, FailToReplacePersistentWithSubcontextSameBatch)
 {
     auto query = get_target_index("query");
 
     object_store store;
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
         {
             EXPECT_TRUE(store.insert(query, "query", owned_object::make_string("hello")));
 
@@ -511,14 +562,14 @@ TEST(TestObjectStore, FailToReplacePersistentWithEphemeralSameBatch)
             EXPECT_TRUE(store.is_new_target(query));
 
             auto [object, attr] = store.get_target(query);
-            EXPECT_EQ(attr, object_store::attribute::none);
+            EXPECT_EQ(attr, evaluation_scope::context);
             EXPECT_TRUE(object.has_value());
             EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
 
         {
-            EXPECT_FALSE(store.insert(query, "query", owned_object::make_string("bye"),
-                object_store::attribute::ephemeral));
+            EXPECT_FALSE(store.insert(
+                query, "query", owned_object::make_string("bye"), evaluation_scope::subcontext));
 
             EXPECT_FALSE(store.empty());
             EXPECT_TRUE(store.has_new_targets());
@@ -526,7 +577,7 @@ TEST(TestObjectStore, FailToReplacePersistentWithEphemeralSameBatch)
             EXPECT_TRUE(store.get_target(query).first.has_value());
 
             auto [object, attr] = store.get_target(query);
-            EXPECT_EQ(attr, object_store::attribute::none);
+            EXPECT_EQ(attr, evaluation_scope::context);
             EXPECT_TRUE(object.has_value());
             EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
@@ -538,14 +589,17 @@ TEST(TestObjectStore, FailToReplacePersistentWithEphemeralSameBatch)
     EXPECT_TRUE(store.get_target(query).first.has_value());
 }
 
-TEST(TestObjectStore, FailToReplacePersistentWithEphemeralDifferentBatch)
+TEST(TestObjectStore, FailToReplacePersistentWithSubcontextDifferentBatch)
 {
     auto query = get_target_index("query");
 
     object_store store;
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         EXPECT_TRUE(store.insert(query, "query", owned_object::make_string("hello")));
 
@@ -554,16 +608,19 @@ TEST(TestObjectStore, FailToReplacePersistentWithEphemeralDifferentBatch)
         EXPECT_TRUE(store.is_new_target(query));
 
         auto [object, attr] = store.get_target(query);
-        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_EQ(attr, evaluation_scope::context);
         EXPECT_TRUE(object.has_value());
         EXPECT_STRV(object.as<std::string_view>(), "hello");
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         EXPECT_FALSE(store.insert(
-            query, "query", owned_object::make_string("bye"), object_store::attribute::ephemeral));
+            query, "query", owned_object::make_string("bye"), evaluation_scope::subcontext));
 
         EXPECT_FALSE(store.empty());
         EXPECT_FALSE(store.has_new_targets());
@@ -571,7 +628,7 @@ TEST(TestObjectStore, FailToReplacePersistentWithEphemeralDifferentBatch)
         EXPECT_TRUE(store.get_target(query).first.has_value());
 
         auto [object, attr] = store.get_target(query);
-        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_EQ(attr, evaluation_scope::context);
         EXPECT_TRUE(object.has_value());
         EXPECT_STRV(object.as<std::string_view>(), "hello");
     }

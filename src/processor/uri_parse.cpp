@@ -13,6 +13,7 @@
 #include "pointer.hpp"
 #include "processor/base.hpp"
 #include "uri_utils.hpp"
+#include "utils.hpp"
 
 #include <string_view>
 #include <unordered_map>

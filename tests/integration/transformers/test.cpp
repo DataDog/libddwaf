@@ -30,7 +30,7 @@ TEST(TestTransformers, Base64Decode)
         ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("J09SIDE9MS8q"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -63,7 +63,7 @@ TEST(TestTransformers, Base64DecodeAlias)
         ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("J09SIDE9MS8q"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -96,7 +96,7 @@ TEST(TestTransformers, Base64UrlDecode)
         ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("J09SIDE9MS8q"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -129,7 +129,7 @@ TEST(TestTransformers, Base64Encode)
         ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("'OR 1=1/*"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -163,7 +163,7 @@ TEST(TestTransformers, Base64EncodeAlias)
         ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("'OR 1=1/*"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -197,7 +197,7 @@ TEST(TestTransformers, CompressWhitespace)
         ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("attack      value"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -231,7 +231,7 @@ TEST(TestTransformers, CompressWhitespaceAlias)
         ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("attack      value"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -265,7 +265,7 @@ TEST(TestTransformers, CssDecode)
         ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("CSS\\\n tran\\sformations"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -300,7 +300,7 @@ TEST(TestTransformers, CssDecodeAlias)
         ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("CSS\\\n tran\\sformations"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -335,7 +335,7 @@ TEST(TestTransformers, HtmlEntityDecode)
         STRL("HTML &#x0000000000000000000000000000041 &#x41; transformation"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -370,7 +370,7 @@ TEST(TestTransformers, HtmlEntityDecodeAlias)
         STRL("HTML &#x0000000000000000000000000000041 &#x41; transformation"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -405,7 +405,7 @@ TEST(TestTransformers, JsDecode)
         STRL(R"(\x41\x20\x4aS\x20transf\x6Frmation)"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -440,7 +440,7 @@ TEST(TestTransformers, JsDecodeAlias)
         STRL(R"(\x41\x20\x4aS\x20transf\x6Frmation)"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -475,7 +475,7 @@ TEST(TestTransformers, Lowercase)
         ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("ArAcHnI"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -509,7 +509,7 @@ TEST(TestTransformers, NormalizePath)
         ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("/etc/dir1/dir2/../../passwd"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -543,7 +543,7 @@ TEST(TestTransformers, NormalizePathAlias)
         ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("/etc/dir1/dir2/../../passwd"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -577,7 +577,7 @@ TEST(TestTransformers, NormalizePathWin)
         STRL(R"(\etc\dir1\dir2\..\..\passwd)"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -611,7 +611,7 @@ TEST(TestTransformers, NormalizePathAliasWin)
         STRL(R"(\etc\dir1\dir2\..\..\passwd)"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -645,7 +645,7 @@ TEST(TestTransformers, RemoveComments)
         ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("passwd#asdsd"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -679,7 +679,7 @@ TEST(TestTransformers, RemoveCommentsAlias)
         ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("passwd#asdsd"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -713,7 +713,7 @@ TEST(TestTransformers, RemoveNulls)
         ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("/etc/\0passwd"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -747,7 +747,7 @@ TEST(TestTransformers, RemoveNullsAlias)
         "/etc/\0passwd", sizeof("/etc/\0passwd") - 1);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -781,7 +781,7 @@ TEST(TestTransformers, ShellUnescape)
         ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("/\\etc/\"pass^wd"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -815,7 +815,7 @@ TEST(TestTransformers, ShellUnescapeAlias)
         ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("/\\etc/\"pass^wd"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -849,7 +849,7 @@ TEST(TestTransformers, UnicodeNormalize)
         ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("/étc/p𝑎ßwd"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -883,7 +883,7 @@ TEST(TestTransformers, UrlBasename)
         ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("/path/to/index.php?a=b#frag"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -917,7 +917,7 @@ TEST(TestTransformers, UrlBasenameAlias)
         ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("/path/to/index.php?a=b#frag"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -951,7 +951,7 @@ TEST(TestTransformers, UrlDecode)
         ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("%61n+%61ttack%20valu%65"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -985,7 +985,7 @@ TEST(TestTransformers, UrlDecodeAlias)
         ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("%61n+%61ttack%20valu%65"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -1019,7 +1019,7 @@ TEST(TestTransformers, UrlDecodeIis)
         ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("%61n+%61ttack%20valu%65"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -1053,7 +1053,7 @@ TEST(TestTransformers, UrlDecodeIisAlias)
         ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("%61n+%61ttack%20valu%65"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -1087,7 +1087,7 @@ TEST(TestTransformers, UrlPath)
         ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("/path/to/index.php?a=b#frag"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -1121,7 +1121,7 @@ TEST(TestTransformers, UrlPathAlias)
         ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("/path/to/index.php?a=b#frag"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -1155,7 +1155,7 @@ TEST(TestTransformers, UrlQuerystring)
         ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("/path/to/index.php?a=b#frag"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -1189,7 +1189,7 @@ TEST(TestTransformers, UrlQuerystringAlias)
         ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("/path/to/index.php?a=b#frag"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -1223,7 +1223,7 @@ TEST(TestTransformers, Mixed)
         STRL("L3AgIGEgIHRIL3QgIE8vRmlsRS5QSFA/YT1iI2ZyYWc="));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(

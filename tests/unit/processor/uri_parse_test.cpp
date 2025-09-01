@@ -49,11 +49,11 @@ TEST(TestUriParseProcessor, QueryParameters)
     for (auto &[url, result] : samples) {
         ddwaf::timer deadline{2s};
         processor_cache cache;
-        auto [output, attr] =
-            gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = url}, cache,
-                alloc, deadline);
+        auto [output, attr] = gen.eval_impl(
+            {.address = {}, .key_path = {}, .scope = evaluation_scope::context, .value = url},
+            cache, alloc, deadline);
         EXPECT_TRUE(output.is_map());
-        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_EQ(attr, evaluation_scope::context);
 
         auto query = object_view{output}.find("query");
         EXPECT_JSON(query.ref(), result);
@@ -79,17 +79,17 @@ TEST(TestUriParseProcessor, MixedUrls)
     for (auto &[url, result] : samples) {
         ddwaf::timer deadline{2s};
         processor_cache cache;
-        auto [output, attr] =
-            gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = url}, cache,
-                alloc, deadline);
+        auto [output, attr] = gen.eval_impl(
+            {.address = {}, .key_path = {}, .scope = evaluation_scope::context, .value = url},
+            cache, alloc, deadline);
         EXPECT_TRUE(output.is_map());
-        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_EQ(attr, evaluation_scope::context);
 
         EXPECT_JSON(output.ref(), result);
     }
 }
 
-TEST(TestUriParseProcessor, Ephemeral)
+TEST(TestUriParseProcessor, Subcontext)
 {
     auto *alloc = memory::get_default_resource();
 
@@ -102,9 +102,10 @@ TEST(TestUriParseProcessor, Ephemeral)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl(
-        {.address = {}, .key_path = {}, .ephemeral = true, .value = url}, cache, alloc, deadline);
+        {.address = {}, .key_path = {}, .scope = evaluation_scope::subcontext, .value = url}, cache,
+        alloc, deadline);
     EXPECT_TRUE(output.is_map());
-    EXPECT_EQ(attr, object_store::attribute::ephemeral);
+    EXPECT_EQ(attr, evaluation_scope::subcontext);
 
     EXPECT_JSON(output.ref(),
         R"({"scheme":"https","userinfo":"user","host":"test.com","port":222,"path":"/path","query":{"normal":"value","array":["1","2"],"emptyvalue":"","flag":true,"query":["value1","value2"]},"fragment":"frag"})");
@@ -121,9 +122,9 @@ TEST(TestUriParseProcessor, Malformed)
     for (auto &url : samples) {
         ddwaf::timer deadline{2s};
         processor_cache cache;
-        auto [output, attr] =
-            gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = url}, cache,
-                alloc, deadline);
+        auto [output, attr] = gen.eval_impl(
+            {.address = {}, .key_path = {}, .scope = evaluation_scope::context, .value = url},
+            cache, alloc, deadline);
         EXPECT_TRUE(output.is_invalid());
     }
 }

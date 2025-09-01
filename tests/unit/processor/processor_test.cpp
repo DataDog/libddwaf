@@ -32,7 +32,7 @@ public:
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
     {}
 
-    MOCK_METHOD((std::pair<owned_object, object_store::attribute>), eval_impl,
+    MOCK_METHOD((std::pair<owned_object, evaluation_scope>), eval_impl,
         (const unary_argument<object_view> &, processor_cache &,
             nonnull_ptr<memory::memory_resource>, ddwaf::timer &),
         (const));
@@ -61,8 +61,8 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
-            std::move(output), object_store::attribute::none})));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context})));
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
@@ -110,10 +110,10 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>(
-            std::move(first_output), object_store::attribute::none))))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>(
-            std::move(second_output), object_store::attribute::none))));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>(
+            std::move(first_output), evaluation_scope::context))))
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>(
+            std::move(second_output), evaluation_scope::context))));
 
     processor_cache cache;
     timer deadline{2s};
@@ -165,8 +165,8 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
-            std::move(output), object_store::attribute::none})));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context})));
 
     processor_cache cache;
     timer deadline{2s};
@@ -210,8 +210,8 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
-            std::move(output), object_store::attribute::none})));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context})));
 
     processor_cache cache;
     timer deadline{2s};
@@ -300,8 +300,8 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
-            std::move(output), object_store::attribute::none})));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context})));
 
     processor_cache cache;
     timer deadline{2s};
@@ -352,8 +352,8 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
-            std::move(output), object_store::attribute::none})));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context})));
     processor_cache cache;
 
     timer deadline{2s};
@@ -443,10 +443,10 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>(
-            std::move(first_output), object_store::attribute::none))))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>(
-            std::move(second_output), object_store::attribute::none))));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>(
+            std::move(first_output), evaluation_scope::context))))
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>(
+            std::move(second_output), evaluation_scope::context))));
 
     processor_cache cache;
     timer deadline{2s};
@@ -496,8 +496,8 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
-            std::move(output), object_store::attribute::none})));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context})));
 
     processor_cache cache;
     timer deadline{2s};
@@ -643,8 +643,8 @@ TEST(TestProcessor, OutputEvalWithoutattributesMap)
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
-            std::move(output), object_store::attribute::none})));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context})));
 
     processor_cache cache;
     timer deadline{2s};

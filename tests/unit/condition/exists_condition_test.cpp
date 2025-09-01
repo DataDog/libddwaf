@@ -101,7 +101,7 @@ TEST(TestExistsCondition, KeyPathAvailableButExcluded)
     condition_cache cache;
 
     exclusion::object_set_ref excluded_ref;
-    excluded_ref.persistent = excluded;
+    excluded_ref.context = excluded;
 
     // While the key path is present, since part of the path was excluded
     // the evaluation fails to determine the presence of the full key path,
@@ -223,7 +223,7 @@ TEST(TestNegatedExistsCondition, KeyPathAvailableButExcluded)
     condition_cache cache;
 
     exclusion::object_set_ref excluded_ref;
-    excluded_ref.persistent = excluded;
+    excluded_ref.context = excluded;
 
     // While the key path is not present, since part of the path was excluded
     // the evaluation fails to determine the presence of the full key path,

@@ -59,7 +59,7 @@ void match_path_and_input(const std::vector<std::pair<std::string, ssrf_sample>>
         auto res = cond.eval(cache, store, {}, {}, deadline);
         if (match) {
             ASSERT_TRUE(res.outcome) << path;
-            EXPECT_FALSE(res.ephemeral);
+            EXPECT_EQ(res.scope, evaluation_scope::context);
 
             EXPECT_TRUE(cache.match);
             if (cache.match) { // Silence linter

@@ -22,12 +22,12 @@
 #include "exception.hpp"
 #include "memory_resource.hpp"
 #include "object.hpp"
-#include "object_store.hpp"
 #include "object_type.hpp"
 #include "pointer.hpp"
 #include "processor/base.hpp"
 #include "processor/extract_schema.hpp"
 #include "scanner.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 namespace schema {

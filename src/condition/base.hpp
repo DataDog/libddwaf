@@ -41,7 +41,7 @@ struct condition_cache {
     // Stores the pointer to the object of the i-th target of the condition,
     // used in the previous evaluation. This ensures that the evaluation of
     // the condition can be skipped for the same object in the future.
-    memory::vector<object_view> targets;
+    memory::vector<std::pair<object_view, evaluation_scope>> targets;
     std::optional<condition_match> match;
 };
 

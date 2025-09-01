@@ -38,12 +38,12 @@ TEST(TestRuleFilter, Match)
 
     ddwaf::timer deadline{2s};
 
-    exclusion::rule_filter::excluded_set default_set{{}, true, {}, {}};
+    exclusion::rule_filter::excluded_set default_set{{}, evaluation_scope::subcontext, {}, {}};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
     auto res = filter.match(store, cache, {}, deadline);
     EXPECT_FALSE(res.value_or(default_set).rules.empty());
-    EXPECT_FALSE(res.value_or(default_set).ephemeral);
+    EXPECT_EQ(res.value_or(default_set).scope, evaluation_scope::context);
     EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
 }
 
@@ -89,17 +89,17 @@ TEST(TestRuleFilter, MatchWithDynamicMatcher)
             std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         exclusion::rule_filter::excluded_set default_set{
-            .rules = {}, .ephemeral = true, .mode = {}, .action = {}};
+            .rules = {}, .scope = evaluation_scope::subcontext, .mode = {}, .action = {}};
 
         ddwaf::exclusion::rule_filter::cache_type cache;
         auto res = filter.match(store, cache, matchers, deadline);
         EXPECT_FALSE(res.value_or(default_set).rules.empty());
-        EXPECT_FALSE(res.value_or(default_set).ephemeral);
+        EXPECT_EQ(res.value_or(default_set).scope, evaluation_scope::context);
         EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
     }
 }
 
-TEST(TestRuleFilter, EphemeralMatch)
+TEST(TestRuleFilter, SubcontextMatch)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -118,16 +118,16 @@ TEST(TestRuleFilter, EphemeralMatch)
     auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
     ddwaf::object_store store;
-    store.insert(std::move(root), object_store::attribute::ephemeral);
+    store.insert(std::move(root), evaluation_scope::subcontext);
 
     ddwaf::timer deadline{2s};
 
-    exclusion::rule_filter::excluded_set default_set{{}, false, {}, {}};
+    exclusion::rule_filter::excluded_set default_set{{}, evaluation_scope::context, {}, {}};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
     auto res = filter.match(store, cache, {}, deadline);
     EXPECT_FALSE(res.value_or(default_set).rules.empty());
-    EXPECT_TRUE(res.value_or(default_set).ephemeral);
+    EXPECT_EQ(res.value_or(default_set).scope, evaluation_scope::subcontext);
     EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
 }
 
@@ -192,16 +192,16 @@ TEST(TestRuleFilter, ValidateCachedMatch)
 
         ddwaf::timer deadline{2s};
 
-        exclusion::rule_filter::excluded_set default_set{{}, false, {}, {}};
+        exclusion::rule_filter::excluded_set default_set{{}, evaluation_scope::context, {}, {}};
 
         auto res = filter.match(store, cache, {}, deadline);
         EXPECT_FALSE(res.value_or(default_set).rules.empty());
-        EXPECT_FALSE(res.value_or(default_set).ephemeral);
+        EXPECT_EQ(res.value_or(default_set).scope, evaluation_scope::context);
         EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
     }
 }
 
-TEST(TestRuleFilter, CachedMatchAndEphemeralMatch)
+TEST(TestRuleFilter, CachedMatchAndSubcontextMatch)
 {
     test::expression_builder builder(2);
 
@@ -225,7 +225,11 @@ TEST(TestRuleFilter, CachedMatchAndEphemeralMatch)
     // only the latest address. This ensures that the IP condition can't be
     // matched on the second run.
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            exclusion::rule_filter::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -236,23 +240,28 @@ TEST(TestRuleFilter, CachedMatchAndEphemeralMatch)
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            exclusion::rule_filter::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"usr.id", "admin"}});
 
-        store.insert(std::move(root), object_store::attribute::ephemeral);
+        store.insert(std::move(root), evaluation_scope::subcontext);
 
         ddwaf::timer deadline{2s};
-        exclusion::rule_filter::excluded_set default_set{{}, false, {}, {}};
+        exclusion::rule_filter::excluded_set default_set{
+            .rules = {}, .scope = evaluation_scope::context, .mode = {}, .action = {}};
 
         auto res = filter.match(store, cache, {}, deadline);
         EXPECT_FALSE(res.value_or(default_set).rules.empty());
-        EXPECT_TRUE(res.value_or(default_set).ephemeral);
+        EXPECT_EQ(res.value_or(default_set).scope, evaluation_scope::subcontext);
         EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
     }
 }
 
-TEST(TestRuleFilter, ValidateEphemeralMatchCache)
+TEST(TestRuleFilter, ValidateSubcontextMatchCache)
 {
     test::expression_builder builder(2);
 
@@ -276,22 +285,30 @@ TEST(TestRuleFilter, ValidateEphemeralMatchCache)
     // only the latest address. This ensures that the IP condition can't be
     // matched on the second run.
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            exclusion::rule_filter::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), object_store::attribute::ephemeral);
+        store.insert(std::move(root), evaluation_scope::subcontext);
 
         ddwaf::timer deadline{2s};
         EXPECT_FALSE(filter.match(store, cache, {}, deadline));
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            exclusion::rule_filter::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
         auto root = object_builder::map({{"usr.id", "admin"}});
 
-        store.insert(std::move(root), object_store::attribute::ephemeral);
+        store.insert(std::move(root), evaluation_scope::subcontext);
 
         ddwaf::timer deadline{2s};
         EXPECT_FALSE(filter.match(store, cache, {}, deadline));

@@ -49,6 +49,7 @@ public:
     static void invalidate_subcontext_cache(cache_type &cache)
     {
         expression::invalidate_subcontext_cache(cache.expr_cache);
+        object_filter::invalidate_subcontext_cache(cache.object_filter_cache);
     }
 
 protected:

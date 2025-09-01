@@ -9,6 +9,7 @@
 #include "waf.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
 
 namespace {
 
@@ -52,7 +53,8 @@ TEST(TestWaf, BasicContextRun)
     auto *ctx = instance.create_context();
 
     EXPECT_TRUE(ctx->insert(std::move(root)));
-    auto [code, res] = ctx->eval(LONG_TIME);
+    ddwaf::timer deadline{2s};
+    auto [code, res] = ctx->eval(deadline);
     EXPECT_EQ(code, DDWAF_MATCH);
     delete ctx;
 }

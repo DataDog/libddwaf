@@ -67,6 +67,12 @@ public:
                 cond_cache.match = {};
                 invalidated = true;
             }
+
+            for (auto &[object, scope] : cond_cache.targets) {
+                if (scope == evaluation_scope::subcontext) {
+                    object = {};
+                }
+            }
         }
 
         if (invalidated) {

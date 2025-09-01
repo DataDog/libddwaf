@@ -92,6 +92,13 @@ public:
     static void invalidate_subcontext_cache(processor_cache &cache)
     {
         expression::invalidate_subcontext_cache(cache.expr_cache);
+        for (auto it = cache.generated.begin(); it != cache.generated.end();) {
+            if (it->second == evaluation_scope::subcontext) {
+                it = cache.generated.erase(it);
+            } else {
+                ++it;
+            }
+        }
     }
 };
 

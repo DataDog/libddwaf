@@ -19,11 +19,10 @@
 using namespace ddwaf;
 using namespace std::literals;
 using namespace ddwaf::exclusion;
-using attribute = object_store::attribute;
 
 namespace {
 
-TEST(TestContext, MatchTimeout)
+TEST(TestEvaluationEngine, MatchTimeout)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -48,7 +47,7 @@ TEST(TestContext, MatchTimeout)
     EXPECT_THROW(engine.eval_rules(store, {}, results, deadline), ddwaf::timeout_exception);
 }
 
-TEST(TestContext, NoMatch)
+TEST(TestEvaluationEngine, NoMatch)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -74,7 +73,7 @@ TEST(TestContext, NoMatch)
     EXPECT_EQ(results.size(), 0);
 }
 
-TEST(TestContext, Match)
+TEST(TestEvaluationEngine, Match)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -100,7 +99,7 @@ TEST(TestContext, Match)
     EXPECT_EQ(results.size(), 1);
 }
 
-TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
+TEST(TestEvaluationEngine, MatchMultipleRulesInCollectionSingleRun)
 {
     test::ruleset_builder rbuilder;
     {
@@ -161,7 +160,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     EXPECT_TRUE(match.args[0].key_path.empty());
 }
 
-TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
+TEST(TestEvaluationEngine, MatchMultipleRulesWithPrioritySingleRun)
 {
     test::ruleset_builder rbuilder;
     std::vector<std::shared_ptr<core_rule>> rules;
@@ -238,7 +237,7 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
     }
 }
 
-TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
+TEST(TestEvaluationEngine, MatchMultipleRulesInCollectionDoubleRun)
 {
     test::ruleset_builder rbuilder;
     std::vector<std::shared_ptr<core_rule>> rules;
@@ -310,7 +309,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
     }
 }
 
-TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
+TEST(TestEvaluationEngine, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
 {
     test::ruleset_builder rbuilder;
     {
@@ -405,7 +404,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
     }
 }
 
-TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
+TEST(TestEvaluationEngine, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
 {
     test::ruleset_builder rbuilder;
     std::vector<std::shared_ptr<core_rule>> rules;
@@ -481,7 +480,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
     }
 }
 
-TEST(TestContext, MatchMultipleCollectionsSingleRun)
+TEST(TestEvaluationEngine, MatchMultipleCollectionsSingleRun)
 {
     test::ruleset_builder rbuilder;
     std::vector<std::shared_ptr<core_rule>> rules;
@@ -524,7 +523,7 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
     EXPECT_EQ(results.size(), 2);
 }
 
-TEST(TestContext, MatchPriorityCollectionsSingleRun)
+TEST(TestEvaluationEngine, MatchPriorityCollectionsSingleRun)
 {
     test::ruleset_builder rbuilder;
     std::vector<std::shared_ptr<core_rule>> rules;
@@ -570,7 +569,7 @@ TEST(TestContext, MatchPriorityCollectionsSingleRun)
     EXPECT_EQ(results.size(), 1);
 }
 
-TEST(TestContext, MatchMultipleCollectionsDoubleRun)
+TEST(TestEvaluationEngine, MatchMultipleCollectionsDoubleRun)
 {
     test::ruleset_builder rbuilder;
     std::vector<std::shared_ptr<core_rule>> rules;
@@ -623,7 +622,7 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
     }
 }
 
-TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
+TEST(TestEvaluationEngine, MatchMultiplePriorityCollectionsDoubleRun)
 {
     test::ruleset_builder rbuilder;
     std::vector<std::shared_ptr<core_rule>> rules;
@@ -679,7 +678,7 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
     }
 }
 
-TEST(TestContext, RuleFilterWithCondition)
+TEST(TestEvaluationEngine, RuleFilterWithCondition)
 {
     test::ruleset_builder rbuilder;
 
@@ -727,7 +726,7 @@ TEST(TestContext, RuleFilterWithCondition)
     EXPECT_EQ(results.size(), 0);
 }
 
-TEST(TestContext, RuleFilterWithEphemeralConditionMatch)
+TEST(TestEvaluationEngine, RuleFilterWithSubcontextConditionMatch)
 {
     test::ruleset_builder rbuilder;
 
@@ -759,30 +758,31 @@ TEST(TestContext, RuleFilterWithEphemeralConditionMatch)
     }
 
     evaluation_engine engine(rbuilder.build());
-    object_store store;
 
     {
+        scope_exit cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
+
         auto persistent = object_builder::map({{"usr.id", "admin"}});
         auto ephemeral = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        EXPECT_TRUE(store.insert(std::move(persistent)));
-        EXPECT_TRUE(store.insert(std::move(ephemeral), context::attribute::ephemeral));
+        EXPECT_TRUE(engine.insert(std::move(persistent)));
+        EXPECT_TRUE(engine.insert(std::move(ephemeral), evaluation_scope::subcontext));
 
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(store, deadline);
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_OK);
     }
 
     {
         auto root = object_builder::map({{"usr.id", "admin"}});
-        EXPECT_TRUE(store.insert(std::move(root)));
+        EXPECT_TRUE(engine.insert(std::move(root)));
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(store, deadline);
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_MATCH);
     }
 }
 
-TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
+TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextBypassPersistentMonitor)
 {
     test::ruleset_builder rbuilder;
 
@@ -827,33 +827,34 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
     }
 
     evaluation_engine engine(rbuilder.build());
-    object_store store;
 
     {
+        scope_exit cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
+
         auto persistent = object_builder::map({{"usr.id", "admin"}, {"http.route", "unrouted"}});
         auto ephemeral = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        EXPECT_TRUE(store.insert(std::move(persistent)));
-        EXPECT_TRUE(store.insert(std::move(ephemeral), context::attribute::ephemeral));
+        EXPECT_TRUE(engine.insert(std::move(persistent)));
+        EXPECT_TRUE(engine.insert(std::move(ephemeral), evaluation_scope::subcontext));
 
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(store, deadline);
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_OK);
     }
 
     {
         auto root = object_builder::map({{"usr.id", "admin"}});
-        EXPECT_TRUE(store.insert(std::move(root)));
+        EXPECT_TRUE(engine.insert(std::move(root)));
 
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(store, deadline);
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_MATCH);
 
         EXPECT_TRUE(object_view{res}.find("actions").empty());
     }
 }
 
-TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
+TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextMonitorPersistentBypass)
 {
     test::ruleset_builder rbuilder;
 
@@ -898,31 +899,32 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
     }
 
     evaluation_engine engine(rbuilder.build());
-    object_store store;
 
     {
+        scope_exit cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
+
         auto persistent = object_builder::map({{"usr.id", "admin"}, {"http.route", "unrouted"}});
         auto ephemeral = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        EXPECT_TRUE(store.insert(std::move(persistent)));
-        EXPECT_TRUE(store.insert(std::move(ephemeral), context::attribute::ephemeral));
+        EXPECT_TRUE(engine.insert(std::move(persistent)));
+        EXPECT_TRUE(engine.insert(std::move(ephemeral), evaluation_scope::subcontext));
 
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(store, deadline);
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_OK);
     }
 
     {
         auto root = object_builder::map({{"usr.id", "admin"}});
-        EXPECT_TRUE(store.insert(std::move(root)));
+        EXPECT_TRUE(engine.insert(std::move(root)));
 
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(store, deadline);
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_OK);
     }
 }
 
-TEST(TestContext, RuleFilterTimeout)
+TEST(TestEvaluationEngine, RuleFilterTimeout)
 {
     test::ruleset_builder rbuilder;
 
@@ -964,7 +966,7 @@ TEST(TestContext, RuleFilterTimeout)
     EXPECT_THROW(engine.eval_filters(store, deadline), ddwaf::timeout_exception);
 }
 
-TEST(TestContext, NoRuleFilterWithCondition)
+TEST(TestEvaluationEngine, NoRuleFilterWithCondition)
 {
     test::ruleset_builder rbuilder;
 
@@ -1011,7 +1013,7 @@ TEST(TestContext, NoRuleFilterWithCondition)
     EXPECT_EQ(results.size(), 1);
 }
 
-TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
+TEST(TestEvaluationEngine, MultipleRuleFiltersNonOverlappingRules)
 {
     test::ruleset_builder rbuilder;
 
@@ -1086,7 +1088,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
     }
 }
 
-TEST(TestContext, MultipleRuleFiltersOverlappingRules)
+TEST(TestEvaluationEngine, MultipleRuleFiltersOverlappingRules)
 {
     test::ruleset_builder rbuilder;
 
@@ -1199,7 +1201,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     }
 }
 
-TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
+TEST(TestEvaluationEngine, MultipleRuleFiltersNonOverlappingRulesWithConditions)
 {
     test::ruleset_builder rbuilder;
 
@@ -1274,7 +1276,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
     }
 }
 
-TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
+TEST(TestEvaluationEngine, MultipleRuleFiltersOverlappingRulesWithConditions)
 {
     test::ruleset_builder rbuilder;
 
@@ -1354,7 +1356,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
     }
 }
 
-TEST(TestContext, InputFilterExclude)
+TEST(TestEvaluationEngine, InputFilterExclude)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -1390,7 +1392,7 @@ TEST(TestContext, InputFilterExclude)
     EXPECT_EQ(results.size(), 0);
 }
 
-TEST(TestContext, InputFilterExcludeEphemeral)
+TEST(TestEvaluationEngine, InputFilterExcludeSubcontext)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -1412,35 +1414,40 @@ TEST(TestContext, InputFilterExcludeEphemeral)
         std::set<const core_rule *>{rule}, std::move(obj_filter)});
 
     evaluation_engine engine(rbuilder.build());
-    object_store store;
 
     {
+        scope_exit cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
+
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-        EXPECT_TRUE(store.insert(std::move(root)));
+        EXPECT_TRUE(engine.insert(std::move(root), evaluation_scope::subcontext));
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(store, deadline);
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_OK);
     }
 
     {
+        scope_exit cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
+
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-        EXPECT_TRUE(store.insert(std::move(root)));
+        EXPECT_TRUE(engine.insert(std::move(root), evaluation_scope::subcontext));
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(store, deadline);
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_OK);
     }
 
     {
+        scope_exit cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
+
         auto root = object_builder::map({{"http.peer_ip", "192.168.0.1"}});
-        EXPECT_TRUE(store.insert(std::move(root)));
+        EXPECT_TRUE(engine.insert(std::move(root), evaluation_scope::subcontext));
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(store, deadline);
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_MATCH);
     }
 }
 
 // TODO figure out how to test this
-/*TEST(TestContext, InputFilterExcludeEphemeralReuseObject)*/
+/*TEST(TestEvaluationEngine, InputFilterExcludeSubcontextReuseObject)*/
 /*{*/
 /*test::expression_builder builder(1);*/
 /*builder.start_condition();*/
@@ -1480,7 +1487,7 @@ TEST(TestContext, InputFilterExcludeEphemeral)
 /*}*/
 /*}*/
 
-TEST(TestContext, InputFilterExcludeRule)
+TEST(TestEvaluationEngine, InputFilterExcludeRule)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -1515,7 +1522,7 @@ TEST(TestContext, InputFilterExcludeRule)
     auto objects_to_exclude = engine.eval_filters(store, deadline);
     EXPECT_EQ(objects_to_exclude.size(), 1);
 
-    auto it = objects_to_exclude.persistent.find(rule);
+    auto it = objects_to_exclude.context.find(rule);
     it->second.mode = filter_mode::none;
     EXPECT_TRUE(it->second.objects.empty());
 
@@ -1524,7 +1531,7 @@ TEST(TestContext, InputFilterExcludeRule)
     EXPECT_EQ(results.size(), 1);
 }
 
-TEST(TestContext, InputFilterExcludeRuleEphemeral)
+TEST(TestEvaluationEngine, InputFilterExcludeRuleSubcontext)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -1551,18 +1558,18 @@ TEST(TestContext, InputFilterExcludeRuleEphemeral)
     auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
     object_store store;
-    store.insert(std::move(root), attribute::ephemeral);
+    store.insert(std::move(root), evaluation_scope::subcontext);
 
     auto objects_to_exclude = engine.eval_filters(store, deadline);
     EXPECT_EQ(objects_to_exclude.size(), 1);
 
-    auto it = objects_to_exclude.persistent.find(rule);
+    auto it = objects_to_exclude.context.find(rule);
     EXPECT_TRUE(it->second.objects.empty());
 
-    EXPECT_FALSE(objects_to_exclude.ephemeral.contains(rule));
+    EXPECT_FALSE(objects_to_exclude.subcontext.contains(rule));
 }
 
-TEST(TestContext, InputFilterMonitorRuleEphemeral)
+TEST(TestEvaluationEngine, InputFilterMonitorRuleSubcontext)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -1589,23 +1596,23 @@ TEST(TestContext, InputFilterMonitorRuleEphemeral)
     auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
     object_store store;
-    store.insert(std::move(root), attribute::ephemeral);
+    store.insert(std::move(root), evaluation_scope::subcontext);
 
-    auto objects_to_exclude = engine.eval_filters(store, deadline);
-    EXPECT_EQ(objects_to_exclude.size(), 2);
+    auto policy = engine.eval_filters(store, deadline);
+    EXPECT_EQ(policy.size(), 2);
 
     {
-        auto it = objects_to_exclude.persistent.find(rule);
+        auto it = policy.context.find(rule);
         EXPECT_TRUE(it->second.objects.empty());
     }
 
     {
-        auto it = objects_to_exclude.ephemeral.find(rule);
+        auto it = policy.subcontext.find(rule);
         EXPECT_FALSE(it->second.objects.empty());
     }
 }
 
-TEST(TestContext, InputFilterExcluderRuleEphemeralAndPersistent)
+TEST(TestEvaluationEngine, InputFilterExcluderRuleSubcontextAndPersistent)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -1633,7 +1640,7 @@ TEST(TestContext, InputFilterExcluderRuleEphemeralAndPersistent)
 
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-        store.insert(std::move(root), attribute::ephemeral);
+        store.insert(std::move(root), evaluation_scope::subcontext);
     }
 
     {
@@ -1644,13 +1651,13 @@ TEST(TestContext, InputFilterExcluderRuleEphemeralAndPersistent)
     auto objects_to_exclude = engine.eval_filters(store, deadline);
     EXPECT_EQ(objects_to_exclude.size(), 1);
 
-    auto it = objects_to_exclude.persistent.find(rule);
+    auto it = objects_to_exclude.context.find(rule);
     EXPECT_TRUE(it->second.objects.empty());
 
-    EXPECT_FALSE(objects_to_exclude.ephemeral.contains(rule));
+    EXPECT_FALSE(objects_to_exclude.subcontext.contains(rule));
 }
 
-TEST(TestContext, InputFilterMonitorRuleEphemeralAndPersistent)
+TEST(TestEvaluationEngine, InputFilterMonitorRuleSubcontextAndPersistent)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -1678,7 +1685,7 @@ TEST(TestContext, InputFilterMonitorRuleEphemeralAndPersistent)
 
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-        store.insert(std::move(root), attribute::ephemeral);
+        store.insert(std::move(root), evaluation_scope::subcontext);
     }
 
     {
@@ -1690,17 +1697,17 @@ TEST(TestContext, InputFilterMonitorRuleEphemeralAndPersistent)
     EXPECT_EQ(objects_to_exclude.size(), 2);
 
     {
-        auto it = objects_to_exclude.persistent.find(rule);
+        auto it = objects_to_exclude.context.find(rule);
         EXPECT_FALSE(it->second.objects.empty());
     }
 
     {
-        auto it = objects_to_exclude.ephemeral.find(rule);
+        auto it = objects_to_exclude.subcontext.find(rule);
         EXPECT_FALSE(it->second.objects.empty());
     }
 }
 
-TEST(TestContext, InputFilterWithCondition)
+TEST(TestEvaluationEngine, InputFilterWithCondition)
 {
     test::ruleset_builder rbuilder{};
 
@@ -1785,7 +1792,7 @@ TEST(TestContext, InputFilterWithCondition)
     }
 }
 
-TEST(TestContext, InputFilterWithEphemeralCondition)
+TEST(TestEvaluationEngine, InputFilterWithSubcontextCondition)
 {
     test::ruleset_builder rbuilder{};
 
@@ -1819,29 +1826,30 @@ TEST(TestContext, InputFilterWithEphemeralCondition)
     }
 
     evaluation_engine engine(rbuilder.build());
-    object_store store;
 
     {
+        scope_exit cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
+
         auto persistent = object_builder::map({{"http.client_ip", "192.168.0.1"}});
         auto ephemeral = object_builder::map({{"usr.id", "admin"}});
 
-        EXPECT_TRUE(store.insert(std::move(persistent)));
-        EXPECT_TRUE(store.insert(std::move(ephemeral), context::attribute::ephemeral));
+        EXPECT_TRUE(engine.insert(std::move(persistent)));
+        EXPECT_TRUE(engine.insert(std::move(ephemeral), evaluation_scope::subcontext));
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(store, deadline);
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_OK);
     }
 
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-        EXPECT_TRUE(store.insert(std::move(root)));
+        EXPECT_TRUE(engine.insert(std::move(root)));
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(store, deadline);
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_MATCH);
     }
 }
 
-TEST(TestContext, InputFilterMultipleRules)
+TEST(TestEvaluationEngine, InputFilterMultipleRules)
 {
     test::ruleset_builder rbuilder{};
     std::vector<core_rule *> rules;
@@ -1893,7 +1901,7 @@ TEST(TestContext, InputFilterMultipleRules)
 
         auto objects_to_exclude = engine.eval_filters(store, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             EXPECT_EQ(policy.objects.size(), 1);
         }
 
@@ -1913,7 +1921,7 @@ TEST(TestContext, InputFilterMultipleRules)
 
         auto objects_to_exclude = engine.eval_filters(store, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             EXPECT_EQ(policy.objects.size(), 2);
         }
 
@@ -1933,7 +1941,7 @@ TEST(TestContext, InputFilterMultipleRules)
 
         auto objects_to_exclude = engine.eval_filters(store, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             EXPECT_EQ(policy.objects.size(), 2);
         }
 
@@ -1943,7 +1951,7 @@ TEST(TestContext, InputFilterMultipleRules)
     }
 }
 
-TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
+TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFilters)
 {
     test::ruleset_builder rbuilder{};
     std::vector<core_rule *> rules;
@@ -2002,7 +2010,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
 
         auto objects_to_exclude = engine.eval_filters(store, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 1);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
         }
@@ -2023,7 +2031,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
 
         auto objects_to_exclude = engine.eval_filters(store, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
         }
@@ -2044,7 +2052,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
 
         auto objects_to_exclude = engine.eval_filters(store, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
         }
@@ -2055,7 +2063,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
     }
 }
 
-TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
+TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 {
     test::ruleset_builder rbuilder{};
 
@@ -2144,7 +2152,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
         auto objects_to_exclude = engine.eval_filters(store, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
             EXPECT_TRUE(objects.contains(root.at(0)));
@@ -2165,7 +2173,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
         auto objects_to_exclude = engine.eval_filters(store, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
             EXPECT_TRUE(objects.contains(root.at(0)));
@@ -2187,7 +2195,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
         auto objects_to_exclude = engine.eval_filters(store, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
             EXPECT_TRUE(objects.contains(root.at(0)));
@@ -2208,7 +2216,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
         auto objects_to_exclude = engine.eval_filters(store, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 2);
             EXPECT_TRUE(objects.contains(root.at(0)));
@@ -2231,7 +2239,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
         auto objects_to_exclude = engine.eval_filters(store, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 2);
             EXPECT_TRUE(objects.contains(root.at(0)));
@@ -2254,7 +2262,7 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
         auto objects_to_exclude = engine.eval_filters(store, deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 3);
             EXPECT_TRUE(objects.contains(root.at(0)));

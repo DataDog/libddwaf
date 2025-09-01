@@ -34,17 +34,17 @@ TEST(TestInputFilter, InputExclusionNoConditions)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
-    EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
-    EXPECT_EQ(opt_spec->objects.ephemeral.size(), 0);
+    EXPECT_EQ(opt_spec->objects.context.size(), 1);
+    EXPECT_EQ(opt_spec->objects.subcontext.size(), 0);
     EXPECT_TRUE(opt_spec->objects.contains(root.at(0)));
 }
 
-TEST(TestInputFilter, EphemeralInputExclusionNoConditions)
+TEST(TestInputFilter, SubcontextInputExclusionNoConditions)
 {
     object_store store;
 
     auto root = object_builder::map({{"query", "value"}});
-    store.insert(root, object_store::attribute::ephemeral);
+    store.insert(root, evaluation_scope::subcontext);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {});
@@ -59,8 +59,8 @@ TEST(TestInputFilter, EphemeralInputExclusionNoConditions)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
-    EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
-    EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
+    EXPECT_EQ(opt_spec->objects.subcontext.size(), 1);
+    EXPECT_EQ(opt_spec->objects.context.size(), 0);
     EXPECT_TRUE(opt_spec->objects.contains(root.at(0)));
 }
 
@@ -87,12 +87,12 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
-    EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
-    EXPECT_EQ(opt_spec->objects.ephemeral.size(), 0);
+    EXPECT_EQ(opt_spec->objects.context.size(), 1);
+    EXPECT_EQ(opt_spec->objects.subcontext.size(), 0);
     EXPECT_TRUE(opt_spec->objects.contains(child.at(0)));
 }
 
-TEST(TestInputFilter, EphemeralObjectExclusionNoConditions)
+TEST(TestInputFilter, SubcontextObjectExclusionNoConditions)
 {
     object_store store;
 
@@ -100,7 +100,7 @@ TEST(TestInputFilter, EphemeralObjectExclusionNoConditions)
     auto child = root.emplace("query", object_builder::map());
     child.emplace("params", "param");
 
-    store.insert(root, object_store::attribute::ephemeral);
+    store.insert(root, evaluation_scope::subcontext);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
@@ -115,8 +115,8 @@ TEST(TestInputFilter, EphemeralObjectExclusionNoConditions)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
-    EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
-    EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
+    EXPECT_EQ(opt_spec->objects.context.size(), 0);
+    EXPECT_EQ(opt_spec->objects.subcontext.size(), 1);
     EXPECT_TRUE(opt_spec->objects.contains(child.at(0)));
 }
 
@@ -144,12 +144,12 @@ TEST(TestInputFilter, PersistentInputExclusionWithPersistentCondition)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
-    EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
-    EXPECT_EQ(opt_spec->objects.ephemeral.size(), 0);
+    EXPECT_EQ(opt_spec->objects.context.size(), 1);
+    EXPECT_EQ(opt_spec->objects.subcontext.size(), 0);
     EXPECT_TRUE(opt_spec->objects.contains(root.at(0)));
 }
 
-TEST(TestInputFilter, EphemeralInputExclusionWithEphemeralCondition)
+TEST(TestInputFilter, SubcontextInputExclusionWithSubcontextCondition)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -160,7 +160,7 @@ TEST(TestInputFilter, EphemeralInputExclusionWithEphemeralCondition)
     auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
     ddwaf::object_store store;
-    store.insert(root, object_store::attribute::ephemeral);
+    store.insert(root, evaluation_scope::subcontext);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -174,12 +174,12 @@ TEST(TestInputFilter, EphemeralInputExclusionWithEphemeralCondition)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
-    EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
-    EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
+    EXPECT_EQ(opt_spec->objects.context.size(), 0);
+    EXPECT_EQ(opt_spec->objects.subcontext.size(), 1);
     EXPECT_TRUE(opt_spec->objects.contains(root.at(0)));
 }
 
-TEST(TestInputFilter, PersistentInputExclusionWithEphemeralCondition)
+TEST(TestInputFilter, PersistentInputExclusionWithSubcontextCondition)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -190,7 +190,7 @@ TEST(TestInputFilter, PersistentInputExclusionWithEphemeralCondition)
     ddwaf::object_store store;
 
     auto root = object_builder::map({{"usr.id", "admin"}});
-    store.insert(std::move(root), object_store::attribute::ephemeral);
+    store.insert(std::move(root), evaluation_scope::subcontext);
 
     root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
     store.insert(root);
@@ -207,12 +207,12 @@ TEST(TestInputFilter, PersistentInputExclusionWithEphemeralCondition)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
-    EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
-    EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
+    EXPECT_EQ(opt_spec->objects.context.size(), 0);
+    EXPECT_EQ(opt_spec->objects.subcontext.size(), 1);
     EXPECT_TRUE(opt_spec->objects.contains(root.at(0)));
 }
 
-TEST(TestInputFilter, EphemeralInputExclusionWithPersistentCondition)
+TEST(TestInputFilter, SubcontextInputExclusionWithPersistentCondition)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -226,7 +226,7 @@ TEST(TestInputFilter, EphemeralInputExclusionWithPersistentCondition)
     store.insert(std::move(root));
 
     root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-    store.insert(root, object_store::attribute::ephemeral);
+    store.insert(root, evaluation_scope::subcontext);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -240,8 +240,8 @@ TEST(TestInputFilter, EphemeralInputExclusionWithPersistentCondition)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
-    EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
-    EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
+    EXPECT_EQ(opt_spec->objects.context.size(), 0);
+    EXPECT_EQ(opt_spec->objects.subcontext.size(), 1);
     EXPECT_TRUE(opt_spec->objects.contains(root.at(0)));
 }
 
@@ -270,7 +270,7 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
-    EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
+    EXPECT_EQ(opt_spec->objects.context.size(), 1);
     EXPECT_TRUE(opt_spec->objects.contains(root.at(0)));
 }
 
@@ -329,7 +329,7 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
-    EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
+    EXPECT_EQ(opt_spec->objects.context.size(), 1);
     EXPECT_TRUE(opt_spec->objects.contains(child.at(0)));
 }
 
@@ -403,12 +403,12 @@ TEST(TestInputFilter, InputValidateCachedMatch)
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
-        EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
+        EXPECT_EQ(opt_spec->objects.context.size(), 1);
         EXPECT_TRUE(opt_spec->objects.contains(root.at(0)));
     }
 }
 
-TEST(TestInputFilter, InputValidateCachedEphemeralMatch)
+TEST(TestInputFilter, InputValidateCachedSubcontextMatch)
 {
     test::expression_builder builder(2);
     builder.start_condition();
@@ -434,9 +434,13 @@ TEST(TestInputFilter, InputValidateCachedEphemeralMatch)
     input_filter::cache_type cache;
     ddwaf::object_store store;
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            exclusion::input_filter::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
-        store.insert(objects[0], object_store::attribute::ephemeral);
+        store.insert(objects[0], evaluation_scope::subcontext);
         store.insert(objects[1]);
 
         ddwaf::timer deadline{2s};
@@ -444,13 +448,18 @@ TEST(TestInputFilter, InputValidateCachedEphemeralMatch)
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
-        EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
-        EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
+        EXPECT_EQ(opt_spec->objects.subcontext.size(), 1);
+        EXPECT_EQ(opt_spec->objects.context.size(), 0);
         EXPECT_TRUE(opt_spec->objects.contains(objects[1].at(0)));
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            exclusion::input_filter::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
+
         store.insert(objects[2]);
 
         ddwaf::timer deadline{2s};
@@ -458,17 +467,21 @@ TEST(TestInputFilter, InputValidateCachedEphemeralMatch)
     }
 
     {
-        auto scope = store.get_eval_scope();
+        scope_exit cleanup{[&]() {
+            exclusion::input_filter::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
-        store.insert(objects[3], object_store::attribute::ephemeral);
+        store.insert(objects[3], evaluation_scope::subcontext);
 
         ddwaf::timer deadline{2s};
         auto opt_spec = filter.match(store, cache, {}, deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
-        EXPECT_EQ(opt_spec->objects.ephemeral.size(), 1);
-        EXPECT_EQ(opt_spec->objects.persistent.size(), 0);
+        EXPECT_EQ(opt_spec->objects.subcontext.size(), 1);
+        EXPECT_EQ(opt_spec->objects.context.size(), 0);
     }
 }
 
@@ -561,7 +574,7 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
-        EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
+        EXPECT_EQ(opt_spec->objects.context.size(), 1);
         EXPECT_TRUE(opt_spec->objects.contains(client_ip_ptr));
     }
 }
@@ -596,8 +609,11 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     objects.emplace_back(object_builder::map({{"random", "random"}}));
 
     {
-        auto scope = store.get_eval_scope();
-
+        scope_exit cleanup{[&]() {
+            exclusion::input_filter::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
         store.insert(objects[0]);
 
         ddwaf::timer deadline{2s};
@@ -605,13 +621,16 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
-        EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
+        EXPECT_EQ(opt_spec->objects.context.size(), 1);
         EXPECT_TRUE(opt_spec->objects.contains(objects[0].at(0)));
     }
 
     {
-        auto scope = store.get_eval_scope();
-
+        scope_exit cleanup{[&]() {
+            exclusion::input_filter::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
         store.insert(objects[1]);
 
         ddwaf::timer deadline{2s};
@@ -665,7 +684,7 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
-        EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
+        EXPECT_EQ(opt_spec->objects.context.size(), 1);
     }
 }
 
@@ -758,7 +777,7 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
-        EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
+        EXPECT_EQ(opt_spec->objects.context.size(), 1);
     }
 }
 
@@ -792,8 +811,11 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     objects.emplace_back(object_builder::map({{"random", "random"}}));
 
     {
-        auto scope = store.get_eval_scope();
-
+        scope_exit cleanup{[&]() {
+            exclusion::input_filter::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
         store.insert(objects[0]);
 
         ddwaf::timer deadline{2s};
@@ -801,12 +823,15 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
-        EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
+        EXPECT_EQ(opt_spec->objects.context.size(), 1);
     }
 
     {
-        auto scope = store.get_eval_scope();
-
+        scope_exit cleanup{[&]() {
+            exclusion::input_filter::invalidate_subcontext_cache(cache);
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
         store.insert(objects[1]);
 
         ddwaf::timer deadline{2s};
@@ -864,6 +889,6 @@ TEST(TestInputFilter, MatchWithDynamicMatcher)
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
-        EXPECT_EQ(opt_spec->objects.persistent.size(), 1);
+        EXPECT_EQ(opt_spec->objects.context.size(), 1);
     }
 }
