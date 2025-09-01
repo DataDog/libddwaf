@@ -122,7 +122,8 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
                                              .path = {"root", "key"}}}}}});
 
     EXPECT_ACTIONS(result_object,
-        {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}},
+        {{"block_request",
+             {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}},
             {"monitor_request", {}}});
 
     ddwaf_object_free(&result_object);
@@ -227,7 +228,8 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
                                              }}}}});
 
     EXPECT_ACTIONS(result_object,
-        {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}},
+        {{"block_request",
+             {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}},
             {"monitor_request", {}}});
 
     ddwaf_object_free(&result_object);
@@ -359,7 +361,8 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
         {});
 
     EXPECT_ACTIONS(result_object,
-        {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}},
+        {{"block_request",
+             {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}},
             {"monitor_request", {}}, {"unknown", {}}});
 
     ddwaf_object_free(&result_object);
@@ -681,7 +684,7 @@ TEST(TestEventSerializer, StackTraceAction)
 
         auto it = obtained.find("generate_stack");
         EXPECT_TRUE(it->second.contains("stack_id"));
-        EXPECT_EQ(it->second.at("stack_id"), stack_id);
+        EXPECT_EQ(std::get<std::string>(it->second.at("stack_id")), stack_id);
     }
 
     ddwaf_object_free(&result_object);
