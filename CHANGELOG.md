@@ -8,7 +8,7 @@ This release introduces a new URI-decomposition preprocessor along with enhancem
 
 #### URI parsing preprocessor
 
-A new `uri_parse` preprocessor has been introduced to convert a single URI into a structured map. URI decomposition follows RFC 3986, with some additions from WHATWG for compatibility. This preprocessor improves the ability of the rule writer to target specific URI components without the need for crafting complex and innacurate regular expressions.
+A new `uri_parse` preprocessor has been introduced to convert a single URI into a structured map. URI decomposition follows [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986), with some additions from [WHATWG](https://url.spec.whatwg.org/) for compatibility. This preprocessor improves the ability of the rule writer to target specific URI components without the need for crafting complex and innacurate regular expressions.
 
 An example definition of this preprocessor can be seen below:
 ```yaml
@@ -42,14 +42,14 @@ After the evaluation of this example preprocessor `server.request.uri` will be a
 
 Action parameters can now include any of the available scalar types in addition to strings. This enables more natural configurations and prevents the need for ad‑hoc conversions by the WAF caller. This is a small, incremental improvement ahead of v2’s planned complex‑type support.
 
-In addition to this change, the `status_code` field of the `block_request` and `redirect_request actions, as well as the `grpc_status_code` field of the `block_request` action, are now being stored and interpreted as an unsigned integer, rather than a string.
+In addition to this change, the `status_code` field of the `block_request` and `redirect_request` actions, as well as the `grpc_status_code` field of the `block_request` action, are now being stored and interpreted as an unsigned integer, rather than a string.
 
 #### Performance & Initialisation
 
 Due to the static initialisation cost of tokenizer regular expressions, this is now deferred to the first ruleset instantiation. This avoids startup overhead and protects request latency from any one‑time initialization costs. No behavior changes are expected for existing rules.
 
 #### Platforms & CI
-Continuous integration now builds and tests libddwaf on Windows ARM64, leveraging the windows-11-arm runners, this is an external contribution from @Greenie0701.
+Continuous integration now builds and tests libddwaf on Windows ARM64, leveraging the windows-11-arm runners, this is an external contribution from [@Greenie0701](https://github.com/Greenie0701).
 
 ### Release changelog
 #### Changes
