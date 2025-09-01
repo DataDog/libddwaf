@@ -257,7 +257,19 @@ void serialize_action(
     if (type != action_type::generate_stack) {
         auto param_map = action_map.emplace(
             type_str, owned_object::make_map(parameters.size(), action_map.alloc()));
-        for (const auto &[k, v] : parameters) { param_map.emplace(k, v); }
+        for (const auto &[k, v] : parameters) {
+            if (std::holds_alternative<std::string>(v)) {
+                param_map.emplace(k, std::get<std::string>(v));
+            } else if (std::holds_alternative<bool>(v)) {
+                param_map.emplace(k, std::get<bool>(v));
+            } else if (std::holds_alternative<int64_t>(v)) {
+                param_map.emplace(k, std::get<int64_t>(v));
+            } else if (std::holds_alternative<uint64_t>(v)) {
+                param_map.emplace(k, std::get<uint64_t>(v));
+            } else if (std::holds_alternative<double>(v)) {
+                param_map.emplace(k, std::get<double>(v));
+            }
+        }
     } else {
         auto param_map =
             action_map.emplace(type_str, owned_object::make_map(1, action_map.alloc()));

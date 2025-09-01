@@ -186,7 +186,17 @@ std::ostream &operator<<(std::ostream &os, const ddwaf::test::action_map &action
                 param_start = false;
             }
 
-            os << indent(8) << k << ": " << v;
+            if (std::holds_alternative<std::string>(v)) {
+                os << indent(8) << k << ": " << std::get<std::string>(v);
+            } else if (std::holds_alternative<int64_t>(v)) {
+                os << indent(8) << k << ": " << std::get<int64_t>(v);
+            } else if (std::holds_alternative<uint64_t>(v)) {
+                os << indent(8) << k << ": " << std::get<uint64_t>(v);
+            } else if (std::holds_alternative<double>(v)) {
+                os << indent(8) << k << ": " << std::get<double>(v);
+            } else if (std::holds_alternative<bool>(v)) {
+                os << indent(8) << k << ": " << std::boolalpha << std::get<bool>(v);
+            }
         }
 
         os << "\n" << indent(4) << "}";
@@ -245,7 +255,7 @@ void PrintTo(const ddwaf::test::action_map &actions, ::std::ostream *os) { *os <
 }
 
 WafResultActionMatcher::WafResultActionMatcher(
-    std::map<std::string, std::map<std::string, std::string>> &&v)
+    std::map<std::string, std::map<std::string, ddwaf::test::scalar_type>> &&v)
     : expected_(std::move(v))
 {}
 
@@ -423,6 +433,46 @@ event as_if<event, void>::operator()() const
 
     return e;
 }
+std::map<std::string, ddwaf::test::scalar_type>
+as_if<std::map<std::string, ddwaf::test::scalar_type>, void>::operator()() const
+{
+    std::map<std::string, ddwaf::test::scalar_type> parameters;
+
+    for (auto it = node.begin(); it != node.end(); ++it) {
+        auto key = it->first.as<std::string>();
+
+        const std::string &value = it->second.Scalar();
+        if (it->second.Tag() == "?") {
+            try {
+                parameters.emplace(std::move(key), it->second.as<uint64_t>());
+                continue;
+            } catch (...) {}
+
+            try {
+                parameters.emplace(std::move(key), it->second.as<int64_t>());
+                continue;
+            } catch (...) {}
+
+            try {
+                parameters.emplace(std::move(key), it->second.as<double>());
+                continue;
+            } catch (...) {}
+
+            try {
+                if (!value.empty() && value[0] != 'Y' && value[0] != 'y' && value[0] != 'n' &&
+                    value[0] != 'N') {
+                    // Skip the yes / no variants of boolean
+                    parameters.emplace(std::move(key), it->second.as<bool>());
+                }
+                continue;
+            } catch (...) {}
+        }
+
+        parameters.emplace(std::move(key), value);
+    }
+
+    return parameters;
+}
 
 action_map as_if<action_map, void>::operator()() const
 {
@@ -433,8 +483,7 @@ action_map as_if<action_map, void>::operator()() const
     action_map actions;
     for (YAML::const_iterator it = node.begin(); it != node.end(); ++it) {
         auto key = it->first.as<std::string>();
-        auto parameters = it->second.as<std::map<std::string, std::string>>();
-
+        auto parameters = it->second.as<std::map<std::string, ddwaf::test::scalar_type>>();
         actions.emplace(key, parameters);
     }
 

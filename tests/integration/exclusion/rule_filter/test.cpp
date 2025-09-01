@@ -761,8 +761,8 @@ TEST(TestRuleFilterIntegration, UnconditionalCustomFilterMode)
                                    .value = "192.168.0.1"sv,
                                    .address = "http.client_ip",
                                }}}}});
-    EXPECT_ACTIONS(out,
-        {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}})
+    EXPECT_ACTIONS(out, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                               {"type", "auto"}}}})
 
     ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
@@ -801,8 +801,8 @@ TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
                                        .value = "192.168.0.1"sv,
                                        .address = "http.client_ip",
                                    }}}}});
-        EXPECT_ACTIONS(out, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
-                                                   {"type", "auto"}}}})
+        EXPECT_ACTIONS(out, {{"block_request", {{"status_code", 403ULL},
+                                                   {"grpc_status_code", 10ULL}, {"type", "auto"}}}})
 
         ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
@@ -911,8 +911,8 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
                                        .value = "192.168.0.1"sv,
                                        .address = "http.client_ip",
                                    }}}}});
-        EXPECT_ACTIONS(out, {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"},
-                                                   {"type", "auto"}}}})
+        EXPECT_ACTIONS(out, {{"block_request", {{"status_code", 403ULL},
+                                                   {"grpc_status_code", 10ULL}, {"type", "auto"}}}})
 
         ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
@@ -956,8 +956,8 @@ TEST(TestRuleFilterIntegration, CustomFilterModeNonblockingAction)
                                    .value = "192.168.0.1"sv,
                                    .address = "http.client_ip",
                                }}}}});
-    EXPECT_ACTIONS(out,
-        {{"block_request", {{"status_code", "403"}, {"grpc_status_code", "10"}, {"type", "auto"}}}})
+    EXPECT_ACTIONS(out, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                               {"type", "auto"}}}})
 
     ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);

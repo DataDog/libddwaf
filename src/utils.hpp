@@ -21,6 +21,7 @@
 #include <system_error>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 // Convert numbers to strings
@@ -30,6 +31,7 @@
 #define STRL(value) value, sizeof(value) - 1
 
 template <typename T> using optional_ref = std::optional<std::reference_wrapper<T>>;
+using scalar_type = std::variant<bool, int64_t, uint64_t, double, std::string>;
 
 namespace ddwaf {
 

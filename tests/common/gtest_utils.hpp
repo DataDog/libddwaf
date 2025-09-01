@@ -50,7 +50,8 @@ struct event {
 };
 // NOLINTEND(readability-redundant-member-init)
 
-using action_map = ::std::map<::std::string, ::std::map<::std::string, ::std::string>>;
+using scalar_type = std::variant<bool, int64_t, uint64_t, double, std::string>;
+using action_map = ::std::map<::std::string, ::std::map<::std::string, scalar_type>>;
 
 bool operator==(const event::match::argument &lhs, const event::match::argument &rhs);
 bool operator==(const event::match &lhs, const event::match &rhs);
@@ -81,6 +82,12 @@ template <> struct as_if<ddwaf::test::event, void> {
     explicit as_if(const Node &node_) : node(node_) {}
     ddwaf::test::event operator()() const;
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
+    const Node &node;
+};
+
+template <> struct as_if<std::map<std::string, ddwaf::test::scalar_type>, void> {
+    explicit as_if(const Node &node_) : node(node_) {}
+    std::map<std::string, ddwaf::test::scalar_type> operator()() const;
     const Node &node;
 };
 

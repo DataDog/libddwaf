@@ -61,6 +61,28 @@ TEST(TestNegatedScalarCondition, NoMatch)
     ASSERT_FALSE(res.ephemeral);
 }
 
+TEST(TestNegatedScalarCondition, NoMatchWithKeyPath)
+{
+    negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
+        {{{{.name = "server.request.uri.raw"s,
+            .index = get_target_index("server.request.uri.raw"),
+            .key_path = {"path", "to", "rome"}}}}}};
+
+    auto root = object_builder::map({{"server.request.uri.raw",
+        object_builder::map({{"path",
+            object_builder::map({{"to",
+                object_builder::map({{"object", object_builder::array({{"bye"}})}})}})}})}});
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, deadline);
+    ASSERT_FALSE(res.outcome);
+    ASSERT_FALSE(res.ephemeral);
+}
+
 TEST(TestNegatedScalarCondition, Timeout)
 {
     negated_scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
