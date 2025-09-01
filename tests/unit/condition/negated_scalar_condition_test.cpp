@@ -64,6 +64,45 @@ TEST(TestNegatedScalarCondition, NoMatch)
     ASSERT_FALSE(res.ephemeral);
 }
 
+TEST(TestNegatedScalarCondition, NoMatchWithKeyPath)
+{
+    negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
+        {{{{.name = "server.request.uri.raw"s,
+            .index = get_target_index("server.request.uri.raw"),
+            .key_path = {"path", "to", "rome"}}}}}};
+
+    ddwaf_object tmp;
+
+    ddwaf_object array;
+    ddwaf_object_array(&array);
+    ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, "bye"));
+
+    ddwaf_object object;
+    ddwaf_object_map(&object);
+    ddwaf_object_map_add(&object, "object", &array);
+
+    ddwaf_object to;
+    ddwaf_object_map(&to);
+    ddwaf_object_map_add(&to, "to", &object);
+
+    ddwaf_object path;
+    ddwaf_object_map(&path);
+    ddwaf_object_map_add(&path, "path", &to);
+
+    ddwaf_object root;
+    ddwaf_object_map(&root);
+    ddwaf_object_map_add(&root, "server.request.uri.raw", &path);
+
+    object_store store;
+    store.insert(root);
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    ASSERT_FALSE(res.outcome);
+    ASSERT_FALSE(res.ephemeral);
+}
+
 TEST(TestNegatedScalarCondition, Timeout)
 {
     negated_scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},

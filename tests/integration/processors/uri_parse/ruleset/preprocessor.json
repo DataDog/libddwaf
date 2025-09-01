@@ -1,0 +1,51 @@
+{
+  "version": "2.2",
+  "metadata": {
+    "rules_version": "1.8.0"
+  },
+  "rules": [
+    {
+      "id": "rule1",
+      "name": "rule1",
+      "tags": {
+        "type": "flow1",
+        "category": "category1"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.io.net.request.url",
+                "key_path": [ "host" ]
+              }
+            ],
+            "regex": "^datadoghq.com$"
+          },
+          "operator": "match_regex"
+        }
+      ]
+    }
+  ],
+  "processors": [
+    {
+      "id": "processor-001",
+      "generator": "uri_parse",
+      "conditions": [],
+      "parameters": {
+        "mappings": [
+          {
+            "inputs": [
+              {
+                "address": "server.io.net.url"
+              }
+            ],
+            "output": "server.io.net.request.url"
+          }
+        ]
+      },
+      "evaluate": true,
+      "output": false
+    }
+  ]
+}
