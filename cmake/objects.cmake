@@ -54,6 +54,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/processor/extract_schema.cpp
     ${libddwaf_SOURCE_DIR}/src/processor/fingerprint.cpp
     ${libddwaf_SOURCE_DIR}/src/processor/jwt_decode.cpp
+    ${libddwaf_SOURCE_DIR}/src/processor/uri_parse.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/exists.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/lfi_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/sqli_detector.cpp

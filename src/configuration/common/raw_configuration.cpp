@@ -309,6 +309,45 @@ raw_configuration::operator std::unordered_map<std::string, std::string>() const
     return map;
 }
 
+raw_configuration::operator std::unordered_map<std::string, scalar_type>() const
+{
+    if (!view_.is_map()) {
+        throw bad_cast("map", strtype(view_.type()));
+    }
+
+    const map_view mv{view_};
+    if (mv.empty()) {
+        return {};
+    }
+
+    std::unordered_map<std::string, scalar_type> data;
+    data.reserve(mv.size());
+    for (auto [key, value] : mv) {
+        switch (value.type()) {
+        case object_type::boolean:
+            data.emplace(key.as<std::string>(), value.as<bool>());
+            break;
+        case object_type::int64:
+            data.emplace(key.as<std::string>(), value.as<int64_t>());
+            break;
+        case object_type::uint64:
+            data.emplace(key.as<std::string>(), value.as<uint64_t>());
+            break;
+        case object_type::float64:
+            data.emplace(key.as<std::string>(), value.as<double>());
+            break;
+        case object_type::string:
+        case object_type::small_string:
+        case object_type::literal_string:
+            data.emplace(key.as<std::string>(), value.as<std::string>());
+            break;
+        default:
+            throw malformed_object("item in scalar map not a valid scalar");
+        }
+    }
+    return data;
+}
+
 raw_configuration::operator semantic_version() const
 {
     if (!view_.is_string()) {

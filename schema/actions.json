@@ -9,13 +9,13 @@
       "type": "object",
       "properties": {
         "status_code": {
-          "type": "string"
+          "type": "number"
         },
         "type": {
           "type": "string"
         },
         "grpc_status_code": {
-          "type": "string"
+          "type": "number"
         }
       },
       "required": [
@@ -29,7 +29,7 @@
       "type": "object",
       "properties": {
         "status_code": {
-          "type": "string"
+          "type": "number"
         },
         "location": {
           "type": "string"

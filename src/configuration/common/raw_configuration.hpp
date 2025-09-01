@@ -46,6 +46,8 @@ public:
     explicit operator std::vector<std::string>() const;
     explicit operator std::vector<std::string_view>() const;
     explicit operator std::unordered_map<std::string, std::string>() const;
+    explicit operator std::unordered_map<std::string,
+        std::variant<bool, int64_t, uint64_t, double, std::string>>() const;
     explicit operator semantic_version() const;
     explicit operator object_view() const { return view_; }
 
@@ -89,6 +91,14 @@ template <> struct raw_configuration_traits<std::vector<std::string_view>> {
 
 template <> struct raw_configuration_traits<std::unordered_map<std::string, std::string>> {
     static const char *name() { return "std::unordered_map<std::string, std::string>"; }
+};
+
+template <> struct raw_configuration_traits<std::unordered_map<std::string, scalar_type>> {
+    static const char *name()
+    {
+        return "std::unordered_map<std::string, std::variant<bool, int64_t, uint64_t, double, "
+               "std::string>>";
+    }
 };
 
 template <> struct raw_configuration_traits<semantic_version> {

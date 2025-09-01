@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <string_view>
 #include <unordered_set>
@@ -21,8 +22,24 @@
 namespace ddwaf {
 namespace {
 // Hexadecimal, octal, decimal or floating point
-re2::RE2 number_regex(
-    R"((?i)^(0[Xx][0-9a-fA-F](?:[0-9a-fA-F]*|_[0-9a-fA-F])*|0[Bb][01](?:[01]|_[01])*|0[Oo][0-7](?:[0-7]|_[0-7])*|(?:(?:[-+]?[0-9](?:[0-9]|_[0-9])*)(?:\.[0-9](?:[0-9]|_[0-9])*)?(?:[eE][+-]?[0-9](?:[0-9]|_[0-9])*)?))(?:\b|\s|$))");
+constexpr std::string_view number_regex_initialiser =
+    R"((?i)^(0[Xx][0-9a-fA-F](?:[0-9a-fA-F]*|_[0-9a-fA-F])*|0[Bb][01](?:[01]|_[01])*|0[Oo][0-7](?:[0-7]|_[0-7])*|(?:(?:[-+]?[0-9](?:[0-9]|_[0-9])*)(?:\.[0-9](?:[0-9]|_[0-9])*)?(?:[eE][+-]?[0-9](?:[0-9]|_[0-9])*)?))(?:\b|\s|$))";
+
+std::unique_ptr<re2::RE2> number_regex;
+
+bool initialise_global_statics()
+{
+    static const bool ret = []() {
+        try {
+            number_regex = std::make_unique<re2::RE2>(number_regex_initialiser);
+            return number_regex->ok();
+        } catch (...) {
+            return false;
+        }
+    }();
+
+    return ret;
+}
 
 } // namespace
 
@@ -162,13 +179,20 @@ std::ostream &operator<<(std::ostream &os, sql_token_type type)
     return os;
 }
 
+template <typename T> bool sql_tokenizer<T>::initialise_regexes()
+{
+    // Since this is a template class, we defer the operation to a separate
+    // function to avoid multiple initialisations
+    return initialise_global_statics();
+}
+
 template <typename T>
 sql_tokenizer<T>::sql_tokenizer(
     std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
     : base_tokenizer(str, std::move(skip_tokens))
 {
-    if (!number_regex.ok()) {
-        throw std::runtime_error("sql number regex not valid: " + number_regex.error_arg());
+    if (!initialise_regexes()) {
+        throw std::runtime_error("sql number regex not valid: " + number_regex->error_arg());
     }
 }
 
@@ -220,7 +244,7 @@ template <typename T> std::string_view sql_tokenizer<T>::extract_number()
     auto str = substr();
     std::string_view number;
     const std::string_view ref(str.data(), str.size());
-    if (re2::RE2::PartialMatch(ref, number_regex, &number)) {
+    if (re2::RE2::PartialMatch(ref, *number_regex, &number)) {
         if (!number.empty()) {
             return {number.data(), number.size()};
         }

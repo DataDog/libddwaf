@@ -16,18 +16,29 @@ concurrency:
   cancel-in-progress: true
 jobs:
   windows-builds:
-    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
-        arch:
-          - Win32
-          - x64
+        include:
+          - os: windows-2022
+            arch: Win32
+          - os: windows-2022
+            arch: x64
+          - os: windows-11-arm
+            arch: ARM64
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           submodules: recursive
-      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Setup MSVC for Windows(32/64-bit)
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756
+        if: matrix.os == 'windows-2022'
+      - name: Setup MSVC for Windows(ARM64)
+        uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce
+        if: matrix.os == 'windows-11-arm'
+        with:
+          msbuild-architecture: arm64
       - name: Create Directories
         run: cmake -E make_directory ${{ github.workspace }}/build ${{ github.workspace }}/packages
       - name: Generating Build Scripts
@@ -250,7 +261,7 @@ jobs:
             bsdtar -xOf "$arch" "$file_in_arch" > "$dest"/"$(basename "$file_in_arch")"
           }
 
-          mkdir -p ./packages/nuget/runtimes/{linux-x64,linux-arm64,osx,win-x86,win-x64}/native
+          mkdir -p ./packages/nuget/runtimes/{linux-x64,linux-arm64,osx,win-x86,win-x64,win-arm64}/native
 
           extract_file ./artifacts/libddwaf-x86_64-linux-musl/libddwaf-*-x86_64-linux-musl*.tar.gz \
             '/libddwaf\.so$' ./packages/nuget/runtimes/linux-x64/native
@@ -260,7 +271,8 @@ jobs:
             '/ddwaf\.dll$' ./packages/nuget/runtimes/win-x86/native
           extract_file ./artifacts/libddwaf-windows-x64/libddwaf-*-windows-x64*.tar.gz \
             '/ddwaf\.dll$' ./packages/nuget/runtimes/win-x64/native
-
+          extract_file ./artifacts/libddwaf-windows-ARM64/libddwaf-*-windows-arm64*.tar.gz \
+           '/ddwaf\.dll$' ./packages/nuget/runtimes/win-arm64/native
           extract_file ./artifacts/libddwaf-macos-universal/libddwaf-*-darwin-universal*.tar.gz \
             '/libddwaf\.dylib$' ./packages/nuget/runtimes/osx/native
 
