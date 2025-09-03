@@ -1,5 +1,10 @@
 # libddwaf release
 
+## v1.28.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+### Release changelog
+#### Fixes
+- Support float status codes in configuration ([#448](https://github.com/DataDog/libddwaf/pull/448))
+
 ## v1.28.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 ### New Features
