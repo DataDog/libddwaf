@@ -6,7 +6,9 @@
 
 #include <cstdint>
 #include <exception>
+#include <optional>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <variant>
@@ -36,24 +38,38 @@ bool validate_status_code_presence_and_type(
         return false;
     }
 
-    if (holds_alternative<int64_t>(it->second)) {
-        if (const int64_t value = std::get<int64_t>(it->second); value >= 0) {
-            it->second = static_cast<uint64_t>(value);
+    // NOLINTNEXTLINE(fuchsia-trailing-return)
+    auto validate_status_code = [&validate_fn](auto &&code) -> std::optional<uint64_t> {
+        using T = std::decay_t<decltype(code)>;
+        uint64_t ucode;
+        if constexpr (std::is_same_v<T, bool>) {
+            return std::nullopt;
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            if (auto [res, value] = from_string<uint64_t>(code); res) {
+                ucode = value;
+            } else {
+                return std::nullopt;
+            }
+        } else {
+            ucode = static_cast<uint64_t>(code);
+            if (code < 0 || static_cast<T>(ucode) != code) {
+                return std::nullopt;
+            }
         }
-    } else if (holds_alternative<std::string>(it->second)) {
-        if (auto [res, value] = from_string<uint64_t>(std::get<std::string>(it->second)); res) {
-            it->second = value;
+        if (ucode > 999 || !validate_fn(ucode)) {
+            return std::nullopt;
         }
+        return ucode;
+    };
+
+    auto &code = it->second;
+    if (auto ucode = std::visit(validate_status_code, code); ucode.has_value()) {
+        code = ucode.value();
+        return true;
     }
 
-    if (!std::holds_alternative<uint64_t>(it->second) ||
-        !validate_fn(std::get<uint64_t>(it->second))) {
-        // Unsupported type, let's remove it
-        parameters.erase(it);
-        return false;
-    }
-
-    return true;
+    parameters.erase(it);
+    return false;
 }
 
 void validate_and_add_block(auto &cfg, auto id, auto &type, auto &parameters)
