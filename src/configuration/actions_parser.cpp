@@ -36,24 +36,41 @@ bool validate_status_code_presence_and_type(
         return false;
     }
 
-    if (holds_alternative<int64_t>(it->second)) {
-        if (const int64_t value = std::get<int64_t>(it->second); value >= 0) {
-            it->second = static_cast<uint64_t>(value);
+    auto validate_status_code = [&validate_fn]<typename T>(T code) {
+        auto ucode = static_cast<uint64_t>(code);
+        if constexpr (std::is_same_v<T, double>) {
+            return code >= 0 && code <= 999 && code == ucode && validate_fn(ucode);
+        } else {
+            return code >= 0 && code <= 999 && validate_fn(ucode);
         }
-    } else if (holds_alternative<std::string>(it->second)) {
-        if (auto [res, value] = from_string<uint64_t>(std::get<std::string>(it->second)); res) {
-            it->second = value;
+    };
+
+    auto &code = it->second;
+    if (holds_alternative<uint64_t>(code) && validate_status_code(std::get<uint64_t>(code))) {
+        return true;
+    }
+
+    if (holds_alternative<int64_t>(code) && validate_status_code(std::get<int64_t>(code))) {
+        code = static_cast<uint64_t>(std::get<int64_t>(code));
+        return true;
+    }
+
+    if (holds_alternative<double>(code) && validate_status_code(std::get<double>(code))) {
+        // NOLINTNEXTLINE(cppcoreguidelines-narrowing-conversions, bugprone-narrowing-conversions)
+        code = static_cast<uint64_t>(std::get<double>(code));
+        return true;
+    }
+
+    if (holds_alternative<std::string>(code)) {
+        if (auto [res, value] = from_string<uint64_t>(std::get<std::string>(code));
+            res && validate_status_code(value)) {
+            code = value;
+            return true;
         }
     }
 
-    if (!std::holds_alternative<uint64_t>(it->second) ||
-        !validate_fn(std::get<uint64_t>(it->second))) {
-        // Unsupported type, let's remove it
-        parameters.erase(it);
-        return false;
-    }
-
-    return true;
+    parameters.erase(it);
+    return false;
 }
 
 void validate_and_add_block(auto &cfg, auto id, auto &type, auto &parameters)
