@@ -129,7 +129,7 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
     expression::cache_type cache;
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             expression::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -147,7 +147,7 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             expression::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -188,7 +188,7 @@ TEST(TestExpression, SubcontextMatchOnSecondEval)
     expression::cache_type cache;
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             expression::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -206,7 +206,7 @@ TEST(TestExpression, SubcontextMatchOnSecondEval)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             expression::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -304,7 +304,7 @@ TEST(TestExpression, SubcontextMatchOnFirstConditionFirstEval)
     expression::cache_type cache;
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             expression::invalidate_subcontext_cache(cache);
             store.clear_subcontext_objects();
         }};
@@ -321,7 +321,7 @@ TEST(TestExpression, SubcontextMatchOnFirstConditionFirstEval)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             expression::invalidate_subcontext_cache(cache);
             store.clear_subcontext_objects();
         }};
@@ -357,7 +357,7 @@ TEST(TestExpression, SubcontextMatchOnFirstConditionSecondEval)
     expression::cache_type cache;
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             expression::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -375,7 +375,7 @@ TEST(TestExpression, SubcontextMatchOnFirstConditionSecondEval)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             expression::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -407,7 +407,7 @@ TEST(TestExpression, DuplicateInput)
     ddwaf::object_store store;
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             expression::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -425,7 +425,7 @@ TEST(TestExpression, DuplicateInput)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             expression::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -457,7 +457,7 @@ TEST(TestExpression, DuplicateSubcontextInput)
     ddwaf::object_store store;
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             expression::invalidate_subcontext_cache(cache);
             store.clear_subcontext_objects();
         }};
@@ -474,7 +474,7 @@ TEST(TestExpression, DuplicateSubcontextInput)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             expression::invalidate_subcontext_cache(cache);
             store.clear_subcontext_objects();
         }};
@@ -503,7 +503,7 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
 
     ddwaf::object_store store;
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -519,7 +519,7 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -565,7 +565,7 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
     ddwaf::object_store store;
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             expression::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -581,7 +581,7 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             expression::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -670,7 +670,7 @@ TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
     expression::cache_type cache;
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             expression::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -686,7 +686,7 @@ TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             expression::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();

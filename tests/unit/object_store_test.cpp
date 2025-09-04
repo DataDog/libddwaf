@@ -19,7 +19,7 @@ TEST(TestObjectStore, InsertInvalidObject)
 
     object_store store;
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -43,7 +43,7 @@ TEST(TestObjectStore, InsertStringObject)
 
     object_store store;
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -66,7 +66,7 @@ TEST(TestObjectStore, InsertAndGetObject)
 
     object_store store;
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -92,7 +92,7 @@ TEST(TestObjectStore, InsertAndGetSubcontextObject)
 
     object_store store;
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -182,7 +182,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjectBatches)
 
     object_store store;
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -201,7 +201,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjectBatches)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -220,7 +220,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjectBatches)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -243,7 +243,7 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
 
     object_store store;
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -266,7 +266,7 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -298,7 +298,7 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -363,7 +363,7 @@ TEST(TestObjectStore, InsertSingleTargetBatches)
 
     object_store store;
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -379,7 +379,7 @@ TEST(TestObjectStore, InsertSingleTargetBatches)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -409,7 +409,7 @@ TEST(TestObjectStore, DuplicatePersistentTarget)
 
     object_store store;
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -427,7 +427,7 @@ TEST(TestObjectStore, DuplicatePersistentTarget)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -458,7 +458,7 @@ TEST(TestObjectStore, DuplicateSubcontextTarget)
     object_store store;
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -505,7 +505,7 @@ TEST(TestObjectStore, FailtoReplaceSubcontextWithPersistent)
     object_store store;
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -551,7 +551,7 @@ TEST(TestObjectStore, FailToReplacePersistentWithSubcontextSameBatch)
     object_store store;
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -597,7 +597,7 @@ TEST(TestObjectStore, FailToReplacePersistentWithSubcontextDifferentBatch)
     object_store store;
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -615,7 +615,7 @@ TEST(TestObjectStore, FailToReplacePersistentWithSubcontextDifferentBatch)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};

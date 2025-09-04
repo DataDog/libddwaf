@@ -35,36 +35,52 @@ using scalar_type = std::variant<bool, int64_t, uint64_t, double, std::string>;
 
 namespace ddwaf {
 
-class evaluation_scope_manager;
+enum class scope_kind : uint8_t { context = 0, subcontext = 1 };
 
 class evaluation_scope {
 public:
-    // Default is context
     evaluation_scope() = default;
 
-    [[nodiscard]] bool is_context() const { return id_ == 0; }
-    [[nodiscard]] bool is_subcontext() const { return id_ > 0; }
+    static evaluation_scope context() { return evaluation_scope{scope_kind::context}; }
+    static evaluation_scope subcontext() { return evaluation_scope{scope_kind::subcontext}; }
 
-    static evaluation_scope context() { return evaluation_scope{0}; }
-    static evaluation_scope subcontext() { return evaluation_scope{1}; }
-
-    bool operator==(const evaluation_scope &other) const { return id_ == other.id_; }
-
-    evaluation_scope operator++(int)
+    static evaluation_scope next_subcontext(evaluation_scope root)
     {
-        // Assume
-        return evaluation_scope{id_++};
+        ++root.id_;
+        return root;
+    }
+
+    [[nodiscard]] bool is_context() const { return kind_ == scope_kind::context; }
+    [[nodiscard]] bool is_subcontext() const { return kind_ == scope_kind::subcontext; }
+
+    bool operator==(scope_kind other) const { return kind_ == other; }
+
+    bool operator==(const evaluation_scope other) const
+    {
+        return kind_ == other.kind_ && id_ == other.id_;
+    }
+
+    bool has_higher_precedence_than(evaluation_scope other)
+    {
+        return static_cast<uint8_t>(kind_) < static_cast<uint8_t>(other.kind_);
+    }
+
+    bool has_lower_precedence_than(evaluation_scope other)
+    {
+        return static_cast<uint8_t>(kind_) > static_cast<uint8_t>(other.kind_);
     }
 
 private:
-    explicit evaluation_scope(uint32_t id) : id_(id) {}
-    uint32_t id_{0};
+    explicit evaluation_scope(scope_kind kind) : kind_(kind){};
 
-    friend class evaluation_scope_manager;
+    scope_kind kind_ : 1 {scope_kind::context};
+    uint32_t id_ : 31 {0};
 };
 
+static_assert(sizeof(evaluation_scope) == 4);
+
 struct eval_result {
-    bool outcome;
+    bool outcome{false};
     evaluation_scope scope;
 };
 
@@ -88,15 +104,15 @@ inline uint8_t from_hex(char c)
 }
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
-template <class Fn> class scope_exit {
+template <class Fn> class defer {
 public:
-    explicit scope_exit(Fn &&fn) noexcept : fn_(std::move(fn)) {}
-    ~scope_exit() { fn_(); }
+    explicit defer(Fn &&fn) noexcept : fn_(std::move(fn)) {}
+    ~defer() { fn_(); }
 
-    scope_exit(const scope_exit &) = delete;
-    scope_exit(scope_exit &&) = delete;
-    scope_exit &operator=(const scope_exit &) = delete;
-    scope_exit &operator=(scope_exit &&) = delete;
+    defer(const defer &) = delete;
+    defer(defer &&) = delete;
+    defer &operator=(const defer &) = delete;
+    defer &operator=(defer &&) = delete;
 
 protected:
     Fn fn_;

@@ -49,7 +49,7 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
 {
     // Clear the last batch of targets on exit so that the process can identify
     // new targets in the next eval
-    auto on_exit = scope_exit([this]() { store_.clear_last_batch(); });
+    auto on_exit = defer([this]() { store_.clear_last_batch(); });
 
     result_serializer serializer(obfuscator_, actions_, output_alloc_);
 

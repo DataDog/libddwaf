@@ -196,7 +196,7 @@ ddwaf::waf *ddwaf_init(
 
             ddwaf::raw_configuration input{to_ref(ruleset)};
             ddwaf::ruleset_info ri;
-            const ddwaf::scope_exit on_exit([&]() {
+            const ddwaf::defer on_exit([&]() {
                 if (diagnostics != nullptr) {
                     to_borrowed(diagnostics) = ri.to_object();
                 }
@@ -443,7 +443,7 @@ bool ddwaf_builder_add_or_update_config(ddwaf::waf_builder *builder, const char 
         auto input = static_cast<ddwaf::raw_configuration>(to_ref(config));
 
         ddwaf::ruleset_info ri;
-        const ddwaf::scope_exit on_exit([&]() {
+        const ddwaf::defer on_exit([&]() {
             if (diagnostics != nullptr) {
                 to_borrowed(diagnostics) = ri.to_object();
             }

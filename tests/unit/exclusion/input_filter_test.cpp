@@ -434,7 +434,7 @@ TEST(TestInputFilter, InputValidateCachedSubcontextMatch)
     input_filter::cache_type cache;
     ddwaf::object_store store;
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             exclusion::input_filter::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -454,7 +454,7 @@ TEST(TestInputFilter, InputValidateCachedSubcontextMatch)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             exclusion::input_filter::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -467,7 +467,7 @@ TEST(TestInputFilter, InputValidateCachedSubcontextMatch)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             exclusion::input_filter::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -609,7 +609,7 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     objects.emplace_back(object_builder::map({{"random", "random"}}));
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             exclusion::input_filter::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -626,7 +626,7 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             exclusion::input_filter::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -811,7 +811,7 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     objects.emplace_back(object_builder::map({{"random", "random"}}));
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             exclusion::input_filter::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -827,7 +827,7 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             exclusion::input_filter::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();

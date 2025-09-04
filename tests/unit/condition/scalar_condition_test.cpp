@@ -143,7 +143,7 @@ TEST(TestScalarCondition, SimpleSubcontextMatch)
 
     object_store store;
     {
-        scope_exit cleanup{[&]() { store.clear_subcontext_objects(); }};
+        defer cleanup{[&]() { store.clear_subcontext_objects(); }};
 
         store.insert(root.clone(), evaluation_scope::subcontext());
 
@@ -155,7 +155,7 @@ TEST(TestScalarCondition, SimpleSubcontextMatch)
     }
 
     {
-        scope_exit cleanup{[&]() { store.clear_subcontext_objects(); }};
+        defer cleanup{[&]() { store.clear_subcontext_objects(); }};
 
         store.insert(std::move(root), evaluation_scope::subcontext());
 

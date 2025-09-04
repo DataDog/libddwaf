@@ -225,7 +225,7 @@ TEST(TestRuleFilter, CachedMatchAndSubcontextMatch)
     // only the latest address. This ensures that the IP condition can't be
     // matched on the second run.
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             exclusion::rule_filter::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -240,7 +240,7 @@ TEST(TestRuleFilter, CachedMatchAndSubcontextMatch)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             exclusion::rule_filter::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -285,7 +285,7 @@ TEST(TestRuleFilter, ValidateSubcontextMatchCache)
     // only the latest address. This ensures that the IP condition can't be
     // matched on the second run.
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             exclusion::rule_filter::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
@@ -300,7 +300,7 @@ TEST(TestRuleFilter, ValidateSubcontextMatchCache)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             exclusion::rule_filter::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();

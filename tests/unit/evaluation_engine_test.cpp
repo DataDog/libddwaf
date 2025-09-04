@@ -760,7 +760,7 @@ TEST(TestEvaluationEngine, RuleFilterWithSubcontextConditionMatch)
     evaluation_engine engine(rbuilder.build());
 
     {
-        scope_exit cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
+        defer cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
 
         auto persistent = object_builder::map({{"usr.id", "admin"}});
         auto ephemeral = object_builder::map({{"http.client_ip", "192.168.0.1"}});
@@ -829,7 +829,7 @@ TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextBypassPersistentMonit
     evaluation_engine engine(rbuilder.build());
 
     {
-        scope_exit cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
+        defer cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
 
         auto persistent = object_builder::map({{"usr.id", "admin"}, {"http.route", "unrouted"}});
         auto ephemeral = object_builder::map({{"http.client_ip", "192.168.0.1"}});
@@ -901,7 +901,7 @@ TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextMonitorPersistentBypa
     evaluation_engine engine(rbuilder.build());
 
     {
-        scope_exit cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
+        defer cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
 
         auto persistent = object_builder::map({{"usr.id", "admin"}, {"http.route", "unrouted"}});
         auto ephemeral = object_builder::map({{"http.client_ip", "192.168.0.1"}});
@@ -1416,7 +1416,7 @@ TEST(TestEvaluationEngine, InputFilterExcludeSubcontext)
     evaluation_engine engine(rbuilder.build());
 
     {
-        scope_exit cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
+        defer cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
 
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
         EXPECT_TRUE(engine.insert(std::move(root), evaluation_scope::subcontext()));
@@ -1426,7 +1426,7 @@ TEST(TestEvaluationEngine, InputFilterExcludeSubcontext)
     }
 
     {
-        scope_exit cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
+        defer cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
 
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
         EXPECT_TRUE(engine.insert(std::move(root), evaluation_scope::subcontext()));
@@ -1436,7 +1436,7 @@ TEST(TestEvaluationEngine, InputFilterExcludeSubcontext)
     }
 
     {
-        scope_exit cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
+        defer cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
 
         auto root = object_builder::map({{"http.peer_ip", "192.168.0.1"}});
         EXPECT_TRUE(engine.insert(std::move(root), evaluation_scope::subcontext()));
@@ -1828,7 +1828,7 @@ TEST(TestEvaluationEngine, InputFilterWithSubcontextCondition)
     evaluation_engine engine(rbuilder.build());
 
     {
-        scope_exit cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
+        defer cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
 
         auto persistent = object_builder::map({{"http.client_ip", "192.168.0.1"}});
         auto ephemeral = object_builder::map({{"usr.id", "admin"}});

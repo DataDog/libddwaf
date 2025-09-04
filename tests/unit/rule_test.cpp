@@ -36,7 +36,7 @@ TEST(TestRule, Match)
 
     core_rule::cache_type cache;
     {
-        scope_exit cleanup{[&]() { store.clear_subcontext_objects(); }};
+        defer cleanup{[&]() { store.clear_subcontext_objects(); }};
         store.insert(root.clone(), evaluation_scope::context());
 
         auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
@@ -63,7 +63,7 @@ TEST(TestRule, Match)
     }
 
     {
-        scope_exit cleanup{[&]() { store.clear_subcontext_objects(); }};
+        defer cleanup{[&]() { store.clear_subcontext_objects(); }};
         store.insert(std::move(root), evaluation_scope::context());
 
         auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
@@ -92,7 +92,7 @@ TEST(TestRule, SubcontextMatch)
 
     core_rule::cache_type cache;
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_subcontext_objects();
             core_rule::invalidate_subcontext_cache(cache);
         }};
@@ -104,7 +104,7 @@ TEST(TestRule, SubcontextMatch)
     }
 
     {
-        scope_exit cleanup{[&]() {
+        defer cleanup{[&]() {
             store.clear_subcontext_objects();
             core_rule::invalidate_subcontext_cache(cache);
         }};

@@ -110,7 +110,10 @@ public:
         return engine_->eval(deadline);
     }
 
-    subcontext *create_subcontext() { return new subcontext{engine_, mr_, subcontext_++}; }
+    subcontext *create_subcontext()
+    {
+        return new subcontext{engine_, mr_, evaluation_scope::next_subcontext(subcontext_)};
+    }
 
 protected:
     std::shared_ptr<evaluation_engine> engine_;
