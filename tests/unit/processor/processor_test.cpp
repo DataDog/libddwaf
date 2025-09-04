@@ -62,7 +62,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
-            std::move(output), evaluation_scope::context})));
+            std::move(output), evaluation_scope::context()})));
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
@@ -111,9 +111,9 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>(
-            std::move(first_output), evaluation_scope::context))))
+            std::move(first_output), evaluation_scope::context()))))
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>(
-            std::move(second_output), evaluation_scope::context))));
+            std::move(second_output), evaluation_scope::context()))));
 
     processor_cache cache;
     timer deadline{2s};
@@ -166,7 +166,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
-            std::move(output), evaluation_scope::context})));
+            std::move(output), evaluation_scope::context()})));
 
     processor_cache cache;
     timer deadline{2s};
@@ -211,7 +211,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
-            std::move(output), evaluation_scope::context})));
+            std::move(output), evaluation_scope::context()})));
 
     processor_cache cache;
     timer deadline{2s};
@@ -301,7 +301,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
-            std::move(output), evaluation_scope::context})));
+            std::move(output), evaluation_scope::context()})));
 
     processor_cache cache;
     timer deadline{2s};
@@ -353,7 +353,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
-            std::move(output), evaluation_scope::context})));
+            std::move(output), evaluation_scope::context()})));
     processor_cache cache;
 
     timer deadline{2s};
@@ -444,9 +444,9 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>(
-            std::move(first_output), evaluation_scope::context))))
+            std::move(first_output), evaluation_scope::context()))))
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>(
-            std::move(second_output), evaluation_scope::context))));
+            std::move(second_output), evaluation_scope::context()))));
 
     processor_cache cache;
     timer deadline{2s};
@@ -497,7 +497,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
-            std::move(output), evaluation_scope::context})));
+            std::move(output), evaluation_scope::context()})));
 
     processor_cache cache;
     timer deadline{2s};
@@ -644,7 +644,7 @@ TEST(TestProcessor, OutputEvalWithoutattributesMap)
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
-            std::move(output), evaluation_scope::context})));
+            std::move(output), evaluation_scope::context()})));
 
     processor_cache cache;
     timer deadline{2s};

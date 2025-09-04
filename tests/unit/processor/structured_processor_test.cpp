@@ -74,7 +74,7 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _, _, _))
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
-            std::move(output), evaluation_scope::context})));
+            std::move(output), evaluation_scope::context()})));
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
@@ -124,7 +124,7 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _, _, _))
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
-            std::move(output), evaluation_scope::context})));
+            std::move(output), evaluation_scope::context()})));
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 

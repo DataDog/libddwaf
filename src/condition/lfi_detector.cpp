@@ -130,10 +130,13 @@ eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path
         auto res = lfi_impl(path.value, param.value, objects_excluded, deadline);
         if (res.has_value()) {
             const std::vector<std::string> path_kp{path.key_path.begin(), path.key_path.end()};
-            const auto scope = path.scope == evaluation_scope::subcontext ||
-                                       param.scope == evaluation_scope::subcontext
-                                   ? evaluation_scope::subcontext
-                                   : evaluation_scope::context;
+
+            evaluation_scope scope;
+            if (path.scope.is_subcontext()) {
+                scope = path.scope;
+            } else if (param.scope.is_subcontext()) {
+                scope = param.scope;
+            }
 
             auto &[highlight, param_kp] = res.value();
 

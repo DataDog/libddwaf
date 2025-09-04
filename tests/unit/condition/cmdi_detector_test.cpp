@@ -112,7 +112,7 @@ TEST(TestCmdiDetector, NoInjection)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << param;
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
     }
 }
 
@@ -152,7 +152,7 @@ TEST(TestCmdiDetector, NoExecutableInjection)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << param;
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
     }
 }
 
@@ -209,7 +209,7 @@ TEST(TestCmdiDetector, NoShellInjection)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << resource_str;
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
     }
 }
 
@@ -245,7 +245,7 @@ TEST(TestCmdiDetector, ExecutableInjectionLinux)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << param;
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -295,7 +295,7 @@ TEST(TestCmdiDetector, ExecutableInjectionWindows)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << param;
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -340,7 +340,7 @@ TEST(TestCmdiDetector, ExecutableWithSpacesInjection)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << param;
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -568,7 +568,7 @@ TEST(TestCmdiDetector, LinuxShellInjection)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource_str;
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -657,7 +657,7 @@ TEST(TestCmdiDetector, WindowsShellInjection)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource_str;
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -696,7 +696,7 @@ TEST(TestCmdiDetector, ExecutableInjectionMultipleArguments)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome) << resource[0];
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -735,7 +735,7 @@ TEST(TestCmdiDetector, EmptyExecutable)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome) << resource[0];
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 }
 
 TEST(TestCmdiDetector, ShellInjectionMultipleArguments)
@@ -763,7 +763,7 @@ TEST(TestCmdiDetector, ShellInjectionMultipleArguments)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome) << resource[0];
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");

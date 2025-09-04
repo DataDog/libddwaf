@@ -766,7 +766,7 @@ TEST(TestEvaluationEngine, RuleFilterWithSubcontextConditionMatch)
         auto ephemeral = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         EXPECT_TRUE(engine.insert(std::move(persistent)));
-        EXPECT_TRUE(engine.insert(std::move(ephemeral), evaluation_scope::subcontext));
+        EXPECT_TRUE(engine.insert(std::move(ephemeral), evaluation_scope::subcontext()));
 
         timer deadline{std::chrono::microseconds(LONG_TIME)};
         auto [code, res] = engine.eval(deadline);
@@ -835,7 +835,7 @@ TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextBypassPersistentMonit
         auto ephemeral = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         EXPECT_TRUE(engine.insert(std::move(persistent)));
-        EXPECT_TRUE(engine.insert(std::move(ephemeral), evaluation_scope::subcontext));
+        EXPECT_TRUE(engine.insert(std::move(ephemeral), evaluation_scope::subcontext()));
 
         timer deadline{std::chrono::microseconds(LONG_TIME)};
         auto [code, res] = engine.eval(deadline);
@@ -907,7 +907,7 @@ TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextMonitorPersistentBypa
         auto ephemeral = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         EXPECT_TRUE(engine.insert(std::move(persistent)));
-        EXPECT_TRUE(engine.insert(std::move(ephemeral), evaluation_scope::subcontext));
+        EXPECT_TRUE(engine.insert(std::move(ephemeral), evaluation_scope::subcontext()));
 
         timer deadline{std::chrono::microseconds(LONG_TIME)};
         auto [code, res] = engine.eval(deadline);
@@ -1419,7 +1419,7 @@ TEST(TestEvaluationEngine, InputFilterExcludeSubcontext)
         scope_exit cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
 
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-        EXPECT_TRUE(engine.insert(std::move(root), evaluation_scope::subcontext));
+        EXPECT_TRUE(engine.insert(std::move(root), evaluation_scope::subcontext()));
         timer deadline{std::chrono::microseconds(LONG_TIME)};
         auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_OK);
@@ -1429,7 +1429,7 @@ TEST(TestEvaluationEngine, InputFilterExcludeSubcontext)
         scope_exit cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
 
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-        EXPECT_TRUE(engine.insert(std::move(root), evaluation_scope::subcontext));
+        EXPECT_TRUE(engine.insert(std::move(root), evaluation_scope::subcontext()));
         timer deadline{std::chrono::microseconds(LONG_TIME)};
         auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_OK);
@@ -1439,7 +1439,7 @@ TEST(TestEvaluationEngine, InputFilterExcludeSubcontext)
         scope_exit cleanup{[&]() { engine.clear_subcontext_artifacts(); }};
 
         auto root = object_builder::map({{"http.peer_ip", "192.168.0.1"}});
-        EXPECT_TRUE(engine.insert(std::move(root), evaluation_scope::subcontext));
+        EXPECT_TRUE(engine.insert(std::move(root), evaluation_scope::subcontext()));
         timer deadline{std::chrono::microseconds(LONG_TIME)};
         auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_MATCH);
@@ -1558,7 +1558,7 @@ TEST(TestEvaluationEngine, InputFilterExcludeRuleSubcontext)
     auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::subcontext);
+    store.insert(std::move(root), evaluation_scope::subcontext());
 
     auto objects_to_exclude = engine.eval_filters(store, deadline);
     EXPECT_EQ(objects_to_exclude.size(), 1);
@@ -1596,7 +1596,7 @@ TEST(TestEvaluationEngine, InputFilterMonitorRuleSubcontext)
     auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::subcontext);
+    store.insert(std::move(root), evaluation_scope::subcontext());
 
     auto policy = engine.eval_filters(store, deadline);
     EXPECT_EQ(policy.size(), 2);
@@ -1640,7 +1640,7 @@ TEST(TestEvaluationEngine, InputFilterExcluderRuleSubcontextAndPersistent)
 
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-        store.insert(std::move(root), evaluation_scope::subcontext);
+        store.insert(std::move(root), evaluation_scope::subcontext());
     }
 
     {
@@ -1685,7 +1685,7 @@ TEST(TestEvaluationEngine, InputFilterMonitorRuleSubcontextAndPersistent)
 
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-        store.insert(std::move(root), evaluation_scope::subcontext);
+        store.insert(std::move(root), evaluation_scope::subcontext());
     }
 
     {
@@ -1834,7 +1834,7 @@ TEST(TestEvaluationEngine, InputFilterWithSubcontextCondition)
         auto ephemeral = object_builder::map({{"usr.id", "admin"}});
 
         EXPECT_TRUE(engine.insert(std::move(persistent)));
-        EXPECT_TRUE(engine.insert(std::move(ephemeral), evaluation_scope::subcontext));
+        EXPECT_TRUE(engine.insert(std::move(ephemeral), evaluation_scope::subcontext()));
         timer deadline{std::chrono::microseconds(LONG_TIME)};
         auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_OK);

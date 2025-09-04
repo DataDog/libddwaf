@@ -15,7 +15,7 @@ namespace ddwaf {
 
 struct rule_collection_cache {
     core_rule::verdict_type type{core_rule::verdict_type::none};
-    evaluation_scope scope{evaluation_scope::context};
+    evaluation_scope scope;
 };
 
 struct rule_module_cache {
@@ -58,7 +58,7 @@ public:
     {
         for (auto &rule_cache : cache.rules) { core_rule::invalidate_subcontext_cache(rule_cache); }
         for (auto &[_, collection_cache] : cache.collections) {
-            if (collection_cache.scope == evaluation_scope::subcontext) {
+            if (collection_cache.scope.is_subcontext()) {
                 collection_cache = {};
             }
         }

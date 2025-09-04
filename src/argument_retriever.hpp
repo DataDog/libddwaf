@@ -25,7 +25,7 @@ template <typename T> struct unary_argument {
     // by either the condition (condition_target) or the processor (processor_target).
     std::string_view address{};
     std::span<const std::string> key_path;
-    evaluation_scope scope{evaluation_scope::context};
+    evaluation_scope scope{evaluation_scope::context()};
     T value;
 };
 

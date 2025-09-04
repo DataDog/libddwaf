@@ -49,7 +49,7 @@ TEST(TestScalarCondition, NoMatch)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 }
 
 TEST(TestScalarCondition, Timeout)
@@ -81,7 +81,7 @@ TEST(TestScalarCondition, SimpleMatch)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 }
 
 TEST(TestScalarCondition, CachedMatch)
@@ -100,7 +100,7 @@ TEST(TestScalarCondition, CachedMatch)
 
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
     }
 
     {
@@ -109,7 +109,7 @@ TEST(TestScalarCondition, CachedMatch)
 
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
     }
 }
 
@@ -131,7 +131,7 @@ TEST(TestScalarCondition, SimpleMatchOnKeys)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 }
 
 TEST(TestScalarCondition, SimpleSubcontextMatch)
@@ -145,25 +145,25 @@ TEST(TestScalarCondition, SimpleSubcontextMatch)
     {
         scope_exit cleanup{[&]() { store.clear_subcontext_objects(); }};
 
-        store.insert(root.clone(), evaluation_scope::subcontext);
+        store.insert(root.clone(), evaluation_scope::subcontext());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::subcontext);
+        EXPECT_TRUE(res.scope.is_subcontext());
     }
 
     {
         scope_exit cleanup{[&]() { store.clear_subcontext_objects(); }};
 
-        store.insert(std::move(root), evaluation_scope::subcontext);
+        store.insert(std::move(root), evaluation_scope::subcontext());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::subcontext);
+        EXPECT_TRUE(res.scope.is_subcontext());
     }
 }
 

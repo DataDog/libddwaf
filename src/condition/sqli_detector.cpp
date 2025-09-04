@@ -534,10 +534,13 @@ sqli_detector::sqli_detector(std::vector<condition_parameter> args)
             sql.value, resource_tokens, param.value, dialect, objects_excluded, deadline);
         if (std::holds_alternative<internal::matched_param>(res)) {
             const std::vector<std::string> sql_kp{sql.key_path.begin(), sql.key_path.end()};
-            const auto scope = sql.scope == evaluation_scope::subcontext ||
-                                       param.scope == evaluation_scope::subcontext
-                                   ? evaluation_scope::subcontext
-                                   : evaluation_scope::context;
+
+            evaluation_scope scope;
+            if (sql.scope.is_subcontext()) {
+                scope = sql.scope;
+            } else if (param.scope.is_subcontext()) {
+                scope = param.scope;
+            }
 
             auto stripped_stmt = internal::strip_literals(sql.value, resource_tokens);
 

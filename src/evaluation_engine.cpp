@@ -40,7 +40,7 @@ void set_context_event_address(object_store &store)
         return;
     }
 
-    store.insert(event_addr_idx, event_addr, owned_object{true}, evaluation_scope::context);
+    store.insert(event_addr_idx, event_addr, owned_object{true}, evaluation_scope::context());
 }
 
 } // namespace

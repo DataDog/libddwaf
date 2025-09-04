@@ -261,7 +261,7 @@ public:
     static void invalidate_subcontext_cache(cache_type &cache)
     {
         for (auto it = cache.begin(); it != cache.end();) {
-            if (it->second == evaluation_scope::subcontext) {
+            if (it->second.is_subcontext()) {
                 it = cache.erase(it);
             } else {
                 ++it;

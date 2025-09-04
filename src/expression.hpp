@@ -62,14 +62,13 @@ public:
     {
         bool invalidated = false;
         for (auto &cond_cache : cache.conditions) {
-            if (cond_cache.match.has_value() &&
-                cond_cache.match->scope == evaluation_scope::subcontext) {
+            if (cond_cache.match.has_value() && cond_cache.match->scope.is_subcontext()) {
                 cond_cache.match = {};
                 invalidated = true;
             }
 
             for (auto &[object, scope] : cond_cache.targets) {
-                if (scope == evaluation_scope::subcontext) {
+                if (scope.is_subcontext()) {
                     object = {};
                 }
             }

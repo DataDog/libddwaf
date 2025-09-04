@@ -117,7 +117,7 @@ struct exclusion_policy {
     void add_rule_exclusion(
         const core_rule *rule, filter_mode mode, std::string_view action, evaluation_scope scope)
     {
-        auto &rule_policy = scope == evaluation_scope::context ? context : subcontext;
+        auto &rule_policy = scope.is_context() ? context : subcontext;
 
         auto &policy = rule_policy[rule];
         // Bypass has precedence over monitor

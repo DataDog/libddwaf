@@ -532,7 +532,7 @@ std::pair<owned_object, evaluation_scope> http_endpoint_fingerprint::eval_impl(
         DDWAF_WARN("Failed to generate http endpoint fingerprint: {}", e.what());
     }
 
-    return {std::move(res), evaluation_scope::context};
+    return {std::move(res), evaluation_scope::context()};
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
@@ -575,7 +575,7 @@ std::pair<owned_object, evaluation_scope> http_header_fingerprint::eval_impl(
         DDWAF_WARN("Failed to generate http header fingerprint: {}", e.what());
     }
 
-    return {std::move(res), evaluation_scope::context};
+    return {std::move(res), evaluation_scope::context()};
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
@@ -627,7 +627,7 @@ std::pair<owned_object, evaluation_scope> http_network_fingerprint::eval_impl(
         DDWAF_WARN("Failed to generate http network fingerprint: {}", e.what());
     }
 
-    return {std::move(res), evaluation_scope::context};
+    return {std::move(res), evaluation_scope::context()};
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
@@ -652,7 +652,7 @@ std::pair<owned_object, evaluation_scope> session_fingerprint::eval_impl(
         DDWAF_WARN("Failed to generate session fingerprint: {}", e.what());
     }
 
-    return {std::move(res), evaluation_scope::context};
+    return {std::move(res), evaluation_scope::context()};
 }
 
 } // namespace ddwaf

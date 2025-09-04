@@ -324,10 +324,13 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
             *forbidden_ip_matcher_, allowed_schemes_, forbidden_domains_, deadline);
         if (res.has_value()) {
             const std::vector<std::string> uri_kp{uri.key_path.begin(), uri.key_path.end()};
-            const auto scope = uri.scope == evaluation_scope::subcontext ||
-                                       param.scope == evaluation_scope::subcontext
-                                   ? evaluation_scope::subcontext
-                                   : evaluation_scope::context;
+
+            evaluation_scope scope;
+            if (uri.scope.is_subcontext()) {
+                scope = uri.scope;
+            } else if (param.scope.is_subcontext()) {
+                scope = param.scope;
+            }
 
             auto &[highlight, param_kp] = res.value();
 

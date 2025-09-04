@@ -44,7 +44,7 @@ TEST(TestInputFilter, SubcontextInputExclusionNoConditions)
     object_store store;
 
     auto root = object_builder::map({{"query", "value"}});
-    store.insert(root, evaluation_scope::subcontext);
+    store.insert(root, evaluation_scope::subcontext());
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {});
@@ -100,7 +100,7 @@ TEST(TestInputFilter, SubcontextObjectExclusionNoConditions)
     auto child = root.emplace("query", object_builder::map());
     child.emplace("params", "param");
 
-    store.insert(root, evaluation_scope::subcontext);
+    store.insert(root, evaluation_scope::subcontext());
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
@@ -160,7 +160,7 @@ TEST(TestInputFilter, SubcontextInputExclusionWithSubcontextCondition)
     auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
     ddwaf::object_store store;
-    store.insert(root, evaluation_scope::subcontext);
+    store.insert(root, evaluation_scope::subcontext());
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -190,7 +190,7 @@ TEST(TestInputFilter, PersistentInputExclusionWithSubcontextCondition)
     ddwaf::object_store store;
 
     auto root = object_builder::map({{"usr.id", "admin"}});
-    store.insert(std::move(root), evaluation_scope::subcontext);
+    store.insert(std::move(root), evaluation_scope::subcontext());
 
     root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
     store.insert(root);
@@ -226,7 +226,7 @@ TEST(TestInputFilter, SubcontextInputExclusionWithPersistentCondition)
     store.insert(std::move(root));
 
     root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-    store.insert(root, evaluation_scope::subcontext);
+    store.insert(root, evaluation_scope::subcontext());
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -440,7 +440,7 @@ TEST(TestInputFilter, InputValidateCachedSubcontextMatch)
             store.clear_subcontext_objects();
         }};
 
-        store.insert(objects[0], evaluation_scope::subcontext);
+        store.insert(objects[0], evaluation_scope::subcontext());
         store.insert(objects[1]);
 
         ddwaf::timer deadline{2s};
@@ -473,7 +473,7 @@ TEST(TestInputFilter, InputValidateCachedSubcontextMatch)
             store.clear_subcontext_objects();
         }};
 
-        store.insert(objects[3], evaluation_scope::subcontext);
+        store.insert(objects[3], evaluation_scope::subcontext());
 
         ddwaf::timer deadline{2s};
         auto opt_spec = filter.match(store, cache, {}, deadline);

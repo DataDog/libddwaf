@@ -24,14 +24,14 @@ public:
     object_store &operator=(const object_store &) = delete;
     object_store &operator=(object_store &&) = delete;
 
-    bool insert(owned_object &&input, evaluation_scope scope = evaluation_scope::context);
+    bool insert(owned_object &&input, evaluation_scope scope = evaluation_scope::context());
 
     // This function doesn't clear the latest batch
     bool insert(target_index target, std::string_view key, owned_object &&input,
-        evaluation_scope scope = evaluation_scope::context);
+        evaluation_scope scope = evaluation_scope::context());
 
     // Used for testing
-    bool insert(map_view input, evaluation_scope scope = evaluation_scope::context);
+    bool insert(map_view input, evaluation_scope scope = evaluation_scope::context());
 
     std::pair<object_view, evaluation_scope> get_target(target_index target) const
     {
@@ -39,7 +39,7 @@ public:
         if (it != objects_.end()) {
             return {it->second.first, it->second.second};
         }
-        return {nullptr, evaluation_scope::context};
+        return {nullptr, evaluation_scope::context()};
     }
 
     // Used for testing
@@ -75,7 +75,7 @@ public:
 
 protected:
     bool insert_target_helper(target_index target, std::string_view key, object_view view,
-        evaluation_scope scope = evaluation_scope::context);
+        evaluation_scope scope = evaluation_scope::context());
 
     memory::list<owned_object> input_objects_;
     std::list<owned_object> subcontext_objects_;

@@ -28,7 +28,7 @@ eval_result expression::eval(cache_type &cache, const object_store &store,
         cache.conditions.assign(conditions_.size(), condition_cache{});
     }
 
-    evaluation_scope final_scope = evaluation_scope::context;
+    evaluation_scope final_scope;
     for (unsigned i = 0; i < conditions_.size(); ++i) {
         const auto &cond = conditions_[i];
         auto &cond_cache = cache.conditions[i];
@@ -43,8 +43,8 @@ eval_result expression::eval(cache_type &cache, const object_store &store,
             return {.outcome = false, .scope = {}};
         }
 
-        if (cond_eval_scope == evaluation_scope::subcontext) {
-            final_scope = evaluation_scope::subcontext;
+        if (cond_eval_scope.is_subcontext()) {
+            final_scope = cond_eval_scope;
         }
     }
     cache.result = true;

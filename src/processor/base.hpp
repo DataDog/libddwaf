@@ -93,7 +93,7 @@ public:
     {
         expression::invalidate_subcontext_cache(cache.expr_cache);
         for (auto it = cache.generated.begin(); it != cache.generated.end();) {
-            if (it->second == evaluation_scope::subcontext) {
+            if (it->second.is_subcontext()) {
                 it = cache.generated.erase(it);
             } else {
                 ++it;

@@ -37,7 +37,7 @@ TEST(TestRule, Match)
     core_rule::cache_type cache;
     {
         scope_exit cleanup{[&]() { store.clear_subcontext_objects(); }};
-        store.insert(root.clone(), evaluation_scope::context);
+        store.insert(root.clone(), evaluation_scope::context());
 
         auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
         ASSERT_TRUE(result.has_value());
@@ -50,7 +50,7 @@ TEST(TestRule, Match)
         std::vector<std::string> expected_actions{"update", "block", "passlist"};
         EXPECT_EQ(result->actions.get(), expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
-        EXPECT_EQ(result->scope, evaluation_scope::context);
+        EXPECT_TRUE(result->scope.is_context());
 
         auto &match = event.matches[0];
         EXPECT_STR(match.args[0].resolved, "192.168.0.1");
@@ -59,12 +59,12 @@ TEST(TestRule, Match)
         EXPECT_STR(match.operator_value, "");
         EXPECT_STR(match.args[0].address, "http.client_ip");
         EXPECT_TRUE(match.args[0].key_path.empty());
-        EXPECT_EQ(match.scope, evaluation_scope::context);
+        EXPECT_TRUE(match.scope.is_context());
     }
 
     {
         scope_exit cleanup{[&]() { store.clear_subcontext_objects(); }};
-        store.insert(std::move(root), evaluation_scope::context);
+        store.insert(std::move(root), evaluation_scope::context());
 
         auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
         EXPECT_FALSE(result.has_value());
@@ -96,11 +96,11 @@ TEST(TestRule, SubcontextMatch)
             store.clear_subcontext_objects();
             core_rule::invalidate_subcontext_cache(cache);
         }};
-        store.insert(root.clone(), evaluation_scope::subcontext);
+        store.insert(root.clone(), evaluation_scope::subcontext());
 
         auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
         ASSERT_TRUE(result.has_value());
-        EXPECT_EQ(result->scope, evaluation_scope::subcontext);
+        EXPECT_TRUE(result->scope.is_subcontext());
     }
 
     {
@@ -108,11 +108,11 @@ TEST(TestRule, SubcontextMatch)
             store.clear_subcontext_objects();
             core_rule::invalidate_subcontext_cache(cache);
         }};
-        store.insert(std::move(root), evaluation_scope::subcontext);
+        store.insert(std::move(root), evaluation_scope::subcontext());
 
         auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
         ASSERT_TRUE(result.has_value());
-        EXPECT_EQ(result->scope, evaluation_scope::subcontext);
+        EXPECT_TRUE(result->scope.is_subcontext());
     }
 
     EXPECT_FALSE(cache.expr_cache.result);

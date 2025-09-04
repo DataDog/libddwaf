@@ -48,7 +48,7 @@ public:
     evaluation_engine &operator=(evaluation_engine &&) = delete;
     ~evaluation_engine() = default;
 
-    bool insert(owned_object data, evaluation_scope scope = evaluation_scope::context) noexcept
+    bool insert(owned_object data, evaluation_scope scope = evaluation_scope::context()) noexcept
     {
         if (!store_.insert(std::move(data), scope)) {
             DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
@@ -57,7 +57,7 @@ public:
         return true;
     }
 
-    bool insert(map_view data, evaluation_scope scope = evaluation_scope::context) noexcept
+    bool insert(map_view data, evaluation_scope scope = evaluation_scope::context()) noexcept
     {
         if (!store_.insert(data, scope)) {
             DDWAF_WARN("Illegal WAF call: parameter structure invalid!");

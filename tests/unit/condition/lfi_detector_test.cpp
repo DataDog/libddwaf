@@ -44,7 +44,7 @@ TEST(TestLFIDetector, MatchBasicUnix)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
@@ -108,7 +108,7 @@ TEST(TestLFIDetector, MatchBasicWindows)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome) << path;
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
@@ -138,7 +138,7 @@ TEST(TestLFIDetector, MatchWithKeyPath)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
@@ -166,14 +166,14 @@ TEST(TestLFIDetector, PartiallySubcontextMatch)
 
     {
         auto root = object_builder::map({{"server.request.query", "../../../etc/passwd"}});
-        store.insert(std::move(root), evaluation_scope::subcontext);
+        store.insert(std::move(root), evaluation_scope::subcontext());
     }
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::subcontext);
+    EXPECT_TRUE(res.scope.is_subcontext());
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
@@ -196,13 +196,13 @@ TEST(TestLFIDetector, SubcontextMatch)
     auto root = object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
         {"server.request.query", "../../../etc/passwd"}});
 
-    store.insert(std::move(root), evaluation_scope::subcontext);
+    store.insert(std::move(root), evaluation_scope::subcontext());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::subcontext);
+    EXPECT_TRUE(res.scope.is_subcontext());
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
@@ -241,7 +241,7 @@ TEST(TestLFIDetector, NoMatchUnix)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome) << path;
-        EXPECT_EQ(res.scope, evaluation_scope::context) << path;
+        EXPECT_TRUE(res.scope.is_context()) << path;
         EXPECT_FALSE(cache.match);
     }
 }
@@ -280,7 +280,7 @@ TEST(TestLFIDetector, NoMatchWindows)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome) << path;
-        EXPECT_EQ(res.scope, evaluation_scope::context) << path;
+        EXPECT_TRUE(res.scope.is_context()) << path;
         EXPECT_FALSE(cache.match);
     }
 }
@@ -305,7 +305,7 @@ TEST(TestLFIDetector, NoMatchExcludedPath)
     condition_cache cache;
     auto res = cond.eval(cache, store, exclusion, {}, deadline);
     EXPECT_FALSE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
     EXPECT_FALSE(cache.match);
 }
 
@@ -326,7 +326,7 @@ TEST(TestLFIDetector, NoMatchExcludedAddress)
     condition_cache cache;
     auto res = cond.eval(cache, store, exclusion, {}, deadline);
     EXPECT_FALSE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
     EXPECT_FALSE(cache.match);
 }
 
@@ -347,7 +347,7 @@ TEST(TestLFIDetector, Timeout)
     condition_cache cache;
     auto res = cond.eval(cache, store, exclusion, {}, deadline);
     EXPECT_FALSE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
     EXPECT_FALSE(cache.match);
 }
 
@@ -368,7 +368,7 @@ TEST(TestLFIDetector, NoParams)
     condition_cache cache;
     auto res = cond.eval(cache, store, exclusion, {}, deadline);
     EXPECT_FALSE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
     EXPECT_FALSE(cache.match);
 }
 

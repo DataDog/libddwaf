@@ -100,14 +100,14 @@ TEST(TestObjectStore, InsertAndGetSubcontextObject)
         auto root = owned_object::make_map();
         root.emplace("query", owned_object::make_string("hello"));
 
-        store.insert(std::move(root), evaluation_scope::subcontext);
+        store.insert(std::move(root), evaluation_scope::subcontext());
 
         EXPECT_FALSE(store.empty());
         EXPECT_TRUE(store.has_new_targets());
         EXPECT_TRUE(store.is_new_target(query));
         EXPECT_FALSE(store.is_new_target(url));
         EXPECT_TRUE(store.get_target(query).first.has_value());
-        EXPECT_EQ(store.get_target(query).second, evaluation_scope::subcontext);
+        EXPECT_TRUE(store.get_target(query).second.is_subcontext());
         EXPECT_FALSE(store.get_target(url).first.has_value());
     }
 
@@ -142,7 +142,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     {
         auto second = owned_object::make_map();
         second.emplace("url", owned_object::make_string("hello"));
-        store.insert(std::move(second), evaluation_scope::subcontext);
+        store.insert(std::move(second), evaluation_scope::subcontext());
     }
 
     EXPECT_FALSE(store.empty());
@@ -336,7 +336,7 @@ TEST(TestObjectStore, InsertSingleTargets)
     EXPECT_TRUE(store.get_target(query).first.has_value());
     EXPECT_FALSE(store.get_target(url).first.has_value());
 
-    store.insert(url, "url", owned_object::make_string("hello"), evaluation_scope::subcontext);
+    store.insert(url, "url", owned_object::make_string("hello"), evaluation_scope::subcontext());
 
     EXPECT_FALSE(store.empty());
     EXPECT_TRUE(store.has_new_targets());
@@ -384,7 +384,8 @@ TEST(TestObjectStore, InsertSingleTargetBatches)
             store.clear_subcontext_objects();
         }};
 
-        store.insert(url, "url", owned_object::make_string("hello"), evaluation_scope::subcontext);
+        store.insert(
+            url, "url", owned_object::make_string("hello"), evaluation_scope::subcontext());
 
         EXPECT_FALSE(store.empty());
         EXPECT_TRUE(store.has_new_targets());
@@ -420,7 +421,7 @@ TEST(TestObjectStore, DuplicatePersistentTarget)
         EXPECT_TRUE(store.is_new_target(query));
 
         auto [object, attr] = store.get_target(query);
-        EXPECT_EQ(attr, evaluation_scope::context);
+        EXPECT_TRUE(attr.is_context());
         EXPECT_TRUE(object.has_value());
         EXPECT_STRV(object.as<std::string_view>(), "hello");
     }
@@ -439,7 +440,7 @@ TEST(TestObjectStore, DuplicatePersistentTarget)
         EXPECT_TRUE(store.get_target(query).first.has_value());
 
         auto [object, attr] = store.get_target(query);
-        EXPECT_EQ(attr, evaluation_scope::context);
+        EXPECT_TRUE(attr.is_context());
         EXPECT_TRUE(object.has_value());
         EXPECT_STRV(object.as<std::string_view>(), "bye");
     }
@@ -462,22 +463,22 @@ TEST(TestObjectStore, DuplicateSubcontextTarget)
             store.clear_subcontext_objects();
         }};
         {
-            EXPECT_TRUE(store.insert(
-                query, "query", owned_object::make_string("hello"), evaluation_scope::subcontext));
+            EXPECT_TRUE(store.insert(query, "query", owned_object::make_string("hello"),
+                evaluation_scope::subcontext()));
 
             EXPECT_FALSE(store.empty());
             EXPECT_TRUE(store.has_new_targets());
             EXPECT_TRUE(store.is_new_target(query));
 
             auto [object, attr] = store.get_target(query);
-            EXPECT_EQ(attr, evaluation_scope::subcontext);
+            EXPECT_TRUE(attr.is_subcontext());
             EXPECT_TRUE(object.has_value());
             EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
 
         {
             EXPECT_TRUE(store.insert(
-                query, "query", owned_object::make_string("bye"), evaluation_scope::subcontext));
+                query, "query", owned_object::make_string("bye"), evaluation_scope::subcontext()));
 
             EXPECT_FALSE(store.empty());
             EXPECT_TRUE(store.has_new_targets());
@@ -485,7 +486,7 @@ TEST(TestObjectStore, DuplicateSubcontextTarget)
             EXPECT_TRUE(store.get_target(query).first.has_value());
 
             auto [object, attr] = store.get_target(query);
-            EXPECT_EQ(attr, evaluation_scope::subcontext);
+            EXPECT_TRUE(attr.is_subcontext());
             EXPECT_TRUE(object.has_value());
             EXPECT_STRV(object.as<std::string_view>(), "bye");
         }
@@ -509,15 +510,15 @@ TEST(TestObjectStore, FailtoReplaceSubcontextWithPersistent)
             store.clear_subcontext_objects();
         }};
         {
-            EXPECT_TRUE(store.insert(
-                query, "query", owned_object::make_string("hello"), evaluation_scope::subcontext));
+            EXPECT_TRUE(store.insert(query, "query", owned_object::make_string("hello"),
+                evaluation_scope::subcontext()));
 
             EXPECT_FALSE(store.empty());
             EXPECT_TRUE(store.has_new_targets());
             EXPECT_TRUE(store.is_new_target(query));
 
             auto [object, attr] = store.get_target(query);
-            EXPECT_EQ(attr, evaluation_scope::subcontext);
+            EXPECT_TRUE(attr.is_subcontext());
             EXPECT_TRUE(object.has_value());
             EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
@@ -531,7 +532,7 @@ TEST(TestObjectStore, FailtoReplaceSubcontextWithPersistent)
             EXPECT_TRUE(store.get_target(query).first.has_value());
 
             auto [object, attr] = store.get_target(query);
-            EXPECT_EQ(attr, evaluation_scope::subcontext);
+            EXPECT_TRUE(attr.is_subcontext());
             EXPECT_TRUE(object.has_value());
             EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
@@ -562,14 +563,14 @@ TEST(TestObjectStore, FailToReplacePersistentWithSubcontextSameBatch)
             EXPECT_TRUE(store.is_new_target(query));
 
             auto [object, attr] = store.get_target(query);
-            EXPECT_EQ(attr, evaluation_scope::context);
+            EXPECT_TRUE(attr.is_context());
             EXPECT_TRUE(object.has_value());
             EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
 
         {
             EXPECT_FALSE(store.insert(
-                query, "query", owned_object::make_string("bye"), evaluation_scope::subcontext));
+                query, "query", owned_object::make_string("bye"), evaluation_scope::subcontext()));
 
             EXPECT_FALSE(store.empty());
             EXPECT_TRUE(store.has_new_targets());
@@ -577,7 +578,7 @@ TEST(TestObjectStore, FailToReplacePersistentWithSubcontextSameBatch)
             EXPECT_TRUE(store.get_target(query).first.has_value());
 
             auto [object, attr] = store.get_target(query);
-            EXPECT_EQ(attr, evaluation_scope::context);
+            EXPECT_TRUE(attr.is_context());
             EXPECT_TRUE(object.has_value());
             EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
@@ -608,7 +609,7 @@ TEST(TestObjectStore, FailToReplacePersistentWithSubcontextDifferentBatch)
         EXPECT_TRUE(store.is_new_target(query));
 
         auto [object, attr] = store.get_target(query);
-        EXPECT_EQ(attr, evaluation_scope::context);
+        EXPECT_TRUE(attr.is_context());
         EXPECT_TRUE(object.has_value());
         EXPECT_STRV(object.as<std::string_view>(), "hello");
     }
@@ -620,7 +621,7 @@ TEST(TestObjectStore, FailToReplacePersistentWithSubcontextDifferentBatch)
         }};
 
         EXPECT_FALSE(store.insert(
-            query, "query", owned_object::make_string("bye"), evaluation_scope::subcontext));
+            query, "query", owned_object::make_string("bye"), evaluation_scope::subcontext()));
 
         EXPECT_FALSE(store.empty());
         EXPECT_FALSE(store.has_new_targets());
@@ -628,7 +629,7 @@ TEST(TestObjectStore, FailToReplacePersistentWithSubcontextDifferentBatch)
         EXPECT_TRUE(store.get_target(query).first.has_value());
 
         auto [object, attr] = store.get_target(query);
-        EXPECT_EQ(attr, evaluation_scope::context);
+        EXPECT_TRUE(attr.is_context());
         EXPECT_TRUE(object.has_value());
         EXPECT_STRV(object.as<std::string_view>(), "hello");
     }

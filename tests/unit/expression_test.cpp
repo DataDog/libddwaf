@@ -32,11 +32,11 @@ TEST(TestExpression, SimpleMatch)
     expression::cache_type cache;
     auto res = expr->eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 
     auto matches = ddwaf::expression::get_matches(cache);
     EXPECT_EQ(matches.size(), 1);
-    EXPECT_EQ(matches[0].scope, evaluation_scope::context);
+    EXPECT_TRUE(matches[0].scope.is_context());
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = ".*",
                                 .highlight = "value"sv,
@@ -66,11 +66,11 @@ TEST(TestExpression, SimpleNegatedMatch)
     expression::cache_type cache;
     auto res = expr->eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 
     auto matches = ddwaf::expression::get_matches(cache);
     EXPECT_EQ(matches.size(), 1);
-    EXPECT_EQ(matches[0].scope, evaluation_scope::context);
+    EXPECT_TRUE(matches[0].scope.is_context());
     EXPECT_MATCHES(matches, {.op = "!match_regex",
                                 .op_value = ".*",
                                 .highlight = "val"sv,
@@ -93,18 +93,18 @@ TEST(TestExpression, SubcontextMatch)
     auto root = object_builder::map({{"server.request.query", "value"}});
 
     ddwaf::object_store store;
-    store.insert(std::move(root), evaluation_scope::subcontext);
+    store.insert(std::move(root), evaluation_scope::subcontext());
 
     ddwaf::timer deadline{2s};
 
     expression::cache_type cache;
     auto res = expr->eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::subcontext);
+    EXPECT_TRUE(res.scope.is_subcontext());
 
     auto matches = ddwaf::expression::get_matches(cache);
     EXPECT_EQ(matches.size(), 1);
-    EXPECT_EQ(matches[0].scope, evaluation_scope::subcontext);
+    EXPECT_TRUE(matches[0].scope.is_subcontext());
     EXPECT_MATCHES(matches, {.op = "match_regex",
                                 .op_value = ".*",
                                 .highlight = "value"sv,
@@ -143,7 +143,7 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
     }
 
     {
@@ -161,7 +161,7 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
 
         auto matches = ddwaf::expression::get_matches(cache);
         EXPECT_MATCHES(matches, {.op = "match_regex",
@@ -196,13 +196,13 @@ TEST(TestExpression, SubcontextMatchOnSecondEval)
 
         auto root = object_builder::map({{"server.request.body", "bad"}});
 
-        store.insert(std::move(root), evaluation_scope::subcontext);
+        store.insert(std::move(root), evaluation_scope::subcontext());
 
         ddwaf::timer deadline{2s};
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
     }
 
     {
@@ -214,13 +214,13 @@ TEST(TestExpression, SubcontextMatchOnSecondEval)
 
         auto root = object_builder::map({{"server.request.body", "value"}});
 
-        store.insert(std::move(root), evaluation_scope::subcontext);
+        store.insert(std::move(root), evaluation_scope::subcontext());
 
         ddwaf::timer deadline{2s};
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::subcontext);
+        EXPECT_TRUE(res.scope.is_subcontext());
 
         auto matches = ddwaf::expression::get_matches(cache);
         EXPECT_MATCHES(matches, {.op = "match_regex",
@@ -253,7 +253,7 @@ TEST(TestExpression, SubcontextMatchTwoConditions)
 
     {
         auto root = object_builder::map({{"server.request.query", "value"}});
-        store.insert(std::move(root), evaluation_scope::subcontext);
+        store.insert(std::move(root), evaluation_scope::subcontext());
     }
 
     {
@@ -265,7 +265,7 @@ TEST(TestExpression, SubcontextMatchTwoConditions)
 
     auto res = expr->eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::subcontext);
+    EXPECT_TRUE(res.scope.is_subcontext());
 
     auto matches = ddwaf::expression::get_matches(cache);
     EXPECT_MATCHES(matches,
@@ -311,13 +311,13 @@ TEST(TestExpression, SubcontextMatchOnFirstConditionFirstEval)
 
         auto root = object_builder::map({{"server.request.query", "value"}});
 
-        store.insert(std::move(root), evaluation_scope::subcontext);
+        store.insert(std::move(root), evaluation_scope::subcontext());
 
         ddwaf::timer deadline{2s};
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
     }
 
     {
@@ -334,7 +334,7 @@ TEST(TestExpression, SubcontextMatchOnFirstConditionFirstEval)
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
     }
 }
 
@@ -371,7 +371,7 @@ TEST(TestExpression, SubcontextMatchOnFirstConditionSecondEval)
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
     }
 
     {
@@ -383,13 +383,13 @@ TEST(TestExpression, SubcontextMatchOnFirstConditionSecondEval)
 
         auto root = object_builder::map({{"server.request.query", "value"}});
 
-        store.insert(std::move(root), evaluation_scope::subcontext);
+        store.insert(std::move(root), evaluation_scope::subcontext());
 
         ddwaf::timer deadline{2s};
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::subcontext);
+        EXPECT_TRUE(res.scope.is_subcontext());
     }
 }
 
@@ -421,7 +421,7 @@ TEST(TestExpression, DuplicateInput)
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
     }
 
     {
@@ -439,7 +439,7 @@ TEST(TestExpression, DuplicateInput)
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
     }
 }
 
@@ -464,13 +464,13 @@ TEST(TestExpression, DuplicateSubcontextInput)
 
         auto root = object_builder::map({{"server.request.query", "value"}});
 
-        store.insert(std::move(root), evaluation_scope::subcontext);
+        store.insert(std::move(root), evaluation_scope::subcontext());
 
         ddwaf::timer deadline{2s};
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::subcontext);
+        EXPECT_TRUE(res.scope.is_subcontext());
     }
 
     {
@@ -481,13 +481,13 @@ TEST(TestExpression, DuplicateSubcontextInput)
 
         auto root = object_builder::map({{"server.request.query", "value"}});
 
-        store.insert(std::move(root), evaluation_scope::subcontext);
+        store.insert(std::move(root), evaluation_scope::subcontext());
 
         ddwaf::timer deadline{2s};
 
         auto res = expr->eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::subcontext);
+        EXPECT_TRUE(res.scope.is_subcontext());
     }
 }
 
@@ -535,7 +535,7 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
 
         auto matches = ddwaf::expression::get_matches(cache);
         EXPECT_EQ(matches.size(), 1);
-        EXPECT_EQ(matches[0].scope, evaluation_scope::context);
+        EXPECT_TRUE(matches[0].scope.is_context());
         EXPECT_MATCHES(matches, {.op = "match_regex",
                                     .op_value = "^value$",
                                     .highlight = "value"sv,

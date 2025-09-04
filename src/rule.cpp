@@ -41,7 +41,7 @@ std::pair<rule_verdict, std::optional<rule_result>> core_rule::match(const objec
 
     rule_result result{.keep = contains(flags_, rule_flags::keep_outcome),
         .scope =
-            contains(flags_, rule_flags::generate_event) ? res.scope : evaluation_scope::context,
+            contains(flags_, rule_flags::generate_event) ? res.scope : evaluation_scope::context(),
         .action_override = {},
         .actions = actions_,
         .attributes = !cache.attributes_generated ? attributes_ : empty_attributes};

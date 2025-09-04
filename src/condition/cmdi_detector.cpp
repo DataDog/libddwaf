@@ -448,10 +448,13 @@ eval_result cmdi_detector::eval_impl(const unary_argument<object_view> &resource
         if (res.has_value()) {
             const std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
-            const auto scope = resource.scope == evaluation_scope::subcontext ||
-                                       param.scope == evaluation_scope::subcontext
-                                   ? evaluation_scope::subcontext
-                                   : evaluation_scope::context;
+
+            evaluation_scope scope;
+            if (resource.scope.is_subcontext()) {
+                scope = resource.scope;
+            } else if (param.scope.is_subcontext()) {
+                scope = param.scope;
+            }
 
             auto &[highlight, param_kp] = res.value();
 
@@ -475,6 +478,6 @@ eval_result cmdi_detector::eval_impl(const unary_argument<object_view> &resource
         }
     }
 
-    return {};
+    return {.outcome = false, .scope = {}};
 }
 } // namespace ddwaf

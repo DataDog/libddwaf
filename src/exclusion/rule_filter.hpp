@@ -20,7 +20,7 @@ public:
     struct excluded_set {
         // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
         const std::unordered_set<const core_rule *> &rules;
-        evaluation_scope scope{evaluation_scope::context};
+        evaluation_scope scope;
         filter_mode mode{filter_mode::none};
         std::string_view action;
     };

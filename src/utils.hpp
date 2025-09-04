@@ -35,7 +35,33 @@ using scalar_type = std::variant<bool, int64_t, uint64_t, double, std::string>;
 
 namespace ddwaf {
 
-enum class evaluation_scope : uint8_t { context = 0, subcontext = 1 };
+class evaluation_scope_manager;
+
+class evaluation_scope {
+public:
+    // Default is context
+    evaluation_scope() = default;
+
+    [[nodiscard]] bool is_context() const { return id_ == 0; }
+    [[nodiscard]] bool is_subcontext() const { return id_ > 0; }
+
+    static evaluation_scope context() { return evaluation_scope{0}; }
+    static evaluation_scope subcontext() { return evaluation_scope{1}; }
+
+    bool operator==(const evaluation_scope &other) const { return id_ == other.id_; }
+
+    evaluation_scope operator++(int)
+    {
+        // Assume
+        return evaluation_scope{id_++};
+    }
+
+private:
+    explicit evaluation_scope(uint32_t id) : id_(id) {}
+    uint32_t id_{0};
+
+    friend class evaluation_scope_manager;
+};
 
 struct eval_result {
     bool outcome;

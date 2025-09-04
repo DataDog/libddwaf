@@ -77,7 +77,7 @@ struct rule_event {
 
 struct rule_result {
     bool keep{false};
-    evaluation_scope scope{evaluation_scope::context};
+    evaluation_scope scope;
 
     std::optional<rule_event> event{std::nullopt};
 

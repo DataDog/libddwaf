@@ -109,11 +109,11 @@ object_set object_filter::match(const object_store &store, cache_type &cache,
             continue;
         }
 
-        if (scope == evaluation_scope::context && object_scope == evaluation_scope::context) {
-            cache.emplace(object, evaluation_scope::context);
+        if (scope.is_context() && object_scope.is_context()) {
+            cache.emplace(object, evaluation_scope::context());
             iterate_object(filter.get_traverser(), object, objects_to_exclude.context);
         } else {
-            cache.emplace(object, evaluation_scope::subcontext);
+            cache.emplace(object, evaluation_scope::subcontext());
             iterate_object(filter.get_traverser(), object, objects_to_exclude.subcontext);
         }
     }

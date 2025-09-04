@@ -156,7 +156,7 @@ TEST_P(DialectTestFixture, MaliciousInjections)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
@@ -227,7 +227,7 @@ TEST_P(DialectTestFixture, Tautologies)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
@@ -272,7 +272,7 @@ TEST_P(DialectTestFixture, Comments)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
@@ -314,7 +314,7 @@ TEST(TestSqliDetectorMySql, Comments)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
@@ -359,7 +359,7 @@ TEST(TestSqliDetectorMySql, Tautologies)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
@@ -407,7 +407,7 @@ TEST(TestSqliDetectorPgSql, Tautologies)
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");

@@ -58,7 +58,7 @@ TEST(TestNegatedScalarCondition, NoMatch)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 }
 
 TEST(TestNegatedScalarCondition, NoMatchWithKeyPath)
@@ -80,7 +80,7 @@ TEST(TestNegatedScalarCondition, NoMatchWithKeyPath)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 }
 
 TEST(TestNegatedScalarCondition, Timeout)
@@ -112,7 +112,7 @@ TEST(TestNegatedScalarCondition, SimpleMatch)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 
     // Ensure the resolved value is the single one that didn't match
     ASSERT_TRUE(cache.match.has_value());
@@ -138,7 +138,7 @@ TEST(TestNegatedScalarCondition, SimpleMatchWithKeyPath)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 
     // Ensure the resolved value is the single one that didn't match
     ASSERT_TRUE(cache.match.has_value());
@@ -161,7 +161,7 @@ TEST(TestNegatedScalarCondition, SingleValueArrayMatch)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 
     // Ensure the resolved value is the single one that didn't match
     ASSERT_TRUE(cache.match.has_value());
@@ -189,7 +189,7 @@ TEST(TestNegatedScalarCondition, SingleValueArrayMatchWithKeyPath)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 
     // Ensure the resolved value is the single one that didn't match
     ASSERT_TRUE(cache.match.has_value());
@@ -213,7 +213,7 @@ TEST(TestNegatedScalarCondition, MultiValueArrayMatch)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 
     // Ensure the resolved value is the single one that didn't match
     ASSERT_TRUE(cache.match.has_value());
@@ -241,7 +241,7 @@ TEST(TestNegatedScalarCondition, MultiValueArrayMatchWithKeyPath)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 
     // Ensure the resolved value is the single one that didn't match
     ASSERT_TRUE(cache.match.has_value());
@@ -274,7 +274,7 @@ TEST(TestNegatedScalarCondition, ExcludedRootObject)
     auto res =
         cond.eval(cache, store, {.context = excluded_objects, .subcontext = {}}, {}, deadline);
     ASSERT_FALSE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 }
 
 TEST(TestNegatedScalarCondition, ExcludedIntermediateObject)
@@ -302,7 +302,7 @@ TEST(TestNegatedScalarCondition, ExcludedIntermediateObject)
     auto res =
         cond.eval(cache, store, {.context = excluded_objects, .subcontext = {}}, {}, deadline);
     ASSERT_FALSE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 }
 
 TEST(TestNegatedScalarCondition, ExcludedFinalObject)
@@ -330,7 +330,7 @@ TEST(TestNegatedScalarCondition, ExcludedFinalObject)
     auto res =
         cond.eval(cache, store, {.context = excluded_objects, .subcontext = {}}, {}, deadline);
     ASSERT_FALSE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 }
 
 TEST(TestNegatedScalarCondition, CachedMatch)
@@ -349,7 +349,7 @@ TEST(TestNegatedScalarCondition, CachedMatch)
 
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
     }
 
     {
@@ -358,7 +358,7 @@ TEST(TestNegatedScalarCondition, CachedMatch)
 
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::context);
+        EXPECT_TRUE(res.scope.is_context());
     }
 }
 
@@ -380,7 +380,7 @@ TEST(TestNegatedScalarCondition, SimpleMatchOnKeys)
     condition_cache cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
-    EXPECT_EQ(res.scope, evaluation_scope::context);
+    EXPECT_TRUE(res.scope.is_context());
 }
 
 TEST(TestNegatedScalarCondition, SimplesubcontextMatch)
@@ -394,25 +394,25 @@ TEST(TestNegatedScalarCondition, SimplesubcontextMatch)
     {
         scope_exit cleanup{[&]() { store.clear_subcontext_objects(); }};
 
-        store.insert(root, evaluation_scope::subcontext);
+        store.insert(root, evaluation_scope::subcontext());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::subcontext);
+        EXPECT_TRUE(res.scope.is_subcontext());
     }
 
     {
         scope_exit cleanup{[&]() { store.clear_subcontext_objects(); }};
 
-        store.insert(root, evaluation_scope::subcontext);
+        store.insert(root, evaluation_scope::subcontext());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
-        EXPECT_EQ(res.scope, evaluation_scope::subcontext);
+        EXPECT_TRUE(res.scope.is_subcontext());
     }
 }
 

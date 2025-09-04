@@ -38,12 +38,12 @@ TEST(TestRuleFilter, Match)
 
     ddwaf::timer deadline{2s};
 
-    exclusion::rule_filter::excluded_set default_set{{}, evaluation_scope::subcontext, {}, {}};
+    exclusion::rule_filter::excluded_set default_set{{}, evaluation_scope::subcontext(), {}, {}};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
     auto res = filter.match(store, cache, {}, deadline);
     EXPECT_FALSE(res.value_or(default_set).rules.empty());
-    EXPECT_EQ(res.value_or(default_set).scope, evaluation_scope::context);
+    EXPECT_TRUE(res.value_or(default_set).scope.is_context());
     EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
 }
 
@@ -89,12 +89,12 @@ TEST(TestRuleFilter, MatchWithDynamicMatcher)
             std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         exclusion::rule_filter::excluded_set default_set{
-            .rules = {}, .scope = evaluation_scope::subcontext, .mode = {}, .action = {}};
+            .rules = {}, .scope = evaluation_scope::subcontext(), .mode = {}, .action = {}};
 
         ddwaf::exclusion::rule_filter::cache_type cache;
         auto res = filter.match(store, cache, matchers, deadline);
         EXPECT_FALSE(res.value_or(default_set).rules.empty());
-        EXPECT_EQ(res.value_or(default_set).scope, evaluation_scope::context);
+        EXPECT_TRUE(res.value_or(default_set).scope.is_context());
         EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
     }
 }
@@ -118,16 +118,16 @@ TEST(TestRuleFilter, SubcontextMatch)
     auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
     ddwaf::object_store store;
-    store.insert(std::move(root), evaluation_scope::subcontext);
+    store.insert(std::move(root), evaluation_scope::subcontext());
 
     ddwaf::timer deadline{2s};
 
-    exclusion::rule_filter::excluded_set default_set{{}, evaluation_scope::context, {}, {}};
+    exclusion::rule_filter::excluded_set default_set{{}, evaluation_scope::context(), {}, {}};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
     auto res = filter.match(store, cache, {}, deadline);
     EXPECT_FALSE(res.value_or(default_set).rules.empty());
-    EXPECT_EQ(res.value_or(default_set).scope, evaluation_scope::subcontext);
+    EXPECT_TRUE(res.value_or(default_set).scope.is_subcontext());
     EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
 }
 
@@ -192,11 +192,11 @@ TEST(TestRuleFilter, ValidateCachedMatch)
 
         ddwaf::timer deadline{2s};
 
-        exclusion::rule_filter::excluded_set default_set{{}, evaluation_scope::context, {}, {}};
+        exclusion::rule_filter::excluded_set default_set{{}, evaluation_scope::context(), {}, {}};
 
         auto res = filter.match(store, cache, {}, deadline);
         EXPECT_FALSE(res.value_or(default_set).rules.empty());
-        EXPECT_EQ(res.value_or(default_set).scope, evaluation_scope::context);
+        EXPECT_TRUE(res.value_or(default_set).scope.is_context());
         EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
     }
 }
@@ -248,15 +248,15 @@ TEST(TestRuleFilter, CachedMatchAndSubcontextMatch)
 
         auto root = object_builder::map({{"usr.id", "admin"}});
 
-        store.insert(std::move(root), evaluation_scope::subcontext);
+        store.insert(std::move(root), evaluation_scope::subcontext());
 
         ddwaf::timer deadline{2s};
         exclusion::rule_filter::excluded_set default_set{
-            .rules = {}, .scope = evaluation_scope::context, .mode = {}, .action = {}};
+            .rules = {}, .scope = evaluation_scope::context(), .mode = {}, .action = {}};
 
         auto res = filter.match(store, cache, {}, deadline);
         EXPECT_FALSE(res.value_or(default_set).rules.empty());
-        EXPECT_EQ(res.value_or(default_set).scope, evaluation_scope::subcontext);
+        EXPECT_TRUE(res.value_or(default_set).scope.is_subcontext());
         EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
     }
 }
@@ -293,7 +293,7 @@ TEST(TestRuleFilter, ValidateSubcontextMatchCache)
 
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::subcontext);
+        store.insert(std::move(root), evaluation_scope::subcontext());
 
         ddwaf::timer deadline{2s};
         EXPECT_FALSE(filter.match(store, cache, {}, deadline));
@@ -308,7 +308,7 @@ TEST(TestRuleFilter, ValidateSubcontextMatchCache)
 
         auto root = object_builder::map({{"usr.id", "admin"}});
 
-        store.insert(std::move(root), evaluation_scope::subcontext);
+        store.insert(std::move(root), evaluation_scope::subcontext());
 
         ddwaf::timer deadline{2s};
         EXPECT_FALSE(filter.match(store, cache, {}, deadline));
