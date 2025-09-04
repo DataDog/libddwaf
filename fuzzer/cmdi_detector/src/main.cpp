@@ -38,12 +38,6 @@ std::pair<std::vector<std::string_view>, std::string_view> deserialize(
     std::size_t resource_size;
     std::memcpy(&resource_size, data, sizeof(std::size_t));
 
-    // Cap resource_size to prevent excessive memory allocation
-    constexpr std::size_t MAX_RESOURCE_SIZE = 128 * 1024; // 128k elements
-    if (resource_size > MAX_RESOURCE_SIZE) {
-        return {};
-    }
-
     data += sizeof(std::size_t);
     size -= sizeof(std::size_t);
 

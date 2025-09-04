@@ -36,14 +36,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
         {gen_param_def("server.db.statement", "server.request.query", "server.db.statement")}};
 
     InputSplitter splitter(data, size);
-
-    auto dialect_index = splitter.get<uint8_t>();
-    if (dialect_index < dialects.size()) {
-        dialect = ddwaf::sql_dialect_from_type(dialects[dialect_index]);
-    } else {
-        dialect = ddwaf::sql_dialect::generic;
-    }
-
     auto resource = splitter.get_string();
     auto param = splitter.get_remaining();
 
@@ -58,22 +50,25 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     // add request query parameter
     ddwaf_object_map_add(
         &root, "server.request.query", ddwaf_object_stringl(&tmp, param.data(), param.size()));
+    
+    // Check all the dialects with the same input
+    for (const auto &dialect_str : dialects) {
 
-    // add database system info
-    auto dialect_str = ddwaf::sql_dialect_to_string(dialect);
-    ddwaf_object_map_add(&root, "server.db.system",
-        ddwaf_object_stringl(&tmp, dialect_str.data(), dialect_str.size()));
-
-    // create object store and evaluate condition
-    object_store store;
-    store.insert(root);
-
-    ddwaf::timer deadline{2s};
-    condition_cache cache;
-    auto result = cond.eval(cache, store, {}, {}, {}, deadline);
-
-    prevent_optimization(result);
-
+        ddwaf_object_map_add(&root, "server.db.system",
+            ddwaf_object_stringl(&tmp, dialect_str.data(), dialect_str.size()));
+    
+        // create object store and evaluate condition
+        object_store store;
+        store.insert(root);
+    
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        
+        // eval the sqli detector
+        auto result = cond.eval(cache, store, {}, {}, {}, deadline);
+        prevent_optimization(result);
+    }        
+    
     return 0;
 }
 
