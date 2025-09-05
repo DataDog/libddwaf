@@ -14,7 +14,6 @@
 #include "memory_resource.hpp"
 #include "pointer.hpp"
 #include "ruleset.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -25,7 +24,7 @@ public:
     ~subcontext()
     {
         memory::memory_resource_guard guard(mr_.get());
-        engine_->clear_subcontext_artifacts();
+        engine_->stop_subcontext();
         // Reset to make sure that If the context has been destroyed, the
         // destructors are called with the correct thread-local memory resource
         engine_.reset();
@@ -39,13 +38,13 @@ public:
     bool insert(owned_object data) noexcept
     {
         memory::memory_resource_guard guard(mr_.get());
-        return engine_->insert(std::move(data), scope_);
+        return engine_->insert(std::move(data));
     }
 
     bool insert(map_view data) noexcept
     {
         memory::memory_resource_guard guard(mr_.get());
-        return engine_->insert(data, scope_);
+        return engine_->insert(data);
     }
 
     std::pair<bool, owned_object> eval(timer &deadline)
@@ -56,17 +55,17 @@ public:
 
 protected:
     explicit subcontext(std::shared_ptr<evaluation_engine> engine,
-        std::shared_ptr<memory::monotonic_buffer_resource> mr, evaluation_scope scope)
-        : engine_(std::move(engine)), mr_(std::move(mr)), scope_(scope)
-    {}
+        std::shared_ptr<memory::monotonic_buffer_resource> mr)
+        : engine_(std::move(engine)), mr_(std::move(mr))
+    {
+        engine_->start_subcontext();
+    }
 
     std::shared_ptr<evaluation_engine> engine_;
     // This memory resource is primarily used for non-subcontext allocations within the context
     // itself, such as for caching purposes of finite elements. This has the advantage of
     // improving the context destruction and memory deallocation performance.
     std::shared_ptr<memory::monotonic_buffer_resource> mr_;
-
-    evaluation_scope scope_;
 
     friend class context;
 };
@@ -95,13 +94,13 @@ public:
     bool insert(owned_object data) noexcept
     {
         memory::memory_resource_guard guard(mr_.get());
-        return engine_->insert(std::move(data), evaluation_scope::context());
+        return engine_->insert(std::move(data));
     }
 
     bool insert(map_view data) noexcept
     {
         memory::memory_resource_guard guard(mr_.get());
-        return engine_->insert(data, evaluation_scope::context());
+        return engine_->insert(data);
     }
 
     std::pair<bool, owned_object> eval(timer &deadline)
@@ -110,10 +109,7 @@ public:
         return engine_->eval(deadline);
     }
 
-    subcontext *create_subcontext()
-    {
-        return new subcontext{engine_, mr_, evaluation_scope::next_subcontext(subcontext_)};
-    }
+    subcontext *create_subcontext() { return new subcontext{engine_, mr_}; }
 
 protected:
     std::shared_ptr<evaluation_engine> engine_;
@@ -121,8 +117,6 @@ protected:
     // itself, such as for caching purposes of finite elements. This has the advantage of
     // improving the context destruction and memory deallocation performance.
     std::shared_ptr<memory::monotonic_buffer_resource> mr_;
-
-    evaluation_scope subcontext_{evaluation_scope::subcontext()};
 };
 
 } // namespace ddwaf

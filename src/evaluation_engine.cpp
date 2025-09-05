@@ -31,7 +31,7 @@ namespace {
 // This function adds the waf.context.event "virtual" address, specifically
 // meant to be used to tryigger post-processors when there has been an event
 // during the lifecycle of the context.
-void set_context_event_address(object_store &store)
+void set_context_event_address(object_store &store, evaluation_scope scope)
 {
     static const std::string_view event_addr = "waf.context.event";
     static auto event_addr_idx = get_target_index(event_addr);
@@ -40,7 +40,7 @@ void set_context_event_address(object_store &store)
         return;
     }
 
-    store.insert(event_addr_idx, event_addr, owned_object{true}, evaluation_scope::context());
+    store.insert(event_addr_idx, event_addr, owned_object{true}, scope);
 }
 
 } // namespace
@@ -83,7 +83,7 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
             if (should_eval_rules) {
                 eval_rules(store_, policy, results, deadline);
                 if (!results.empty()) {
-                    set_context_event_address(store_);
+                    set_context_event_address(store_, current_scope_);
                 }
             }
         }

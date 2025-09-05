@@ -48,18 +48,38 @@ public:
     evaluation_engine &operator=(evaluation_engine &&) = delete;
     ~evaluation_engine() = default;
 
-    bool insert(owned_object data, evaluation_scope scope = evaluation_scope::context()) noexcept
+    void start_subcontext()
     {
-        if (!store_.insert(std::move(data), scope)) {
+        if (current_scope_.is_subcontext()) {
+            throw std::runtime_error("subcontext already started");
+        }
+
+        current_scope_ = evaluation_scope::next_subcontext(subcontext_scope_);
+    }
+
+    void stop_subcontext()
+    {
+        if (!current_scope_.is_subcontext()) {
+            return;
+        }
+
+        clear_subcontext_artifacts();
+
+        current_scope_ = evaluation_scope::context();
+    }
+
+    bool insert(owned_object data) noexcept
+    {
+        if (!store_.insert(std::move(data), current_scope_)) {
             DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
             return false;
         }
         return true;
     }
 
-    bool insert(map_view data, evaluation_scope scope = evaluation_scope::context()) noexcept
+    bool insert(map_view data) noexcept
     {
-        if (!store_.insert(data, scope)) {
+        if (!store_.insert(data, current_scope_)) {
             DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
             return false;
         }
@@ -119,6 +139,12 @@ protected:
         }
         return false;
     }
+
+    // TODO Create a subcontext scope tracker instead of this
+    evaluation_scope subcontext_scope_;
+
+    // The current scope: context or subcontext
+    evaluation_scope current_scope_;
 
     // This memory resource is used primarily for the allocation of memory
     // which will be returned to the user.
