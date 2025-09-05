@@ -82,7 +82,7 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 1);
@@ -132,7 +132,7 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 1);
@@ -178,7 +178,7 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 0);
 }
@@ -222,7 +222,7 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 0);
 }

@@ -70,7 +70,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 1);
@@ -119,7 +119,7 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 2);
@@ -172,7 +172,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 1);
@@ -217,7 +217,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 0);
@@ -228,7 +228,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
 
     store.insert(std::move(input_map));
 
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
     attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 1);
 
@@ -269,7 +269,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 0);
@@ -314,7 +314,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
     }
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     {
         auto obtained = store.get_target("output_address").first;
@@ -363,7 +363,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
     EXPECT_FALSE(store.get_target("output_address").first.has_value());
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     {
         auto obtained = store.get_target("output_address").first;
@@ -407,7 +407,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
 
     EXPECT_FALSE(store.get_target("output_address").first.has_value());
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     EXPECT_FALSE(store.get_target("output_address").first.has_value());
 }
@@ -456,7 +456,7 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
     EXPECT_FALSE(store.get_target("output_address.second").first.has_value());
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     {
         auto obtained = store.get_target("output_address.first").first;
@@ -508,7 +508,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     }
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     {
         auto obtained = store.get_target("output_address").first;
@@ -552,7 +552,7 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 }
 
 TEST(TestProcessor, OutputAlreadyGenerated)
@@ -583,8 +583,8 @@ TEST(TestProcessor, OutputAlreadyGenerated)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 }
 
 TEST(TestProcessor, EvalAlreadyAvailableInStore)
@@ -615,7 +615,7 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
     owned_object attributes;
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 }
 
 TEST(TestProcessor, OutputEvalWithoutattributesMap)
@@ -657,7 +657,7 @@ TEST(TestProcessor, OutputEvalWithoutattributesMap)
     }
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     {
         auto obtained = store.get_target("output_address").first;
@@ -690,7 +690,7 @@ TEST(TestProcessor, Timeout)
     owned_object attributes;
 
     attribute_collector collector;
-    EXPECT_THROW(proc.eval(store, collector, cache, alloc, deadline), ddwaf::timeout_exception);
+    EXPECT_THROW(proc.eval(store, collector, cache, alloc, {}, deadline), ddwaf::timeout_exception);
 }
 
 } // namespace

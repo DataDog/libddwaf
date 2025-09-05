@@ -38,10 +38,10 @@ TEST(TestRuleFilter, Match)
 
     ddwaf::timer deadline{2s};
 
-    exclusion::rule_filter::excluded_set default_set{{}, evaluation_scope::subcontext(), {}, {}};
+    exclusion::rule_filter::excluded_set default_set{{}, {}, {}, {}};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
-    auto res = filter.match(store, cache, {}, deadline);
+    auto res = filter.match(store, cache, {}, {}, deadline);
     EXPECT_FALSE(res.value_or(default_set).rules.empty());
     EXPECT_TRUE(res.value_or(default_set).scope.is_context());
     EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
@@ -72,7 +72,7 @@ TEST(TestRuleFilter, MatchWithDynamicMatcher)
         ddwaf::timer deadline{2s};
 
         ddwaf::exclusion::rule_filter::cache_type cache;
-        auto res = filter.match(store, cache, {}, deadline);
+        auto res = filter.match(store, cache, {}, {}, deadline);
         EXPECT_FALSE(res.has_value());
     }
 
@@ -89,10 +89,10 @@ TEST(TestRuleFilter, MatchWithDynamicMatcher)
             std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
         exclusion::rule_filter::excluded_set default_set{
-            .rules = {}, .scope = evaluation_scope::subcontext(), .mode = {}, .action = {}};
+            .rules = {}, .scope = {}, .mode = {}, .action = {}};
 
         ddwaf::exclusion::rule_filter::cache_type cache;
-        auto res = filter.match(store, cache, matchers, deadline);
+        auto res = filter.match(store, cache, matchers, {}, deadline);
         EXPECT_FALSE(res.value_or(default_set).rules.empty());
         EXPECT_TRUE(res.value_or(default_set).scope.is_context());
         EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
@@ -125,7 +125,7 @@ TEST(TestRuleFilter, SubcontextMatch)
     exclusion::rule_filter::excluded_set default_set{{}, evaluation_scope::context(), {}, {}};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
-    auto res = filter.match(store, cache, {}, deadline);
+    auto res = filter.match(store, cache, {}, evaluation_scope::subcontext(), deadline);
     EXPECT_FALSE(res.value_or(default_set).rules.empty());
     EXPECT_TRUE(res.value_or(default_set).scope.is_subcontext());
     EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
@@ -149,7 +149,7 @@ TEST(TestRuleFilter, NoMatch)
     ddwaf::timer deadline{2s};
 
     ddwaf::exclusion::rule_filter::cache_type cache;
-    EXPECT_FALSE(filter.match(store, cache, {}, deadline));
+    EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline));
 }
 
 TEST(TestRuleFilter, ValidateCachedMatch)
@@ -181,7 +181,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline));
     }
 
     {
@@ -192,9 +192,9 @@ TEST(TestRuleFilter, ValidateCachedMatch)
 
         ddwaf::timer deadline{2s};
 
-        exclusion::rule_filter::excluded_set default_set{{}, evaluation_scope::context(), {}, {}};
+        exclusion::rule_filter::excluded_set default_set{{}, {}, {}, {}};
 
-        auto res = filter.match(store, cache, {}, deadline);
+        auto res = filter.match(store, cache, {}, {}, deadline);
         EXPECT_FALSE(res.value_or(default_set).rules.empty());
         EXPECT_TRUE(res.value_or(default_set).scope.is_context());
         EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
@@ -226,7 +226,6 @@ TEST(TestRuleFilter, CachedMatchAndSubcontextMatch)
     // matched on the second run.
     {
         defer cleanup{[&]() {
-            exclusion::rule_filter::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -236,12 +235,11 @@ TEST(TestRuleFilter, CachedMatchAndSubcontextMatch)
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline));
     }
 
     {
         defer cleanup{[&]() {
-            exclusion::rule_filter::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
@@ -254,7 +252,7 @@ TEST(TestRuleFilter, CachedMatchAndSubcontextMatch)
         exclusion::rule_filter::excluded_set default_set{
             .rules = {}, .scope = evaluation_scope::context(), .mode = {}, .action = {}};
 
-        auto res = filter.match(store, cache, {}, deadline);
+        auto res = filter.match(store, cache, {}, evaluation_scope::subcontext(), deadline);
         EXPECT_FALSE(res.value_or(default_set).rules.empty());
         EXPECT_TRUE(res.value_or(default_set).scope.is_subcontext());
         EXPECT_EQ(res.value_or(default_set).mode, exclusion::filter_mode::bypass);
@@ -281,37 +279,39 @@ TEST(TestRuleFilter, ValidateSubcontextMatchCache)
     ddwaf::exclusion::rule_filter::cache_type cache;
 
     ddwaf::object_store store;
+    auto scope = evaluation_scope::subcontext();
+
     // To validate that the cache works, we pass an object store containing
     // only the latest address. This ensures that the IP condition can't be
     // matched on the second run.
     {
         defer cleanup{[&]() {
-            exclusion::rule_filter::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
 
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::subcontext());
+        store.insert(std::move(root), scope);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, scope, deadline));
     }
 
     {
         defer cleanup{[&]() {
-            exclusion::rule_filter::invalidate_subcontext_cache(cache);
             store.clear_last_batch();
             store.clear_subcontext_objects();
         }};
 
+        scope = evaluation_scope::next_subcontext(scope);
+
         auto root = object_builder::map({{"usr.id", "admin"}});
 
-        store.insert(std::move(root), evaluation_scope::subcontext());
+        store.insert(std::move(root), scope);
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, scope, deadline));
     }
 }
 
@@ -343,7 +343,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline));
     }
 
     {
@@ -353,7 +353,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline)->rules.empty());
+        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline)->rules.empty());
     }
 }
 
@@ -384,7 +384,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline));
     }
 
     {
@@ -395,7 +395,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline));
     }
 }
 
@@ -427,7 +427,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline)->rules.empty());
+        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline)->rules.empty());
         EXPECT_TRUE(cache.result);
     }
 
@@ -437,7 +437,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
+        EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline));
     }
 }
 

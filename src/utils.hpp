@@ -52,6 +52,11 @@ public:
 
     [[nodiscard]] bool is_context() const { return kind_ == scope_kind::context; }
     [[nodiscard]] bool is_subcontext() const { return kind_ == scope_kind::subcontext; }
+    [[nodiscard]] bool is_subcontext_and_equal_to(evaluation_scope other) const
+    {
+        return kind_ == scope_kind::subcontext && other.kind_ == scope_kind::subcontext &&
+               id_ == other.id_;
+    }
 
     bool operator==(scope_kind other) const { return kind_ == other; }
 
@@ -65,19 +70,35 @@ public:
         return static_cast<uint8_t>(kind_) < static_cast<uint8_t>(other.kind_);
     }
 
+    bool has_higher_precedence_or_is_equal_to(evaluation_scope other)
+    {
+        return has_higher_precedence_than(other) || *this == other;
+    }
+
     bool has_lower_precedence_than(evaluation_scope other)
     {
         return static_cast<uint8_t>(kind_) > static_cast<uint8_t>(other.kind_);
     }
 
+    // For testing
+    [[nodiscard]] uint32_t id() const { return id_; }
+
 private:
     explicit evaluation_scope(scope_kind kind) : kind_(kind){};
 
-    scope_kind kind_ : 1 {scope_kind::context};
-    uint32_t id_ : 31 {0};
+    scope_kind kind_{scope_kind::context};
+    uint32_t id_{0};
 };
 
-static_assert(sizeof(evaluation_scope) == 4);
+inline std::ostream &operator<<(std::ostream &os, evaluation_scope scope)
+{
+    if (scope.is_context()) {
+        os << "scope::context";
+    } else {
+        os << "scope::subcontext::" << scope.id();
+    }
+    return os;
+}
 
 struct eval_result {
     bool outcome{false};

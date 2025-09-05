@@ -37,7 +37,7 @@ public:
     ~rule_filter() = default;
 
     std::optional<excluded_set> match(const object_store &store, cache_type &cache,
-        const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const;
+        const matcher_mapper &dynamic_matchers, evaluation_scope scope, timer &deadline) const;
 
     std::string_view get_id() const { return id_; }
 
@@ -47,11 +47,6 @@ public:
     }
 
     std::string_view get_action() const { return action_; }
-
-    static void invalidate_subcontext_cache(cache_type &cache)
-    {
-        expression::invalidate_subcontext_cache(cache);
-    }
 
 protected:
     std::string id_;

@@ -131,7 +131,8 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
 
         const auto &target = targets_[i];
         auto [object, scope] = store.get_target(target.index);
-        if (!object.has_value() || object == cache.targets[i].first) {
+        if (!object.has_value() ||
+            (object == cache.targets[i].first && scope == cache.targets[i].second)) {
             continue;
         }
 

@@ -87,11 +87,6 @@ struct rule_result {
     std::reference_wrapper<const std::vector<rule_attribute>> attributes;
 };
 
-struct rule_cache {
-    bool attributes_generated{false};
-    expression::cache_type expr_cache;
-};
-
 // A core rule constitutes the most important type of entity within the
 // evaluation process. These rules are "request-bound", i.e. they are used to
 // specifically analyse request data, as opposed to other types of rules such
@@ -101,8 +96,7 @@ public:
     using source_type = rule_source;
     using verdict_type = rule_verdict;
 
-    using cache_type = rule_cache;
-
+    using cache_type = expression::cache_type;
     core_rule(std::string id,                              // Required: Unique identifier
         std::string name,                                  // Required: Human-readable name
         std::unordered_map<std::string, std::string> tags, // Required: Rule metadata
@@ -143,7 +137,7 @@ public:
 
     std::pair<verdict_type, std::optional<rule_result>> match(const object_store &store,
         cache_type &cache, const exclusion::object_set_ref &objects_excluded,
-        const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const;
+        const matcher_mapper &dynamic_matchers, evaluation_scope scope, timer &deadline) const;
 
     [[nodiscard]] bool is_enabled() const { return enabled_; }
 
@@ -164,11 +158,6 @@ public:
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
         expr_->get_addresses(addresses);
-    }
-
-    static void invalidate_subcontext_cache(cache_type &cache)
-    {
-        expression::invalidate_subcontext_cache(cache.expr_cache);
     }
 
 protected:

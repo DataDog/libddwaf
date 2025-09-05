@@ -136,7 +136,8 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
     }
 
     auto [object, scope] = store.get_target(target_.index);
-    if (!object.has_value() || object == cache.targets[0].first) {
+    if (!object.has_value() ||
+        (object == cache.targets[0].first && scope == cache.targets[0].second)) {
         return {};
     }
 

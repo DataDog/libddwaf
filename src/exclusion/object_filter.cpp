@@ -105,8 +105,17 @@ object_set object_filter::match(const object_store &store, cache_type &cache,
         }
 
         auto [object, object_scope] = store.get_target(target);
-        if (!object.has_value() || cache.contains(object)) {
+        if (!object.has_value()) {
             continue;
+        }
+
+        auto it = cache.find(object);
+        if (it != cache.end()) {
+            if (it->second == object_scope) {
+                continue;
+            }
+            // Erase cached object as it belongs to a different subcontext
+            cache.erase(object);
         }
 
         if (scope.is_context() && object_scope.is_context()) {

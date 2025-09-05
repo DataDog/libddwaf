@@ -45,9 +45,17 @@ struct processor_cache {
     expression::cache_type expr_cache;
     std::unordered_map<target_index, evaluation_scope> generated;
 
-    std::vector<resolved_argument_count> evaluated;
+    struct {
+        std::vector<resolved_argument_count> evaluated;
+    } context;
 
-    // Fingerprinting cache
+    struct {
+        evaluation_scope scope;
+        std::vector<resolved_argument_count> evaluated;
+    } subcontext;
+
+    // Fingerprinting cache, note that the fingerprint generation
+    // doesn't support subcontexts
     struct {
         std::vector<std::optional<dynamic_string>> fragment_fields;
     } fingerprint;
@@ -83,23 +91,12 @@ public:
     virtual ~base_processor() = default;
 
     virtual void eval(object_store &store, attribute_collector &collector, processor_cache &cache,
-        nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const = 0;
+        nonnull_ptr<memory::memory_resource> alloc, evaluation_scope scope,
+        ddwaf::timer &deadline) const = 0;
 
     virtual void get_addresses(std::unordered_map<target_index, std::string> &addresses) const = 0;
 
     [[nodiscard]] virtual const std::string &get_id() const = 0;
-
-    static void invalidate_subcontext_cache(processor_cache &cache)
-    {
-        expression::invalidate_subcontext_cache(cache.expr_cache);
-        for (auto it = cache.generated.begin(); it != cache.generated.end();) {
-            if (it->second.is_subcontext()) {
-                it = cache.generated.erase(it);
-            } else {
-                ++it;
-            }
-        }
-    }
 };
 
 template <typename Self> class structured_processor : public base_processor {
@@ -118,11 +115,12 @@ public:
     ~structured_processor() override = default;
 
     void eval(object_store &store, attribute_collector &collector, processor_cache &cache,
-        nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const override
+        nonnull_ptr<memory::memory_resource> alloc, evaluation_scope scope,
+        ddwaf::timer &deadline) const override
     {
         DDWAF_DEBUG("Evaluating processor '{}'", id_);
 
-        if (!expr_->eval(cache.expr_cache, store, {}, {}, deadline).outcome) {
+        if (!expr_->eval(cache.expr_cache, store, {}, {}, scope, deadline).outcome) {
             return;
         }
 
@@ -130,12 +128,30 @@ public:
         using tuple_type = typename func_traits::tuple_type;
         static_assert(func_traits::nargs == Self::param_names.size());
 
+        auto &evaluated = scope.is_context() ? cache.context.evaluated : cache.subcontext.evaluated;
+
         if constexpr (is_tuple_with_optional<tuple_type>) {
             // If the processor has optional parameters, initialise the cache to
             // ensure that we can keep track of the number of optional arguments
             // seen and reevaluate as necessary.
-            if (cache.evaluated.size() < mappings_.size()) {
-                cache.evaluated.resize(mappings_.size());
+            if (scope.is_context() && evaluated.size() < mappings_.size()) {
+                evaluated.resize(mappings_.size());
+            }
+
+            if (scope.is_subcontext() && scope != cache.subcontext.scope) {
+                cache.subcontext.scope = scope;
+
+                // If the context has a cache of arguments evaluated, copy it
+                // otherwise initialise this one.
+                if (cache.context.evaluated.size() == mappings_.size()) {
+                    evaluated = cache.context.evaluated;
+                } else {
+                    if (evaluated.size() == mappings_.size()) {
+                        std::fill(evaluated.begin(), evaluated.end(), resolved_argument_count{});
+                    } else {
+                        evaluated.resize(mappings_.size());
+                    }
+                }
             }
         }
 
@@ -145,12 +161,25 @@ public:
                 throw ddwaf::timeout_exception();
             }
 
-            if (store.has_target(mapping.output.index) ||
-                cache.generated.contains(mapping.output.index)) {
+            // TODO: skip checks based on evaluate and output
+
+            // Check if it's already in the object store
+            auto [target, target_scope] = store.get_target(mapping.output.index);
+            bool maybe_skip_output =
+                target.has_value() && target_scope.has_higher_precedence_or_is_equal_to(scope);
+
+            if (!maybe_skip_output) {
+                // Check if it has already been generated within this scope
+                auto it = cache.generated.find(mapping.output.index);
+                maybe_skip_output = it != cache.generated.end() &&
+                                    it->second.has_higher_precedence_or_is_equal_to(scope);
+            }
+
+            if (maybe_skip_output) {
                 if constexpr (is_tuple_with_optional<tuple_type>) {
                     // When the processor has optional arguments, these should still be
                     // resolved as there could be new ones available
-                    if (cache.evaluated[i].optional == tuple_optionals_trait<tuple_type>::count) {
+                    if (evaluated[i].optional == tuple_optionals_trait<tuple_type>::count) {
                         continue;
                     }
                 } else {
@@ -163,8 +192,8 @@ public:
                 mapping, store, args, std::make_index_sequence<func_traits::nargs>{});
             if constexpr (is_tuple_with_optional<tuple_type>) {
                 // If there are no new optional arguments, or no arguments at all, skip
-                if (arg_count.all == 0 || (arg_count.all == cache.evaluated[i].all &&
-                                              arg_count.optional == cache.evaluated[i].optional)) {
+                if (arg_count.all == 0 || (arg_count.all == evaluated[i].all &&
+                                              arg_count.optional == evaluated[i].optional)) {
                     continue;
                 }
             } else {
@@ -194,7 +223,7 @@ public:
             // again or not. The number of optionals found should increase
             // on every call, hence why we simply replace the value.
             if constexpr (is_tuple_with_optional<tuple_type>) {
-                cache.evaluated[i] = arg_count;
+                evaluated[i] = arg_count;
             }
 
             if (object.is_invalid()) {

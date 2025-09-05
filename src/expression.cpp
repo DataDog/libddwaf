@@ -18,10 +18,15 @@ namespace ddwaf {
 
 eval_result expression::eval(cache_type &cache, const object_store &store,
     const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
-    ddwaf::timer &deadline) const
+    evaluation_scope scope, ddwaf::timer &deadline) const
 {
-    if (cache.result || conditions_.empty()) {
+    if (conditions_.empty()) {
+        // Since there's no conditions, we use the default (context) scope
         return {.outcome = true, .scope = {}};
+    }
+
+    if (expression::get_result(cache, scope)) {
+        return {.outcome = true, .scope = scope};
     }
 
     if (cache.conditions.size() < conditions_.size()) {
@@ -33,7 +38,8 @@ eval_result expression::eval(cache_type &cache, const object_store &store,
         const auto &cond = conditions_[i];
         auto &cond_cache = cache.conditions[i];
 
-        if (cond_cache.match.has_value()) {
+        if (cond_cache.match.has_value() &&
+            cond_cache.match->scope.has_higher_precedence_or_is_equal_to(scope)) {
             continue;
         }
 
@@ -48,6 +54,7 @@ eval_result expression::eval(cache_type &cache, const object_store &store,
         }
     }
     cache.result = true;
+    cache.scope = final_scope;
 
     return {.outcome = true, .scope = final_scope};
 }

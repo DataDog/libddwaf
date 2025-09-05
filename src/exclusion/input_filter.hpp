@@ -36,7 +36,8 @@ public:
     ~input_filter() = default;
 
     std::optional<excluded_set> match(const object_store &store, cache_type &cache,
-        const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const;
+        const matcher_mapper &dynamic_matchers, evaluation_scope scope,
+        ddwaf::timer &deadline) const;
 
     std::string_view get_id() { return id_; }
 
@@ -44,12 +45,6 @@ public:
     {
         expr_->get_addresses(addresses);
         filter_->get_addresses(addresses);
-    }
-
-    static void invalidate_subcontext_cache(cache_type &cache)
-    {
-        expression::invalidate_subcontext_cache(cache.expr_cache);
-        object_filter::invalidate_subcontext_cache(cache.object_filter_cache);
     }
 
 protected:

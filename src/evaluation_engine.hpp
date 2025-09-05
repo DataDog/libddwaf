@@ -18,6 +18,7 @@
 #include "pointer.hpp"
 #include "processor/base.hpp"
 #include "ruleset.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -54,7 +55,8 @@ public:
             throw std::runtime_error("subcontext already started");
         }
 
-        current_scope_ = evaluation_scope::next_subcontext(subcontext_scope_);
+        subcontext_scope_ = evaluation_scope::next_subcontext(subcontext_scope_);
+        current_scope_ = subcontext_scope_;
     }
 
     void stop_subcontext()
@@ -63,7 +65,8 @@ public:
             return;
         }
 
-        clear_subcontext_artifacts();
+        exclusions_.subcontext.clear();
+        store_.clear_subcontext_objects();
 
         current_scope_ = evaluation_scope::context();
     }
@@ -88,34 +91,14 @@ public:
 
     std::pair<bool, owned_object> eval(timer &deadline);
 
-    void clear_subcontext_artifacts()
-    {
-        exclusions_.subcontext.clear();
-        store_.clear_subcontext_objects();
-
-        for (auto &cache : rule_module_cache_) { rule_module::invalidate_subcontext_cache(cache); }
-
-        for (auto &[_, cache] : rule_filter_cache_) {
-            exclusion::rule_filter::invalidate_subcontext_cache(cache);
-        }
-
-        for (auto &[_, cache] : input_filter_cache_) {
-            exclusion::input_filter::invalidate_subcontext_cache(cache);
-        }
-
-        for (auto &[proc, cache] : processor_cache_) {
-            base_processor::invalidate_subcontext_cache(cache);
-        }
-    }
-
     // Internals exposed for testing
-    void eval_preprocessors(object_store &store, timer &deadline);
-    void eval_postprocessors(object_store &store, timer &deadline);
+    void eval_preprocessors(timer &deadline);
+    void eval_postprocessors(timer &deadline);
     // This function below returns a reference to an internal object,
     // however using them this way helps with testing
-    exclusion::exclusion_policy &eval_filters(object_store &store, timer &deadline);
-    void eval_rules(object_store &store, const exclusion::exclusion_policy &policy,
-        std::vector<rule_result> &results, timer &deadline);
+    exclusion::exclusion_policy &eval_filters(timer &deadline);
+    void eval_rules(const exclusion::exclusion_policy &policy, std::vector<rule_result> &results,
+        timer &deadline);
 
 protected:
     bool check_new_rule_targets() const
@@ -141,7 +124,7 @@ protected:
     }
 
     // TODO Create a subcontext scope tracker instead of this
-    evaluation_scope subcontext_scope_;
+    evaluation_scope subcontext_scope_{evaluation_scope::subcontext()};
 
     // The current scope: context or subcontext
     evaluation_scope current_scope_;

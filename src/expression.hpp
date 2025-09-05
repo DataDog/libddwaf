@@ -26,6 +26,7 @@ class expression {
 public:
     struct cache_type {
         bool result{false};
+        evaluation_scope scope;
         memory::vector<condition_cache> conditions;
     };
 
@@ -37,46 +38,29 @@ public:
 
     eval_result eval(cache_type &cache, const object_store &store,
         const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
-        ddwaf::timer &deadline) const;
+        evaluation_scope scope, ddwaf::timer &deadline) const;
 
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
         for (const auto &cond : conditions_) { cond->get_addresses(addresses); }
     }
 
-    static std::vector<condition_match> get_matches(cache_type &cache)
+    static std::vector<condition_match> get_matches(cache_type &cache, evaluation_scope scope = {})
     {
         std::vector<condition_match> matches;
         matches.reserve(cache.conditions.size());
         for (auto &cond_cache : cache.conditions) {
-            if (cond_cache.match.has_value()) {
+            if (cond_cache.match.has_value() &&
+                cond_cache.match->scope.has_higher_precedence_or_is_equal_to(scope)) {
                 matches.emplace_back(cond_cache.match.value());
             }
         }
         return matches;
     }
 
-    static bool get_result(cache_type &cache) { return cache.result; }
-
-    static void invalidate_subcontext_cache(cache_type &cache)
+    static bool get_result(cache_type &cache, evaluation_scope scope)
     {
-        bool invalidated = false;
-        for (auto &cond_cache : cache.conditions) {
-            if (cond_cache.match.has_value() && cond_cache.match->scope.is_subcontext()) {
-                cond_cache.match = {};
-                invalidated = true;
-            }
-
-            for (auto &[object, scope] : cond_cache.targets) {
-                if (scope.is_subcontext()) {
-                    object = {};
-                }
-            }
-        }
-
-        if (invalidated) {
-            cache.result = false;
-        }
+        return cache.scope.has_higher_precedence_or_is_equal_to(scope) && cache.result;
     }
 
     [[nodiscard]] bool empty() const { return conditions_.empty(); }

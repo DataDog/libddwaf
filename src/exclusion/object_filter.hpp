@@ -258,17 +258,6 @@ public:
         for (const auto &[index, str] : targets_) { addresses.emplace(index, str); }
     }
 
-    static void invalidate_subcontext_cache(cache_type &cache)
-    {
-        for (auto it = cache.begin(); it != cache.end();) {
-            if (it->second.is_subcontext()) {
-                it = cache.erase(it);
-            } else {
-                ++it;
-            }
-        }
-    }
-
 protected:
     std::unordered_map<target_index, path_trie> target_paths_;
     std::unordered_map<target_index, std::string> targets_;

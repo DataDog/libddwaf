@@ -10,6 +10,7 @@
 #include "matcher/ip_match.hpp"
 #include "object_store.hpp"
 #include "rule.hpp"
+#include "utils.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -36,10 +37,13 @@ TEST(TestRule, Match)
 
     core_rule::cache_type cache;
     {
-        defer cleanup{[&]() { store.clear_subcontext_objects(); }};
+        defer cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
         store.insert(root.clone(), evaluation_scope::context());
 
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         ASSERT_TRUE(result.has_value());
         ASSERT_TRUE(result->event.has_value());
 
@@ -63,14 +67,13 @@ TEST(TestRule, Match)
     }
 
     {
-        defer cleanup{[&]() { store.clear_subcontext_objects(); }};
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(result.has_value());
     }
 
-    EXPECT_TRUE(cache.expr_cache.result);
+    EXPECT_TRUE(cache.result);
 }
 
 TEST(TestRule, SubcontextMatch)
@@ -90,32 +93,38 @@ TEST(TestRule, SubcontextMatch)
 
     ddwaf::timer deadline{2s};
 
+    auto scope = evaluation_scope::subcontext();
+
     core_rule::cache_type cache;
     {
         defer cleanup{[&]() {
+            store.clear_last_batch();
             store.clear_subcontext_objects();
-            core_rule::invalidate_subcontext_cache(cache);
         }};
-        store.insert(root.clone(), evaluation_scope::subcontext());
+        store.insert(root.clone(), scope);
 
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, scope, deadline);
         ASSERT_TRUE(result.has_value());
         EXPECT_TRUE(result->scope.is_subcontext());
     }
 
     {
         defer cleanup{[&]() {
+            store.clear_last_batch();
             store.clear_subcontext_objects();
-            core_rule::invalidate_subcontext_cache(cache);
         }};
-        store.insert(std::move(root), evaluation_scope::subcontext());
 
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        scope = evaluation_scope::next_subcontext(scope);
+
+        store.insert(std::move(root), scope);
+
+        auto [verdict, result] = rule.match(store, cache, {}, {}, scope, deadline);
         ASSERT_TRUE(result.has_value());
         EXPECT_TRUE(result->scope.is_subcontext());
     }
 
-    EXPECT_FALSE(cache.expr_cache.result);
+    EXPECT_TRUE(cache.result);
+    EXPECT_EQ(cache.scope, scope);
 }
 
 TEST(TestRule, NoMatch)
@@ -137,7 +146,7 @@ TEST(TestRule, NoMatch)
     ddwaf::timer deadline{2s};
 
     core_rule::cache_type cache;
-    auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+    auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
     EXPECT_FALSE(result.has_value());
 }
 
@@ -169,7 +178,7 @@ TEST(TestRule, ValidateCachedMatch)
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(result.has_value());
     }
 
@@ -180,7 +189,7 @@ TEST(TestRule, ValidateCachedMatch)
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         ASSERT_TRUE(result.has_value());
         ASSERT_TRUE(result->event.has_value());
 
@@ -240,7 +249,7 @@ TEST(TestRule, MatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(result.has_value());
     }
 
@@ -251,7 +260,7 @@ TEST(TestRule, MatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         ASSERT_TRUE(result.has_value());
         ASSERT_TRUE(result->event.has_value());
 
@@ -304,7 +313,7 @@ TEST(TestRule, NoMatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(result.has_value());
     }
 
@@ -316,7 +325,7 @@ TEST(TestRule, NoMatchWithoutCache)
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(result.has_value());
     }
 }
@@ -349,7 +358,7 @@ TEST(TestRule, FullCachedMatchSecondRun)
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_TRUE(result.has_value());
         ASSERT_TRUE(result->event.has_value());
     }
@@ -361,7 +370,7 @@ TEST(TestRule, FullCachedMatchSecondRun)
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(result.has_value());
     }
 }
@@ -388,7 +397,7 @@ TEST(TestRule, ExcludeObject)
 
     core_rule::cache_type cache;
     auto [verdict, result] =
-        rule.match(store, cache, {.context = excluded_set, .subcontext = {}}, {}, deadline);
+        rule.match(store, cache, {.context = excluded_set, .subcontext = {}}, {}, {}, deadline);
     EXPECT_FALSE(result.has_value());
 }
 } // namespace

@@ -724,7 +724,7 @@ TEST(TestRuleAttributesIntegration, AttributesEventsAndSubcontextMatches)
     }
 
     {
-        // The second match should contain an event but no attributes
+        // The second match should contain an event and attributes as well
         ddwaf_object parameter;
         ddwaf_object_set_map(&parameter, 1, alloc);
         ddwaf_object_set_string_literal(
@@ -751,7 +751,7 @@ TEST(TestRuleAttributesIntegration, AttributesEventsAndSubcontextMatches)
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
         EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         ddwaf_object_destroy(&result, alloc);
         ddwaf_subcontext_destroy(subctx);
