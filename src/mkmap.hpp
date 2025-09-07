@@ -51,7 +51,7 @@ public:
     template <typename CompatKey>
     const std::set<T> &find_ref(const std::pair<CompatKey, CompatKey> &key) const
     {
-        static std::set<T> empty;
+        static const std::set<T> empty;
         auto first_it = data_.find(Key(key.first));
         if (first_it == data_.end()) {
             return empty;
@@ -88,7 +88,7 @@ public:
 
     template <typename U> std::set<T> multifind(const U &keys) const
     {
-        std::pair<Key, Key> first = *keys.begin();
+        const std::pair<Key, Key> first = *keys.begin();
 
         switch (keys.size()) {
         case 0:
@@ -96,7 +96,7 @@ public:
         case 1:
             return find(first);
         case 2: {
-            std::pair<Key, Key> second = *(++keys.begin());
+            const std::pair<Key, Key> second = *(++keys.begin());
             return find2(first, second);
         }
         }

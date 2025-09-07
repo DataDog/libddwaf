@@ -1055,7 +1055,9 @@ template <typename T>
 
 // Convert the underlying type to the requested type, converters are defined
 // in the object_converter header
-template <typename Derived> template <typename T> T readable_object<Derived>::convert() const
+template <typename Derived>
+template <typename T>
+[[nodiscard]] T readable_object<Derived>::convert() const
 {
     return object_converter<T>{object_ref()}();
 }

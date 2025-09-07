@@ -320,7 +320,8 @@ protected:
     }
 
     template <size_t I>
-    auto resolve_argument(const processor_mapping &mapping, const object_store &store) const
+    [[nodiscard]] auto resolve_argument(
+        const processor_mapping &mapping, const object_store &store) const
     {
         using func_traits = decltype(make_eval_traits(&Self::eval_impl));
         using target_type = typename func_traits::template arg_type<I>;

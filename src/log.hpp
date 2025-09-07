@@ -18,7 +18,7 @@ constexpr const char *base_name(const char *path)
 #ifdef _WIN32
         char separator = '\\';
 #else
-        char separator = '/';
+        const char separator = '/';
 #endif
         if (*path++ == separator) {
             base = path;

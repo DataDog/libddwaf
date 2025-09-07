@@ -18,6 +18,7 @@ namespace ddwaf::exclusion {
 class input_filter {
 public:
     struct excluded_set {
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
         const std::set<const core_rule *> &rules;
         object_set objects;
     };

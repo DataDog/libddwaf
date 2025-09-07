@@ -449,12 +449,7 @@ eval_result cmdi_detector::eval_impl(const unary_argument<object_view> &resource
             const std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
 
-            evaluation_scope scope;
-            if (resource.scope.is_subcontext()) {
-                scope = resource.scope;
-            } else if (param.scope.is_subcontext()) {
-                scope = param.scope;
-            }
+            const evaluation_scope scope = resolve_scope(resource, param);
 
             auto &[highlight, param_kp] = res.value();
 

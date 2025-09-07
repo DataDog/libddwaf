@@ -91,11 +91,11 @@ public:
         [[nodiscard]] ruleset_info_state state() const noexcept
         {
             //  The section is valid if there are no errors and
-            if (error_.empty() && loaded_.size() > 0) {
+            if (error_.empty() && !loaded_.empty()) {
                 return ruleset_info_state::valid;
             }
 
-            if (!error_.empty() || failed_.size() > 0) {
+            if (!error_.empty() || !failed_.empty()) {
                 return ruleset_info_state::invalid;
             }
 

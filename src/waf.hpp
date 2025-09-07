@@ -22,10 +22,10 @@ public:
     waf &operator=(waf &&) = default;
     ~waf() = default;
 
-    context *create_context(
+    context create_context(
         nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
     {
-        return new context(ruleset_, alloc);
+        return context(ruleset_, alloc);
     }
 
     [[nodiscard]] const std::vector<const char *> &get_root_addresses() const

@@ -23,6 +23,7 @@ public:
     hidden_ascii_match &operator=(hidden_ascii_match &&) noexcept = default;
 
 protected:
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] std::string_view to_string_impl() const { return ""; }
     static constexpr bool is_supported_type_impl(object_type type)
     {

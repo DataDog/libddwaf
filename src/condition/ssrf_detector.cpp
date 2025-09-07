@@ -325,12 +325,7 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
         if (res.has_value()) {
             const std::vector<std::string> uri_kp{uri.key_path.begin(), uri.key_path.end()};
 
-            evaluation_scope scope;
-            if (uri.scope.is_subcontext()) {
-                scope = uri.scope;
-            } else if (param.scope.is_subcontext()) {
-                scope = param.scope;
-            }
+            const evaluation_scope scope = resolve_scope(uri, param);
 
             auto &[highlight, param_kp] = res.value();
 

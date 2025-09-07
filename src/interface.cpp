@@ -266,7 +266,7 @@ ddwaf_context ddwaf_context_init(ddwaf::waf *handle, ddwaf_allocator output_allo
 {
     try {
         if (handle != nullptr && output_alloc != nullptr) {
-            return handle->create_context(to_alloc_ptr(output_alloc));
+            return new context(handle->create_context(to_alloc_ptr(output_alloc)));
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());
@@ -340,7 +340,7 @@ ddwaf_subcontext ddwaf_subcontext_init(ddwaf_context context)
 {
     try {
         if (context != nullptr) {
-            return context->create_subcontext();
+            return new subcontext(context->create_subcontext());
         }
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());

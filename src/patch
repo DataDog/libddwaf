@@ -1,0 +1,71 @@
+diff --git a/src/condition/base.hpp b/src/condition/base.hpp
+index 5d77626d..f09519ed 100644
+--- a/src/condition/base.hpp
++++ b/src/condition/base.hpp
+@@ -41,7 +41,7 @@ struct condition_cache {
+     // Stores the pointer to the object of the i-th target of the condition,
+     // used in the previous evaluation. This ensures that the evaluation of
+     // the condition can be skipped for the same object in the future.
+-    memory::vector<object_view> targets;
++    memory::vector<std::pair<object_view, evaluation_scope>> targets;
+     std::optional<condition_match> match;
+ };
+ 
+diff --git a/src/condition/negated_scalar_condition.cpp b/src/condition/negated_scalar_condition.cpp
+index 6f3b9b6d..56507904 100644
+--- a/src/condition/negated_scalar_condition.cpp
++++ b/src/condition/negated_scalar_condition.cpp
+@@ -132,15 +132,15 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
+     }
+ 
+     if (cache.targets.size() != 1) {
+-        cache.targets.assign(1, nullptr);
++        cache.targets.assign(1, {nullptr, {}});
+     }
+ 
+     auto [object, scope] = store.get_target(target_.index);
+-    if (!object.has_value() || object == cache.targets[0]) {
++    if (!object.has_value() || object == cache.targets[0].first) {
+         return {};
+     }
+ 
+-    cache.targets[0] = object;
++    cache.targets[0] = {object, scope};
+ 
+     auto target_object = object.find_key_path(target_.key_path, objects_excluded);
+     if (!target_object.has_value()) {
+diff --git a/src/condition/scalar_condition.cpp b/src/condition/scalar_condition.cpp
+index e9e2448f..edd18ff3 100644
+--- a/src/condition/scalar_condition.cpp
++++ b/src/condition/scalar_condition.cpp
+@@ -131,11 +131,11 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
+ 
+         const auto &target = targets_[i];
+         auto [object, scope] = store.get_target(target.index);
+-        if (!object.has_value() || object == cache.targets[i]) {
++        if (!object.has_value() || object == cache.targets[i].first) {
+             continue;
+         }
+ 
+-        cache.targets[i] = object;
++        cache.targets[i] = {object, scope};
+ 
+         std::optional<condition_match> match;
+         // TODO: iterators could be cached to avoid reinitialisation
+diff --git a/src/expression.hpp b/src/expression.hpp
+index 0edac017..0dad68f7 100644
+--- a/src/expression.hpp
++++ b/src/expression.hpp
+@@ -67,6 +67,12 @@ public:
+                 cond_cache.match = {};
+                 invalidated = true;
+             }
++
++            for (auto &[object, scope] : cond_cache.targets) {
++                if (scope == evaluation_scope::subcontext) {
++                    object = {};
++                }
++            }
+         }
+ 
+         if (invalidated) {

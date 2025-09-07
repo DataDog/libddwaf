@@ -23,7 +23,7 @@ class subcontext {
 public:
     ~subcontext()
     {
-        memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(mr_.get());
         engine_->stop_subcontext();
         // Reset to make sure that If the context has been destroyed, the
         // destructors are called with the correct thread-local memory resource
@@ -37,19 +37,19 @@ public:
 
     bool insert(owned_object data) noexcept
     {
-        memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(mr_.get());
         return engine_->insert(std::move(data));
     }
 
     bool insert(map_view data) noexcept
     {
-        memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(mr_.get());
         return engine_->insert(data);
     }
 
     std::pair<bool, owned_object> eval(timer &deadline)
     {
-        memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(mr_.get());
         return engine_->eval(deadline);
     }
 
@@ -76,13 +76,13 @@ public:
         nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
         : mr_(std::make_shared<memory::monotonic_buffer_resource>())
     {
-        memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(mr_.get());
         engine_ = std::make_shared<evaluation_engine>(std::move(ruleset), output_alloc);
     }
 
     ~context()
     {
-        memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(mr_.get());
         engine_.reset();
     }
 
@@ -93,23 +93,23 @@ public:
 
     bool insert(owned_object data) noexcept
     {
-        memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(mr_.get());
         return engine_->insert(std::move(data));
     }
 
     bool insert(map_view data) noexcept
     {
-        memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(mr_.get());
         return engine_->insert(data);
     }
 
     std::pair<bool, owned_object> eval(timer &deadline)
     {
-        memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(mr_.get());
         return engine_->eval(deadline);
     }
 
-    subcontext *create_subcontext() { return new subcontext{engine_, mr_}; }
+    subcontext create_subcontext() { return subcontext{engine_, mr_}; }
 
 protected:
     std::shared_ptr<evaluation_engine> engine_;

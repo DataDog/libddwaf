@@ -24,11 +24,13 @@
 #include <variant>
 #include <vector>
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
 // Convert numbers to strings
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
 // (string, length), only for literals
 #define STRL(value) value, sizeof(value) - 1
+// NOLINTEND(cppcoreguidelines-macro-usage)
 
 template <typename T> using optional_ref = std::optional<std::reference_wrapper<T>>;
 using scalar_type = std::variant<bool, int64_t, uint64_t, double, std::string>;
@@ -217,6 +219,7 @@ template <typename T> std::pair<bool, T> from_string(std::string_view str)
             return {true, result};
         }
     } else {
+        // NOLINTNEXTLINE(misc-const-correctness)
         std::istringstream iss(std::string{str});
         iss >> result;
         if (!iss.fail() && iss.eof()) {
