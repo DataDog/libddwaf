@@ -4,10 +4,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <cstdint>
 #include <exception>
+#include <optional>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 
 #include "action_mapper.hpp"
 #include "builder/action_mapper_builder.hpp"
@@ -20,20 +24,70 @@
 #include "log.hpp"
 #include "ruleset_info.hpp"
 #include "uri_utils.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 
 namespace {
 
+bool validate_status_code_presence_and_type(
+    auto &parameters, const std::string &key, auto &&validate_fn)
+{
+    auto it = parameters.find(key);
+    if (it == parameters.end()) {
+        return false;
+    }
+
+    // NOLINTNEXTLINE(fuchsia-trailing-return)
+    auto validate_status_code = [&validate_fn](auto &&code) -> std::optional<uint64_t> {
+        using T = std::decay_t<decltype(code)>;
+        uint64_t ucode;
+        if constexpr (std::is_same_v<T, bool>) {
+            return std::nullopt;
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            if (auto [res, value] = from_string<uint64_t>(code); res) {
+                ucode = value;
+            } else {
+                return std::nullopt;
+            }
+        } else {
+            ucode = static_cast<uint64_t>(code);
+            if (code < 0 || static_cast<T>(ucode) != code) {
+                return std::nullopt;
+            }
+        }
+        if (ucode > 999 || !validate_fn(ucode)) {
+            return std::nullopt;
+        }
+        return ucode;
+    };
+
+    auto &code = it->second;
+    if (auto ucode = std::visit(validate_status_code, code); ucode.has_value()) {
+        code = ucode.value();
+        return true;
+    }
+
+    parameters.erase(it);
+    return false;
+}
+
 void validate_and_add_block(auto &cfg, auto id, auto &type, auto &parameters)
 {
-    if (!parameters.contains("status_code") || !parameters.contains("grpc_status_code") ||
-        !parameters.contains("type")) {
+    // Accept any status code
+    auto validator = [](uint64_t /*code*/) { return true; };
+    auto status_code = validate_status_code_presence_and_type(parameters, "status_code", validator);
+    auto grpc_status_code =
+        validate_status_code_presence_and_type(parameters, "grpc_status_code", validator);
+
+    if (!status_code || !grpc_status_code || !parameters.contains("type")) {
         // If any of the parameters are missing, add the relevant default value
         // We could also avoid the above check ...
         auto default_params = action_mapper_builder::get_default_action("block");
         for (const auto &[k, v] : default_params.parameters) { parameters.try_emplace(k, v); }
     }
+
+    // Validate that status codes are provided as strings
 
     cfg.emplace_action(std::move(id),
         action_spec{action_type_from_string(type), std::move(type), std::move(parameters)});
@@ -42,7 +96,8 @@ void validate_and_add_block(auto &cfg, auto id, auto &type, auto &parameters)
 void validate_and_add_redirect(auto &cfg, auto id, auto &type, auto &parameters)
 {
     auto it = parameters.find("location");
-    if (it == parameters.end() || it->second.empty()) {
+    if (it == parameters.end() || !std::holds_alternative<std::string>(it->second) ||
+        std::get<std::string>(it->second).empty()) {
         auto block_params = action_mapper_builder::get_default_action("block");
         DDWAF_DEBUG("Location missing from redirect action '{}', downgrading to block_request", id);
         cfg.emplace_action(id, action_spec{.type = block_params.type,
@@ -57,7 +112,7 @@ void validate_and_add_redirect(auto &cfg, auto id, auto &type, auto &parameters)
     //   - If it doesn't have a scheme:
     //     - Check it also doesn't have an authority
     //     - Check it's a path starting with /
-    auto decomposed = uri_parse(it->second);
+    auto decomposed = uri_parse(std::get<std::string>(it->second));
     if (!decomposed.has_value() ||
         (!decomposed->scheme.empty() && decomposed->scheme != "http" &&
             decomposed->scheme != "https") ||
@@ -71,14 +126,12 @@ void validate_and_add_redirect(auto &cfg, auto id, auto &type, auto &parameters)
         return;
     }
 
-    it = parameters.find("status_code");
-    if (it != parameters.end()) {
-        auto [res, code] = ddwaf::from_string<unsigned>(it->second);
-        if (!res || (code != 301 && code != 302 && code != 303 && code != 307)) {
-            it->second = "303";
-        }
-    } else {
-        parameters.emplace("status_code", "303");
+    auto validator = [](uint64_t code) {
+        return code == 301 || code == 302 || code == 303 || code == 307;
+    };
+
+    if (!validate_status_code_presence_and_type(parameters, "status_code", validator)) {
+        parameters.emplace("status_code", 303ULL);
     }
 
     cfg.emplace_action(
@@ -104,7 +157,7 @@ void parse_actions(const raw_configuration::vector &actions_array, configuration
             }
 
             auto type = at<std::string>(node, "type");
-            auto parameters = at<std::unordered_map<std::string, std::string>>(node, "parameters");
+            auto parameters = at<std::unordered_map<std::string, scalar_type>>(node, "parameters");
 
             DDWAF_DEBUG("Parsed action {} of type {}", id, type);
 

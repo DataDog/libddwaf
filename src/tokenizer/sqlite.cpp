@@ -3,6 +3,7 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <memory>
 #include <stdexcept>
 #include <string_view>
 #include <unordered_set>
@@ -21,18 +22,35 @@ namespace ddwaf {
 namespace {
 // https://www.sqlite.org/lang_select.html
 // Identifiers: https://sqlite.org/lang_keywords.html
-re2::RE2 identifier_regex(
-    R"((?i)^(?:(?P<keyword>SELECT|DISTINCT|ALL|FROM|WHERE|GROUP|HAVING|WINDOW|VALUES|OFFSET|LIMIT|ORDER|BY|ASC|DESC|UNION|INTERSECT|EXCEPT|NULL|AS)|(?P<binary_operator>OR|AND|IN|BETWEEN|LIKE|GLOB|ESCAPE|COLLATE|REGEXP|MATCH|NOTNULL|ISNULL|NOT|IS)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*|\$[0-9]+))(?:\b|\s|$))");
+constexpr std::string_view identifier_regex_initialiser =
+    R"((?i)^(?:(?P<keyword>SELECT|DISTINCT|ALL|FROM|WHERE|GROUP|HAVING|WINDOW|VALUES|OFFSET|LIMIT|ORDER|BY|ASC|DESC|UNION|INTERSECT|EXCEPT|NULL|AS)|(?P<binary_operator>OR|AND|IN|BETWEEN|LIKE|GLOB|ESCAPE|COLLATE|REGEXP|MATCH|NOTNULL|ISNULL|NOT|IS)|(?P<identifier>[\x{0080}-\x{FFFF}a-zA-Z_][\x{0080}-\x{FFFF}a-zA-Z_0-9$]*|\$[0-9]+))(?:\b|\s|$))";
+
+std::unique_ptr<re2::RE2> identifier_regex;
 
 } // namespace
+
+bool sqlite_tokenizer::initialise_regexes()
+{
+    static const bool ret = []() {
+        try {
+            bool const parent_init = sql_tokenizer<sqlite_tokenizer>::initialise_regexes();
+            identifier_regex = std::make_unique<re2::RE2>(identifier_regex_initialiser);
+            return parent_init && identifier_regex->ok();
+        } catch (...) {
+            return false;
+        }
+    }();
+
+    return ret;
+}
 
 sqlite_tokenizer::sqlite_tokenizer(
     std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
     : sql_tokenizer(str, std::move(skip_tokens))
 {
-    if (!identifier_regex.ok()) {
+    if (!initialise_regexes()) {
         throw std::runtime_error(
-            "sqlite identifier regex not valid: " + identifier_regex.error_arg());
+            "sqlite identifier regex not valid: " + identifier_regex->error_arg());
     }
 }
 
@@ -48,7 +66,7 @@ void sqlite_tokenizer::tokenize_keyword_operator_or_identifier()
     std::string_view ident;
 
     const std::string_view ref(remaining_str.data(), remaining_str.size());
-    if (re2::RE2::PartialMatch(ref, identifier_regex, &keyword, &binary_op, &ident)) {
+    if (re2::RE2::PartialMatch(ref, *identifier_regex, &keyword, &binary_op, &ident)) {
         // At least one of the strings will contain a match
         if (!binary_op.empty()) {
             token.type = sql_token_type::binary_operator;

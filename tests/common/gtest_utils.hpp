@@ -49,7 +49,8 @@ struct event {
     std::vector<match> matches;
 };
 
-using action_map = ::std::map<::std::string, ::std::map<::std::string, ::std::string>>;
+using scalar_type = std::variant<bool, int64_t, uint64_t, double, std::string>;
+using action_map = ::std::map<::std::string, ::std::map<::std::string, scalar_type>>;
 
 bool operator==(const event::match::argument &lhs, const event::match::argument &rhs);
 bool operator==(const event::match &lhs, const event::match &rhs);
@@ -79,6 +80,12 @@ template <> struct as_if<ddwaf::test::event::match, void> {
 template <> struct as_if<ddwaf::test::event, void> {
     explicit as_if(const Node &node_) : node(node_) {}
     ddwaf::test::event operator()() const;
+    const Node &node;
+};
+
+template <> struct as_if<std::map<std::string, ddwaf::test::scalar_type>, void> {
+    explicit as_if(const Node &node_) : node(node_) {}
+    std::map<std::string, ddwaf::test::scalar_type> operator()() const;
     const Node &node;
 };
 
@@ -172,6 +179,48 @@ inline ::testing::PolymorphicMatcher<MatchMatcher> WithMatches(
 
 std::list<ddwaf::test::event::match> from_matches(
     const std::vector<ddwaf::condition_match> &matches);
+
+/*inline bool operator==(const ddwaf::test::scalar_type& left, const ddwaf::test::scalar_type&
+ * right)*/
+/*{*/
+/*if (std::holds_alternative<std::string>(left)) {*/
+/*return std::holds_alternative<std::string>(right) && std::get<std::string>(left) ==
+ * std::get<std::string>(right);*/
+/*}*/
+
+/*if (std::holds_alternative<uint64_t>(left)) {*/
+/*return std::holds_alternative<uint64_t>(right) && std::get<uint64_t>(left) ==
+ * std::get<uint64_t>(right);*/
+/*}*/
+
+/*if (std::holds_alternative<int64_t>(left)) {*/
+/*return std::holds_alternative<int64_t>(right) && std::get<int64_t>(left) ==
+ * std::get<int64_t>(right);*/
+/*}*/
+
+/*if (std::holds_alternative<double>(left)) {*/
+/*return std::holds_alternative<double>(right) && std::get<double>(left) ==
+ * std::get<double>(right);*/
+/*}*/
+
+/*if (std::holds_alternative<bool>(left)) {*/
+/*return std::holds_alternative<bool>(right) && std::get<bool>(left) == std::get<bool>(right);*/
+/*}*/
+
+/*return false;*/
+/*}*/
+
+/*template <typename T>*/
+/*inline bool operator==(const ddwaf::test::scalar_type& left, const T& right)*/
+/*{*/
+/*return std::holds_alternative<T>(left) && std::get<T>(left) == right;*/
+/*}*/
+
+/*template <typename T>*/
+/*inline bool operator==(const T& left, const ddwaf::test::scalar_type& right)*/
+/*{*/
+/*return std::holds_alternative<T>(right) && left == std::get<T>(right);*/
+/*}*/
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define EXPECT_EVENTS(result, ...)                                                                 \

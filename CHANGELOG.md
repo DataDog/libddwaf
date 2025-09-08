@@ -1,5 +1,70 @@
 # libddwaf release
 
+## v1.28.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+### Release changelog
+#### Fixes
+- Support float status codes in configuration ([#448](https://github.com/DataDog/libddwaf/pull/448))
+
+## v1.28.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+### New Features
+
+This release introduces a new URI-decomposition preprocessor along with enhancements to action parameter types, initialization performance, and platform support.
+
+#### URI parsing preprocessor
+
+A new `uri_parse` preprocessor has been introduced to convert a single URI into a structured map. URI decomposition follows [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986), with some additions from [WHATWG](https://url.spec.whatwg.org/) for compatibility. This preprocessor improves the ability of the rule writer to target specific URI components without the need for crafting complex and innacurate regular expressions.
+
+An example definition of this preprocessor can be seen below:
+```yaml
+id: decompose-uri
+generator: uri_parse
+conditions: []
+parameters:
+  mappings:
+    - inputs:
+        - address: server.request.uri.raw
+      output: server.request.uri
+evaluate: true
+output: false
+```
+
+After the evaluation of this example preprocessor `server.request.uri` will be available as a map containing the following fields:
+
+```yaml
+{
+  "scheme": <string>,
+  "userinfo": <string>,
+  "host": <string>,
+  "port": <unsigned>,
+  "path": <string>,
+  "query": {},
+  "fragment": <string>
+}
+```
+
+#### Action parameters: broader scalar support
+
+Action parameters can now include any of the available scalar types in addition to strings. This enables more natural configurations and prevents the need for ad‑hoc conversions by the WAF caller. This is a small, incremental improvement ahead of v2’s planned complex‑type support.
+
+In addition to this change, the `status_code` field of the `block_request` and `redirect_request` actions, as well as the `grpc_status_code` field of the `block_request` action, are now being stored and interpreted as an unsigned integer, rather than a string.
+
+#### Performance & Initialisation
+
+Due to the static initialisation cost of tokenizer regular expressions, this is now deferred to the first ruleset instantiation. This avoids startup overhead and protects request latency from any one‑time initialization costs. No behavior changes are expected for existing rules.
+
+#### Platforms & CI
+Continuous integration now builds and tests libddwaf on Windows ARM64, leveraging the windows-11-arm runners, this is an external contribution from [@Greenie0701](https://github.com/Greenie0701).
+
+### Release changelog
+#### Changes
+- URI parsing preprocessor ([#439](https://github.com/DataDog/libddwaf/pull/439))
+- Support other scalar types on action parameters ([#441](https://github.com/DataDog/libddwaf/pull/441))
+- Load tokenizer regexes on first ruleset instantiation ([#446](https://github.com/DataDog/libddwaf/pull/446))
+
+#### Miscellaneous
+- Add support for building and testing windows arm64 ([#440](https://github.com/DataDog/libddwaf/pull/440))
+
 ## v1.27.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 ### New Features

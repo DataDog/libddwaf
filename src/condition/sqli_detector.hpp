@@ -16,9 +16,7 @@ public:
     static constexpr unsigned version = 3;
     static constexpr std::array<std::string_view, 3> param_names{"resource", "params", "db_type"};
 
-    explicit sqli_detector(std::vector<condition_parameter> args)
-        : base_impl<sqli_detector>(std::move(args))
-    {}
+    explicit sqli_detector(std::vector<condition_parameter> args);
 
 protected:
     [[nodiscard]] eval_result eval_impl(const unary_argument<std::string_view> &sql,

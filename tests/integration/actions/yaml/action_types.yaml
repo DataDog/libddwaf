@@ -1,0 +1,26 @@
+version: "2.1"
+rules:
+  - id: sanitize-rule
+    name: sanitize-rule
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value
+          regex: ^sanitize
+          options:
+            case_sensitive: true
+    on_match:
+      - sanitize
+actions:
+  - id: sanitize
+    parameters:
+      string: thisisastring
+      int64: -200
+      uint64: 18446744073709551615
+      double: 22.22
+      bool: true
+    type: sanitize_something

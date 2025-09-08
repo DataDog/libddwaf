@@ -14,6 +14,8 @@
 #include "utils.hpp"
 
 /*
+   RFC 3986
+   --
    URI           = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
    hier-part     = "//" authority path-abempty
                  / path-absolute
@@ -55,12 +57,22 @@
    segment       = *pchar
    segment-nz    = 1*pchar
    pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
-   query         = *( pchar / "/" / "?" )
+   query         = *( ext-query-set / pchar / "/" / "?" )
    fragment      = *( pchar / "/" / "?" )
    pct-encoded   = "%" HEXDIG HEXDIG
    unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
    sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
                  / "*" / "+" / "," / ";" / "="
+   ext-query-set = "[" / "]"
+
+--
+  To account for the extended use of [] characters in the query string, which
+  is somewhat allowed by section 2.2 of RFC 3986, the ext-query-set has been
+  introduced, but only to the query string.
+
+  Note that these are also tolerated by the WHATWG standard.
+
+  Discussion in https://stackoverflow.com/questions/11490326
 */
 
 namespace ddwaf {
@@ -83,6 +95,8 @@ enum class token_type : uint8_t {
 };
 constexpr const auto &npos = std::string_view::npos;
 
+inline bool is_extended_query_set(char c) { return c == '[' || c == ']'; }
+
 inline bool is_unreserved(char c)
 {
     return ddwaf::isalnum(c) || c == '-' || c == '.' || c == '_' || c == '~';
@@ -100,7 +114,10 @@ inline bool is_path_char(char c)
 {
     return is_unreserved(c) || is_subdelim(c) || c == '%' || c == ':' || c == '@';
 }
-inline bool is_query_char(char c) { return is_path_char(c) || c == '/' || c == '?'; }
+inline bool is_query_char(char c)
+{
+    return is_extended_query_set(c) || is_path_char(c) || c == '/' || c == '?';
+}
 inline bool is_frag_char(char c) { return is_path_char(c) || c == '/' || c == '?'; }
 
 inline bool is_userinfo_char(char c)
@@ -353,10 +370,11 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
 
             auto port_substr = uri.substr(token_begin, i - token_begin);
             if (!port_substr.empty()) {
-                if (auto [res, value] = from_string<uint16_t>(port_substr); !res) {
+                if (auto [res, value] = from_string<uint16_t>(port_substr); res) {
+                    decomposed.authority.port = value;
+                } else {
                     return std::nullopt;
                 }
-                decomposed.authority.port = port_substr;
             }
 
             if (authority_end == uri.size()) {
