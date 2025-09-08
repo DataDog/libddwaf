@@ -50,25 +50,25 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     // add request query parameter
     ddwaf_object_map_add(
         &root, "server.request.query", ddwaf_object_stringl(&tmp, param.data(), param.size()));
-    
+
     // Check all the dialects with the same input
     for (const auto &dialect_str : dialects) {
 
         ddwaf_object_map_add(&root, "server.db.system",
             ddwaf_object_stringl(&tmp, dialect_str.data(), dialect_str.size()));
-    
+
         // create object store and evaluate condition
         object_store store;
         store.insert(root);
-    
+
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        
+
         // eval the sqli detector
         auto result = cond.eval(cache, store, {}, {}, {}, deadline);
         prevent_optimization(result);
-    }        
-    
+    }
+
     return 0;
 }
 
