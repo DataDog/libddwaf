@@ -560,7 +560,7 @@ sqli_detector::sqli_detector(std::vector<condition_parameter> args)
                 .operator_value = {},
                 .scope = scope};
 
-            return {.outcome = true, .scope = scope};
+            return eval_result::match(scope);
         }
 
         if (std::holds_alternative<internal::sqli_error>(res)) {

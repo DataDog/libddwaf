@@ -83,7 +83,7 @@ search_outcome exists(object_view root, std::span<const std::string> key_path,
             return {.outcome = true, .scope = input.scope};
         }
     }
-    return {.outcome = false, .scope = {}};
+    return eval_result::no_match();
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
@@ -95,7 +95,7 @@ search_outcome exists(object_view root, std::span<const std::string> key_path,
     // unknown, we can't guarantee that the key path isn't actually present in
     // the data set
     if (exists(input.value, input.key_path, objects_excluded) != search_outcome::not_found) {
-        return {.outcome = false, .scope = {}};
+        return eval_result::no_match();
     }
 
     std::vector<std::string> key_path{input.key_path.begin(), input.key_path.end()};

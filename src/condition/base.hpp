@@ -38,10 +38,15 @@ struct condition_match {
 };
 
 struct condition_cache {
+    struct cache_entry {
+        object_cache_key object;
+        evaluation_scope scope;
+    };
+
     // Stores the pointer to the object of the i-th target of the condition,
     // used in the previous evaluation. This ensures that the evaluation of
     // the condition can be skipped for the same object in the future.
-    memory::vector<std::pair<object_view, evaluation_scope>> targets;
+    memory::vector<cache_entry> targets;
     std::optional<condition_match> match;
 };
 

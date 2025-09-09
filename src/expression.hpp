@@ -45,7 +45,8 @@ public:
         for (const auto &cond : conditions_) { cond->get_addresses(addresses); }
     }
 
-    static std::vector<condition_match> get_matches(cache_type &cache, evaluation_scope scope = {})
+    static std::vector<condition_match> get_matches(
+        cache_type &cache, evaluation_scope scope = evaluation_scope::context())
     {
         std::vector<condition_match> matches;
         matches.reserve(cache.conditions.size());

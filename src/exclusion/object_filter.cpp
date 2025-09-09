@@ -22,7 +22,7 @@ namespace ddwaf::exclusion {
 namespace {
 // Add requires
 void iterate_object(const path_trie::traverser &filter, object_view object,
-    std::unordered_set<object_view> &objects_to_exclude)
+    std::unordered_set<object_cache_key> &objects_to_exclude)
 {
     using state = path_trie::traverser::state;
     if (!object.has_value()) {
@@ -109,20 +109,17 @@ object_set object_filter::match(const object_store &store, cache_type &cache,
             continue;
         }
 
-        auto it = cache.find(object);
-        if (it != cache.end()) {
-            if (it->second == object_scope) {
-                continue;
-            }
-            // Erase cached object as it belongs to a different subcontext
-            cache.erase(object);
+        auto &[cached_object, cached_scope] = cache[target];
+        if (cached_object == object && cached_scope == object_scope) {
+            continue;
         }
 
+        cached_object = object;
         if (scope.is_context() && object_scope.is_context()) {
-            cache.emplace(object, evaluation_scope::context());
+            cached_scope = evaluation_scope::context();
             iterate_object(filter.get_traverser(), object, objects_to_exclude.context);
         } else {
-            cache.emplace(object, evaluation_scope::subcontext());
+            cached_scope = scope.is_subcontext() ? scope : object_scope;
             iterate_object(filter.get_traverser(), object, objects_to_exclude.subcontext);
         }
     }

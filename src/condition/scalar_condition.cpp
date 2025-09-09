@@ -132,11 +132,11 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
         const auto &target = targets_[i];
         auto [object, scope] = store.get_target(target.index);
         if (!object.has_value() ||
-            (object == cache.targets[i].first && scope == cache.targets[i].second)) {
+            (object == cache.targets[i].object && scope == cache.targets[i].scope)) {
             continue;
         }
 
-        cache.targets[i] = {object, scope};
+        cache.targets[i] = {.object = object, .scope = scope};
 
         std::optional<condition_match> match;
         // TODO: iterators could be cached to avoid reinitialisation
@@ -150,11 +150,11 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
 
         if (match.has_value()) {
             cache.match = std::move(match);
-            return {.outcome = true, .scope = scope};
+            return eval_result::match(scope);
         }
     }
 
-    return {.outcome = false, .scope = {}};
+    return eval_result::no_match();
 }
 
 } // namespace ddwaf

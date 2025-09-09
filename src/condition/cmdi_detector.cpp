@@ -469,10 +469,10 @@ eval_result cmdi_detector::eval_impl(const unary_argument<object_view> &resource
                     .operator_value = {},
                     .scope = scope};
 
-            return {.outcome = true, .scope = scope};
+            return eval_result::match(scope);
         }
     }
 
-    return {.outcome = false, .scope = {}};
+    return eval_result::no_match();
 }
 } // namespace ddwaf

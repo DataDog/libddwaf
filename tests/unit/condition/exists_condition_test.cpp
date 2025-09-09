@@ -26,7 +26,7 @@ TEST(TestExistsCondition, AddressAvailable)
     auto root = object_builder::map({{"server.request.uri_raw", owned_object{}}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -44,7 +44,7 @@ TEST(TestExistsCondition, KeyPathAvailable)
             object_builder::map({{"to", object_builder::map({{"object", owned_object{}}})}})}})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -59,7 +59,7 @@ TEST(TestExistsCondition, AddressNotAvaialble)
     auto root = object_builder::map({{"server.request.query", owned_object{}}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -76,7 +76,7 @@ TEST(TestExistsCondition, KeyPathNotAvailable)
         object_builder::map({{"path", object_builder::map({{"to", owned_object{}}})}})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -93,9 +93,9 @@ TEST(TestExistsCondition, KeyPathAvailableButExcluded)
         object_builder::map({{"path",
             object_builder::map({{"to", object_builder::map({{"object", owned_object{}}})}})}})}});
 
-    std::unordered_set<object_view> excluded = {root.at(0)};
+    std::unordered_set<object_cache_key> excluded = {root.at(0)};
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -119,7 +119,7 @@ TEST(TestExistsCondition, MultipleAddresses)
         auto root = object_builder::map({{address, owned_object{}}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -151,7 +151,7 @@ TEST(TestExistsCondition, MultipleAddressesAndKeyPaths)
         }
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -181,7 +181,7 @@ TEST(TestNegatedExistsCondition, KeyPathAvailable)
             object_builder::map({{"to", object_builder::map({{"object", owned_object{}}})}})}})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -197,7 +197,7 @@ TEST(TestNegatedExistsCondition, KeyPathNotAvailable)
     auto root = object_builder::map({{"server.request.uri_raw",
         object_builder::map({{"path", object_builder::map({{"to", owned_object{}}})}})}});
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -214,10 +214,10 @@ TEST(TestNegatedExistsCondition, KeyPathAvailableButExcluded)
         object_builder::map({{"path",
             object_builder::map({{"to", object_builder::map({{"object", owned_object{}}})}})}})}});
 
-    std::unordered_set<object_view> excluded = {root.at(0)};
+    std::unordered_set<object_cache_key> excluded = {root.at(0)};
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;

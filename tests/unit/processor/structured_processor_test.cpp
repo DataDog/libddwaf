@@ -51,7 +51,7 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
         {{"unary_address", "unary_string"}, {"optional_address", "optional_string"},
             {"variadic_address_1", 1U}, {"variadic_address_2", 1U}});
     object_store store;
-    store.insert(input_map);
+    store.insert(input_map, evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("unary_address"),
@@ -101,7 +101,7 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
         {"variadic_address_1", 1U}, {"variadic_address_2", 1U}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(input_map, evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("unary_address"),
@@ -149,7 +149,7 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
         {"variadic_address_1", 1U}, {"variadic_address_2", 1U}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(input_map, evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("unary_address"),
@@ -193,7 +193,7 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
     });
 
     object_store store;
-    store.insert(input_map);
+    store.insert(input_map, evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("unary_address"),

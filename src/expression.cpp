@@ -22,7 +22,7 @@ eval_result expression::eval(cache_type &cache, const object_store &store,
 {
     if (conditions_.empty()) {
         // Since there's no conditions, we use the default (context) scope
-        return {.outcome = true, .scope = {}};
+        return {.outcome = true, .scope = evaluation_scope::context()};
     }
 
     if (expression::get_result(cache, scope)) {
@@ -46,7 +46,7 @@ eval_result expression::eval(cache_type &cache, const object_store &store,
         auto [res, cond_eval_scope] =
             cond->eval(cond_cache, store, objects_excluded, dynamic_matchers, deadline);
         if (!res) {
-            return {.outcome = false, .scope = {}};
+            return {.outcome = false, .scope = evaluation_scope::context()};
         }
 
         if (cond_eval_scope.is_subcontext()) {

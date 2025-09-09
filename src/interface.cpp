@@ -286,16 +286,14 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
     }
 
     try {
-        if (data != nullptr) {
-            if (free_objects) {
-                if (!context->insert(owned_object{to_ref(data)})) {
-                    return DDWAF_ERR_INVALID_OBJECT;
-                }
-            } else {
-                const object_view input{to_ref(data)};
-                if (!input.is_map() || !context->insert(input.as<map_view>())) {
-                    return DDWAF_ERR_INVALID_OBJECT;
-                }
+        if (free_objects) {
+            if (!context->insert(owned_object{to_ref(data)})) {
+                return DDWAF_ERR_INVALID_OBJECT;
+            }
+        } else {
+            const object_view input{to_ref(data)};
+            if (!input.is_map() || !context->insert(input.as<map_view>())) {
+                return DDWAF_ERR_INVALID_OBJECT;
             }
         }
 
@@ -360,16 +358,14 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *
     }
 
     try {
-        if (data != nullptr) {
-            if (free_objects) {
-                if (!subcontext->insert(owned_object{to_ref(data)})) {
-                    return DDWAF_ERR_INVALID_OBJECT;
-                }
-            } else {
-                const object_view input{to_ref(data)};
-                if (!input.is_map() || !subcontext->insert(input.as<map_view>())) {
-                    return DDWAF_ERR_INVALID_OBJECT;
-                }
+        if (free_objects) {
+            if (!subcontext->insert(owned_object{to_ref(data)})) {
+                return DDWAF_ERR_INVALID_OBJECT;
+            }
+        } else {
+            const object_view input{to_ref(data)};
+            if (!input.is_map() || !subcontext->insert(input.as<map_view>())) {
+                return DDWAF_ERR_INVALID_OBJECT;
             }
         }
 

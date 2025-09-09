@@ -41,7 +41,7 @@ TEST(TestCmdiDetector, InvalidType)
         {{"server.sys.exec.cmd", object_builder::map()}, {"server.request.query", "whatever"}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -57,7 +57,7 @@ TEST(TestCmdiDetector, EmptyResource)
         {{"server.sys.exec.cmd", object_builder::array()}, {"server.request.query", "whatever"}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -106,7 +106,7 @@ TEST(TestCmdiDetector, NoInjection)
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -146,7 +146,7 @@ TEST(TestCmdiDetector, NoExecutableInjection)
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -203,7 +203,7 @@ TEST(TestCmdiDetector, NoShellInjection)
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -239,7 +239,7 @@ TEST(TestCmdiDetector, ExecutableInjectionLinux)
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -289,7 +289,7 @@ TEST(TestCmdiDetector, ExecutableInjectionWindows)
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -334,7 +334,7 @@ TEST(TestCmdiDetector, ExecutableWithSpacesInjection)
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -562,7 +562,7 @@ TEST(TestCmdiDetector, LinuxShellInjection)
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -651,7 +651,7 @@ TEST(TestCmdiDetector, WindowsShellInjection)
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -690,7 +690,7 @@ TEST(TestCmdiDetector, ExecutableInjectionMultipleArguments)
     for (const auto &[key, value] : params) { map.emplace(key, value); }
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -729,7 +729,7 @@ TEST(TestCmdiDetector, EmptyExecutable)
     for (const auto &[key, value] : params) { map.emplace(key, value); }
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -757,7 +757,7 @@ TEST(TestCmdiDetector, ShellInjectionMultipleArguments)
     for (const auto &[key, value] : params) { map.emplace(key, value); }
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;

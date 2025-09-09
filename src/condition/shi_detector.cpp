@@ -63,7 +63,7 @@ eval_result shi_detector::eval_string(const unary_argument<object_view> &resourc
                 .operator_value = {},
                 .scope = scope};
 
-            return {.outcome = true, .scope = scope};
+            return eval_result::match(scope);
         }
     }
 
@@ -106,7 +106,7 @@ eval_result shi_detector::eval_array(const unary_argument<object_view> &resource
                 .operator_value = {},
                 .scope = scope};
 
-            return {.outcome = true, .scope = scope};
+            return eval_result::match(scope);
         }
     }
 

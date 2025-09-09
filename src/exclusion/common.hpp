@@ -20,8 +20,8 @@ namespace exclusion {
 enum class filter_mode : uint8_t { none = 0, custom = 1, monitor = 2, bypass = 3 };
 
 struct object_set {
-    std::unordered_set<object_view> context;
-    std::unordered_set<object_view> subcontext;
+    std::unordered_set<object_cache_key> context;
+    std::unordered_set<object_cache_key> subcontext;
     bool empty() const { return context.empty() && subcontext.empty(); }
     [[nodiscard]] std::size_t size() const { return context.size() + subcontext.size(); }
 
@@ -34,12 +34,12 @@ struct object_set {
 struct rule_policy {
     filter_mode mode{filter_mode::none};
     std::string_view action_override;
-    std::unordered_set<object_view> objects;
+    std::unordered_set<object_cache_key> objects;
 };
 
 struct object_set_ref {
-    optional_ref<const std::unordered_set<object_view>> context{std::nullopt};
-    optional_ref<const std::unordered_set<object_view>> subcontext{std::nullopt};
+    optional_ref<const std::unordered_set<object_cache_key>> context{std::nullopt};
+    optional_ref<const std::unordered_set<object_cache_key>> subcontext{std::nullopt};
 
     [[nodiscard]] bool empty() const
     {

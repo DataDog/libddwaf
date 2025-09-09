@@ -52,7 +52,7 @@ void match_path_and_input(const std::vector<std::pair<std::string, ssrf_sample>>
             {"server.request.query", yaml_to_object<owned_object>(sample.yaml)}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;

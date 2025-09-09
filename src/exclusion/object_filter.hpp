@@ -237,7 +237,14 @@ inline std::ostream &operator<<(std::ostream &os, const path_trie::traverser::st
 
 class object_filter {
 public:
-    using cache_type = memory::unordered_map<object_view, evaluation_scope>;
+    struct cache_entry {
+        object_cache_key object;
+        evaluation_scope scope;
+    };
+
+    // cache_type will always be limited by target_paths_.size(), so it can use
+    // the context allocator
+    using cache_type = memory::unordered_map<target_index, cache_entry>;
 
     object_filter() = default;
 

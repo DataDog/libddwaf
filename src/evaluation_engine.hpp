@@ -71,6 +71,8 @@ public:
         current_scope_ = evaluation_scope::context();
     }
 
+    bool in_subcontext() { return current_scope_.is_subcontext(); }
+
     bool insert(owned_object data) noexcept
     {
         if (!store_.insert(std::move(data), current_scope_)) {

@@ -38,7 +38,7 @@ TEST(TestLFIDetector, MatchBasicUnix)
             object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -102,7 +102,7 @@ TEST(TestLFIDetector, MatchBasicWindows)
             object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -132,7 +132,7 @@ TEST(TestLFIDetector, MatchWithKeyPath)
         server.request.query: {array: [ {map: ../etc/passwd}]}})");
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -161,7 +161,7 @@ TEST(TestLFIDetector, PartiallySubcontextMatch)
     {
         auto root =
             object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"}});
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
     }
 
     {
@@ -235,7 +235,7 @@ TEST(TestLFIDetector, NoMatchUnix)
             object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -274,7 +274,7 @@ TEST(TestLFIDetector, NoMatchWindows)
             object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -295,11 +295,11 @@ TEST(TestLFIDetector, NoMatchExcludedPath)
     auto params_map = root.emplace(
         "server.request.query", object_builder::map({{"endpoint", "../../../etc/passwd"}}));
 
-    std::unordered_set<object_view> context{params_map.at(0)};
+    std::unordered_set<object_cache_key> context{params_map.at(0)};
     exclusion::object_set_ref exclusion{.context = context, .subcontext = {}};
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -316,11 +316,11 @@ TEST(TestLFIDetector, NoMatchExcludedAddress)
     auto root = object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
         {"server.request.query", object_builder::map({{"endpoint", "../../../etc/passwd"}})}});
 
-    std::unordered_set<object_view> context{root.at(1)};
+    std::unordered_set<object_cache_key> context{root.at(1)};
     exclusion::object_set_ref exclusion{.context = context, .subcontext = {}};
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -337,11 +337,11 @@ TEST(TestLFIDetector, Timeout)
     auto root = object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
         {"server.request.query", object_builder::map({{"endpoint", "../../../etc/passwd"}})}});
 
-    std::unordered_set<object_view> context{root.at(1)};
+    std::unordered_set<object_cache_key> context{root.at(1)};
     exclusion::object_set_ref exclusion{.context = context, .subcontext = {}};
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
@@ -362,7 +362,7 @@ TEST(TestLFIDetector, NoParams)
     exclusion::object_set_ref exclusion{.context = {}, .subcontext = {}};
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{0s};
     condition_cache cache;

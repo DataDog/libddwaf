@@ -344,7 +344,7 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
                 .operator_value = {},
                 .scope = scope};
 
-            return {.outcome = true, .scope = scope};
+            return eval_result::match(scope);
         }
     }
 

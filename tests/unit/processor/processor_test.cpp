@@ -48,7 +48,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
 
     auto input_map = object_builder::map({{"input_address", "input_string"}});
     object_store store;
-    store.insert(input_map);
+    store.insert(input_map, evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -90,7 +90,7 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
         {"input_address.second", "second_input_string"}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(input_map, evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address.first"),
@@ -145,7 +145,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
     auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", true}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(input_map, evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -190,7 +190,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     auto input_map = object_builder::map({{"enabled?", true}});
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -226,7 +226,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
         {"input_address", "input_string"},
     });
 
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     proc.eval(store, collector, cache, alloc, {}, deadline);
     attributes = collector.get_available_attributes_and_reset();
@@ -246,7 +246,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
     auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", false}});
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -286,7 +286,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
     });
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -332,7 +332,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
     auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", true}});
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -381,7 +381,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
     auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", false}});
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -423,7 +423,7 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
         {"input_address.second", "second_input_string"}});
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address.first"),
@@ -482,7 +482,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     });
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -533,7 +533,7 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
         {{"input_address", "input_string"}, {"output_address", owned_object::make_null()}});
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -564,7 +564,7 @@ TEST(TestProcessor, OutputAlreadyGenerated)
     });
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -595,7 +595,7 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
         {{"input_address", "input_string"}, {"output_address", owned_object::make_null()}});
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -629,7 +629,7 @@ TEST(TestProcessor, OutputEvalWithoutattributesMap)
     });
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),

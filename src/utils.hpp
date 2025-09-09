@@ -105,6 +105,13 @@ inline std::ostream &operator<<(std::ostream &os, evaluation_scope scope)
 struct eval_result {
     bool outcome{false};
     evaluation_scope scope;
+
+    static eval_result match(evaluation_scope scope) { return {.outcome = true, .scope = scope}; }
+
+    static eval_result no_match()
+    {
+        return {.outcome = false, .scope = evaluation_scope::context()};
+    }
 };
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)

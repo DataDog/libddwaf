@@ -150,7 +150,7 @@ eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path
                 .operator_value = {},
                 .scope = scope};
 
-            return {.outcome = true, .scope = scope};
+            return eval_result::match(scope);
         }
     }
 
