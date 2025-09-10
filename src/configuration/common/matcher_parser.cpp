@@ -22,6 +22,7 @@
 #include "configuration/common/raw_configuration.hpp"
 #include "ddwaf.h"
 #include "matcher/base.hpp"
+#include "matcher/checksum.hpp"
 #include "matcher/equals.hpp"
 #include "matcher/exact_match.hpp"
 #include "matcher/greater_than.hpp"
@@ -73,14 +74,15 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::re
     auto regex = at<std::string>(params, "regex");
     options = at<raw_configuration::map>(params, "options", options);
 
-    auto case_sensitive = at<bool>(options, "case_sensitive", false);
     auto min_length = at<int64_t>(options, "min_length", 0);
     if (min_length < 0) {
         throw ddwaf::parsing_error("min_length is a negative number");
     }
 
-    return {
-        std::string{}, std::make_unique<matcher::regex_match>(regex, min_length, case_sensitive)};
+    return {std::string{},
+        std::make_unique<matcher::regex_match>(regex, min_length,
+            at<bool>(options, "case_sensitive", false),
+            checksum_algorithm_from_string(at<std::string_view>(options, "checksum", "none")))};
 }
 
 template <>

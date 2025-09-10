@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <array>
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -13,13 +12,15 @@
 
 #include "configuration/common/parser_exception.hpp"
 #include "dynamic_string.hpp"
+#include "matcher/checksum.hpp"
 #include "matcher/regex_match.hpp"
 #include "re2.h"
 
 namespace ddwaf::matcher {
 
-regex_match::regex_match(const std::string &regex_str, std::size_t minLength, bool case_sensitive)
-    : min_length(minLength)
+regex_match::regex_match(const std::string &regex_str, std::size_t minLength, bool case_sensitive,
+    checksum_algorithm algo)
+    : min_length(minLength), algo_(algo)
 {
     constexpr unsigned regex_max_mem = 512 * 1024;
 
@@ -41,15 +42,14 @@ std::pair<bool, dynamic_string> regex_match::match_impl(std::string_view pattern
         return {false, {}};
     }
 
-    const std::string_view ref(pattern.data(), pattern.size());
-    std::array<std::string_view, max_match_count> match;
-    const bool res = regex->Match(ref, 0, pattern.size(), re2::RE2::UNANCHORED, match.data(), 1);
+    std::string_view match;
+    const bool res = regex->Match(pattern, 0, pattern.size(), re2::RE2::UNANCHORED, &match, 1);
 
-    if (!res) {
+    if (!res || !checksum_eval(algo_, match)) {
         return {false, {}};
     }
 
-    return {true, {match[0].data(), match[0].size()}};
+    return {true, match};
 }
 
 } // namespace ddwaf::matcher

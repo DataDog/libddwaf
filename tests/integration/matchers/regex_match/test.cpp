@@ -214,4 +214,71 @@ TEST(TestRegexMatchIntegration, MinLength)
     }
     ddwaf_destroy(handle);
 }
+
+TEST(TestRegexMatchIntegration, LuhnChecksumMatch)
+{
+    // Initialize a WAF rule
+    auto rule = yaml_to_object(
+        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: '\b4\d{3}(?:(?:,\d{4}){3}|(?:\s\d{4}){3}|(?:\.\d{4}){3}|(?:-\d{4}){3})\b', options: {checksum: luhn}}}]}]})");
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object param;
+        ddwaf_object tmp;
+        ddwaf_object_map(&param);
+        ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "4000-0000-0000-1000"));
+
+        ddwaf_object ret;
+
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_MATCH);
+        const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
+        EXPECT_EVENTS(ret,
+            {.id = "1",
+                .name = "rule1",
+                .tags = {{"type", "flow1"}, {"category", "category1"}},
+                .matches = {{.op = "match_regex",
+                    .op_value =
+                        R"(\b4\d{3}(?:(?:,\d{4}){3}|(?:\s\d{4}){3}|(?:\.\d{4}){3}|(?:-\d{4}){3})\b)",
+                    .highlight = "4000-0000-0000-1000"sv,
+                    .args = {{
+                        .value = "4000-0000-0000-1000"sv,
+                        .address = "arg1",
+                    }}}}});
+        ddwaf_object_free(&ret);
+
+        ddwaf_context_destroy(context);
+    }
+
+    {
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object param;
+        ddwaf_object tmp;
+        ddwaf_object_map(&param);
+        ddwaf_object_map_add(
+            &param, "arg1", ddwaf_object_string(&tmp, "<script>AlErT(1);</script>"));
+
+        ddwaf_object ret;
+
+        auto code = ddwaf_run(context, &param, nullptr, &ret, LONG_TIME);
+        EXPECT_EQ(code, DDWAF_OK);
+        const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
+        EXPECT_FALSE(ddwaf_object_get_bool(timeout));
+        ddwaf_object_free(&ret);
+
+        ddwaf_context_destroy(context);
+    }
+    ddwaf_destroy(handle);
+}
+
 } // namespace
