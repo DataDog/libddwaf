@@ -12,7 +12,6 @@
 #include "json_utils.hpp"
 #include "memory_resource.hpp"
 #include "object.hpp"
-#include "object_store.hpp"
 #include "pointer.hpp"
 #include "processor/base.hpp"
 #include "transformer/base64_decode.hpp"
@@ -104,13 +103,10 @@ std::string_view find_token(object_view root, std::span<const std::string> key_p
 } // namespace
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-std::pair<owned_object, object_store::attribute> jwt_decode::eval_impl(
+std::pair<owned_object, evaluation_scope> jwt_decode::eval_impl(
     const unary_argument<object_view> &input, processor_cache & /*cache*/,
     nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer & /*deadline*/) const
 {
-    const object_store::attribute attr =
-        input.ephemeral ? object_store::attribute::ephemeral : object_store::attribute::none;
-
     std::string_view token = find_token(input.value, input.key_path);
     if (token.empty()) {
         return {};
@@ -142,7 +138,7 @@ std::pair<owned_object, object_store::attribute> jwt_decode::eval_impl(
         {"payload", decode_and_parse(jwt.payload, alloc)},
         {"signature", object_builder::map({{"available", !jwt.signature.empty()}}, alloc)}});
 
-    return {std::move(output), attr};
+    return {std::move(output), input.scope};
 }
 
 } // namespace ddwaf

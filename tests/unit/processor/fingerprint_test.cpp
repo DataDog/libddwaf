@@ -30,17 +30,13 @@ TEST(TestHttpEndpointFingerprint, Basic)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = "GET"},
-            {.address = {},
-                .key_path = {},
-                .ephemeral = false,
-                .value = "/path/to/whatever?param=hello"},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = {query}}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = {body}}}, cache, alloc,
-            deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
+        {.address = {}, .key_path = {}, .scope = {}, .value = "/path/to/whatever?param=hello"},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {query}}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {body}}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
@@ -63,17 +59,13 @@ TEST(TestHttpEndpointFingerprint, EmptyQuery)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = "GET"},
-            {.address = {},
-                .key_path = {},
-                .ephemeral = false,
-                .value = "/path/to/whatever?param=hello"},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = {query}}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = {body}}}, cache, alloc,
-            deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
+        {.address = {}, .key_path = {}, .scope = {}, .value = "/path/to/whatever?param=hello"},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {query}}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {body}}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "http-get-0ede9e60--9798c0e4");
@@ -94,17 +86,13 @@ TEST(TestHttpEndpointFingerprint, EmptyBody)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = "GET"},
-            {.address = {},
-                .key_path = {},
-                .ephemeral = false,
-                .value = "/path/to/whatever?param=hello"},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = {query}}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = {body}}}, cache, alloc,
-            deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
+        {.address = {}, .key_path = {}, .scope = {}, .value = "/path/to/whatever?param=hello"},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {query}}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {body}}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-");
@@ -120,14 +108,12 @@ TEST(TestHttpEndpointFingerprint, EmptyEverything)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = ""},
-            {.address = {}, .key_path = {}, .ephemeral = false, .value = ""},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = {query}}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = {body}}}, cache, alloc,
-            deadline);
+    auto [output, attr] = gen.eval_impl({.address = {}, .key_path = {}, .scope = {}, .value = ""},
+        {.address = {}, .key_path = {}, .scope = {}, .value = ""},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {query}}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {body}}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "http----");
@@ -154,17 +140,13 @@ TEST(TestHttpEndpointFingerprint, KeyConsistency)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = "GET"},
-            {.address = {},
-                .key_path = {},
-                .ephemeral = false,
-                .value = "/path/to/whatever?param=hello"},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = {query}}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = {body}}}, cache, alloc,
-            deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
+        {.address = {}, .key_path = {}, .scope = {}, .value = "/path/to/whatever?param=hello"},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {query}}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {body}}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "http-get-0ede9e60-ced401fa-ff07216e");
@@ -191,17 +173,14 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
     {
         ddwaf::timer deadline{2s};
         processor_cache cache;
-        auto [output, attr] =
-            gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = "GET"},
-                {.address = {},
-                    .key_path = {},
-                    .ephemeral = false,
-                    .value = "/path/to/whatever?param=hello"},
-                {{.address = {}, .key_path = {}, .ephemeral = false, .value = {query}}},
-                {{.address = {}, .key_path = {}, .ephemeral = false, .value = {body}}}, cache,
-                alloc, deadline);
+        auto [output, attr] = gen.eval_impl(
+            {.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
+            {.address = {}, .key_path = {}, .scope = {}, .value = "/path/to/whatever?param=hello"},
+            {{.address = {}, .key_path = {}, .scope = {}, .value = {query}}},
+            {{.address = {}, .key_path = {}, .scope = {}, .value = {body}}}, cache, alloc,
+            deadline);
         EXPECT_TRUE(output.is_string());
-        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_TRUE(attr.is_context());
 
         auto output_sv = output.as<std::string_view>();
         EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
@@ -211,16 +190,13 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
         ddwaf::timer deadline{2s};
         processor_cache cache;
         auto [output, attr] =
-            gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = "GET"},
-                {.address = {},
-                    .key_path = {},
-                    .ephemeral = false,
-                    .value = "/path/to/whatever#fragment"},
-                {{.address = {}, .key_path = {}, .ephemeral = false, .value = {query}}},
-                {{.address = {}, .key_path = {}, .ephemeral = false, .value = {body}}}, cache,
-                alloc, deadline);
+            gen.eval_impl({.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
+                {.address = {}, .key_path = {}, .scope = {}, .value = "/path/to/whatever#fragment"},
+                {{.address = {}, .key_path = {}, .scope = {}, .value = {query}}},
+                {{.address = {}, .key_path = {}, .scope = {}, .value = {body}}}, cache, alloc,
+                deadline);
         EXPECT_TRUE(output.is_string());
-        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_TRUE(attr.is_context());
 
         auto output_sv = output.as<std::string_view>();
         EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
@@ -230,16 +206,16 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
         ddwaf::timer deadline{2s};
         processor_cache cache;
         auto [output, attr] =
-            gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = "GET"},
+            gen.eval_impl({.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
                 {.address = {},
                     .key_path = {},
-                    .ephemeral = false,
+                    .scope = {},
                     .value = "/path/to/whatever?param=hello#fragment"},
-                {{.address = {}, .key_path = {}, .ephemeral = false, .value = {query}}},
-                {{.address = {}, .key_path = {}, .ephemeral = false, .value = {body}}}, cache,
-                alloc, deadline);
+                {{.address = {}, .key_path = {}, .scope = {}, .value = {query}}},
+                {{.address = {}, .key_path = {}, .scope = {}, .value = {body}}}, cache, alloc,
+                deadline);
         EXPECT_TRUE(output.is_string());
-        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_TRUE(attr.is_context());
 
         auto output_sv = output.as<std::string_view>();
         EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
@@ -249,13 +225,13 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
         ddwaf::timer deadline{2s};
         processor_cache cache;
         auto [output, attr] =
-            gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = "GET"},
-                {.address = {}, .key_path = {}, .ephemeral = false, .value = "/path/to/whatever"},
-                {{.address = {}, .key_path = {}, .ephemeral = false, .value = {query}}},
-                {{.address = {}, .key_path = {}, .ephemeral = false, .value = {body}}}, cache,
-                alloc, deadline);
+            gen.eval_impl({.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
+                {.address = {}, .key_path = {}, .scope = {}, .value = "/path/to/whatever"},
+                {{.address = {}, .key_path = {}, .scope = {}, .value = {query}}},
+                {{.address = {}, .key_path = {}, .scope = {}, .value = {body}}}, cache, alloc,
+                deadline);
         EXPECT_TRUE(output.is_string());
-        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_TRUE(attr.is_context());
 
         auto output_sv = output.as<std::string_view>();
         EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
@@ -265,13 +241,13 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
         ddwaf::timer deadline{2s};
         processor_cache cache;
         auto [output, attr] =
-            gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = "GET"},
-                {.address = {}, .key_path = {}, .ephemeral = false, .value = "/PaTh/To/WhAtEVER"},
-                {{.address = {}, .key_path = {}, .ephemeral = false, .value = {query}}},
-                {{.address = {}, .key_path = {}, .ephemeral = false, .value = {body}}}, cache,
-                alloc, deadline);
+            gen.eval_impl({.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
+                {.address = {}, .key_path = {}, .scope = {}, .value = "/PaTh/To/WhAtEVER"},
+                {{.address = {}, .key_path = {}, .scope = {}, .value = {query}}},
+                {{.address = {}, .key_path = {}, .scope = {}, .value = {body}}}, cache, alloc,
+                deadline);
         EXPECT_TRUE(output.is_string());
-        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_TRUE(attr.is_context());
 
         auto output_sv = output.as<std::string_view>();
         EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
@@ -293,16 +269,13 @@ TEST(TestHttpEndpointFingerprint, Regeneration)
 
     {
         ddwaf::timer deadline{2s};
-        auto [output, attr] =
-            gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = "GET"},
-                {.address = {},
-                    .key_path = {},
-                    .ephemeral = false,
-                    .value = "/path/to/whatever?param=hello"},
-                {{.address = {}, .key_path = {}, .ephemeral = false, .value = {query}}},
-                std::nullopt, cache, alloc, deadline);
+        auto [output, attr] = gen.eval_impl(
+            {.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
+            {.address = {}, .key_path = {}, .scope = {}, .value = "/path/to/whatever?param=hello"},
+            {{.address = {}, .key_path = {}, .scope = {}, .value = {query}}}, std::nullopt, cache,
+            alloc, deadline);
         EXPECT_TRUE(output.is_string());
-        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_TRUE(attr.is_context());
 
         auto output_sv = output.as<std::string_view>();
         EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-");
@@ -317,17 +290,14 @@ TEST(TestHttpEndpointFingerprint, Regeneration)
         });
 
         ddwaf::timer deadline{2s};
-        auto [output, attr] =
-            gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = "GET"},
-                {.address = {},
-                    .key_path = {},
-                    .ephemeral = false,
-                    .value = "/path/to/whatever?param=hello"},
-                {{.address = {}, .key_path = {}, .ephemeral = false, .value = {query}}},
-                {{.address = {}, .key_path = {}, .ephemeral = false, .value = {body}}}, cache,
-                alloc, deadline);
+        auto [output, attr] = gen.eval_impl(
+            {.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
+            {.address = {}, .key_path = {}, .scope = {}, .value = "/path/to/whatever?param=hello"},
+            {{.address = {}, .key_path = {}, .scope = {}, .value = {query}}},
+            {{.address = {}, .key_path = {}, .scope = {}, .value = {body}}}, cache, alloc,
+            deadline);
         EXPECT_TRUE(output.is_string());
-        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_TRUE(attr.is_context());
 
         auto output_sv = output.as<std::string_view>();
         EXPECT_STRV(output_sv, "http-get-0ede9e60-0ac3796a-9798c0e4");
@@ -355,11 +325,10 @@ TEST(TestHttpHeaderFingerprint, AllKnownHeaders)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = {headers}},
-            cache, alloc, deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-1111111111--0-");
@@ -374,11 +343,10 @@ TEST(TestHttpHeaderFingerprint, NoHeaders)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = {headers}},
-            cache, alloc, deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-0000000000--0-");
@@ -401,11 +369,10 @@ TEST(TestHttpHeaderFingerprint, SomeKnownHeaders)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = {headers}},
-            cache, alloc, deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-1010101011--0-");
@@ -433,11 +400,10 @@ TEST(TestHttpHeaderFingerprint, UserAgent)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = {headers}},
-            cache, alloc, deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-1111111111-a441b15f-0-");
@@ -465,11 +431,10 @@ TEST(TestHttpHeaderFingerprint, UserAgentAsArray)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = {headers}},
-            cache, alloc, deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-1111111111-a441b15f-0-");
@@ -496,11 +461,10 @@ TEST(TestHttpHeaderFingerprint, UserAgentAsArrayInvalidType)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = {headers}},
-            cache, alloc, deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-1111111111--0-");
@@ -527,11 +491,10 @@ TEST(TestHttpHeaderFingerprint, MultipleUserAgents)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = {headers}},
-            cache, alloc, deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-1111111111--0-");
@@ -572,11 +535,10 @@ TEST(TestHttpHeaderFingerprint, ExcludedUnknownHeaders)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = {headers}},
-            cache, alloc, deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-1111111111-a441b15f-0-");
@@ -621,11 +583,10 @@ TEST(TestHttpHeaderFingerprint, UnknownHeaders)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = {headers}},
-            cache, alloc, deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "hdr-1111111111-a441b15f-4-47280082");
@@ -652,11 +613,10 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeaders)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = {headers}},
-            cache, alloc, deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "net-1-1111111111");
@@ -670,11 +630,10 @@ TEST(TestHttpNetworkFingerprint, NoHeaders)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = {headers}},
-            cache, alloc, deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "net-0-0000000000");
@@ -701,11 +660,10 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPs)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = {headers}},
-            cache, alloc, deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "net-3-1111111111");
@@ -731,11 +689,10 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPsAsArray)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = {headers}},
-            cache, alloc, deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "net-3-1111111111");
@@ -762,11 +719,10 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPsAsArrayInvalidTyp
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = {headers}},
-            cache, alloc, deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "net-0-1111111111");
@@ -793,11 +749,10 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPsDuplicateXFF)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = {headers}},
-            cache, alloc, deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "net-0-1111111111");
@@ -824,11 +779,10 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersRandomChosenHeader)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = {headers}},
-            cache, alloc, deadline);
+    auto [output, attr] = gen.eval_impl(
+        {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "net-3-1111111111");
@@ -861,10 +815,10 @@ TEST(TestHttpNetworkFingerprint, HeaderPrecedence)
         ddwaf::timer deadline{2s};
         processor_cache cache;
         auto [output, attr] =
-            gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = {headers}},
-                cache, alloc, deadline);
+            gen.eval_impl({.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache,
+                alloc, deadline);
         EXPECT_TRUE(output.is_string());
-        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_TRUE(attr.is_context());
 
         auto output_sv = output.as<std::string_view>();
         EXPECT_STRV(output_sv, expected);
@@ -891,14 +845,13 @@ TEST(TestSessionFingerprint, UserOnly)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({{.address = {}, .key_path = {}, .ephemeral = false, .value = {cookies}}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = {}}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "admin"}}, cache, alloc,
-            deadline);
+    auto [output, attr] = gen.eval_impl(
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {}}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = "admin"}}, cache, alloc, deadline);
 
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5---");
@@ -913,13 +866,13 @@ TEST(TestSessionFingerprint, SessionOnly)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl(
-        {{.address = {}, .key_path = {}, .ephemeral = false, .value = {cookies}}},
-        {{.address = {}, .key_path = {}, .ephemeral = false, .value = "ansd0182u2n"}},
-        {{.address = {}, .key_path = {}, .ephemeral = false, .value = {}}}, cache, alloc, deadline);
+    auto [output, attr] =
+        gen.eval_impl({{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
+            {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}},
+            {{.address = {}, .key_path = {}, .scope = {}, .value = {}}}, cache, alloc, deadline);
 
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn----269500d3");
@@ -943,13 +896,13 @@ TEST(TestSessionFingerprint, CookiesOnly)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl(
-        {{.address = {}, .key_path = {}, .ephemeral = false, .value = {cookies}}},
-        {{.address = {}, .key_path = {}, .ephemeral = false, .value = {}}},
-        {{.address = {}, .key_path = {}, .ephemeral = false, .value = {}}}, cache, alloc, deadline);
+    auto [output, attr] =
+        gen.eval_impl({{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
+            {{.address = {}, .key_path = {}, .scope = {}, .value = {}}},
+            {{.address = {}, .key_path = {}, .scope = {}, .value = {}}}, cache, alloc, deadline);
 
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn--df6143bc-60ba1602-");
@@ -973,14 +926,13 @@ TEST(TestSessionFingerprint, UserCookieAndSession)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({{.address = {}, .key_path = {}, .ephemeral = false, .value = {cookies}}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "ansd0182u2n"}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "admin"}}, cache, alloc,
-            deadline);
+    auto [output, attr] = gen.eval_impl(
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = "admin"}}, cache, alloc, deadline);
 
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-df6143bc-60ba1602-269500d3");
@@ -1004,14 +956,13 @@ TEST(TestSessionFingerprint, CookieKeysNormalization)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({{.address = {}, .key_path = {}, .ephemeral = false, .value = {cookies}}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "ansd0182u2n"}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "admin"}}, cache, alloc,
-            deadline);
+    auto [output, attr] = gen.eval_impl(
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = "admin"}}, cache, alloc, deadline);
 
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-424e7e09-60ba1602-269500d3");
@@ -1035,14 +986,13 @@ TEST(TestSessionFingerprint, CookieValuesNormalization)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({{.address = {}, .key_path = {}, .ephemeral = false, .value = {cookies}}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "ansd0182u2n"}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "admin"}}, cache, alloc,
-            deadline);
+    auto [output, attr] = gen.eval_impl(
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = "admin"}}, cache, alloc, deadline);
 
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-df6143bc-64f82cf7-269500d3");
@@ -1066,14 +1016,13 @@ TEST(TestSessionFingerprint, CookieValuesAsArray)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({{.address = {}, .key_path = {}, .ephemeral = false, .value = {cookies}}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "ansd0182u2n"}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "admin"}}, cache, alloc,
-            deadline);
+    auto [output, attr] = gen.eval_impl(
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = "admin"}}, cache, alloc, deadline);
 
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-df6143bc-64f82cf7-269500d3");
@@ -1097,14 +1046,13 @@ TEST(TestSessionFingerprint, CookieValuesAsArrayInvalidType)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({{.address = {}, .key_path = {}, .ephemeral = false, .value = {cookies}}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "ansd0182u2n"}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "admin"}}, cache, alloc,
-            deadline);
+    auto [output, attr] = gen.eval_impl(
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = "admin"}}, cache, alloc, deadline);
 
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-df6143bc-d3648ef2-269500d3");
@@ -1128,14 +1076,13 @@ TEST(TestSessionFingerprint, CookieValuesArrayMultiples)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({{.address = {}, .key_path = {}, .ephemeral = false, .value = {cookies}}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "ansd0182u2n"}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "admin"}}, cache, alloc,
-            deadline);
+    auto [output, attr] = gen.eval_impl(
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = "admin"}}, cache, alloc, deadline);
 
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-df6143bc-d3648ef2-269500d3");
@@ -1159,14 +1106,13 @@ TEST(TestSessionFingerprint, CookieEmptyValues)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({{.address = {}, .key_path = {}, .ephemeral = false, .value = {cookies}}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "ansd0182u2n"}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "admin"}}, cache, alloc,
-            deadline);
+    auto [output, attr] = gen.eval_impl(
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = "admin"}}, cache, alloc, deadline);
 
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-df6143bc-d3648ef2-269500d3");
@@ -1190,14 +1136,13 @@ TEST(TestSessionFingerprint, CookieEmptyKeys)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] =
-        gen.eval_impl({{.address = {}, .key_path = {}, .ephemeral = false, .value = {cookies}}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "ansd0182u2n"}},
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "admin"}}, cache, alloc,
-            deadline);
+    auto [output, attr] = gen.eval_impl(
+        {{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}},
+        {{.address = {}, .key_path = {}, .scope = {}, .value = "admin"}}, cache, alloc, deadline);
 
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn-8c6976e5-d3648ef2-f32e5c3e-269500d3");
@@ -1212,13 +1157,13 @@ TEST(TestSessionFingerprint, EmptyEverything)
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
-    auto [output, attr] = gen.eval_impl(
-        {{.address = {}, .key_path = {}, .ephemeral = false, .value = {cookies}}},
-        {{.address = {}, .key_path = {}, .ephemeral = false, .value = {}}},
-        {{.address = {}, .key_path = {}, .ephemeral = false, .value = {}}}, cache, alloc, deadline);
+    auto [output, attr] =
+        gen.eval_impl({{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
+            {{.address = {}, .key_path = {}, .scope = {}, .value = {}}},
+            {{.address = {}, .key_path = {}, .scope = {}, .value = {}}}, cache, alloc, deadline);
 
     EXPECT_TRUE(output.is_string());
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     auto output_sv = output.as<std::string_view>();
     EXPECT_STRV(output_sv, "ssn----");
@@ -1236,7 +1181,7 @@ TEST(TestSessionFingerprint, Regeneration)
         auto [output, attr] =
             gen.eval_impl(std::nullopt, std::nullopt, std::nullopt, cache, alloc, deadline);
         EXPECT_TRUE(output.is_string());
-        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_TRUE(attr.is_context());
 
         auto output_sv = output.as<std::string_view>();
         EXPECT_STRV(output_sv, "ssn----");
@@ -1256,10 +1201,10 @@ TEST(TestSessionFingerprint, Regeneration)
         ddwaf::timer deadline{2s};
 
         auto [output, attr] =
-            gen.eval_impl({{.address = {}, .key_path = {}, .ephemeral = false, .value = {cookies}}},
+            gen.eval_impl({{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
                 std::nullopt, std::nullopt, cache, alloc, deadline);
         EXPECT_TRUE(output.is_string());
-        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_TRUE(attr.is_context());
 
         auto output_sv = output.as<std::string_view>();
         EXPECT_STRV(output_sv, "ssn--df6143bc-64f82cf7-");
@@ -1269,10 +1214,10 @@ TEST(TestSessionFingerprint, Regeneration)
         ddwaf::timer deadline{2s};
 
         auto [output, attr] = gen.eval_impl(std::nullopt,
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "ansd0182u2n"}},
-            std::nullopt, cache, alloc, deadline);
+            {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}}, std::nullopt,
+            cache, alloc, deadline);
         EXPECT_TRUE(output.is_string());
-        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_TRUE(attr.is_context());
 
         auto output_sv = output.as<std::string_view>();
         EXPECT_STRV(output_sv, "ssn--df6143bc-64f82cf7-269500d3");
@@ -1282,10 +1227,10 @@ TEST(TestSessionFingerprint, Regeneration)
         ddwaf::timer deadline{2s};
 
         auto [output, attr] = gen.eval_impl(std::nullopt, std::nullopt,
-            {{.address = {}, .key_path = {}, .ephemeral = false, .value = "user"}}, cache, alloc,
+            {{.address = {}, .key_path = {}, .scope = {}, .value = "user"}}, cache, alloc,
             deadline);
         EXPECT_TRUE(output.is_string());
-        EXPECT_EQ(attr, object_store::attribute::none);
+        EXPECT_TRUE(attr.is_context());
 
         auto output_sv = output.as<std::string_view>();
         EXPECT_STRV(output_sv, "ssn-04f8996d-df6143bc-64f82cf7-269500d3");

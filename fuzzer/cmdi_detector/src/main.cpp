@@ -194,7 +194,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     for (auto arg : resource) { array.emplace_back(owned_object::make_string(arg)); }
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;

@@ -43,7 +43,8 @@ eval_result shi_detector::eval_string(const unary_argument<object_view> &resourc
         if (res.has_value()) {
             const std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
-            const bool ephemeral = resource.ephemeral || param.ephemeral;
+
+            const evaluation_scope scope = resolve_scope(resource, param);
 
             auto &[highlight, param_kp] = res.value();
 
@@ -60,9 +61,9 @@ eval_result shi_detector::eval_string(const unary_argument<object_view> &resourc
                 .highlights = {std::move(highlight)},
                 .operator_name = "shi_detector",
                 .operator_value = {},
-                .ephemeral = ephemeral};
+                .scope = scope};
 
-            return {.outcome = true, .ephemeral = ephemeral};
+            return eval_result::match(scope);
         }
     }
 
@@ -85,7 +86,8 @@ eval_result shi_detector::eval_array(const unary_argument<object_view> &resource
         if (res.has_value()) {
             const std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
-            const bool ephemeral = resource.ephemeral || param.ephemeral;
+
+            const evaluation_scope scope = resolve_scope(resource, param);
 
             auto &[highlight, param_kp] = res.value();
 
@@ -102,9 +104,9 @@ eval_result shi_detector::eval_array(const unary_argument<object_view> &resource
                 .highlights = {std::move(highlight)},
                 .operator_name = "shi_detector",
                 .operator_value = {},
-                .ephemeral = ephemeral};
+                .scope = scope};
 
-            return {.outcome = true, .ephemeral = ephemeral};
+            return eval_result::match(scope);
         }
     }
 

@@ -314,9 +314,9 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
             .highlights = {decomposed->scheme_and_authority},
             .operator_name = "ssrf_detector",
             .operator_value = {},
-            .ephemeral = uri.ephemeral};
+            .scope = uri.scope};
 
-        return {.outcome = true, .ephemeral = uri.ephemeral};
+        return {.outcome = true, .scope = uri.scope};
     }
 
     for (const auto &param : params) {
@@ -324,7 +324,8 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
             *forbidden_ip_matcher_, allowed_schemes_, forbidden_domains_, deadline);
         if (res.has_value()) {
             const std::vector<std::string> uri_kp{uri.key_path.begin(), uri.key_path.end()};
-            const bool ephemeral = uri.ephemeral || param.ephemeral;
+
+            const evaluation_scope scope = resolve_scope(uri, param);
 
             auto &[highlight, param_kp] = res.value();
 
@@ -341,9 +342,9 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
                 .highlights = {std::move(highlight)},
                 .operator_name = "ssrf_detector",
                 .operator_value = {},
-                .ephemeral = ephemeral};
+                .scope = scope};
 
-            return {.outcome = true, .ephemeral = ephemeral};
+            return eval_result::match(scope);
         }
     }
 

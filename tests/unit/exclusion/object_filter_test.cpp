@@ -7,6 +7,7 @@
 #include "common/gtest_utils.hpp"
 #include "exception.hpp"
 #include "exclusion/object_filter.hpp"
+#include "utils.hpp"
 
 using namespace ddwaf;
 using namespace ddwaf::exclusion;
@@ -22,17 +23,45 @@ TEST(TestObjectFilter, RootTarget)
     auto root = object_builder::map({
         {"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
     });
-    store.insert(root);
+    store.insert(root, evaluation_scope::context());
 
     object_filter filter;
     filter.insert(query, "query", {});
 
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
-    auto objects_filtered = filter.match(store, cache, false, deadline);
+    auto objects_filtered = filter.match(store, cache, {}, deadline);
 
     ASSERT_EQ(objects_filtered.size(), 1);
     EXPECT_TRUE(objects_filtered.contains(root.at(0)));
+
+    ASSERT_EQ(objects_filtered.context.size(), 1);
+    ASSERT_EQ(objects_filtered.subcontext.size(), 0);
+}
+
+TEST(TestObjectFilter, RootTargetSubcontext)
+{
+    auto query = get_target_index("query");
+
+    object_store store;
+
+    auto root = object_builder::map({
+        {"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
+    });
+    store.insert(root, evaluation_scope::subcontext());
+
+    object_filter filter;
+    filter.insert(query, "query", {});
+
+    ddwaf::timer deadline{2s};
+    object_filter::cache_type cache;
+    auto objects_filtered = filter.match(store, cache, {}, deadline);
+
+    ASSERT_EQ(objects_filtered.size(), 1);
+    EXPECT_TRUE(objects_filtered.contains(root.at(0)));
+
+    ASSERT_EQ(objects_filtered.context.size(), 0);
+    ASSERT_EQ(objects_filtered.subcontext.size(), 1);
 }
 
 TEST(TestObjectFilter, DuplicateTarget)
@@ -55,18 +84,18 @@ TEST(TestObjectFilter, DuplicateTarget)
         {"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
     }));
     {
-        store.insert(objects[0]);
+        store.insert(objects[0], evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
 
         ASSERT_EQ(objects_filtered.size(), 1);
         EXPECT_TRUE(objects_filtered.contains(objects[0].at(0)));
     }
 
     {
-        store.insert(objects[1]);
+        store.insert(objects[1], evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
 
         ASSERT_EQ(objects_filtered.size(), 1);
         EXPECT_TRUE(objects_filtered.contains(objects[1].at(0)));
@@ -88,17 +117,68 @@ TEST(TestObjectFilter, DuplicateCachedTarget)
     auto root = object_builder::map({
         {"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
     });
-    store.insert(root);
+    store.insert(root, evaluation_scope::context());
 
     {
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
         EXPECT_TRUE(objects_filtered.contains(root.at(0)));
     }
 
     {
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
+    }
+}
+
+TEST(TestObjectFilter, DuplicateTargetSubcontext)
+{
+    auto query = get_target_index("query");
+
+    object_store store;
+
+    object_filter filter;
+    filter.insert(query, "query", {});
+
+    ddwaf::timer deadline{2s};
+    object_filter::cache_type cache;
+
+    std::vector<owned_object> objects;
+    objects.emplace_back(object_builder::map({
+        {"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
+    }));
+    objects.emplace_back(object_builder::map({
+        {"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
+    }));
+
+    auto scope = evaluation_scope::subcontext();
+    {
+        defer cleanup([&]() {
+            store.clear_subcontext_objects();
+            store.clear_last_batch();
+        });
+        store.insert(objects[0], scope);
+
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
+
+        ASSERT_EQ(objects_filtered.size(), 1);
+        EXPECT_TRUE(objects_filtered.contains(objects[0].at(0)));
+
+        EXPECT_EQ(objects_filtered.context.size(), 0);
+        EXPECT_EQ(objects_filtered.subcontext.size(), 1);
+    }
+
+    scope = evaluation_scope::next_subcontext(scope);
+    {
+        store.insert(objects[1], scope);
+
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
+
+        ASSERT_EQ(objects_filtered.size(), 1);
+        EXPECT_TRUE(objects_filtered.contains(objects[1].at(0)));
+
+        EXPECT_EQ(objects_filtered.context.size(), 0);
+        EXPECT_EQ(objects_filtered.subcontext.size(), 1);
     }
 }
 
@@ -112,14 +192,14 @@ TEST(TestObjectFilter, SingleTarget)
     auto child = root.emplace(
         "query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-    store.insert(root);
+    store.insert(root, evaluation_scope::context());
 
     object_filter filter;
     filter.insert(query, "query", {"params"});
 
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
-    auto objects_filtered = filter.match(store, cache, false, deadline);
+    auto objects_filtered = filter.match(store, cache, {}, deadline);
 
     ASSERT_EQ(objects_filtered.size(), 1);
     EXPECT_TRUE(objects_filtered.contains(child.at(0)));
@@ -142,9 +222,9 @@ TEST(TestObjectFilter, DuplicateSingleTarget)
         auto child = root.emplace(
             "query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
         EXPECT_TRUE(objects_filtered.contains(child.at(0)));
     }
@@ -154,9 +234,9 @@ TEST(TestObjectFilter, DuplicateSingleTarget)
         auto child = root.emplace(
             "query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
         EXPECT_TRUE(objects_filtered.contains(child.at(0)));
     }
@@ -181,7 +261,7 @@ TEST(TestObjectFilter, MultipleTargets)
     auto object = sibling.emplace(
         "token", object_builder::map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
-    store.insert(root);
+    store.insert(root, evaluation_scope::context());
 
     object_filter filter;
     filter.insert(query, "query", {"uri"});
@@ -189,7 +269,7 @@ TEST(TestObjectFilter, MultipleTargets)
 
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
-    auto objects_filtered = filter.match(store, cache, false, deadline);
+    auto objects_filtered = filter.match(store, cache, {}, deadline);
 
     ASSERT_EQ(objects_filtered.size(), 2);
     EXPECT_TRUE(objects_filtered.contains(child.at(1)));
@@ -222,9 +302,9 @@ TEST(TestObjectFilter, DuplicateMultipleTargets)
         auto object = sibling.emplace(
             "token", object_builder::map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
 
         ASSERT_EQ(objects_filtered.size(), 2);
         EXPECT_TRUE(objects_filtered.contains(child.at(1)));
@@ -243,9 +323,9 @@ TEST(TestObjectFilter, DuplicateMultipleTargets)
         auto object = sibling.emplace(
             "token", object_builder::map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
 
         ASSERT_EQ(objects_filtered.size(), 2);
         EXPECT_TRUE(objects_filtered.contains(child.at(1)));
@@ -267,14 +347,14 @@ TEST(TestObjectFilter, MissingTarget)
                             {"token", object_builder::map({{"value", "naskjdnakjsd"},
                                           {"expiration", "yesterday"}})}})},
     });
-    store.insert(root);
+    store.insert(root, evaluation_scope::context());
 
     object_filter filter;
     filter.insert(status, "status", {"value"});
 
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
-    auto objects_filtered = filter.match(store, cache, false, deadline);
+    auto objects_filtered = filter.match(store, cache, {}, deadline);
     ASSERT_EQ(objects_filtered.size(), 0);
 }
 
@@ -288,7 +368,7 @@ TEST(TestObjectFilter, SingleTargetCache)
     auto child = root.emplace(
         "query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-    store.insert(root);
+    store.insert(root, evaluation_scope::context());
 
     object_filter filter;
     filter.insert(query, "query", {"params"});
@@ -296,13 +376,13 @@ TEST(TestObjectFilter, SingleTargetCache)
     ddwaf::timer deadline{2s};
     object_filter::cache_type cache;
     {
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
         EXPECT_TRUE(objects_filtered.contains(child.at(0)));
     }
 
     {
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         EXPECT_TRUE(objects_filtered.empty());
     }
 }
@@ -325,9 +405,9 @@ TEST(TestObjectFilter, MultipleTargetsCache)
         auto child = root.emplace(
             "query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
         EXPECT_TRUE(objects_filtered.contains(child.at(1)));
     }
@@ -340,15 +420,15 @@ TEST(TestObjectFilter, MultipleTargetsCache)
         auto object = sibling.emplace(
             "token", object_builder::map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
         EXPECT_TRUE(objects_filtered.contains(object.at(0)));
     }
 
     {
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         EXPECT_TRUE(objects_filtered.empty());
     }
 }
@@ -368,9 +448,9 @@ TEST(TestObjectFilter, SingleGlobTarget)
         auto child = root.emplace(
             "query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-        store.insert(root);
+        store.insert(root, evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
         EXPECT_TRUE(objects_filtered.contains(child.at(0)));
         EXPECT_TRUE(objects_filtered.contains(child.at(1)));
@@ -385,9 +465,9 @@ TEST(TestObjectFilter, SingleGlobTarget)
             object_builder::map({{"params", object_builder::map({{"value", "paramsvalue"}})},
                 {"uri", "uri_value"}}));
 
-        store.insert(root);
+        store.insert(root, evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
         EXPECT_TRUE(objects_filtered.contains(child.at(0)));
         EXPECT_TRUE(objects_filtered.contains(child.at(1)));
@@ -398,9 +478,9 @@ TEST(TestObjectFilter, SingleGlobTarget)
         object_filter::cache_type cache;
 
         auto root = object_builder::map({{"query", owned_object{}}});
-        store.insert(root);
+        store.insert(root, evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
     }
 }
@@ -422,9 +502,9 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
         auto child = root.emplace(
             "query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-        store.insert(root);
+        store.insert(root, evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
         EXPECT_TRUE(objects_filtered.contains(child.at(0)));
         EXPECT_TRUE(objects_filtered.contains(child.at(1)));
@@ -439,9 +519,9 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
             object_builder::map({{"params", object_builder::map({{"value", "paramsvalue"}})},
                 {"uri", "uri_value"}}));
 
-        store.insert(root);
+        store.insert(root, evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
         EXPECT_TRUE(objects_filtered.contains(child.at(0)));
         EXPECT_TRUE(objects_filtered.contains(child.at(1)));
@@ -452,9 +532,9 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
         object_filter::cache_type cache;
 
         auto root = object_builder::map({{"query", owned_object{}}});
-        store.insert(root);
+        store.insert(root, evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
     }
 }
@@ -478,9 +558,9 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
             object_builder::map({{"params", object_builder::map({{"other", "paramsvalue"}})}}));
         auto grandnephew = child.emplace("uri", object_builder::map({{"other", "paramsvalue"}}));
 
-        store.insert(root);
+        store.insert(root, evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
         EXPECT_TRUE(objects_filtered.contains(grandnephew.at(0)));
     }
@@ -494,9 +574,9 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
         auto grandchild = child.emplace("params", object_builder::map({{"value", "paramsvalue"}}));
         auto grandnephew = child.emplace("uri", object_builder::map({{"value", "paramsvalue"}}));
 
-        store.insert(root);
+        store.insert(root, evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
         EXPECT_TRUE(objects_filtered.contains(grandnephew.at(0)));
         EXPECT_TRUE(objects_filtered.contains(grandchild.at(0)));
@@ -509,9 +589,9 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
             object_builder::map({{"value", object_builder::map({{"whatever", "paramsvalue"}})},
                 {"other", object_builder::map({{"random", "paramsvalue"}})}})}});
 
-        store.insert(root);
+        store.insert(root, evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
     }
 
@@ -522,9 +602,9 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
         owned_object root =
             object_builder::map({{"query", object_builder::map({{"value", "value"}})}});
 
-        store.insert(root);
+        store.insert(root, evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
     }
 }
@@ -551,9 +631,9 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
         auto greatgrandnephew = grandnephew.emplace("random",
             object_builder::map({{"other", "paramsvalue"}, {"somethingelse", "paramsvalue"}}));
 
-        store.insert(root);
+        store.insert(root, evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 4);
         EXPECT_TRUE(objects_filtered.contains(greatgrandchild.at(0)));
         EXPECT_TRUE(objects_filtered.contains(greatgrandchild.at(1)));
@@ -569,9 +649,9 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
             object_builder::map({{"params", object_builder::map({{"something", "value"}})},
                 {"uri", object_builder::map({{"random", "value"}})}})}});
 
-        store.insert(root);
+        store.insert(root, evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
     }
 
@@ -582,9 +662,9 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
         auto root = object_builder::map(
             {{"query", object_builder::map({{"params", "value"}, {"uri", "value"}})}});
 
-        store.insert(root);
+        store.insert(root, evaluation_scope::context());
 
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
     }
 }
@@ -618,10 +698,10 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
             object_store store;
             object_filter::cache_type cache;
             auto root = yaml_to_object<owned_object>(object);
-            store.insert(root);
+            store.insert(root, evaluation_scope::context());
 
             ddwaf::timer deadline{2s};
-            auto objects_filtered = filter.match(store, cache, false, deadline);
+            auto objects_filtered = filter.match(store, cache, {}, deadline);
             ASSERT_EQ(objects_filtered.size(), 1);
             // TODO Replace this test
             // EXPECT_STREQ((*objects_filtered.persistent.begin())->parameterName, result.c_str());
@@ -645,10 +725,10 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
             object_store store;
             object_filter::cache_type cache;
             auto root = yaml_to_object<owned_object>(object);
-            store.insert(root);
+            store.insert(root, evaluation_scope::context());
 
             ddwaf::timer deadline{2s};
-            auto objects_filtered = filter.match(store, cache, false, deadline);
+            auto objects_filtered = filter.match(store, cache, {}, deadline);
             ASSERT_EQ(objects_filtered.size(), 0);
         }
     }
@@ -668,10 +748,10 @@ TEST(TestObjectFilter, ArrayWithGlobTargets)
             object_builder::map({{"a", object_builder::array({object_builder::map(
                                            {{"c", object_builder::map({{"d", "value"}})}})})}})}});
 
-        store.insert(root);
+        store.insert(root, evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        auto objects_filtered = filter.match(store, cache, false, deadline);
+        auto objects_filtered = filter.match(store, cache, {}, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
     }
 }
@@ -684,14 +764,14 @@ TEST(TestObjectFilter, Timeout)
 
     auto root = object_builder::map(
         {{"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})}});
-    store.insert(root);
+    store.insert(root, evaluation_scope::context());
 
     object_filter filter;
     filter.insert(query, "query", {});
 
     ddwaf::timer deadline{0s};
     object_filter::cache_type cache;
-    EXPECT_THROW(filter.match(store, cache, false, deadline), ddwaf::timeout_exception);
+    EXPECT_THROW(filter.match(store, cache, {}, deadline), ddwaf::timeout_exception);
 }
 
 } // namespace

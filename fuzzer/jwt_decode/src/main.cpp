@@ -26,8 +26,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     ddwaf::timer deadline{2s};
     static const std::vector<std::string> key_path{"authorization"};
     auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, memory::get_default_resource(), deadline);
+        gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
+            memory::get_default_resource(), deadline);
 
     return 0;
 }

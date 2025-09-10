@@ -17,7 +17,9 @@ namespace ddwaf {
 
 class waf_builder {
 public:
-    waf_builder(std::shared_ptr<match_obfuscator> obfuscator) : rbuilder_(std::move(obfuscator)) {}
+    explicit waf_builder(std::shared_ptr<match_obfuscator> obfuscator)
+        : rbuilder_(std::move(obfuscator))
+    {}
 
     ~waf_builder() = default;
     waf_builder(waf_builder &&) = delete;

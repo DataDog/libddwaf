@@ -40,7 +40,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     processor_cache cache;
     ddwaf::timer deadline{2s};
     auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = {}, .ephemeral = false, .value = header}, cache,
+        gen.eval_impl({.address = {}, .key_path = {}, .scope = {}, .value = header}, cache,
             memory::get_default_resource(), deadline);
 
     return 0;

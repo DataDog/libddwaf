@@ -18,35 +18,45 @@ namespace ddwaf {
 
 eval_result expression::eval(cache_type &cache, const object_store &store,
     const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
-    ddwaf::timer &deadline) const
+    evaluation_scope scope, ddwaf::timer &deadline) const
 {
-    if (cache.result || conditions_.empty()) {
-        return {.outcome = true, .ephemeral = false};
+    if (conditions_.empty()) {
+        // Since there's no conditions, we use the default (context) scope
+        return {.outcome = true, .scope = evaluation_scope::context()};
+    }
+
+    if (expression::get_result(cache, scope)) {
+        return {.outcome = true, .scope = scope};
     }
 
     if (cache.conditions.size() < conditions_.size()) {
         cache.conditions.assign(conditions_.size(), condition_cache{});
     }
 
-    bool ephemeral_match = false;
+    evaluation_scope final_scope;
     for (unsigned i = 0; i < conditions_.size(); ++i) {
         const auto &cond = conditions_[i];
         auto &cond_cache = cache.conditions[i];
 
-        if (cond_cache.match.has_value() && !cond_cache.match->ephemeral) {
+        if (cond_cache.match.has_value() &&
+            cond_cache.match->scope.has_higher_precedence_or_is_equal_to(scope)) {
             continue;
         }
 
-        auto [res, ephemeral] =
+        auto [res, cond_eval_scope] =
             cond->eval(cond_cache, store, objects_excluded, dynamic_matchers, deadline);
         if (!res) {
-            return {.outcome = false, .ephemeral = false};
+            return {.outcome = false, .scope = evaluation_scope::context()};
         }
-        ephemeral_match = ephemeral_match || ephemeral;
-    }
-    cache.result = !ephemeral_match;
 
-    return {.outcome = true, .ephemeral = ephemeral_match};
+        if (cond_eval_scope.is_subcontext()) {
+            final_scope = cond_eval_scope;
+        }
+    }
+    cache.result = true;
+    cache.scope = final_scope;
+
+    return {.outcome = true, .scope = final_scope};
 }
 
 } // namespace ddwaf

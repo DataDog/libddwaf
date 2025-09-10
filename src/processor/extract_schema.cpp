@@ -22,12 +22,12 @@
 #include "exception.hpp"
 #include "memory_resource.hpp"
 #include "object.hpp"
-#include "object_store.hpp"
 #include "object_type.hpp"
 #include "pointer.hpp"
 #include "processor/base.hpp"
 #include "processor/extract_schema.hpp"
 #include "scanner.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 namespace schema {
@@ -337,7 +337,7 @@ owned_object generate(object_view object, const std::set<const scanner *> &scann
 
 } // namespace schema
 
-std::pair<owned_object, object_store::attribute> extract_schema::eval_impl(
+std::pair<owned_object, evaluation_scope> extract_schema::eval_impl(
     const unary_argument<object_view> &input, processor_cache & /*cache*/,
     nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const
 {
@@ -345,9 +345,7 @@ std::pair<owned_object, object_store::attribute> extract_schema::eval_impl(
         return {};
     }
 
-    const object_store::attribute attr =
-        input.ephemeral ? object_store::attribute::ephemeral : object_store::attribute::none;
-    return {schema::generate(input.value, scanners_, alloc, deadline), attr};
+    return {schema::generate(input.value, scanners_, alloc, deadline), input.scope};
 }
 
 } // namespace ddwaf

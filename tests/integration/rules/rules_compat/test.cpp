@@ -40,8 +40,7 @@ TEST(TestRulesCompatIntegration, VerifyBothBaseAndCompat)
             ddwaf_object_insert_key(&parameter, STRL("value2"), alloc), STRL("rule2"));
 
         ddwaf_object result;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, LONG_TIME),
-            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, true, &result, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
@@ -154,8 +153,7 @@ TEST(TestRulesCompatIntegration, DuplicateRules)
             ddwaf_object_insert_key(&parameter, STRL("value2"), alloc), STRL("rule2"));
 
         ddwaf_object result;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, nullptr, true, &result, LONG_TIME),
-            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, true, &result, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 

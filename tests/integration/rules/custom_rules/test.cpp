@@ -38,8 +38,7 @@ TEST(TestCustomRulesIntegration, InitWithoutBaseRules)
         ddwaf_object_set_string_literal(
             ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("custom_rule1"));
 
-        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, nullptr, LONG_TIME),
-            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, nullptr, LONG_TIME), DDWAF_MATCH);
     }
 
     {
@@ -48,8 +47,7 @@ TEST(TestCustomRulesIntegration, InitWithoutBaseRules)
         ddwaf_object_set_string_literal(
             ddwaf_object_insert_key(&parameter, STRL("value2"), alloc), STRL("custom_rule2"));
 
-        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, nullptr, LONG_TIME),
-            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, nullptr, LONG_TIME), DDWAF_MATCH);
     }
 
     ddwaf_context_destroy(context1);
@@ -80,8 +78,7 @@ TEST(TestCustomRulesIntegration, InitWithBaseRules)
         ddwaf_object_set_string_literal(
             ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
-        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, nullptr, LONG_TIME),
-            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, nullptr, LONG_TIME), DDWAF_MATCH);
     }
 
     {
@@ -90,8 +87,7 @@ TEST(TestCustomRulesIntegration, InitWithBaseRules)
         ddwaf_object_set_string_literal(
             ddwaf_object_insert_key(&parameter, STRL("value2"), alloc), STRL("custom_rule2"));
 
-        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, nullptr, LONG_TIME),
-            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, nullptr, LONG_TIME), DDWAF_MATCH);
     }
 
     ddwaf_context_destroy(context1);
@@ -123,8 +119,7 @@ TEST(TestCustomRulesIntegration, RegularCustomRulesPrecedence)
             ddwaf_object_insert_key(&parameter, STRL("value3"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context1, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule3",
                                .name = "custom_rule3",
@@ -165,8 +160,7 @@ TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
             ddwaf_object_insert_key(&parameter, STRL("value4"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context1, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
@@ -213,8 +207,7 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
             ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context1, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
@@ -278,8 +271,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
             ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context1, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
@@ -303,8 +295,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
             ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context2, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
@@ -372,8 +363,7 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
             ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context1, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
@@ -397,8 +387,7 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
             ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context2, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule5",
                                .name = "custom_rule5",
@@ -487,8 +476,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
             ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context1, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
@@ -512,8 +500,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
             ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context2, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
@@ -581,8 +568,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
             ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context1, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
@@ -606,8 +592,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
             ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context2, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
@@ -689,8 +674,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
             ddwaf_object_insert_key(&parameter, STRL("value4"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context1, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
@@ -713,8 +697,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
         ddwaf_object_set_string_literal(
             ddwaf_object_insert_key(&parameter, STRL("value4"), alloc), STRL("custom_rule"));
 
-        EXPECT_EQ(
-            ddwaf_context_eval(context2, &parameter, nullptr, true, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, true, nullptr, LONG_TIME), DDWAF_OK);
     }
 
     {
@@ -724,8 +707,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
             ddwaf_object_insert_key(&parameter, STRL("value4"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context3, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
@@ -794,8 +776,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
             ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context1, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
@@ -819,8 +800,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
             ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context2, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
@@ -902,8 +882,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
             ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context1, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
@@ -930,8 +909,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
             ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context2, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "rule3",
                                .name = "rule3",
@@ -954,8 +932,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
             ddwaf_object_insert_key(&parameter, STRL("value34"), alloc), STRL("custom_rule"));
 
         ddwaf_object res;
-        EXPECT_EQ(
-            ddwaf_context_eval(context3, &parameter, nullptr, true, &res, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, true, &res, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(res, {.id = "custom_rule3",
                                .name = "custom_rule3",

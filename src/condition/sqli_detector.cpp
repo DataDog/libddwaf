@@ -534,7 +534,8 @@ sqli_detector::sqli_detector(std::vector<condition_parameter> args)
             sql.value, resource_tokens, param.value, dialect, objects_excluded, deadline);
         if (std::holds_alternative<internal::matched_param>(res)) {
             const std::vector<std::string> sql_kp{sql.key_path.begin(), sql.key_path.end()};
-            const bool ephemeral = sql.ephemeral || param.ephemeral;
+
+            const evaluation_scope scope = resolve_scope(sql, param);
 
             auto stripped_stmt = internal::strip_literals(sql.value, resource_tokens);
 
@@ -557,9 +558,9 @@ sqli_detector::sqli_detector(std::vector<condition_parameter> args)
                 .highlights = {std::move(highlight)},
                 .operator_name = "sqli_detector",
                 .operator_value = {},
-                .ephemeral = ephemeral};
+                .scope = scope};
 
-            return {.outcome = true, .ephemeral = ephemeral};
+            return eval_result::match(scope);
         }
 
         if (std::holds_alternative<internal::sqli_error>(res)) {

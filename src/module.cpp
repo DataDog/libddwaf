@@ -18,6 +18,7 @@
 #include "matcher/base.hpp"
 #include "object_store.hpp"
 #include "rule.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -26,8 +27,8 @@ using verdict_type = rule_module::verdict_type;
 
 std::pair<verdict_type, std::optional<rule_result>> eval_rule(const core_rule &rule,
     const object_store &store, core_rule::cache_type &cache,
-    const exclusion::context_policy &policy, const matcher_mapper &dynamic_matchers,
-    ddwaf::timer &deadline)
+    const exclusion::exclusion_policy &policy, const matcher_mapper &dynamic_matchers,
+    evaluation_scope scope, ddwaf::timer &deadline)
 {
     const auto &id = rule.get_id();
 
@@ -63,7 +64,7 @@ std::pair<verdict_type, std::optional<rule_result>> eval_rule(const core_rule &r
 
     try {
         auto [verdict, outcome] =
-            rule.match(store, cache, exclusion.objects, dynamic_matchers, deadline);
+            rule.match(store, cache, exclusion.objects, dynamic_matchers, scope, deadline);
 
         if (outcome.has_value()) {
             outcome->action_override = action_override;
@@ -91,32 +92,33 @@ ddwaf::timer &rule_module::get_deadline(ddwaf::timer &deadline) const
 }
 
 verdict_type rule_module::eval_with_collections(std::vector<rule_result> &results,
-    object_store &store, cache_type &cache, const exclusion::context_policy &exclusion,
-    const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const
+    object_store &store, cache_type &cache, const exclusion::exclusion_policy &exclusion,
+    const matcher_mapper &dynamic_matchers, evaluation_scope scope, ddwaf::timer &deadline) const
 {
     verdict_type final_verdict = verdict_type::none;
     for (const auto &collection : collections_) {
         DDWAF_DEBUG("Evaluating collection: {}", collection.name);
         auto &collection_cache = cache.collections[collection.name];
-        if (collection_cache.type >= collection.type) {
-            // If the result was cached but ephemeral, clear it. Note that this is
-            // just a workaround taking advantage of the order of evaluation of
-            // collections. Collections might be removed in the future altogether.
-            if (collection_cache.type == collection.type && collection_cache.ephemeral) {
-                collection_cache.type = core_rule::verdict_type::none;
-                collection_cache.ephemeral = false;
-            } else {
-                continue;
-            }
+        if (collection_cache.context.type >= collection.type) {
+            continue;
+        }
+
+        if (scope.is_subcontext_and_equal_to(collection_cache.subcontext.scope) &&
+            collection_cache.subcontext.type >= collection.type) {
+            continue;
         }
 
         for (std::size_t i = collection.begin; i < collection.end; ++i) {
             const auto &rule = *rules_[i];
-            auto [verdict, outcome] =
-                eval_rule(rule, store, cache.rules[i], exclusion, dynamic_matchers, deadline);
+            auto [verdict, outcome] = eval_rule(
+                rule, store, cache.rules[i], exclusion, dynamic_matchers, scope, deadline);
             if (outcome.has_value()) {
-                collection_cache.type = verdict;
-                collection_cache.ephemeral = outcome->ephemeral;
+                if (outcome->scope.is_context()) {
+                    collection_cache.context.type = verdict;
+                } else {
+                    collection_cache.subcontext.type = verdict;
+                    collection_cache.subcontext.scope = scope;
+                }
 
                 results.emplace_back(std::move(*outcome));
                 DDWAF_DEBUG("Found event on rule {}", rule.get_id());
@@ -134,8 +136,8 @@ verdict_type rule_module::eval_with_collections(std::vector<rule_result> &result
 }
 
 verdict_type rule_module::eval(std::vector<rule_result> &results, object_store &store,
-    cache_type &cache, const exclusion::context_policy &exclusion,
-    const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const
+    cache_type &cache, const exclusion::exclusion_policy &exclusion,
+    const matcher_mapper &dynamic_matchers, evaluation_scope scope, ddwaf::timer &deadline) const
 {
     auto &apt_deadline = get_deadline(deadline);
 
@@ -145,8 +147,8 @@ verdict_type rule_module::eval(std::vector<rule_result> &results, object_store &
             const auto &rule = *rules_[i];
             auto &rule_cache = cache.rules[i];
 
-            auto [verdict, outcome] =
-                eval_rule(rule, store, rule_cache, exclusion, dynamic_matchers, apt_deadline);
+            auto [verdict, outcome] = eval_rule(
+                rule, store, rule_cache, exclusion, dynamic_matchers, scope, apt_deadline);
             if (outcome.has_value()) {
                 results.emplace_back(std::move(*outcome));
                 DDWAF_DEBUG("Found event on rule {}", rule.get_id());
@@ -159,6 +161,7 @@ verdict_type rule_module::eval(std::vector<rule_result> &results, object_store &
         return final_verdict;
     }
 
-    return eval_with_collections(results, store, cache, exclusion, dynamic_matchers, apt_deadline);
+    return eval_with_collections(
+        results, store, cache, exclusion, dynamic_matchers, scope, apt_deadline);
 }
 } // namespace ddwaf

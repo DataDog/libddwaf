@@ -114,31 +114,10 @@ int main(int argc, char *argv[])
         }
 
         auto input = YAML::Load(json_str);
-
-        ddwaf_object persistent;
-        ddwaf_object ephemeral;
-
-        auto persistent_input = input["persistent"];
-        auto ephemeral_input = input["ephemeral"];
-        if (!persistent_input.IsDefined() && !ephemeral_input.IsDefined()) {
-            persistent = input.as<ddwaf_object>();
-            ddwaf_object_set_map(&ephemeral, 0, alloc);
-        } else {
-            if (input["persistent"].IsDefined()) {
-                persistent = input["persistent"].as<ddwaf_object>();
-            } else {
-                ddwaf_object_set_map(&persistent, 0, alloc);
-            }
-
-            if (input["ephemeral"].IsDefined()) {
-                ephemeral = input["ephemeral"].as<ddwaf_object>();
-            } else {
-                ddwaf_object_set_map(&ephemeral, 0, alloc);
-            }
-        }
+        auto data = input.as<ddwaf_object>();
 
         ddwaf_object ret;
-        ddwaf_context_eval(context, &persistent, &ephemeral, true, &ret, std::numeric_limits<uint64_t>::max());
+        ddwaf_context_eval(context, &data, true, &ret, std::numeric_limits<uint64_t>::max());
 
         YAML::Emitter out(std::cout);
         out.SetIndent(2);

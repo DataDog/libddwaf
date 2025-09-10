@@ -31,7 +31,7 @@ bool generic_sql_tokenizer::initialise_regexes()
 {
     static const bool ret = []() {
         try {
-            bool const parent_init = sql_tokenizer<generic_sql_tokenizer>::initialise_regexes();
+            const bool parent_init = sql_tokenizer<generic_sql_tokenizer>::initialise_regexes();
             identifier_regex = std::make_unique<re2::RE2>(identifier_regex_initialiser);
             return parent_init && identifier_regex && identifier_regex->ok();
         } catch (...) {

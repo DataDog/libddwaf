@@ -15,13 +15,14 @@
 #include "log.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::exclusion {
 
 namespace {
 // Add requires
 void iterate_object(const path_trie::traverser &filter, object_view object,
-    std::unordered_set<object_view> &objects_to_exclude)
+    std::unordered_set<object_cache_key> &objects_to_exclude)
 {
     using state = path_trie::traverser::state;
     if (!object.has_value()) {
@@ -94,8 +95,8 @@ void iterate_object(const path_trie::traverser &filter, object_view object,
 
 } // namespace
 
-object_set object_filter::match(
-    const object_store &store, cache_type &cache, bool ephemeral, ddwaf::timer &deadline) const
+object_set object_filter::match(const object_store &store, cache_type &cache,
+    evaluation_scope scope, ddwaf::timer &deadline) const
 {
     object_set objects_to_exclude;
     for (const auto &[target, filter] : target_paths_) {
@@ -103,16 +104,23 @@ object_set object_filter::match(
             throw ddwaf::timeout_exception();
         }
 
-        auto [object, attr] = store.get_target(target);
-        if (!object.has_value() || cache.contains(object)) {
+        auto [object, object_scope] = store.get_target(target);
+        if (!object.has_value()) {
             continue;
         }
 
-        if (!ephemeral && attr != object_store::attribute::ephemeral) {
-            cache.emplace(object);
-            iterate_object(filter.get_traverser(), object, objects_to_exclude.persistent);
+        auto &[cached_object, cached_scope] = cache[target];
+        if (cached_object == object && cached_scope == object_scope) {
+            continue;
+        }
+
+        cached_object = object;
+        if (scope.is_context() && object_scope.is_context()) {
+            cached_scope = evaluation_scope::context();
+            iterate_object(filter.get_traverser(), object, objects_to_exclude.context);
         } else {
-            iterate_object(filter.get_traverser(), object, objects_to_exclude.ephemeral);
+            cached_scope = scope.is_subcontext() ? scope : object_scope;
+            iterate_object(filter.get_traverser(), object, objects_to_exclude.subcontext);
         }
     }
 

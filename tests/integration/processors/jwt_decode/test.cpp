@@ -49,7 +49,7 @@ TEST(TestJwtDecoderIntegration, Preprocessor)
         alloc);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -107,7 +107,7 @@ TEST(TestJwtDecoderIntegration, Postprocessor)
         alloc);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_OK);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -159,7 +159,7 @@ TEST(TestJwtDecoderIntegration, Processor)
         alloc);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, nullptr, true, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 

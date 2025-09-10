@@ -32,7 +32,7 @@ public:
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
     {}
 
-    MOCK_METHOD((std::pair<owned_object, object_store::attribute>), eval_impl,
+    MOCK_METHOD((std::pair<owned_object, evaluation_scope>), eval_impl,
         (const unary_argument<object_view> &, processor_cache &,
             nonnull_ptr<memory::memory_resource>, ddwaf::timer &),
         (const));
@@ -48,7 +48,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
 
     auto input_map = object_builder::map({{"input_address", "input_string"}});
     object_store store;
-    store.insert(input_map);
+    store.insert(input_map, evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -61,8 +61,8 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
-            std::move(output), object_store::attribute::none})));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context()})));
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
@@ -70,7 +70,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 1);
@@ -90,7 +90,7 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
         {"input_address.second", "second_input_string"}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(input_map, evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address.first"),
@@ -110,16 +110,16 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>(
-            std::move(first_output), object_store::attribute::none))))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>(
-            std::move(second_output), object_store::attribute::none))));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>(
+            std::move(first_output), evaluation_scope::context()))))
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>(
+            std::move(second_output), evaluation_scope::context()))));
 
     processor_cache cache;
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 2);
@@ -145,7 +145,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
     auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", true}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(input_map, evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -165,14 +165,14 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
-            std::move(output), object_store::attribute::none})));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context()})));
 
     processor_cache cache;
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 1);
@@ -190,7 +190,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     auto input_map = object_builder::map({{"enabled?", true}});
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -210,14 +210,14 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
-            std::move(output), object_store::attribute::none})));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context()})));
 
     processor_cache cache;
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 0);
@@ -226,9 +226,9 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
         {"input_address", "input_string"},
     });
 
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
     attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 1);
 
@@ -246,7 +246,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
     auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", false}});
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -269,7 +269,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 0);
@@ -286,7 +286,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
     });
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -300,8 +300,8 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
-            std::move(output), object_store::attribute::none})));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context()})));
 
     processor_cache cache;
     timer deadline{2s};
@@ -314,7 +314,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
     }
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     {
         auto obtained = store.get_target("output_address").first;
@@ -332,7 +332,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
     auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", true}});
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -352,8 +352,8 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
-            std::move(output), object_store::attribute::none})));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context()})));
     processor_cache cache;
 
     timer deadline{2s};
@@ -363,7 +363,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
     EXPECT_FALSE(store.get_target("output_address").first.has_value());
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     {
         auto obtained = store.get_target("output_address").first;
@@ -381,7 +381,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
     auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", false}});
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -407,7 +407,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
 
     EXPECT_FALSE(store.get_target("output_address").first.has_value());
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     EXPECT_FALSE(store.get_target("output_address").first.has_value());
 }
@@ -423,7 +423,7 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
         {"input_address.second", "second_input_string"}});
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address.first"),
@@ -443,10 +443,10 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>(
-            std::move(first_output), object_store::attribute::none))))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>(
-            std::move(second_output), object_store::attribute::none))));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>(
+            std::move(first_output), evaluation_scope::context()))))
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>(
+            std::move(second_output), evaluation_scope::context()))));
 
     processor_cache cache;
     timer deadline{2s};
@@ -456,7 +456,7 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
     EXPECT_FALSE(store.get_target("output_address.second").first.has_value());
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     {
         auto obtained = store.get_target("output_address.first").first;
@@ -482,7 +482,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     });
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -496,8 +496,8 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
-            std::move(output), object_store::attribute::none})));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context()})));
 
     processor_cache cache;
     timer deadline{2s};
@@ -508,7 +508,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     }
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     {
         auto obtained = store.get_target("output_address").first;
@@ -533,7 +533,7 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
         {{"input_address", "input_string"}, {"output_address", owned_object::make_null()}});
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -552,7 +552,7 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 }
 
 TEST(TestProcessor, OutputAlreadyGenerated)
@@ -564,7 +564,7 @@ TEST(TestProcessor, OutputAlreadyGenerated)
     });
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -583,8 +583,8 @@ TEST(TestProcessor, OutputAlreadyGenerated)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 }
 
 TEST(TestProcessor, EvalAlreadyAvailableInStore)
@@ -595,7 +595,7 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
         {{"input_address", "input_string"}, {"output_address", owned_object::make_null()}});
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -615,7 +615,7 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
     owned_object attributes;
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 }
 
 TEST(TestProcessor, OutputEvalWithoutattributesMap)
@@ -629,7 +629,7 @@ TEST(TestProcessor, OutputEvalWithoutattributesMap)
     });
 
     object_store store;
-    store.insert(std::move(input_map));
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -643,8 +643,8 @@ TEST(TestProcessor, OutputEvalWithoutattributesMap)
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
-            std::move(output), object_store::attribute::none})));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context()})));
 
     processor_cache cache;
     timer deadline{2s};
@@ -657,7 +657,7 @@ TEST(TestProcessor, OutputEvalWithoutattributesMap)
     }
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     {
         auto obtained = store.get_target("output_address").first;
@@ -690,7 +690,7 @@ TEST(TestProcessor, Timeout)
     owned_object attributes;
 
     attribute_collector collector;
-    EXPECT_THROW(proc.eval(store, collector, cache, alloc, deadline), ddwaf::timeout_exception);
+    EXPECT_THROW(proc.eval(store, collector, cache, alloc, {}, deadline), ddwaf::timeout_exception);
 }
 
 } // namespace

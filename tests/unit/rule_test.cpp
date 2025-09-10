@@ -10,6 +10,7 @@
 #include "matcher/ip_match.hpp"
 #include "object_store.hpp"
 #include "rule.hpp"
+#include "utils.hpp"
 
 using namespace ddwaf;
 using namespace std::literals;
@@ -36,10 +37,13 @@ TEST(TestRule, Match)
 
     core_rule::cache_type cache;
     {
-        auto scope = store.get_eval_scope();
-        store.insert(root.clone(), object_store::attribute::none);
+        defer cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
+        store.insert(root.clone(), evaluation_scope::context());
 
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         ASSERT_TRUE(result.has_value());
         ASSERT_TRUE(result->event.has_value());
 
@@ -50,7 +54,7 @@ TEST(TestRule, Match)
         std::vector<std::string> expected_actions{"update", "block", "passlist"};
         EXPECT_EQ(result->actions.get(), expected_actions);
         EXPECT_EQ(event.matches.size(), 1);
-        EXPECT_FALSE(result->ephemeral);
+        EXPECT_TRUE(result->scope.is_context());
 
         auto &match = event.matches[0];
         EXPECT_STR(match.args[0].resolved, "192.168.0.1");
@@ -59,21 +63,20 @@ TEST(TestRule, Match)
         EXPECT_STR(match.operator_value, "");
         EXPECT_STR(match.args[0].address, "http.client_ip");
         EXPECT_TRUE(match.args[0].key_path.empty());
-        EXPECT_FALSE(match.ephemeral);
+        EXPECT_TRUE(match.scope.is_context());
     }
 
     {
-        auto scope = store.get_eval_scope();
-        store.insert(std::move(root), object_store::attribute::none);
+        store.insert(std::move(root), evaluation_scope::context());
 
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(result.has_value());
     }
 
-    EXPECT_TRUE(cache.expr_cache.result);
+    EXPECT_TRUE(cache.result);
 }
 
-TEST(TestRule, EphemeralMatch)
+TEST(TestRule, SubcontextMatch)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -90,26 +93,38 @@ TEST(TestRule, EphemeralMatch)
 
     ddwaf::timer deadline{2s};
 
+    auto scope = evaluation_scope::subcontext();
+
     core_rule::cache_type cache;
     {
-        auto scope = store.get_eval_scope();
-        store.insert(root.clone(), object_store::attribute::ephemeral);
+        defer cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
+        store.insert(root.clone(), scope);
 
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, scope, deadline);
         ASSERT_TRUE(result.has_value());
-        EXPECT_TRUE(result->ephemeral);
+        EXPECT_TRUE(result->scope.is_subcontext());
     }
 
     {
-        auto scope = store.get_eval_scope();
-        store.insert(std::move(root), object_store::attribute::ephemeral);
+        defer cleanup{[&]() {
+            store.clear_last_batch();
+            store.clear_subcontext_objects();
+        }};
 
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        scope = evaluation_scope::next_subcontext(scope);
+
+        store.insert(std::move(root), scope);
+
+        auto [verdict, result] = rule.match(store, cache, {}, {}, scope, deadline);
         ASSERT_TRUE(result.has_value());
-        EXPECT_TRUE(result->ephemeral);
+        EXPECT_TRUE(result->scope.is_subcontext());
     }
 
-    EXPECT_FALSE(cache.expr_cache.result);
+    EXPECT_TRUE(cache.result);
+    EXPECT_EQ(cache.scope, scope);
 }
 
 TEST(TestRule, NoMatch)
@@ -126,12 +141,12 @@ TEST(TestRule, NoMatch)
     auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
     ddwaf::object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
 
     core_rule::cache_type cache;
-    auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+    auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
     EXPECT_FALSE(result.has_value());
 }
 
@@ -160,10 +175,10 @@ TEST(TestRule, ValidateCachedMatch)
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         ddwaf::object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(result.has_value());
     }
 
@@ -171,10 +186,10 @@ TEST(TestRule, ValidateCachedMatch)
         auto root = object_builder::map({{"usr.id", "admin"}});
 
         ddwaf::object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         ASSERT_TRUE(result.has_value());
         ASSERT_TRUE(result->event.has_value());
 
@@ -230,22 +245,22 @@ TEST(TestRule, MatchWithoutCache)
     ddwaf::object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(result.has_value());
     }
 
     {
         auto root = object_builder::map({{"usr.id", "admin"}});
 
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         ASSERT_TRUE(result.has_value());
         ASSERT_TRUE(result->event.has_value());
 
@@ -294,11 +309,11 @@ TEST(TestRule, NoMatchWithoutCache)
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
         ddwaf::object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(result.has_value());
     }
 
@@ -306,11 +321,11 @@ TEST(TestRule, NoMatchWithoutCache)
         auto root = object_builder::map({{"usr.id", "admin"}});
 
         ddwaf::object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(result.has_value());
     }
 }
@@ -340,10 +355,10 @@ TEST(TestRule, FullCachedMatchSecondRun)
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
 
         ddwaf::object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_TRUE(result.has_value());
         ASSERT_TRUE(result->event.has_value());
     }
@@ -352,10 +367,10 @@ TEST(TestRule, FullCachedMatchSecondRun)
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
 
         ddwaf::object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
+        auto [verdict, result] = rule.match(store, cache, {}, {}, {}, deadline);
         EXPECT_FALSE(result.has_value());
     }
 }
@@ -374,15 +389,15 @@ TEST(TestRule, ExcludeObject)
 
     auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
     ddwaf::object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
-    std::unordered_set<object_view> excluded_set{store.get_target("http.client_ip").first};
+    std::unordered_set<object_cache_key> excluded_set{store.get_target("http.client_ip").first};
 
     ddwaf::timer deadline{2s};
 
     core_rule::cache_type cache;
     auto [verdict, result] =
-        rule.match(store, cache, {.persistent = excluded_set, .ephemeral = {}}, {}, deadline);
+        rule.match(store, cache, {.context = excluded_set, .subcontext = {}}, {}, {}, deadline);
     EXPECT_FALSE(result.has_value());
 }
 } // namespace

@@ -11,14 +11,15 @@
 #include "object.hpp"
 #include "object_store.hpp"
 #include "target_address.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 
-bool object_store::insert(owned_object &&input, attribute attr)
+bool object_store::insert(owned_object &&input, evaluation_scope scope)
 {
     object_view view;
-    if (attr == attribute::ephemeral) {
-        view = ephemeral_objects_.emplace_back(std::move(input));
+    if (scope.is_subcontext()) {
+        view = subcontext_objects_.emplace_back(std::move(input));
     } else {
         view = input_objects_.emplace_back(std::move(input));
     }
@@ -27,10 +28,10 @@ bool object_store::insert(owned_object &&input, attribute attr)
         return false;
     }
 
-    return insert(view, attr);
+    return insert(view, scope);
 }
 
-bool object_store::insert(map_view input, attribute attr)
+bool object_store::insert(map_view input, evaluation_scope scope)
 {
     const auto size = input.size();
     if (size == 0) {
@@ -42,8 +43,8 @@ bool object_store::insert(map_view input, attribute attr)
 
     latest_batch_.reserve(latest_batch_.size() + size);
 
-    if (attr == attribute::ephemeral) {
-        ephemeral_targets_.reserve(size);
+    if (scope.is_subcontext()) {
+        subcontext_targets_.reserve(size);
     }
 
     for (std::size_t i = 0; i < size; ++i) {
@@ -54,72 +55,54 @@ bool object_store::insert(map_view input, attribute attr)
 
         auto key = key_obj.as<std::string_view>();
         auto target = get_target_index(key);
-        insert_target_helper(target, key, value, attr);
+        insert_target_helper(target, key, value, scope);
     }
 
     return true;
 }
 
 bool object_store::insert(
-    target_index target, std::string_view key, owned_object &&input, attribute attr)
+    target_index target, std::string_view key, owned_object &&input, evaluation_scope scope)
 {
     object_view view;
-    if (attr == attribute::ephemeral) {
-        view = ephemeral_objects_.emplace_back(std::move(input));
+    if (scope.is_subcontext()) {
+        view = subcontext_objects_.emplace_back(std::move(input));
     } else {
         view = input_objects_.emplace_back(std::move(input));
     }
 
-    return insert_target_helper(target, key, view, attr);
+    return insert_target_helper(target, key, view, scope);
 }
 
 bool object_store::insert_target_helper(
-    target_index target, std::string_view key, object_view view, attribute attr)
+    target_index target, std::string_view key, object_view view, evaluation_scope scope)
 {
     if (objects_.contains(target)) {
-        if (attr == attribute::ephemeral && !ephemeral_targets_.contains(target)) {
-            DDWAF_WARN("Failed to replace non-ephemeral target '{}' with an ephemeral one", key);
+        if (scope.is_subcontext() && !subcontext_targets_.contains(target)) {
+            DDWAF_WARN("Failed to replace non-subcontext target '{}' with a subcontext one", key);
             return false;
         }
 
-        if (attr == attribute::none && ephemeral_targets_.contains(target)) {
-            DDWAF_WARN("Failed to replace ephemeral target '{}' with a non-ephemeral one", key);
+        if (scope.is_context() && subcontext_targets_.contains(target)) {
+            DDWAF_WARN("Failed to replace subcontext target '{}' with a non-subcontext one", key);
             return false;
         }
 
         DDWAF_DEBUG("Replacing {} target '{}' in object store",
-            attr == attribute::ephemeral ? "ephemeral" : "persistent", key);
+            scope.is_subcontext() ? "subcontext" : "context", key);
     } else {
         DDWAF_DEBUG("Inserting {} target '{}' into object store",
-            attr == attribute::ephemeral ? "ephemeral" : "persistent", key);
+            scope.is_subcontext() ? "subcontext" : "context", key);
     }
 
-    if (attr == attribute::ephemeral) {
-        ephemeral_targets_.emplace(target);
+    if (scope.is_subcontext()) {
+        subcontext_targets_.emplace(target);
     }
 
-    objects_[target] = {view, attr};
+    objects_[target] = {view, scope};
     latest_batch_.emplace(target);
 
     return true;
-}
-
-void object_store::clear_last_batch()
-{
-    // Clear latest batch
-    latest_batch_.clear();
-
-    // Clear any ephemeral targets
-    for (auto target : ephemeral_targets_) {
-        auto it = objects_.find(target);
-        if (it != objects_.end()) {
-            objects_.erase(it);
-        }
-    }
-    ephemeral_targets_.clear();
-
-    // Free ephemeral objects and targets
-    ephemeral_objects_.clear();
 }
 
 } // namespace ddwaf

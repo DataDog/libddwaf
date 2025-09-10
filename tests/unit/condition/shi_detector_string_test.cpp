@@ -25,7 +25,7 @@ TEST(TestShiDetectorString, InvalidType)
         {{"server.sys.shell.cmd", owned_object{}}, {"server.request.query", "whatever"}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -41,7 +41,7 @@ TEST(TestShiDetectorString, EmptyResource)
         object_builder::map({{"server.sys.shell.cmd", ""}, {"server.request.query", "whatever"}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -82,7 +82,7 @@ TEST(TestShiDetectorString, NoMatchAndFalsePositives)
         });
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -113,13 +113,13 @@ TEST(TestShiDetectorString, ExecutablesAndRedirections)
         });
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
@@ -157,13 +157,13 @@ TEST(TestShiDetectorString, InjectionsWithinCommandSubstitution)
         });
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
@@ -194,13 +194,13 @@ TEST(TestShiDetectorString, InjectionsWithinProcessSubstitution)
         });
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
@@ -233,13 +233,13 @@ TEST(TestShiDetectorString, OffByOnePayloadsMatch)
         });
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
@@ -293,13 +293,13 @@ TEST(TestShiDetectorString, MultipleArgumentsMatch)
             {"server.request.query", yaml_to_object<owned_object>(params)}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");

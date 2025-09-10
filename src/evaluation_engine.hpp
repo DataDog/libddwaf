@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <cstdint>
 #include <memory>
 
 #include "attribute_collector.hpp"
@@ -17,11 +16,11 @@
 #include "memory_resource.hpp"
 #include "obfuscator.hpp"
 #include "pointer.hpp"
+#include "processor/base.hpp"
 #include "ruleset.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
-
-enum class evaluation_scope : uint8_t { context = 0, subcontext = 1 };
 
 class evaluation_engine {
 public:
@@ -50,44 +49,94 @@ public:
     evaluation_engine &operator=(evaluation_engine &&) = delete;
     ~evaluation_engine() = default;
 
-    std::pair<bool, owned_object> eval(object_store &store, timer &deadline);
+    void start_subcontext()
+    {
+        if (current_scope_.is_subcontext()) {
+            throw std::runtime_error("subcontext already started");
+        }
 
-    void eval_preprocessors(object_store &store, timer &deadline);
-    void eval_postprocessors(object_store &store, timer &deadline);
+        subcontext_scope_ = evaluation_scope::next_subcontext(subcontext_scope_);
+        current_scope_ = subcontext_scope_;
+    }
+
+    void stop_subcontext()
+    {
+        if (!current_scope_.is_subcontext()) {
+            return;
+        }
+
+        exclusions_.subcontext.clear();
+        store_.clear_subcontext_objects();
+
+        current_scope_ = evaluation_scope::context();
+    }
+
+    bool in_subcontext() { return current_scope_.is_subcontext(); }
+
+    bool insert(owned_object data) noexcept
+    {
+        if (!store_.insert(std::move(data), current_scope_)) {
+            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+            return false;
+        }
+        return true;
+    }
+
+    bool insert(map_view data) noexcept
+    {
+        if (!store_.insert(data, current_scope_)) {
+            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+            return false;
+        }
+        return true;
+    }
+
+    std::pair<bool, owned_object> eval(timer &deadline);
+
+    // Internals exposed for testing
+    void eval_preprocessors(timer &deadline);
+    void eval_postprocessors(timer &deadline);
     // This function below returns a reference to an internal object,
     // however using them this way helps with testing
-    exclusion::context_policy &eval_filters(object_store &store, timer &deadline);
-    void eval_rules(object_store &store, const exclusion::context_policy &policy,
-        std::vector<rule_result> &results, timer &deadline);
+    exclusion::exclusion_policy &eval_filters(timer &deadline);
+    void eval_rules(const exclusion::exclusion_policy &policy, std::vector<rule_result> &results,
+        timer &deadline);
 
 protected:
-    bool check_new_rule_targets(const object_store &store) const
+    bool check_new_rule_targets() const
     {
         // NOLINTNEXTLINE(readability-use-anyofallof)
         for (const auto &[target, str] : ruleset_->rule_addresses) {
-            if (store.is_new_target(target)) {
+            if (store_.is_new_target(target)) {
                 return true;
             }
         }
         return false;
     }
 
-    bool check_new_filter_targets(const object_store &store) const
+    bool check_new_filter_targets() const
     {
         // NOLINTNEXTLINE(readability-use-anyofallof)
         for (const auto &[target, str] : ruleset_->filter_addresses) {
-            if (store.is_new_target(target)) {
+            if (store_.is_new_target(target)) {
                 return true;
             }
         }
         return false;
     }
+
+    // TODO Create a subcontext scope tracker instead of this
+    evaluation_scope subcontext_scope_{evaluation_scope::subcontext()};
+
+    // The current scope: context or subcontext
+    evaluation_scope current_scope_;
 
     // This memory resource is used primarily for the allocation of memory
     // which will be returned to the user.
     nonnull_ptr<memory::memory_resource> output_alloc_;
 
     std::shared_ptr<ruleset> ruleset_;
+    object_store store_;
     attribute_collector collector_;
 
     // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
@@ -113,7 +162,7 @@ protected:
     // Caches of filters and conditions
     memory::unordered_map<const rule_filter *, rule_filter::cache_type> rule_filter_cache_;
     memory::unordered_map<const input_filter *, input_filter::cache_type> input_filter_cache_;
-    exclusion::context_policy exclusion_policy_;
+    exclusion::exclusion_policy exclusions_;
 
     // Cache of modules to avoid processing once a result has been obtained
     std::array<rule_module_cache, rule_module_count> rule_module_cache_;

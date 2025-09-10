@@ -9,6 +9,7 @@
 #include "waf.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
 
 namespace {
 
@@ -49,12 +50,12 @@ TEST(TestWaf, BasicContextRun)
     auto instance = build_instance("interface.yaml");
 
     auto root = object_builder::map({{"value1", "rule1"}});
-    auto *ctx = instance.create_context();
+    auto ctx = instance.create_context();
 
-    EXPECT_TRUE(ctx->insert(std::move(root)));
-    auto [code, res] = ctx->eval(LONG_TIME);
+    EXPECT_TRUE(ctx.insert(std::move(root)));
+    ddwaf::timer deadline{2s};
+    auto [code, res] = ctx.eval(deadline);
     EXPECT_EQ(code, DDWAF_MATCH);
-    delete ctx;
 }
 
 TEST(TestWaf, AddressUniqueness)

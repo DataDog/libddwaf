@@ -31,6 +31,8 @@ class array_view;
 class owned_object;
 class borrowed_object;
 
+class object_cache_key;
+
 template <typename T> struct object_converter;
 
 namespace detail {
@@ -1055,7 +1057,9 @@ template <typename T>
 
 // Convert the underlying type to the requested type, converters are defined
 // in the object_converter header
-template <typename Derived> template <typename T> T readable_object<Derived>::convert() const
+template <typename Derived>
+template <typename T>
+[[nodiscard]] T readable_object<Derived>::convert() const
 {
     return object_converter<T>{object_ref()}();
 }
@@ -1258,6 +1262,26 @@ inline borrowed_object &borrowed_object::operator=(owned_object &&obj)
     *obj_ = obj.move();
     return *this;
 }
+
+class object_cache_key {
+public:
+    object_cache_key() = default;
+    // NOLINTBEGIN(google-explicit-constructor,hicpp-explicit-conversions)
+    object_cache_key(object_view view) : ptr_(static_cast<const void *>(view.ptr())) {}
+    object_cache_key(owned_object obj) : ptr_(static_cast<const void *>(obj.ptr())) {}
+    object_cache_key(borrowed_object obj) : ptr_(static_cast<const void *>(obj.ptr())) {}
+    // NOLINTEND(google-explicit-constructor,hicpp-explicit-conversions)
+
+    bool operator==(const object_cache_key &other) const { return ptr_ == other.ptr_; }
+    bool operator==(const object_view &other) const { return ptr_ == other.ptr(); }
+
+    [[nodiscard]] std::size_t hash() const noexcept { return std::hash<const void *>{}(ptr_); }
+
+private:
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
+    const void *ptr_{nullptr};
+};
+
 namespace object_builder {
 
 struct movable_object {
@@ -1349,10 +1373,7 @@ inline owned_object map(std::initializer_list<key_value> list = {},
 
 namespace std {
 
-template <> struct hash<ddwaf::object_view> {
-    auto operator()(const ddwaf::object_view &obj) const
-    {
-        return std::hash<const void *>{}(static_cast<const void *>(obj.ptr()));
-    }
+template <> struct hash<ddwaf::object_cache_key> {
+    auto operator()(const ddwaf::object_cache_key &key) const { return key.hash(); }
 };
 } // namespace std

@@ -6,11 +6,7 @@
 
 #pragma once
 
-#include <memory>
-#include <span>
 #include <string>
-#include <string_view>
-#include <type_traits>
 #include <vector>
 
 #include "argument_retriever.hpp"
@@ -85,6 +81,14 @@ public:
     }
 
 protected:
+    template <typename T, typename... Ts>
+    static evaluation_scope resolve_scope(const T &first, Ts... rest)
+    {
+        evaluation_scope result = first.scope;
+        ((result = result.has_lower_precedence_than(rest.scope) ? result : rest.scope), ...);
+        return result;
+    }
+
     template <size_t I, size_t... Is, typename Args>
     bool resolve_arguments(const object_store &store,
         const exclusion::object_set_ref &objects_excluded, Args &args,
@@ -116,7 +120,7 @@ protected:
     }
 
     template <size_t I>
-    auto resolve_argument(
+    [[nodiscard]] auto resolve_argument(
         const object_store &store, const exclusion::object_set_ref &objects_excluded) const
     {
         using func_traits = decltype(make_eval_traits(&Self::eval_impl));

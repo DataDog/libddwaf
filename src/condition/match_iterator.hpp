@@ -9,6 +9,8 @@
 #include "iterator.hpp"
 #include "object.hpp"
 
+#include <utility>
+
 namespace ddwaf {
 
 template <std::size_t MinLength = 2, typename IteratorType = kv_iterator,
@@ -19,7 +21,7 @@ public:
 
     explicit match_iterator(
         ResourceType resource, object_view obj, const exclusion::object_set_ref &exclude)
-        : resource_(resource), it_(obj, {}, exclude)
+        : resource_(std::move(resource)), it_(obj, {}, exclude)
     {
         for (; it_; ++it_) {
             const auto current_obj = *it_;

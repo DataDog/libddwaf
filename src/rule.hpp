@@ -59,7 +59,7 @@ enum class rule_source : uint8_t { base = 1, user = 2 };
 struct rule_attribute {
     struct input_target {
         std::string name;
-        target_index index;
+        target_index index; // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
         std::vector<std::string> key_path;
     };
     std::variant<input_target, std::string, uint64_t, int64_t, double, bool> value_or_target;
@@ -77,7 +77,7 @@ struct rule_event {
 
 struct rule_result {
     bool keep{false};
-    bool ephemeral{false};
+    evaluation_scope scope;
 
     std::optional<rule_event> event{std::nullopt};
 
@@ -85,11 +85,6 @@ struct rule_result {
     std::reference_wrapper<const std::vector<std::string>> actions;
 
     std::reference_wrapper<const std::vector<rule_attribute>> attributes;
-};
-
-struct rule_cache {
-    bool attributes_generated{false};
-    expression::cache_type expr_cache;
 };
 
 // A core rule constitutes the most important type of entity within the
@@ -101,8 +96,7 @@ public:
     using source_type = rule_source;
     using verdict_type = rule_verdict;
 
-    using cache_type = rule_cache;
-
+    using cache_type = expression::cache_type;
     core_rule(std::string id,                              // Required: Unique identifier
         std::string name,                                  // Required: Human-readable name
         std::unordered_map<std::string, std::string> tags, // Required: Rule metadata
@@ -143,7 +137,7 @@ public:
 
     std::pair<verdict_type, std::optional<rule_result>> match(const object_store &store,
         cache_type &cache, const exclusion::object_set_ref &objects_excluded,
-        const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const;
+        const matcher_mapper &dynamic_matchers, evaluation_scope scope, timer &deadline) const;
 
     [[nodiscard]] bool is_enabled() const { return enabled_; }
 

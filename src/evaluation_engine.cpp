@@ -27,15 +27,11 @@
 namespace ddwaf {
 
 namespace {
-using attribute = object_store::attribute;
 
 // This function adds the waf.context.event "virtual" address, specifically
 // meant to be used to tryigger post-processors when there has been an event
 // during the lifecycle of the context.
-// Since post-processors aren't typically used with ephemeral addresses or
-// composite requests in general, we don't need to make this address dependent
-// on whether the events were ephemeral or not.
-void set_context_event_address(object_store &store)
+void set_context_event_address(object_store &store, evaluation_scope scope)
 {
     static const std::string_view event_addr = "waf.context.event";
     static auto event_addr_idx = get_target_index(event_addr);
@@ -44,31 +40,30 @@ void set_context_event_address(object_store &store)
         return;
     }
 
-    store.insert(event_addr_idx, event_addr, owned_object{true}, attribute::none);
+    store.insert(event_addr_idx, event_addr, owned_object{true}, scope);
 }
 
 } // namespace
 
-std::pair<bool, owned_object> evaluation_engine::eval(object_store &store, timer &deadline)
+std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
 {
-    // This scope ensures that all ephemeral and cached objects are removed
-    // from the store at the end of the evaluation
-    auto storecleanup_scope = store.get_eval_scope();
-    auto on_exit = scope_exit([this]() { this->exclusion_policy_.ephemeral.clear(); });
+    // Clear the last batch of targets on exit so that the process can identify
+    // new targets in the next eval
+    auto on_exit = defer([this]() { store_.clear_last_batch(); });
 
     result_serializer serializer(obfuscator_, actions_, output_alloc_);
 
     // Generate result object once relevant checks have been made
     auto [result_object, output] = serializer.initialise_result_object();
 
-    if (!store.has_new_targets()) {
+    if (!store_.has_new_targets()) {
         return {false, std::move(result_object)};
     }
 
     try {
         // Evaluate preprocessors first in their own try-catch, if there's a
         // timeout we still need to evaluate rules unaffected by it.
-        eval_preprocessors(store, deadline);
+        eval_preprocessors(deadline);
         // NOLINTNEXTLINE(bugprone-empty-catch)
     } catch (const ddwaf::timeout_exception &) {}
 
@@ -76,24 +71,24 @@ std::pair<bool, owned_object> evaluation_engine::eval(object_store &store, timer
 
     try {
         // If no rule targets are available, there is no point in evaluating them
-        const bool should_eval_rules = check_new_rule_targets(store);
-        const bool should_eval_filters = should_eval_rules || check_new_filter_targets(store);
+        const bool should_eval_rules = check_new_rule_targets();
+        const bool should_eval_filters = should_eval_rules || check_new_filter_targets();
 
         if (should_eval_filters) {
             // Filters need to be evaluated even if rules don't, otherwise it'll
             // break the current condition cache mechanism which requires knowing
             // if an address is new to this run.
-            const auto &policy = eval_filters(store, deadline);
+            const auto &policy = eval_filters(deadline);
 
             if (should_eval_rules) {
-                eval_rules(store, policy, results, deadline);
+                eval_rules(policy, results, deadline);
                 if (!results.empty()) {
-                    set_context_event_address(store);
+                    set_context_event_address(store_, current_scope_);
                 }
             }
         }
 
-        eval_postprocessors(store, deadline);
+        eval_postprocessors(deadline);
         // NOLINTNEXTLINE(bugprone-empty-catch)
     } catch (const ddwaf::timeout_exception &) {}
 
@@ -101,11 +96,11 @@ std::pair<bool, owned_object> evaluation_engine::eval(object_store &store, timer
     // available (e.g. from a postprocessor) and return a map of all attributes
     // generated during this call.
     // object::assign(result.attributes, collector_.collect_pending(store));
-    serializer.serialize(store, results, collector_, deadline, output);
+    serializer.serialize(store_, results, collector_, deadline, output);
     return {!results.empty(), std::move(result_object)};
 }
 
-void evaluation_engine::eval_preprocessors(object_store &store, timer &deadline)
+void evaluation_engine::eval_preprocessors(timer &deadline)
 {
     DDWAF_DEBUG("Evaluating preprocessors");
 
@@ -121,11 +116,11 @@ void evaluation_engine::eval_preprocessors(object_store &store, timer &deadline)
             it = new_it;
         }
 
-        preproc->eval(store, collector_, it->second, output_alloc_, deadline);
+        preproc->eval(store_, collector_, it->second, output_alloc_, current_scope_, deadline);
     }
 }
 
-void evaluation_engine::eval_postprocessors(object_store &store, timer &deadline)
+void evaluation_engine::eval_postprocessors(timer &deadline)
 {
     DDWAF_DEBUG("Evaluating postprocessors");
 
@@ -141,11 +136,11 @@ void evaluation_engine::eval_postprocessors(object_store &store, timer &deadline
             it = new_it;
         }
 
-        postproc->eval(store, collector_, it->second, output_alloc_, deadline);
+        postproc->eval(store_, collector_, it->second, output_alloc_, current_scope_, deadline);
     }
 }
 
-exclusion::context_policy &evaluation_engine::eval_filters(object_store &store, timer &deadline)
+exclusion::exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
 {
     DDWAF_DEBUG("Evaluating rule filters");
 
@@ -162,11 +157,11 @@ exclusion::context_policy &evaluation_engine::eval_filters(object_store &store, 
         }
 
         rule_filter::cache_type &cache = it->second;
-        auto exclusion = filter.match(store, cache, exclusion_matchers_, deadline);
+        auto exclusion = filter.match(store_, cache, exclusion_matchers_, current_scope_, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
-                exclusion_policy_.add_rule_exclusion(
-                    rule, exclusion->mode, exclusion->action, exclusion->ephemeral);
+                exclusions_.add_rule_exclusion(
+                    rule, exclusion->mode, exclusion->action, exclusion->scope);
             }
         }
     }
@@ -186,25 +181,26 @@ exclusion::context_policy &evaluation_engine::eval_filters(object_store &store, 
         }
 
         input_filter::cache_type &cache = it->second;
-        auto exclusion = filter.match(store, cache, exclusion_matchers_, deadline);
+        auto exclusion = filter.match(store_, cache, exclusion_matchers_, current_scope_, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
-                exclusion_policy_.add_input_exclusion(rule, exclusion->objects);
+                exclusions_.add_input_exclusion(rule, exclusion->objects);
             }
         }
     }
 
-    return exclusion_policy_;
+    return exclusions_;
 }
 
-void evaluation_engine::eval_rules(object_store &store, const exclusion::context_policy &policy,
-    std::vector<rule_result> &results, timer &deadline)
+void evaluation_engine::eval_rules(
+    const exclusion::exclusion_policy &policy, std::vector<rule_result> &results, timer &deadline)
 {
     for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
         const auto &mod = ruleset_->rule_modules[i];
         auto &cache = rule_module_cache_[i];
 
-        auto verdict = mod.eval(results, store, cache, policy, rule_matchers_, deadline);
+        auto verdict =
+            mod.eval(results, store_, cache, policy, rule_matchers_, current_scope_, deadline);
         if (verdict == rule_module::verdict_type::block) {
             break;
         }

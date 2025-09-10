@@ -10,12 +10,14 @@
 #ifdef __cplusplus
 namespace ddwaf{
 class waf;
-class context_wrapper;
+class context;
+class subcontext;
 class waf_builder;
 } // namespace ddwaf
 
 using ddwaf_handle = ddwaf::waf *;
-using ddwaf_context = ddwaf::context_wrapper *;
+using ddwaf_context = ddwaf::context *;
+using ddwaf_subcontext = ddwaf::subcontext *;
 using ddwaf_builder = ddwaf::waf_builder *;
 using ddwaf_allocator = void *;
 
@@ -89,6 +91,7 @@ typedef enum
 #ifndef __cplusplus
 typedef struct _ddwaf_handle* ddwaf_handle;
 typedef struct _ddwaf_context* ddwaf_context;
+typedef struct _ddwaf_subcontext* ddwaf_subcontext;
 typedef struct _ddwaf_builder* ddwaf_builder;
 typedef struct _ddwaf_allocator* ddwaf_allocator;
 #endif
@@ -302,22 +305,14 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_allocator outp
  *                ruleset which will be used and it will also ensure that
  *                parameters are taken into account across runs (nonnull)
  *
- * @param persistent_data Data on which to perform the pattern matching. This
+ * @param data (nonnull) Data on which to perform the pattern matching. This
  *    data will be stored by the context and used across multiple calls to this
- *    function. Once the context is destroyed, the used-defined free function
- *    will be used to free the data provided. Note that the data passed must be
- *    valid until the destruction of the context. The object must be a map of
- *    {string, <value>} in which each key represents the relevant address
- *    associated to the value, which can be of an arbitrary type. This parameter
- *    can be null if ephemeral data is provided.
- *
- * @param ephemeral_data Data on which to perform the pattern matching. This
- *    data will not be cached by the WAF. Matches arising from this data will
- *    also not be cached at any level. The data will be freed at the end of the
- *    call to ddwaf_context_eval. The object must be a map of {string, <value>} in which
- *    each key represents the relevant address associated to the value, which
- *    can be of an arbitrary type. This parameter can be null if persistent data
- *    is provided.
+ *    function or ddwaf_subcontext_eval. Once the context is destroyed, the user
+ *    defined allocator will be used to free the data provided. Note that the
+ *    data passed must be valid until the destruction of the context. The object
+ *    must be a map of {string, <value>} in which each key represents the
+ *    relevant address associated to the value, which can be of an arbitrary
+ *    type.
  *
  * @param result (nullable) Object map containing the following items:
  *               - events: an array of the generated events.
@@ -349,24 +344,13 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_allocator outp
  *
  * Notes on addresses:
  * - Within a single run, addresses provided should be unique.
- *   If duplicate persistent addresses are provided:
+ *   If duplicate addresses are provided:
  *   - Within the same batch, the latest one in the structure will be the one
  *     used for evaluation.
- *  - Within two different batches, the second batch will only use the new data.
- *
- *  Ephemeral addresses are designed to be duplicated across batches, but if
- *  duplicate addresses are provided within the same batch, the latest one seen
- *  will be the one used.
- *
- *  Duplicate addresses of different types (ephemeral, persistent), are not
- *  permitted. An existing address will never be replaced by a duplicate one
- *  of a different type, but it doesn't result in a critical failure. Due to the
- *  nature of ephemerals, an ephemeral address can be replaced in a subsequent
- *  batch by a persistent address, however taking advantage of this is not
- *  recommended and might be explicitly rejected in the future.
+ *   - Within two different batches, the second batch will only use the new data.
  **/
-DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *persistent_data,
-    ddwaf_object *ephemeral_data, bool free_objects, ddwaf_object *result,  uint64_t timeout);
+DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
+    bool free_objects, ddwaf_object *result,  uint64_t timeout);
 
 /**
  * ddwaf_context_destroy
@@ -377,6 +361,83 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *persisten
  * @param context Context to destroy. (nonnull)
  **/
 void ddwaf_context_destroy(ddwaf_context context);
+
+/**
+ * ddwaf_subcontext_init
+ *
+ * Subcontext object to perform matching using the provided WAF instance.
+ *
+ * @param conext Context from which to derive this subcontext. (nonnull)
+
+ * @return Handle to the subcontext instance.
+ **/
+ddwaf_subcontext ddwaf_subcontext_init(ddwaf_context context);
+
+/**
+ * ddwaf_subcontext_eval
+ *
+ * Perform a matching operation on the provided data
+ *
+ * @param subcontext WAF subcontext to be used in this run, this will determine
+ * the ruleset which will be used and it will also ensure that parameters are
+ * taken into account across runs (nonnull)
+ *
+ * @param data (nonnull) Data on which to perform the pattern matching. This
+ *    data will be stored by the subcontext and used across multiple calls to this
+ *    function. Once the subcontext is destroyed, the user defined allocator will
+ *    be used to free the data provided. Note that the data passed must be valid
+ *    until the destruction of the subcontext. The object must be a map of
+ *    {string, <value>} in which each key represents the  relevant address
+ *    associated to the value, which can be of an arbitrary type.
+ *
+ * @param result (nullable) Object map containing the following items:
+ *               - events: an array of the generated events.
+ *               - actions: a map of the generated actions in the format:
+ *                          {action type: { <parameter map> }, ...}
+ *               - duration: an unsigned specifying the total runtime of the
+ *                           call in nanoseconds.
+ *               - timeout: whether there has been a timeout during the call.
+ *               - attributes: a map containing all derived objects in the
+ *                             format: {tag, value}
+ *               - keep: whether the data contained herein must override any
+ *                       transport sampling through the relevant mechanism.
+ *               This structure must be freed by the caller and will contain all
+ *               specified keys when the value returned by ddwaf_subcontext_eval is either
+ *               DDWAF_OK or DDWAF_MATCH and will be empty otherwise.
+ * @param timeout Maximum time budget in microseconds.
+ *
+ * @return Return code of the operation.
+ * @error DDWAF_ERR_INVALID_ARGUMENT The subcontext is invalid, the data will not
+ *                                   be freed.
+ * @error DDWAF_ERR_INVALID_OBJECT The data provided didn't match the desired
+ *                                 structure or contained invalid objects, the
+ *                                 data will be freed by this function.
+ * @error DDWAF_ERR_INTERNAL There was an unexpected error and the operation did
+ *                           not succeed. The state of the WAF is undefined if
+ *                           this error is produced and the ownership of the
+ *                           data is unknown. The result structure will not be
+ *                           filled if this error occurs.
+ *
+ * Notes on addresses:
+ * - Within a single run, addresses provided should be unique.
+ *   If duplicate addresses are provided:
+ *   - Within the same batch, the latest one in the structure will be the one
+ *     used for evaluation.
+ *   - Within two different batches, the second batch will only use the new data.
+ **/
+DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *data,
+    bool free_objects, ddwaf_object *result,  uint64_t timeout);
+
+/**
+ * ddwaf_subcontext_destroy
+ *
+ * Performs the destruction of the subcontext, freeing the data passed to it through
+ * ddwaf_subcontext_eval using the used-defined allocator.
+ *
+ * @param subcontext subcontext to destroy. (nonnull)
+ **/
+void ddwaf_subcontext_destroy(ddwaf_subcontext subcontext);
+
 
 /**
  * ddwaf_builder_init

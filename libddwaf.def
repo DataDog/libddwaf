@@ -12,6 +12,9 @@ EXPORTS
   ddwaf_context_init
   ddwaf_context_eval
   ddwaf_context_destroy
+  ddwaf_subcontext_init
+  ddwaf_subcontext_eval
+  ddwaf_subcontext_destroy
   ddwaf_object_destroy
   ddwaf_get_version
   ddwaf_set_log_cb

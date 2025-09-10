@@ -32,15 +32,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     ddwaf::timer deadline{2s};
 
     auto [output, attr] =
-        gen.eval_impl({{.address = {}, .key_path = {}, .ephemeral = false, .value = cookies}},
-            {{.address = {},
-                .key_path = {},
-                .ephemeral = false,
-                .value = buffer.get<std::string_view>()}},
-            {{.address = {},
-                .key_path = {},
-                .ephemeral = false,
-                .value = buffer.get<std::string_view>()}},
+        gen.eval_impl({{.address = {}, .key_path = {}, .scope = {}, .value = cookies}},
+            {{.address = {}, .key_path = {}, .scope = {}, .value = buffer.get<std::string_view>()}},
+            {{.address = {}, .key_path = {}, .scope = {}, .value = buffer.get<std::string_view>()}},
             cache, memory::get_default_resource(), deadline);
 
     return 0;

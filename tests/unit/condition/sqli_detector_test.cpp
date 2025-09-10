@@ -38,7 +38,7 @@ TEST_P(DialectTestFixture, InvalidSql)
             {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -63,7 +63,7 @@ TEST_P(DialectTestFixture, InjectionWithoutTokens)
             {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -100,7 +100,7 @@ TEST_P(DialectTestFixture, BenignInjections)
             {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -150,13 +150,13 @@ TEST_P(DialectTestFixture, MaliciousInjections)
             {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
@@ -221,13 +221,13 @@ TEST_P(DialectTestFixture, Tautologies)
             {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
@@ -266,13 +266,13 @@ TEST_P(DialectTestFixture, Comments)
             {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
@@ -308,13 +308,13 @@ TEST(TestSqliDetectorMySql, Comments)
             {"server.db.system", "mysql"}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
@@ -353,13 +353,13 @@ TEST(TestSqliDetectorMySql, Tautologies)
             {"server.db.system", "mysql"}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
@@ -401,13 +401,13 @@ TEST(TestSqliDetectorPgSql, Tautologies)
             {"server.db.system", "pgsql"}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");

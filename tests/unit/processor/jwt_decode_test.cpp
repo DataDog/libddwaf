@@ -33,10 +33,10 @@ TEST(TestJwtDecoder, Basic)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, alloc, deadline);
+        gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
+            alloc, deadline);
     EXPECT_EQ(output.type(), object_type::map);
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     EXPECT_JSON(output.ref(),
         R"({"header":{"alg":"RS384","typ":"JWT"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022},"signature":{"available":true}})");
@@ -64,10 +64,10 @@ TEST(TestJwtDecoder, KeyPathLeadsToSingleValueArray)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, alloc, deadline);
+        gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
+            alloc, deadline);
     EXPECT_EQ(output.type(), object_type::map);
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     EXPECT_JSON(output.ref(),
         R"({"header":{"alg":"RS384","typ":"JWT"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022},"signature":{"available":true}})");
@@ -96,10 +96,10 @@ TEST(TestJwtDecoder, KeyPathLeadsToValidMultiValueArray)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, alloc, deadline);
+        gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
+            alloc, deadline);
     EXPECT_EQ(output.type(), object_type::map);
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     EXPECT_JSON(output.ref(),
         R"({"header":{"alg":"RS384","typ":"JWT"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022},"signature":{"available":true}})");
@@ -129,8 +129,8 @@ TEST(TestJwtDecoder, KeyPathLeadsToInvalidMultiValueArray)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, alloc, deadline);
+        gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
+            alloc, deadline);
     EXPECT_EQ(output.type(), object_type::invalid);
 }
 
@@ -155,8 +155,8 @@ TEST(TestJwtDecoder, MissingKeypath)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, alloc, deadline);
+        gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
+            alloc, deadline);
     EXPECT_EQ(output.type(), object_type::invalid);
 }
 
@@ -181,10 +181,10 @@ TEST(TestJwtDecoder, EmptyHeader)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, alloc, deadline);
+        gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
+            alloc, deadline);
     EXPECT_EQ(output.type(), object_type::map);
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     EXPECT_JSON(output.ref(),
         R"({"header":null,"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022},"signature":{"available":true}})");
@@ -210,10 +210,10 @@ TEST(TestJwtDecoder, EmptyPayload)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, alloc, deadline);
+        gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
+            alloc, deadline);
     EXPECT_EQ(output.type(), object_type::map);
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     EXPECT_JSON(output.ref(),
         R"({"header":{"alg":"RS384","typ":"JWT"},"payload":null,"signature":{"available":true}})");
@@ -238,10 +238,10 @@ TEST(TestJwtDecoder, LargePayloadBeyondLimit)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, alloc, deadline);
+        gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
+            alloc, deadline);
     EXPECT_EQ(output.type(), object_type::map);
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     EXPECT_JSON(output.ref(),
         R"({"header":{"alg":"RS384","typ":"JWT"},"payload":{"key_0":{"key_1":{"key_2":{"key_3":{"key_4":{"key_5":{"key_6":{"key_7":{"key_8":{"key_9":{"key_10":{"key_11":{"key_12":{"key_3":{"key_4":{"key_5":{"key_6":{"key_7":{"key_8":{"key_9":[]}}}}}}}}}}}}}}}}}}}},"signature":{"available":true}})");
@@ -264,10 +264,10 @@ TEST(TestJwtDecoder, NoSignature)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, alloc, deadline);
+        gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
+            alloc, deadline);
     EXPECT_EQ(output.type(), object_type::map);
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 
     EXPECT_JSON(output.ref(),
         R"({"header":{"alg":"none"},"payload":{"sub":"1234567890","name":"John Doe","admin":true,"iat":1516239022,"roles":["admin","1839021d", "~~"]},"signature":{"available":false}})");
@@ -287,10 +287,10 @@ TEST(TestJwtDecoder, NoPayloadNoSignatureMissingDelim)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, alloc, deadline);
+        gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
+            alloc, deadline);
     EXPECT_EQ(output.type(), object_type::invalid);
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 }
 
 TEST(TestJwtDecoder, NoPayloadNoSignatureMissingAllDelim)
@@ -306,10 +306,10 @@ TEST(TestJwtDecoder, NoPayloadNoSignatureMissingAllDelim)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, alloc, deadline);
+        gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
+            alloc, deadline);
     EXPECT_EQ(output.type(), object_type::invalid);
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 }
 
 TEST(TestJwtDecoder, NoSignatureNoDelim)
@@ -329,10 +329,10 @@ TEST(TestJwtDecoder, NoSignatureNoDelim)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] =
-        gen.eval_impl({.address = {}, .key_path = key_path, .ephemeral = false, .value = headers},
-            cache, alloc, deadline);
+        gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
+            alloc, deadline);
     EXPECT_EQ(output.type(), object_type::invalid);
-    EXPECT_EQ(attr, object_store::attribute::none);
+    EXPECT_TRUE(attr.is_context());
 }
 
 } // namespace

@@ -37,7 +37,7 @@ public:
 
     constexpr T *operator->() const { return ptr_; }
     constexpr T &operator*() const { return *ptr_; }
-    constexpr T *get() const { return ptr_; }
+    [[nodiscard]] constexpr T *get() const { return ptr_; }
 
 private:
     T *ptr_;

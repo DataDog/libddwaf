@@ -36,8 +36,7 @@ TEST(TestRuleAttributesIntegration, SingleValueOutputNoEvent)
             ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
         ddwaf_object result;
-        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, &result, LONG_TIME),
-            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &result, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
@@ -94,8 +93,7 @@ TEST(TestRuleAttributesIntegration, SingleValueOutputAndEvent)
             ddwaf_object_insert_key(&parameter, STRL("value2"), alloc), STRL("rule2"));
 
         ddwaf_object result;
-        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, &result, LONG_TIME),
-            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &result, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
@@ -155,8 +153,7 @@ TEST(TestRuleAttributesIntegration, SingleTargetOutputNoEvent)
             ddwaf_object_insert_key(&parameter, STRL("value3"), alloc), STRL("rule3"));
 
         ddwaf_object result;
-        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, &result, LONG_TIME),
-            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &result, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
@@ -213,8 +210,7 @@ TEST(TestRuleAttributesIntegration, MultipleValuesOutputNoEvent)
             ddwaf_object_insert_key(&parameter, STRL("value4"), alloc), STRL("rule4"));
 
         ddwaf_object result;
-        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, &result, LONG_TIME),
-            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &result, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
@@ -289,8 +285,7 @@ TEST(TestRuleAttributesIntegration, AttributesWithActions)
             ddwaf_object_insert_key(&parameter, STRL("value5"), alloc), STRL("rule5"));
 
         ddwaf_object result;
-        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, &result, LONG_TIME),
-            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &result, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
@@ -357,8 +352,7 @@ TEST(TestRuleAttributesIntegration, MultipleAttributesAndActions)
             ddwaf_object_insert_key(&parameter, STRL("value6"), alloc), STRL("rule6"));
 
         ddwaf_object result;
-        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, &result, LONG_TIME),
-            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &result, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
@@ -443,8 +437,7 @@ TEST(TestRuleAttributesIntegration, AttributesAndMonitorRuleFilter)
             ddwaf_object_insert_key(&parameter, STRL("value7"), alloc), STRL("rule7"));
 
         ddwaf_object result;
-        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, &result, LONG_TIME),
-            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &result, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
@@ -506,8 +499,7 @@ TEST(TestRuleAttributesIntegration, AttributesAndBlockingRuleFilter)
             ddwaf_object_insert_key(&parameter, STRL("value8"), alloc), STRL("rule8"));
 
         ddwaf_object result;
-        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, true, &result, LONG_TIME),
-            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, true, &result, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
@@ -572,9 +564,10 @@ TEST(TestRuleAttributesIntegration, AttributesAndEphemeralMatches)
         ddwaf_object_set_string_literal(
             ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule8"));
 
+        auto *subctx = ddwaf_subcontext_init(context1);
+
         ddwaf_object result;
-        EXPECT_EQ(
-            ddwaf_context_eval(context1, nullptr, &parameter, true, &result, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &parameter, true, &result, LONG_TIME), DDWAF_OK);
 
         EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
@@ -589,6 +582,7 @@ TEST(TestRuleAttributesIntegration, AttributesAndEphemeralMatches)
         EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
         ddwaf_object_destroy(&result, alloc);
+        ddwaf_subcontext_destroy(subctx);
     }
 
     {
@@ -598,9 +592,10 @@ TEST(TestRuleAttributesIntegration, AttributesAndEphemeralMatches)
         ddwaf_object_set_string_literal(
             ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
+        auto *subctx = ddwaf_subcontext_init(context1);
+
         ddwaf_object result;
-        EXPECT_EQ(ddwaf_context_eval(context1, nullptr, &parameter, true, &result, LONG_TIME),
-            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &parameter, true, &result, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
@@ -615,6 +610,7 @@ TEST(TestRuleAttributesIntegration, AttributesAndEphemeralMatches)
         EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         ddwaf_object_destroy(&result, alloc);
+        ddwaf_subcontext_destroy(subctx);
     }
 
     {
@@ -625,9 +621,10 @@ TEST(TestRuleAttributesIntegration, AttributesAndEphemeralMatches)
         ddwaf_object_set_string_literal(
             ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
+        auto *subctx = ddwaf_subcontext_init(context1);
+
         ddwaf_object result;
-        EXPECT_EQ(
-            ddwaf_context_eval(context1, nullptr, &parameter, true, &result, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &parameter, true, &result, LONG_TIME), DDWAF_OK);
 
         EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
@@ -642,12 +639,13 @@ TEST(TestRuleAttributesIntegration, AttributesAndEphemeralMatches)
         EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
         ddwaf_object_destroy(&result, alloc);
+        ddwaf_subcontext_destroy(subctx);
     }
 
     ddwaf_context_destroy(context1);
 }
 
-TEST(TestRuleAttributesIntegration, AttributesEventsAndEphemeralMatches)
+TEST(TestRuleAttributesIntegration, AttributesEventsAndSubcontextMatches)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
@@ -670,9 +668,10 @@ TEST(TestRuleAttributesIntegration, AttributesEventsAndEphemeralMatches)
         ddwaf_object_set_string_literal(
             ddwaf_object_insert_key(&parameter, STRL("value2"), alloc), STRL("rule8"));
 
+        auto *subctx = ddwaf_subcontext_init(context1);
+
         ddwaf_object result;
-        EXPECT_EQ(
-            ddwaf_context_eval(context1, nullptr, &parameter, true, &result, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &parameter, true, &result, LONG_TIME), DDWAF_OK);
 
         EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
@@ -687,6 +686,7 @@ TEST(TestRuleAttributesIntegration, AttributesEventsAndEphemeralMatches)
         EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
 
         ddwaf_object_destroy(&result, alloc);
+        ddwaf_subcontext_destroy(subctx);
     }
 
     {
@@ -696,9 +696,10 @@ TEST(TestRuleAttributesIntegration, AttributesEventsAndEphemeralMatches)
         ddwaf_object_set_string_literal(
             ddwaf_object_insert_key(&parameter, STRL("value2"), alloc), STRL("rule2"));
 
+        auto *subctx = ddwaf_subcontext_init(context1);
+
         ddwaf_object result;
-        EXPECT_EQ(ddwaf_context_eval(context1, nullptr, &parameter, true, &result, LONG_TIME),
-            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &parameter, true, &result, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
@@ -719,18 +720,20 @@ TEST(TestRuleAttributesIntegration, AttributesEventsAndEphemeralMatches)
         EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         ddwaf_object_destroy(&result, alloc);
+        ddwaf_subcontext_destroy(subctx);
     }
 
     {
-        // The second match should contain an event but no attributes
+        // The second match should contain an event and attributes as well
         ddwaf_object parameter;
         ddwaf_object_set_map(&parameter, 1, alloc);
         ddwaf_object_set_string_literal(
             ddwaf_object_insert_key(&parameter, STRL("value2"), alloc), STRL("rule2"));
 
+        auto *subctx = ddwaf_subcontext_init(context1);
+
         ddwaf_object result;
-        EXPECT_EQ(ddwaf_context_eval(context1, nullptr, &parameter, true, &result, LONG_TIME),
-            DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &parameter, true, &result, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
@@ -748,9 +751,10 @@ TEST(TestRuleAttributesIntegration, AttributesEventsAndEphemeralMatches)
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
         EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         ddwaf_object_destroy(&result, alloc);
+        ddwaf_subcontext_destroy(subctx);
     }
 
     ddwaf_context_destroy(context1);

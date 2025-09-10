@@ -24,20 +24,94 @@
 #include <variant>
 #include <vector>
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
 // Convert numbers to strings
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
 // (string, length), only for literals
 #define STRL(value) value, sizeof(value) - 1
+// NOLINTEND(cppcoreguidelines-macro-usage)
 
 template <typename T> using optional_ref = std::optional<std::reference_wrapper<T>>;
 using scalar_type = std::variant<bool, int64_t, uint64_t, double, std::string>;
 
 namespace ddwaf {
 
+enum class scope_kind : uint8_t { context = 0, subcontext = 1 };
+
+class evaluation_scope {
+public:
+    evaluation_scope() = default;
+
+    static evaluation_scope context() { return evaluation_scope{scope_kind::context}; }
+    static evaluation_scope subcontext() { return evaluation_scope{scope_kind::subcontext}; }
+
+    static evaluation_scope next_subcontext(evaluation_scope root)
+    {
+        ++root.id_;
+        return root;
+    }
+
+    [[nodiscard]] bool is_context() const { return kind_ == scope_kind::context; }
+    [[nodiscard]] bool is_subcontext() const { return kind_ == scope_kind::subcontext; }
+    [[nodiscard]] bool is_subcontext_and_equal_to(evaluation_scope other) const
+    {
+        return kind_ == scope_kind::subcontext && other.kind_ == scope_kind::subcontext &&
+               id_ == other.id_;
+    }
+
+    bool operator==(scope_kind other) const { return kind_ == other; }
+
+    bool operator==(const evaluation_scope other) const
+    {
+        return kind_ == other.kind_ && id_ == other.id_;
+    }
+
+    bool has_higher_precedence_than(evaluation_scope other)
+    {
+        return static_cast<uint8_t>(kind_) < static_cast<uint8_t>(other.kind_);
+    }
+
+    bool has_higher_precedence_or_is_equal_to(evaluation_scope other)
+    {
+        return has_higher_precedence_than(other) || *this == other;
+    }
+
+    bool has_lower_precedence_than(evaluation_scope other)
+    {
+        return static_cast<uint8_t>(kind_) > static_cast<uint8_t>(other.kind_);
+    }
+
+    // For testing
+    [[nodiscard]] uint32_t id() const { return id_; }
+
+private:
+    explicit evaluation_scope(scope_kind kind) : kind_(kind){};
+
+    scope_kind kind_{scope_kind::context};
+    uint32_t id_{0};
+};
+
+inline std::ostream &operator<<(std::ostream &os, evaluation_scope scope)
+{
+    if (scope.is_context()) {
+        os << "scope::context";
+    } else {
+        os << "scope::subcontext::" << scope.id();
+    }
+    return os;
+}
+
 struct eval_result {
-    bool outcome;
-    bool ephemeral;
+    bool outcome{false};
+    evaluation_scope scope;
+
+    static eval_result match(evaluation_scope scope) { return {.outcome = true, .scope = scope}; }
+
+    static eval_result no_match()
+    {
+        return {.outcome = false, .scope = evaluation_scope::context()};
+    }
 };
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
@@ -60,15 +134,15 @@ inline uint8_t from_hex(char c)
 }
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
-template <class Fn> class scope_exit {
+template <class Fn> class defer {
 public:
-    explicit scope_exit(Fn &&fn) noexcept : fn_(std::move(fn)) {}
-    ~scope_exit() { fn_(); }
+    explicit defer(Fn &&fn) noexcept : fn_(std::move(fn)) {}
+    ~defer() { fn_(); }
 
-    scope_exit(const scope_exit &) = delete;
-    scope_exit(scope_exit &&) = delete;
-    scope_exit &operator=(const scope_exit &) = delete;
-    scope_exit &operator=(scope_exit &&) = delete;
+    defer(const defer &) = delete;
+    defer(defer &&) = delete;
+    defer &operator=(const defer &) = delete;
+    defer &operator=(defer &&) = delete;
 
 protected:
     Fn fn_;
@@ -152,6 +226,7 @@ template <typename T> std::pair<bool, T> from_string(std::string_view str)
             return {true, result};
         }
     } else {
+        // NOLINTNEXTLINE(misc-const-correctness)
         std::istringstream iss(std::string{str});
         iss >> result;
         if (!iss.fail() && iss.eof()) {

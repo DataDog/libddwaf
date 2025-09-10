@@ -237,7 +237,14 @@ inline std::ostream &operator<<(std::ostream &os, const path_trie::traverser::st
 
 class object_filter {
 public:
-    using cache_type = memory::unordered_set<object_view>;
+    struct cache_entry {
+        object_cache_key object;
+        evaluation_scope scope;
+    };
+
+    // cache_type will always be limited by target_paths_.size(), so it can use
+    // the context allocator
+    using cache_type = memory::unordered_map<target_index, cache_entry>;
 
     object_filter() = default;
 
@@ -250,8 +257,8 @@ public:
 
     [[nodiscard]] bool empty() const { return target_paths_.empty(); }
 
-    object_set match(
-        const object_store &store, cache_type &cache, bool ephemeral, ddwaf::timer &deadline) const;
+    object_set match(const object_store &store, cache_type &cache, evaluation_scope scope,
+        ddwaf::timer &deadline) const;
 
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {

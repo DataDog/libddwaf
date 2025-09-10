@@ -262,7 +262,7 @@ int main() {
         ddwaf_object_insert_key(&data, STRL("key"), alloc), STRL("Arachni"), alloc);
 
     ddwaf_object result = {0};
-    ddwaf_context_eval(ctx, &data, NULL, true, &result, (uint32_t)-1);
+    ddwaf_context_eval(ctx, &data, true, &result, (uint32_t)-1);
     
 
     const ddwaf_object *events = ddwaf_object_find(&result, "events", sizeof("events") - 1);

@@ -29,7 +29,7 @@ TEST(ExclusionObjectSet, PersistentOnly)
     EXPECT_TRUE(excluded.contains(root.at(0)));
 }
 
-TEST(ExclusionObjectSet, EphemeralOnly)
+TEST(ExclusionObjectSet, SubcontextOnly)
 {
     auto root = object_builder::map({{"value", "node"}});
 
@@ -39,7 +39,7 @@ TEST(ExclusionObjectSet, EphemeralOnly)
     EXPECT_TRUE(excluded.contains(root.at(0)));
 }
 
-TEST(ExclusionObjectSet, EphemeralAndPersistent)
+TEST(ExclusionObjectSet, SubcontextAndPersistent)
 {
     auto root = object_builder::map({{"first", "node"}, {"second", "node"}});
 
@@ -58,20 +58,20 @@ TEST(ExclusionObjectSetRef, Empty)
     }
 
     {
-        std::unordered_set<object_view> persistent;
+        std::unordered_set<object_cache_key> persistent;
         exclusion::object_set_ref excluded{persistent, {}};
         EXPECT_TRUE(excluded.empty());
     }
 
     {
-        std::unordered_set<object_view> ephemeral;
+        std::unordered_set<object_cache_key> ephemeral;
         exclusion::object_set_ref excluded{{}, ephemeral};
         EXPECT_TRUE(excluded.empty());
     }
 
     {
-        std::unordered_set<object_view> persistent;
-        std::unordered_set<object_view> ephemeral;
+        std::unordered_set<object_cache_key> persistent;
+        std::unordered_set<object_cache_key> ephemeral;
         exclusion::object_set_ref excluded{persistent, ephemeral};
         EXPECT_TRUE(excluded.empty());
     }
@@ -81,30 +81,30 @@ TEST(ExclusionObjectSetRef, PersistentOnly)
 {
     auto root = object_builder::map({{"value", "node"}});
 
-    std::unordered_set<object_view> persistent{root.at(0)};
+    std::unordered_set<object_cache_key> persistent{root.at(0)};
     exclusion::object_set_ref excluded{persistent, {}};
     EXPECT_FALSE(excluded.empty());
     EXPECT_EQ(excluded.size(), 1);
     EXPECT_TRUE(excluded.contains(root.at(0)));
 }
 
-TEST(ExclusionObjectSetRef, EphemeralOnly)
+TEST(ExclusionObjectSetRef, SubcontextOnly)
 {
     auto root = object_builder::map({{"value", "node"}});
 
-    std::unordered_set<object_view> ephemeral{root.at(0)};
+    std::unordered_set<object_cache_key> ephemeral{root.at(0)};
     exclusion::object_set_ref excluded{{}, ephemeral};
     EXPECT_FALSE(excluded.empty());
     EXPECT_EQ(excluded.size(), 1);
     EXPECT_TRUE(excluded.contains(root.at(0)));
 }
 
-TEST(ExclusionObjectSetRef, EphemeralAndPersistent)
+TEST(ExclusionObjectSetRef, SubcontextAndPersistent)
 {
     auto root = object_builder::map({{"first", "node"}, {"second", "node"}});
 
-    std::unordered_set<object_view> persistent{root.at(1)};
-    std::unordered_set<object_view> ephemeral{root.at(0)};
+    std::unordered_set<object_cache_key> persistent{root.at(1)};
+    std::unordered_set<object_cache_key> ephemeral{root.at(0)};
     exclusion::object_set_ref excluded{persistent, ephemeral};
     EXPECT_FALSE(excluded.empty());
     EXPECT_EQ(excluded.size(), 2);

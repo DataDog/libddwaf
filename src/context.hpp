@@ -17,98 +17,106 @@
 
 namespace ddwaf {
 
-using filter_mode = exclusion::filter_mode;
+class context;
+
+class subcontext {
+public:
+    ~subcontext()
+    {
+        const memory::memory_resource_guard guard(mr_.get());
+        engine_->stop_subcontext();
+        // Reset to make sure that If the context has been destroyed, the
+        // destructors are called with the correct thread-local memory resource
+        engine_.reset();
+    }
+
+    subcontext(subcontext &&) noexcept = delete;
+    subcontext(const subcontext &) = delete;
+    subcontext &operator=(subcontext &&) noexcept = delete;
+    subcontext &operator=(const subcontext &) = delete;
+
+    bool insert(owned_object data) noexcept
+    {
+        const memory::memory_resource_guard guard(mr_.get());
+        return engine_->insert(std::move(data));
+    }
+
+    bool insert(map_view data) noexcept
+    {
+        const memory::memory_resource_guard guard(mr_.get());
+        return engine_->insert(data);
+    }
+
+    std::pair<bool, owned_object> eval(timer &deadline)
+    {
+        const memory::memory_resource_guard guard(mr_.get());
+        return engine_->eval(deadline);
+    }
+
+protected:
+    explicit subcontext(std::shared_ptr<evaluation_engine> engine,
+        std::shared_ptr<memory::monotonic_buffer_resource> mr)
+        : engine_(std::move(engine)), mr_(std::move(mr))
+    {
+        engine_->start_subcontext();
+    }
+
+    std::shared_ptr<evaluation_engine> engine_;
+    // This memory resource is primarily used for non-subcontext allocations within the context
+    // itself, such as for caching purposes of finite elements. This has the advantage of
+    // improving the context destruction and memory deallocation performance.
+    std::shared_ptr<memory::monotonic_buffer_resource> mr_;
+
+    friend class context;
+};
 
 class context {
 public:
-    using attribute = object_store::attribute;
-
     explicit context(std::shared_ptr<ruleset> ruleset,
         nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
-        : engine_(std::move(ruleset), output_alloc)
-    {}
+        : mr_(std::make_shared<memory::monotonic_buffer_resource>())
+    {
+        const memory::memory_resource_guard guard(mr_.get());
+        engine_ = std::make_shared<evaluation_engine>(std::move(ruleset), output_alloc);
+    }
 
+    ~context()
+    {
+        const memory::memory_resource_guard guard(mr_.get());
+        engine_.reset();
+    }
+
+    context(context &&) noexcept = delete;
     context(const context &) = delete;
+    context &operator=(context &&) noexcept = delete;
     context &operator=(const context &) = delete;
-    context(context &&) = delete;
-    context &operator=(context &&) = delete;
-    ~context() = default;
 
-    bool insert(owned_object data, attribute attr = attribute::none) noexcept
+    bool insert(owned_object data) noexcept
     {
-        if (!store_.insert(std::move(data), attr)) {
-            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
-            return false;
-        }
-        return true;
+        const memory::memory_resource_guard guard(mr_.get());
+        return engine_->insert(std::move(data));
     }
 
-    bool insert(map_view data, attribute attr = attribute::none) noexcept
+    bool insert(map_view data) noexcept
     {
-        if (!store_.insert(data, attr)) {
-            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
-            return false;
-        }
-        return true;
+        const memory::memory_resource_guard guard(mr_.get());
+        return engine_->insert(data);
     }
 
-    std::pair<bool, owned_object> eval(uint64_t timeout)
+    std::pair<bool, owned_object> eval(timer &deadline)
     {
-        timer deadline{std::chrono::microseconds(timeout)};
-        return engine_.eval(store_, deadline);
+        const memory::memory_resource_guard guard(mr_.get());
+        return engine_->eval(deadline);
     }
+
+    subcontext create_subcontext() { return subcontext{engine_, mr_}; }
 
 protected:
-    evaluation_engine engine_;
-    object_store store_;
-};
-
-class context_wrapper {
-public:
-    explicit context_wrapper(std::shared_ptr<ruleset> ruleset,
-        nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
-    {
-        memory::memory_resource_guard guard(&mr_);
-        ctx_ = static_cast<context *>(mr_.allocate(sizeof(context), alignof(context)));
-        new (ctx_) context{std::move(ruleset), output_alloc};
-    }
-
-    ~context_wrapper()
-    {
-        memory::memory_resource_guard guard(&mr_);
-        ctx_->~context();
-        mr_.deallocate(static_cast<void *>(ctx_), sizeof(context), alignof(context));
-    }
-
-    context_wrapper(context_wrapper &&) noexcept = delete;
-    context_wrapper(const context_wrapper &) = delete;
-    context_wrapper &operator=(context_wrapper &&) noexcept = delete;
-    context_wrapper &operator=(const context_wrapper &) = delete;
-
-    bool insert(owned_object data, context::attribute attr = context::attribute::none) noexcept
-    {
-        memory::memory_resource_guard guard(&mr_);
-        return ctx_->insert(std::move(data), attr);
-    }
-
-    bool insert(map_view data, context::attribute attr = context::attribute::none) noexcept
-    {
-        memory::memory_resource_guard guard(&mr_);
-        return ctx_->insert(data, attr);
-    }
-
-    std::pair<bool, owned_object> eval(uint64_t timeout)
-    {
-        memory::memory_resource_guard guard(&mr_);
-        return ctx_->eval(timeout);
-    }
-
-protected:
-    context *ctx_;
-    // This memory resource is primarily used for non-ephemeral allocations within the context
+    std::shared_ptr<evaluation_engine> engine_;
+    // This memory resource is primarily used for non-subcontext allocations within the context
     // itself, such as for caching purposes of finite elements. This has the advantage of
     // improving the context destruction and memory deallocation performance.
-    memory::monotonic_buffer_resource mr_;
+    std::shared_ptr<memory::monotonic_buffer_resource> mr_;
 };
 
 } // namespace ddwaf

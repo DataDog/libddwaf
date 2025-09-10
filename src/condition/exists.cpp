@@ -79,11 +79,11 @@ search_outcome exists(object_view root, std::span<const std::string> key_path,
                 .highlights = {},
                 .operator_name = "exists",
                 .operator_value = {},
-                .ephemeral = input.ephemeral}};
-            return {.outcome = true, .ephemeral = input.ephemeral};
+                .scope = input.scope}};
+            return {.outcome = true, .scope = input.scope};
         }
     }
-    return {.outcome = false, .ephemeral = false};
+    return eval_result::no_match();
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
@@ -95,7 +95,7 @@ search_outcome exists(object_view root, std::span<const std::string> key_path,
     // unknown, we can't guarantee that the key path isn't actually present in
     // the data set
     if (exists(input.value, input.key_path, objects_excluded) != search_outcome::not_found) {
-        return {.outcome = false, .ephemeral = false};
+        return eval_result::no_match();
     }
 
     std::vector<std::string> key_path{input.key_path.begin(), input.key_path.end()};
@@ -106,8 +106,8 @@ search_outcome exists(object_view root, std::span<const std::string> key_path,
         .highlights = {},
         .operator_name = "!exists",
         .operator_value = {},
-        .ephemeral = input.ephemeral}};
-    return {.outcome = true, .ephemeral = input.ephemeral};
+        .scope = input.scope}};
+    return {.outcome = true, .scope = input.scope};
 }
 
 } // namespace ddwaf

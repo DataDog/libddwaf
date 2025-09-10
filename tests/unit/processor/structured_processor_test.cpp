@@ -31,7 +31,7 @@ public:
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
     {}
 
-    MOCK_METHOD((std::pair<owned_object, object_store::attribute>), eval_impl,
+    MOCK_METHOD((std::pair<owned_object, evaluation_scope>), eval_impl,
         (const unary_argument<object_view> &unary,
             const optional_argument<std::string_view> &optional,
             const variadic_argument<uint64_t> &variadic, processor_cache &,
@@ -51,7 +51,7 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
         {{"unary_address", "unary_string"}, {"optional_address", "optional_string"},
             {"variadic_address_1", 1U}, {"variadic_address_2", 1U}});
     object_store store;
-    store.insert(input_map);
+    store.insert(input_map, evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("unary_address"),
@@ -73,8 +73,8 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
-            std::move(output), object_store::attribute::none})));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context()})));
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
@@ -82,7 +82,7 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 1);
@@ -101,7 +101,7 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
         {"variadic_address_1", 1U}, {"variadic_address_2", 1U}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(input_map, evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("unary_address"),
@@ -123,8 +123,8 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, object_store::attribute>{
-            std::move(output), object_store::attribute::none})));
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context()})));
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
@@ -132,7 +132,7 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 1);
@@ -149,7 +149,7 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
         {"variadic_address_1", 1U}, {"variadic_address_2", 1U}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(input_map, evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("unary_address"),
@@ -178,7 +178,7 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 0);
 }
@@ -193,7 +193,7 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
     });
 
     object_store store;
-    store.insert(input_map);
+    store.insert(input_map, evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("unary_address"),
@@ -222,7 +222,7 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 0);
 }

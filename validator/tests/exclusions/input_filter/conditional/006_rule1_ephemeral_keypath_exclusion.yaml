@@ -1,5 +1,6 @@
 {
   name: "Ephemeral keypath exclusion with condition",
+  expected-fail: true,
   runs: [
     {
       ephemeral-input: {
