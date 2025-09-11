@@ -10,7 +10,6 @@
 #include <re2/re2.h>
 
 #include "matcher/base.hpp"
-#include "matcher/checksum.hpp"
 
 namespace ddwaf::matcher {
 
@@ -19,8 +18,7 @@ public:
     static constexpr std::string_view matcher_name = "match_regex";
     static constexpr std::string_view negated_matcher_name = "!match_regex";
 
-    regex_match(const std::string &regex_str, std::size_t minLength, bool case_sensitive,
-        checksum_algorithm algo = checksum_algorithm::none);
+    regex_match(const std::string &regex_str, std::size_t minLength, bool case_sensitive);
     ~regex_match() override = default;
     regex_match(const regex_match &) = delete;
     regex_match(regex_match &&) noexcept = default;
@@ -35,12 +33,9 @@ protected:
     }
 
     [[nodiscard]] std::pair<bool, dynamic_string> match_impl(std::string_view pattern) const;
-    [[nodiscard]] std::pair<bool, dynamic_string> match_one(std::string_view pattern) const;
 
     std::unique_ptr<re2::RE2> regex{nullptr};
     std::size_t min_length;
-
-    checksum_algorithm algo_;
 
     friend class base_impl<regex_match>;
 };

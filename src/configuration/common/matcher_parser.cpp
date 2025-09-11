@@ -16,13 +16,13 @@
 #include <utility>
 #include <vector>
 
+#include "builder/checksum_builder.hpp"
 #include "configuration/common/common.hpp"
 #include "configuration/common/matcher_parser.hpp" // IWYU pragma: keep
 #include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
 #include "ddwaf.h"
 #include "matcher/base.hpp"
-#include "matcher/checksum.hpp"
 #include "matcher/equals.hpp"
 #include "matcher/exact_match.hpp"
 #include "matcher/greater_than.hpp"
@@ -33,6 +33,7 @@
 #include "matcher/lower_than.hpp"
 #include "matcher/phrase_match.hpp"
 #include "matcher/regex_match.hpp"
+#include "matcher/regex_match_with_checksum.hpp"
 
 namespace ddwaf {
 
@@ -79,10 +80,27 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::re
         throw ddwaf::parsing_error("min_length is a negative number");
     }
 
-    return {std::string{},
-        std::make_unique<matcher::regex_match>(regex, min_length,
-            at<bool>(options, "case_sensitive", false),
-            checksum_algorithm_from_string(at<std::string_view>(options, "checksum", "none")))};
+    return {std::string{}, std::make_unique<matcher::regex_match>(
+                               regex, min_length, at<bool>(options, "case_sensitive", false))};
+}
+
+template <>
+std::pair<std::string, std::unique_ptr<matcher::base>>
+parse_matcher<matcher::regex_match_with_checksum>(const raw_configuration::map &params)
+{
+    raw_configuration::map options;
+
+    auto regex = at<std::string>(params, "regex");
+    options = at<raw_configuration::map>(params, "options", options);
+
+    auto min_length = at<int64_t>(options, "min_length", 0);
+    if (min_length < 0) {
+        throw ddwaf::parsing_error("min_length is a negative number");
+    }
+
+    return {std::string{}, std::make_unique<matcher::regex_match_with_checksum>(regex, min_length,
+                               at<bool>(options, "case_sensitive", false),
+                               checksum_builder::build(at<std::string_view>(options, "checksum")))};
 }
 
 template <>

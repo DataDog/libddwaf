@@ -23,6 +23,7 @@
 #include "matcher/lower_than.hpp"
 #include "matcher/phrase_match.hpp"
 #include "matcher/regex_match.hpp"
+#include "matcher/regex_match_with_checksum.hpp"
 
 namespace ddwaf {
 
@@ -50,7 +51,8 @@ inline std::pair<std::string, std::unique_ptr<matcher::base>> parse_any_matcher(
 {
     return parse_matcher<matcher::equals<>, matcher::exact_match, matcher::greater_than<>,
         matcher::ip_match, matcher::is_sqli, matcher::is_xss, matcher::lower_than<>,
-        matcher::phrase_match, matcher::regex_match, matcher::hidden_ascii_match>(name, params);
+        matcher::phrase_match, matcher::regex_match, matcher::regex_match_with_checksum,
+        matcher::hidden_ascii_match>(name, params);
 }
 
 } // namespace ddwaf

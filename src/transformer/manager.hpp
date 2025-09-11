@@ -7,7 +7,6 @@
 #pragma once
 
 #include <span>
-#include <vector>
 
 #include "ddwaf.h"
 #include "transformer/base.hpp"

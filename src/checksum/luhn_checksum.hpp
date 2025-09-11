@@ -6,14 +6,18 @@
 
 #pragma once
 
-#include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <string_view>
+
+#include "checksum/base.hpp"
 
 namespace ddwaf {
 
-enum class checksum_algorithm : uint8_t { none, luhn };
-
-checksum_algorithm checksum_algorithm_from_string(std::string_view str);
-bool checksum_eval(checksum_algorithm algo, std::string_view str);
+class luhn_checksum : public base_checksum_impl<luhn_checksum> {
+protected:
+    static bool validate_impl(std::string_view str) noexcept;
+    friend class base_checksum_impl<luhn_checksum>;
+};
 
 } // namespace ddwaf

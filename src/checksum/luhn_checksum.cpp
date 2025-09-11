@@ -4,17 +4,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2025 Datadog, Inc.
 
-#include "matcher/checksum.hpp"
 #include "utils.hpp"
 #include <cstddef>
-#include <stdexcept>
 #include <string_view>
+
+#include "checksum/luhn_checksum.hpp"
 
 namespace ddwaf {
 
-namespace {
-
-bool luhn_checksum(std::string_view str)
+bool luhn_checksum::validate_impl(std::string_view str) noexcept
 {
     unsigned check_digit = 0;
     std::size_t i = str.size();
@@ -50,34 +48,6 @@ bool luhn_checksum(std::string_view str)
     auto computed_digit = ((10 - (total % 10)) % 10);
 
     return computed_digit == check_digit;
-}
-
-} // namespace
-
-checksum_algorithm checksum_algorithm_from_string(std::string_view str)
-{
-    if (str == "luhn") {
-        return checksum_algorithm::luhn;
-    }
-
-    if (str == "none") {
-        return checksum_algorithm::none;
-    }
-
-    throw std::invalid_argument("unknown check digit algorithm");
-}
-
-bool checksum_eval(checksum_algorithm algo, std::string_view str)
-{
-    switch (algo) {
-    case checksum_algorithm::luhn:
-        return luhn_checksum(str);
-    case checksum_algorithm::none:
-        return true;
-    default:
-        break;
-    }
-    return false;
 }
 
 } // namespace ddwaf
