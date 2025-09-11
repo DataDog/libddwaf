@@ -42,9 +42,10 @@ regex_match_with_checksum::regex_match_with_checksum(const std::string &regex_st
 std::pair<bool, dynamic_string> regex_match_with_checksum::match_impl(
     std::string_view pattern) const
 {
-    while (pattern.size() >= min_length) {
+    while (!pattern.empty() && pattern.size() >= min_length) {
         std::string_view match;
-        if (!regex->Match(pattern, 0, pattern.size(), RE2::UNANCHORED, &match, 1)) {
+        auto res = regex->Match(pattern, 0, pattern.size(), RE2::UNANCHORED, &match, 1);
+        if (!res || match.empty()) {
             break;
         }
 

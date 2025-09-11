@@ -36,7 +36,7 @@ regex_match::regex_match(const std::string &regex_str, std::size_t minLength, bo
 
 std::pair<bool, dynamic_string> regex_match::match_impl(std::string_view pattern) const
 {
-    if (pattern.size() < min_length) {
+    if (pattern.size() < min_length || pattern.empty()) {
         return {false, {}};
     }
 

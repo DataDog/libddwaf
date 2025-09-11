@@ -5,7 +5,9 @@
 // Copyright 2025 Datadog, Inc.
 
 #include "utils.hpp"
+#include <array>
 #include <cstddef>
+#include <cstdint>
 #include <string_view>
 
 #include "checksum/luhn_checksum.hpp"
@@ -14,40 +16,24 @@ namespace ddwaf {
 
 bool luhn_checksum::validate_impl(std::string_view str) noexcept
 {
-    unsigned check_digit = 0;
-    std::size_t i = str.size();
-    for (; i > 0; --i) {
-        auto c = str[i - 1];
+    // Precomputed doubled values
+    //   for num from 0 to 9: (2 * num) / 10 + (2 * num) % 10
+    static constexpr std::array<uint8_t, 10> lut = {0, 2, 4, 6, 8, 1, 3, 5, 7, 9};
+
+    uint32_t sum = 0;
+    bool should_double = false;
+    for (std::size_t i = str.size(); i > 0; --i) {
+        const auto c = str[i - 1];
         if (!ddwaf::isdigit(c)) {
             continue;
         }
 
-        check_digit = (c - '0');
-        break;
+        const auto d = static_cast<uint32_t>(c - '0');
+        sum += should_double ? lut[d] : d;
+        should_double = !should_double;
     }
 
-    if (i == 0) {
-        return false;
-    }
-
-    unsigned total = 0;
-    unsigned count = 0;
-    for (i -= 1; i > 0; --i) {
-        auto c = str[i - 1];
-        if (!ddwaf::isdigit(c)) {
-            continue;
-        }
-
-        unsigned num = c - '0';
-        if ((count++ & 0x01) == 0) {
-            num = (2 * num) / 10 + (2 * num) % 10;
-        }
-        total += num;
-    }
-
-    auto computed_digit = ((10 - (total % 10)) % 10);
-
-    return computed_digit == check_digit;
+    return sum > 0 && (sum % 10U == 0U);
 }
 
 } // namespace ddwaf

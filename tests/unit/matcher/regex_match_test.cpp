@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "configuration/common/parser_exception.hpp"
 #include "matcher/regex_match.hpp"
 
 #include "common/gtest_utils.hpp"
@@ -11,6 +12,11 @@
 using namespace ddwaf::matcher;
 
 namespace {
+
+TEST(TestRegexMatch, InvalidRegex)
+{
+    EXPECT_THROW(regex_match("\\uFFFF", 16, true), ddwaf::parsing_error);
+}
 TEST(TestRegexMatch, TestBasicCaseInsensitive)
 {
     regex_match matcher("^rEgEx$", 0, false);
