@@ -35,6 +35,7 @@ protected:
     }
 
     [[nodiscard]] std::pair<bool, dynamic_string> match_impl(std::string_view pattern) const;
+    [[nodiscard]] std::pair<bool, dynamic_string> match_one(std::string_view pattern) const;
 
     std::unique_ptr<re2::RE2> regex{nullptr};
     std::size_t min_length;

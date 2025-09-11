@@ -36,20 +36,43 @@ regex_match::regex_match(const std::string &regex_str, std::size_t minLength, bo
     }
 }
 
-std::pair<bool, dynamic_string> regex_match::match_impl(std::string_view pattern) const
+std::pair<bool, dynamic_string> regex_match::match_one(std::string_view pattern) const
 {
-    if (pattern.data() == nullptr || !regex->ok() || pattern.size() < min_length) {
+    if (pattern.size() < min_length) {
         return {false, {}};
     }
 
     std::string_view match;
-    const bool res = regex->Match(pattern, 0, pattern.size(), re2::RE2::UNANCHORED, &match, 1);
-
-    if (!res || !checksum_eval(algo_, match)) {
+    if (!regex->Match(pattern, 0, pattern.size(), RE2::UNANCHORED, &match, 1)) {
         return {false, {}};
     }
 
     return {true, match};
+}
+
+std::pair<bool, dynamic_string> regex_match::match_impl(std::string_view pattern) const
+{
+    if (algo_ == checksum_algorithm::none) {
+        return match_one(pattern);
+    }
+
+    while (pattern.size() >= min_length) {
+        std::string_view match;
+        if (!regex->Match(pattern, 0, pattern.size(), RE2::UNANCHORED, &match, 1)) {
+            break;
+        }
+
+        if (checksum_eval(algo_, match)) {
+            return {true, match};
+        }
+
+        auto prefix_size = match.data() - pattern.data() + match.size();
+        if (prefix_size <= pattern.size()) {
+            pattern.remove_prefix(prefix_size);
+        }
+    }
+
+    return {false, {}};
 }
 
 } // namespace ddwaf::matcher

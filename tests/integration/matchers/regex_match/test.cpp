@@ -265,8 +265,7 @@ TEST(TestRegexMatchIntegration, LuhnChecksumMatch)
         ddwaf_object param;
         ddwaf_object tmp;
         ddwaf_object_map(&param);
-        ddwaf_object_map_add(
-            &param, "arg1", ddwaf_object_string(&tmp, "<script>AlErT(1);</script>"));
+        ddwaf_object_map_add(&param, "arg1", ddwaf_object_string(&tmp, "4000-0000-0000-0000"));
 
         ddwaf_object ret;
 
