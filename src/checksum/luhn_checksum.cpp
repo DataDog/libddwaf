@@ -22,18 +22,20 @@ bool luhn_checksum::validate_impl(std::string_view str) noexcept
 
     uint32_t sum = 0;
     bool should_double = false;
+    bool digits_seen = false;
     for (std::size_t i = str.size(); i > 0; --i) {
         const auto c = str[i - 1];
         if (!ddwaf::isdigit(c)) {
             continue;
         }
 
+        digits_seen = true;
         const auto d = static_cast<uint32_t>(c - '0');
         sum += should_double ? lut[d] : d;
         should_double = !should_double;
     }
 
-    return sum > 0 && (sum % 10U == 0U);
+    return digits_seen && (sum % 10U == 0U);
 }
 
 } // namespace ddwaf

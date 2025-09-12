@@ -33,6 +33,11 @@ TEST(TestLuhnChecksum, Luhn)
     EXPECT_TRUE(luhn_checksum{}.validate("40000000_00001000"));
     EXPECT_TRUE(luhn_checksum{}.validate("4000_0000_0000_1000"));
 
+    // Edge case
+    EXPECT_TRUE(luhn_checksum{}.validate("0000000000000000"));
+    EXPECT_TRUE(luhn_checksum{}.validate("0000_0000_0000_0000"));
+    EXPECT_TRUE(luhn_checksum{}.validate("0000-0000-0000-0000"));
+
     // Random IMEI
     EXPECT_TRUE(luhn_checksum{}.validate("350009218041876"));
 
