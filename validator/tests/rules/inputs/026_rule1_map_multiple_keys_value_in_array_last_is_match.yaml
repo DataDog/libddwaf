@@ -2,7 +2,7 @@
   name: "Map with multiple keys, value in array, last is match",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule1-input: {
           first: {
             second: [

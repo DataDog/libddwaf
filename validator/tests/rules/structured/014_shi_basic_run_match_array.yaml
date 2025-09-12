@@ -2,7 +2,7 @@
   name: "Basic run with match on array",
   runs: [
     {
-      persistent-input: {
+      input: {
         server.sys.shell.cmd: [ "ls", "-l", "; cat /etc/passwd" ],
         server.request.query: [ "; cat /etc/passwd" ]
       },

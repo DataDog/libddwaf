@@ -2,7 +2,7 @@
   name: "Default forbidden IPs overridden through policy",
   runs: [
     {
-      persistent-input: {
+      input: {
         server.io.net.url.1: "https://10.5.5.5/somewhere/in/the/app",
         server.request.body: "10.5.5.5"
       },

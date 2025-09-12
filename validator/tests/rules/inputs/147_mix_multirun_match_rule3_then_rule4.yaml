@@ -2,7 +2,7 @@
   name: "Match rule3 on first run and rule4 on second",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule3-input: {
           keypath: rule3
         }
@@ -23,7 +23,7 @@
       code: match
     },
     {
-      persistent-input: {
+      input: {
         rule4-input1: {
           keypath: rule4
         }

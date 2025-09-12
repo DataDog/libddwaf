@@ -2,7 +2,7 @@
   name: "Exclude multi key path",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule4-input: {
           parent: {
             sibling: rule4,

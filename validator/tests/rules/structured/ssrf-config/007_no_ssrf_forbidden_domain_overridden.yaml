@@ -2,7 +2,7 @@
   name: "Default forbidden domains overridden through policy",
   runs: [
     {
-      persistent-input: {
+      input: {
         server.io.net.url.1: "https://blabla.burpcollaborator.net/path",
         server.request.body: "burpcollaborator.net"
       },

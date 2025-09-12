@@ -1,0 +1,37 @@
+{
+  name: "Subcontext keypath exclusion with condition",
+  runs: [
+    [
+      {
+        input: {
+          exclusion-filter-1-input: exclusion-filter-1,
+          rule1-input1: {
+              parent: rule1
+          }
+        },
+        code: ok
+      }
+    ],
+    [
+      {
+        input: {
+          rule1-input1: {
+              parent: rule1
+          }
+        },
+        rules: [
+          {
+            1: [
+              {
+                address: rule1-input1,
+                key_path: [parent],
+                value: rule1
+              }
+            ]
+          }
+        ],
+        code: match
+      },
+    ]
+  ],
+}

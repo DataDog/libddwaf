@@ -2,7 +2,7 @@
   name: "Rule custom action by ID",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule11-input: "rule11"
       },
       rules: [

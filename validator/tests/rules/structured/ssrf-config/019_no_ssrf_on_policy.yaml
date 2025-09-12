@@ -2,7 +2,7 @@
   name: "Valid URL within default policy",
   runs: [
     {
-      persistent-input: {
+      input: {
         server.io.net.url.4: "https://google.com/somewhere/in/the/app",
         server.request.body: ""
       },

@@ -76,28 +76,64 @@ bool test_runner::run_test(const YAML::Node &runs)
         expect(true, runs.IsDefined());
         expect(true, runs.size() > 0);
         for (auto it = runs.begin(); it != runs.end(); ++it) {
-            YAML::Node run = *it;
-            DDWAF_RET_CODE code = DDWAF_OK;
-            if (run["code"].as<std::string>() == "match") {
-                code = DDWAF_MATCH;
+            if (it->IsMap()) { // context
+                YAML::Node run = *it;
+                DDWAF_RET_CODE code = DDWAF_OK;
+                if (run["code"].as<std::string>() == "match") {
+                    code = DDWAF_MATCH;
+                }
+
+                ddwaf_object *data_ptr = nullptr;
+                auto data = run["input"].as<ddwaf_object>();
+                if (ddwaf_object_get_type(&data) != DDWAF_OBJ_INVALID) {
+                    data_ptr = &data;
+                }
+
+                auto retval = ddwaf_context_eval(ctx.get(), data_ptr, true, res.get(), timeout);
+
+                expect(retval, code);
+                if (code == DDWAF_MATCH) {
+                    auto res_yaml = object_to_yaml(*res);
+                    validate(run["rules"], res_yaml["events"]);
+                    validate_actions(run["actions"], res_yaml["actions"]);
+                }
+
+                ddwaf_object_destroy(res.get(), alloc);
+            } else { // subcontext sequence
+                YAML::Node sub_runs = *it;
+                expect(true, sub_runs.size() > 0);
+
+                std::unique_ptr<std::remove_pointer_t<ddwaf_subcontext>,
+                    decltype(&ddwaf_subcontext_destroy)>
+                    sctx(ddwaf_subcontext_init(ctx.get()), ddwaf_subcontext_destroy);
+
+                for (auto sub_it = sub_runs.begin(); sub_it != sub_runs.end(); ++sub_it) {
+                    YAML::Node run = *sub_it;
+
+                    DDWAF_RET_CODE code = DDWAF_OK;
+                    if (run["code"].as<std::string>() == "match") {
+                        code = DDWAF_MATCH;
+                    }
+
+                    ddwaf_object *data_ptr = nullptr;
+                    auto data = run["input"].as<ddwaf_object>();
+                    if (ddwaf_object_get_type(&data) != DDWAF_OBJ_INVALID) {
+                        data_ptr = &data;
+                    }
+
+                    auto retval =
+                        ddwaf_subcontext_eval(sctx.get(), data_ptr, true, res.get(), timeout);
+
+                    expect(retval, code);
+                    if (code == DDWAF_MATCH) {
+                        auto res_yaml = object_to_yaml(*res);
+                        validate(run["rules"], res_yaml["events"]);
+                        validate_actions(run["actions"], res_yaml["actions"]);
+                    }
+
+                    ddwaf_object_destroy(res.get(), alloc);
+                }
             }
-
-            ddwaf_object *persistent_ptr = nullptr;
-            auto persistent = run["persistent-input"].as<ddwaf_object>();
-            if (ddwaf_object_get_type(&persistent) != DDWAF_OBJ_INVALID) {
-                persistent_ptr = &persistent;
-            }
-
-            auto retval = ddwaf_context_eval(ctx.get(), persistent_ptr, true, res.get(), timeout);
-
-            expect(retval, code);
-            if (code == DDWAF_MATCH) {
-                auto res_yaml = object_to_yaml(*res);
-                validate(run["rules"], res_yaml["events"]);
-                validate_actions(run["actions"], res_yaml["actions"]);
-            }
-
-            ddwaf_object_destroy(res.get(), alloc);
         }
         passed = true;
     } catch (const std::exception &e) {

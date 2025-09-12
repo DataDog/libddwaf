@@ -2,7 +2,7 @@
   name: "Match with an undefinedactions",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule2-input: "abcd::1234:0:ab11:0"
       },
       rules: [
