@@ -4,10 +4,13 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2021 Datadog, Inc.
 
-#include "utils.hpp"
-#include "ddwaf.h"
+#include <fstream>
 #include <iostream>
+#include <regex>
 #include <unistd.h>
+
+#include "ddwaf.h"
+#include "utils.hpp"
 
 using namespace std::literals;
 
@@ -198,4 +201,62 @@ YAML::Node object_to_yaml(const ddwaf_object &obj)
     YAML::Node root;
     object_to_yaml_helper(obj, root);
     return root;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+bool yaml_equals(const YAML::Node &lhs, const YAML::Node &rhs)
+{
+    if (lhs.Type() != rhs.Type()) {
+        return false;
+    }
+
+    switch (lhs.Type()) {
+    case YAML::NodeType::Map: {
+        if (lhs.size() != rhs.size()) {
+            return false;
+        }
+
+        std::vector<bool> seen(lhs.size(), false);
+        for (auto it = lhs.begin(); it != lhs.end(); ++it) {
+            const YAML::Node rnode = rhs[it->first.as<std::string>()];
+            if (!rnode.IsDefined() || !yaml_equals(it->second, rnode)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    case YAML::NodeType::Sequence: {
+        if (lhs.size() != rhs.size()) {
+            return false;
+        }
+
+        std::vector<bool> seen(lhs.size(), false);
+        for (unsigned i = 0; i < lhs.size(); ++i) {
+            bool found = false;
+            for (unsigned j = 0; j < rhs.size(); ++j) {
+                if (!seen[j] && yaml_equals(lhs[i], rhs[j])) {
+                    seen[j] = found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return false;
+            }
+        }
+        return true;
+    }
+    case YAML::NodeType::Scalar: {
+        const auto lstr = lhs.as<std::string>();
+        const auto rstr = rhs.as<std::string>();
+
+        if (lstr.starts_with("regex:")) {
+            std::regex regex(lstr.substr(sizeof("regex:") - 1), std::regex_constants::icase);
+            return std::regex_match(rstr, regex);
+        }
+        return lstr == rstr;
+    }
+    default:
+        return true;
+    }
+    return false;
 }

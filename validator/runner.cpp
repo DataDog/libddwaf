@@ -8,7 +8,6 @@
 #include "assert.hpp"
 #include "ddwaf.h"
 #include "utils.hpp"
-#include <unordered_set>
 
 test_runner::test_runner(const std::string &rule_file)
 {
@@ -92,11 +91,11 @@ bool test_runner::run_test(const YAML::Node &runs)
                 auto retval = ddwaf_context_eval(ctx.get(), data_ptr, true, res.get(), timeout);
 
                 expect(retval, code);
-                if (code == DDWAF_MATCH) {
-                    auto res_yaml = object_to_yaml(*res);
-                    validate(run["rules"], res_yaml["events"]);
-                    validate_actions(run["actions"], res_yaml["actions"]);
-                }
+
+                auto res_yaml = object_to_yaml(*res);
+                validate(run["rules"], res_yaml["events"]);
+                validate_actions(run["actions"], res_yaml["actions"]);
+                validate_attributes(run["attributes"], res_yaml["attributes"]);
 
                 ddwaf_object_destroy(res.get(), alloc);
             } else { // subcontext sequence
@@ -129,6 +128,7 @@ bool test_runner::run_test(const YAML::Node &runs)
                         auto res_yaml = object_to_yaml(*res);
                         validate(run["rules"], res_yaml["events"]);
                         validate_actions(run["actions"], res_yaml["actions"]);
+                        validate_attributes(run["attributes"], res_yaml["attributes"]);
                     }
 
                     ddwaf_object_destroy(res.get(), alloc);
@@ -210,6 +210,7 @@ void test_runner::validate(const YAML::Node &expected, const YAML::Node &obtaine
             } else {
                 rule = custom_rules_[id];
             }
+
             validate_rule(rule, obtained_rule_match["rule"]);
             validate_conditions(rule["conditions"], obtained_rule_match["rule_matches"]);
             validate_matches(expected_rule_match, obtained_rule_match["rule_matches"]);
@@ -221,6 +222,7 @@ void test_runner::validate(const YAML::Node &expected, const YAML::Node &obtaine
     for (bool v : seen) { expect(true, v); }
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void test_runner::validate_rule(const YAML::Node &expected, const YAML::Node &obtained)
 {
     expect(expected["id"], obtained["id"]);
@@ -232,15 +234,14 @@ void test_runner::validate_rule(const YAML::Node &expected, const YAML::Node &ob
     expect(expected_tags["type"], obtained_tags["type"]);
     expect(expected_tags["category"], obtained_tags["category"]);
 
-    if (expected["on_match"].IsDefined()) {
-        auto expected_actions = expected["on_match"];
-        auto obtained_actions = obtained["on_match"];
+    auto expected_actions = expected["on_match"];
+    auto obtained_actions = obtained["on_match"];
+    if (expected_actions.IsDefined()) {
+        expect(true, obtained_actions.IsDefined());
 
         if (obtained_actions.size() == 1 && obtained_actions[0].as<std::string>() == "monitor") {
             return;
         }
-
-        expect(true, obtained_actions.IsDefined());
         expect(expected_actions.size(), obtained_actions.size());
 
         expect(expected_actions, obtained_actions);
@@ -345,12 +346,56 @@ void test_runner::validate_action_params(const YAML::Node &expected, const YAML:
         return;
     }
 
-    expect(expected.size(), obtained.size());
-    for (YAML::const_iterator it = expected.begin(); it != expected.end(); ++it) {
-        auto key = it->first.as<std::string>();
-        auto expected_param = it->second.as<std::string>();
-        auto obtained_param = obtained[key].as<std::string>();
+    validate_equals(expected, obtained);
+}
 
-        expect(expected_param, obtained_param);
+void test_runner::validate_attributes(const YAML::Node &expected, const YAML::Node &obtained)
+{
+    if (!expected.IsDefined()) {
+        return;
+    }
+
+    validate_equals(expected, obtained);
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+void test_runner::validate_equals(const YAML::Node &expected, const YAML::Node &obtained)
+{
+    expect(true, obtained.IsDefined());
+    expect(expected.Type(), obtained.Type());
+
+    switch (expected.Type()) {
+    case YAML::NodeType::Map: {
+        expect(expected.size(), obtained.size());
+
+        for (auto it = expected.begin(); it != expected.end(); ++it) {
+            validate_equals(it->second, obtained[it->first.as<std::string>()]);
+        }
+        break;
+    }
+    case YAML::NodeType::Sequence: {
+        expect(expected.size(), obtained.size());
+
+        std::vector<bool> seen(expected.size(), false);
+        for (unsigned i = 0; i < expected.size(); ++i) {
+            bool found = false;
+            for (unsigned j = 0; j < obtained.size(); ++j) {
+                try {
+                    if (!seen[j]) {
+                        validate_equals(expected[i], obtained[j]);
+                        seen[j] = found = true;
+                        break;
+                    }
+                } catch (...) {}
+            }
+            expect(true, found);
+        }
+        break;
+    }
+    case YAML::NodeType::Scalar:
+        expect(expected.as<std::string>(), obtained.as<std::string>());
+        break;
+    default:
+        break;
     }
 }
