@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
         auto data = input.as<ddwaf_object>();
 
         ddwaf_object ret;
-        ddwaf_context_eval(context, &data, true, &ret, std::numeric_limits<uint64_t>::max());
+        ddwaf_context_eval(context, &data, alloc, &ret, std::numeric_limits<uint64_t>::max());
 
         YAML::Emitter out(std::cout);
         out.SetIndent(2);

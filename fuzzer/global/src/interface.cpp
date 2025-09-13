@@ -143,10 +143,10 @@ void run_waf(ddwaf_handle handle, ddwaf_object args, bool ephemeral, size_t time
     ddwaf_object res;
     if (ephemeral) {
         auto *subctx = ddwaf_subcontext_init(context);
-        ddwaf_subcontext_eval(subctx, &args, true, &res, timeLeftInUs);
+        ddwaf_subcontext_eval(subctx, &args, alloc, &res, timeLeftInUs);
         ddwaf_subcontext_destroy(subctx);
     } else {
-        ddwaf_context_eval(context, &args, true, &res, timeLeftInUs);
+        ddwaf_context_eval(context, &args, alloc, &res, timeLeftInUs);
     }
 
     // TODO split input in several ddwaf_object, and call ddwaf_context_eval on the same context

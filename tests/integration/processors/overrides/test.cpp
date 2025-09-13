@@ -43,7 +43,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersById)
             STRL("employee@company.com"), alloc);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -80,7 +80,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersById)
             STRL("employee@company.com"), alloc);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -129,7 +129,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersByTags)
             STRL("employee@company.com"), alloc);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -166,7 +166,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersByTags)
             STRL("employee@company.com"), alloc);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -215,7 +215,7 @@ TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
             STRL("employee@company.com"), alloc);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -253,7 +253,7 @@ TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
             STRL("employee@company.com"), alloc);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -291,7 +291,7 @@ TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
             STRL("employee@company.com"), alloc);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -339,7 +339,7 @@ TEST(TestProcessorOverridesIntegration, DisableDefaultScanners)
             STRL("employee@company.com"), alloc);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -377,7 +377,7 @@ TEST(TestProcessorOverridesIntegration, DisableDefaultScanners)
             STRL("employee@company.com"), alloc);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -425,7 +425,7 @@ TEST(TestProcessorOverridesIntegration, RemoveScannersAfterOverride)
             STRL("employee@company.com"), alloc);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -462,7 +462,7 @@ TEST(TestProcessorOverridesIntegration, RemoveScannersAfterOverride)
             STRL("employee@company.com"), alloc);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -496,7 +496,7 @@ TEST(TestProcessorOverridesIntegration, RemoveScannersAfterOverride)
             STRL("employee@company.com"), alloc);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -544,7 +544,7 @@ TEST(TestProcessorOverridesIntegration, RemoveOverride)
             STRL("employee@company.com"), alloc);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -581,7 +581,7 @@ TEST(TestProcessorOverridesIntegration, RemoveOverride)
             STRL("employee@company.com"), alloc);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -615,7 +615,7 @@ TEST(TestProcessorOverridesIntegration, RemoveOverride)
             STRL("employee@company.com"), alloc);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -668,7 +668,7 @@ TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
             STRL("employee@company.com"), alloc);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -717,7 +717,7 @@ TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
             STRL("employee@company.com"), alloc);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, true, &out, LONG_TIME), DDWAF_OK);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 

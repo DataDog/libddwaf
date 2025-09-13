@@ -350,7 +350,7 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_allocator outp
  *   - Within two different batches, the second batch will only use the new data.
  **/
 DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
-    bool free_objects, ddwaf_object *result,  uint64_t timeout);
+    ddwaf_allocator alloc, ddwaf_object *result,  uint64_t timeout);
 
 /**
  * ddwaf_context_destroy
@@ -426,7 +426,7 @@ ddwaf_subcontext ddwaf_subcontext_init(ddwaf_context context);
  *   - Within two different batches, the second batch will only use the new data.
  **/
 DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *data,
-    bool free_objects, ddwaf_object *result,  uint64_t timeout);
+    ddwaf_allocator alloc, ddwaf_object *result,  uint64_t timeout);
 
 /**
  * ddwaf_subcontext_destroy

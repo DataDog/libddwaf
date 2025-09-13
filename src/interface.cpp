@@ -278,7 +278,7 @@ ddwaf_context ddwaf_context_init(ddwaf::waf *handle, ddwaf_allocator output_allo
 
 DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    bool free_objects, ddwaf_object *result, uint64_t timeout)
+    ddwaf_allocator alloc, ddwaf_object *result, uint64_t timeout)
 {
     if (context == nullptr || data == nullptr) {
         DDWAF_WARN("Illegal WAF call: context or data was null");
@@ -286,15 +286,10 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
     }
 
     try {
-        if (free_objects) {
-            if (!context->insert(owned_object{to_ref(data)})) {
-                return DDWAF_ERR_INVALID_OBJECT;
-            }
-        } else {
-            const object_view input{to_ref(data)};
-            if (!input.is_map() || !context->insert(input.as<map_view>())) {
-                return DDWAF_ERR_INVALID_OBJECT;
-            }
+        nonnull_ptr<memory::memory_resource> alloc_ptr =
+            alloc == nullptr ? memory::get_default_null_resource() : to_alloc_ptr(alloc);
+        if (!context->insert(owned_object{to_ref(data), alloc_ptr})) {
+            return DDWAF_ERR_INVALID_OBJECT;
         }
 
         // The timers will actually count nanoseconds, std::chrono doesn't
@@ -350,7 +345,7 @@ ddwaf_subcontext ddwaf_subcontext_init(ddwaf_context context)
 
 DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *data,
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    bool free_objects, ddwaf_object *result, uint64_t timeout)
+    ddwaf_allocator alloc, ddwaf_object *result, uint64_t timeout)
 {
     if (subcontext == nullptr || data == nullptr) {
         DDWAF_WARN("Illegal WAF call: subcontext or data was null");
@@ -358,15 +353,10 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *
     }
 
     try {
-        if (free_objects) {
-            if (!subcontext->insert(owned_object{to_ref(data)})) {
-                return DDWAF_ERR_INVALID_OBJECT;
-            }
-        } else {
-            const object_view input{to_ref(data)};
-            if (!input.is_map() || !subcontext->insert(input.as<map_view>())) {
-                return DDWAF_ERR_INVALID_OBJECT;
-            }
+        nonnull_ptr<memory::memory_resource> alloc_ptr =
+            alloc == nullptr ? memory::get_default_null_resource() : to_alloc_ptr(alloc);
+        if (!subcontext->insert(owned_object{to_ref(data), alloc_ptr})) {
+            return DDWAF_ERR_INVALID_OBJECT;
         }
 
         // The timers will actually count nanoseconds, std::chrono doesn't

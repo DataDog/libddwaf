@@ -31,6 +31,8 @@ ddwaf_object convertRuleToRuleset(const YAML::Node &rulePayload)
 
 bool runVectors(YAML::Node rule, ddwaf_handle handle, bool runPositiveMatches)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     bool success = true;
     auto ruleID = rule["id"].as<std::string>();
     YAML::Node matches = rule["test_vectors"][runPositiveMatches ? "matches" : "no_matches"];
@@ -40,8 +42,8 @@ bool runVectors(YAML::Node rule, ddwaf_handle handle, bool runPositiveMatches)
              ++vector, ++counter) {
             auto root = vector->as<ddwaf_object>();
             if (root.type != DDWAF_OBJ_INVALID) {
-                ddwaf_context ctx = ddwaf_context_init(handle, ddwaf_get_default_allocator());
-                DDWAF_RET_CODE ret = ddwaf_context_eval(ctx, &root, true, nullptr, LONG_TIME);
+                ddwaf_context ctx = ddwaf_context_init(handle, alloc);
+                DDWAF_RET_CODE ret = ddwaf_context_eval(ctx, &root, alloc, nullptr, LONG_TIME);
 
                 bool hadError = ret < DDWAF_OK;
                 bool hadMatch = !hadError && ret != DDWAF_OK;
