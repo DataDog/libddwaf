@@ -27,6 +27,8 @@ namespace ddwaf::memory {
 
 using memory_resource = std::pmr::memory_resource;
 using monotonic_buffer_resource = std::pmr::monotonic_buffer_resource;
+using unsynchronized_pool_resource = std::pmr::unsynchronized_pool_resource;
+using synchronized_pool_resource = std::pmr::synchronized_pool_resource;
 
 const auto get_default_resource = std::pmr::get_default_resource;
 

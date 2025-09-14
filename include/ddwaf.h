@@ -8,6 +8,8 @@
 #define DDWAF_H
 
 #ifdef __cplusplus
+#include <cstddef>
+
 namespace ddwaf{
 class waf;
 class context;
@@ -20,6 +22,8 @@ using ddwaf_context = ddwaf::context *;
 using ddwaf_subcontext = ddwaf::subcontext *;
 using ddwaf_builder = ddwaf::waf_builder *;
 using ddwaf_allocator = void *;
+using ddwaf_alloc_fn_type = void *(*)(void *, size_t size, size_t alignment);
+using ddwaf_free_fn_type = void (*)(void *, void *, size_t size, size_t alignment);
 
 extern "C"
 {
@@ -94,6 +98,9 @@ typedef struct _ddwaf_context* ddwaf_context;
 typedef struct _ddwaf_subcontext* ddwaf_subcontext;
 typedef struct _ddwaf_builder* ddwaf_builder;
 typedef struct _ddwaf_allocator* ddwaf_allocator;
+
+typedef void *(ddwaf_alloc_fn_type)(void *, size_t size, size_t alignment);
+typedef void (ddwaf_free_fn_type)(void *, void *, size_t size, size_t alignment);
 #endif
 
 typedef struct _ddwaf_config ddwaf_config;
@@ -540,8 +547,45 @@ void ddwaf_builder_destroy(ddwaf_builder builder);
  * Returns the default allocator used by the library.
  *
  * @return The default allocator.
+ *
+ * @note The provided allocator must never be destroyed.
  **/
 ddwaf_allocator ddwaf_get_default_allocator();
+
+/**
+ * ddwaf_synchronized_pool_allocator_init
+ *
+ * @return allocator.
+ **/
+ddwaf_allocator ddwaf_synchronized_pool_allocator_init();
+
+/**
+ * ddwaf_unsynchronized_pool_allocator_init
+ *
+ * @return allocator.
+ **/
+ddwaf_allocator ddwaf_unsynchronized_pool_allocator_init();
+
+/**
+ * ddwaf_monotonic_allocator_init
+ *
+ * @return allocator.
+ **/
+ddwaf_allocator ddwaf_monotonic_allocator_init();
+
+/**
+ * ddwaf_user_allocator_init
+ *
+ * @return allocator.
+ **/
+ddwaf_allocator ddwaf_user_allocator_init(ddwaf_alloc_fn_type alloc_fn, ddwaf_free_fn_type free_fn, void *uptr);
+
+/**
+ * ddwaf_allocator_destroy
+ *
+ * @param alloc Allocator to destroy.
+ **/
+void ddwaf_allocator_destroy(ddwaf_allocator alloc);
 
 /**
  * ddwaf_object_set_invalid

@@ -32,6 +32,7 @@
 #include "pointer.hpp"
 #include "re2.h"
 #include "ruleset_info.hpp"
+#include "user_resource.hpp"
 #include "utils.hpp"
 #include "version.hpp"
 #include "waf.hpp"
@@ -286,7 +287,7 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
     }
 
     try {
-        nonnull_ptr<memory::memory_resource> alloc_ptr =
+        const nonnull_ptr<memory::memory_resource> alloc_ptr =
             alloc == nullptr ? memory::get_default_null_resource() : to_alloc_ptr(alloc);
         if (!context->insert(owned_object{to_ref(data), alloc_ptr})) {
             return DDWAF_ERR_INVALID_OBJECT;
@@ -353,7 +354,7 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *
     }
 
     try {
-        nonnull_ptr<memory::memory_resource> alloc_ptr =
+        const nonnull_ptr<memory::memory_resource> alloc_ptr =
             alloc == nullptr ? memory::get_default_null_resource() : to_alloc_ptr(alloc);
         if (!subcontext->insert(owned_object{to_ref(data), alloc_ptr})) {
             return DDWAF_ERR_INVALID_OBJECT;
@@ -516,6 +517,31 @@ uint32_t ddwaf_builder_get_config_paths(
 void ddwaf_builder_destroy(ddwaf_builder builder) { delete builder; }
 
 ddwaf_allocator ddwaf_get_default_allocator() { return memory::get_default_resource(); }
+
+ddwaf_allocator ddwaf_synchronized_pool_allocator_init()
+{
+    return new memory::synchronized_pool_resource();
+}
+ddwaf_allocator ddwaf_unsynchronized_pool_allocator_init()
+{
+    return new memory::unsynchronized_pool_resource();
+}
+ddwaf_allocator ddwaf_monotonic_allocator_init() { return new memory::monotonic_buffer_resource(); }
+
+ddwaf_allocator ddwaf_user_allocator_init(
+    ddwaf_alloc_fn_type alloc_fn, ddwaf_free_fn_type free_fn, void *uptr)
+{
+    return new memory::user_resource(alloc_fn, free_fn, uptr);
+}
+
+void ddwaf_allocator_destroy(ddwaf_allocator alloc)
+{
+    if (alloc == memory::get_default_resource()) {
+        return;
+    }
+
+    delete to_alloc_ptr(alloc);
+}
 
 ddwaf_object *ddwaf_object_set_invalid(ddwaf_object *object)
 {
