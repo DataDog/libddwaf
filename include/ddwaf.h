@@ -546,44 +546,94 @@ void ddwaf_builder_destroy(ddwaf_builder builder);
  *
  * Returns the default allocator used by the library.
  *
- * @return The default allocator.
+ * Lifetime and safety:
+ * - The returned allocator must never be destroyed.
  *
- * @note The provided allocator must never be destroyed.
+ * @return Allocator handle.
  **/
 ddwaf_allocator ddwaf_get_default_allocator();
 
 /**
  * ddwaf_synchronized_pool_allocator_init
  *
- * @return allocator.
+ * Creates a thread-safe pool allocator. Allocations are served from internal
+ * pools sized by block class to reduce fragmentation and allocator overhead;
+ * memory freed via the corresponding ddwaf APIs is returned to the pools for
+ * reuse. This allocator can be shared across threads safely.
+ *
+ * Lifetime and safety:
+ * - The allocator must not be destroyed while any memory obtained from it is
+ *   still in use; doing so will invalidate outstanding pointers.
+ *
+ * @return Allocator handle.
  **/
 ddwaf_allocator ddwaf_synchronized_pool_allocator_init();
 
 /**
  * ddwaf_unsynchronized_pool_allocator_init
  *
- * @return allocator.
+ * Creates a pool allocator without internal synchronization. It provides the
+ * same pooling characteristics as the synchronized variant but with lower
+ * overhead. This allocator must not be used concurrently from multiple threads
+ * unless externally synchronized.
+ *
+ * Lifetime and safety:
+ * - The allocator must not be destroyed while any memory obtained from it is
+ *   still in use; doing so will invalidate outstanding pointers.
+ *
+ * @return Allocator handle.
  **/
 ddwaf_allocator ddwaf_unsynchronized_pool_allocator_init();
 
 /**
  * ddwaf_monotonic_allocator_init
  *
- * @return allocator.
+ * Creates a monotonic (growing) allocator. Allocations are fast and never freed
+ * individually; all memory is reclaimed only when the allocator is destroyed.
+ * This allocator must not be used concurrently from multiple threads unless
+ * externally synchronized.
+ *
+ * Lifetime and safety:
+ * - Objects allocated from this allocator remain valid until the allocator is
+ *   destroyed; individual frees have no effect.
+ * - The allocator must not be destroyed while any memory obtained from it is
+ *   still in use; doing so will invalidate outstanding pointers.
+ *
+ * @return Allocator handle.
  **/
 ddwaf_allocator ddwaf_monotonic_allocator_init();
 
 /**
  * ddwaf_user_allocator_init
  *
- * @return allocator.
+ * Creates an allocator that forwards allocation and deallocation to user
+ * provided callbacks.
+ *
+ * @param alloc_fn Allocation callback. It receives the opaque `uptr`, the
+ *        requested `size` and `alignment`, and must return a pointer meeting the
+ *        alignment requirements or NULL on failure. (nonnull)
+ * @param free_fn Deallocation callback. It receives the opaque `uptr`, the
+ *        pointer to free, and the original `size` and `alignment`. It must be
+ *        able to free any pointer previously returned by `alloc_fn`. (nonnull)
+ * @param uptr Opaque user pointer forwarded to both callbacks; can be used to
+ *        carry custom state. (nullable)
+ *
+ * @return Allocator handle.
  **/
 ddwaf_allocator ddwaf_user_allocator_init(ddwaf_alloc_fn_type alloc_fn, ddwaf_free_fn_type free_fn, void *uptr);
 
 /**
  * ddwaf_allocator_destroy
  *
- * @param alloc Allocator to destroy.
+ * Destroys an allocator created by one of the ddwaf_*_allocator_init functions
+ * and releases any internal resources it holds.
+ *
+ * Safety and lifetime:
+ * - It is the caller's responsibility to ensure no outstanding memory from the
+ *   allocator is still in use at the time of destruction.
+ * - Must not called concurrently with other operations using the same allocator.
+ *
+ * @param alloc Allocator to destroy. (nonnull)
  **/
 void ddwaf_allocator_destroy(ddwaf_allocator alloc);
 

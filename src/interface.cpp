@@ -514,24 +514,49 @@ uint32_t ddwaf_builder_get_config_paths(
     return 0;
 }
 
-void ddwaf_builder_destroy(ddwaf_builder builder) { delete builder; }
+void ddwaf_builder_destroy(ddwaf_builder builder)
+{
+    try {
+        delete builder;
+    } catch (...) {} // NOLINT
+}
 
 ddwaf_allocator ddwaf_get_default_allocator() { return memory::get_default_resource(); }
 
 ddwaf_allocator ddwaf_synchronized_pool_allocator_init()
 {
-    return new memory::synchronized_pool_resource();
+    try {
+        return new memory::synchronized_pool_resource();
+    } catch (...) {} // NOLINT
+
+    return nullptr;
 }
+
 ddwaf_allocator ddwaf_unsynchronized_pool_allocator_init()
 {
-    return new memory::unsynchronized_pool_resource();
+    try {
+        return new memory::unsynchronized_pool_resource();
+    } catch (...) {} // NOLINT
+
+    return nullptr;
 }
-ddwaf_allocator ddwaf_monotonic_allocator_init() { return new memory::monotonic_buffer_resource(); }
+ddwaf_allocator ddwaf_monotonic_allocator_init()
+{
+    try {
+        return new memory::monotonic_buffer_resource();
+    } catch (...) {} // NOLINT
+
+    return nullptr;
+}
 
 ddwaf_allocator ddwaf_user_allocator_init(
     ddwaf_alloc_fn_type alloc_fn, ddwaf_free_fn_type free_fn, void *uptr)
 {
-    return new memory::user_resource(alloc_fn, free_fn, uptr);
+    try {
+        return new memory::user_resource(alloc_fn, free_fn, uptr);
+    } catch (...) {} // NOLINT
+
+    return nullptr;
 }
 
 void ddwaf_allocator_destroy(ddwaf_allocator alloc)
@@ -540,7 +565,9 @@ void ddwaf_allocator_destroy(ddwaf_allocator alloc)
         return;
     }
 
-    delete to_alloc_ptr(alloc);
+    try {
+        delete to_alloc_ptr(alloc);
+    } catch (...) {} // NOLINT
 }
 
 ddwaf_object *ddwaf_object_set_invalid(ddwaf_object *object)
