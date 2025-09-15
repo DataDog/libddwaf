@@ -2,7 +2,7 @@
   name: "Match on both conditions",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule7-input1: rule7_1,
         rule7-input2: rule7_2
       },

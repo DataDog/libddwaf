@@ -2,7 +2,7 @@
   name: "Match on all-caps",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule1-input: RULE1
       },
       rules: [

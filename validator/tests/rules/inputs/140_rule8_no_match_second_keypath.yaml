@@ -2,7 +2,7 @@
   name: "No match",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule8-input: {
           first: {
               second: rule8

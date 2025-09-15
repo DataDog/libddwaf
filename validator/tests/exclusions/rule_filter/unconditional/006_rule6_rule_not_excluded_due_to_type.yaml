@@ -2,7 +2,7 @@
   name: "Rule not excluded due to type",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule6-input: rule6
       },
       rules: [

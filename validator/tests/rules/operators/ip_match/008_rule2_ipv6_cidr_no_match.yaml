@@ -2,7 +2,7 @@
   name: "ip_match operator, no match on IPv6 CIDR",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule2-input: "abcd::1234:1:0:1"
       },
       code: ok

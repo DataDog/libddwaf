@@ -2,7 +2,7 @@
   name: "Array with multiple items, first is match",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule1-input: [
           rule1,
           value,
