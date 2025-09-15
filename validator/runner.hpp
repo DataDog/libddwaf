@@ -7,12 +7,9 @@
 #pragma once
 
 #include <filesystem>
-#include <iostream>
 #include <sstream>
 #include <string>
-#include <string_view>
 #include <tuple>
-#include <vector>
 #include <yaml-cpp/yaml.h>
 
 #include "ddwaf.h"
@@ -44,6 +41,8 @@ protected:
     static void validate_matches(const YAML::Node &expected, const YAML::Node &obtained);
     static void validate_actions(const YAML::Node &expected, const YAML::Node &obtained);
     static void validate_action_params(const YAML::Node &expected, const YAML::Node &obtained);
+    static void validate_attributes(const YAML::Node &expected, const YAML::Node &obtained);
+    static void validate_equals(const YAML::Node &expected, const YAML::Node &obtained);
 
     static constexpr unsigned timeout = 1000000;
     ddwaf_handle handle_;

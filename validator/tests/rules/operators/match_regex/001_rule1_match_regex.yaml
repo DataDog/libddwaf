@@ -2,7 +2,7 @@
   name: "Basic run with match_regex operator",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule1-input: "Arachni/v1"
       },
       rules: [

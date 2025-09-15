@@ -2,7 +2,7 @@
   name: "Match rule3 and rule4",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule3-input: {
           keypath: rule3
         },

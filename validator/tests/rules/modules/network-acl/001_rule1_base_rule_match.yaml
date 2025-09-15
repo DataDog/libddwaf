@@ -2,7 +2,7 @@
   name: "All rules are provided in monitoring mode",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule1-input: 192.168.0.1
       },
       rules: [

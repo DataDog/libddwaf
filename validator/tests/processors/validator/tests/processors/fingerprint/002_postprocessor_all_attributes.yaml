@@ -1,0 +1,56 @@
+{
+  name: "Fingerprint postprocessor all attributes in single run",
+  runs: [
+    {
+      input: {
+        server.request.body: { key: null },
+        server.request.query: { key: null },
+        server.request.uri.raw: "/path/to/resource/?key=",
+        server.request.method: "PuT",
+        server.request.headers.no_cookies: {
+          referer: null,
+          connection: null,
+          accept-encoding: null,
+          content-encoding: null,
+          cache-control: null,
+          te: null,
+          accept-charset: null,
+          content-type: null,
+          accept: null,
+          accept-language: null,
+          user-agent: Random,
+          x-forwarded-for: "::1",
+          x-real-ip: null,
+          true-client-ip: null,
+          x-client-ip: null,
+          x-forwarded: null,
+          forwarded-for: null,
+          x-cluster-client-ip: null,
+          fastly-client-ip: null,
+          cf-connecting-ip: null,
+          cf-connecting-ipv6: null
+        },
+        server.request.cookies: {
+          name: albert,
+          theme: dark,
+          language: en-GB,
+          tracking_id: xyzabc,
+          gdpr_consent: "yes",
+          session_id: ansd0182u2n,
+          last_visit: "2024-07-16T12:00:00Z"
+        },
+        usr.id: admin,
+        usr.session_id: ansd0182u2n,
+        waf.context.processor: { fingerprint: true }
+      },
+      attributes: {
+        _dd.appsec.fp.http.endpoint: "http-put-729d56c3-2c70e12b-2c70e12b",
+        _dd.appsec.fp.http.header: "hdr-1111111111-a441b15f-0-",
+        _dd.appsec.fp.http.network: "net-1-1111111111",
+        _dd.appsec.fp.session: "ssn-8c6976e5-df6143bc-60ba1602-269500d3"
+      },
+      code: ok
+    }
+  ]
+}
+

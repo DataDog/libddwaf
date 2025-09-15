@@ -2,7 +2,7 @@
   name: "Basic run with exists operator with key_path",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule2-input: {
           "path": {
             "to": {

@@ -2,7 +2,7 @@
   name: "Match on first input, both are arrays",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule2-input1: [
           rule2
         ],

@@ -2,7 +2,7 @@
   name: "Input exclusion with condition",
   runs: [
     {
-      persistent-input: {
+      input: {
         exclusion-filter-1-input: exclusion-filter-1,
         rule1-input2: rule1
       },

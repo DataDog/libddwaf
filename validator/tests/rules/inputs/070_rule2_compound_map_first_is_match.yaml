@@ -2,7 +2,7 @@
   name: "Both inputs are compound maps, match on first",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule2-input1: {
           first: {
             second: rule2

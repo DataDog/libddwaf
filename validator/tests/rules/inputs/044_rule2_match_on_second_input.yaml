@@ -2,7 +2,7 @@
   name: "Match on second input",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule2-input2: rule2
       },
       rules: [

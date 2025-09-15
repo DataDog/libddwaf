@@ -2,7 +2,7 @@
   name: "Basic run with lower_than operator, no match",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule1-input: -41
       },
       code: ok

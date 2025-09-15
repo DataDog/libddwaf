@@ -1,0 +1,33 @@
+{
+  name: "Subcontext input exclusion with condition",
+  runs: [
+    [
+      {
+        input: {
+          exclusion-filter-1-input: exclusion-filter-1,
+          rule1-input2: rule1
+        },
+        code: ok
+      }
+    ],
+    [
+      {
+        input: {
+          rule1-input2: rule1
+        },
+        rules: [
+          {
+            1: [
+              {
+                address: rule1-input2,
+                key_path: [],
+                value: rule1
+              }
+            ]
+          }
+        ],
+        code: match
+      }
+    ]
+  ],
+}

@@ -2,7 +2,7 @@
   name: "No match within first key path",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule4-input: {
             first: {
                 rule4: {

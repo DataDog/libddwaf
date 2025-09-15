@@ -2,7 +2,7 @@
   name: "Match on rule1 in flow",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule1-input: rule1
       },
       rules: [
