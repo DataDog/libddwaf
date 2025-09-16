@@ -16,6 +16,17 @@
 #  include <unordered_map>
 #  include <unordered_set>
 #  include <vector>
+
+#  if !defined(__cpp_lib_experimental_memory_resources)
+#    include "libcxx-compat/monotonic_buffer_resource.hpp"
+#    include "libcxx-compat/synchronized_pool_resource.hpp"
+#    include "libcxx-compat/unsynchronized_pool_resource.hpp"
+
+namespace std { // NOLINT(cert-dcl58-cpp)
+namespace pmr = std::experimental::pmr;
+} // namespace std
+
+#  endif
 #endif
 
 namespace ddwaf::memory {
