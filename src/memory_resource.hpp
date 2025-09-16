@@ -16,11 +16,6 @@
 #  include <unordered_map>
 #  include <unordered_set>
 #  include <vector>
-
-#  if !defined(__cpp_lib_experimental_memory_resources)
-#    include "libcxx-compat/monotonic_buffer_resource.hpp"
-#  endif
-
 #endif
 
 namespace ddwaf::memory {
