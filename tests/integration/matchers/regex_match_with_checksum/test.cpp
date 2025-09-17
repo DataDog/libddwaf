@@ -17,7 +17,7 @@ TEST(TestRegexMatchWithChecksumIntegration, LuhnChecksumMatch)
 {
     // Initialize a WAF rule
     auto rule = yaml_to_object(
-        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex_with_checksum, parameters: {inputs: [{address: arg1}], regex: '\b4\d{3}(?:(?:,\d{4}){3}|(?:\s\d{4}){3}|(?:\.\d{4}){3}|(?:-\d{4}){3})\b', options: {min_length: 16, checksum: luhn}}}]}]})");
+        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex_with_checksum, parameters: {inputs: [{address: arg1}], regex: '\b4\d{3}(?:(?:,\d{4}){3}|(?:\s\d{4}){3}|(?:\.\d{4}){3}|(?:-\d{4}){3})\b', options: {min_length: 16}, checksum: luhn}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -82,7 +82,7 @@ TEST(TestRegexMatchWithChecksumIntegration, MinLengthBeyondInput)
 {
     // Initialize a WAF rule
     auto rule = yaml_to_object(
-        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex_with_checksum, parameters: {inputs: [{address: arg1}], regex: '\b4\d{3}(?:(?:,\d{4}){3}|(?:\s\d{4}){3}|(?:\.\d{4}){3}|(?:-\d{4}){3})\b', options: {min_length: 20, checksum: luhn}}}]}]})");
+        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex_with_checksum, parameters: {inputs: [{address: arg1}], regex: '\b4\d{3}(?:(?:,\d{4}){3}|(?:\s\d{4}){3}|(?:\.\d{4}){3}|(?:-\d{4}){3})\b', options: {min_length: 20}, checksum: luhn}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
@@ -113,7 +113,7 @@ TEST(TestRegexMatchWithChecksumIntegration, MinLengthBeyondInput)
 TEST(TestRegexMatchWithChecksumIntegration, InvalidChecksum)
 {
     auto rule = yaml_to_object(
-        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex_with_checksum, parameters: {inputs: [{address: arg1}], regex: '\b4\d{3}(?:(?:,\d{4}){3}|(?:\s\d{4}){3}|(?:\.\d{4}){3}|(?:-\d{4}){3})\b', options: {checksum: none}}}]}]})");
+        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex_with_checksum, parameters: {inputs: [{address: arg1}], regex: '\b4\d{3}(?:(?:,\d{4}){3}|(?:\s\d{4}){3}|(?:\.\d{4}){3}|(?:-\d{4}){3})\b', options: {}, checksum: none}}]}]})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
@@ -152,7 +152,7 @@ TEST(TestRegexMatchWithChecksumIntegration, InvalidChecksum)
 TEST(TestRegexMatchWithChecksumIntegration, InvalidMinLength)
 {
     auto rule = yaml_to_object(
-        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex_with_checksum, parameters: {inputs: [{address: arg1}], regex: '\b4\d{3}(?:(?:,\d{4}){3}|(?:\s\d{4}){3}|(?:\.\d{4}){3}|(?:-\d{4}){3})\b', options: {min_length: -1, checksum: luhn}}}]}]})");
+        R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex_with_checksum, parameters: {inputs: [{address: arg1}], regex: '\b4\d{3}(?:(?:,\d{4}){3}|(?:\s\d{4}){3}|(?:\.\d{4}){3}|(?:-\d{4}){3})\b', options: {min_length: -1}, checksum: luhn}}]}]})");
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;

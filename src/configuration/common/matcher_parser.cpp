@@ -100,7 +100,7 @@ parse_matcher<matcher::regex_match_with_checksum>(const raw_configuration::map &
 
     return {std::string{}, std::make_unique<matcher::regex_match_with_checksum>(regex, min_length,
                                at<bool>(options, "case_sensitive", false),
-                               checksum_builder::build(at<std::string_view>(options, "checksum")))};
+                               checksum_builder::build(at<std::string_view>(params, "checksum")))};
 }
 
 template <>
