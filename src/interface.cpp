@@ -15,6 +15,7 @@
 #include <limits>
 #include <memory>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -115,6 +116,11 @@ static_assert(offsetof(detail::object_map, type) == offsetof(_ddwaf_object_map, 
 static_assert(offsetof(detail::object_map, size) == offsetof(_ddwaf_object_map, size));
 static_assert(offsetof(detail::object_map, capacity) == offsetof(_ddwaf_object_map, capacity));
 static_assert(offsetof(detail::object_map, ptr) == offsetof(_ddwaf_object_map, ptr));
+
+// Allocator callback compatibility
+static_assert(std::is_same_v<ddwaf_alloc_fn_type, memory::user_resource::alloc_fn_type>);
+static_assert(std::is_same_v<ddwaf_free_fn_type, memory::user_resource::free_fn_type>);
+static_assert(std::is_same_v<ddwaf_udata_free_fn_type, memory::user_resource::udata_free_fn_type>);
 
 namespace {
 const char *log_level_to_str(DDWAF_LOG_LEVEL level)
@@ -549,11 +555,11 @@ ddwaf_allocator ddwaf_monotonic_allocator_init()
     return nullptr;
 }
 
-ddwaf_allocator ddwaf_user_allocator_init(
-    ddwaf_alloc_fn_type alloc_fn, ddwaf_free_fn_type free_fn, void *uptr)
+ddwaf_allocator ddwaf_user_allocator_init(ddwaf_alloc_fn_type alloc_fn, ddwaf_free_fn_type free_fn,
+    void *udata, ddwaf_udata_free_fn_type udata_free_fn)
 {
     try {
-        return new memory::user_resource(alloc_fn, free_fn, uptr);
+        return new memory::user_resource(alloc_fn, free_fn, udata, udata_free_fn);
     } catch (...) {} // NOLINT
 
     return nullptr;

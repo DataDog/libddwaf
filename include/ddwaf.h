@@ -22,8 +22,9 @@ using ddwaf_context = ddwaf::context *;
 using ddwaf_subcontext = ddwaf::subcontext *;
 using ddwaf_builder = ddwaf::waf_builder *;
 using ddwaf_allocator = void *;
-using ddwaf_alloc_fn_type = void *(*)(void *, size_t size, size_t alignment);
-using ddwaf_free_fn_type = void (*)(void *, void *, size_t size, size_t alignment);
+using ddwaf_alloc_fn_type = void *(*)(void *, size_t, size_t);
+using ddwaf_free_fn_type = void (*)(void *, void *, size_t, size_t);
+using ddwaf_udata_free_fn_type = void (*)(void *);
 
 extern "C"
 {
@@ -99,8 +100,9 @@ typedef struct _ddwaf_subcontext* ddwaf_subcontext;
 typedef struct _ddwaf_builder* ddwaf_builder;
 typedef struct _ddwaf_allocator* ddwaf_allocator;
 
-typedef void *(ddwaf_alloc_fn_type)(void *, size_t size, size_t alignment);
-typedef void (ddwaf_free_fn_type)(void *, void *, size_t size, size_t alignment);
+typedef void *(ddwaf_alloc_fn_type)(void *, size_t, size_t);
+typedef void (ddwaf_free_fn_type)(void *, void *, size_t, size_t);
+typedef void (ddwaf_udata_free_fn_type)(void *);
 #endif
 
 typedef struct _ddwaf_config ddwaf_config;
@@ -609,18 +611,18 @@ ddwaf_allocator ddwaf_monotonic_allocator_init();
  * Creates an allocator that forwards allocation and deallocation to user
  * provided callbacks.
  *
- * @param alloc_fn Allocation callback. It receives the opaque `uptr`, the
+ * @param alloc_fn Allocation callback. It receives the opaque `udata`, the
  *        requested `size` and `alignment`, and must return a pointer meeting the
  *        alignment requirements or NULL on failure. (nonnull)
- * @param free_fn Deallocation callback. It receives the opaque `uptr`, the
+ * @param free_fn Deallocation callback. It receives the opaque `udata`, the
  *        pointer to free, and the original `size` and `alignment`. It must be
  *        able to free any pointer previously returned by `alloc_fn`. (nonnull)
- * @param uptr Opaque user pointer forwarded to both callbacks; can be used to
+ * @param udata Opaque user pointer forwarded to both callbacks; can be used to
  *        carry custom state. (nullable)
  *
  * @return Allocator handle.
  **/
-ddwaf_allocator ddwaf_user_allocator_init(ddwaf_alloc_fn_type alloc_fn, ddwaf_free_fn_type free_fn, void *uptr);
+ddwaf_allocator ddwaf_user_allocator_init(ddwaf_alloc_fn_type alloc_fn, ddwaf_free_fn_type free_fn, void *udata, ddwaf_udata_free_fn_type udata_free_fn);
 
 /**
  * ddwaf_allocator_destroy

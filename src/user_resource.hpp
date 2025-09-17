@@ -12,26 +12,35 @@ namespace ddwaf::memory {
 
 class user_resource : public memory::memory_resource {
 public:
-    using alloc_fn_type = void *(*)(void *, size_t size, size_t alignment);
-    using free_fn_type = void (*)(void *, void *, size_t size, size_t alignment);
+    using alloc_fn_type = void *(*)(void *, size_t, size_t);
+    using free_fn_type = void (*)(void *, void *, size_t, size_t);
+    using udata_free_fn_type = void (*)(void *);
 
-    user_resource(alloc_fn_type alloc_fn, free_fn_type free_fn, void *uptr)
-        : alloc_fn_(alloc_fn), free_fn_(free_fn), uptr_(uptr)
+    user_resource(
+        alloc_fn_type alloc_fn, free_fn_type free_fn, void *udata, udata_free_fn_type udata_free_fn)
+        : alloc_fn_(alloc_fn), free_fn_(free_fn), udata_(udata), udata_free_fn_(udata_free_fn)
     {
         if (alloc_fn_ == nullptr || free_fn_ == nullptr) {
             throw std::invalid_argument("undefined user alloc/free function");
         }
     }
 
+    ~user_resource() override
+    {
+        if (udata_free_fn_ != nullptr) {
+            udata_free_fn_(udata_);
+        }
+    }
+
 private:
     void *do_allocate(std::size_t bytes, std::size_t alignment) override
     {
-        return alloc_fn_(uptr_, bytes, alignment);
+        return alloc_fn_(udata_, bytes, alignment);
     }
 
     void do_deallocate(void *p, std::size_t bytes, std::size_t alignment) override
     {
-        free_fn_(uptr_, p, bytes, alignment);
+        free_fn_(udata_, p, bytes, alignment);
     }
 
     [[nodiscard]] bool do_is_equal(const memory::memory_resource &other) const noexcept override
@@ -48,7 +57,8 @@ private:
 
     alloc_fn_type alloc_fn_;
     free_fn_type free_fn_;
-    void *uptr_;
+    void *udata_;
+    udata_free_fn_type udata_free_fn_;
 };
 
 } // namespace ddwaf::memory
