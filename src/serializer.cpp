@@ -45,7 +45,7 @@ owned_object serialize_match(condition_match &match, nonnull_ptr<memory::memory_
         auto &arg = match.args[0];
 
         param.emplace("address", arg.address);
-        param.emplace("value", arg.resolved.to_object());
+        param.emplace("value", arg.resolved.to_object(alloc));
 
         auto key_path =
             param.emplace("key_path", owned_object::make_array(arg.key_path.size(), alloc));
@@ -54,7 +54,7 @@ owned_object serialize_match(condition_match &match, nonnull_ptr<memory::memory_
         auto highlight_arr =
             param.emplace("highlight", owned_object::make_array(match.highlights.size(), alloc));
         for (auto &highlight : match.highlights) {
-            highlight_arr.emplace_back(highlight.to_object());
+            highlight_arr.emplace_back(highlight.to_object(alloc));
         }
     } else {
         auto param = parameters.emplace_back(owned_object::make_map(match.args.size() + 1, alloc));
@@ -63,7 +63,7 @@ owned_object serialize_match(condition_match &match, nonnull_ptr<memory::memory_
             auto argument = param.emplace(arg.name, owned_object::make_map(3, alloc));
 
             argument.emplace("address", arg.address);
-            argument.emplace("value", arg.resolved.to_object());
+            argument.emplace("value", arg.resolved.to_object(alloc));
 
             auto key_path =
                 argument.emplace("key_path", owned_object::make_array(arg.key_path.size(), alloc));
@@ -73,7 +73,7 @@ owned_object serialize_match(condition_match &match, nonnull_ptr<memory::memory_
         auto highlight_arr =
             param.emplace("highlight", owned_object::make_array(match.highlights.size(), alloc));
         for (auto &highlight : match.highlights) {
-            highlight_arr.emplace_back(highlight.to_object());
+            highlight_arr.emplace_back(highlight.to_object(alloc));
         }
     }
 

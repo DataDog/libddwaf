@@ -222,10 +222,6 @@ ddwaf::waf *ddwaf_init(
 
 void ddwaf_destroy(ddwaf::waf *handle)
 {
-    if (handle == nullptr) {
-        return;
-    }
-
     try {
         delete handle;
     } catch (const std::exception &e) {
@@ -311,7 +307,6 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
         }
         return code ? DDWAF_MATCH : DDWAF_OK;
     } catch (const std::exception &e) {
-        // catch-all to avoid std::terminate
         DDWAF_ERROR("{}", e.what());
     } catch (...) {
         DDWAF_ERROR("unknown exception");
@@ -322,14 +317,9 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
 
 void ddwaf_context_destroy(ddwaf_context context)
 {
-    if (context == nullptr) {
-        return;
-    }
-
     try {
         delete context;
     } catch (const std::exception &e) {
-        // catch-all to avoid std::terminate
         DDWAF_ERROR("{}", e.what());
     } catch (...) {
         DDWAF_ERROR("unknown exception");
@@ -378,7 +368,6 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *
         }
         return code ? DDWAF_MATCH : DDWAF_OK;
     } catch (const std::exception &e) {
-        // catch-all to avoid std::terminate
         DDWAF_ERROR("{}", e.what());
     } catch (...) {
         DDWAF_ERROR("unknown exception");
@@ -389,14 +378,9 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *
 
 void ddwaf_subcontext_destroy(ddwaf_subcontext subcontext)
 {
-    if (subcontext == nullptr) {
-        return;
-    }
-
     try {
         delete subcontext;
     } catch (const std::exception &e) {
-        // catch-all to avoid std::terminate
         DDWAF_ERROR("{}", e.what());
     } catch (...) {
         DDWAF_ERROR("unknown exception");
@@ -524,7 +508,11 @@ void ddwaf_builder_destroy(ddwaf_builder builder)
 {
     try {
         delete builder;
-    } catch (...) {} // NOLINT
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
 }
 
 ddwaf_allocator ddwaf_get_default_allocator() { return memory::get_default_resource(); }
@@ -533,8 +521,11 @@ ddwaf_allocator ddwaf_synchronized_pool_allocator_init()
 {
     try {
         return new memory::synchronized_pool_resource();
-    } catch (...) {} // NOLINT
-
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
     return nullptr;
 }
 
@@ -542,16 +533,23 @@ ddwaf_allocator ddwaf_unsynchronized_pool_allocator_init()
 {
     try {
         return new memory::unsynchronized_pool_resource();
-    } catch (...) {} // NOLINT
-
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
     return nullptr;
 }
+
 ddwaf_allocator ddwaf_monotonic_allocator_init()
 {
     try {
         return new memory::monotonic_buffer_resource();
-    } catch (...) {} // NOLINT
-
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
     return nullptr;
 }
 
@@ -560,9 +558,35 @@ ddwaf_allocator ddwaf_user_allocator_init(ddwaf_alloc_fn_type alloc_fn, ddwaf_fr
 {
     try {
         return new memory::user_resource(alloc_fn, free_fn, udata, udata_free_fn);
-    } catch (...) {} // NOLINT
-
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
     return nullptr;
+}
+
+void *ddwaf_allocator_alloc(ddwaf_allocator alloc, size_t bytes, size_t alignment)
+{
+    if (alloc == nullptr) {
+        return nullptr;
+    }
+
+    try {
+        return to_alloc_ptr(alloc)->allocate(bytes, alignment);
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+    return nullptr;
+}
+
+void ddwaf_allocator_free(ddwaf_allocator alloc, void *p, size_t bytes, size_t alignment)
+{
+    if (alloc != nullptr) {
+        to_alloc_ptr(alloc)->deallocate(p, bytes, alignment);
+    }
 }
 
 void ddwaf_allocator_destroy(ddwaf_allocator alloc)
@@ -573,7 +597,11 @@ void ddwaf_allocator_destroy(ddwaf_allocator alloc)
 
     try {
         delete to_alloc_ptr(alloc);
-    } catch (...) {} // NOLINT
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
 }
 
 ddwaf_object *ddwaf_object_set_invalid(ddwaf_object *object)
@@ -926,41 +954,49 @@ bool ddwaf_object_is_invalid(const ddwaf_object *object)
     const object_view view{to_ptr(object)};
     return view.has_value() && view.is_invalid();
 }
+
 bool ddwaf_object_is_null(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     return view.has_value() && view.type() == object_type::null;
 }
+
 bool ddwaf_object_is_bool(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     return view.has_value() && view.type() == object_type::boolean;
 }
+
 bool ddwaf_object_is_signed(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     return view.has_value() && view.type() == object_type::int64;
 }
+
 bool ddwaf_object_is_unsigned(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     return view.has_value() && view.type() == object_type::uint64;
 }
+
 bool ddwaf_object_is_float(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     return view.has_value() && view.type() == object_type::float64;
 }
+
 bool ddwaf_object_is_string(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     return view.has_value() && view.is_string();
 }
+
 bool ddwaf_object_is_array(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     return view.has_value() && view.is_array();
 }
+
 bool ddwaf_object_is_map(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};

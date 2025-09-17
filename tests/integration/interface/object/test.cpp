@@ -28,9 +28,7 @@ TEST(TestObjectIntegration, TestCreateInvalid)
     ddwaf_object object;
     ddwaf_object_set_invalid(&object);
     EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_INVALID);
-
-    // Getters
-    EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_INVALID);
+    EXPECT_TRUE(ddwaf_object_is_invalid(&object));
 }
 
 TEST(TestObjectIntegration, TestInvalidString)
@@ -38,7 +36,7 @@ TEST(TestObjectIntegration, TestInvalidString)
     auto *alloc = ddwaf_get_default_allocator();
     ddwaf_object object;
     EXPECT_EQ(ddwaf_object_set_string(&object, nullptr, 0, alloc), nullptr);
-    EXPECT_EQ(ddwaf_object_set_string(&object, nullptr, 0, alloc), nullptr);
+    EXPECT_TRUE(ddwaf_object_is_invalid(&object));
 }
 
 TEST(TestObjectIntegration, TestString)
@@ -51,12 +49,14 @@ TEST(TestObjectIntegration, TestString)
     EXPECT_TRUE((ddwaf_object_get_type(&object) & DDWAF_OBJ_STRING) != 0);
     EXPECT_EQ(ddwaf_object_get_length(&object), 6);
     EXPECT_STRV(object_to_view(object), "Sqreen");
+    EXPECT_TRUE(ddwaf_object_is_string(&object));
 
     // Getters
     EXPECT_TRUE((ddwaf_object_get_type(&object) & DDWAF_OBJ_STRING) != 0);
     EXPECT_STRV(object_to_view(object), "Sqreen");
     EXPECT_EQ(ddwaf_object_get_length(&object), 6);
     EXPECT_EQ(ddwaf_object_get_size(&object), 0);
+    EXPECT_TRUE(ddwaf_object_is_string(&object));
 
     ddwaf_object_destroy(&object, alloc);
 }
@@ -94,6 +94,10 @@ TEST(TestObjectIntegration, TestCreateInt)
     EXPECT_EQ(ddwaf_object_get_unsigned(&object), 0);
     EXPECT_EQ(ddwaf_object_get_bool(&object), false);
 
+    EXPECT_TRUE(ddwaf_object_is_signed(&object));
+    EXPECT_FALSE(ddwaf_object_is_unsigned(&object));
+    EXPECT_FALSE(ddwaf_object_is_float(&object));
+
     ddwaf_object_destroy(&object, alloc);
 }
 
@@ -110,6 +114,10 @@ TEST(TestObjectIntegration, TestCreateUint)
     EXPECT_EQ(ddwaf_object_get_signed(&object), 0);
     EXPECT_EQ(ddwaf_object_get_unsigned(&object), UINT64_MAX);
     EXPECT_EQ(ddwaf_object_get_bool(&object), false);
+
+    EXPECT_TRUE(ddwaf_object_is_unsigned(&object));
+    EXPECT_FALSE(ddwaf_object_is_signed(&object));
+    EXPECT_FALSE(ddwaf_object_is_float(&object));
 
     ddwaf_object_destroy(&object, alloc);
 }
@@ -128,6 +136,7 @@ TEST(TestObjectIntegration, TestCreateBool)
         EXPECT_EQ(ddwaf_object_get_signed(&object), 0);
         EXPECT_EQ(ddwaf_object_get_unsigned(&object), 0);
         EXPECT_EQ(ddwaf_object_get_bool(&object), true);
+        EXPECT_TRUE(ddwaf_object_is_bool(&object));
 
         ddwaf_object_destroy(&object, alloc);
     }
@@ -143,6 +152,7 @@ TEST(TestObjectIntegration, TestCreateBool)
         EXPECT_EQ(ddwaf_object_get_signed(&object), 0);
         EXPECT_EQ(ddwaf_object_get_unsigned(&object), 0);
         EXPECT_EQ(ddwaf_object_get_bool(&object), false);
+        EXPECT_TRUE(ddwaf_object_is_bool(&object));
 
         ddwaf_object_destroy(&object, alloc);
     }
@@ -162,6 +172,7 @@ TEST(TestObjectIntegration, TestCreateArray)
     EXPECT_EQ(ddwaf_object_get_length(&container), 0);
     EXPECT_EQ(ddwaf_object_get_size(&container), 0);
     EXPECT_EQ(ddwaf_object_at_value(&container, 0), nullptr);
+    EXPECT_TRUE(ddwaf_object_is_array(&container));
 
     ddwaf_object_destroy(&container, alloc);
 }
@@ -180,6 +191,7 @@ TEST(TestObjectIntegration, TestCreateMap)
     EXPECT_EQ(ddwaf_object_get_length(&container), 0);
     EXPECT_EQ(ddwaf_object_get_size(&container), 0);
     EXPECT_EQ(ddwaf_object_at_value(&container, 0), nullptr);
+    EXPECT_TRUE(ddwaf_object_is_map(&container));
 
     ddwaf_object_destroy(&container, alloc);
 }
@@ -369,6 +381,9 @@ TEST(TestObject, FromJsonSignedInteger)
     EXPECT_TRUE(ddwaf_object_from_json(&object, json, strlen(json), alloc));
     EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_SIGNED);
     EXPECT_EQ(ddwaf_object_get_signed(&object), -123456789);
+    EXPECT_TRUE(ddwaf_object_is_signed(&object));
+    EXPECT_FALSE(ddwaf_object_is_unsigned(&object));
+    EXPECT_FALSE(ddwaf_object_is_float(&object));
 
     ddwaf_object_destroy(&object, alloc);
 }
@@ -383,6 +398,9 @@ TEST(TestObject, FromJsonUnsignedInteger)
     EXPECT_TRUE(ddwaf_object_from_json(&object, json, strlen(json), alloc));
     EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_UNSIGNED);
     EXPECT_EQ(ddwaf_object_get_unsigned(&object), UINT64_MAX);
+    EXPECT_TRUE(ddwaf_object_is_unsigned(&object));
+    EXPECT_FALSE(ddwaf_object_is_signed(&object));
+    EXPECT_FALSE(ddwaf_object_is_float(&object));
 
     ddwaf_object_destroy(&object, alloc);
 }
@@ -397,6 +415,9 @@ TEST(TestObject, FromJsonFloat)
     EXPECT_TRUE(ddwaf_object_from_json(&object, json, strlen(json), alloc));
     EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_FLOAT);
     EXPECT_DOUBLE_EQ(ddwaf_object_get_float(&object), 3.14159);
+    EXPECT_TRUE(ddwaf_object_is_float(&object));
+    EXPECT_FALSE(ddwaf_object_is_unsigned(&object));
+    EXPECT_FALSE(ddwaf_object_is_signed(&object));
 
     ddwaf_object_destroy(&object, alloc);
 }
@@ -412,6 +433,7 @@ TEST(TestObject, FromJsonBoolean)
         EXPECT_TRUE(ddwaf_object_from_json(&object, json, strlen(json), alloc));
         EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_BOOL);
         EXPECT_TRUE(ddwaf_object_get_bool(&object));
+        EXPECT_TRUE(ddwaf_object_is_bool(&object));
 
         ddwaf_object_destroy(&object, alloc);
     }
@@ -423,6 +445,7 @@ TEST(TestObject, FromJsonBoolean)
         EXPECT_TRUE(ddwaf_object_from_json(&object, json, strlen(json), alloc));
         EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_BOOL);
         EXPECT_FALSE(ddwaf_object_get_bool(&object));
+        EXPECT_TRUE(ddwaf_object_is_bool(&object));
 
         ddwaf_object_destroy(&object, alloc);
     }
@@ -437,6 +460,7 @@ TEST(TestObject, FromJsonNull)
 
     EXPECT_TRUE(ddwaf_object_from_json(&object, json, strlen(json), alloc));
     EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_NULL);
+    EXPECT_TRUE(ddwaf_object_is_null(&object));
 
     ddwaf_object_destroy(&object, alloc);
 }

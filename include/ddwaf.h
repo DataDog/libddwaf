@@ -548,9 +548,6 @@ void ddwaf_builder_destroy(ddwaf_builder builder);
  *
  * Returns the default allocator used by the library.
  *
- * Lifetime and safety:
- * - The returned allocator must never be destroyed.
- *
  * @return Allocator handle.
  **/
 ddwaf_allocator ddwaf_get_default_allocator();
@@ -625,6 +622,51 @@ ddwaf_allocator ddwaf_monotonic_allocator_init();
 ddwaf_allocator ddwaf_user_allocator_init(ddwaf_alloc_fn_type alloc_fn, ddwaf_free_fn_type free_fn, void *udata, ddwaf_udata_free_fn_type udata_free_fn);
 
 /**
+ * ddwaf_allocator_alloc
+ *
+ * Allocates a block of memory from the given allocator with the requested
+ * alignment.
+ *
+ * Usage and guarantees:
+ * - The returned pointer is aligned to `alignment` bytes.
+ * - Returns NULL on allocation failure.
+ * - Memory obtained with this function must be released with
+ *   ddwaf_allocator_free using the same allocator and the same `bytes` and
+ *   `alignment` values.
+ * - Thread-safety depends on the allocator type; see the corresponding
+ *   allocator init function for details.
+ *
+ * @param alloc Allocator to use for the allocation. (nonnull)
+ * @param bytes Number of bytes to allocate.
+ * @param alignment Required alignment in bytes; must be a power of two.
+ *
+ * @return Pointer to the allocated memory or NULL on failure.
+ **/
+void *ddwaf_allocator_alloc(ddwaf_allocator alloc, size_t bytes, size_t alignment);
+
+/**
+ * ddwaf_allocator_free
+ *
+ * Releases a block of memory previously obtained via ddwaf_allocator_alloc
+ * from the same allocator.
+ *
+ * Requirements and safety:
+ * - `p` must point to memory returned by ddwaf_allocator_alloc using `alloc`.
+ * - `bytes` and `alignment` must match the values used for the allocation.
+ * - After this call, the memory referenced by `p` must no longer be accessed.
+ * - Do not mix allocators; freeing with a different allocator is undefined.
+ * - Thread-safety depends on the allocator type; see the corresponding
+ *   allocator init function for details.
+ *
+ * @param alloc Allocator used for the original allocation. (nonnull)
+ * @param p Pointer to the memory to free. (nonnull)
+ * @param bytes Size in bytes of the original allocation.
+ * @param alignment Alignment in bytes of the original allocation.
+ **/
+void ddwaf_allocator_free(ddwaf_allocator alloc, void *p, size_t bytes, size_t alignment);
+
+
+/**
  * ddwaf_allocator_destroy
  *
  * Destroys an allocator created by one of the ddwaf_*_allocator_init functions
@@ -634,6 +676,7 @@ ddwaf_allocator ddwaf_user_allocator_init(ddwaf_alloc_fn_type alloc_fn, ddwaf_fr
  * - It is the caller's responsibility to ensure no outstanding memory from the
  *   allocator is still in use at the time of destruction.
  * - Must not called concurrently with other operations using the same allocator.
+ * - Attempting to destroy the default allocator is a no-op and has no ill-effects.
  *
  * @param alloc Allocator to destroy. (nonnull)
  **/

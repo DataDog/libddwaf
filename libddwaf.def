@@ -20,6 +20,13 @@ EXPORTS
   ddwaf_set_log_cb
   ddwaf_known_actions
   ddwaf_get_default_allocator
+  ddwaf_synchronized_pool_allocator_init
+  ddwaf_unsynchronized_pool_allocator_init
+  ddwaf_monotonic_allocator_init
+  ddwaf_user_allocator_init
+  ddwaf_allocator_alloc
+  ddwaf_allocator_free
+  ddwaf_allocator_destroy
   ddwaf_object_set_invalid
   ddwaf_object_set_null
   ddwaf_object_set_bool
