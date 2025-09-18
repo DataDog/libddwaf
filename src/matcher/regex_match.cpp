@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <array>
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -37,19 +36,16 @@ regex_match::regex_match(const std::string &regex_str, std::size_t minLength, bo
 
 std::pair<bool, dynamic_string> regex_match::match_impl(std::string_view pattern) const
 {
-    if (pattern.data() == nullptr || !regex->ok() || pattern.size() < min_length) {
+    if (pattern.size() < min_length || pattern.empty()) {
         return {false, {}};
     }
 
-    const std::string_view ref(pattern.data(), pattern.size());
-    std::array<std::string_view, max_match_count> match;
-    const bool res = regex->Match(ref, 0, pattern.size(), re2::RE2::UNANCHORED, match.data(), 1);
-
-    if (!res) {
+    std::string_view match;
+    if (!regex->Match(pattern, 0, pattern.size(), RE2::UNANCHORED, &match, 1)) {
         return {false, {}};
     }
 
-    return {true, {match[0].data(), match[0].size()}};
+    return {true, match};
 }
 
 } // namespace ddwaf::matcher

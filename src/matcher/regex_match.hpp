@@ -10,7 +10,6 @@
 #include <re2/re2.h>
 
 #include "matcher/base.hpp"
-#include "utils.hpp"
 
 namespace ddwaf::matcher {
 
@@ -35,7 +34,6 @@ protected:
 
     [[nodiscard]] std::pair<bool, dynamic_string> match_impl(std::string_view pattern) const;
 
-    static constexpr int max_match_count = 16;
     std::unique_ptr<re2::RE2> regex{nullptr};
     std::size_t min_length;
 
