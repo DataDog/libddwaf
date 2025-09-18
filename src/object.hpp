@@ -75,7 +75,7 @@ struct object_map {
 
 union [[gnu::may_alias]] object {
     object_type type;
-    union [[gnu::packed]] {
+    union {
         object_scalar<bool> b8;
         object_scalar<int64_t> i64;
         object_scalar<uint64_t> u64;
@@ -1243,14 +1243,22 @@ template <typename Derived>
 template <typename T>
 borrowed_object writable_object<Derived>::emplace_back(T &&value)
 {
-    return emplace_back(owned_object{std::forward<T>(value)});
+    if constexpr (is_type_in_set_v<std::decay_t<T>, std::string, std::string_view>) {
+        return emplace_back(owned_object{std::forward<T>(value), alloc()});
+    } else {
+        return emplace_back(owned_object{std::forward<T>(value)});
+    }
 }
 
 template <typename Derived>
 template <typename T>
 borrowed_object writable_object<Derived>::emplace(std::string_view key, T &&value)
 {
-    return emplace(key, owned_object{std::forward<T>(value)});
+    if constexpr (is_type_in_set_v<std::decay_t<T>, std::string, std::string_view>) {
+        return emplace(key, owned_object{std::forward<T>(value), alloc()});
+    } else {
+        return emplace(key, owned_object{std::forward<T>(value)});
+    }
 }
 
 inline borrowed_object::borrowed_object(owned_object &obj) : obj_(obj.ptr()), alloc_(obj.alloc()) {}

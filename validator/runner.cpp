@@ -63,7 +63,7 @@ bool test_runner::run_test(const YAML::Node &runs)
 
     bool passed = false;
     std::unique_ptr<std::remove_pointer_t<ddwaf_context>, decltype(&ddwaf_context_destroy)> ctx(
-        ddwaf_context_init(handle_, ddwaf_get_default_allocator()), ddwaf_context_destroy);
+        ddwaf_context_init(handle_, alloc), ddwaf_context_destroy);
 
     ddwaf_object res_mem{};
     ddwaf_object_set_invalid(&res_mem);
@@ -88,7 +88,7 @@ bool test_runner::run_test(const YAML::Node &runs)
                     data_ptr = &data;
                 }
 
-                auto retval = ddwaf_context_eval(ctx.get(), data_ptr, true, res.get(), timeout);
+                auto retval = ddwaf_context_eval(ctx.get(), data_ptr, alloc, res.get(), timeout);
 
                 expect(retval, code);
 
@@ -121,7 +121,7 @@ bool test_runner::run_test(const YAML::Node &runs)
                     }
 
                     auto retval =
-                        ddwaf_subcontext_eval(sctx.get(), data_ptr, true, res.get(), timeout);
+                        ddwaf_subcontext_eval(sctx.get(), data_ptr, alloc, res.get(), timeout);
 
                     expect(retval, code);
                     if (code == DDWAF_MATCH) {

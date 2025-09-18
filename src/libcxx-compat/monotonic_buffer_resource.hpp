@@ -8,12 +8,10 @@
 
 #include <experimental/memory_resource>
 
-namespace std { // NOLINT(cert-dcl58-cpp)
-namespace experimental::pmr {
+namespace std::experimental::pmr { // NOLINT(cert-dcl58-cpp)
 
 class monotonic_buffer_resource : public memory_resource {
-    static const size_t __default_buffer_capacity = 1024;
-    static const size_t __default_buffer_alignment = 16;
+    static constexpr size_t __default_buffer_capacity = 1024;
 
     struct __chunk_footer {
         __chunk_footer *__next_;
@@ -22,9 +20,8 @@ class monotonic_buffer_resource : public memory_resource {
         size_t __align_;
         size_t __allocation_size()
         {
-            return (reinterpret_cast<char *>(this) - __start_) + sizeof(*this); // NOLINT
+            return (reinterpret_cast<char *>(this) - __start_) + sizeof(*this);
         }
-        void *__try_allocate_from_chunk(size_t, size_t);
     };
 
     struct __initial_descriptor {
@@ -34,7 +31,6 @@ class monotonic_buffer_resource : public memory_resource {
             char *__end_;
             size_t __size_;
         };
-        void *__try_allocate_from_chunk(size_t, size_t);
     };
 
 public:
@@ -63,7 +59,7 @@ public:
     {
         __initial_.__start_ = static_cast<char *>(__buffer);
         if (__buffer != nullptr) {
-            __initial_.__cur_ = static_cast<char *>(__buffer);
+            __initial_.__cur_ = static_cast<char *>(__buffer) + __buffer_size;
             __initial_.__end_ = static_cast<char *>(__buffer) + __buffer_size;
         } else {
             __initial_.__cur_ = nullptr;
@@ -74,17 +70,14 @@ public:
 
     monotonic_buffer_resource(const monotonic_buffer_resource &) = delete;
 
-    monotonic_buffer_resource(monotonic_buffer_resource &&) = delete;
-
     ~monotonic_buffer_resource() override { release(); }
 
     monotonic_buffer_resource &operator=(const monotonic_buffer_resource &) = delete;
 
-    monotonic_buffer_resource &operator=(monotonic_buffer_resource &&) = delete;
-
     void release()
     {
-        __initial_.__cur_ = __initial_.__start_;
+        if (__initial_.__start_ != nullptr)
+            __initial_.__cur_ = __initial_.__end_;
         while (__chunks_ != nullptr) {
             __chunk_footer *__next = __chunks_->__next_;
             __res_->deallocate(
@@ -93,24 +86,22 @@ public:
         }
     }
 
-    [[nodiscard]] memory_resource *upstream_resource() const { return __res_; }
+    memory_resource *upstream_resource() const { return __res_; }
 
 protected:
-    void *do_allocate(size_t bytes, size_t align) override; // key function
+    void *do_allocate(size_t __bytes, size_t __alignment) override; // key function
 
     void do_deallocate(void *, size_t, size_t) override {}
 
-    [[nodiscard]] bool do_is_equal(const memory_resource &__other) const _NOEXCEPT override
+    bool do_is_equal(const memory_resource &__other) const noexcept override
     {
         return this == std::addressof(__other);
     }
 
 private:
-    __initial_descriptor __initial_{};
+    __initial_descriptor __initial_;
     __chunk_footer *__chunks_;
     memory_resource *__res_;
 };
 
-} // namespace experimental::pmr
-namespace pmr = std::experimental::pmr;
-} // namespace std
+} // namespace std::experimental::pmr

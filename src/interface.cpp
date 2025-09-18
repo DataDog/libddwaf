@@ -15,6 +15,7 @@
 #include <limits>
 #include <memory>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -32,6 +33,7 @@
 #include "pointer.hpp"
 #include "re2.h"
 #include "ruleset_info.hpp"
+#include "user_resource.hpp"
 #include "utils.hpp"
 #include "version.hpp"
 #include "waf.hpp"
@@ -114,6 +116,11 @@ static_assert(offsetof(detail::object_map, type) == offsetof(_ddwaf_object_map, 
 static_assert(offsetof(detail::object_map, size) == offsetof(_ddwaf_object_map, size));
 static_assert(offsetof(detail::object_map, capacity) == offsetof(_ddwaf_object_map, capacity));
 static_assert(offsetof(detail::object_map, ptr) == offsetof(_ddwaf_object_map, ptr));
+
+// Allocator callback compatibility
+static_assert(std::is_same_v<ddwaf_alloc_fn_type, memory::user_resource::alloc_fn_type>);
+static_assert(std::is_same_v<ddwaf_free_fn_type, memory::user_resource::free_fn_type>);
+static_assert(std::is_same_v<ddwaf_udata_free_fn_type, memory::user_resource::udata_free_fn_type>);
 
 namespace {
 const char *log_level_to_str(DDWAF_LOG_LEVEL level)
@@ -215,10 +222,6 @@ ddwaf::waf *ddwaf_init(
 
 void ddwaf_destroy(ddwaf::waf *handle)
 {
-    if (handle == nullptr) {
-        return;
-    }
-
     try {
         delete handle;
     } catch (const std::exception &e) {
@@ -278,7 +281,7 @@ ddwaf_context ddwaf_context_init(ddwaf::waf *handle, ddwaf_allocator output_allo
 
 DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    bool free_objects, ddwaf_object *result, uint64_t timeout)
+    ddwaf_allocator alloc, ddwaf_object *result, uint64_t timeout)
 {
     if (context == nullptr || data == nullptr) {
         DDWAF_WARN("Illegal WAF call: context or data was null");
@@ -286,8 +289,8 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
     }
 
     try {
-        if (free_objects) {
-            if (!context->insert(owned_object{to_ref(data)})) {
+        if (alloc != nullptr) {
+            if (!context->insert(owned_object{to_ref(data), to_alloc_ptr(alloc)})) {
                 return DDWAF_ERR_INVALID_OBJECT;
             }
         } else {
@@ -309,7 +312,6 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
         }
         return code ? DDWAF_MATCH : DDWAF_OK;
     } catch (const std::exception &e) {
-        // catch-all to avoid std::terminate
         DDWAF_ERROR("{}", e.what());
     } catch (...) {
         DDWAF_ERROR("unknown exception");
@@ -320,14 +322,9 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
 
 void ddwaf_context_destroy(ddwaf_context context)
 {
-    if (context == nullptr) {
-        return;
-    }
-
     try {
         delete context;
     } catch (const std::exception &e) {
-        // catch-all to avoid std::terminate
         DDWAF_ERROR("{}", e.what());
     } catch (...) {
         DDWAF_ERROR("unknown exception");
@@ -350,7 +347,7 @@ ddwaf_subcontext ddwaf_subcontext_init(ddwaf_context context)
 
 DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *data,
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    bool free_objects, ddwaf_object *result, uint64_t timeout)
+    ddwaf_allocator alloc, ddwaf_object *result, uint64_t timeout)
 {
     if (subcontext == nullptr || data == nullptr) {
         DDWAF_WARN("Illegal WAF call: subcontext or data was null");
@@ -358,8 +355,8 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *
     }
 
     try {
-        if (free_objects) {
-            if (!subcontext->insert(owned_object{to_ref(data)})) {
+        if (alloc != nullptr) {
+            if (!subcontext->insert(owned_object{to_ref(data), to_alloc_ptr(alloc)})) {
                 return DDWAF_ERR_INVALID_OBJECT;
             }
         } else {
@@ -368,7 +365,6 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *
                 return DDWAF_ERR_INVALID_OBJECT;
             }
         }
-
         // The timers will actually count nanoseconds, std::chrono doesn't
         // deal well with durations being beyond range.
         constexpr uint64_t max_timeout_us = std::chrono::nanoseconds::max().count() / 1000;
@@ -381,7 +377,6 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *
         }
         return code ? DDWAF_MATCH : DDWAF_OK;
     } catch (const std::exception &e) {
-        // catch-all to avoid std::terminate
         DDWAF_ERROR("{}", e.what());
     } catch (...) {
         DDWAF_ERROR("unknown exception");
@@ -392,14 +387,9 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *
 
 void ddwaf_subcontext_destroy(ddwaf_subcontext subcontext)
 {
-    if (subcontext == nullptr) {
-        return;
-    }
-
     try {
         delete subcontext;
     } catch (const std::exception &e) {
-        // catch-all to avoid std::terminate
         DDWAF_ERROR("{}", e.what());
     } catch (...) {
         DDWAF_ERROR("unknown exception");
@@ -523,9 +513,105 @@ uint32_t ddwaf_builder_get_config_paths(
     return 0;
 }
 
-void ddwaf_builder_destroy(ddwaf_builder builder) { delete builder; }
+void ddwaf_builder_destroy(ddwaf_builder builder)
+{
+    try {
+        delete builder;
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+}
 
 ddwaf_allocator ddwaf_get_default_allocator() { return memory::get_default_resource(); }
+
+ddwaf_allocator ddwaf_synchronized_pool_allocator_init()
+{
+    try {
+        return new memory::synchronized_pool_resource();
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+    return nullptr;
+}
+
+ddwaf_allocator ddwaf_unsynchronized_pool_allocator_init()
+{
+    try {
+        return new memory::unsynchronized_pool_resource();
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+    return nullptr;
+}
+
+ddwaf_allocator ddwaf_monotonic_allocator_init()
+{
+    try {
+        return new memory::monotonic_buffer_resource();
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+    return nullptr;
+}
+
+ddwaf_allocator ddwaf_user_allocator_init(ddwaf_alloc_fn_type alloc_fn, ddwaf_free_fn_type free_fn,
+    void *udata, ddwaf_udata_free_fn_type udata_free_fn)
+{
+    try {
+        return new memory::user_resource(alloc_fn, free_fn, udata, udata_free_fn);
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+    return nullptr;
+}
+
+void *ddwaf_allocator_alloc(ddwaf_allocator alloc, size_t bytes, size_t alignment)
+{
+    if (alloc == nullptr) {
+        return nullptr;
+    }
+
+    try {
+        return to_alloc_ptr(alloc)->allocate(bytes, alignment);
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+    return nullptr;
+}
+
+void ddwaf_allocator_free(ddwaf_allocator alloc, void *p, size_t bytes, size_t alignment)
+{
+    if (alloc != nullptr) {
+        to_alloc_ptr(alloc)->deallocate(p, bytes, alignment);
+    }
+}
+
+void ddwaf_allocator_destroy(ddwaf_allocator alloc)
+{
+    if (alloc == memory::get_default_resource()) {
+        return;
+    }
+
+    try {
+        delete to_alloc_ptr(alloc);
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+}
 
 ddwaf_object *ddwaf_object_set_invalid(ddwaf_object *object)
 {
@@ -877,41 +963,49 @@ bool ddwaf_object_is_invalid(const ddwaf_object *object)
     const object_view view{to_ptr(object)};
     return view.has_value() && view.is_invalid();
 }
+
 bool ddwaf_object_is_null(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     return view.has_value() && view.type() == object_type::null;
 }
+
 bool ddwaf_object_is_bool(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     return view.has_value() && view.type() == object_type::boolean;
 }
+
 bool ddwaf_object_is_signed(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     return view.has_value() && view.type() == object_type::int64;
 }
+
 bool ddwaf_object_is_unsigned(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     return view.has_value() && view.type() == object_type::uint64;
 }
+
 bool ddwaf_object_is_float(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     return view.has_value() && view.type() == object_type::float64;
 }
+
 bool ddwaf_object_is_string(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     return view.has_value() && view.is_string();
 }
+
 bool ddwaf_object_is_array(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};
     return view.has_value() && view.is_array();
 }
+
 bool ddwaf_object_is_map(const ddwaf_object *object)
 {
     const object_view view{to_ptr(object)};

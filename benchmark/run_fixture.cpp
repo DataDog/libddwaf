@@ -50,6 +50,7 @@ void run_fixture::warmup()
 
 uint64_t run_fixture::test_main()
 {
+    auto *alloc = ddwaf_get_default_allocator();
     uint64_t total_runtime = 0;
 
     for (auto &object : objects_) {
@@ -57,7 +58,7 @@ uint64_t run_fixture::test_main()
 
         auto *subctx = ddwaf_subcontext_init(ctx_);
         auto code = ddwaf_subcontext_eval(
-            subctx, &object, false, &res, std::numeric_limits<uint32_t>::max());
+            subctx, &object, nullptr, &res, std::numeric_limits<uint32_t>::max());
         ddwaf_subcontext_destroy(subctx);
         if (code < 0) {
             throw std::runtime_error("WAF returned " + std::to_string(code));
@@ -70,7 +71,7 @@ uint64_t run_fixture::test_main()
 
         const auto *duration = ddwaf_object_find(&res, "duration", sizeof("duration") - 1);
         total_runtime += ddwaf_object_get_unsigned(duration);
-        ddwaf_object_destroy(&res, ddwaf_get_default_allocator());
+        ddwaf_object_destroy(&res, alloc);
     }
 
     return total_runtime;

@@ -83,7 +83,7 @@ TEST_F(TestSchemaIntegration, SimpleResult)
         ddwaf_object_insert_key(&param, STRL("arg1"), alloc), STRL("rule1"), alloc);
 
     ddwaf_object ret;
-    auto code = ddwaf_context_eval(context, &param, true, &ret, LONG_TIME);
+    auto code = ddwaf_context_eval(context, &param, alloc, &ret, LONG_TIME);
     Validate(ret, code);
     ddwaf_object_destroy(&ret, alloc);
 }
@@ -100,7 +100,7 @@ TEST_F(TestSchemaIntegration, SimpleResultWithKeyPath)
         ddwaf_object_insert_key(arg2, STRL("key1"), alloc), STRL("rule2"), alloc);
 
     ddwaf_object ret;
-    auto code = ddwaf_context_eval(context, &param, true, &ret, LONG_TIME);
+    auto code = ddwaf_context_eval(context, &param, alloc, &ret, LONG_TIME);
     Validate(ret, code);
     ddwaf_object_destroy(&ret, alloc);
 }
@@ -120,7 +120,7 @@ TEST_F(TestSchemaIntegration, SimpleResultWithMultiKeyPath)
     ddwaf_object_set_string(ddwaf_object_insert(array, alloc), STRL("rule2"), alloc);
 
     ddwaf_object ret;
-    auto code = ddwaf_context_eval(context, &param, true, &ret, LONG_TIME);
+    auto code = ddwaf_context_eval(context, &param, alloc, &ret, LONG_TIME);
     Validate(ret, code);
     ddwaf_object_destroy(&ret, alloc);
 }
@@ -141,7 +141,7 @@ TEST_F(TestSchemaIntegration, ResultWithMultiCondition)
         ddwaf_object_insert_key(&param, STRL("arg3"), alloc), STRL("rule3_value"), alloc);
 
     ddwaf_object ret;
-    auto code = ddwaf_context_eval(context, &param, true, &ret, LONG_TIME);
+    auto code = ddwaf_context_eval(context, &param, alloc, &ret, LONG_TIME);
     Validate(ret, code);
     ddwaf_object_destroy(&ret, alloc);
 }
@@ -172,7 +172,7 @@ TEST_F(TestSchemaIntegration, MultiResultWithMultiCondition)
         ddwaf_object_insert_key(arg4, STRL("key1"), alloc), STRL("rule3"), alloc);
 
     ddwaf_object ret;
-    auto code = ddwaf_context_eval(context, &param, true, &ret, LONG_TIME);
+    auto code = ddwaf_context_eval(context, &param, alloc, &ret, LONG_TIME);
     Validate(ret, code);
     ddwaf_object_destroy(&ret, alloc);
 }
