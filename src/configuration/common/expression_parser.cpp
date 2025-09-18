@@ -37,6 +37,7 @@
 #include "matcher/lower_than.hpp"
 #include "matcher/phrase_match.hpp"
 #include "matcher/regex_match.hpp"
+#include "matcher/regex_match_with_checksum.hpp"
 #include "target_address.hpp"
 #include "transformer/base.hpp"
 #include "utils.hpp"
@@ -239,13 +240,14 @@ std::shared_ptr<expression> parse_expression(const raw_configuration::vector &co
         } else if (operator_name.starts_with('!')) {
             conditions.emplace_back(
                 build_condition<negated_scalar_condition, matcher::ip_match, matcher::exact_match,
-                    matcher::regex_match, matcher::phrase_match, matcher::equals<>>(
-                    operator_name.substr(1), params, source, transformers));
+                    matcher::regex_match, matcher::regex_match_with_checksum, matcher::phrase_match,
+                    matcher::equals<>>(operator_name.substr(1), params, source, transformers));
         } else {
             conditions.emplace_back(build_condition<scalar_condition, matcher::equals<>,
                 matcher::exact_match, matcher::greater_than<>, matcher::ip_match, matcher::is_sqli,
                 matcher::is_xss, matcher::lower_than<>, matcher::phrase_match, matcher::regex_match,
-                matcher::hidden_ascii_match>(operator_name, params, source, transformers));
+                matcher::regex_match_with_checksum, matcher::hidden_ascii_match>(
+                operator_name, params, source, transformers));
         }
     }
 

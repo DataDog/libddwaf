@@ -27,6 +27,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/builder/module_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/processor_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/ruleset_builder.cpp
+    ${libddwaf_SOURCE_DIR}/src/builder/checksum_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/sql_base.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/pgsql.cpp
     ${libddwaf_SOURCE_DIR}/src/tokenizer/mysql.cpp
@@ -64,8 +65,10 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/condition/shi_common.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/shi_detector.cpp
     ${libddwaf_SOURCE_DIR}/src/condition/cmdi_detector.cpp
+    ${libddwaf_SOURCE_DIR}/src/checksum/luhn_checksum.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/phrase_match.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/regex_match.cpp
+    ${libddwaf_SOURCE_DIR}/src/matcher/regex_match_with_checksum.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/is_sqli.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/is_xss.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/ip_match.cpp
