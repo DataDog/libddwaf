@@ -122,26 +122,17 @@ static_assert(std::is_same_v<ddwaf_alloc_fn_type, memory::user_resource::alloc_f
 static_assert(std::is_same_v<ddwaf_free_fn_type, memory::user_resource::free_fn_type>);
 static_assert(std::is_same_v<ddwaf_udata_free_fn_type, memory::user_resource::udata_free_fn_type>);
 
-namespace {
-const char *log_level_to_str(DDWAF_LOG_LEVEL level)
-{
-    switch (level) {
-    case DDWAF_LOG_TRACE:
-        return "trace";
-    case DDWAF_LOG_DEBUG:
-        return "debug";
-    case DDWAF_LOG_ERROR:
-        return "error";
-    case DDWAF_LOG_WARN:
-        return "warn";
-    case DDWAF_LOG_INFO:
-        return "info";
-    case DDWAF_LOG_OFF:
-        break;
-    }
+// Log compatibility
+static_assert(DDWAF_LOG_TRACE == static_cast<uint8_t>(log_level::trace));
+static_assert(DDWAF_LOG_DEBUG == static_cast<uint8_t>(log_level::debug));
+static_assert(DDWAF_LOG_INFO == static_cast<uint8_t>(log_level::info));
+static_assert(DDWAF_LOG_WARN == static_cast<uint8_t>(log_level::warn));
+static_assert(DDWAF_LOG_ERROR == static_cast<uint8_t>(log_level::error));
+static_assert(DDWAF_LOG_OFF == static_cast<uint8_t>(log_level::off));
+static_assert(sizeof(DDWAF_LOG_LEVEL) == sizeof(log_level));
+static_assert(alignof(DDWAF_LOG_LEVEL) == alignof(log_level));
 
-    return "off";
-}
+namespace {
 
 std::shared_ptr<ddwaf::match_obfuscator> obfuscator_from_config(const ddwaf_config *config)
 {
@@ -400,8 +391,10 @@ const char *ddwaf_get_version() { return ddwaf::current_version.cstring(); }
 
 bool ddwaf_set_log_cb(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level)
 {
-    ddwaf::logger::init(cb, min_level);
-    DDWAF_INFO("Sending log messages to binding, min level {}", log_level_to_str(min_level));
+    auto level = static_cast<log_level>(min_level);
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    ddwaf::logger::init(reinterpret_cast<logger::log_cb_type>(cb), level);
+    DDWAF_INFO("Sending log messages to binding, min level {}", log_level_to_str(level));
     return true;
 }
 
