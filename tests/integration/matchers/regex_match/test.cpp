@@ -212,4 +212,5 @@ TEST(TestRegexMatchIntegration, MinLength)
     }
     ddwaf_destroy(handle);
 }
+
 } // namespace
