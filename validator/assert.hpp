@@ -77,8 +77,6 @@ inline std::string to_string(DDWAF_RET_CODE val)
         return "invalid argument";
     case DDWAF_OK:
         return "ok";
-    case DDWAF_MATCH:
-        return "match";
     }
     return "unknown";
 }

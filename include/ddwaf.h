@@ -75,7 +75,6 @@ typedef enum
     DDWAF_ERR_INVALID_OBJECT   = -2,
     DDWAF_ERR_INVALID_ARGUMENT = -1,
     DDWAF_OK                   = 0,
-    DDWAF_MATCH                = 1,
 } DDWAF_RET_CODE;
 
 /**
@@ -336,7 +335,7 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_allocator outp
  *                       transport sampling through the relevant mechanism.
  *               This structure must be freed by the caller and will contain all
  *               specified keys when the value returned by ddwaf_context_eval is either
- *               DDWAF_OK or DDWAF_MATCH and will be empty otherwise.
+ *               DDWAF_OK  and will be empty otherwise.
  * @param timeout Maximum time budget in microseconds.
  *
  * @return Return code of the operation.
@@ -412,7 +411,7 @@ ddwaf_subcontext ddwaf_subcontext_init(ddwaf_context context);
  *                       transport sampling through the relevant mechanism.
  *               This structure must be freed by the caller and will contain all
  *               specified keys when the value returned by ddwaf_subcontext_eval is either
- *               DDWAF_OK or DDWAF_MATCH and will be empty otherwise.
+ *               DDWAF_OK and will be empty otherwise.
  * @param timeout Maximum time budget in microseconds.
  *
  * @return Return code of the operation.

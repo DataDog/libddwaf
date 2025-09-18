@@ -6,7 +6,6 @@
         server.sys.exec.cmd: ["ls", "-l"],
         server.request.query: [ "potato" ]
       },
-      code: ok
     }
   ]
 }

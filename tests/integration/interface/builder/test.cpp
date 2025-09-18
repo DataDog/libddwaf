@@ -215,7 +215,7 @@ TEST(TestEngineBuilderFunctional, BaseRules)
         ddwaf_object_set_map(&root, 1, alloc);
         ddwaf_object_set_string(
             ddwaf_object_insert_key(&root, STRL("value1"), alloc), STRL("rule1"), alloc);
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -246,7 +246,7 @@ TEST(TestEngineBuilderFunctional, BaseRules)
         ddwaf_object_set_map(&root, 1, alloc);
         ddwaf_object_set_string(
             ddwaf_object_insert_key(&root, STRL("value2"), alloc), STRL("rule2"), alloc);
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -295,12 +295,12 @@ TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
         ddwaf_object_set_map(&root, 1, alloc);
         ddwaf_object_set_string(
             ddwaf_object_insert_key(&root, STRL("value1"), alloc), STRL("rule1"), alloc);
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_object_set_map(&root, 1, alloc);
         ddwaf_object_set_string(
             ddwaf_object_insert_key(&root, STRL("value2"), alloc), STRL("rule2"), alloc);
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -319,7 +319,7 @@ TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
         ddwaf_object_set_map(&root, 1, alloc);
         ddwaf_object_set_string(
             ddwaf_object_insert_key(&root, STRL("value1"), alloc), STRL("rule1"), alloc);
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_object_set_map(&root, 1, alloc);
         ddwaf_object_set_string(
@@ -362,7 +362,7 @@ TEST(TestEngineBuilderFunctional, CustomRules)
         ddwaf_object_set_map(&root, 1, alloc);
         ddwaf_object_set_string(
             ddwaf_object_insert_key(&root, STRL("value1"), alloc), STRL("rule1"), alloc);
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -394,7 +394,7 @@ TEST(TestEngineBuilderFunctional, CustomRules)
         ddwaf_object_set_map(&root, 1, alloc);
         ddwaf_object_set_string(
             ddwaf_object_insert_key(&root, STRL("value2"), alloc), STRL("rule2"), alloc);
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }

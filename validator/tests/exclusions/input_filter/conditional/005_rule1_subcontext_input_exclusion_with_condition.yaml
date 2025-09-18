@@ -7,7 +7,6 @@
           exclusion-filter-1-input: exclusion-filter-1,
           rule1-input2: rule1
         },
-        code: ok
       }
     ],
     [
@@ -26,7 +25,6 @@
             ]
           }
         ],
-        code: match
       }
     ]
   ],

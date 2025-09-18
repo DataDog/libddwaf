@@ -63,7 +63,7 @@ TEST(TestAllocatorIntegration, MonotonicAllocator)
 
     ddwaf_object result;
     ddwaf_object_set_invalid(&result);
-    EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &result, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &result, LONG_TIME), DDWAF_OK);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
@@ -148,7 +148,7 @@ TEST(TestAllocatorIntegration, UnsynchronizedPoolAllocator)
 
     ddwaf_object result;
     ddwaf_object_set_invalid(&result);
-    EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &result, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &result, LONG_TIME), DDWAF_OK);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
@@ -233,7 +233,7 @@ TEST(TestAllocatorIntegration, SynchronizedPoolAllocator)
 
     ddwaf_object result;
     ddwaf_object_set_invalid(&result);
-    EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &result, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &result, LONG_TIME), DDWAF_OK);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
@@ -323,8 +323,7 @@ TEST(TestAllocatorIntegration, SplitInputOutputAllocators)
 
     ddwaf_object result;
     ddwaf_object_set_invalid(&result);
-    EXPECT_EQ(
-        ddwaf_context_eval(context, &parameter, input_alloc, &result, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, input_alloc, &result, LONG_TIME), DDWAF_OK);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
@@ -395,7 +394,7 @@ TEST(TestAllocatorIntegration, MultiCallSplitInputOutputAllocators)
         ddwaf_object result;
         ddwaf_object_set_invalid(&result);
         EXPECT_EQ(
-            ddwaf_context_eval(context, &parameter, input_alloc0, &result, LONG_TIME), DDWAF_MATCH);
+            ddwaf_context_eval(context, &parameter, input_alloc0, &result, LONG_TIME), DDWAF_OK);
 
         const auto *events = ddwaf_object_find(&result, STRL("events"));
         ASSERT_NE(events, nullptr);
@@ -576,7 +575,7 @@ TEST(TestAllocatorIntegration, UserAllocator)
 
     ddwaf_object result;
     ddwaf_object_set_invalid(&result);
-    EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &result, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &result, LONG_TIME), DDWAF_OK);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
@@ -667,7 +666,7 @@ TEST(TestAllocatorIntegration, UserAllocatorWithFreeableUdata)
 
     ddwaf_object result;
     ddwaf_object_set_invalid(&result);
-    EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &result, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &result, LONG_TIME), DDWAF_OK);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
@@ -757,7 +756,7 @@ TEST(TestAllocatorIntegration, MultiCallSplitInputOutputAllocatorsSubcontext)
         ddwaf_object result;
         ddwaf_object_set_invalid(&result);
         EXPECT_EQ(
-            ddwaf_subcontext_eval(sctx, &parameter, input_alloc, &result, LONG_TIME), DDWAF_MATCH);
+            ddwaf_subcontext_eval(sctx, &parameter, input_alloc, &result, LONG_TIME), DDWAF_OK);
 
         const auto *events = ddwaf_object_find(&result, STRL("events"));
         ASSERT_NE(events, nullptr);

@@ -1,157 +1,110 @@
 #include "ddwaf.h"
 #include <iostream>
+#include <string>
+#include <string_view>
 #include <yaml-cpp/yaml.h>
 
 #define LONG_TIME 1000000
 
-namespace YAML {
-
-template <> struct as_if<ddwaf_object, void> {
-    explicit as_if(const Node &node_) : node(node_) {}
-
-    static ddwaf_object yaml_to_object_helper(const Node &node)
-    {
-        ddwaf_object arg;
-        switch (node.Type()) {
-        case NodeType::Sequence:
-            ddwaf_object_array(&arg);
-            break;
-        case NodeType::Map:
-            ddwaf_object_map(&arg);
-            break;
-        case NodeType::Scalar:
-            ddwaf_object_string(&arg, node.Scalar().c_str());
-            break;
-        case NodeType::Null:
-            ddwaf_object_null(&arg);
-            break;
-        case NodeType::Undefined:
-        default:
-            ddwaf_object_invalid(&arg);
-            break;
-        }
-        return arg;
-    }
-
-    ddwaf_object operator()() const
-    {
-        std::list<std::tuple<ddwaf_object &, YAML::Node, YAML::Node::const_iterator>> stack;
-
-        ddwaf_object root = yaml_to_object_helper(node);
-        if (root.type == DDWAF_OBJ_MAP || root.type == DDWAF_OBJ_ARRAY) {
-            stack.emplace_back(root, node, node.begin());
-        }
-
-        while (!stack.empty()) {
-            auto current_depth = stack.size();
-            auto &[parent_obj, parent_node, it] = stack.back();
-
-            for (; it != parent_node.end(); ++it) {
-                YAML::Node child_node = parent_node.IsMap() ? it->second : *it;
-                auto child_obj = yaml_to_object_helper(child_node);
-                if (parent_obj.type == DDWAF_OBJ_MAP) {
-                    auto key = it->first.as<std::string>();
-                    ddwaf_object_map_add(&parent_obj, key.c_str(), &child_obj);
-                } else if (parent_obj.type == DDWAF_OBJ_ARRAY) {
-                    ddwaf_object_array_add(&parent_obj, &child_obj);
-                }
-
-                if (child_obj.type == DDWAF_OBJ_MAP || child_obj.type == DDWAF_OBJ_ARRAY) {
-                    auto &child_ptr = parent_obj.array[parent_obj.nbEntries - 1];
-                    stack.emplace_back(child_ptr, child_node, child_node.begin());
-                    ++it;
-                    break;
-                }
-            }
-
-            if (current_depth == stack.size()) {
-                stack.pop_back();
-            }
-        }
-        return root;
-    }
-
-    const Node &node;
-};
-
-} // namespace YAML
-
 namespace {
 
-YAML::Node object_to_yaml_helper(const ddwaf_object &obj)
-{
-    YAML::Node output;
-    switch (obj.type) {
-    case DDWAF_OBJ_BOOL:
-        output = obj.boolean;
-        break;
-    case DDWAF_OBJ_SIGNED:
-        output = obj.intValue;
-        break;
-    case DDWAF_OBJ_UNSIGNED:
-        output = obj.uintValue;
-        break;
-    case DDWAF_OBJ_FLOAT:
-        output = obj.f64;
-        break;
-    case DDWAF_OBJ_STRING:
-        output = std::string{obj.stringValue, obj.nbEntries};
-        break;
-    case DDWAF_OBJ_MAP:
-        output = YAML::Load("{}");
-        break;
-    case DDWAF_OBJ_ARRAY:
-        output = YAML::Load("[]");
-        break;
-    case DDWAF_OBJ_INVALID:
-    case DDWAF_OBJ_NULL:
-        output = YAML::Null;
-        break;
-    };
-    return output;
-}
+// Convert a ddwaf_object to YAML recursively using the new object layout
+YAML::Node object_to_yaml(const ddwaf_object &obj);
 
-} // namespace
+inline std::string_view string_from_object(const ddwaf_object &o)
+{
+    switch (o.type) {
+    case DDWAF_OBJ_SMALL_STRING:
+        return std::string_view{o.via.sstr.data, o.via.sstr.size};
+    case DDWAF_OBJ_STRING:
+    case DDWAF_OBJ_LITERAL_STRING:
+        return std::string_view{o.via.str.ptr, o.via.str.size};
+    default:
+        return std::string_view{};
+    }
+}
 
 YAML::Node object_to_yaml(const ddwaf_object &obj)
 {
-    std::list<std::tuple<const ddwaf_object &, YAML::Node, std::size_t>> stack;
-
-    YAML::Node root = object_to_yaml_helper(obj);
-    if (obj.type == DDWAF_OBJ_MAP || obj.type == DDWAF_OBJ_ARRAY) {
-        stack.emplace_back(obj, root, 0);
-    }
-
-    while (!stack.empty()) {
-        auto current_depth = stack.size();
-        auto &[parent_obj, parent_node, index] = stack.back();
-
-        for (; index < parent_obj.nbEntries; ++index) {
-            auto &child_obj = parent_obj.array[index];
-            auto child_node = object_to_yaml_helper(child_obj);
-
-            if (parent_obj.type == DDWAF_OBJ_MAP) {
-                std::string key{child_obj.parameterName, child_obj.parameterNameLength};
-                parent_node[key] = child_node;
-            } else if (parent_obj.type == DDWAF_OBJ_ARRAY) {
-                parent_node.push_back(child_node);
-            }
-
-            if (child_obj.type == DDWAF_OBJ_MAP || child_obj.type == DDWAF_OBJ_ARRAY) {
-                stack.emplace_back(child_obj, child_node, 0);
-                ++index;
-                break;
-            }
+    switch (obj.type) {
+    case DDWAF_OBJ_BOOL:
+        return YAML::Node(obj.via.b8.val);
+    case DDWAF_OBJ_SIGNED:
+        return YAML::Node(static_cast<int64_t>(obj.via.i64.val));
+    case DDWAF_OBJ_UNSIGNED:
+        return YAML::Node(static_cast<uint64_t>(obj.via.u64.val));
+    case DDWAF_OBJ_FLOAT:
+        return YAML::Node(obj.via.f64.val);
+    case DDWAF_OBJ_SMALL_STRING:
+    case DDWAF_OBJ_STRING:
+    case DDWAF_OBJ_LITERAL_STRING:
+        return YAML::Node(std::string{string_from_object(obj)});
+    case DDWAF_OBJ_ARRAY: {
+        YAML::Node out(YAML::NodeType::Sequence);
+        for (uint16_t i = 0; i < obj.via.array.size; ++i) {
+            out.push_back(object_to_yaml(obj.via.array.ptr[i]));
         }
-
-        if (current_depth == stack.size()) {
-            stack.pop_back();
-        }
+        return out;
     }
-    return root;
+    case DDWAF_OBJ_MAP: {
+        YAML::Node out(YAML::NodeType::Map);
+        for (uint16_t i = 0; i < obj.via.map.size; ++i) {
+            const auto &kv = obj.via.map.ptr[i];
+            auto ksv = string_from_object(kv.key);
+            out[std::string{ksv}] = object_to_yaml(kv.val);
+        }
+        return out;
+    }
+    case DDWAF_OBJ_INVALID:
+    case DDWAF_OBJ_NULL:
+    default:
+        return {};
+    }
 }
 
-constexpr std::string_view waf_rule = R"(
+// Build a ddwaf_object from YAML recursively using the new setters/insert API
+bool yaml_to_object_inplace(const YAML::Node &node, ddwaf_object *out, ddwaf_allocator alloc)
+{
+    switch (node.Type()) {
+    case YAML::NodeType::Null:
+        return ddwaf_object_set_null(out) != nullptr;
+    case YAML::NodeType::Scalar: {
+        const auto &s = node.Scalar();
+        return ddwaf_object_set_string(out, s.c_str(), static_cast<uint32_t>(s.size()), alloc) != nullptr;
+    }
+    case YAML::NodeType::Sequence: {
+        if (ddwaf_object_set_array(out, static_cast<uint16_t>(node.size()), alloc) == nullptr) {
+            return false;
+        }
+        for (const auto &child : node) {
+            ddwaf_object *slot = ddwaf_object_insert(out, alloc);
+            if (slot == nullptr) {return false; }
+            if (!yaml_to_object_inplace(child, slot, alloc)) {return false; }
+        }
+        return true;
+    }
+    case YAML::NodeType::Map: {
+        if (ddwaf_object_set_map(out, static_cast<uint16_t>(node.size()), alloc) == nullptr) {
+            return false;
+        }
+        for (auto it = node.begin(); it != node.end(); ++it) {
+            auto key = it->first.as<std::string>();
+            ddwaf_object *slot = ddwaf_object_insert_key(out, key.c_str(), static_cast<uint32_t>(key.size()), alloc);
+            if (slot == nullptr) { return false; }
+            if (!yaml_to_object_inplace(it->second, slot, alloc)) { return false; }
+        }
+        return true;
+    }
+    case YAML::NodeType::Undefined:
+    default:
+        return ddwaf_object_set_invalid(out) != nullptr;
+    }
+}
+
+} // namespace
+int main()
+{
+  std::string waf_rule = R"(
 version: "2.1"
 rules:
   - id: "1"
@@ -173,39 +126,59 @@ rules:
     on_match: [ block ]
 )";
 
-int main()
-{
-    YAML::Node doc = YAML::Load(waf_rule.data(), waf_rule.size());
+    YAML::Node doc = YAML::Load(waf_rule);
 
-    auto rule = doc.as<ddwaf_object>(); //= convert_yaml_to_args(doc);
+    ddwaf_allocator alloc = ddwaf_get_default_allocator();
+
+    ddwaf_object rule;
+    if (!yaml_to_object_inplace(doc, &rule, alloc)) {
+        std::cerr << "Failed to convert YAML ruleset to ddwaf_object\n";
+        return EXIT_FAILURE;
+    }
+
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ddwaf_object_destroy(&rule, alloc);
     if (handle == nullptr) {
         return EXIT_FAILURE;
     }
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     if (context == nullptr) {
         ddwaf_destroy(handle);
         return EXIT_FAILURE;
     }
 
     ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "arg1", ddwaf_object_string(&tmp, "string 1"));
-    ddwaf_object_map_add(&root, "arg2", ddwaf_object_string(&tmp, "string 2"));
+    if (ddwaf_object_set_map(&root, 2, alloc) == nullptr) {
+        ddwaf_context_destroy(context);
+        ddwaf_destroy(handle);
+        return EXIT_FAILURE;
+    }
+    {
+        ddwaf_object *v = ddwaf_object_insert_literal_key(&root, "arg1", 4, alloc);
+        if (v == nullptr || ddwaf_object_set_string(v, "string 1", 8, alloc) == nullptr) {
+            ddwaf_context_destroy(context);
+            ddwaf_destroy(handle);
+            return EXIT_FAILURE;
+        }
+    }
+    {
+        ddwaf_object *v = ddwaf_object_insert_literal_key(&root, "arg2", 4, alloc);
+        if (v == nullptr || ddwaf_object_set_string(v, "string 2", 8, alloc) == nullptr) {
+            ddwaf_context_destroy(context);
+            ddwaf_destroy(handle);
+            return EXIT_FAILURE;
+        }
+    }
 
     ddwaf_object ret;
-    auto code = ddwaf_context_eval(context, &root, nullptr, &ret, LONG_TIME);
+    auto code = ddwaf_context_eval(context, &root, alloc, &ret, LONG_TIME);
     std::cout << "Output second run: " << code << '\n';
-    if (code == DDWAF_MATCH) {
-        YAML::Emitter out(std::cout);
-        out.SetIndent(2);
-        out.SetMapFormat(YAML::Block);
-        out.SetSeqFormat(YAML::Block);
-        out << object_to_yaml(ret);
-    }
+    YAML::Emitter out(std::cout);
+    out.SetIndent(2);
+    out.SetMapFormat(YAML::Block);
+    out.SetSeqFormat(YAML::Block);
+    out << object_to_yaml(ret);
 
     ddwaf_object_destroy(&ret, alloc);
 

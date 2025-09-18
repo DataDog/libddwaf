@@ -30,7 +30,7 @@ TEST(TestEqualsMatcherIntegration, StringEquals)
         ddwaf_object_insert_key(&map, STRL("input"), alloc), STRL("arachni"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -65,7 +65,7 @@ TEST(TestEqualsMatcherIntegration, BoolEquals)
     ddwaf_object_set_bool(ddwaf_object_insert_key(&map, STRL("input"), alloc), false);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -102,7 +102,7 @@ TEST(TestEqualsMatcherIntegration, SignedEquals)
     ddwaf_object_set_signed(ddwaf_object_insert_key(&map, STRL("input"), alloc), -42);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "3",
@@ -137,7 +137,7 @@ TEST(TestEqualsMatcherIntegration, UnsignedEquals)
     ddwaf_object_set_unsigned(ddwaf_object_insert_key(&map, STRL("input"), alloc), 42);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "4",
@@ -174,7 +174,7 @@ TEST(TestEqualsMatcherIntegration, FloatEquals)
     ddwaf_object_set_float(ddwaf_object_insert_key(&map, STRL("input"), alloc), 42.01);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "5",

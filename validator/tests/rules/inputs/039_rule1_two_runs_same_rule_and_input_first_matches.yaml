@@ -16,13 +16,11 @@
           ]
         }
       ],
-      code: match
     },
     {
       input: {
         rule1-input: rule1
       },
-      code: ok
     }
   ],
 }

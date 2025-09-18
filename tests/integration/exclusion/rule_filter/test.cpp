@@ -32,7 +32,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRule)
         ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "type2"}, {"category", "category"}},
@@ -66,7 +66,7 @@ TEST(TestRuleFilterIntegration, ExcludeByType)
         ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
@@ -126,7 +126,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTags)
         ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
     EXPECT_EVENTS(out, {.id = "2",
                            .name = "rule2",
                            .tags = {{"type", "type2"}, {"category", "category"}},
@@ -181,7 +181,7 @@ TEST(TestRuleFilterIntegration, ExcludeAllWithCondition)
             STRL("192.168.0.1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -230,7 +230,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithCondition)
             ddwaf_object_insert_key(&root, STRL("usr.id"), alloc), STRL("admin"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
@@ -256,7 +256,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithCondition)
             STRL("192.168.0.1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -306,7 +306,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithConditionAndTransformers)
             ddwaf_object_insert_key(&root, STRL("usr.id"), alloc), STRL("AD      MIN"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
@@ -332,7 +332,7 @@ TEST(TestRuleFilterIntegration, ExcludeSingleRuleWithConditionAndTransformers)
             STRL("192.168.0.1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -380,7 +380,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTypeWithCondition)
             ddwaf_object_insert_key(&root, STRL("usr.id"), alloc), STRL("admin"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
@@ -406,7 +406,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTypeWithCondition)
             STRL("192.168.0.1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -472,7 +472,7 @@ TEST(TestRuleFilterIntegration, ExcludeByCategoryWithCondition)
             STRL("192.168.0.1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -521,7 +521,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTagsWithCondition)
             ddwaf_object_insert_key(&root, STRL("usr.id"), alloc), STRL("admin"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "type2"}, {"category", "category"}},
@@ -547,7 +547,7 @@ TEST(TestRuleFilterIntegration, ExcludeByTagsWithCondition)
             STRL("192.168.0.1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out,
             {.id = "1",
                 .name = "rule1",
@@ -592,7 +592,7 @@ TEST(TestRuleFilterIntegration, MonitorSingleRule)
         ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
@@ -629,7 +629,7 @@ TEST(TestRuleFilterIntegration, AvoidHavingTwoMonitorOnActions)
         ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
@@ -689,7 +689,7 @@ TEST(TestRuleFilterIntegration, MonitorCustomFilterModePrecedence)
         ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
@@ -750,7 +750,7 @@ TEST(TestRuleFilterIntegration, UnconditionalCustomFilterMode)
         ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},
@@ -790,7 +790,7 @@ TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
             STRL("192.168.0.1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
@@ -819,7 +819,7 @@ TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
             STRL("192.168.0.2"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
@@ -863,7 +863,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
             STRL("192.168.0.1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
@@ -900,7 +900,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
             STRL("192.168.0.1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "type1"}, {"category", "category"}},
@@ -945,7 +945,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeNonblockingAction)
         ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.0.1"), alloc);
 
     ddwaf_object out;
-    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_OK);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "type1"}, {"category", "category"}},

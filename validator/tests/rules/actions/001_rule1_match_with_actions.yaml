@@ -15,7 +15,6 @@
           ]
         }
       ],
-      code: match,
       actions: {
         block_request: {
           grpc_status_code: 10,

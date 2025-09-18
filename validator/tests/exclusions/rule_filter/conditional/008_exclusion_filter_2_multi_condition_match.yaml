@@ -7,7 +7,6 @@
         exclusion-filter-2-input2: "exclusion-filter-2",
         rule1-input: "rule1",
       },
-      code: ok
     }
   ]
 }

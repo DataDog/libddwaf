@@ -755,8 +755,8 @@ TEST(TestEvaluationEngine, RuleFilterWithSubcontextConditionMatch)
         EXPECT_TRUE(engine.insert(std::move(ephemeral)));
 
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(deadline);
-        EXPECT_EQ(code, DDWAF_OK);
+        auto res = engine.eval(deadline);
+        EXPECT_TRUE(object_view{res}.find("events").empty());
 
         engine.stop_subcontext();
     }
@@ -765,8 +765,8 @@ TEST(TestEvaluationEngine, RuleFilterWithSubcontextConditionMatch)
         auto root = object_builder::map({{"usr.id", "admin"}});
         EXPECT_TRUE(engine.insert(std::move(root)));
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(deadline);
-        EXPECT_EQ(code, DDWAF_MATCH);
+        auto res = engine.eval(deadline);
+        EXPECT_FALSE(object_view{res}.find("events").empty());
     }
 }
 
@@ -826,8 +826,8 @@ TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextBypassPersistentMonit
         EXPECT_TRUE(engine.insert(std::move(ephemeral)));
 
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(deadline);
-        EXPECT_EQ(code, DDWAF_OK);
+        auto res = engine.eval(deadline);
+        EXPECT_TRUE(object_view{res}.find("events").empty());
 
         engine.stop_subcontext();
     }
@@ -837,8 +837,8 @@ TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextBypassPersistentMonit
         EXPECT_TRUE(engine.insert(std::move(root)));
 
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(deadline);
-        EXPECT_EQ(code, DDWAF_MATCH);
+        auto res = engine.eval(deadline);
+        EXPECT_FALSE(object_view{res}.find("events").empty());
 
         EXPECT_TRUE(object_view{res}.find("actions").empty());
     }
@@ -901,8 +901,8 @@ TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextMonitorPersistentBypa
         EXPECT_TRUE(engine.insert(std::move(ephemeral)));
 
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(deadline);
-        EXPECT_EQ(code, DDWAF_OK);
+        auto res = engine.eval(deadline);
+        EXPECT_TRUE(object_view{res}.find("events").empty());
 
         engine.stop_subcontext();
     }
@@ -912,8 +912,8 @@ TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextMonitorPersistentBypa
         EXPECT_TRUE(engine.insert(std::move(root)));
 
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(deadline);
-        EXPECT_EQ(code, DDWAF_OK);
+        auto res = engine.eval(deadline);
+        EXPECT_TRUE(object_view{res}.find("events").empty());
     }
 }
 
@@ -1400,8 +1400,8 @@ TEST(TestEvaluationEngine, InputFilterExcludeSubcontext)
 
         EXPECT_TRUE(engine.insert(std::move(root)));
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(deadline);
-        EXPECT_EQ(code, DDWAF_OK);
+        auto res = engine.eval(deadline);
+        EXPECT_TRUE(object_view{res}.find("events").empty());
 
         engine.stop_subcontext();
     }
@@ -1413,8 +1413,8 @@ TEST(TestEvaluationEngine, InputFilterExcludeSubcontext)
 
         EXPECT_TRUE(engine.insert(std::move(root)));
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(deadline);
-        EXPECT_EQ(code, DDWAF_OK);
+        auto res = engine.eval(deadline);
+        EXPECT_TRUE(object_view{res}.find("events").empty());
 
         engine.stop_subcontext();
     }
@@ -1426,8 +1426,8 @@ TEST(TestEvaluationEngine, InputFilterExcludeSubcontext)
 
         EXPECT_TRUE(engine.insert(std::move(root)));
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(deadline);
-        EXPECT_EQ(code, DDWAF_MATCH);
+        auto res = engine.eval(deadline);
+        EXPECT_FALSE(object_view{res}.find("events").empty());
 
         engine.stop_subcontext();
     }
@@ -1459,8 +1459,8 @@ TEST(TestEvaluationEngine, InputFilterExcludeSubcontext)
 
 /*auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});*/
 /*    {*/
-/*auto [code, res] = engine.eval({}, std::move(root), LONG_TIME);*/
-/*EXPECT_EQ(code, DDWAF_OK);*/
+/*auto res = engine.eval({}, std::move(root), LONG_TIME);*/
+/*EXPECT_TRUE(object_view{res}.find("events").empty());*/
 /*}*/
 
 /*std::string peer_ip = "http.peer_ip";*/
@@ -1469,8 +1469,8 @@ TEST(TestEvaluationEngine, InputFilterExcludeSubcontext)
 /*root.array[0].parameterNameLength = peer_ip.size();*/
 
 /*{*/
-/*auto [code, res] = engine.eval({}, std::move(root), LONG_TIME);*/
-/*EXPECT_EQ(code, DDWAF_MATCH);*/
+/*auto res = engine.eval({}, std::move(root), LONG_TIME);*/
+/*EXPECT_TRUE(object_view{res}.find("events").empty());*/
 /*}*/
 /*}*/
 
@@ -1833,8 +1833,8 @@ TEST(TestEvaluationEngine, InputFilterWithSubcontextCondition)
 
         EXPECT_TRUE(engine.insert(std::move(ephemeral)));
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(deadline);
-        EXPECT_EQ(code, DDWAF_OK);
+        auto res = engine.eval(deadline);
+        EXPECT_TRUE(object_view{res}.find("events").empty());
 
         engine.stop_subcontext();
     }
@@ -1843,8 +1843,8 @@ TEST(TestEvaluationEngine, InputFilterWithSubcontextCondition)
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
         EXPECT_TRUE(engine.insert(std::move(root)));
         timer deadline{std::chrono::microseconds(LONG_TIME)};
-        auto [code, res] = engine.eval(deadline);
-        EXPECT_EQ(code, DDWAF_MATCH);
+        auto res = engine.eval(deadline);
+        EXPECT_FALSE(object_view{res}.find("events").empty());
     }
 }
 

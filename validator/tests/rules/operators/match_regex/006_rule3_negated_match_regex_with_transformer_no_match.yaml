@@ -5,7 +5,6 @@
       input: {
         rule3-input: "ARACHNI"
       },
-      code: ok
     }
   ]
 }

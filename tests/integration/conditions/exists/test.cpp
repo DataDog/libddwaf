@@ -31,7 +31,7 @@ TEST(TestConditionExistsIntegration, AddressAvailable)
     ddwaf_object_insert_key(&map, STRL("input-1"), alloc);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
 
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
@@ -94,7 +94,7 @@ TEST(TestConditionExistsIntegration, KeyPathAvailable)
     ddwaf_object_insert_key(intermediate, STRL("path"), alloc);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -155,7 +155,7 @@ TEST(TestConditionExistsIntegration, AddressAvailableVariadicRule)
     ddwaf_object_insert_key(&map, STRL("input-3-1"), alloc);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "3",
@@ -193,7 +193,7 @@ TEST(TestConditionExistsIntegration, KeyPathAvailableVariadicRule)
     ddwaf_object_insert_key(intermediate, STRL("path"), alloc);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "3",
@@ -231,7 +231,7 @@ TEST(TestConditionExistsIntegration, AddressAvailableKeyPathNotAvailableVariadic
     ddwaf_object_insert_key(&map, STRL("input-3-1"), alloc);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "3",
@@ -323,7 +323,7 @@ TEST(TestConditionExistsNegatedIntegration, KeyPathNotAvailable)
     ddwaf_object_insert_key(intermediate, STRL("poth"), alloc);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",

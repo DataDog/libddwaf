@@ -6,7 +6,6 @@
         input: {
           exclusion-filter-3-input: "exclusion-filter-3",
         },
-        code: ok
       }
     ],
     {
@@ -23,7 +22,6 @@
           ]
         }
       ],
-      code: match
     }
   ]
 }

@@ -5,7 +5,6 @@
       input: {
         rule1-input: 192.168.0.2
       },
-      code: ok
     }
   ]
 }

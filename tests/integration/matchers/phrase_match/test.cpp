@@ -30,7 +30,7 @@ TEST(TestPhraseMatchMatcherIntegration, Match)
         ddwaf_object_insert_key(&map, STRL("input1"), alloc), STRL("string00"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -67,7 +67,7 @@ TEST(TestPhraseMatchMatcherIntegration, MatchWordBound)
             ddwaf_object_insert_key(&map, STRL("input2"), alloc), STRL("string01;"));
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
         EXPECT_EVENTS(out, {.id = "2",

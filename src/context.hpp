@@ -47,7 +47,7 @@ public:
         return engine_->insert(data);
     }
 
-    std::pair<bool, owned_object> eval(timer &deadline)
+    owned_object eval(timer &deadline)
     {
         const memory::memory_resource_guard guard(mr_.get());
         return engine_->eval(deadline);
@@ -103,7 +103,7 @@ public:
         return engine_->insert(data);
     }
 
-    std::pair<bool, owned_object> eval(timer &deadline)
+    owned_object eval(timer &deadline)
     {
         const memory::memory_resource_guard guard(mr_.get());
         return engine_->eval(deadline);

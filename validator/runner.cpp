@@ -77,10 +77,6 @@ bool test_runner::run_test(const YAML::Node &runs)
         for (auto it = runs.begin(); it != runs.end(); ++it) {
             if (it->IsMap()) { // context
                 YAML::Node run = *it;
-                DDWAF_RET_CODE code = DDWAF_OK;
-                if (run["code"].as<std::string>() == "match") {
-                    code = DDWAF_MATCH;
-                }
 
                 ddwaf_object *data_ptr = nullptr;
                 auto data = run["input"].as<ddwaf_object>();
@@ -90,7 +86,7 @@ bool test_runner::run_test(const YAML::Node &runs)
 
                 auto retval = ddwaf_context_eval(ctx.get(), data_ptr, alloc, res.get(), timeout);
 
-                expect(retval, code);
+                expect(retval, DDWAF_OK);
 
                 auto res_yaml = object_to_yaml(*res);
                 validate(run["rules"], res_yaml["events"]);
@@ -109,11 +105,6 @@ bool test_runner::run_test(const YAML::Node &runs)
                 for (auto sub_it = sub_runs.begin(); sub_it != sub_runs.end(); ++sub_it) {
                     YAML::Node run = *sub_it;
 
-                    DDWAF_RET_CODE code = DDWAF_OK;
-                    if (run["code"].as<std::string>() == "match") {
-                        code = DDWAF_MATCH;
-                    }
-
                     ddwaf_object *data_ptr = nullptr;
                     auto data = run["input"].as<ddwaf_object>();
                     if (ddwaf_object_get_type(&data) != DDWAF_OBJ_INVALID) {
@@ -123,13 +114,11 @@ bool test_runner::run_test(const YAML::Node &runs)
                     auto retval =
                         ddwaf_subcontext_eval(sctx.get(), data_ptr, alloc, res.get(), timeout);
 
-                    expect(retval, code);
-                    if (code == DDWAF_MATCH) {
-                        auto res_yaml = object_to_yaml(*res);
-                        validate(run["rules"], res_yaml["events"]);
-                        validate_actions(run["actions"], res_yaml["actions"]);
-                        validate_attributes(run["attributes"], res_yaml["attributes"]);
-                    }
+                    expect(retval, DDWAF_OK);
+                    auto res_yaml = object_to_yaml(*res);
+                    validate(run["rules"], res_yaml["events"]);
+                    validate_actions(run["actions"], res_yaml["actions"]);
+                    validate_attributes(run["attributes"], res_yaml["attributes"]);
 
                     ddwaf_object_destroy(res.get(), alloc);
                 }

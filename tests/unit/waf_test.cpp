@@ -54,8 +54,8 @@ TEST(TestWaf, BasicContextRun)
 
     EXPECT_TRUE(ctx.insert(std::move(root)));
     ddwaf::timer deadline{2s};
-    auto [code, res] = ctx.eval(deadline);
-    EXPECT_EQ(code, DDWAF_MATCH);
+    auto res = ctx.eval(deadline);
+    EXPECT_FALSE(object_view{res}.find("events").empty());
 }
 
 TEST(TestWaf, AddressUniqueness)

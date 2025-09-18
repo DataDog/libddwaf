@@ -5,7 +5,6 @@
       input: {
         rule6-input: "arachni"
       },
-      code: ok
     }
   ]
 }

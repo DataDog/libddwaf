@@ -6,7 +6,6 @@
         server.io.net.url.1: "gopher://whatever.net/somewhere/in/the/app",
         server.request.body: "gopher:"
       },
-      code: ok
     }
   ]
 }

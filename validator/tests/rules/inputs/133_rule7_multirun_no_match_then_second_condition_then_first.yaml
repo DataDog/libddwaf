@@ -5,13 +5,11 @@
       input: {
         rule7-input2: garbage
       },
-      code: ok
     },
     {
       input: {
         rule7-input2: rule7_2
       },
-      code: ok
     },
     {
       input: {
@@ -33,7 +31,6 @@
           ]
         }
       ],
-      code: match
     }
   ],
 }

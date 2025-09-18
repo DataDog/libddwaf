@@ -6,7 +6,6 @@
         server.io.net.url.2: "https://169.254.169.254/somewhere/in/the/app",
         server.request.body: "169.254.169.254/somewhere/in/the/app"
       },
-      code: ok
     }
   ]
 }

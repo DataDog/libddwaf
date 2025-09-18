@@ -6,7 +6,6 @@
         rule2-input2: garbage,
         rule2-input1: garbage
       },
-      code: ok
     }
   ],
 }

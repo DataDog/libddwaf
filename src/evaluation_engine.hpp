@@ -91,7 +91,7 @@ public:
         return true;
     }
 
-    std::pair<bool, owned_object> eval(timer &deadline);
+    owned_object eval(timer &deadline);
 
     // Internals exposed for testing
     void eval_preprocessors(timer &deadline);

@@ -47,7 +47,7 @@ public:
     void Validate(ddwaf_object ret, DDWAF_RET_CODE code)
     {
         Document d;
-        EXPECT_EQ(code, DDWAF_MATCH);
+        EXPECT_EQ(code, DDWAF_OK);
 
         const auto *events = ddwaf_object_find(&ret, STRL("events"));
         ASSERT_EQ(ddwaf_object_get_type(events), DDWAF_OBJ_ARRAY);

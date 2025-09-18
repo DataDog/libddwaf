@@ -5,7 +5,6 @@
       input: {
         rule6-input1: rule6
       },
-      code: ok
     },
     {
       input: {
@@ -27,7 +26,6 @@
           ]
         }
       ],
-      code: match
     }
   ],
 }

@@ -37,7 +37,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
             ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -65,7 +65,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
             ddwaf_object_insert_key(inter, STRL("passwordle"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -91,7 +91,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
             ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1_obf"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -119,7 +119,7 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
             ddwaf_object_insert_key(inter, STRL("passwordle"), alloc), STRL("rule1_obf"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -160,7 +160,7 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
             ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -188,7 +188,7 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
             ddwaf_object_insert_key(inter, STRL("passwordle"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -214,7 +214,7 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
             ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1_obf"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -254,7 +254,7 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
             ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -282,7 +282,7 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
             ddwaf_object_insert_key(inter, STRL("passwordle"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -308,7 +308,7 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
             ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1_obf"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -348,7 +348,7 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
             STRL("badvalue_something"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "security_scanner"}, {"category", "category2"}},
@@ -372,7 +372,7 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
             STRL("othervalue_badvalue"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "security_scanner"}, {"category", "category2"}},
@@ -411,7 +411,7 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
             ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -439,7 +439,7 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
             ddwaf_object_insert_key(inter, STRL("passwordle"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -465,7 +465,7 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
             ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1_obf"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -505,7 +505,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
             ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -533,7 +533,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
             ddwaf_object_insert_key(inter, STRL("passwordle"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -559,7 +559,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
             ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1_obf"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -599,7 +599,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
             ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -627,7 +627,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
             ddwaf_object_insert_key(inter, STRL("passwordle"), alloc), STRL("rule1"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},
@@ -653,7 +653,7 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
             ddwaf_object_insert_key(&parameter, STRL("value"), alloc), STRL("rule1_obf"), alloc);
 
         ddwaf_object out;
-        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &out, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "security_scanner"}, {"category", "category1"}},

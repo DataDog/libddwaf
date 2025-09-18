@@ -297,11 +297,11 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
         timeout = std::min(timeout, max_timeout_us);
 
         timer deadline{std::chrono::microseconds(timeout)};
-        auto [code, res] = context->eval(deadline);
+        auto res = context->eval(deadline);
         if (result != nullptr) {
             to_borrowed(result) = std::move(res);
         }
-        return code ? DDWAF_MATCH : DDWAF_OK;
+        return DDWAF_OK;
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());
     } catch (...) {
@@ -362,11 +362,11 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *
         timeout = std::min(timeout, max_timeout_us);
 
         timer deadline{std::chrono::microseconds(timeout)};
-        auto [code, res] = subcontext->eval(deadline);
+        auto res = subcontext->eval(deadline);
         if (result != nullptr) {
             to_borrowed(result) = std::move(res);
         }
-        return code ? DDWAF_MATCH : DDWAF_OK;
+        return DDWAF_OK;
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());
     } catch (...) {

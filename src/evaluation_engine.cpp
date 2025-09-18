@@ -45,7 +45,7 @@ void set_context_event_address(object_store &store, evaluation_scope scope)
 
 } // namespace
 
-std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
+owned_object evaluation_engine::eval(timer &deadline)
 {
     // Clear the last batch of targets on exit so that the process can identify
     // new targets in the next eval
@@ -57,7 +57,7 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
     auto [result_object, output] = serializer.initialise_result_object();
 
     if (!store_.has_new_targets()) {
-        return {false, std::move(result_object)};
+        return std::move(result_object);
     }
 
     try {
@@ -97,7 +97,7 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
     // generated during this call.
     // object::assign(result.attributes, collector_.collect_pending(store));
     serializer.serialize(store_, results, collector_, deadline, output);
-    return {!results.empty(), std::move(result_object)};
+    return std::move(result_object);
 }
 
 void evaluation_engine::eval_preprocessors(timer &deadline)

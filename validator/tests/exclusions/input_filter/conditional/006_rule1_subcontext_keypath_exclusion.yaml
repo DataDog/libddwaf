@@ -9,7 +9,6 @@
               parent: rule1
           }
         },
-        code: ok
       }
     ],
     [
@@ -30,7 +29,6 @@
             ]
           }
         ],
-        code: match
       },
     ]
   ],

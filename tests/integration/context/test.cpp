@@ -40,7 +40,7 @@ TEST(TestContextIntegration, Basic)
         ddwaf_object_insert_key(subMap, STRL("key"), alloc), STRL("rule3"), alloc);
 
     ddwaf_object ret;
-    EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &ret, LONG_TIME), DDWAF_OK);
 
     const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
@@ -91,7 +91,7 @@ TEST(TestContextIntegration, KeyPaths)
         ddwaf_object_insert_key(param, STRL("x"), alloc), STRL("Sqreen"), alloc);
 
     ddwaf_object ret;
-    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &ret, LONG_TIME), DDWAF_OK);
 
     const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
@@ -115,7 +115,7 @@ TEST(TestContextIntegration, KeyPaths)
     ddwaf_object_set_string(
         ddwaf_object_insert_key(param, STRL("z"), alloc), STRL("Sqreen"), alloc);
 
-    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &ret, LONG_TIME), DDWAF_OK);
 
     timeout = ddwaf_object_find(&ret, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
@@ -143,7 +143,7 @@ TEST(TestContextIntegration, KeyPaths)
     ddwaf_object_set_string(
         ddwaf_object_insert_key(param, STRL("y"), alloc), STRL("Sqreen"), alloc);
 
-    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &ret, LONG_TIME), DDWAF_OK);
 
     timeout = ddwaf_object_find(&ret, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
@@ -228,7 +228,7 @@ TEST(TestContextIntegration, InvalidUTF8Input)
         alloc);
 
     ddwaf_object ret;
-    EXPECT_EQ(ddwaf_context_eval(context, &param, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &param, alloc, &ret, LONG_TIME), DDWAF_OK);
 
     const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
@@ -268,7 +268,7 @@ TEST(TestContextIntegration, SingleCollectionMatch)
         ddwaf_object_set_string(
             ddwaf_object_insert_key(&param1, STRL("param1"), alloc), STRL("Sqreen"), alloc);
 
-        EXPECT_EQ(ddwaf_context_eval(context, &param1, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &param1, alloc, &ret, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
         EXPECT_EVENTS(ret, {.id = "1",
@@ -326,7 +326,7 @@ TEST(TestContextIntegration, MultiCollectionMatches)
         ddwaf_object_set_string(
             ddwaf_object_insert_key(&param, STRL("param1"), alloc), STRL("Sqreen"), alloc);
 
-        EXPECT_EQ(ddwaf_context_eval(context, &param, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &param, alloc, &ret, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
         EXPECT_EVENTS(ret, {.id = "1",
@@ -366,7 +366,7 @@ TEST(TestContextIntegration, MultiCollectionMatches)
         ddwaf_object_set_string(
             ddwaf_object_insert_key(&param, STRL("param2"), alloc), STRL("Sqreen"), alloc);
 
-        EXPECT_EQ(ddwaf_context_eval(context, &param, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &param, alloc, &ret, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
         EXPECT_EVENTS(ret, {.id = "2",
@@ -450,7 +450,7 @@ TEST(TestContextIntegration, ParameterOverride)
 
     // Override `arg1`
     code = ddwaf_context_eval(context, &param2, alloc, &ret, LONG_TIME);
-    EXPECT_EQ(code, DDWAF_MATCH);
+    EXPECT_EQ(code, DDWAF_OK);
     EXPECT_EVENTS(ret, {.id = "1",
                            .name = "rule1",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -508,7 +508,7 @@ TEST(TestContextIntegration, DuplicateSubcontextMatch)
         ddwaf_subcontext subctx = ddwaf_subcontext_init(context);
 
         ddwaf_object ret;
-        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &param1, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &param1, alloc, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -532,7 +532,7 @@ TEST(TestContextIntegration, DuplicateSubcontextMatch)
         ddwaf_subcontext subctx = ddwaf_subcontext_init(context);
 
         ddwaf_object ret;
-        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &param1, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &param1, alloc, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -579,7 +579,7 @@ TEST(TestContextIntegration, SubcontextAndContextMatches)
         ddwaf_subcontext subctx = ddwaf_subcontext_init(context);
 
         ddwaf_object ret;
-        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -610,7 +610,7 @@ TEST(TestContextIntegration, SubcontextAndContextMatches)
         ddwaf_subcontext subctx = ddwaf_subcontext_init(context);
 
         ddwaf_object ret;
-        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -642,7 +642,7 @@ TEST(TestContextIntegration, SubcontextAndContextMatches)
         ddwaf_subcontext subctx = ddwaf_subcontext_init(context);
         ddwaf_object ret;
 
-        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -690,7 +690,7 @@ TEST(TestContextIntegration, SubcontextNonPriorityAndSubcontextPriority)
         ddwaf_subcontext subctx = ddwaf_subcontext_init(context);
 
         ddwaf_object ret;
-        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -716,7 +716,7 @@ TEST(TestContextIntegration, SubcontextNonPriorityAndSubcontextPriority)
         ddwaf_subcontext subctx = ddwaf_subcontext_init(context);
 
         ddwaf_object ret;
-        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -759,7 +759,7 @@ TEST(TestContextIntegration, EphemeralPriorityAndEphemeralNonPriority)
         ddwaf_subcontext subctx = ddwaf_subcontext_init(context);
 
         ddwaf_object ret;
-        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -784,7 +784,7 @@ TEST(TestContextIntegration, EphemeralPriorityAndEphemeralNonPriority)
         ddwaf_subcontext subctx = ddwaf_subcontext_init(context);
 
         ddwaf_object ret;
-        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -825,7 +825,7 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndPersistentPriority)
         ddwaf_subcontext subctx = ddwaf_subcontext_init(context);
 
         ddwaf_object ret;
-        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -849,7 +849,7 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndPersistentPriority)
         ddwaf_subcontext subctx = ddwaf_subcontext_init(context);
 
         ddwaf_object ret;
-        EXPECT_EQ(ddwaf_context_eval(context, &persistent, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &persistent, alloc, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -893,7 +893,7 @@ TEST(TestContextIntegration, ReplaceEphemeral)
         ddwaf_subcontext subctx = ddwaf_subcontext_init(context);
 
         ddwaf_object ret;
-        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -934,7 +934,7 @@ TEST(TestContextIntegration, EphemeralPriorityAndPersistentNonPriority)
         ddwaf_subcontext subctx = ddwaf_subcontext_init(context);
 
         ddwaf_object ret;
-        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, alloc, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -957,7 +957,7 @@ TEST(TestContextIntegration, EphemeralPriorityAndPersistentNonPriority)
             ddwaf_object_insert_key(&persistent, STRL("arg1"), alloc), STRL("string 1"), alloc);
 
         ddwaf_object ret;
-        EXPECT_EQ(ddwaf_context_eval(context, &persistent, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &persistent, alloc, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(ret, {.id = "1",
                                .name = "rule1",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -995,7 +995,7 @@ TEST(TestContextIntegration, PersistentPriorityAndEphemeralNonPriority)
             ddwaf_object_insert_key(&persistent, STRL("arg2"), alloc), STRL("string 8"), alloc);
 
         ddwaf_object ret;
-        EXPECT_EQ(ddwaf_context_eval(context, &persistent, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &persistent, alloc, &ret, LONG_TIME), DDWAF_OK);
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
@@ -1098,7 +1098,7 @@ TEST(TestContextIntegration, WafContextEventAddress)
             ddwaf_object_insert_key(&map, STRL("waf.trigger"), alloc), STRL("rule"), alloc);
 
         ddwaf_object out;
-        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
+        ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_OK);
         const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
         EXPECT_FALSE(ddwaf_object_get_bool(timeout));
 
@@ -1137,7 +1137,7 @@ TEST(TestContextIntegration, MultipleModuleSingleCollectionMatch)
     ddwaf_object_set_string(
         ddwaf_object_insert_key(&param1, STRL("param1"), alloc), STRL("Sqreen"), alloc);
 
-    EXPECT_EQ(ddwaf_context_eval(context, &param1, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &param1, alloc, &ret, LONG_TIME), DDWAF_OK);
     const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(ret,
@@ -1196,7 +1196,7 @@ TEST(TestContextIntegration, TimeoutBeyondLimit)
     ddwaf_object ret;
     EXPECT_EQ(
         ddwaf_context_eval(context, &parameter, alloc, &ret, std::numeric_limits<uint64_t>::max()),
-        DDWAF_MATCH);
+        DDWAF_OK);
 
     const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));

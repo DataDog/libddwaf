@@ -15,7 +15,6 @@
           ]
         }
       ],
-      code: match,
       actions: {
         block_request: {
           status_code: 403,
