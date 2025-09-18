@@ -14,7 +14,7 @@
 
 namespace ddwaf {
 
-bool luhn_checksum::validate_impl(std::string_view str) noexcept
+bool luhn_checksum::validate(std::string_view str) const noexcept
 {
     // Precomputed doubled values
     //   for num from 0 to 9: (2 * num) / 10 + (2 * num) % 10

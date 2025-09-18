@@ -14,10 +14,16 @@
 
 namespace ddwaf {
 
-class luhn_checksum : public base_checksum_impl<luhn_checksum> {
-protected:
-    static bool validate_impl(std::string_view str) noexcept;
-    friend class base_checksum_impl<luhn_checksum>;
+class luhn_checksum : public base_checksum {
+public:
+    luhn_checksum() = default;
+    luhn_checksum(const luhn_checksum &) = default;
+    luhn_checksum &operator=(const luhn_checksum &) = default;
+    luhn_checksum(luhn_checksum &&) = default;
+    luhn_checksum &operator=(luhn_checksum &&) = default;
+    ~luhn_checksum() override = default;
+
+    [[nodiscard]] bool validate(std::string_view str) const noexcept override;
 };
 
 } // namespace ddwaf

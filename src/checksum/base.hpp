@@ -24,19 +24,4 @@ public:
     [[nodiscard]] virtual bool validate(std::string_view str) const noexcept = 0;
 };
 
-template <typename T> class base_checksum_impl : public base_checksum {
-public:
-    base_checksum_impl() = default;
-    base_checksum_impl(const base_checksum_impl &) = default;
-    base_checksum_impl &operator=(const base_checksum_impl &) = default;
-    base_checksum_impl(base_checksum_impl &&) = default;
-    base_checksum_impl &operator=(base_checksum_impl &&) = default;
-    ~base_checksum_impl() override = default;
-
-    [[nodiscard]] bool validate(std::string_view str) const noexcept override
-    {
-        return T::validate_impl(str);
-    }
-};
-
 } // namespace ddwaf
