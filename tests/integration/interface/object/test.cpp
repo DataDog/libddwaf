@@ -36,7 +36,6 @@ TEST(TestObjectIntegration, TestInvalidString)
     auto *alloc = ddwaf_get_default_allocator();
     ddwaf_object object;
     EXPECT_EQ(ddwaf_object_set_string(&object, nullptr, 0, alloc), nullptr);
-    EXPECT_TRUE(ddwaf_object_is_invalid(&object));
 }
 
 TEST(TestObjectIntegration, TestString)

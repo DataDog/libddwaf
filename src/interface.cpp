@@ -289,10 +289,15 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
     }
 
     try {
-        const nonnull_ptr<memory::memory_resource> alloc_ptr =
-            alloc == nullptr ? memory::get_default_null_resource() : to_alloc_ptr(alloc);
-        if (!context->insert(owned_object{to_ref(data), alloc_ptr})) {
-            return DDWAF_ERR_INVALID_OBJECT;
+        if (alloc != nullptr) {
+            if (!context->insert(owned_object{to_ref(data), to_alloc_ptr(alloc)})) {
+                return DDWAF_ERR_INVALID_OBJECT;
+            }
+        } else {
+            const object_view input{to_ref(data)};
+            if (!input.is_map() || !context->insert(input.as<map_view>())) {
+                return DDWAF_ERR_INVALID_OBJECT;
+            }
         }
 
         // The timers will actually count nanoseconds, std::chrono doesn't
@@ -350,12 +355,16 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *
     }
 
     try {
-        const nonnull_ptr<memory::memory_resource> alloc_ptr =
-            alloc == nullptr ? memory::get_default_null_resource() : to_alloc_ptr(alloc);
-        if (!subcontext->insert(owned_object{to_ref(data), alloc_ptr})) {
-            return DDWAF_ERR_INVALID_OBJECT;
+        if (alloc != nullptr) {
+            if (!subcontext->insert(owned_object{to_ref(data), to_alloc_ptr(alloc)})) {
+                return DDWAF_ERR_INVALID_OBJECT;
+            }
+        } else {
+            const object_view input{to_ref(data)};
+            if (!input.is_map() || !subcontext->insert(input.as<map_view>())) {
+                return DDWAF_ERR_INVALID_OBJECT;
+            }
         }
-
         // The timers will actually count nanoseconds, std::chrono doesn't
         // deal well with durations being beyond range.
         constexpr uint64_t max_timeout_us = std::chrono::nanoseconds::max().count() / 1000;
