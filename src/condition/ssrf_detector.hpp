@@ -10,7 +10,6 @@
 #include "clock.hpp"
 #include "condition/base.hpp"
 #include "condition/structured_condition.hpp"
-#include "ddwaf.h"
 #include "exclusion/common.hpp"
 #include "matcher/ip_match.hpp"
 #include "utils.hpp"

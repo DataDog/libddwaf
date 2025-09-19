@@ -8,8 +8,6 @@
 
 #include <fmt/core.h>
 
-#include "ddwaf.h"
-
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 constexpr const char *base_name(const char *path)
 {
@@ -39,24 +37,52 @@ constexpr const char *base_name(const char *path)
 #define DDWAF_LOG(level, fmt, ...)                                                                 \
     DDWAF_LOG_HELPER(level, __func__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
 
-#define DDWAF_TRACE(fmt, ...) DDWAF_LOG(DDWAF_LOG_TRACE, fmt, ##__VA_ARGS__)
-#define DDWAF_DEBUG(fmt, ...) DDWAF_LOG(DDWAF_LOG_DEBUG, fmt, ##__VA_ARGS__)
-#define DDWAF_INFO(fmt, ...) DDWAF_LOG(DDWAF_LOG_INFO, fmt, ##__VA_ARGS__)
-#define DDWAF_WARN(fmt, ...) DDWAF_LOG(DDWAF_LOG_WARN, fmt, ##__VA_ARGS__)
-#define DDWAF_ERROR(fmt, ...) DDWAF_LOG(DDWAF_LOG_ERROR, fmt, ##__VA_ARGS__)
+#define DDWAF_TRACE(fmt, ...) DDWAF_LOG(ddwaf::log_level::trace, fmt, ##__VA_ARGS__)
+#define DDWAF_DEBUG(fmt, ...) DDWAF_LOG(ddwaf::log_level::debug, fmt, ##__VA_ARGS__)
+#define DDWAF_INFO(fmt, ...) DDWAF_LOG(ddwaf::log_level::info, fmt, ##__VA_ARGS__)
+#define DDWAF_WARN(fmt, ...) DDWAF_LOG(ddwaf::log_level::warn, fmt, ##__VA_ARGS__)
+#define DDWAF_ERROR(fmt, ...) DDWAF_LOG(ddwaf::log_level::error, fmt, ##__VA_ARGS__)
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
 namespace ddwaf {
+
+// This enum is 32 bit for compatibility with DDWAF_LOG_LEVEL
+// NOLINTNEXTLINE(performance-enum-size)
+enum class log_level : uint32_t { trace, debug, info, warn, error, off };
+
+inline std::string_view log_level_to_str(log_level level)
+{
+    switch (level) {
+    case log_level::trace:
+        return "trace";
+    case log_level::debug:
+        return "debug";
+    case log_level::error:
+        return "error";
+    case log_level::warn:
+        return "warn";
+    case log_level::info:
+        return "info";
+    case log_level::off:
+        break;
+    }
+
+    return "off";
+}
+
 class logger {
 public:
-    static void init(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level);
-    static bool valid(DDWAF_LOG_LEVEL level) { return cb != nullptr && level >= min_level; }
-    static void log(DDWAF_LOG_LEVEL level, const char *function, const char *file, unsigned line,
+    using log_cb_type = void (*)(log_level level, const char *function, const char *file,
+        unsigned line, const char *message, uint64_t message_len);
+
+    static void init(log_cb_type cb, log_level min_level);
+    static bool valid(log_level level) { return cb != nullptr && level >= min_level; }
+    static void log(log_level level, const char *function, const char *file, unsigned line,
         const char *message, size_t length);
 
 private:
-    static ddwaf_log_cb cb;
-    static DDWAF_LOG_LEVEL min_level;
+    static log_cb_type cb;
+    static log_level min_level;
 };
 
 } // namespace ddwaf
