@@ -97,7 +97,8 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
     // generated during this call.
     // object::assign(result.attributes, collector_.collect_pending(store));
     serializer.serialize(store_, results, collector_, deadline, output);
-    return {!results.empty(), std::move(result_object)};
+    return {!output.attributes.empty() || !output.actions.empty() || !output.events.empty(),
+        std::move(result_object)};
 }
 
 void evaluation_engine::eval_preprocessors(timer &deadline)

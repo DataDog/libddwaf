@@ -463,7 +463,7 @@ TEST(TestAllocatorIntegration, MultiCallSplitInputOutputAllocators)
         ddwaf_object result;
         ddwaf_object_set_invalid(&result);
         EXPECT_EQ(
-            ddwaf_context_eval(context, &parameter, input_alloc1, &result, LONG_TIME), DDWAF_OK);
+            ddwaf_context_eval(context, &parameter, input_alloc1, &result, LONG_TIME), DDWAF_MATCH);
 
         const auto *events = ddwaf_object_find(&result, STRL("events"));
         ASSERT_NE(events, nullptr);
@@ -831,7 +831,7 @@ TEST(TestAllocatorIntegration, MultiCallSplitInputOutputAllocatorsSubcontext)
         ddwaf_object result;
         ddwaf_object_set_invalid(&result);
         EXPECT_EQ(
-            ddwaf_subcontext_eval(sctx, &parameter, input_alloc, &result, LONG_TIME), DDWAF_OK);
+            ddwaf_subcontext_eval(sctx, &parameter, input_alloc, &result, LONG_TIME), DDWAF_MATCH);
 
         const auto *events = ddwaf_object_find(&result, STRL("events"));
         ASSERT_NE(events, nullptr);

@@ -35,7 +35,7 @@
         _dd.appsec.fp.http.header: "hdr-1111111111-a441b15f-0-",
         _dd.appsec.fp.http.network: "net-1-1111111111"
       },
-      code: ok
+       code: match
     },
     {
       input: {
@@ -44,7 +44,7 @@
       attributes: {
         _dd.appsec.fp.http.endpoint: "http-put-729d56c3--2c70e12b"
       },
-      code: ok
+       code: match
     },
     {
       input: {
@@ -53,7 +53,7 @@
       attributes: {
         _dd.appsec.fp.http.endpoint: "http-put-729d56c3-2c70e12b-2c70e12b"
       },
-      code: ok
+       code: match
     },
     {
       input: {
@@ -70,7 +70,7 @@
       attributes: {
         _dd.appsec.fp.session: "ssn--df6143bc-60ba1602-"
       },
-      code: ok
+       code: match
     },
     {
       input: {
@@ -79,7 +79,7 @@
       attributes: {
         _dd.appsec.fp.session: "ssn-8c6976e5-df6143bc-60ba1602-"
       },
-      code: ok
+       code: match
     },
     {
       input: {
@@ -88,7 +88,7 @@
       attributes: {
         _dd.appsec.fp.session: "ssn-8c6976e5-df6143bc-60ba1602-269500d3"
       },
-      code: ok
+       code: match
     }
   ]
 }

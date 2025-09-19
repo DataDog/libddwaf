@@ -189,7 +189,7 @@ TEST(TestContextResultIntegration, ResultOk)
     ddwaf_context_destroy(context);
 }
 
-TEST(TestContextResultIntegration, ResultOkWithAttributes)
+TEST(TestContextResultIntegration, ResultMatchWithAttributes)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
@@ -217,7 +217,7 @@ TEST(TestContextResultIntegration, ResultOkWithAttributes)
 
     ddwaf_object result;
     ddwaf_object_set_invalid(&result);
-    EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &result, LONG_TIME), DDWAF_OK);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &result, LONG_TIME), DDWAF_MATCH);
 
     const auto *events = ddwaf_object_find(&result, STRL("events"));
     ASSERT_NE(events, nullptr);
