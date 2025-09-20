@@ -13,7 +13,7 @@
 #include "object_store.hpp"
 #include "rule.hpp"
 
-namespace ddwaf::exclusion {
+namespace ddwaf {
 
 class input_filter {
 public:
@@ -55,4 +55,4 @@ protected:
     std::shared_ptr<object_filter> filter_;
 };
 
-} // namespace ddwaf::exclusion
+} // namespace ddwaf

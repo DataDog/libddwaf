@@ -100,7 +100,7 @@ TEST(TestExistsCondition, KeyPathAvailableButExcluded)
     ddwaf::timer deadline{2s};
     condition_cache cache;
 
-    exclusion::object_set_ref excluded_ref;
+    object_set_ref excluded_ref;
     excluded_ref.context = excluded;
 
     // While the key path is present, since part of the path was excluded
@@ -222,7 +222,7 @@ TEST(TestNegatedExistsCondition, KeyPathAvailableButExcluded)
     ddwaf::timer deadline{2s};
     condition_cache cache;
 
-    exclusion::object_set_ref excluded_ref;
+    object_set_ref excluded_ref;
     excluded_ref.context = excluded;
 
     // While the key path is not present, since part of the path was excluded

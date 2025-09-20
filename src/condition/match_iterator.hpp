@@ -19,8 +19,7 @@ class match_iterator {
 public:
     static constexpr std::size_t npos = std::string_view::npos;
 
-    explicit match_iterator(
-        ResourceType resource, object_view obj, const exclusion::object_set_ref &exclude)
+    explicit match_iterator(ResourceType resource, object_view obj, const object_set_ref &exclude)
         : resource_(std::move(resource)), it_(obj, {}, exclude)
     {
         for (; it_; ++it_) {

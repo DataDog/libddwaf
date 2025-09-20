@@ -18,7 +18,6 @@
 
 using namespace ddwaf;
 using namespace std::literals;
-using namespace ddwaf::exclusion;
 
 namespace {
 
@@ -810,8 +809,8 @@ TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextBypassPersistentMonit
         builder.add_target("http.route");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"unrouted"});
 
-        rbuilder.insert_filter(rule_filter{"2", builder.build(), std::set<const core_rule *>{rule},
-            exclusion::filter_mode::monitor});
+        rbuilder.insert_filter(rule_filter{
+            "2", builder.build(), std::set<const core_rule *>{rule}, filter_mode::monitor});
     }
 
     evaluation_engine engine(rbuilder.build());
@@ -873,8 +872,8 @@ TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextMonitorPersistentBypa
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        rbuilder.insert_filter(rule_filter{"1", builder.build(), std::set<const core_rule *>{rule},
-            exclusion::filter_mode::monitor});
+        rbuilder.insert_filter(rule_filter{
+            "1", builder.build(), std::set<const core_rule *>{rule}, filter_mode::monitor});
     }
 
     {

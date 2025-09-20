@@ -22,7 +22,7 @@ protected:
     [[nodiscard]] eval_result eval_impl(const unary_argument<std::string_view> &sql,
         const variadic_argument<object_view> &params,
         const unary_argument<std::string_view> &db_type, condition_cache &cache,
-        const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const;
+        const object_set_ref &objects_excluded, ddwaf::timer &deadline) const;
 
     friend class base_impl<sqli_detector>;
 };

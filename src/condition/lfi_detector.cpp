@@ -93,7 +93,7 @@ bool lfi_impl_unix(std::string_view path, std::string_view param)
 }
 
 lfi_result lfi_impl(std::string_view path, object_view params,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline)
+    const object_set_ref &objects_excluded, ddwaf::timer &deadline)
 {
     auto *lfi_fn = &lfi_impl_unix;
     if (system_platform::current() == platform::windows) {
@@ -124,7 +124,7 @@ lfi_result lfi_impl(std::string_view path, object_view params,
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path,
     const variadic_argument<object_view> &params, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
+    const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     for (const auto &param : params) {
         auto res = lfi_impl(path.value, param.value, objects_excluded, deadline);

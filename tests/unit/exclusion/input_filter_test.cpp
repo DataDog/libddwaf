@@ -11,7 +11,6 @@
 #include "matcher/ip_match.hpp"
 
 using namespace ddwaf;
-using namespace ddwaf::exclusion;
 using namespace std::literals;
 
 TEST(TestInputFilter, InputExclusionNoConditions)

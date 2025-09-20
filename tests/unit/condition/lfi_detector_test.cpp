@@ -296,7 +296,7 @@ TEST(TestLFIDetector, NoMatchExcludedPath)
         "server.request.query", object_builder::map({{"endpoint", "../../../etc/passwd"}}));
 
     std::unordered_set<object_cache_key> context{params_map.at(0)};
-    exclusion::object_set_ref exclusion{.context = context, .subcontext = {}};
+    object_set_ref exclusion{.context = context, .subcontext = {}};
 
     object_store store;
     store.insert(std::move(root), evaluation_scope::context());
@@ -317,7 +317,7 @@ TEST(TestLFIDetector, NoMatchExcludedAddress)
         {"server.request.query", object_builder::map({{"endpoint", "../../../etc/passwd"}})}});
 
     std::unordered_set<object_cache_key> context{root.at(1)};
-    exclusion::object_set_ref exclusion{.context = context, .subcontext = {}};
+    object_set_ref exclusion{.context = context, .subcontext = {}};
 
     object_store store;
     store.insert(std::move(root), evaluation_scope::context());
@@ -338,7 +338,7 @@ TEST(TestLFIDetector, Timeout)
         {"server.request.query", object_builder::map({{"endpoint", "../../../etc/passwd"}})}});
 
     std::unordered_set<object_cache_key> context{root.at(1)};
-    exclusion::object_set_ref exclusion{.context = context, .subcontext = {}};
+    object_set_ref exclusion{.context = context, .subcontext = {}};
 
     object_store store;
     store.insert(std::move(root), evaluation_scope::context());
@@ -359,7 +359,7 @@ TEST(TestLFIDetector, NoParams)
         {"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
     });
 
-    exclusion::object_set_ref exclusion{.context = {}, .subcontext = {}};
+    object_set_ref exclusion{.context = {}, .subcontext = {}};
 
     object_store store;
     store.insert(std::move(root), evaluation_scope::context());

@@ -14,6 +14,8 @@
 #include "evaluation_engine.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
+#include "exclusion/input_filter.hpp"
+#include "exclusion/rule_filter.hpp"
 #include "log.hpp"
 #include "module.hpp"
 #include "object.hpp"
@@ -51,7 +53,7 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
     // new targets in the next eval
     auto on_exit = defer([this]() { store_.clear_last_batch(); });
 
-    result_serializer serializer(obfuscator_, actions_, output_alloc_);
+    result_serializer serializer(*ruleset_->obfuscator, *ruleset_->actions, output_alloc_);
 
     // Generate result object once relevant checks have been made
     auto [result_object, output] = serializer.initialise_result_object();
@@ -105,7 +107,7 @@ void evaluation_engine::eval_preprocessors(timer &deadline)
 {
     DDWAF_DEBUG("Evaluating preprocessors");
 
-    for (const auto &preproc : preprocessors_) {
+    for (const auto &preproc : *ruleset_->preprocessors) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating preprocessors");
             throw timeout_exception();
@@ -125,7 +127,7 @@ void evaluation_engine::eval_postprocessors(timer &deadline)
 {
     DDWAF_DEBUG("Evaluating postprocessors");
 
-    for (const auto &postproc : postprocessors_) {
+    for (const auto &postproc : *ruleset_->postprocessors) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating postprocessors");
             throw timeout_exception();
@@ -141,11 +143,11 @@ void evaluation_engine::eval_postprocessors(timer &deadline)
     }
 }
 
-exclusion::exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
+exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
 {
     DDWAF_DEBUG("Evaluating rule filters");
 
-    for (const auto &filter : rule_filters_) {
+    for (const auto &filter : *ruleset_->rule_filters) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating rule filters");
             throw timeout_exception();
@@ -158,7 +160,8 @@ exclusion::exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
         }
 
         rule_filter::cache_type &cache = it->second;
-        auto exclusion = filter.match(store_, cache, exclusion_matchers_, current_scope_, deadline);
+        auto exclusion =
+            filter.match(store_, cache, *ruleset_->exclusion_matchers, current_scope_, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 exclusions_.add_rule_exclusion(
@@ -169,7 +172,7 @@ exclusion::exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
 
     DDWAF_DEBUG("Evaluating input filters");
 
-    for (const auto &filter : input_filters_) {
+    for (const auto &filter : *ruleset_->input_filters) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating input filters");
             throw timeout_exception();
@@ -182,7 +185,8 @@ exclusion::exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
         }
 
         input_filter::cache_type &cache = it->second;
-        auto exclusion = filter.match(store_, cache, exclusion_matchers_, current_scope_, deadline);
+        auto exclusion =
+            filter.match(store_, cache, *ruleset_->exclusion_matchers, current_scope_, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 exclusions_.add_input_exclusion(rule, exclusion->objects);
@@ -194,14 +198,14 @@ exclusion::exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
 }
 
 void evaluation_engine::eval_rules(
-    const exclusion::exclusion_policy &policy, std::vector<rule_result> &results, timer &deadline)
+    const exclusion_policy &policy, std::vector<rule_result> &results, timer &deadline)
 {
     for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
         const auto &mod = ruleset_->rule_modules[i];
         auto &cache = rule_module_cache_[i];
 
-        auto verdict =
-            mod.eval(results, store_, cache, policy, rule_matchers_, current_scope_, deadline);
+        auto verdict = mod.eval(
+            results, store_, cache, policy, *ruleset_->rule_matchers, current_scope_, deadline);
         if (verdict == rule_module::verdict_type::block) {
             break;
         }

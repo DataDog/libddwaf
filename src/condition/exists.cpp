@@ -25,8 +25,8 @@ namespace {
 
 enum class search_outcome : uint8_t { found, not_found, unknown };
 
-search_outcome exists(object_view root, std::span<const std::string> key_path,
-    const exclusion::object_set_ref &objects_excluded)
+search_outcome exists(
+    object_view root, std::span<const std::string> key_path, const object_set_ref &objects_excluded)
 {
     if (key_path.empty()) {
         return search_outcome::found;
@@ -62,8 +62,7 @@ search_outcome exists(object_view root, std::span<const std::string> key_path,
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[nodiscard]] eval_result exists_condition::eval_impl(const variadic_argument<object_view> &inputs,
-    condition_cache &cache, const exclusion::object_set_ref &objects_excluded,
-    ddwaf::timer &deadline) const
+    condition_cache &cache, const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     for (const auto &input : inputs) {
         if (deadline.expired()) {
@@ -89,7 +88,7 @@ search_outcome exists(object_view root, std::span<const std::string> key_path,
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[nodiscard]] eval_result negated_exists_condition::eval_impl(
     const unary_argument<object_view> &input, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer & /*deadline*/) const
+    const object_set_ref &objects_excluded, ddwaf::timer & /*deadline*/) const
 {
     // We need to make sure the key path hasn't been found. If the result is
     // unknown, we can't guarantee that the key path isn't actually present in

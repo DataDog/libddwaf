@@ -15,8 +15,6 @@ namespace ddwaf {
 
 class core_rule;
 
-namespace exclusion {
-
 enum class filter_mode : uint8_t { none = 0, custom = 1, monitor = 2, bypass = 3 };
 
 struct object_set {
@@ -154,5 +152,4 @@ struct exclusion_policy {
     }
 };
 
-} // namespace exclusion
 } // namespace ddwaf

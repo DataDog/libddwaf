@@ -162,7 +162,7 @@ bool is_forbidden_uri(const uri_decomposed &uri, const matcher::ip_match &forbid
 }
 
 ssrf_result ssrf_impl(const uri_decomposed &uri, object_view params,
-    const exclusion::object_set_ref &objects_excluded, const ssrf_opts &opts,
+    const object_set_ref &objects_excluded, const ssrf_opts &opts,
     const matcher::ip_match &forbidden_ip_matcher,
     const std::unordered_set<std::string_view> &allowed_scheme_set,
     const std::vector<std::string> &forbidden_domains, ddwaf::timer &deadline)
@@ -291,7 +291,7 @@ ssrf_detector::ssrf_detector(std::vector<condition_parameter> args, const ssrf_o
 
 eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri,
     const variadic_argument<object_view> &params, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
+    const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     auto decomposed = uri_parse(uri.value);
     if (!decomposed.has_value()) {

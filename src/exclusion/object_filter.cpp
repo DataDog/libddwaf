@@ -17,7 +17,7 @@
 #include "object_store.hpp"
 #include "utils.hpp"
 
-namespace ddwaf::exclusion {
+namespace ddwaf {
 
 namespace {
 // Add requires
@@ -127,4 +127,4 @@ object_set object_filter::match(const object_store &store, cache_type &cache,
     return objects_to_exclude;
 }
 
-} // namespace ddwaf::exclusion
+} // namespace ddwaf

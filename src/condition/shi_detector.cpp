@@ -28,7 +28,7 @@ namespace ddwaf {
 
 eval_result shi_detector::eval_string(const unary_argument<object_view> &resource,
     const variadic_argument<object_view> &params, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline)
+    const object_set_ref &objects_excluded, ddwaf::timer &deadline)
 {
     if (resource.value.empty()) {
         return {};
@@ -72,7 +72,7 @@ eval_result shi_detector::eval_string(const unary_argument<object_view> &resourc
 
 eval_result shi_detector::eval_array(const unary_argument<object_view> &resource,
     const variadic_argument<object_view> &params, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline)
+    const object_set_ref &objects_excluded, ddwaf::timer &deadline)
 {
     shell_argument_array arguments{resource.value};
     if (arguments.empty()) {
@@ -122,7 +122,7 @@ shi_detector::shi_detector(std::vector<condition_parameter> args)
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 eval_result shi_detector::eval_impl(const unary_argument<object_view> &resource,
     const variadic_argument<object_view> &params, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
+    const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     if (resource.value.is_string()) {
         return eval_string(resource, params, cache, objects_excluded, deadline);

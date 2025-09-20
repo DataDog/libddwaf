@@ -20,7 +20,7 @@
 namespace ddwaf {
 
 template <typename T>
-iterator_base<T>::iterator_base(const exclusion::object_set_ref &exclude) : excluded_(exclude)
+iterator_base<T>::iterator_base(const object_set_ref &exclude) : excluded_(exclude)
 {
     stack_.reserve(initial_stack_size);
 }
@@ -74,7 +74,7 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
 }
 
 value_iterator::value_iterator(
-    object_view obj, std::span<const std::string> path, const exclusion::object_set_ref &exclude)
+    object_view obj, std::span<const std::string> path, const object_set_ref &exclude)
     : iterator_base(exclude)
 {
     initialise_cursor(obj, path);
@@ -211,7 +211,7 @@ void value_iterator::set_cursor_to_next_object()
 }
 
 key_iterator::key_iterator(
-    object_view obj, std::span<const std::string> path, const exclusion::object_set_ref &exclude)
+    object_view obj, std::span<const std::string> path, const object_set_ref &exclude)
     : iterator_base(exclude)
 {
     initialise_cursor(obj, path);
@@ -334,7 +334,7 @@ void key_iterator::set_cursor_to_next_object()
 }
 
 kv_iterator::kv_iterator(
-    object_view obj, std::span<const std::string> path, const exclusion::object_set_ref &exclude)
+    object_view obj, std::span<const std::string> path, const object_set_ref &exclude)
     : iterator_base(exclude)
 {
     initialise_cursor(obj, path);
