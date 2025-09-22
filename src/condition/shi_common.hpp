@@ -38,7 +38,7 @@ struct shell_argument_array {
 template <typename ResourceType, typename IteratorType = kv_iterator>
 std::optional<shi_result> find_shi_from_params(const ResourceType &resource,
     std::vector<shell_token> &resource_tokens, object_view params,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline)
+    const object_set_ref &objects_excluded, ddwaf::timer &deadline)
 {
     match_iterator<2, IteratorType, ResourceType> it(resource, params, objects_excluded);
     for (; it; ++it) {

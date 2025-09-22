@@ -21,7 +21,7 @@
 #include "rule.hpp"
 #include "utils.hpp"
 
-namespace ddwaf::exclusion {
+namespace ddwaf {
 
 using excluded_set = input_filter::excluded_set;
 
@@ -55,4 +55,4 @@ std::optional<excluded_set> input_filter::match(const object_store &store, cache
     return {{.rules = rule_targets_, .objects = std::move(objects)}};
 }
 
-} // namespace ddwaf::exclusion
+} // namespace ddwaf

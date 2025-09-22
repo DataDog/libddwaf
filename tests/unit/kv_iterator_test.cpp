@@ -16,7 +16,7 @@ TEST(TestKVIterator, TestInvalidIterator)
 {
     owned_object object;
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
     EXPECT_FALSE((bool)it);
     EXPECT_FALSE((*it).has_value());
@@ -33,7 +33,7 @@ TEST(TestKVIterator, TestStringScalar)
 {
     owned_object object{"value"};
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
     EXPECT_TRUE((bool)it);
     EXPECT_EQ(*it, object_view{object});
@@ -50,7 +50,7 @@ TEST(TestKVIterator, TestUnsignedScalar)
 {
     owned_object object{22U};
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
     EXPECT_TRUE((bool)it);
     EXPECT_EQ(*it, object_view{object});
@@ -65,7 +65,7 @@ TEST(TestKVIterator, TestSignedScalar)
 {
     owned_object object{22L};
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
     EXPECT_TRUE((bool)it);
     EXPECT_EQ(*it, object_view{object});
@@ -80,7 +80,7 @@ TEST(TestKVIterator, TestArraySingleItem)
 {
     auto object = object_builder::array({"string"});
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
     EXPECT_TRUE(it);
     EXPECT_STREQ((*it).as<const char *>(), "string");
@@ -98,7 +98,7 @@ TEST(TestKVIterator, TestArrayMultipleItems)
     for (unsigned i = 0; i < 50; i++) { object.emplace_back(std::to_string(i)); }
 
     std::unordered_set<object_cache_key> persistent;
-    exclusion::object_set_ref exclude{persistent, {}};
+    object_set_ref exclude{persistent, {}};
     ddwaf::kv_iterator it(object, {}, exclude);
 
     unsigned index = 0;
@@ -128,7 +128,7 @@ TEST(TestKVIterator, TestArrayMultipleNullAndInvalid)
     EXPECT_EQ(object.size(), 75);
 
     std::unordered_set<object_cache_key> persistent;
-    exclusion::object_set_ref exclude{persistent, {}};
+    object_set_ref exclude{persistent, {}};
     ddwaf::kv_iterator it(object, {}, exclude);
 
     // Null and invalid objects should be skipped
@@ -156,7 +156,7 @@ TEST(TestKVIterator, TestDeepArray)
     }
 
     std::unordered_set<object_cache_key> persistent;
-    exclusion::object_set_ref exclude{persistent, {}};
+    object_set_ref exclude{persistent, {}};
     ddwaf::kv_iterator it(object, {}, exclude);
     for (unsigned i = 0; i < 10; i++) {
         auto index = std::to_string(i);
@@ -178,7 +178,7 @@ TEST(TestKVIterator, TestArrayNoScalars)
     auto object = object_builder::array();
     for (unsigned i = 0; i < 50; i++) { object.emplace_back(object_builder::array()); }
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
 
     EXPECT_FALSE((*it).has_value());
@@ -190,7 +190,7 @@ TEST(TestKVIterator, TestMapSingleItem)
 {
     auto object = object_builder::map({{"key", "value"}});
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
     {
         EXPECT_TRUE((bool)it);
@@ -222,7 +222,7 @@ TEST(TestKVIterator, TestMapMultipleItems)
         object.emplace("key" + index, "value" + index);
     }
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
 
     for (unsigned i = 0; i < 50; i++) {
@@ -271,7 +271,7 @@ TEST(TestKVIterator, TestMapMultipleNullAndInvalid)
         }
     }
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
 
     for (unsigned i = 0; i < 25; i++) {
@@ -337,7 +337,7 @@ TEST(TestKVIterator, TestDeepMap)
         map = map.emplace("map" + index, object_builder::map());
     }
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
 
     for (unsigned i = 0; i < 10; i++) {
@@ -391,7 +391,7 @@ TEST(TestKVIterator, TestNoRootKey)
     auto object = object_builder::map();
     object.emplace("root", object_builder::map({{"key", "value"}}));
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     ddwaf::kv_iterator it(object.at(0), {}, exclude);
     EXPECT_TRUE((bool)it);
     EXPECT_STREQ((*it).as<const char *>(), "key");
@@ -429,7 +429,7 @@ TEST(TestKVIterator, TestContainerMix)
     )");
 
     {
-        exclusion::object_set_ref exclude;
+        object_set_ref exclude;
         ddwaf::kv_iterator it(object, {}, exclude);
 
         std::vector<std::pair<std::string, std::vector<std::string>>> values = {
@@ -469,7 +469,7 @@ TEST(TestKVIterator, TestMapNoScalars)
     auto object = object_builder::map();
     for (unsigned i = 0; i < 50; i++) { object.emplace("key", object_builder::map()); }
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
 
     for (unsigned i = 0; i < 50; i++) {
@@ -489,7 +489,7 @@ TEST(TestKVIterator, TestInvalidObjectPath)
 {
     owned_object object;
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     std::vector<std::string> key_path{"key", "0", "value"};
     ddwaf::kv_iterator it(object, key_path, exclude);
     EXPECT_FALSE((bool)it);
@@ -542,7 +542,7 @@ TEST(TestKVIterator, TestMultiPath)
                        {"value", "value_second"}})},
             {"value", "value_first"}});
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     {
         std::vector<std::pair<std::string, std::vector<std::string>>> values = {
             {"second", {"first", "second"}},
@@ -628,7 +628,7 @@ TEST(TestKVIterator, TestContainerMixPath)
         }
     )");
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     {
         std::vector<std::string> key_path{"root", "key0"};
         ddwaf::kv_iterator it(object, key_path, exclude);
@@ -709,7 +709,7 @@ TEST(TestKVIterator, TestContainerMixInvalidPath)
         }
     )");
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     {
         std::vector<std::string> key_path{"rat"};
         ddwaf::kv_iterator it(object, key_path, exclude);
@@ -735,7 +735,7 @@ TEST(TestKVIterator, TestExcludeSingleObject)
 
     std::unordered_set<object_cache_key> persistent{object.at(0)};
 
-    exclusion::object_set_ref exclude{persistent, {}};
+    object_set_ref exclude{persistent, {}};
     ddwaf::kv_iterator it(object, {}, exclude);
 
     EXPECT_FALSE(it);
@@ -749,7 +749,7 @@ TEST(TestKVIterator, TestExcludeMultipleObjects)
         root.emplace("other", object_builder::map({{"hello_key", "hello"}, {"bye_key", "bye"}}));
 
     std::unordered_set<object_cache_key> persistent{root.at(0), map.at(1)};
-    exclusion::object_set_ref exclude{persistent, {}};
+    object_set_ref exclude{persistent, {}};
     ddwaf::kv_iterator it(root, {}, exclude);
 
     EXPECT_TRUE(it);
@@ -786,7 +786,7 @@ TEST(TestKVIterator, TestExcludeObjectInKeyPath)
     child.emplace("child", "value");
 
     std::unordered_set<object_cache_key> persistent{child.at(0)};
-    exclusion::object_set_ref exclude{persistent, {}};
+    object_set_ref exclude{persistent, {}};
     std::vector<std::string> key_path{"parent", "child"};
     ddwaf::kv_iterator it(root, key_path, exclude);
 
@@ -798,7 +798,7 @@ TEST(TestKVIterator, TestExcludeRootOfKeyPath)
     auto root = object_builder::map({{"parent", object_builder::map({{"child", "value"}})}});
 
     std::unordered_set<object_cache_key> persistent{root.at(0)};
-    exclusion::object_set_ref exclude{persistent, {}};
+    object_set_ref exclude{persistent, {}};
     std::vector<std::string> key_path{"parent", "child"};
     ddwaf::kv_iterator it(root, key_path, exclude);
 

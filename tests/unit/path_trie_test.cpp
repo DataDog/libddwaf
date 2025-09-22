@@ -10,11 +10,11 @@
 
 namespace {
 
-using state = ddwaf::exclusion::path_trie::traverser::state;
+using state = ddwaf::path_trie::traverser::state;
 
 TEST(TestPathTrie, Basic)
 {
-    ddwaf::exclusion::path_trie trie;
+    ddwaf::path_trie trie;
     trie.insert<std::string>({"path", "to", "object"});
     trie.insert<std::string_view>({"path", "to", "another", "object"});
 
@@ -53,7 +53,7 @@ TEST(TestPathTrie, Basic)
 
 TEST(TestPathTrie, Glob)
 {
-    ddwaf::exclusion::path_trie trie;
+    ddwaf::path_trie trie;
     trie.insert<std::string>({"path", "*", "object"});
 
     auto it = trie.get_traverser();
@@ -87,7 +87,7 @@ TEST(TestPathTrie, Glob)
 
 TEST(TestPathTrie, MultipleGlobsAndPaths)
 {
-    ddwaf::exclusion::path_trie trie;
+    ddwaf::path_trie trie;
     trie.insert<std::string>({"path", "*", "object", "*", "box"});
     trie.insert<std::string>({"path", "was", "closed"});
     trie.insert<std::string>({"path", "*", "object", "but", "empty"});
@@ -177,7 +177,7 @@ TEST(TestPathTrie, MultipleGlobsAndPaths)
 }
 TEST(TestPathTrie, Empty)
 {
-    ddwaf::exclusion::path_trie trie;
+    ddwaf::path_trie trie;
 
     auto it = trie.get_traverser();
     EXPECT_EQ(it.get_state(), state::not_found);
@@ -188,7 +188,7 @@ TEST(TestPathTrie, Empty)
 
 TEST(TestPathTrie, SetIsFullDomain)
 {
-    ddwaf::exclusion::path_trie trie;
+    ddwaf::path_trie trie;
     trie.insert<std::string_view>({});
 
     auto it = trie.get_traverser();

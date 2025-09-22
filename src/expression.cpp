@@ -17,7 +17,7 @@
 namespace ddwaf {
 
 eval_result expression::eval(cache_type &cache, const object_store &store,
-    const exclusion::object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
+    const object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
     evaluation_scope scope, ddwaf::timer &deadline) const
 {
     if (conditions_.empty()) {

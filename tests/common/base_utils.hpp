@@ -114,7 +114,7 @@ struct ruleset_builder {
 
     template <typename T> void insert_filter(T &&filter)
     {
-        if constexpr (std::is_same_v<T, exclusion::rule_filter>) {
+        if constexpr (std::is_same_v<T, rule_filter>) {
             rule_filters->emplace_back(std::forward<T>(filter));
         } else {
             input_filters->emplace_back(std::forward<T>(filter));
@@ -153,8 +153,8 @@ struct ruleset_builder {
     std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> preprocessors;
     std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> postprocessors;
 
-    std::shared_ptr<std::vector<exclusion::rule_filter>> rule_filters;
-    std::shared_ptr<std::vector<exclusion::input_filter>> input_filters;
+    std::shared_ptr<std::vector<rule_filter>> rule_filters;
+    std::shared_ptr<std::vector<input_filter>> input_filters;
 
     std::shared_ptr<std::vector<core_rule>> base_rules;
     std::shared_ptr<std::vector<core_rule>> user_rules;

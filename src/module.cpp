@@ -26,9 +26,8 @@ namespace {
 using verdict_type = rule_module::verdict_type;
 
 std::pair<verdict_type, std::optional<rule_result>> eval_rule(const core_rule &rule,
-    const object_store &store, core_rule::cache_type &cache,
-    const exclusion::exclusion_policy &policy, const matcher_mapper &dynamic_matchers,
-    evaluation_scope scope, ddwaf::timer &deadline)
+    const object_store &store, core_rule::cache_type &cache, const exclusion_policy &policy,
+    const matcher_mapper &dynamic_matchers, evaluation_scope scope, ddwaf::timer &deadline)
 {
     const auto &id = rule.get_id();
 
@@ -44,17 +43,17 @@ std::pair<verdict_type, std::optional<rule_result>> eval_rule(const core_rule &r
 
     std::string_view action_override;
     auto exclusion = policy.find(&rule);
-    if (exclusion.mode == exclusion::filter_mode::bypass) {
+    if (exclusion.mode == filter_mode::bypass) {
         DDWAF_DEBUG("Bypassing rule '{}'", id);
         return {verdict_type::none, std::nullopt};
     }
 
     rule_verdict verdict_override = rule_verdict::none;
-    if (exclusion.mode == exclusion::filter_mode::monitor) {
+    if (exclusion.mode == filter_mode::monitor) {
         action_override = "monitor";
         verdict_override = verdict_type::monitor;
         DDWAF_DEBUG("Monitoring rule '{}'", id);
-    } else if (exclusion.mode == exclusion::filter_mode::custom) {
+    } else if (exclusion.mode == filter_mode::custom) {
         action_override = exclusion.action_override;
         verdict_override = verdict_type::block;
         DDWAF_DEBUG("Evaluating rule '{}' with custom action '{}'", id, action_override);
@@ -92,7 +91,7 @@ ddwaf::timer &rule_module::get_deadline(ddwaf::timer &deadline) const
 }
 
 verdict_type rule_module::eval_with_collections(std::vector<rule_result> &results,
-    object_store &store, cache_type &cache, const exclusion::exclusion_policy &exclusion,
+    object_store &store, cache_type &cache, const exclusion_policy &exclusion,
     const matcher_mapper &dynamic_matchers, evaluation_scope scope, ddwaf::timer &deadline) const
 {
     verdict_type final_verdict = verdict_type::none;
@@ -136,8 +135,8 @@ verdict_type rule_module::eval_with_collections(std::vector<rule_result> &result
 }
 
 verdict_type rule_module::eval(std::vector<rule_result> &results, object_store &store,
-    cache_type &cache, const exclusion::exclusion_policy &exclusion,
-    const matcher_mapper &dynamic_matchers, evaluation_scope scope, ddwaf::timer &deadline) const
+    cache_type &cache, const exclusion_policy &exclusion, const matcher_mapper &dynamic_matchers,
+    evaluation_scope scope, ddwaf::timer &deadline) const
 {
     auto &apt_deadline = get_deadline(deadline);
 

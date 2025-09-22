@@ -43,7 +43,7 @@ namespace {
 class scalar_iterator {
 public:
     explicit scalar_iterator(object_view obj, const std::span<const std::string> & /*path*/,
-        const exclusion::object_set_ref & /*exclude*/)
+        const object_set_ref & /*exclude*/)
         : current_(obj)
     {}
 
@@ -353,7 +353,7 @@ std::string_view find_shell_command(std::string_view executable, object_view exe
 
 std::optional<shi_result> cmdi_impl(object_view exec_args,
     std::vector<shell_token> &resource_tokens, object_view params,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline)
+    const object_set_ref &objects_excluded, ddwaf::timer &deadline)
 {
     const std::string_view executable =
         trim_whitespaces(exec_args.at_value(0).as_or_default<std::string_view>({}));
@@ -435,7 +435,7 @@ cmdi_detector::cmdi_detector(std::vector<condition_parameter> args)
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 eval_result cmdi_detector::eval_impl(const unary_argument<object_view> &resource,
     const variadic_argument<object_view> &params, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, ddwaf::timer &deadline) const
+    const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     if (resource.value.type() != object_type::array || resource.value.empty()) {
         return {};

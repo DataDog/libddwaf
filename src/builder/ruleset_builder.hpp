@@ -50,8 +50,8 @@ protected:
     indexer<const core_rule> rule_index_;
 
     // Filters
-    std::shared_ptr<const std::vector<exclusion::rule_filter>> rule_filters_;
-    std::shared_ptr<const std::vector<exclusion::input_filter>> input_filters_;
+    std::shared_ptr<const std::vector<rule_filter>> rule_filters_;
+    std::shared_ptr<const std::vector<input_filter>> input_filters_;
 
     // Processors
     std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> preprocessors_;

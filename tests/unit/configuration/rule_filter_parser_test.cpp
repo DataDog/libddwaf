@@ -571,7 +571,7 @@ TEST(TestRuleFilterParser, ParseConditionalGlobal)
 
     EXPECT_EQ(filter_it->second.expr->size(), 1);
     EXPECT_EQ(filter_it->second.targets.size(), 0);
-    EXPECT_EQ(filter_it->second.on_match, exclusion::filter_mode::bypass);
+    EXPECT_EQ(filter_it->second.on_match, filter_mode::bypass);
 }
 
 TEST(TestRuleFilterParser, ParseConditionalMultipleConditions)
@@ -616,7 +616,7 @@ TEST(TestRuleFilterParser, ParseConditionalMultipleConditions)
 
     EXPECT_EQ(filter_it->second.expr->size(), 3);
     EXPECT_EQ(filter_it->second.targets.size(), 1);
-    EXPECT_EQ(filter_it->second.on_match, exclusion::filter_mode::bypass);
+    EXPECT_EQ(filter_it->second.on_match, filter_mode::bypass);
 
     const auto &target = filter_it->second.targets[0];
     EXPECT_EQ(target.type, reference_type::id);
@@ -664,7 +664,7 @@ TEST(TestRuleFilterParser, ParseOnMatchMonitor)
     const auto &filter_it = cfg.rule_filters.begin();
     EXPECT_STR(filter_it->first, "1");
 
-    EXPECT_EQ(filter_it->second.on_match, exclusion::filter_mode::monitor);
+    EXPECT_EQ(filter_it->second.on_match, filter_mode::monitor);
 }
 
 TEST(TestRuleFilterParser, ParseOnMatchBypass)
@@ -707,7 +707,7 @@ TEST(TestRuleFilterParser, ParseOnMatchBypass)
     const auto &filter_it = cfg.rule_filters.begin();
     EXPECT_STR(filter_it->first, "1");
 
-    EXPECT_EQ(filter_it->second.on_match, exclusion::filter_mode::bypass);
+    EXPECT_EQ(filter_it->second.on_match, filter_mode::bypass);
 }
 
 TEST(TestRuleFilterParser, ParseCustomOnMatch)
@@ -750,7 +750,7 @@ TEST(TestRuleFilterParser, ParseCustomOnMatch)
     const auto &filter_it = cfg.rule_filters.begin();
     EXPECT_STR(filter_it->first, "1");
 
-    EXPECT_EQ(filter_it->second.on_match, exclusion::filter_mode::custom);
+    EXPECT_EQ(filter_it->second.on_match, filter_mode::custom);
     EXPECT_STR(filter_it->second.custom_action, "obliterate");
 }
 

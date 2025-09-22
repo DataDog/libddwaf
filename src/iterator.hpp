@@ -45,18 +45,18 @@ protected:
     std::vector<std::pair<object_view, std::size_t>> stack_;
     std::pair<object_view, object_view> current_;
 
-    const exclusion::object_set_ref &excluded_;
+    const object_set_ref &excluded_;
 
 private:
-    explicit iterator_base(const exclusion::object_set_ref &exclude);
+    explicit iterator_base(const object_set_ref &exclude);
 
     friend T;
 };
 
 class value_iterator : public iterator_base<value_iterator> {
 public:
-    explicit value_iterator(object_view obj, std::span<const std::string> path,
-        const exclusion::object_set_ref &exclude);
+    explicit value_iterator(
+        object_view obj, std::span<const std::string> path, const object_set_ref &exclude);
 
     ~value_iterator() = default;
 
@@ -84,8 +84,8 @@ protected:
 
 class key_iterator : public iterator_base<key_iterator> {
 public:
-    explicit key_iterator(object_view obj, std::span<const std::string> path,
-        const exclusion::object_set_ref &exclude);
+    explicit key_iterator(
+        object_view obj, std::span<const std::string> path, const object_set_ref &exclude);
 
     ~key_iterator() = default;
 
@@ -119,8 +119,8 @@ protected:
 
 class kv_iterator : public iterator_base<kv_iterator> {
 public:
-    explicit kv_iterator(object_view obj, std::span<const std::string> path,
-        const exclusion::object_set_ref &exclude);
+    explicit kv_iterator(
+        object_view obj, std::span<const std::string> path, const object_set_ref &exclude);
 
     ~kv_iterator() = default;
 

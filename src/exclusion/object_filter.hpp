@@ -23,7 +23,7 @@
 #include "log.hpp"
 #include "object_store.hpp"
 
-namespace ddwaf::exclusion {
+namespace ddwaf {
 
 class path_trie {
     class trie_node {
@@ -270,4 +270,4 @@ protected:
     std::unordered_map<target_index, std::string> targets_;
 };
 
-} // namespace ddwaf::exclusion
+} // namespace ddwaf

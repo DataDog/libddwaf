@@ -14,7 +14,6 @@
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
 #include "memory_resource.hpp"
-#include "obfuscator.hpp"
 #include "pointer.hpp"
 #include "processor/base.hpp"
 #include "ruleset.hpp"
@@ -26,12 +25,7 @@ class evaluation_engine {
 public:
     explicit evaluation_engine(std::shared_ptr<ruleset> ruleset,
         nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
-        : output_alloc_(output_alloc), ruleset_(std::move(ruleset)), collector_(output_alloc),
-          preprocessors_(*ruleset_->preprocessors), postprocessors_(*ruleset_->postprocessors),
-          rule_filters_(*ruleset_->rule_filters), input_filters_(*ruleset_->input_filters),
-          rule_matchers_(*ruleset_->rule_matchers),
-          exclusion_matchers_(*ruleset_->exclusion_matchers), actions_(*ruleset_->actions),
-          obfuscator_(*ruleset_->obfuscator)
+        : output_alloc_(output_alloc), ruleset_(std::move(ruleset)), collector_(output_alloc)
     {
         processor_cache_.reserve(
             ruleset_->preprocessors->size() + ruleset_->postprocessors->size());
@@ -98,9 +92,9 @@ public:
     void eval_postprocessors(timer &deadline);
     // This function below returns a reference to an internal object,
     // however using them this way helps with testing
-    exclusion::exclusion_policy &eval_filters(timer &deadline);
-    void eval_rules(const exclusion::exclusion_policy &policy, std::vector<rule_result> &results,
-        timer &deadline);
+    exclusion_policy &eval_filters(timer &deadline);
+    void eval_rules(
+        const exclusion_policy &policy, std::vector<rule_result> &results, timer &deadline);
 
 protected:
     bool check_new_rule_targets() const
@@ -139,32 +133,13 @@ protected:
     object_store store_;
     attribute_collector collector_;
 
-    // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
-    const std::vector<std::unique_ptr<base_processor>> &preprocessors_;
-    const std::vector<std::unique_ptr<base_processor>> &postprocessors_;
-
-    const std::vector<exclusion::rule_filter> &rule_filters_;
-    const std::vector<exclusion::input_filter> &input_filters_;
-
-    const matcher_mapper &rule_matchers_;
-    const matcher_mapper &exclusion_matchers_;
-
-    const action_mapper &actions_;
-
-    const match_obfuscator &obfuscator_;
-    // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
-
-    using input_filter = exclusion::input_filter;
-    using rule_filter = exclusion::rule_filter;
-
+    // Caches
     memory::unordered_map<base_processor *, processor_cache> processor_cache_;
 
-    // Caches of filters and conditions
     memory::unordered_map<const rule_filter *, rule_filter::cache_type> rule_filter_cache_;
     memory::unordered_map<const input_filter *, input_filter::cache_type> input_filter_cache_;
-    exclusion::exclusion_policy exclusions_;
+    exclusion_policy exclusions_;
 
-    // Cache of modules to avoid processing once a result has been obtained
     std::array<rule_module_cache, rule_module_count> rule_module_cache_;
 };
 

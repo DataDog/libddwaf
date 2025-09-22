@@ -13,7 +13,7 @@
 #include "object_store.hpp"
 #include "rule.hpp"
 
-namespace ddwaf::exclusion {
+namespace ddwaf {
 
 class rule_filter {
 public:
@@ -56,4 +56,4 @@ protected:
     std::string action_;
 };
 
-} // namespace ddwaf::exclusion
+} // namespace ddwaf

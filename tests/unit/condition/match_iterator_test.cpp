@@ -16,7 +16,7 @@ TEST(TestMatchIterator, InvalidIterator)
     owned_object object;
 
     std::string resource = "this is the resource";
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     ddwaf::match_iterator it(resource, object, exclude);
     EXPECT_FALSE((bool)it);
 
@@ -31,7 +31,7 @@ TEST(TestMatchIterator, NoMatch)
     owned_object object{"no match"};
 
     std::string resource = "this is the resource";
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     ddwaf::match_iterator it(resource, object, exclude);
     EXPECT_FALSE((bool)it);
 
@@ -46,7 +46,7 @@ TEST(TestMatchIterator, SingleMatch)
     owned_object object{"resource"};
 
     std::string resource = "this is the resource";
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     ddwaf::match_iterator it(resource, object, exclude);
     EXPECT_TRUE((bool)it);
 
@@ -65,7 +65,7 @@ TEST(TestMatchIterator, MultipleMatches)
     owned_object object{"resource"};
 
     std::string resource = "resource resource resource resource";
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     ddwaf::match_iterator it(resource, object, exclude);
 
     for (std::size_t i = 0; i < 4; ++i) {
@@ -88,7 +88,7 @@ TEST(TestMatchIterator, OverlappingMatches)
     owned_object object{"ee"};
 
     std::string resource = "eeeeeeeeee";
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     ddwaf::match_iterator it(resource, object, exclude);
     EXPECT_TRUE((bool)it);
 
