@@ -30,9 +30,7 @@
                 "description": "The category of the rule as defined in the ruleset"
               }
             },
-            "required": [
-              "type"
-            ]
+            "required": ["type"]
           },
           "on_match": {
             "type": "array",
@@ -42,11 +40,7 @@
             }
           }
         },
-        "required": [
-          "id",
-          "name",
-          "tags"
-        ],
+        "required": ["id", "name", "tags"],
         "additionalProperties": false
       },
       "rule_matches": {
@@ -80,7 +74,7 @@
                           "type": "string"
                         },
                         {
-                          "type": "number"
+                          "type": "integer"
                         }
                       ]
                     }
@@ -97,26 +91,14 @@
                     }
                   }
                 },
-                "required": [
-                  "address",
-                  "key_path",
-                  "value",
-                  "highlight"
-                ]
+                "required": ["address", "key_path", "value", "highlight"]
               }
             }
           },
-          "required": [
-            "operator",
-            "operator_value",
-            "parameters"
-          ]
+          "required": ["operator", "operator_value", "parameters"]
         }
       }
     },
-    "required": [
-      "rule",
-      "rule_matches"
-    ]
+    "required": ["rule", "rule_matches"]
   }
 }
