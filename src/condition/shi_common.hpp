@@ -21,7 +21,7 @@ namespace ddwaf {
 
 struct shi_result {
     std::string value;
-    std::vector<std::string> key_path;
+    std::vector<std::variant<std::string_view, int64_t>> key_path;
 };
 
 struct shell_argument_array {

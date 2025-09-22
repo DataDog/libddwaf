@@ -10,6 +10,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "configuration/common/parser_exception.hpp"
@@ -259,6 +260,31 @@ raw_configuration::operator std::vector<std::string>() const
     for (auto value : av) {
         const raw_configuration item{value};
         vec.emplace_back(static_cast<std::string>(item));
+    }
+    return vec;
+}
+
+raw_configuration::operator std::vector<std::variant<std::string, int64_t>>() const
+{
+    if (!view_.is_array()) {
+        throw bad_cast("array", strtype(view_.type()));
+    }
+
+    const array_view av{view_};
+    if (av.empty()) {
+        return {};
+    }
+
+    std::vector<std::variant<std::string, int64_t>> vec;
+    vec.reserve(av.size());
+
+    for (auto value : av) {
+        const raw_configuration item{value};
+        if (item->is_string()) {
+            vec.emplace_back(static_cast<std::string>(item));
+        } else if (item->type() == object_type::int64 || item->type() == object_type::uint64) {
+            vec.emplace_back(static_cast<int64_t>(item));
+        }
     }
     return vec;
 }

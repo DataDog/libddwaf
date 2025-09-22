@@ -98,7 +98,7 @@ TEST(TestExtractSchemaIntegration, Preprocessor)
                                .args = {{
                                    .value = "8"sv,
                                    .address = "server.request.body.schema",
-                                   .path = {"0"},
+                                   .path = {0},
                                }}}}});
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
@@ -153,7 +153,7 @@ TEST(TestExtractSchemaIntegration, Processor)
                                .args = {{
                                    .value = "8"sv,
                                    .address = "server.request.body.schema",
-                                   .path = {"0"},
+                                   .path = {0},
                                }}}}});
 
     const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
@@ -885,7 +885,7 @@ TEST(TestExtractSchemaIntegration, PreprocessorWithSubcontextMapping)
                                    .args = {{
                                        .value = "8"sv,
                                        .address = "server.request.body.schema",
-                                       .path = {"0"},
+                                       .path = {0},
                                    }}}}});
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
@@ -918,7 +918,7 @@ TEST(TestExtractSchemaIntegration, PreprocessorWithSubcontextMapping)
                                    .args = {{
                                        .value = "8"sv,
                                        .address = "server.request.body.schema",
-                                       .path = {"0"},
+                                       .path = {0},
                                    }}}}});
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
@@ -1029,7 +1029,7 @@ TEST(TestExtractSchemaIntegration, ProcessorSubcontextExpression)
                                    .args = {{
                                        .value = "8"sv,
                                        .address = "server.request.body.schema",
-                                       .path = {"0"},
+                                       .path = {0},
                                    }}}}});
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));

@@ -6,7 +6,8 @@
 #include <cstdint>
 #include <span>
 #include <string>
-#include <utility>
+#include <string_view>
+#include <variant>
 #include <vector>
 
 #include "argument_retriever.hpp"
@@ -25,8 +26,29 @@ namespace {
 
 enum class search_outcome : uint8_t { found, not_found, unknown };
 
-search_outcome exists(
-    object_view root, std::span<const std::string> key_path, const object_set_ref &objects_excluded)
+object_view get_key(object_view root, const std::variant<std::string, int64_t> &key)
+{
+    if (root.is_map() && std::holds_alternative<std::string>(key)) {
+        return root.find(std::get<std::string>(key));
+    }
+
+    if (root.is_array() && std::holds_alternative<int64_t>(key)) {
+        auto index = std::get<int64_t>(key);
+        if (index >= 0 && root.size() > static_cast<uint64_t>(index)) {
+            return root.at_value(index);
+        }
+
+        if (index < 0 && root.size() >= static_cast<uint64_t>(-index)) {
+            return root.at_value(root.size() + index);
+        }
+    }
+
+    return {};
+}
+
+search_outcome exists(object_view root,
+    std::span<const std::variant<std::string, int64_t>> key_path,
+    const object_set_ref &objects_excluded)
 {
     if (key_path.empty()) {
         return search_outcome::found;
@@ -39,7 +61,7 @@ search_outcome exists(
 
     auto it = key_path.begin();
 
-    while ((root = root.find(*it)).has_value()) {
+    while ((root = get_key(root, *it)).has_value()) {
         if (objects_excluded.contains(root)) {
             // We found the next root but it has been excluded, so we
             // can't know for sure if the required key path exists
@@ -70,11 +92,13 @@ search_outcome exists(
         }
 
         if (exists(input.value, input.key_path, objects_excluded) == search_outcome::found) {
-            std::vector<std::string> key_path{input.key_path.begin(), input.key_path.end()};
+
+            const std::vector<std::variant<std::string_view, int64_t>> key_path;
+
             cache.match = {{.args = {{.name = "input",
                                 .resolved = {},
                                 .address = input.address,
-                                .key_path = std::move(key_path)}},
+                                .key_path = convert_key_path(input.key_path)}},
                 .highlights = {},
                 .operator_name = "exists",
                 .operator_value = {},
@@ -97,11 +121,10 @@ search_outcome exists(
         return eval_result::no_match();
     }
 
-    std::vector<std::string> key_path{input.key_path.begin(), input.key_path.end()};
     cache.match = {{.args = {{.name = "input",
                         .resolved = {},
                         .address = input.address,
-                        .key_path = std::move(key_path)}},
+                        .key_path = convert_key_path(input.key_path)}},
         .highlights = {},
         .operator_name = "!exists",
         .operator_value = {},
