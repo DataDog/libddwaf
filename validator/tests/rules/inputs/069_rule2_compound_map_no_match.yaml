@@ -2,7 +2,7 @@
   name: "No match, both are compound maps",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule2-input1: {
           first: {
             second: garbage

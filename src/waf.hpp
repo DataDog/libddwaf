@@ -7,13 +7,9 @@
 
 #include <memory>
 
-#include "configuration/common/raw_configuration.hpp"
 #include "context.hpp"
-#include "ddwaf.h"
+#include "memory_resource.hpp"
 #include "ruleset.hpp"
-#include "ruleset_info.hpp"
-#include "utils.hpp"
-#include "version.hpp"
 
 namespace ddwaf {
 
@@ -26,7 +22,11 @@ public:
     waf &operator=(waf &&) = default;
     ~waf() = default;
 
-    ddwaf::context_wrapper *create_context() { return new context_wrapper(ruleset_); }
+    context create_context(
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+    {
+        return context(ruleset_, alloc);
+    }
 
     [[nodiscard]] const std::vector<const char *> &get_root_addresses() const
     {

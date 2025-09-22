@@ -2,7 +2,7 @@
   name: "Basic run with match on string",
   runs: [
     {
-      persistent-input: {
+      input: {
         server.sys.shell.cmd: "ls -l",
         server.request.query: [ "ls -l" ]
       },

@@ -2,7 +2,7 @@
   name: "Exclude a set of rules with a condition and rules target",
   runs: [
     {
-      persistent-input: {
+      input: {
         exclusion-filter-3-input: "exclusion-filter-3",
         rule3-input: "rule3",
       },

@@ -2,7 +2,7 @@
   name: "Multirule input and keypath exclusion",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule9-11-input2: rule9-11
       },
       code: ok

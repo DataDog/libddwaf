@@ -110,20 +110,16 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 
     auto [resource, param] = deserialize(bytes, size);
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.sys.shell.cmd",
-        ddwaf_object_stringl(&tmp, resource.data(), resource.size()));
-    ddwaf_object_map_add(
-        &root, "server.request.query", ddwaf_object_stringl(&tmp, param.data(), param.size()));
+    auto root = owned_object::make_map();
+    root.emplace("server.request.query", owned_object::make_string(param));
+    root.emplace("server.sys.shell.cmd", owned_object::make_string(resource));
 
     object_store store;
-    store.insert(root);
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    (void)cond.eval(cache, store, {}, {}, {}, deadline);
+    (void)cond.eval(cache, store, {}, {}, deadline);
 
     return 0;
 }

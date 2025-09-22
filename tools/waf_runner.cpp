@@ -59,6 +59,8 @@ const char *value_regex{R"((?i)(?:p(?:ass)?w(?:or)?d|pass(?:[_-]?phrase)?|secret
 
 int main(int argc, char *argv[])
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     auto args = parse_args(argc, argv);
 
     bool verbose = false;
@@ -77,7 +79,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    const ddwaf_config config{{.max_container_size=0, .max_container_depth=0, .max_string_length=0}, {.key_regex=key_regex, .value_regex=value_regex}, ddwaf_object_free};
+    const ddwaf_config config{{.key_regex=key_regex, .value_regex=value_regex}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     std::size_t index = 0;
@@ -89,7 +91,7 @@ int main(int argc, char *argv[])
             std::cout << "Failed to add configuration: " << config << '\n';
         }
 
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
@@ -99,7 +101,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     if (context == nullptr) {
         ddwaf_destroy(handle);
         std::cout << "Failed to initialise context\n";
@@ -112,31 +114,10 @@ int main(int argc, char *argv[])
         }
 
         auto input = YAML::Load(json_str);
-
-        ddwaf_object persistent;
-        ddwaf_object ephemeral;
-
-        auto persistent_input = input["persistent"];
-        auto ephemeral_input = input["ephemeral"];
-        if (!persistent_input.IsDefined() && !ephemeral_input.IsDefined()) {
-            persistent = input.as<ddwaf_object>();
-            ddwaf_object_map(&ephemeral);
-        } else {
-            if (input["persistent"].IsDefined()) {
-                persistent = input["persistent"].as<ddwaf_object>();
-            } else {
-                ddwaf_object_map(&persistent);
-            }
-
-            if (input["ephemeral"].IsDefined()) {
-                ephemeral = input["ephemeral"].as<ddwaf_object>();
-            } else {
-                ddwaf_object_map(&ephemeral);
-            }
-        }
+        auto data = input.as<ddwaf_object>();
 
         ddwaf_object ret;
-            ddwaf_run(context, &persistent, &ephemeral, &ret, std::numeric_limits<uint64_t>::max());
+        ddwaf_context_eval(context, &data, alloc, &ret, std::numeric_limits<uint64_t>::max());
 
         YAML::Emitter out(std::cout);
         out.SetIndent(2);
@@ -145,7 +126,7 @@ int main(int argc, char *argv[])
         out << object_to_yaml(ret);
         std::cout << '\n';
 
-        ddwaf_object_free(&ret);
+        ddwaf_object_destroy(&ret, ddwaf_get_default_allocator());
     }
 
     ddwaf_context_destroy(context);

@@ -2,7 +2,7 @@
   name: "Match with transformer",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule1-input: "\\x41\\x20\\x4aS\\x20transf\\x6Frmation"
       },
       rules: [

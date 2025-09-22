@@ -2,7 +2,7 @@
   name: "User rules have precedence in custom-acl",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule1-input: admin
       },
       rules: [

@@ -2,7 +2,7 @@
   name: "Both valid inputs, match on first",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule2-input1: rule2,
         rule2-input2: garbage
       },

@@ -2,7 +2,7 @@
   name: "Basic match, first input",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule2-input1: rule2
       },
       rules: [

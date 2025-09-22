@@ -14,48 +14,46 @@ namespace {
 
 TEST(TestKVIterator, TestInvalidIterator)
 {
-    ddwaf_object object;
-    ddwaf_object_invalid(&object);
+    owned_object object;
 
-    exclusion::object_set_ref exclude;
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
+    object_set_ref exclude;
+    ddwaf::kv_iterator it(object, {}, exclude);
     EXPECT_FALSE((bool)it);
-    EXPECT_EQ(*it, nullptr);
+    EXPECT_FALSE((*it).has_value());
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 0);
 
     EXPECT_FALSE(++it);
+
+    EXPECT_FALSE((*it).has_value());
 }
 
 TEST(TestKVIterator, TestStringScalar)
 {
-    ddwaf_object object;
-    ddwaf_object_string(&object, "value");
+    owned_object object{"value"};
 
-    exclusion::object_set_ref exclude;
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
+    object_set_ref exclude;
+    ddwaf::kv_iterator it(object, {}, exclude);
     EXPECT_TRUE((bool)it);
-    EXPECT_EQ(*it, &object);
+    EXPECT_EQ(*it, object_view{object});
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 0);
 
     EXPECT_FALSE(++it);
-    EXPECT_EQ(*it, nullptr);
 
-    ddwaf_object_free(&object);
+    EXPECT_FALSE((*it).has_value());
 }
 
 TEST(TestKVIterator, TestUnsignedScalar)
 {
-    ddwaf_object object;
-    ddwaf_object_unsigned(&object, 22);
+    owned_object object{22U};
 
-    exclusion::object_set_ref exclude;
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
+    object_set_ref exclude;
+    ddwaf::kv_iterator it(object, {}, exclude);
     EXPECT_TRUE((bool)it);
-    EXPECT_EQ(*it, &object);
+    EXPECT_EQ(*it, object_view{object});
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 0);
@@ -65,13 +63,12 @@ TEST(TestKVIterator, TestUnsignedScalar)
 
 TEST(TestKVIterator, TestSignedScalar)
 {
-    ddwaf_object object;
-    ddwaf_object_signed(&object, 22);
+    owned_object object{22L};
 
-    exclusion::object_set_ref exclude;
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
+    object_set_ref exclude;
+    ddwaf::kv_iterator it(object, {}, exclude);
     EXPECT_TRUE((bool)it);
-    EXPECT_EQ(*it, &object);
+    EXPECT_EQ(*it, object_view{object});
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 0);
@@ -81,43 +78,34 @@ TEST(TestKVIterator, TestSignedScalar)
 
 TEST(TestKVIterator, TestArraySingleItem)
 {
-    ddwaf_object object;
-    ddwaf_object tmp;
-    ddwaf_object_array(&object);
-    ddwaf_object_array_add(&object, ddwaf_object_string(&tmp, "string"));
+    auto object = object_builder::array({"string"});
 
-    exclusion::object_set_ref exclude;
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
+    object_set_ref exclude;
+    ddwaf::kv_iterator it(object, {}, exclude);
     EXPECT_TRUE(it);
-    EXPECT_STREQ((*it)->stringValue, "string");
+    EXPECT_STREQ((*it).as<const char *>(), "string");
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 1);
     EXPECT_STREQ(path[0].c_str(), "0");
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestKVIterator, TestArrayMultipleItems)
 {
-    ddwaf_object object;
-    ddwaf_object tmp;
-    ddwaf_object_array(&object);
-    for (unsigned i = 0; i < 50; i++) {
-        ddwaf_object_array_add(&object, ddwaf_object_string(&tmp, std::to_string(i).c_str()));
-    }
+    auto object = object_builder::array();
+    for (unsigned i = 0; i < 50; i++) { object.emplace_back(std::to_string(i)); }
 
-    std::unordered_set<const ddwaf_object *> persistent;
-    exclusion::object_set_ref exclude{persistent, {}};
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
+    std::unordered_set<object_cache_key> persistent;
+    object_set_ref exclude{persistent, {}};
+    ddwaf::kv_iterator it(object, {}, exclude);
 
     unsigned index = 0;
     do {
         auto index_str = std::to_string(index);
         EXPECT_TRUE(it);
-        EXPECT_STREQ((*it)->stringValue, index_str.c_str());
+        EXPECT_STREQ((*it).as<const char *>(), index_str.c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -126,32 +114,28 @@ TEST(TestKVIterator, TestArrayMultipleItems)
     } while (++it);
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestKVIterator, TestArrayMultipleNullAndInvalid)
 {
-    ddwaf_object object;
-    ddwaf_object tmp;
-    ddwaf_object_array(&object);
+    auto object = object_builder::array();
     for (unsigned i = 0; i < 25; i++) {
-        ddwaf_object_array_add(&object, ddwaf_object_string(&tmp, std::to_string(i).c_str()));
-        ddwaf_object_array_add(&object, ddwaf_object_invalid(&tmp));
-        ddwaf_object_array_add(&object, ddwaf_object_null(&tmp));
+        object.emplace_back(std::to_string(i));
+        object.emplace_back(owned_object{});
+        object.emplace_back(owned_object::make_null());
     }
 
-    EXPECT_EQ(ddwaf_object_size(&object), 75);
+    EXPECT_EQ(object.size(), 75);
 
-    std::unordered_set<const ddwaf_object *> persistent;
-    exclusion::object_set_ref exclude{persistent, {}};
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
+    std::unordered_set<object_cache_key> persistent;
+    object_set_ref exclude{persistent, {}};
+    ddwaf::kv_iterator it(object, {}, exclude);
 
     // Null and invalid objects should be skipped
     unsigned index = 0;
     do {
         EXPECT_TRUE(it);
-        EXPECT_STREQ((*it)->stringValue, std::to_string(index).c_str());
+        EXPECT_STREQ((*it).as<const char *>(), std::to_string(index).c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -160,69 +144,24 @@ TEST(TestKVIterator, TestArrayMultipleNullAndInvalid)
     } while (++it);
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
-}
-
-TEST(TestKVIterator, TestArrayPastSizeLimit)
-{
-    ddwaf::object_limits limits;
-    ddwaf_object object;
-    ddwaf_object tmp;
-    ddwaf_object_array(&object);
-
-    for (unsigned i = 0; i < limits.max_container_size + 50; i++) {
-        ddwaf_object_array_add(&object, ddwaf_object_string(&tmp, std::to_string(i).c_str()));
-    }
-
-    std::unordered_set<const ddwaf_object *> persistent;
-    exclusion::object_set_ref exclude{persistent, {}};
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
-
-    for (unsigned i = 0; i < limits.max_container_size; i++) {
-        auto index_str = std::to_string(i);
-        EXPECT_TRUE(it);
-        EXPECT_STREQ((*it)->stringValue, index_str.c_str());
-
-        auto path = it.get_current_path();
-        EXPECT_EQ(path.size(), 1);
-        EXPECT_STREQ(path[0].c_str(), index_str.c_str());
-
-        ++it;
-    }
-
-    EXPECT_FALSE(it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestKVIterator, TestDeepArray)
 {
-    ddwaf_object *array;
-    ddwaf_object object;
-
-    ddwaf_object_array(&object);
-    array = &object;
-
+    auto object = object_builder::array();
+    borrowed_object array{object};
     for (unsigned i = 0; i < 10; i++) {
-        ddwaf_object intermediate;
-        ddwaf_object tmp;
-        auto index = std::to_string(i);
-
-        ddwaf_object_array(&intermediate);
-        ddwaf_object_array_add(array, ddwaf_object_string(&tmp, ("val" + index).c_str()));
-        ddwaf_object_array_add(array, &intermediate);
-
-        array = &array->array[1];
+        array.emplace_back("val" + std::to_string(i));
+        array = array.emplace_back(object_builder::array());
     }
 
-    std::unordered_set<const ddwaf_object *> persistent;
-    exclusion::object_set_ref exclude{persistent, {}};
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
+    std::unordered_set<object_cache_key> persistent;
+    object_set_ref exclude{persistent, {}};
+    ddwaf::kv_iterator it(object, {}, exclude);
     for (unsigned i = 0; i < 10; i++) {
         auto index = std::to_string(i);
 
-        EXPECT_STREQ((*it)->stringValue, ("val" + index).c_str());
+        EXPECT_STREQ((*it).as<const char *>(), ("val" + index).c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), i + 1);
@@ -232,81 +171,30 @@ TEST(TestKVIterator, TestDeepArray)
     }
 
     EXPECT_FALSE(it);
-
-    ddwaf_object_free(&object);
-}
-
-TEST(TestKVIterator, TestDeepArrayPastLimit)
-{
-    ddwaf::object_limits limits;
-    ddwaf_object *array;
-    ddwaf_object object;
-
-    ddwaf_object_array(&object);
-    array = &object;
-
-    for (unsigned i = 0; i < limits.max_container_depth + 10; i++) {
-        ddwaf_object intermediate;
-        ddwaf_object tmp;
-        auto index = std::to_string(i);
-
-        ddwaf_object_array(&intermediate);
-        ddwaf_object_array_add(array, ddwaf_object_string(&tmp, ("val" + index).c_str()));
-        ddwaf_object_array_add(array, &intermediate);
-
-        array = &array->array[1];
-    }
-
-    std::unordered_set<const ddwaf_object *> persistent;
-    exclusion::object_set_ref exclude{persistent, {}};
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
-    for (unsigned i = 0; i < limits.max_container_depth; i++) {
-        auto index = std::to_string(i);
-
-        EXPECT_STREQ((*it)->stringValue, ("val" + index).c_str());
-
-        auto path = it.get_current_path();
-        EXPECT_EQ(path.size(), i + 1);
-
-        for (unsigned j = 0; j < i; j++) { EXPECT_STREQ(path[j].c_str(), "1"); }
-        ++it;
-    }
-
-    EXPECT_FALSE(it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestKVIterator, TestArrayNoScalars)
 {
-    ddwaf_object object;
-    ddwaf_object tmp;
-    ddwaf_object_array(&object);
-    for (unsigned i = 0; i < 50; i++) { ddwaf_object_array_add(&object, ddwaf_object_array(&tmp)); }
+    auto object = object_builder::array();
+    for (unsigned i = 0; i < 50; i++) { object.emplace_back(object_builder::array()); }
 
-    exclusion::object_set_ref exclude;
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
+    object_set_ref exclude;
+    ddwaf::kv_iterator it(object, {}, exclude);
 
-    EXPECT_EQ(*it, nullptr);
+    EXPECT_FALSE((*it).has_value());
     EXPECT_FALSE((bool)it);
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestKVIterator, TestMapSingleItem)
 {
-    ddwaf_object object;
-    ddwaf_object tmp;
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "key", ddwaf_object_string(&tmp, "value"));
+    auto object = object_builder::map({{"key", "value"}});
 
-    exclusion::object_set_ref exclude;
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
+    object_set_ref exclude;
+    ddwaf::kv_iterator it(object, {}, exclude);
     {
         EXPECT_TRUE((bool)it);
-        EXPECT_EQ((*it)->parameterName, nullptr);
-        EXPECT_STREQ((*it)->stringValue, "key");
+        EXPECT_STREQ((*it).as<const char *>(), "key");
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -315,7 +203,7 @@ TEST(TestKVIterator, TestMapSingleItem)
 
     {
         EXPECT_TRUE(++it);
-        EXPECT_STREQ((*it)->stringValue, "value");
+        EXPECT_STREQ((*it).as<const char *>(), "value");
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -323,25 +211,19 @@ TEST(TestKVIterator, TestMapSingleItem)
     }
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestKVIterator, TestMapMultipleItems)
 {
-    ddwaf_object object;
-    ddwaf_object tmp;
-    ddwaf_object_map(&object);
+    auto object = object_builder::map();
 
     for (unsigned i = 0; i < 50; i++) {
         auto index = std::to_string(i);
-        std::string key = "key" + index;
-        std::string value = "value" + index;
-        ddwaf_object_map_add(&object, key.c_str(), ddwaf_object_string(&tmp, value.c_str()));
+        object.emplace("key" + index, "value" + index);
     }
 
-    exclusion::object_set_ref exclude;
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
+    object_set_ref exclude;
+    ddwaf::kv_iterator it(object, {}, exclude);
 
     for (unsigned i = 0; i < 50; i++) {
         auto index = std::to_string(i);
@@ -349,15 +231,14 @@ TEST(TestKVIterator, TestMapMultipleItems)
         std::string value = "value" + index;
 
         EXPECT_TRUE((bool)it);
-        EXPECT_STREQ((*it)->stringValue, key.c_str());
+        EXPECT_STREQ((*it).as<const char *>(), key.c_str());
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
         EXPECT_STREQ(path[0].c_str(), key.c_str());
 
         EXPECT_TRUE(++it);
-        EXPECT_STREQ((*it)->stringValue, value.c_str());
-        EXPECT_STREQ((*it)->parameterName, key.c_str());
+        EXPECT_STREQ((*it).as<const char *>(), value.c_str());
 
         path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -367,39 +248,31 @@ TEST(TestKVIterator, TestMapMultipleItems)
     }
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestKVIterator, TestMapMultipleNullAndInvalid)
 {
-    ddwaf_object object;
-    ddwaf_object tmp;
-    ddwaf_object_map(&object);
+    auto object = object_builder::map();
 
     for (unsigned i = 0; i < 25; i++) {
         {
             auto index = std::to_string(i * 3);
-            std::string key = "key" + index;
-            std::string value = "value" + index;
-            ddwaf_object_map_add(&object, key.c_str(), ddwaf_object_string(&tmp, value.c_str()));
+            object.emplace("key" + index, "value" + index);
         }
 
         {
             auto index = std::to_string(i * 3 + 1);
-            std::string key = "key" + index;
-            ddwaf_object_map_add(&object, key.c_str(), ddwaf_object_null(&tmp));
+            object.emplace("key" + index, owned_object::make_null());
         }
 
         {
             auto index = std::to_string(i * 3 + 2);
-            std::string key = "key" + index;
-            ddwaf_object_map_add(&object, key.c_str(), ddwaf_object_invalid(&tmp));
+            object.emplace("key" + index, owned_object{});
         }
     }
 
-    exclusion::object_set_ref exclude;
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
+    object_set_ref exclude;
+    ddwaf::kv_iterator it(object, {}, exclude);
 
     for (unsigned i = 0; i < 25; i++) {
         {
@@ -408,14 +281,14 @@ TEST(TestKVIterator, TestMapMultipleNullAndInvalid)
             std::string value = "value" + index;
 
             EXPECT_TRUE((bool)it);
-            EXPECT_STREQ((*it)->stringValue, key.c_str());
+            EXPECT_STREQ((*it).as<const char *>(), key.c_str());
 
             auto path = it.get_current_path();
             EXPECT_EQ(path.size(), 1);
             EXPECT_STREQ(path[0].c_str(), key.c_str());
 
             EXPECT_TRUE(++it);
-            EXPECT_STREQ((*it)->stringValue, value.c_str());
+            EXPECT_STREQ((*it).as<const char *>(), value.c_str());
 
             path = it.get_current_path();
             EXPECT_EQ(path.size(), 1);
@@ -451,82 +324,26 @@ TEST(TestKVIterator, TestMapMultipleNullAndInvalid)
     }
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
-}
-
-TEST(TestKVIterator, TestMapPastSizeLimit)
-{
-    ddwaf::object_limits limits;
-    ddwaf_object object;
-    ddwaf_object tmp;
-    ddwaf_object_map(&object);
-
-    for (unsigned i = 0; i < limits.max_container_size + 50; i++) {
-        auto index = std::to_string(i);
-        std::string key = "key" + index;
-        std::string value = "value" + index;
-        ddwaf_object_map_add(&object, key.c_str(), ddwaf_object_string(&tmp, value.c_str()));
-    }
-
-    exclusion::object_set_ref exclude;
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
-
-    for (unsigned i = 0; i < limits.max_container_size; i++) {
-        auto index = std::to_string(i);
-        std::string key = "key" + index;
-        std::string value = "value" + index;
-
-        EXPECT_TRUE((bool)it);
-        EXPECT_STREQ((*it)->stringValue, key.c_str());
-
-        auto path = it.get_current_path();
-        EXPECT_EQ(path.size(), 1);
-        EXPECT_STREQ(path[0].c_str(), key.c_str());
-
-        EXPECT_TRUE(++it);
-        EXPECT_STREQ((*it)->stringValue, value.c_str());
-        EXPECT_STREQ((*it)->parameterName, key.c_str());
-
-        path = it.get_current_path();
-        EXPECT_EQ(path.size(), 1);
-        EXPECT_STREQ(path[0].c_str(), key.c_str());
-        ++it;
-    }
-
-    EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestKVIterator, TestDeepMap)
 {
-    ddwaf_object *map;
-    ddwaf_object object;
-
-    ddwaf_object_map(&object);
-    map = &object;
+    auto object = object_builder::map();
+    borrowed_object map{object};
 
     for (unsigned i = 0; i < 10; i++) {
-        ddwaf_object intermediate;
-        ddwaf_object tmp;
         auto index = std::to_string(i);
-
-        ddwaf_object_map(&intermediate);
-        ddwaf_object_map_add(
-            map, ("str" + index).c_str(), ddwaf_object_string(&tmp, ("val" + index).c_str()));
-        ddwaf_object_map_add(map, ("map" + index).c_str(), &intermediate);
-
-        map = &map->array[1];
+        map.emplace("str" + index, "val" + index);
+        map = map.emplace("map" + index, object_builder::map());
     }
 
-    exclusion::object_set_ref exclude;
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
+    object_set_ref exclude;
+    ddwaf::kv_iterator it(object, {}, exclude);
 
     for (unsigned i = 0; i < 10; i++) {
         auto index = std::to_string(i);
 
-        EXPECT_STREQ((*it)->stringValue, ("str" + index).c_str());
+        EXPECT_STREQ((*it).as<const char *>(), ("str" + index).c_str());
 
         {
             auto path = it.get_current_path();
@@ -539,7 +356,7 @@ TEST(TestKVIterator, TestDeepMap)
         }
 
         EXPECT_TRUE(++it);
-        EXPECT_STREQ((*it)->stringValue, ("val" + index).c_str());
+        EXPECT_STREQ((*it).as<const char *>(), ("val" + index).c_str());
         {
             auto path = it.get_current_path();
             EXPECT_EQ(path.size(), i + 1);
@@ -550,7 +367,7 @@ TEST(TestKVIterator, TestDeepMap)
         }
 
         EXPECT_TRUE(++it);
-        EXPECT_STREQ((*it)->stringValue, ("map" + index).c_str());
+        EXPECT_STREQ((*it).as<const char *>(), ("map" + index).c_str());
         {
             auto path = it.get_current_path();
             EXPECT_EQ(path.size(), i + 1);
@@ -564,80 +381,6 @@ TEST(TestKVIterator, TestDeepMap)
     }
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
-}
-
-TEST(TestKVIterator, TestMapPastDepthLimit)
-{
-    ddwaf::object_limits limits;
-    ddwaf_object *map;
-    ddwaf_object object;
-
-    ddwaf_object_map(&object);
-    map = &object;
-
-    for (unsigned i = 0; i < limits.max_container_depth + 10; i++) {
-        ddwaf_object intermediate, tmp;
-        auto index = std::to_string(i);
-
-        ddwaf_object_map(&intermediate);
-        ddwaf_object_map_add(
-            map, ("str" + index).c_str(), ddwaf_object_string(&tmp, ("val" + index).c_str()));
-        ddwaf_object_map_add(map, ("map" + index).c_str(), &intermediate);
-
-        map = &map->array[1];
-    }
-
-    exclusion::object_set_ref exclude;
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
-
-    for (unsigned i = 0; i < limits.max_container_depth; i++) {
-        auto index = std::to_string(i);
-
-        EXPECT_STREQ((*it)->stringValue, ("str" + index).c_str());
-
-        {
-            auto path = it.get_current_path();
-            EXPECT_EQ(path.size(), i + 1);
-            for (unsigned j = 0; j < i; j++) {
-                auto key = "map" + std::to_string(j);
-                EXPECT_STREQ(path[j].c_str(), key.c_str());
-            }
-            EXPECT_STREQ(path.back().c_str(), ("str" + index).c_str());
-        }
-
-        EXPECT_TRUE(++it);
-        EXPECT_STREQ((*it)->stringValue, ("val" + index).c_str());
-
-        {
-            auto path = it.get_current_path();
-            EXPECT_EQ(path.size(), i + 1);
-            for (unsigned j = 0; j < i; j++) {
-                auto key = "map" + std::to_string(j);
-                EXPECT_STREQ(path[j].c_str(), key.c_str());
-            }
-            EXPECT_STREQ(path.back().c_str(), ("str" + index).c_str());
-        }
-
-        EXPECT_TRUE(++it);
-        EXPECT_STREQ((*it)->stringValue, ("map" + index).c_str());
-
-        {
-            auto path = it.get_current_path();
-            EXPECT_EQ(path.size(), i + 1);
-            for (unsigned j = 0; j < i + 1; j++) {
-                auto key = "map" + std::to_string(j);
-                EXPECT_STREQ(path[j].c_str(), key.c_str());
-            }
-        }
-
-        ++it;
-    }
-
-    EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 // Ensure the key on the root object is not reported.
@@ -645,39 +388,31 @@ TEST(TestKVIterator, TestMapPastDepthLimit)
 // addesses (e.g. server.request.query).
 TEST(TestKVIterator, TestNoRootKey)
 {
-    ddwaf_object root;
-    ddwaf_object object;
-    ddwaf_object tmp;
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "key", ddwaf_object_string(&tmp, "value"));
+    auto object = object_builder::map();
+    object.emplace("root", object_builder::map({{"key", "value"}}));
 
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "root", &object);
-
-    exclusion::object_set_ref exclude;
-    ddwaf::object::kv_iterator it(&root.array[0], {}, exclude);
+    object_set_ref exclude;
+    ddwaf::kv_iterator it(object.at(0), {}, exclude);
     EXPECT_TRUE((bool)it);
-    EXPECT_STREQ((*it)->stringValue, "key");
+    EXPECT_STREQ((*it).as<const char *>(), "key");
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 1);
     EXPECT_STREQ(path[0].c_str(), "key");
 
     EXPECT_TRUE(++it);
-    EXPECT_STREQ((*it)->stringValue, "value");
+    EXPECT_STREQ((*it).as<const char *>(), "value");
 
     path = it.get_current_path();
     EXPECT_EQ(path.size(), 1);
     EXPECT_STREQ(path[0].c_str(), "key");
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestKVIterator, TestContainerMix)
 {
-    ddwaf_object object = yaml_to_object(R"(
+    auto object = yaml_to_object<owned_object>(R"(
         {
             root: {
                 key0: [value0_0, value0_1, {
@@ -694,8 +429,8 @@ TEST(TestKVIterator, TestContainerMix)
     )");
 
     {
-        exclusion::object_set_ref exclude;
-        ddwaf::object::kv_iterator it(&object, {}, exclude);
+        object_set_ref exclude;
+        ddwaf::kv_iterator it(object, {}, exclude);
 
         std::vector<std::pair<std::string, std::vector<std::string>>> values = {
             {"root", {"root"}},
@@ -718,7 +453,7 @@ TEST(TestKVIterator, TestContainerMix)
         };
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->stringValue, value.c_str());
+            EXPECT_STREQ((*it).as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -727,25 +462,19 @@ TEST(TestKVIterator, TestContainerMix)
 
         EXPECT_FALSE((bool)it);
     }
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestKVIterator, TestMapNoScalars)
 {
-    ddwaf_object object;
-    ddwaf_object tmp;
-    ddwaf_object_map(&object);
-    for (unsigned i = 0; i < 50; i++) {
-        ddwaf_object_map_add(&object, "key", ddwaf_object_map(&tmp));
-    }
+    auto object = object_builder::map();
+    for (unsigned i = 0; i < 50; i++) { object.emplace("key", object_builder::map()); }
 
-    exclusion::object_set_ref exclude;
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
+    object_set_ref exclude;
+    ddwaf::kv_iterator it(object, {}, exclude);
 
     for (unsigned i = 0; i < 50; i++) {
         EXPECT_TRUE((bool)it);
-        EXPECT_STREQ((*it)->stringValue, "key");
+        EXPECT_STREQ((*it).as<const char *>(), "key");
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
@@ -754,18 +483,15 @@ TEST(TestKVIterator, TestMapNoScalars)
     }
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestKVIterator, TestInvalidObjectPath)
 {
-    ddwaf_object object;
-    ddwaf_object_invalid(&object);
+    owned_object object;
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     std::vector<std::string> key_path{"key", "0", "value"};
-    ddwaf::object::kv_iterator it(&object, key_path, exclude);
+    ddwaf::kv_iterator it(object, key_path, exclude);
     EXPECT_FALSE((bool)it);
 
     auto path = it.get_current_path();
@@ -776,19 +502,18 @@ TEST(TestKVIterator, TestInvalidObjectPath)
 
 TEST(TestKVIterator, TestSimplePath)
 {
-    ddwaf_object object;
-    ddwaf_object_invalid(&object);
+    owned_object object;
 
     {
         std::vector<std::string> key_path{"key"};
-        ddwaf::object::kv_iterator it(&object, key_path, {});
+        ddwaf::kv_iterator it(object, key_path, {});
         EXPECT_FALSE((bool)it);
         EXPECT_FALSE(++it);
     }
 
     {
         std::vector<std::string> key_path{"key", "0"};
-        ddwaf::object::kv_iterator it(&object, key_path, {});
+        ddwaf::kv_iterator it(object, key_path, {});
         EXPECT_FALSE((bool)it);
 
         auto path = it.get_current_path();
@@ -799,7 +524,7 @@ TEST(TestKVIterator, TestSimplePath)
 
     {
         std::vector<std::string> key_path{"key", "0", "value"};
-        ddwaf::object::kv_iterator it(&object, key_path, {});
+        ddwaf::kv_iterator it(object, key_path, {});
         EXPECT_FALSE((bool)it);
 
         auto path = it.get_current_path();
@@ -807,26 +532,17 @@ TEST(TestKVIterator, TestSimplePath)
 
         EXPECT_FALSE(++it);
     }
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestKVIterator, TestMultiPath)
 {
-    ddwaf_object object, *map, tmp;
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "first", ddwaf_object_map(&tmp));
-    ddwaf_object_map_add(&object, "value", ddwaf_object_string(&tmp, "value_first"));
+    auto object = object_builder::map(
+        {{"first", object_builder::map({{"second", object_builder::map({{"third", "final"},
+                                                       {"value", "value_third"}})},
+                       {"value", "value_second"}})},
+            {"value", "value_first"}});
 
-    map = &object.array[0];
-    ddwaf_object_map_add(map, "second", ddwaf_object_map(&tmp));
-    ddwaf_object_map_add(map, "value", ddwaf_object_string(&tmp, "value_second"));
-
-    map = &map->array[0];
-    ddwaf_object_map_add(map, "third", ddwaf_object_string(&tmp, "final"));
-    ddwaf_object_map_add(map, "value", ddwaf_object_string(&tmp, "value_third"));
-
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     {
         std::vector<std::pair<std::string, std::vector<std::string>>> values = {
             {"second", {"first", "second"}},
@@ -839,10 +555,10 @@ TEST(TestKVIterator, TestMultiPath)
         };
 
         std::vector<std::string> key_path{"first"};
-        ddwaf::object::kv_iterator it(&object, key_path, exclude);
+        ddwaf::kv_iterator it(object, key_path, exclude);
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->stringValue, value.c_str());
+            EXPECT_STREQ((*it).as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -861,10 +577,10 @@ TEST(TestKVIterator, TestMultiPath)
         };
 
         std::vector<std::string> key_path{"first", "second"};
-        ddwaf::object::kv_iterator it(&object, key_path, exclude);
+        ddwaf::kv_iterator it(object, key_path, exclude);
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->stringValue, value.c_str());
+            EXPECT_STREQ((*it).as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -880,10 +596,10 @@ TEST(TestKVIterator, TestMultiPath)
         };
 
         std::vector<std::string> key_path{"first", "second", "third"};
-        ddwaf::object::kv_iterator it(&object, key_path, exclude);
+        ddwaf::kv_iterator it(object, key_path, exclude);
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->stringValue, value.c_str());
+            EXPECT_STREQ((*it).as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -892,13 +608,11 @@ TEST(TestKVIterator, TestMultiPath)
 
         EXPECT_FALSE((bool)it);
     }
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestKVIterator, TestContainerMixPath)
 {
-    ddwaf_object object = yaml_to_object(R"(
+    auto object = yaml_to_object<owned_object>(R"(
         {
             root: {
                 key0: [value0_0, value0_1, {
@@ -914,10 +628,10 @@ TEST(TestKVIterator, TestContainerMixPath)
         }
     )");
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     {
         std::vector<std::string> key_path{"root", "key0"};
-        ddwaf::object::kv_iterator it(&object, key_path, exclude);
+        ddwaf::kv_iterator it(object, key_path, exclude);
 
         std::vector<std::pair<std::string, std::vector<std::string>>> values = {
             {"value0_0", {"root", "key0", "0"}},
@@ -928,7 +642,7 @@ TEST(TestKVIterator, TestContainerMixPath)
         };
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->stringValue, value.c_str());
+            EXPECT_STREQ((*it).as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -940,10 +654,10 @@ TEST(TestKVIterator, TestContainerMixPath)
 
     {
         std::vector<std::string> key_path{"root", "key1"};
-        ddwaf::object::kv_iterator it(&object, key_path, exclude);
+        ddwaf::kv_iterator it(object, key_path, exclude);
         EXPECT_TRUE((bool)it);
 
-        EXPECT_STREQ((*it)->stringValue, "value1_0");
+        EXPECT_STREQ((*it).as<const char *>(), "value1_0");
 
         auto path = it.get_current_path();
         EXPECT_EQ(path, key_path);
@@ -963,10 +677,10 @@ TEST(TestKVIterator, TestContainerMixPath)
         };
 
         std::vector<std::string> key_path{"root", "key2"};
-        ddwaf::object::kv_iterator it(&object, key_path, exclude);
+        ddwaf::kv_iterator it(object, key_path, exclude);
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it)->stringValue, value.c_str());
+            EXPECT_STREQ((*it).as<const char *>(), value.c_str());
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -975,13 +689,11 @@ TEST(TestKVIterator, TestContainerMixPath)
 
         EXPECT_FALSE((bool)it);
     }
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestKVIterator, TestContainerMixInvalidPath)
 {
-    ddwaf_object object = yaml_to_object(R"(
+    auto object = yaml_to_object<owned_object>(R"(
         {
             root: {
                 key0: [value0_0, value0_1, {
@@ -997,237 +709,60 @@ TEST(TestKVIterator, TestContainerMixInvalidPath)
         }
     )");
 
-    exclusion::object_set_ref exclude;
+    object_set_ref exclude;
     {
         std::vector<std::string> key_path{"rat"};
-        ddwaf::object::kv_iterator it(&object, key_path, exclude);
+        ddwaf::kv_iterator it(object, key_path, exclude);
         EXPECT_FALSE((bool)it);
     }
 
     {
         std::vector<std::string> key_path{"root", "cat"};
-        ddwaf::object::kv_iterator it(&object, key_path, exclude);
+        ddwaf::kv_iterator it(object, key_path, exclude);
         EXPECT_FALSE((bool)it);
     }
 
     {
         std::vector<std::string> key_path{"root", "key2", "key2_2", "0", "1", "2", "3"};
-        ddwaf::object::kv_iterator it(&object, key_path, exclude);
+        ddwaf::kv_iterator it(object, key_path, exclude);
         EXPECT_FALSE((bool)it);
     }
-
-    ddwaf_object_free(&object);
-}
-
-TEST(TestKVIterator, TestMapDepthLimitPath)
-{
-    ddwaf::object_limits limits;
-
-    ddwaf_object object = yaml_to_object(R"(
-        {
-            root: {
-                child: {
-                    grandchild: {
-                        unknown: {
-                            key: value
-                        },
-                        another: value
-                    }
-                }
-            }
-        }
-    )");
-
-    exclusion::object_set_ref exclude;
-    {
-        limits.max_container_depth = 3;
-        std::vector<std::string> key_path{"root", "child", "grandchild"};
-        ddwaf::object::kv_iterator it(&object, key_path, exclude, limits);
-
-        EXPECT_FALSE(it);
-    }
-
-    {
-        limits.max_container_depth = 4;
-        std::vector<std::string> key_path{"root", "child", "grandchild"};
-        ddwaf::object::kv_iterator it(&object, key_path, exclude, limits);
-
-        EXPECT_TRUE(it);
-        {
-            auto it_path = it.get_current_path();
-            std::vector<std::string> path = {"root", "child", "grandchild", "unknown"};
-            EXPECT_EQ(it_path, path);
-        }
-
-        EXPECT_TRUE(++it);
-        {
-            auto it_path = it.get_current_path();
-            std::vector<std::string> path = {"root", "child", "grandchild", "another"};
-            EXPECT_EQ(it_path, path);
-        }
-
-        EXPECT_TRUE(++it);
-        {
-            auto it_path = it.get_current_path();
-            std::vector<std::string> path = {"root", "child", "grandchild", "another"};
-            EXPECT_EQ(it_path, path);
-            EXPECT_STREQ((*it)->stringValue, "value");
-        }
-
-        EXPECT_FALSE(++it);
-    }
-
-    ddwaf_object_free(&object);
-}
-
-TEST(TestKVIterator, TestInvalidMap)
-{
-    ddwaf_object tmp, root = DDWAF_OBJECT_MAP;
-
-    exclusion::object_set_ref exclude;
-    root.nbEntries = 30;
-    {
-        ddwaf::object::kv_iterator it(&root, {}, exclude);
-        EXPECT_FALSE(it);
-    }
-
-    root.nbEntries = 0;
-    ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
-    root.nbEntries = 0;
-
-    {
-        ddwaf::object::kv_iterator it(&root, {}, exclude);
-        EXPECT_FALSE(it);
-    }
-    root.nbEntries = 1;
-
-    ddwaf_object_map_add(&root, "other", ddwaf_object_map(&tmp));
-    root.array[1].nbEntries = 30;
-    {
-        ddwaf::object::kv_iterator it(&root, {}, exclude);
-        EXPECT_TRUE(it);
-        EXPECT_TRUE(++it);
-        EXPECT_TRUE(++it);
-        EXPECT_FALSE(++it);
-    }
-
-    ddwaf_object_free(&root);
-}
-
-TEST(TestKVIterator, TestInvalidMapKey)
-{
-    exclusion::object_set_ref exclude;
-    ddwaf_object tmp, root = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
-
-    free((void *)root.array[0].parameterName);
-    root.array[0].parameterName = nullptr;
-
-    {
-        ddwaf::object::kv_iterator it(&root, {}, exclude);
-        EXPECT_TRUE(it);
-        EXPECT_FALSE(++it);
-    }
-
-    ddwaf_object_map_add(&root, "other", ddwaf_object_string(&tmp, "value"));
-    {
-        ddwaf::object::kv_iterator it(&root, {}, exclude);
-        EXPECT_TRUE(it);
-        EXPECT_TRUE(++it);
-        EXPECT_TRUE(++it);
-        EXPECT_FALSE(++it);
-    }
-
-    ddwaf_object_free(&root);
-}
-
-TEST(TestKVIterator, TestInvalidMapKeyWithPath)
-{
-    ddwaf_object tmp, other, root = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
-
-    free((void *)root.array[0].parameterName);
-    root.array[0].parameterName = nullptr;
-
-    exclusion::object_set_ref exclude;
-    {
-        std::vector<std::string> key_path{"key"};
-        ddwaf::object::kv_iterator it(&root, key_path, exclude);
-        EXPECT_FALSE(it);
-    }
-
-    ddwaf_object_map(&other);
-    ddwaf_object_map_add(&other, "key", ddwaf_object_string(&tmp, "value"));
-    ddwaf_object_map_add(&root, "other", &other);
-
-    {
-        std::vector<std::string> key_path{"other"};
-        ddwaf::object::kv_iterator it(&root, key_path, exclude);
-        EXPECT_TRUE(it);
-        EXPECT_TRUE(++it);
-        EXPECT_FALSE(++it);
-    }
-
-    ddwaf_object_free(&root);
-}
-
-TEST(TestKVIterator, TestRecursiveMap)
-{
-    ddwaf_object root;
-    root.nbEntries = 1;
-    root.parameterName = "Sqreen";
-    root.parameterNameLength = sizeof("Sqreen") - 1;
-    root.type = DDWAF_OBJ_MAP;
-    root.array = &root;
-
-    exclusion::object_set_ref exclude;
-    ddwaf::object::kv_iterator it(&root, {}, exclude);
-    EXPECT_TRUE(it);
-    EXPECT_FALSE(++it);
 }
 
 TEST(TestKVIterator, TestExcludeSingleObject)
 {
-    ddwaf_object object, tmp;
-    ddwaf_object_map(&object);
-    ddwaf_object_map_add(&object, "key", ddwaf_object_string(&tmp, "value"));
+    auto object = object_builder::map({{"key", "value"}});
 
-    std::unordered_set<const ddwaf_object *> persistent{&object.array[0]};
+    std::unordered_set<object_cache_key> persistent{object.at(0)};
 
-    exclusion::object_set_ref exclude{persistent, {}};
-    ddwaf::object::kv_iterator it(&object, {}, exclude);
+    object_set_ref exclude{persistent, {}};
+    ddwaf::kv_iterator it(object, {}, exclude);
 
     EXPECT_FALSE(it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestKVIterator, TestExcludeMultipleObjects)
 {
-    ddwaf_object root, map, tmp;
-    ddwaf_object_map(&map);
-    ddwaf_object_map_add(&map, "hello_key", ddwaf_object_string(&tmp, "hello"));
-    ddwaf_object_map_add(&map, "bye_key", ddwaf_object_string(&tmp, "bye"));
+    auto root = object_builder::map({{"key", "value"}});
 
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "key", ddwaf_object_string(&tmp, "value"));
-    ddwaf_object_map_add(&root, "other", &map);
+    auto map =
+        root.emplace("other", object_builder::map({{"hello_key", "hello"}, {"bye_key", "bye"}}));
 
-    std::unordered_set<const ddwaf_object *> persistent{&root.array[0], &map.array[1]};
-    exclusion::object_set_ref exclude{persistent, {}};
-    ddwaf::object::kv_iterator it(&root, {}, exclude);
+    std::unordered_set<object_cache_key> persistent{root.at(0), map.at(1)};
+    object_set_ref exclude{persistent, {}};
+    ddwaf::kv_iterator it(root, {}, exclude);
 
     EXPECT_TRUE(it);
-    EXPECT_STREQ((*it)->stringValue, "other");
+    EXPECT_STREQ((*it).as<const char *>(), "other");
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 1);
     EXPECT_STREQ(path[0].c_str(), "other");
 
-    EXPECT_STREQ((*it)->stringValue, "other");
+    EXPECT_STREQ((*it).as<const char *>(), "other");
 
     EXPECT_TRUE(++it);
-    EXPECT_STREQ((*it)->stringValue, "hello_key");
+    EXPECT_STREQ((*it).as<const char *>(), "hello_key");
 
     path = it.get_current_path();
     EXPECT_EQ(path.size(), 2);
@@ -1235,53 +770,39 @@ TEST(TestKVIterator, TestExcludeMultipleObjects)
     EXPECT_STREQ(path[1].c_str(), "hello_key");
 
     EXPECT_TRUE(++it);
-    EXPECT_STREQ((*it)->stringValue, "hello");
+    EXPECT_STREQ((*it).as<const char *>(), "hello");
     path = it.get_current_path();
     EXPECT_EQ(path.size(), 2);
     EXPECT_STREQ(path[0].c_str(), "other");
     EXPECT_STREQ(path[1].c_str(), "hello_key");
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestKVIterator, TestExcludeObjectInKeyPath)
 {
-    ddwaf_object root, child, tmp;
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "child", ddwaf_object_string(&tmp, "value"));
+    auto root = object_builder::map();
+    auto child = root.emplace("parent", object_builder::map());
+    child.emplace("child", "value");
 
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "parent", &child);
-
-    std::unordered_set<const ddwaf_object *> persistent{&child.array[0]};
-    exclusion::object_set_ref exclude{persistent, {}};
+    std::unordered_set<object_cache_key> persistent{child.at(0)};
+    object_set_ref exclude{persistent, {}};
     std::vector<std::string> key_path{"parent", "child"};
-    ddwaf::object::kv_iterator it(&root, key_path, exclude);
+    ddwaf::kv_iterator it(root, key_path, exclude);
 
     EXPECT_FALSE(it);
-
-    ddwaf_object_free(&root);
 }
 
 TEST(TestKVIterator, TestExcludeRootOfKeyPath)
 {
-    ddwaf_object root, child, tmp;
-    ddwaf_object_map(&child);
-    ddwaf_object_map_add(&child, "child", ddwaf_object_string(&tmp, "value"));
+    auto root = object_builder::map({{"parent", object_builder::map({{"child", "value"}})}});
 
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "parent", &child);
-
-    std::unordered_set<const ddwaf_object *> persistent{&root.array[0]};
-    exclusion::object_set_ref exclude{persistent, {}};
+    std::unordered_set<object_cache_key> persistent{root.at(0)};
+    object_set_ref exclude{persistent, {}};
     std::vector<std::string> key_path{"parent", "child"};
-    ddwaf::object::kv_iterator it(&root, key_path, exclude);
+    ddwaf::kv_iterator it(root, key_path, exclude);
 
     EXPECT_FALSE(it);
-
-    ddwaf_object_free(&root);
 }
 
 } // namespace

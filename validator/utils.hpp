@@ -7,14 +7,9 @@
 #pragma once
 
 #include "ddwaf.h"
-#include <fstream>
 #include <string>
 #include <string_view>
 #include <yaml-cpp/yaml.h>
-
-// clang-format off
-#define DDWAF_RESULT_INITIALISER {false,  {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_ARRAY}, {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_MAP}, {nullptr, 0, {nullptr}, 0, DDWAF_OBJ_MAP}, 0}
-// clang-format on
 
 namespace YAML {
 
@@ -61,3 +56,4 @@ bool has_colour();
 std::ostream &operator<<(std::ostream &os, term::colour c);
 std::ostream &operator<<(std::ostream &os, const std::set<std::string> &set);
 YAML::Node object_to_yaml(const ddwaf_object &obj);
+bool yaml_equals(const YAML::Node &lhs, const YAML::Node &rhs);

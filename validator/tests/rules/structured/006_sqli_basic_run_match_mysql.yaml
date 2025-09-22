@@ -2,7 +2,7 @@
   name: "Basic run with match, using mysql dialect",
   runs: [
     {
-      persistent-input: {
+      input: {
         server.db.statement: "SELECT * FROM users WHERE id ='' OR 1=1; -- ';",
         server.request.query: [ "' OR 1=1; --" ],
         server.db.system: "mysql"

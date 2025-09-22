@@ -2,7 +2,7 @@
   name: "Blocking base rules have precedence over non-blocking user rules in network-acl",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule3-input: 192.168.0.1
       },
       rules: [

@@ -2,7 +2,7 @@
   name: "First input with valid key-path and match",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule4-input1: {
           keypath: rule4
         }

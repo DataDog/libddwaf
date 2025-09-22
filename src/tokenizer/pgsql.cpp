@@ -46,7 +46,7 @@ bool pgsql_tokenizer::initialise_regexes()
 {
     static const bool ret = []() {
         try {
-            bool const parent_init = sql_tokenizer<pgsql_tokenizer>::initialise_regexes();
+            const bool parent_init = sql_tokenizer<pgsql_tokenizer>::initialise_regexes();
             identifier_regex = std::make_unique<re2::RE2>(identifier_regex_initialiser);
             parameter_regex = std::make_unique<re2::RE2>(parameter_regex_initialiser);
             return parent_init && identifier_regex->ok() && parameter_regex->ok();

@@ -1,14 +1,16 @@
 {
-  name: "Exclude a rule using an ephemeral condition match",
+  name: "Exclude a rule using a subcontext condition match",
   runs: [
+    [
+      {
+        input: {
+          exclusion-filter-3-input: "exclusion-filter-3",
+        },
+        code: ok
+      }
+    ],
     {
-      ephemeral-input: {
-        exclusion-filter-3-input: "exclusion-filter-3",
-      },
-      code: ok
-    },
-    {
-      persistent-input: {
+      input: {
         rule3-input: "rule3",
       },
       rules: [

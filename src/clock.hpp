@@ -70,8 +70,8 @@ protected:
 #ifdef HAS_BUILTIN_ADD_OVERFLOW
         using duration = monotonic_clock::duration;
 
-        duration::rep augend_count = augend.time_since_epoch().count();
-        duration::rep addend_count = addend.count();
+        const duration::rep augend_count = augend.time_since_epoch().count();
+        const duration::rep addend_count = addend.count();
         duration::rep result;
 
         if (__builtin_add_overflow(augend_count, addend_count, &result)) {

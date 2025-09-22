@@ -2,7 +2,7 @@
   name: "Basic run without match",
   runs: [
     {
-      persistent-input: {
+      input: {
         server.sys.exec.cmd: ["ls", "-l"],
         server.request.query: [ "potato" ]
       },

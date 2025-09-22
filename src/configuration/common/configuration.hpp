@@ -51,13 +51,13 @@ struct rule_override_spec {
 struct rule_filter_spec {
     std::shared_ptr<expression> expr;
     std::vector<reference_spec> targets;
-    exclusion::filter_mode on_match;
+    filter_mode on_match;
     std::string custom_action;
 };
 
 struct input_filter_spec {
     std::shared_ptr<expression> expr;
-    std::shared_ptr<exclusion::object_filter> filter;
+    std::shared_ptr<object_filter> filter;
     std::vector<reference_spec> targets;
 };
 

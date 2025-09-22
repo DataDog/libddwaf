@@ -2,7 +2,7 @@
   name: "Basic run with not equals operator and no match",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule6-input: "arachni"
       },
       code: ok

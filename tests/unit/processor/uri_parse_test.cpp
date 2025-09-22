@@ -15,6 +15,8 @@ namespace {
 
 TEST(TestUriParseProcessor, QueryParameters)
 {
+    auto *alloc = memory::get_default_resource();
+
     std::vector<std::pair<std::string, std::string>> samples = {
         {"https://datadoghq.com/?query", R"({"query": true})"},
         {"https://datadoghq.com/?query&flag&other",
@@ -48,19 +50,19 @@ TEST(TestUriParseProcessor, QueryParameters)
         ddwaf::timer deadline{2s};
         processor_cache cache;
         auto [output, attr] = gen.eval_impl(
-            {.address = {}, .key_path = {}, .ephemeral = false, .value = url}, cache, deadline);
-        EXPECT_EQ(output.type, DDWAF_OBJ_MAP);
-        EXPECT_EQ(attr, object_store::attribute::none);
+            {.address = {}, .key_path = {}, .scope = {}, .value = url}, cache, alloc, deadline);
+        EXPECT_TRUE(output.is_map());
+        EXPECT_TRUE(attr.is_context());
 
-        const auto *query = ddwaf_object_find(&output, STRL("query"));
-        EXPECT_JSON(*query, result);
-
-        ddwaf_object_free(&output);
+        auto query = object_view{output}.find("query");
+        EXPECT_JSON(query.ref(), result);
     }
 }
 
 TEST(TestUriParseProcessor, MixedUrls)
 {
+    auto *alloc = memory::get_default_resource();
+
     std::vector<std::pair<std::string, std::string>> samples = {
         {"https://",
             R"({"scheme":"https","userinfo":"","host":"","port":0,"path":"","query":{},"fragment":""})"},
@@ -77,18 +79,18 @@ TEST(TestUriParseProcessor, MixedUrls)
         ddwaf::timer deadline{2s};
         processor_cache cache;
         auto [output, attr] = gen.eval_impl(
-            {.address = {}, .key_path = {}, .ephemeral = false, .value = url}, cache, deadline);
-        EXPECT_EQ(output.type, DDWAF_OBJ_MAP);
-        EXPECT_EQ(attr, object_store::attribute::none);
+            {.address = {}, .key_path = {}, .scope = {}, .value = url}, cache, alloc, deadline);
+        EXPECT_TRUE(output.is_map());
+        EXPECT_TRUE(attr.is_context());
 
-        EXPECT_JSON(output, result);
-
-        ddwaf_object_free(&output);
+        EXPECT_JSON(output.ref(), result);
     }
 }
 
-TEST(TestUriParseProcessor, Ephemeral)
+TEST(TestUriParseProcessor, Subcontext)
 {
+    auto *alloc = memory::get_default_resource();
+
     std::string_view url =
         "https://user@test.com:222/"
         "path?query=value1&query=value2&flag&emptyvalue=&array[]=1&array[]=2&normal=value#frag";
@@ -98,18 +100,19 @@ TEST(TestUriParseProcessor, Ephemeral)
     ddwaf::timer deadline{2s};
     processor_cache cache;
     auto [output, attr] = gen.eval_impl(
-        {.address = {}, .key_path = {}, .ephemeral = true, .value = url}, cache, deadline);
-    EXPECT_EQ(output.type, DDWAF_OBJ_MAP);
-    EXPECT_EQ(attr, object_store::attribute::ephemeral);
+        {.address = {}, .key_path = {}, .scope = evaluation_scope::subcontext(), .value = url},
+        cache, alloc, deadline);
+    EXPECT_TRUE(output.is_map());
+    EXPECT_TRUE(attr.is_subcontext());
 
-    EXPECT_JSON(output,
+    EXPECT_JSON(output.ref(),
         R"({"scheme":"https","userinfo":"user","host":"test.com","port":222,"path":"/path","query":{"normal":"value","array":["1","2"],"emptyvalue":"","flag":true,"query":["value1","value2"]},"fragment":"frag"})");
-
-    ddwaf_object_free(&output);
 }
 
 TEST(TestUriParseProcessor, Malformed)
 {
+    auto *alloc = memory::get_default_resource();
+
     std::vector<std::string> samples = {"http://authority?que<>ry"};
 
     uri_parse_processor gen{"id", {}, {}, false, true};
@@ -118,8 +121,8 @@ TEST(TestUriParseProcessor, Malformed)
         ddwaf::timer deadline{2s};
         processor_cache cache;
         auto [output, attr] = gen.eval_impl(
-            {.address = {}, .key_path = {}, .ephemeral = false, .value = url}, cache, deadline);
-        EXPECT_EQ(output.type, DDWAF_OBJ_INVALID);
+            {.address = {}, .key_path = {}, .scope = {}, .value = url}, cache, alloc, deadline);
+        EXPECT_TRUE(output.is_invalid());
     }
 }
 

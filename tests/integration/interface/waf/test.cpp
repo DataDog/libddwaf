@@ -17,12 +17,12 @@ constexpr std::string_view base_dir = "integration/interface/waf/";
 
 TEST(TestWafIntegration, Empty)
 {
-    auto rule = yaml_to_object("{}");
+    auto rule = yaml_to_object<ddwaf_object>("{}");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_EQ(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, ddwaf_get_default_allocator());
 }
 
 TEST(TestWafIntegration, GetWafVersion)
@@ -32,44 +32,48 @@ TEST(TestWafIntegration, GetWafVersion)
 
 TEST(TestWafIntegration, HandleBad)
 {
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, ddwaf_object_free};
+    auto *alloc = ddwaf_get_default_allocator();
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
 
-    ddwaf_object tmp;
-    ddwaf_object object = DDWAF_OBJECT_INVALID;
+    ddwaf_object object;
+    ddwaf_object_set_invalid(&object);
     EXPECT_EQ(ddwaf_init(&object, &config, nullptr), nullptr);
 
     EXPECT_NO_FATAL_FAILURE(ddwaf_destroy(nullptr));
 
-    ddwaf_object_string(&object, "value");
-    EXPECT_EQ(ddwaf_run(nullptr, &object, nullptr, nullptr, 1), DDWAF_ERR_INVALID_ARGUMENT);
-    ddwaf_object_free(&object);
+    ddwaf_object_set_string(&object, STRL("value"), alloc);
+    EXPECT_EQ(ddwaf_context_eval(nullptr, &object, alloc, nullptr, 1), DDWAF_ERR_INVALID_ARGUMENT);
+    ddwaf_object_destroy(&object, alloc);
 
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object_string(&object, "value");
-    EXPECT_EQ(ddwaf_run(context, &object, nullptr, nullptr, 1), DDWAF_ERR_INVALID_OBJECT);
+    ddwaf_object_set_string(&object, STRL("value"), alloc);
+    EXPECT_EQ(ddwaf_context_eval(context, &object, alloc, nullptr, 1), DDWAF_ERR_INVALID_OBJECT);
 
-    ddwaf_object_string(&object, "value");
-    EXPECT_EQ(ddwaf_run(context, nullptr, &object, nullptr, 1), DDWAF_ERR_INVALID_OBJECT);
+    ddwaf_object_set_string(&object, STRL("value"), alloc);
+    auto *subctx = ddwaf_subcontext_init(context);
+    EXPECT_EQ(ddwaf_subcontext_eval(subctx, &object, alloc, nullptr, 1), DDWAF_ERR_INVALID_OBJECT);
+    ddwaf_subcontext_destroy(subctx);
 
-    object = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&object, "value1", ddwaf_object_string(&tmp, "value"));
+    ddwaf_object_set_map(&object, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&object, STRL("value1"), alloc), STRL("value"), alloc);
+
     ddwaf_object res;
-    EXPECT_EQ(ddwaf_run(context, &object, nullptr, &res, 0), DDWAF_OK);
+    EXPECT_EQ(ddwaf_context_eval(context, &object, alloc, &res, 0), DDWAF_OK);
 
     const auto *timeout = ddwaf_object_find(&res, STRL("timeout"));
     EXPECT_TRUE(ddwaf_object_get_bool(timeout));
 
-    ddwaf_object_free(&res);
+    ddwaf_object_destroy(&res, alloc);
 
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
@@ -77,15 +81,16 @@ TEST(TestWafIntegration, HandleBad)
 
 TEST(TestWafIntegration, RootAddresses)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     uint32_t size;
     const char *const *addresses = ddwaf_known_addresses(handle, &size);
@@ -101,162 +106,161 @@ TEST(TestWafIntegration, RootAddresses)
 
 TEST(TestWafIntegration, HandleLifetime)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
 
-    ddwaf_object parameter = DDWAF_OBJECT_MAP;
-    ddwaf_object tmp;
-    ddwaf_object param_key = DDWAF_OBJECT_ARRAY;
-    ddwaf_object param_val = DDWAF_OBJECT_ARRAY;
+    ddwaf_object parameter;
+    ddwaf_object_set_map(&parameter, 2, alloc);
 
-    ddwaf_object_array_add(&param_key, ddwaf_object_string_from_unsigned(&tmp, 4242));
-    ddwaf_object_array_add(&param_key, ddwaf_object_string(&tmp, "randomString"));
+    auto *param_key = ddwaf_object_insert_key(&parameter, STRL("value1"), alloc);
+    ddwaf_object_set_array(param_key, 2, alloc);
 
-    ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule1"));
+    ddwaf_object_set_unsigned(ddwaf_object_insert(param_key, alloc), 4242);
+    ddwaf_object_set_string(ddwaf_object_insert(param_key, alloc), STRL("randomString"), alloc);
 
-    ddwaf_object_map_add(&parameter, "value1", &param_key);
-    ddwaf_object_map_add(&parameter, "value2", &param_val);
+    auto *param_val = ddwaf_object_insert_key(&parameter, STRL("value2"), alloc);
+    ddwaf_object_set_array(param_val, 1, alloc);
+    ddwaf_object_set_string(ddwaf_object_insert(param_val, alloc), STRL("rule1"), alloc);
 
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
 
-    ddwaf_object_free(&parameter);
     ddwaf_context_destroy(context);
 }
 
 TEST(TestWafIntegration, HandleLifetimeMultipleContexts)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
 
     ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle);
+    ddwaf_context context2 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context2, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
+    ddwaf_object parameter;
+    ddwaf_object_set_map(&parameter, 2, alloc);
 
-    ddwaf_object parameter = DDWAF_OBJECT_MAP;
-    ddwaf_object tmp;
-    ddwaf_object param_key = DDWAF_OBJECT_ARRAY;
-    ddwaf_object param_val = DDWAF_OBJECT_ARRAY;
+    auto *param_key = ddwaf_object_insert_key(&parameter, STRL("value1"), alloc);
+    ddwaf_object_set_array(param_key, 2, alloc);
 
-    ddwaf_object_array_add(&param_key, ddwaf_object_string_from_unsigned(&tmp, 4242));
-    ddwaf_object_array_add(&param_key, ddwaf_object_string(&tmp, "randomString"));
+    ddwaf_object_set_unsigned(ddwaf_object_insert(param_key, alloc), 4242);
+    ddwaf_object_set_string_literal(ddwaf_object_insert(param_key, alloc), STRL("randomString"));
 
-    ddwaf_object_array_add(&param_val, ddwaf_object_string(&tmp, "rule1"));
+    auto *param_val = ddwaf_object_insert_key(&parameter, STRL("value2"), alloc);
+    ddwaf_object_set_array(param_val, 1, alloc);
+    ddwaf_object_set_string_literal(ddwaf_object_insert(param_val, alloc), STRL("rule1"));
 
-    ddwaf_object_map_add(&parameter, "value1", &param_key);
-    ddwaf_object_map_add(&parameter, "value2", &param_val);
-
-    EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
     ddwaf_context_destroy(context1);
 
-    EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context2, &parameter, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
     ddwaf_context_destroy(context2);
-
-    ddwaf_object_free(&parameter);
 }
 
 TEST(TestWafIntegration, InvalidVersion)
 {
-    auto rule = yaml_to_object("{version: 3.0, rules: []}");
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = yaml_to_object<ddwaf_object>("{version: 3.0, rules: []}");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
 
     ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
     ASSERT_EQ(handle1, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 }
 
 TEST(TestWafIntegration, InvalidVersionNoRules)
 {
-    auto rule = yaml_to_object("{version: 3.0}");
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = yaml_to_object<ddwaf_object>("{version: 3.0}");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
 
     ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
     ASSERT_EQ(handle1, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 }
 
 TEST(TestWafIntegration, PreloadRuleData)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
     ASSERT_NE(builder, nullptr);
 
     {
-        auto rule = read_file("rules_requiring_data.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("rules_requiring_data.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
 
-        auto rule_data = read_file("rule_data.yaml", base_dir);
+        auto rule_data = read_file<ddwaf_object>("rule_data.yaml", base_dir);
         ASSERT_TRUE(rule_data.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rule_data"), &rule_data, nullptr);
-        ddwaf_object_free(&rule_data);
+        ddwaf_object_destroy(&rule_data, alloc);
     }
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.1.1"));
 
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "paco"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&root, STRL("usr.id"), alloc), STRL("paco"));
 
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context);
     }
 
     {
-        auto rule_data = yaml_to_object(
+        auto rule_data = yaml_to_object<ddwaf_object>(
             R"({rules_data: [{id: usr_data, type: data_with_expiration, data: [{value: pepe, expiration: 0}]}, {id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.2, expiration: 0}]}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rule_data"), &rule_data, nullptr);
-        ddwaf_object_free(&rule_data);
+        ddwaf_object_destroy(&rule_data, alloc);
 
         ddwaf_handle new_handle = ddwaf_builder_build_instance(builder);
         ASSERT_NE(new_handle, nullptr);
@@ -266,29 +270,29 @@ TEST(TestWafIntegration, PreloadRuleData)
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("192.168.1.1"));
 
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
 
     {
-        ddwaf_context context = ddwaf_context_init(handle);
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
         ASSERT_NE(context, nullptr);
 
         ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "paco"));
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&root, STRL("usr.id"), alloc), STRL("paco"));
 
-        EXPECT_EQ(ddwaf_run(context, &root, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context);
     }
@@ -299,53 +303,52 @@ TEST(TestWafIntegration, PreloadRuleData)
 
 TEST(TestWafIntegration, UpdateRules)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
 
     ddwaf_builder builder = ddwaf_builder_init(&config);
     ddwaf_builder_add_or_update_config(builder, "default", sizeof("default") - 1, &rule, nullptr);
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context1 = ddwaf_context_init(handle);
+    ddwaf_context context1 = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context1, nullptr);
 
     ddwaf_builder_remove_config(builder, "default", sizeof("default") - 1);
 
-    rule = read_file("interface3.yaml", base_dir);
+    rule = read_file<ddwaf_object>("interface3.yaml", base_dir);
     ddwaf_builder_add_or_update_config(
         builder, "new_config", sizeof("new_config") - 1, &rule, nullptr);
     ddwaf_handle new_handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(new_handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context2 = ddwaf_context_init(new_handle);
+    ddwaf_context context2 = ddwaf_context_init(new_handle, alloc);
     ASSERT_NE(context2, nullptr);
 
     // Destroying the handle should not invalidate it
     ddwaf_destroy(handle);
     ddwaf_destroy(new_handle);
+    ddwaf_object parameter1;
+    ddwaf_object_set_map(&parameter1, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&parameter1, STRL("value1"), alloc), STRL("rule1"));
 
-    ddwaf_object tmp;
-    ddwaf_object parameter1 = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&parameter1, "value1", ddwaf_object_string(&tmp, "rule1"));
+    ddwaf_object parameter2;
+    ddwaf_object_set_map(&parameter2, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&parameter2, STRL("value1"), alloc), STRL("rule2"));
 
-    ddwaf_object parameter2 = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&parameter2, "value1", ddwaf_object_string(&tmp, "rule2"));
+    EXPECT_EQ(ddwaf_context_eval(context1, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context2, &parameter1, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
 
-    EXPECT_EQ(ddwaf_run(context1, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-    EXPECT_EQ(ddwaf_run(context2, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-
-    EXPECT_EQ(ddwaf_run(context1, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-    EXPECT_EQ(ddwaf_run(context2, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-
-    ddwaf_object_free(&parameter1);
-    ddwaf_object_free(&parameter2);
+    EXPECT_EQ(ddwaf_context_eval(context1, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context2, &parameter2, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
     ddwaf_context_destroy(context2);
     ddwaf_context_destroy(context1);
@@ -355,51 +358,52 @@ TEST(TestWafIntegration, UpdateRules)
 
 TEST(TestWafIntegration, UpdateDisableEnableRuleByID)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    auto *alloc = ddwaf_get_default_allocator();
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
     ASSERT_NE(builder, nullptr);
 
     {
-        auto rule = read_file("interface.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("interface"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
     ASSERT_NE(context1, nullptr);
 
     {
-        auto overrides =
-            yaml_to_object(R"({rules_override: [{rules_target: [{rule_id: 1}], enabled: false}]})");
+        auto overrides = yaml_to_object<ddwaf_object>(
+            R"({rules_override: [{rules_target: [{rule_id: 1}], enabled: false}]})");
         ASSERT_TRUE(overrides.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
     }
     auto *handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
     ASSERT_NE(context2, nullptr);
 
-    ddwaf_object tmp;
-    ddwaf_object parameter1 = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&parameter1, "value1", ddwaf_object_string(&tmp, "rule1"));
+    ddwaf_object parameter1;
+    ddwaf_object_set_map(&parameter1, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&parameter1, STRL("value1"), alloc), STRL("rule1"));
 
-    ddwaf_object parameter2 = DDWAF_OBJECT_MAP;
-    ddwaf_object_map_add(&parameter2, "value1", ddwaf_object_string(&tmp, "rule2"));
+    ddwaf_object parameter2;
+    ddwaf_object_set_map(&parameter2, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&parameter2, STRL("value1"), alloc), STRL("rule2"));
 
-    EXPECT_EQ(ddwaf_run(context1, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-    EXPECT_EQ(ddwaf_run(context2, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+    EXPECT_EQ(ddwaf_context_eval(context1, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context2, &parameter1, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
-    EXPECT_EQ(ddwaf_run(context1, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-    EXPECT_EQ(ddwaf_run(context2, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-
-    ddwaf_object_free(&parameter1);
-    ddwaf_object_free(&parameter2);
+    EXPECT_EQ(ddwaf_context_eval(context1, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context2, &parameter2, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
 
     ddwaf_context_destroy(context1);
     ddwaf_destroy(handle1);
@@ -408,18 +412,17 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByID)
     auto *handle3 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle3, nullptr);
 
-    ddwaf_context context3 = ddwaf_context_init(handle3);
+    ddwaf_context context3 = ddwaf_context_init(handle3, alloc);
     ASSERT_NE(context3, nullptr);
 
     {
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
     }
 
     ddwaf_context_destroy(context2);
@@ -432,52 +435,56 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByID)
 
 TEST(TestWafIntegration, UpdateDisableEnableRuleByTags)
 {
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
-        auto rule = read_file("interface.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
     ASSERT_NE(context1, nullptr);
 
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{tags: {type: flow2}}], enabled: false}]})");
         ASSERT_TRUE(overrides.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
     }
     auto *handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
     ASSERT_NE(context2, nullptr);
 
     {
-        ddwaf_object tmp;
-        ddwaf_object parameter1 = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter1, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter1;
+        ddwaf_object_set_map(&parameter1, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter1, STRL("value1"), alloc), STRL("rule1"));
 
-        ddwaf_object parameter2 = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter2, "value1", ddwaf_object_string(&tmp, "rule2"));
+        ddwaf_object parameter2;
+        ddwaf_object_set_map(&parameter2, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter2, STRL("value1"), alloc), STRL("rule2"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter1, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-
-        ddwaf_object_free(&parameter1);
-        ddwaf_object_free(&parameter2);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter2, alloc, nullptr, LONG_TIME), DDWAF_OK);
     }
 
     ddwaf_context_destroy(context1);
@@ -488,28 +495,31 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByTags)
     auto *handle3 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle3, nullptr);
 
-    context2 = ddwaf_context_init(handle2);
+    context2 = ddwaf_context_init(handle2, alloc);
     ASSERT_NE(context2, nullptr);
 
-    ddwaf_context context3 = ddwaf_context_init(handle3);
+    ddwaf_context context3 = ddwaf_context_init(handle3, alloc);
     ASSERT_NE(context3, nullptr);
 
     {
-        ddwaf_object tmp;
-        ddwaf_object parameter1 = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter1, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter1;
+        ddwaf_object_set_map(&parameter1, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter1, STRL("value1"), alloc), STRL("rule1"));
 
-        ddwaf_object parameter2 = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter2, "value1", ddwaf_object_string(&tmp, "rule2"));
+        ddwaf_object parameter2;
+        ddwaf_object_set_map(&parameter2, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter2, STRL("value1"), alloc), STRL("rule2"));
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context3, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter1, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context3, &parameter1, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context3, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter1);
-        ddwaf_object_free(&parameter2);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter2, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(
+            ddwaf_context_eval(context3, &parameter2, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
     }
 
     ddwaf_context_destroy(context2);
@@ -522,16 +532,16 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByTags)
 
 TEST(TestWafIntegration, UpdateActionsByID)
 {
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
+    auto *alloc = ddwaf_get_default_allocator();
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
     ASSERT_NE(builder, nullptr);
 
     {
-        auto rule = read_file("interface.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     auto *handle1 = ddwaf_builder_build_instance(builder);
@@ -546,10 +556,10 @@ TEST(TestWafIntegration, UpdateActionsByID)
 
     ddwaf_handle handle2;
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [block]}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
 
         handle2 = ddwaf_builder_build_instance(builder);
 
@@ -561,60 +571,62 @@ TEST(TestWafIntegration, UpdateActionsByID)
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
         ddwaf_object result1;
         ddwaf_object result2;
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, alloc, &result2, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result1, {});
         EXPECT_ACTIONS(result2,
             {{"block_request",
                 {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
 
-        ddwaf_object_free(&result1);
-        ddwaf_object_free(&result2);
+        ddwaf_object_destroy(&result1, alloc);
+        ddwaf_object_destroy(&result2, alloc);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule2"));
 
         ddwaf_object result1;
         ddwaf_object result2;
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, alloc, &result2, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result1, {});
         EXPECT_ACTIONS(result2, {});
 
-        ddwaf_object_free(&result1);
-        ddwaf_object_free(&result2);
+        ddwaf_object_destroy(&result1, alloc);
+        ddwaf_object_destroy(&result2, alloc);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -623,10 +635,10 @@ TEST(TestWafIntegration, UpdateActionsByID)
 
     ddwaf_handle handle3;
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [redirect]}], actions: [{id: redirect, type: redirect_request, parameters: {location: http://google.com, status_code: 303}}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
 
         handle3 = ddwaf_builder_build_instance(builder);
 
@@ -638,23 +650,24 @@ TEST(TestWafIntegration, UpdateActionsByID)
     }
 
     {
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, alloc);
         ASSERT_NE(context3, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
         ddwaf_object result2;
         ddwaf_object result3;
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context3, &parameter, alloc, &result3, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result2,
             {{"block_request",
@@ -662,8 +675,8 @@ TEST(TestWafIntegration, UpdateActionsByID)
         EXPECT_ACTIONS(result3,
             {{"redirect_request", {{"status_code", 303ULL}, {"location", "http://google.com"}}}});
 
-        ddwaf_object_free(&result2);
-        ddwaf_object_free(&result3);
+        ddwaf_object_destroy(&result2, alloc);
+        ddwaf_object_destroy(&result3, alloc);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context3);
@@ -677,15 +690,15 @@ TEST(TestWafIntegration, UpdateActionsByID)
 
 TEST(TestWafIntegration, UpdateActionsByTags)
 {
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
+    auto *alloc = ddwaf_get_default_allocator();
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
-        auto rule = read_file("interface.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
@@ -700,10 +713,10 @@ TEST(TestWafIntegration, UpdateActionsByTags)
 
     ddwaf_handle handle2;
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{tags: {confidence: 1}}], on_match: [block]}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
 
         handle2 = ddwaf_builder_build_instance(builder);
 
@@ -715,60 +728,62 @@ TEST(TestWafIntegration, UpdateActionsByTags)
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
         ddwaf_object result1;
         ddwaf_object result2;
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, alloc, &result2, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result1, {});
         EXPECT_ACTIONS(result2,
             {{"block_request",
                 {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
 
-        ddwaf_object_free(&result1);
-        ddwaf_object_free(&result2);
+        ddwaf_object_destroy(&result1, alloc);
+        ddwaf_object_destroy(&result2, alloc);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule2"));
 
         ddwaf_object result1;
         ddwaf_object result2;
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, alloc, &result2, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result1, {});
         EXPECT_ACTIONS(result2, {});
 
-        ddwaf_object_free(&result1);
-        ddwaf_object_free(&result2);
+        ddwaf_object_destroy(&result1, alloc);
+        ddwaf_object_destroy(&result2, alloc);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -782,46 +797,49 @@ TEST(TestWafIntegration, UpdateActionsByTags)
 
 TEST(TestWafIntegration, UpdateTagsByID)
 {
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
+    auto *alloc = ddwaf_get_default_allocator();
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
-        auto rule = read_file("interface.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
 
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{rule_id: 1}], tags: {category: new_category, confidence: 0, new_tag: value}}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
     }
 
     auto *handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
         ddwaf_object result1;
         ddwaf_object result2;
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, alloc, &result2, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(result1,
             {.id = "1",
@@ -844,10 +862,8 @@ TEST(TestWafIntegration, UpdateTagsByID)
                     .args = {
                         {.name = "input", .value = "rule1"sv, .address = "value1", .path = {}}}}}});
 
-        ddwaf_object_free(&parameter);
-
-        ddwaf_object_free(&result1);
-        ddwaf_object_free(&result2);
+        ddwaf_object_destroy(&result1, alloc);
+        ddwaf_object_destroy(&result2, alloc);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -857,21 +873,24 @@ TEST(TestWafIntegration, UpdateTagsByID)
     auto *handle3 = ddwaf_builder_build_instance(builder);
 
     {
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, alloc);
         ASSERT_NE(context3, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
         ddwaf_object result3;
         ddwaf_object result2;
 
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, alloc, &result2, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(result3,
             {.id = "1",
@@ -894,10 +913,8 @@ TEST(TestWafIntegration, UpdateTagsByID)
                     .args = {
                         {.name = "input", .value = "rule1"sv, .address = "value1", .path = {}}}}}});
 
-        ddwaf_object_free(&parameter);
-
-        ddwaf_object_free(&result3);
-        ddwaf_object_free(&result2);
+        ddwaf_object_destroy(&result3, alloc);
+        ddwaf_object_destroy(&result2, alloc);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context3);
@@ -912,49 +929,51 @@ TEST(TestWafIntegration, UpdateTagsByID)
 
 TEST(TestWafIntegration, UpdateTagsByTags)
 {
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
-        auto rule = read_file("interface.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
 
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{tags: {confidence: 1}}], tags: {new_tag: value, confidence: 0}}]})");
         ASSERT_TRUE(overrides.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
     }
 
     auto *handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
         ddwaf_object result1;
         ddwaf_object result2;
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, alloc, &result2, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(result1,
             {.id = "1",
@@ -977,31 +996,32 @@ TEST(TestWafIntegration, UpdateTagsByTags)
                     .args = {
                         {.name = "input", .value = "rule1"sv, .address = "value1", .path = {}}}}}});
 
-        ddwaf_object_free(&result1);
-        ddwaf_object_free(&result2);
+        ddwaf_object_destroy(&result1, alloc);
+        ddwaf_object_destroy(&result2, alloc);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule2"));
 
         ddwaf_object result1;
         ddwaf_object result2;
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, alloc, &result2, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(result1,
             {.id = "2",
@@ -1023,31 +1043,32 @@ TEST(TestWafIntegration, UpdateTagsByTags)
                     .args = {
                         {.name = "input", .value = "rule2"sv, .address = "value1", .path = {}}}}}});
 
-        ddwaf_object_free(&result1);
-        ddwaf_object_free(&result2);
+        ddwaf_object_destroy(&result1, alloc);
+        ddwaf_object_destroy(&result2, alloc);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value2", ddwaf_object_string(&tmp, "rule3"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value2"), alloc), STRL("rule3"));
 
         ddwaf_object result1;
         ddwaf_object result2;
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, alloc, &result2, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(result1,
             {.id = "3",
@@ -1070,8 +1091,8 @@ TEST(TestWafIntegration, UpdateTagsByTags)
                     .args = {
                         {.name = "input", .value = "rule3"sv, .address = "value2", .path = {}}}}}});
 
-        ddwaf_object_free(&result1);
-        ddwaf_object_free(&result2);
+        ddwaf_object_destroy(&result1, alloc);
+        ddwaf_object_destroy(&result2, alloc);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -1081,23 +1102,24 @@ TEST(TestWafIntegration, UpdateTagsByTags)
     auto *handle3 = ddwaf_builder_build_instance(builder);
 
     {
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, alloc);
         ASSERT_NE(context3, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value2", ddwaf_object_string(&tmp, "rule3"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value2"), alloc), STRL("rule3"));
 
         ddwaf_object result3;
         ddwaf_object result2;
 
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, alloc, &result2, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(result3,
             {.id = "3",
@@ -1119,8 +1141,8 @@ TEST(TestWafIntegration, UpdateTagsByTags)
                     .highlight = "rule3"sv,
                     .args = {
                         {.name = "input", .value = "rule3"sv, .address = "value2", .path = {}}}}}});
-        ddwaf_object_free(&result3);
-        ddwaf_object_free(&result2);
+        ddwaf_object_destroy(&result3, alloc);
+        ddwaf_object_destroy(&result2, alloc);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context3);
@@ -1135,47 +1157,51 @@ TEST(TestWafIntegration, UpdateTagsByTags)
 
 TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
 {
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
-        auto rule = read_file("interface.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
 
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{tags: {type: flow1}}], tags: {new_tag: old_value}, on_match: ["block"], enabled: false}, {rules_target: [{rule_id: 1}], tags: {new_tag: new_value}, enabled: true}]})");
         ASSERT_TRUE(overrides.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
     }
 
     auto *handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
         ddwaf_object result1;
         ddwaf_object result2;
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, &result1, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, alloc, &result2, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(result1,
             {.id = "1",
@@ -1204,42 +1230,43 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
             {{"block_request",
                 {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
 
-        ddwaf_object_free(&result1);
-        ddwaf_object_free(&result2);
-
-        ddwaf_object_free(&parameter);
+        ddwaf_object_destroy(&result1, alloc);
+        ddwaf_object_destroy(&result2, alloc);
 
         ddwaf_context_destroy(context1);
         ddwaf_context_destroy(context2);
     }
 
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{tags: {type: flow1}}], on_match: ["block"]}, {rules_target: [{rule_id: 1}], on_match: []}]})");
         ASSERT_TRUE(overrides.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
     }
 
     auto *handle3 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle3, nullptr);
 
     {
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, alloc);
         ASSERT_NE(context3, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
         ddwaf_object result2;
         ddwaf_object result3;
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context3, &parameter, alloc, &result3, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EVENTS(result2,
             {.id = "1",
@@ -1268,41 +1295,39 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
                 {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
         EXPECT_ACTIONS(result3, {});
 
-        ddwaf_object_free(&result2);
-        ddwaf_object_free(&result3);
-
-        ddwaf_object_free(&parameter);
+        ddwaf_object_destroy(&result2, alloc);
+        ddwaf_object_destroy(&result3, alloc);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context3);
     }
 
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{tags: {type: flow1}}], enabled: true}, {rules_target: [{rule_id: 1}], enabled: false}]})");
         ASSERT_TRUE(overrides.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
     }
 
     auto *handle4 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle4, nullptr);
 
     {
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, alloc);
         ASSERT_NE(context3, nullptr);
 
-        ddwaf_context context4 = ddwaf_context_init(handle4);
+        ddwaf_context context4 = ddwaf_context_init(handle4, alloc);
         ASSERT_NE(context4, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context4, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context3, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context4, &parameter, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context3);
         ddwaf_context_destroy(context4);
@@ -1318,21 +1343,22 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
 
 TEST(TestWafIntegration, UpdateInvalidOverrides)
 {
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
-    auto rule = read_file("interface.yaml", base_dir);
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
 
-    auto overrides = yaml_to_object(R"({rules_override: [{enabled: false}]})");
+    auto overrides = yaml_to_object<ddwaf_object>(R"({rules_override: [{enabled: false}]})");
     ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-    ddwaf_object_free(&overrides);
+    ddwaf_object_destroy(&overrides, alloc);
 
     ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
@@ -1345,70 +1371,72 @@ TEST(TestWafIntegration, UpdateInvalidOverrides)
 
 TEST(TestWafIntegration, UpdateRuleData)
 {
-    ddwaf_config config{{0, 0, 0}, {nullptr, nullptr}, nullptr};
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
-        auto rule = read_file("rules_requiring_data.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("rules_requiring_data.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
 
     {
-        auto rule_data = yaml_to_object(
+        auto rule_data = yaml_to_object<ddwaf_object>(
             R"({rules_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 0}]}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rule_data"), &rule_data, nullptr);
-        ddwaf_object_free(&rule_data);
+        ddwaf_object_destroy(&rule_data, alloc);
     }
 
     auto *handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
     {
-        auto rule_data = yaml_to_object(
+        auto rule_data = yaml_to_object<ddwaf_object>(
             R"({rules_data: [{id: usr_data, type: data_with_expiration, data: [{value: paco, expiration: 0}]}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rule_data"), &rule_data, nullptr);
-        ddwaf_object_free(&rule_data);
+        ddwaf_object_destroy(&rule_data, alloc);
     }
 
     auto *handle3 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle3, nullptr);
 
-    ddwaf_context context1 = ddwaf_context_init(handle1);
+    ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
     ASSERT_NE(context1, nullptr);
 
-    ddwaf_context context2 = ddwaf_context_init(handle2);
+    ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
     ASSERT_NE(context2, nullptr);
 
-    ddwaf_context context3 = ddwaf_context_init(handle3);
+    ddwaf_context context3 = ddwaf_context_init(handle3, alloc);
     ASSERT_NE(context3, nullptr);
 
-    ddwaf_object tmp;
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("http.client_ip"), alloc),
+            STRL("192.168.1.1"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, alloc, nullptr, LONG_TIME), DDWAF_OK);
     }
 
     {
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "usr.id", ddwaf_object_string(&tmp, "paco"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("usr.id"), alloc), STRL("paco"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
     }
 
     ddwaf_context_destroy(context1);
@@ -1424,46 +1452,46 @@ TEST(TestWafIntegration, UpdateRuleData)
 
 TEST(TestWafIntegration, UpdateAndRevertRuleData)
 {
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
-        auto rule = read_file("rules_requiring_data.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("rules_requiring_data.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
 
     {
-        auto rule_data = yaml_to_object(
+        auto rule_data = yaml_to_object<ddwaf_object>(
             R"({rules_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 0}]}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rule_data"), &rule_data, nullptr);
-        ddwaf_object_free(&rule_data);
+        ddwaf_object_destroy(&rule_data, alloc);
     }
 
     auto *handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
-    ddwaf_object tmp;
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("http.client_ip"), alloc),
+            STRL("192.168.1.1"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(ddwaf_context_eval(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context1);
         ddwaf_context_destroy(context2);
@@ -1474,20 +1502,21 @@ TEST(TestWafIntegration, UpdateAndRevertRuleData)
     ASSERT_NE(handle3, nullptr);
 
     {
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, alloc);
         ASSERT_NE(context3, nullptr);
 
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("http.client_ip"), alloc),
+            STRL("192.168.1.1"));
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context3);
@@ -1502,66 +1531,66 @@ TEST(TestWafIntegration, UpdateAndRevertRuleData)
 
 TEST(TestWafIntegration, UpdateRuleExclusions)
 {
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
+    auto *alloc = ddwaf_get_default_allocator();
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
-        auto rule = read_file("interface.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
 
     {
-        auto exclusions =
-            yaml_to_object(R"({exclusions: [{id: 1, rules_target: [{rule_id: 1}]}]})");
+        auto exclusions = yaml_to_object<ddwaf_object>(
+            R"({exclusions: [{id: 1, rules_target: [{rule_id: 1}]}]})");
         ASSERT_NE(exclusions.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusions"), &exclusions, nullptr);
-        ddwaf_object_free(&exclusions);
+        ddwaf_object_destroy(&exclusions, alloc);
     }
 
     ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule2"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -1573,20 +1602,19 @@ TEST(TestWafIntegration, UpdateRuleExclusions)
     ASSERT_NE(handle3, nullptr);
 
     {
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, alloc);
         ASSERT_NE(context3, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context3);
         ddwaf_context_destroy(context2);
@@ -1600,85 +1628,86 @@ TEST(TestWafIntegration, UpdateRuleExclusions)
 
 TEST(TestWafIntegration, UpdateInputExclusions)
 {
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
+    auto *alloc = ddwaf_get_default_allocator();
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
-        auto rule = read_file("interface.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
 
     {
-        auto exclusions = yaml_to_object(R"({exclusions: [{id: 1, inputs: [{address: value1}]}]})");
+        auto exclusions =
+            yaml_to_object<ddwaf_object>(R"({exclusions: [{id: 1, inputs: [{address: value1}]}]})");
         ASSERT_NE(exclusions.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusions"), &exclusions, nullptr);
-        ddwaf_object_free(&exclusions);
+        ddwaf_object_destroy(&exclusions, alloc);
     }
 
     ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule2"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule2"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value2", ddwaf_object_string(&tmp, "rule3"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value2"), alloc), STRL("rule3"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -1690,20 +1719,19 @@ TEST(TestWafIntegration, UpdateInputExclusions)
     ASSERT_NE(handle3, nullptr);
 
     {
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, alloc);
         ASSERT_NE(context3, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "value1", ddwaf_object_string(&tmp, "rule1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("value1"), alloc), STRL("rule1"));
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context3);
         ddwaf_context_destroy(context2);
@@ -1717,15 +1745,15 @@ TEST(TestWafIntegration, UpdateInputExclusions)
 
 TEST(TestWafIntegration, UpdateEverything)
 {
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
+    auto *alloc = ddwaf_get_default_allocator();
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
-        auto rule = read_file("interface_with_data.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("interface_with_data.yaml", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle1 = ddwaf_builder_build_instance(builder);
@@ -1734,53 +1762,53 @@ TEST(TestWafIntegration, UpdateEverything)
     // After this update:
     //   - No rule will match server.request.query
     {
-        auto exclusions =
-            yaml_to_object(R"({exclusions: [{id: 1, inputs: [{address: server.request.query}]}]})");
+        auto exclusions = yaml_to_object<ddwaf_object>(
+            R"({exclusions: [{id: 1, inputs: [{address: server.request.query}]}]})");
         ASSERT_NE(exclusions.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusions"), &exclusions, nullptr);
-        ddwaf_object_free(&exclusions);
+        ddwaf_object_destroy(&exclusions, alloc);
     }
 
     ddwaf_handle handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("server.request.query"), alloc),
+            STRL("rule3"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
     }
 
     {
-        ddwaf_context context1 = ddwaf_context_init(handle1);
+        ddwaf_context context1 = ddwaf_context_init(handle1, alloc);
         ASSERT_NE(context1, nullptr);
 
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "server.request.params", ddwaf_object_string(&tmp, "rule4"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("server.request.params"), alloc),
+            STRL("rule4"));
 
-        EXPECT_EQ(ddwaf_run(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context1, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context1);
@@ -1790,64 +1818,64 @@ TEST(TestWafIntegration, UpdateEverything)
     //   - No rule will match server.request.query
     //   - Rules with confidence=1 will provide a block action
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{tags: {confidence: 1}}], on_match: [block]}]})");
         ASSERT_NE(overrides.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
     }
 
     ddwaf_handle handle3 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle3, nullptr);
 
     {
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, alloc);
         ASSERT_NE(context3, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "server.response.status", ddwaf_object_string(&tmp, "rule5"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("server.response.status"), alloc),
+            STRL("rule5"));
 
         ddwaf_object result2;
         ddwaf_object result3;
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context2, &parameter, nullptr, &result2, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context3, &parameter, alloc, &result3, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result2, {});
         EXPECT_ACTIONS(result3,
             {{"block_request",
                 {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
 
-        ddwaf_object_free(&result2);
-        ddwaf_object_free(&result3);
+        ddwaf_object_destroy(&result2, alloc);
+        ddwaf_object_destroy(&result3, alloc);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context3);
     }
 
     {
-        ddwaf_context context2 = ddwaf_context_init(handle2);
+        ddwaf_context context2 = ddwaf_context_init(handle2, alloc);
         ASSERT_NE(context2, nullptr);
 
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, alloc);
         ASSERT_NE(context3, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("server.request.query"), alloc),
+            STRL("rule3"));
 
-        EXPECT_EQ(ddwaf_run(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(ddwaf_context_eval(context2, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context2);
         ddwaf_context_destroy(context3);
@@ -1858,60 +1886,59 @@ TEST(TestWafIntegration, UpdateEverything)
     //   - Rules with confidence=1 will provide a block action
     //   - Rules with ip_data or usr_data will now match
     {
-        auto data = yaml_to_object(
+        auto data = yaml_to_object<ddwaf_object>(
             R"({rules_data: [{id: ip_data, type: ip_with_expiration, data: [{value: 192.168.1.1, expiration: 0}]},{id: usr_data, type: data_with_expiration, data: [{value: admin, expiration 0}]}]})");
         ASSERT_NE(data.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rule_data"), &data, nullptr);
-        ddwaf_object_free(&data);
+        ddwaf_object_destroy(&data, alloc);
     }
 
     ddwaf_handle handle4 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle4, nullptr);
 
     {
-        ddwaf_context context3 = ddwaf_context_init(handle3);
+        ddwaf_context context3 = ddwaf_context_init(handle3, alloc);
         ASSERT_NE(context3, nullptr);
 
-        ddwaf_context context4 = ddwaf_context_init(handle4);
+        ddwaf_context context4 = ddwaf_context_init(handle4, alloc);
         ASSERT_NE(context4, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("http.client_ip"), alloc),
+            STRL("192.168.1.1"));
 
         ddwaf_object result3;
         ddwaf_object result4;
 
-        EXPECT_EQ(ddwaf_run(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context4, &parameter, nullptr, &result4, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(ddwaf_context_eval(context3, &parameter, nullptr, &result3, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(
+            ddwaf_context_eval(context4, &parameter, alloc, &result4, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result3, {});
         EXPECT_ACTIONS(result4,
             {{"block_request",
                 {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
 
-        ddwaf_object_free(&result3);
-        ddwaf_object_free(&result4);
+        ddwaf_object_destroy(&result3, alloc);
+        ddwaf_object_destroy(&result4, alloc);
 
         ddwaf_context_destroy(context3);
         ddwaf_context_destroy(context4);
     }
 
     {
-        ddwaf_context context4 = ddwaf_context_init(handle4);
+        ddwaf_context context4 = ddwaf_context_init(handle4, alloc);
         ASSERT_NE(context4, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("server.request.query"), alloc),
+            STRL("rule3"));
 
-        EXPECT_EQ(ddwaf_run(context4, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(ddwaf_context_eval(context4, &parameter, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context4);
     }
@@ -1922,34 +1949,35 @@ TEST(TestWafIntegration, UpdateEverything)
     //   - Rules with ip_data or usr_data will now match
     //   - The following rules will be removed: rule3, rule4, rule5
     {
-        auto rule = read_file("rules_requiring_data.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("rules_requiring_data.yaml", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle5 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle5, nullptr);
 
     {
-        ddwaf_context context4 = ddwaf_context_init(handle4);
+        ddwaf_context context4 = ddwaf_context_init(handle4, alloc);
         ASSERT_NE(context4, nullptr);
 
-        ddwaf_context context5 = ddwaf_context_init(handle5);
+        ddwaf_context context5 = ddwaf_context_init(handle5, alloc);
         ASSERT_NE(context5, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("http.client_ip"), alloc),
+            STRL("192.168.1.1"));
 
         ddwaf_object result4;
         ddwaf_object result5;
 
-        EXPECT_EQ(ddwaf_run(context4, &parameter, nullptr, &result4, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context5, &parameter, nullptr, &result5, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context4, &parameter, nullptr, &result4, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context5, &parameter, alloc, &result5, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result4,
             {{"block_request",
@@ -1958,60 +1986,59 @@ TEST(TestWafIntegration, UpdateEverything)
             {{"block_request",
                 {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
 
-        ddwaf_object_free(&result4);
-        ddwaf_object_free(&result5);
+        ddwaf_object_destroy(&result4, alloc);
+        ddwaf_object_destroy(&result5, alloc);
 
         ddwaf_context_destroy(context4);
         ddwaf_context_destroy(context5);
     }
 
     {
-        ddwaf_context context4 = ddwaf_context_init(handle4);
+        ddwaf_context context4 = ddwaf_context_init(handle4, alloc);
         ASSERT_NE(context4, nullptr);
 
-        ddwaf_context context5 = ddwaf_context_init(handle5);
+        ddwaf_context context5 = ddwaf_context_init(handle5, alloc);
         ASSERT_NE(context5, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(&parameter, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("usr.id"), alloc), STRL("admin"));
 
-        EXPECT_EQ(ddwaf_run(context4, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context5, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(ddwaf_context_eval(context4, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_context_eval(context5, &parameter, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
 
         ddwaf_context_destroy(context4);
         ddwaf_context_destroy(context5);
     }
 
     {
-        ddwaf_context context4 = ddwaf_context_init(handle4);
+        ddwaf_context context4 = ddwaf_context_init(handle4, alloc);
         ASSERT_NE(context4, nullptr);
 
-        ddwaf_context context5 = ddwaf_context_init(handle5);
+        ddwaf_context context5 = ddwaf_context_init(handle5, alloc);
         ASSERT_NE(context5, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "server.response.status", ddwaf_object_string(&tmp, "rule5"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("server.response.status"), alloc),
+            STRL("rule5"));
 
         ddwaf_object result4;
         ddwaf_object result5;
 
-        EXPECT_EQ(ddwaf_run(context4, &parameter, nullptr, &result4, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context5, &parameter, nullptr, &result5, LONG_TIME), DDWAF_OK);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context4, &parameter, nullptr, &result4, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context5, &parameter, alloc, &result5, LONG_TIME), DDWAF_OK);
 
         EXPECT_ACTIONS(result4,
             {{"block_request",
                 {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
         EXPECT_ACTIONS(result5, {});
 
-        ddwaf_object_free(&result4);
-        ddwaf_object_free(&result5);
+        ddwaf_object_destroy(&result4, alloc);
+        ddwaf_object_destroy(&result5, alloc);
 
         ddwaf_context_destroy(context4);
         ddwaf_context_destroy(context5);
@@ -2023,66 +2050,67 @@ TEST(TestWafIntegration, UpdateEverything)
     //   - Rules with ip_data or usr_data will now match
     //   - The following rules be back: rule3, rule4, rule5
     {
-        auto rule = read_file("interface_with_data.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("interface_with_data.yaml", base_dir);
         ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     ddwaf_handle handle6 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle6, nullptr);
 
     {
-        ddwaf_context context5 = ddwaf_context_init(handle5);
+        ddwaf_context context5 = ddwaf_context_init(handle5, alloc);
         ASSERT_NE(context5, nullptr);
 
-        ddwaf_context context6 = ddwaf_context_init(handle6);
+        ddwaf_context context6 = ddwaf_context_init(handle6, alloc);
         ASSERT_NE(context6, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "server.response.status", ddwaf_object_string(&tmp, "rule5"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("server.response.status"), alloc),
+            STRL("rule5"));
 
         ddwaf_object result5;
         ddwaf_object result6;
 
-        EXPECT_EQ(ddwaf_run(context5, &parameter, nullptr, &result5, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context6, &parameter, nullptr, &result6, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(ddwaf_context_eval(context5, &parameter, nullptr, &result5, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(
+            ddwaf_context_eval(context6, &parameter, alloc, &result6, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result5, {});
         EXPECT_ACTIONS(result6,
             {{"block_request",
                 {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
 
-        ddwaf_object_free(&result5);
-        ddwaf_object_free(&result6);
+        ddwaf_object_destroy(&result5, alloc);
+        ddwaf_object_destroy(&result6, alloc);
 
         ddwaf_context_destroy(context5);
         ddwaf_context_destroy(context6);
     }
 
     {
-        ddwaf_context context5 = ddwaf_context_init(handle5);
+        ddwaf_context context5 = ddwaf_context_init(handle5, alloc);
         ASSERT_NE(context5, nullptr);
 
-        ddwaf_context context6 = ddwaf_context_init(handle6);
+        ddwaf_context context6 = ddwaf_context_init(handle6, alloc);
         ASSERT_NE(context6, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("http.client_ip"), alloc),
+            STRL("192.168.1.1"));
 
         ddwaf_object result5;
         ddwaf_object result6;
 
-        EXPECT_EQ(ddwaf_run(context5, &parameter, nullptr, &result5, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context6, &parameter, nullptr, &result6, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context5, &parameter, nullptr, &result5, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context6, &parameter, alloc, &result6, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result5,
             {{"block_request",
@@ -2091,25 +2119,24 @@ TEST(TestWafIntegration, UpdateEverything)
             {{"block_request",
                 {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
 
-        ddwaf_object_free(&result5);
-        ddwaf_object_free(&result6);
+        ddwaf_object_destroy(&result5, alloc);
+        ddwaf_object_destroy(&result6, alloc);
 
         ddwaf_context_destroy(context5);
         ddwaf_context_destroy(context6);
     }
 
     {
-        ddwaf_context context6 = ddwaf_context_init(handle6);
+        ddwaf_context context6 = ddwaf_context_init(handle6, alloc);
         ASSERT_NE(context6, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("server.request.query"), alloc),
+            STRL("rule3"));
 
-        EXPECT_EQ(ddwaf_run(context6, &parameter, nullptr, nullptr, LONG_TIME), DDWAF_OK);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(ddwaf_context_eval(context6, &parameter, alloc, nullptr, LONG_TIME), DDWAF_OK);
 
         ddwaf_context_destroy(context6);
     }
@@ -2122,32 +2149,32 @@ TEST(TestWafIntegration, UpdateEverything)
     ASSERT_NE(handle7, nullptr);
 
     {
-        ddwaf_context context6 = ddwaf_context_init(handle6);
+        ddwaf_context context6 = ddwaf_context_init(handle6, alloc);
         ASSERT_NE(context6, nullptr);
 
-        ddwaf_context context7 = ddwaf_context_init(handle7);
+        ddwaf_context context7 = ddwaf_context_init(handle7, alloc);
         ASSERT_NE(context7, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("server.request.query"), alloc),
+            STRL("rule3"));
 
         ddwaf_object result6;
         ddwaf_object result7;
 
-        EXPECT_EQ(ddwaf_run(context6, &parameter, nullptr, &result6, LONG_TIME), DDWAF_OK);
-        EXPECT_EQ(ddwaf_run(context7, &parameter, nullptr, &result7, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(ddwaf_context_eval(context6, &parameter, nullptr, &result6, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(
+            ddwaf_context_eval(context7, &parameter, alloc, &result7, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result6, {});
         EXPECT_ACTIONS(result7,
             {{"block_request",
                 {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
 
-        ddwaf_object_free(&result6);
-        ddwaf_object_free(&result7);
+        ddwaf_object_destroy(&result6, alloc);
+        ddwaf_object_destroy(&result7, alloc);
 
         ddwaf_context_destroy(context6);
         ddwaf_context_destroy(context7);
@@ -2162,64 +2189,66 @@ TEST(TestWafIntegration, UpdateEverything)
     ASSERT_NE(handle8, nullptr);
 
     {
-        ddwaf_context context7 = ddwaf_context_init(handle7);
+        ddwaf_context context7 = ddwaf_context_init(handle7, alloc);
         ASSERT_NE(context7, nullptr);
 
-        ddwaf_context context8 = ddwaf_context_init(handle8);
+        ddwaf_context context8 = ddwaf_context_init(handle8, alloc);
         ASSERT_NE(context8, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("server.request.query"), alloc),
+            STRL("rule3"));
 
         ddwaf_object result7;
         ddwaf_object result8;
 
-        EXPECT_EQ(ddwaf_run(context7, &parameter, nullptr, &result7, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context8, &parameter, nullptr, &result8, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context7, &parameter, nullptr, &result7, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context8, &parameter, alloc, &result8, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result7,
             {{"block_request",
                 {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
         EXPECT_ACTIONS(result8, {});
 
-        ddwaf_object_free(&result7);
-        ddwaf_object_free(&result8);
+        ddwaf_object_destroy(&result7, alloc);
+        ddwaf_object_destroy(&result8, alloc);
 
         ddwaf_context_destroy(context7);
         ddwaf_context_destroy(context8);
     }
 
     {
-        ddwaf_context context7 = ddwaf_context_init(handle7);
+        ddwaf_context context7 = ddwaf_context_init(handle7, alloc);
         ASSERT_NE(context7, nullptr);
 
-        ddwaf_context context8 = ddwaf_context_init(handle8);
+        ddwaf_context context8 = ddwaf_context_init(handle8, alloc);
         ASSERT_NE(context8, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("http.client_ip"), alloc),
+            STRL("192.168.1.1"));
 
         ddwaf_object result7;
         ddwaf_object result8;
 
-        EXPECT_EQ(ddwaf_run(context7, &parameter, nullptr, &result7, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context8, &parameter, nullptr, &result8, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context7, &parameter, nullptr, &result7, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context8, &parameter, alloc, &result8, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result7,
             {{"block_request",
                 {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
         EXPECT_ACTIONS(result8, {});
 
-        ddwaf_object_free(&result7);
-        ddwaf_object_free(&result8);
+        ddwaf_object_destroy(&result7, alloc);
+        ddwaf_object_destroy(&result8, alloc);
 
         ddwaf_context_destroy(context7);
         ddwaf_context_destroy(context8);
@@ -2231,59 +2260,60 @@ TEST(TestWafIntegration, UpdateEverything)
     ASSERT_NE(handle9, nullptr);
 
     {
-        ddwaf_context context8 = ddwaf_context_init(handle8);
+        ddwaf_context context8 = ddwaf_context_init(handle8, alloc);
         ASSERT_NE(context8, nullptr);
 
-        ddwaf_context context9 = ddwaf_context_init(handle9);
+        ddwaf_context context9 = ddwaf_context_init(handle9, alloc);
         ASSERT_NE(context9, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "server.request.query", ddwaf_object_string(&tmp, "rule3"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("server.request.query"), alloc),
+            STRL("rule3"));
 
         ddwaf_object result8;
         ddwaf_object result9;
 
-        EXPECT_EQ(ddwaf_run(context8, &parameter, nullptr, &result8, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context9, &parameter, nullptr, &result9, LONG_TIME), DDWAF_MATCH);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context8, &parameter, nullptr, &result8, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(
+            ddwaf_context_eval(context9, &parameter, alloc, &result9, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result8, {});
         EXPECT_ACTIONS(result9, {});
 
-        ddwaf_object_free(&result8);
-        ddwaf_object_free(&result9);
+        ddwaf_object_destroy(&result8, alloc);
+        ddwaf_object_destroy(&result9, alloc);
 
         ddwaf_context_destroy(context8);
         ddwaf_context_destroy(context9);
     }
 
     {
-        ddwaf_context context8 = ddwaf_context_init(handle8);
+        ddwaf_context context8 = ddwaf_context_init(handle8, alloc);
         ASSERT_NE(context8, nullptr);
 
-        ddwaf_context context9 = ddwaf_context_init(handle9);
+        ddwaf_context context9 = ddwaf_context_init(handle9, alloc);
         ASSERT_NE(context9, nullptr);
 
-        ddwaf_object tmp;
-        ddwaf_object parameter = DDWAF_OBJECT_MAP;
-        ddwaf_object_map_add(
-            &parameter, "http.client_ip", ddwaf_object_string(&tmp, "192.168.1.1"));
+        ddwaf_object parameter;
+        ddwaf_object_set_map(&parameter, 1, alloc);
+        ddwaf_object_set_string_literal(
+            ddwaf_object_insert_key(&parameter, STRL("http.client_ip"), alloc),
+            STRL("192.168.1.1"));
 
         ddwaf_object result8;
         ddwaf_object result9;
 
-        EXPECT_EQ(ddwaf_run(context8, &parameter, nullptr, &result8, LONG_TIME), DDWAF_MATCH);
-        EXPECT_EQ(ddwaf_run(context9, &parameter, nullptr, &result9, LONG_TIME), DDWAF_OK);
-
-        ddwaf_object_free(&parameter);
+        EXPECT_EQ(
+            ddwaf_context_eval(context8, &parameter, nullptr, &result8, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_context_eval(context9, &parameter, alloc, &result9, LONG_TIME), DDWAF_OK);
 
         EXPECT_ACTIONS(result9, {});
 
-        ddwaf_object_free(&result8);
-        ddwaf_object_free(&result9);
+        ddwaf_object_destroy(&result8, alloc);
+        ddwaf_object_destroy(&result9, alloc);
 
         ddwaf_context_destroy(context8);
         ddwaf_context_destroy(context9);
@@ -2330,33 +2360,34 @@ TEST(TestWafIntegration, UpdateEverything)
 
 TEST(TestWafIntegration, KnownAddressesDisabledRule)
 {
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
-        auto rule = read_file("ruleset_with_disabled_rule.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("ruleset_with_disabled_rule.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("ruleset"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
     auto *handle1 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle1, nullptr);
 
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{rule_id: id-rule-1}], enabled: true}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("override"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
     }
     auto *handle2 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle2, nullptr);
 
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{rule_id: id-rule-1}], enabled: false}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("override"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
     }
     auto *handle3 = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle3, nullptr);
@@ -2398,15 +2429,16 @@ TEST(TestWafIntegration, KnownAddressesDisabledRule)
 
 TEST(TestWafIntegration, KnownActions)
 {
-    ddwaf_config config{{.max_container_size = 0, .max_container_depth = 0, .max_string_length = 0},
-        {.key_regex = nullptr, .value_regex = nullptr}, nullptr};
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
     ddwaf_builder builder = ddwaf_builder_init(&config);
 
     {
-        auto rule = read_file("interface.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
         ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     auto *handle1 = ddwaf_builder_build_instance(builder);
@@ -2422,11 +2454,11 @@ TEST(TestWafIntegration, KnownActions)
     // Add an action
     ddwaf_handle handle2;
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [block]}]})");
         ASSERT_NE(overrides.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
 
         handle2 = ddwaf_builder_build_instance(builder);
 
@@ -2446,11 +2478,11 @@ TEST(TestWafIntegration, KnownActions)
     // Disable the rule containing the only action
     ddwaf_handle handle3;
     {
-        auto overrides =
-            yaml_to_object(R"({rules_override: [{rules_target: [{rule_id: 1}], enabled: false}]})");
+        auto overrides = yaml_to_object<ddwaf_object>(
+            R"({rules_override: [{rules_target: [{rule_id: 1}], enabled: false}]})");
         ASSERT_NE(overrides.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
 
         handle3 = ddwaf_builder_build_instance(builder);
 
@@ -2465,17 +2497,17 @@ TEST(TestWafIntegration, KnownActions)
     // Add a new action type and update another rule to use it
     ddwaf_handle handle4;
     {
-        auto action_cfg = yaml_to_object(
+        auto action_cfg = yaml_to_object<ddwaf_object>(
             R"({actions: [{id: redirect, type: redirect_request, parameters: {location: http://google.com, status_code: 303}}]})");
         ASSERT_NE(action_cfg.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("actions"), &action_cfg, nullptr);
-        ddwaf_object_free(&action_cfg);
+        ddwaf_object_destroy(&action_cfg, alloc);
 
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{rule_id: 2}], on_match: [redirect]}]})");
         ASSERT_NE(overrides.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
 
         handle4 = ddwaf_builder_build_instance(builder);
 
@@ -2495,11 +2527,11 @@ TEST(TestWafIntegration, KnownActions)
     // Add another action to a separate rule
     ddwaf_handle handle5;
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [block]}, {rules_target: [{rule_id: 2}], on_match: [redirect]}]})");
         ASSERT_NE(overrides.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
 
         handle5 = ddwaf_builder_build_instance(builder);
 
@@ -2519,11 +2551,11 @@ TEST(TestWafIntegration, KnownActions)
     // Add two actions to an existing rule
     ddwaf_handle handle6;
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [block]}, {rules_target: [{rule_id: 2}], on_match: [redirect]}, {rules_target: [{rule_id: 3}], on_match: [block, stack_trace]}]})");
         ASSERT_NE(overrides.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
 
         handle6 = ddwaf_builder_build_instance(builder);
 
@@ -2544,17 +2576,17 @@ TEST(TestWafIntegration, KnownActions)
     // Remove the block action from rule1 and add an exclusion filter
     ddwaf_handle handle7;
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{rule_id: 2}], on_match: [redirect]}, {rules_target: [{rule_id: 3}], on_match: [block, stack_trace]}]})");
         ASSERT_NE(overrides.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
 
-        auto exclusions = yaml_to_object(
+        auto exclusions = yaml_to_object<ddwaf_object>(
             R"({exclusions: [{id: 1, rules_target: [{rule_id: 1}], on_match: block}]})");
         ASSERT_NE(exclusions.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusions"), &exclusions, nullptr);
-        ddwaf_object_free(&exclusions);
+        ddwaf_object_destroy(&exclusions, alloc);
 
         handle7 = ddwaf_builder_build_instance(builder);
 
@@ -2610,11 +2642,11 @@ TEST(TestWafIntegration, KnownActions)
     // Disable the rule containing the only action
     ddwaf_handle handle10;
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{rule_id: 1}], on_match: [whatever]}]})");
         ASSERT_NE(overrides.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
 
         handle10 = ddwaf_builder_build_instance(builder);
 
@@ -2629,12 +2661,12 @@ TEST(TestWafIntegration, KnownActions)
     // Add a custom rule with a custom action
     ddwaf_handle handle11;
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({custom_rules:  [{id: u1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}], on_match: [random]}], actions: [{id: random, type: generate_schema, parameters: {}}]})");
         ASSERT_NE(overrides.type, DDWAF_OBJ_INVALID);
         ddwaf_builder_add_or_update_config(
             builder, LSTRARG("custom_rules_and_actions"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
 
         handle11 = ddwaf_builder_build_instance(builder);
 
@@ -2665,35 +2697,40 @@ TEST(TestWafIntegration, KnownActionsNullHandle)
 std::unordered_set<std::string_view> object_to_string_set(const ddwaf_object *array)
 {
     std::unordered_set<std::string_view> set;
-    for (std::size_t i = 0; i < ddwaf_object_size(array); ++i) {
-        const ddwaf_object *child = ddwaf_object_get_index(array, i);
-        EXPECT_EQ(ddwaf_object_type(child), DDWAF_OBJ_STRING);
-        set.emplace(child->stringValue, static_cast<std::size_t>(child->nbEntries));
+    for (std::size_t i = 0; i < ddwaf_object_get_size(array); ++i) {
+        const ddwaf_object *child = ddwaf_object_at_value(array, i);
+        EXPECT_TRUE((ddwaf_object_get_type(child) & DDWAF_OBJ_STRING) != 0);
+
+        std::size_t length;
+        const char *str = ddwaf_object_get_string(child, &length);
+        set.emplace(str, length);
     }
     return set;
 }
 
 TEST(TestWafIntegration, GetConfigPathSingleConfig)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
     ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DD/default"), &rule, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     {
         ddwaf_object paths;
         auto count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
 
         EXPECT_EQ(count, 1);
-        EXPECT_EQ(ddwaf_object_size(&paths), 1);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
 
-        ddwaf_object_free(&paths);
+        ddwaf_object_destroy(&paths, alloc);
     }
 
     {
@@ -2706,25 +2743,26 @@ TEST(TestWafIntegration, GetConfigPathSingleConfig)
 
 TEST(TestWafIntegration, GetConfigPathMultipleConfigs)
 {
+    auto *alloc = ddwaf_get_default_allocator();
 
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
     {
-        auto rule = read_file("interface.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DD/default"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{rule_id: id-rule-1}], enabled: false}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM/overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
     }
 
     {
-        auto data = read_file("rule_data.yaml", base_dir);
+        auto data = read_file<ddwaf_object>("rule_data.yaml", base_dir);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DATA/blocked"), &data, nullptr);
-        ddwaf_object_free(&data);
+        ddwaf_object_destroy(&data, alloc);
     }
 
     {
@@ -2732,15 +2770,15 @@ TEST(TestWafIntegration, GetConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
 
         EXPECT_EQ(count, 3);
-        EXPECT_EQ(ddwaf_object_size(&paths), 3);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 3);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
         EXPECT_TRUE(path_set.contains("ASM/overrides"));
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
 
-        ddwaf_object_free(&paths);
+        ddwaf_object_destroy(&paths, alloc);
     }
 
     {
@@ -2754,14 +2792,14 @@ TEST(TestWafIntegration, GetConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
 
         EXPECT_EQ(count, 2);
-        EXPECT_EQ(ddwaf_object_size(&paths), 2);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 2);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
 
-        ddwaf_object_free(&paths);
+        ddwaf_object_destroy(&paths, alloc);
     }
 
     {
@@ -2775,13 +2813,13 @@ TEST(TestWafIntegration, GetConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
 
         EXPECT_EQ(count, 1);
-        EXPECT_EQ(ddwaf_object_size(&paths), 1);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
 
-        ddwaf_object_free(&paths);
+        ddwaf_object_destroy(&paths, alloc);
     }
 
     {
@@ -2795,10 +2833,10 @@ TEST(TestWafIntegration, GetConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, nullptr, 0);
 
         EXPECT_EQ(count, 0);
-        EXPECT_EQ(ddwaf_object_size(&paths), 0);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 0);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
-        ddwaf_object_free(&paths);
+        ddwaf_object_destroy(&paths, alloc);
     }
 
     {
@@ -2811,24 +2849,26 @@ TEST(TestWafIntegration, GetConfigPathMultipleConfigs)
 
 TEST(TestWafIntegration, GetFilteredConfigPathSingleConfig)
 {
-    auto rule = read_file("interface.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
     ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DD/default"), &rule, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
     {
         ddwaf_object paths;
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM_DD/.*"));
         EXPECT_EQ(count, 1);
-        EXPECT_EQ(ddwaf_object_size(&paths), 1);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
 
-        ddwaf_object_free(&paths);
+        ddwaf_object_destroy(&paths, alloc);
     }
 
     {
@@ -2841,10 +2881,10 @@ TEST(TestWafIntegration, GetFilteredConfigPathSingleConfig)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM/.*"));
 
         EXPECT_EQ(count, 0);
-        EXPECT_EQ(ddwaf_object_size(&paths), 0);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 0);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
-        ddwaf_object_free(&paths);
+        ddwaf_object_destroy(&paths, alloc);
     }
 
     {
@@ -2857,25 +2897,26 @@ TEST(TestWafIntegration, GetFilteredConfigPathSingleConfig)
 
 TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
 {
+    auto *alloc = ddwaf_get_default_allocator();
 
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
     {
-        auto rule = read_file("interface.yaml", base_dir);
+        auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DD/default"), &rule, nullptr);
-        ddwaf_object_free(&rule);
+        ddwaf_object_destroy(&rule, alloc);
     }
 
     {
-        auto overrides = yaml_to_object(
+        auto overrides = yaml_to_object<ddwaf_object>(
             R"({rules_override: [{rules_target: [{rule_id: id-rule-1}], enabled: false}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM/overrides"), &overrides, nullptr);
-        ddwaf_object_free(&overrides);
+        ddwaf_object_destroy(&overrides, alloc);
     }
 
     {
-        auto data = read_file("rule_data.yaml", base_dir);
+        auto data = read_file<ddwaf_object>("rule_data.yaml", base_dir);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DATA/blocked"), &data, nullptr);
-        ddwaf_object_free(&data);
+        ddwaf_object_destroy(&data, alloc);
     }
 
     {
@@ -2883,10 +2924,10 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^random"));
 
         EXPECT_EQ(count, 0);
-        EXPECT_EQ(ddwaf_object_size(&paths), 0);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 0);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
-        ddwaf_object_free(&paths);
+        ddwaf_object_destroy(&paths, alloc);
     }
 
     {
@@ -2899,15 +2940,15 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM.*"));
 
         EXPECT_EQ(count, 3);
-        EXPECT_EQ(ddwaf_object_size(&paths), 3);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 3);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
         EXPECT_TRUE(path_set.contains("ASM/overrides"));
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
 
-        ddwaf_object_free(&paths);
+        ddwaf_object_destroy(&paths, alloc);
     }
 
     {
@@ -2920,13 +2961,13 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM_DD/.*"));
 
         EXPECT_EQ(count, 1);
-        EXPECT_EQ(ddwaf_object_size(&paths), 1);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
 
-        ddwaf_object_free(&paths);
+        ddwaf_object_destroy(&paths, alloc);
     }
 
     {
@@ -2939,14 +2980,14 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM_D.*"));
 
         EXPECT_EQ(count, 2);
-        EXPECT_EQ(ddwaf_object_size(&paths), 2);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 2);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
 
-        ddwaf_object_free(&paths);
+        ddwaf_object_destroy(&paths, alloc);
     }
 
     {
@@ -2959,13 +3000,13 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM/.*"));
 
         EXPECT_EQ(count, 1);
-        EXPECT_EQ(ddwaf_object_size(&paths), 1);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM/overrides"));
 
-        ddwaf_object_free(&paths);
+        ddwaf_object_destroy(&paths, alloc);
     }
 
     {
@@ -2980,14 +3021,14 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM_D.*"));
 
         EXPECT_EQ(count, 2);
-        EXPECT_EQ(ddwaf_object_size(&paths), 2);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 2);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DATA/blocked"));
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
 
-        ddwaf_object_free(&paths);
+        ddwaf_object_destroy(&paths, alloc);
     }
 
     {
@@ -3001,13 +3042,13 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM_DD/.*"));
 
         EXPECT_EQ(count, 1);
-        EXPECT_EQ(ddwaf_object_size(&paths), 1);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 1);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
         auto path_set = object_to_string_set(&paths);
         EXPECT_TRUE(path_set.contains("ASM_DD/default"));
 
-        ddwaf_object_free(&paths);
+        ddwaf_object_destroy(&paths, alloc);
     }
 
     {
@@ -3020,10 +3061,10 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^random"));
 
         EXPECT_EQ(count, 0);
-        EXPECT_EQ(ddwaf_object_size(&paths), 0);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 0);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
-        ddwaf_object_free(&paths);
+        ddwaf_object_destroy(&paths, alloc);
     }
 
     {
@@ -3037,10 +3078,10 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
         auto count = ddwaf_builder_get_config_paths(builder, &paths, LSTRARG("^ASM.*"));
 
         EXPECT_EQ(count, 0);
-        EXPECT_EQ(ddwaf_object_size(&paths), 0);
-        EXPECT_EQ(ddwaf_object_type(&paths), DDWAF_OBJ_ARRAY);
+        EXPECT_EQ(ddwaf_object_get_size(&paths), 0);
+        EXPECT_EQ(ddwaf_object_get_type(&paths), DDWAF_OBJ_ARRAY);
 
-        ddwaf_object_free(&paths);
+        ddwaf_object_destroy(&paths, alloc);
     }
 
     {

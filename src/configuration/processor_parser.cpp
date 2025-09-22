@@ -26,7 +26,6 @@
 #include "ruleset_info.hpp"
 #include "semver.hpp"
 #include "target_address.hpp"
-#include "utils.hpp"
 #include "version.hpp"
 
 namespace ddwaf {
@@ -55,10 +54,6 @@ std::vector<processor_mapping> parse_processor_mappings(
             auto input_address = at<std::string>(input, "address");
 
             auto kp = at<std::vector<std::string>>(input, "key_path", {});
-            if (kp.size() > object_limits::max_key_path_depth) {
-                throw ddwaf::parsing_error("key_path beyond maximum container depth");
-            }
-
             for (const auto &path : kp) {
                 if (path.empty()) {
                     throw ddwaf::parsing_error("empty key_path");

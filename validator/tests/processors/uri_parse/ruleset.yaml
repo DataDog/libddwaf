@@ -1,0 +1,14 @@
+version: "2.2"
+metadata:
+  rules_version: 1.8.0
+processors:
+  - id: processor-001
+    generator: uri_parse
+    conditions: []
+    parameters:
+      mappings:
+        - inputs:
+            - address: proc-input-001
+          output: proc-output-001
+    evaluate: false
+    output: true

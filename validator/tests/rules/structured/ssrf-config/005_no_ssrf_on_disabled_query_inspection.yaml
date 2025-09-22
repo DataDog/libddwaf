@@ -2,7 +2,7 @@
   name: "No SSRF due to query inspection disabled",
   runs: [
     {
-      persistent-input: {
+      input: {
         server.io.net.url.1: "https://169.254.169.254/somewhere/?param=value&something=somethingelse",
         server.request.body: "value&something=somethingelse"
       },

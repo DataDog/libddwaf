@@ -34,22 +34,15 @@ TEST_P(DialectTestFixture, InvalidSql)
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
     for (const auto &[statement, input] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(
-            &root, "server.db.statement", ddwaf_object_string(&tmp, statement.c_str()));
-        ddwaf_object_map_add(&root, "server.db.system", ddwaf_object_string(&tmp, dialect.c_str()));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+        auto root = object_builder::map({{"server.db.statement", statement},
+            {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(root);
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << statement;
     }
 }
@@ -66,22 +59,15 @@ TEST_P(DialectTestFixture, InjectionWithoutTokens)
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
     for (const auto &[statement, input] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(
-            &root, "server.db.statement", ddwaf_object_string(&tmp, statement.c_str()));
-        ddwaf_object_map_add(&root, "server.db.system", ddwaf_object_string(&tmp, dialect.c_str()));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+        auto root = object_builder::map({{"server.db.statement", statement},
+            {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(root);
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << statement;
     }
 }
@@ -110,22 +96,15 @@ TEST_P(DialectTestFixture, BenignInjections)
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
     for (const auto &[statement, input] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(
-            &root, "server.db.statement", ddwaf_object_string(&tmp, statement.c_str()));
-        ddwaf_object_map_add(&root, "server.db.system", ddwaf_object_string(&tmp, dialect.c_str()));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+        auto root = object_builder::map({{"server.db.statement", statement},
+            {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(root);
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << statement;
     }
 }
@@ -167,35 +146,28 @@ TEST_P(DialectTestFixture, MaliciousInjections)
     };
 
     for (const auto &[statement, obfuscated, input] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(
-            &root, "server.db.statement", ddwaf_object_string(&tmp, statement.c_str()));
-        ddwaf_object_map_add(&root, "server.db.system", ddwaf_object_string(&tmp, dialect.c_str()));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+        auto root = object_builder::map({{"server.db.statement", statement},
+            {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(root);
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, obfuscated.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, obfuscated);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, input);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input.c_str());
+        EXPECT_STR(cache.match->highlights[0], input);
     }
 }
 
@@ -245,35 +217,28 @@ TEST_P(DialectTestFixture, Tautologies)
     };
 
     for (const auto &[statement, obfuscated, input] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(
-            &root, "server.db.statement", ddwaf_object_string(&tmp, statement.c_str()));
-        ddwaf_object_map_add(&root, "server.db.system", ddwaf_object_string(&tmp, dialect.c_str()));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+        auto root = object_builder::map({{"server.db.statement", statement},
+            {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(root);
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, obfuscated.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, obfuscated);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, input);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input.c_str());
+        EXPECT_STR(cache.match->highlights[0], input);
     }
 }
 
@@ -297,35 +262,28 @@ TEST_P(DialectTestFixture, Comments)
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
     for (const auto &[statement, obfuscated, input] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(
-            &root, "server.db.statement", ddwaf_object_string(&tmp, statement.c_str()));
-        ddwaf_object_map_add(&root, "server.db.system", ddwaf_object_string(&tmp, dialect.c_str()));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+        auto root = object_builder::map({{"server.db.statement", statement},
+            {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(root);
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, obfuscated.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, obfuscated);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, input);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input.c_str());
+        EXPECT_STR(cache.match->highlights[0], input);
     }
 }
 
@@ -346,35 +304,28 @@ TEST(TestSqliDetectorMySql, Comments)
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
     for (const auto &[statement, obfuscated, input] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(
-            &root, "server.db.statement", ddwaf_object_string(&tmp, statement.c_str()));
-        ddwaf_object_map_add(&root, "server.db.system", ddwaf_object_string(&tmp, "mysql"));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+        auto root = object_builder::map({{"server.db.statement", statement},
+            {"server.db.system", "mysql"}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(root);
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, obfuscated.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, obfuscated);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, input);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input.c_str());
+        EXPECT_STR(cache.match->highlights[0], input);
     }
 }
 
@@ -398,35 +349,28 @@ TEST(TestSqliDetectorMySql, Tautologies)
     };
 
     for (const auto &[statement, obfuscated, input] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(
-            &root, "server.db.statement", ddwaf_object_string(&tmp, statement.c_str()));
-        ddwaf_object_map_add(&root, "server.db.system", ddwaf_object_string(&tmp, "mysql"));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+        auto root = object_builder::map({{"server.db.statement", statement},
+            {"server.db.system", "mysql"}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(root);
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, obfuscated.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, obfuscated);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, input);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input.c_str());
+        EXPECT_STR(cache.match->highlights[0], input);
     }
 }
 
@@ -453,35 +397,28 @@ TEST(TestSqliDetectorPgSql, Tautologies)
     };
 
     for (const auto &[statement, obfuscated, input] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(
-            &root, "server.db.statement", ddwaf_object_string(&tmp, statement.c_str()));
-        ddwaf_object_map_add(&root, "server.db.system", ddwaf_object_string(&tmp, "pgsql"));
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, input.c_str()));
+        auto root = object_builder::map({{"server.db.statement", statement},
+            {"server.db.system", "pgsql"}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(root);
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, obfuscated.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, obfuscated);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, input);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input.c_str());
+        EXPECT_STR(cache.match->highlights[0], input);
     }
 }
 } // namespace

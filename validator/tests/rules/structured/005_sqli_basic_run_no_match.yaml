@@ -2,7 +2,7 @@
   name: "Basic run without match",
   runs: [
     {
-      persistent-input: {
+      input: {
         server.db.statement: "SELECT * FROM users WHERE id='this is a user id with spaces'",
         server.request.query: [ "this is a user id with spaces" ],
         server.db.system: "mysql"

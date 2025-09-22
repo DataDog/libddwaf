@@ -2,7 +2,7 @@
   name: "No key-path",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule4-input1: rule4
       },
       code: ok

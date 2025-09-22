@@ -16,31 +16,6 @@
 #define LONG_TIME 1000000
 #define SHORT_TIME 1
 
-#define DDWAF_OBJECT_INVALID                                                                       \
-    {                                                                                              \
-        NULL, 0, {NULL}, 0, DDWAF_OBJ_INVALID                                                      \
-    }
-#define DDWAF_OBJECT_MAP                                                                           \
-    {                                                                                              \
-        NULL, 0, {NULL}, 0, DDWAF_OBJ_MAP                                                          \
-    }
-#define DDWAF_OBJECT_ARRAY                                                                         \
-    {                                                                                              \
-        NULL, 0, {NULL}, 0, DDWAF_OBJ_ARRAY                                                        \
-    }
-#define DDWAF_OBJECT_SIGNED_FORCE(value)                                                           \
-    {                                                                                              \
-        NULL, 0, {(const char *)value}, 0, DDWAF_OBJ_SIGNED                                        \
-    }
-#define DDWAF_OBJECT_UNSIGNED_FORCE(value)                                                         \
-    {                                                                                              \
-        NULL, 0, {(const char *)value}, 0, DDWAF_OBJ_UNSIGNED                                      \
-    }
-#define DDWAF_OBJECT_STRING_PTR(string, length)                                                    \
-    {                                                                                              \
-        NULL, 0, {string}, length, DDWAF_OBJ_STRING                                                \
-    }
-
 #define LSTRARG(value) value, sizeof(value) - 1
 
 namespace ddwaf::test {
@@ -108,9 +83,8 @@ protected:
 
 // Convenience structure to build rulesets
 struct ruleset_builder {
-    explicit ruleset_builder(ddwaf_object_free_fn free_fn = ddwaf_object_free)
-        : free_fn(free_fn),
-          preprocessors(std::make_shared<typename decltype(preprocessors)::element_type>()),
+    ruleset_builder()
+        : preprocessors(std::make_shared<typename decltype(preprocessors)::element_type>()),
           postprocessors(std::make_shared<typename decltype(postprocessors)::element_type>()),
           rule_filters(std::make_shared<typename decltype(rule_filters)::element_type>()),
           input_filters(std::make_shared<typename decltype(input_filters)::element_type>()),
@@ -140,7 +114,7 @@ struct ruleset_builder {
 
     template <typename T> void insert_filter(T &&filter)
     {
-        if constexpr (std::is_same_v<T, exclusion::rule_filter>) {
+        if constexpr (std::is_same_v<T, rule_filter>) {
             rule_filters->emplace_back(std::forward<T>(filter));
         } else {
             input_filters->emplace_back(std::forward<T>(filter));
@@ -162,7 +136,6 @@ struct ruleset_builder {
         auto ruleset = std::make_shared<ddwaf::ruleset>();
         ruleset->obfuscator = std::make_shared<ddwaf::match_obfuscator>();
 
-        ruleset->free_fn = free_fn;
         ruleset->insert_preprocessors(preprocessors);
         ruleset->insert_rules(base_rules, user_rules);
         ruleset->insert_filters(rule_filters);
@@ -177,12 +150,11 @@ struct ruleset_builder {
         return ruleset;
     }
 
-    ddwaf_object_free_fn free_fn;
     std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> preprocessors;
     std::shared_ptr<std::vector<std::unique_ptr<base_processor>>> postprocessors;
 
-    std::shared_ptr<std::vector<exclusion::rule_filter>> rule_filters;
-    std::shared_ptr<std::vector<exclusion::input_filter>> input_filters;
+    std::shared_ptr<std::vector<rule_filter>> rule_filters;
+    std::shared_ptr<std::vector<input_filter>> input_filters;
 
     std::shared_ptr<std::vector<core_rule>> base_rules;
     std::shared_ptr<std::vector<core_rule>> user_rules;

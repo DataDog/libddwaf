@@ -2,7 +2,7 @@
   name: "negated ip_match operator, no match on IPv4 CIDR",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule3-input: 192.188.25.1
       },
       code: ok

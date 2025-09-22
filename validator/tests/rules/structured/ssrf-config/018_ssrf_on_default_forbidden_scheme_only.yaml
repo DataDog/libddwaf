@@ -2,7 +2,7 @@
   name: "Forbidden scheme enforced by policy only",
   runs: [
     {
-      persistent-input: {
+      input: {
         server.io.net.url.4: "gopher://google.com/somewhere/in/the/app",
         server.request.body: ""
       },

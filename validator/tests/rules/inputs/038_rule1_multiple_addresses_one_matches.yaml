@@ -2,7 +2,7 @@
   name: "Multiple addresses, one matches",
   runs: [
     {
-      persistent-input: {
+      input: {
         random: rule1,
         rule1-input: rule1
       },

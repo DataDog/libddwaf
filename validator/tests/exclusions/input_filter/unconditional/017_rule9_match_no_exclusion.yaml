@@ -2,7 +2,7 @@
   name: "Match with no exclusion",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule9-input: rule9-11
       },
       rules: [

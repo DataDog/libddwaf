@@ -48,7 +48,7 @@ input_filter_spec parse_input_filter(const raw_configuration::map &filter)
         }
     }
 
-    auto obj_filter = std::make_shared<exclusion::object_filter>();
+    auto obj_filter = std::make_shared<object_filter>();
     auto inputs_array = at<raw_configuration::vector>(filter, "inputs");
 
     for (const auto &input_param : inputs_array) {
@@ -86,15 +86,15 @@ rule_filter_spec parse_rule_filter(const raw_configuration::map &filter)
         }
     }
 
-    exclusion::filter_mode on_match;
+    filter_mode on_match;
     auto on_match_str = at<std::string_view>(filter, "on_match", "bypass");
     std::string on_match_id;
     if (on_match_str == "bypass") {
-        on_match = exclusion::filter_mode::bypass;
+        on_match = filter_mode::bypass;
     } else if (on_match_str == "monitor") {
-        on_match = exclusion::filter_mode::monitor;
+        on_match = filter_mode::monitor;
     } else if (!on_match_str.empty()) {
-        on_match = exclusion::filter_mode::custom;
+        on_match = filter_mode::custom;
         on_match_id = on_match_str;
     } else {
         throw ddwaf::parsing_error("empty on_match value");

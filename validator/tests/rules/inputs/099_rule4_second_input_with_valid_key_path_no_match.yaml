@@ -2,7 +2,7 @@
   name: "Second input with valid key-path, no match",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule4-input2: {
           keypath: garbage
         }

@@ -2,7 +2,7 @@
   name: "Invalid key-path",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule5-input: {
           keypath1: garbage
         }

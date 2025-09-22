@@ -2,7 +2,7 @@
   name: "No keypath exclusion with condition",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule1-input1: {
             parent: rule1
         }

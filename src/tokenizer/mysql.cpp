@@ -97,7 +97,7 @@ bool mysql_tokenizer::initialise_regexes()
 {
     static const bool ret = []() {
         try {
-            bool const parent_init = sql_tokenizer<mysql_tokenizer>::initialise_regexes();
+            const bool parent_init = sql_tokenizer<mysql_tokenizer>::initialise_regexes();
             identifier_regex = std::make_unique<re2::RE2>(identifier_regex_initialiser);
             variable_regex = std::make_unique<re2::RE2>(variable_regex_initialiser);
             number_or_identifier_regex =

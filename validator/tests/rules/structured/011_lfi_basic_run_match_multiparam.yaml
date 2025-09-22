@@ -2,7 +2,7 @@
   name: "Basic run with match",
   runs: [
     {
-      persistent-input: {
+      input: {
         server.io.fs.file: "documents/../../../../../../../../../etc/passwd",
         server.request.query: [ "no", "injection", "here" ],
         server.request.body: [ "no", "injection", "before", "../../../../../../../../../etc/passwd", "or", "after"]

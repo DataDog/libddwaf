@@ -2,7 +2,7 @@
   name: "Basic run with equals operator",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule2-input: false
       },
       rules: [

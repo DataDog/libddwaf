@@ -2,7 +2,7 @@
   name: "Fully disabled SSRF",
   runs: [
     {
-      persistent-input: {
+      input: {
         server.io.net.url.5: "gopher://169.254.169.254/somewhere/../in/the/app?param=value&something=somethingelse",
         server.request.body: [
           "gopher://169.254.169.254/somewhere/../in/the/app?param=value&something=somethingelse",

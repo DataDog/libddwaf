@@ -141,28 +141,26 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     // Generate rule filters targetting all final rules
     if (!rule_filters_ || contains(current_changes, filters_update)) {
         // First generate rule filters
-        std::vector<exclusion::rule_filter> filters;
+        std::vector<rule_filter> filters;
         filters.reserve(global_config.rule_filters.size());
         for (const auto &[id, filter] : global_config.rule_filters) {
             auto rule_targets = resolve_references(filter.targets, rule_index_);
             filters.emplace_back(
                 id, filter.expr, std::move(rule_targets), filter.on_match, filter.custom_action);
         }
-        rule_filters_ =
-            std::make_shared<const std::vector<exclusion::rule_filter>>(std::move(filters));
+        rule_filters_ = std::make_shared<const std::vector<rule_filter>>(std::move(filters));
     }
 
     // Generate input filters targetting all final rules
     if (!input_filters_ || contains(current_changes, filters_update)) {
         // Finally input filters
-        std::vector<exclusion::input_filter> filters;
+        std::vector<input_filter> filters;
         filters.reserve(global_config.input_filters.size());
         for (const auto &[id, filter] : global_config.input_filters) {
             auto rule_targets = resolve_references(filter.targets, rule_index_);
             filters.emplace_back(id, filter.expr, std::move(rule_targets), filter.filter);
         }
-        input_filters_ =
-            std::make_shared<const std::vector<exclusion::input_filter>>(std::move(filters));
+        input_filters_ = std::make_shared<const std::vector<input_filter>>(std::move(filters));
     }
 
     // Generate new scanners
@@ -256,9 +254,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     rs->exclusion_matchers = exclusion_matchers_;
     rs->scanners = scanners_;
     rs->actions = actions_;
-    rs->free_fn = free_fn_;
     rs->obfuscator = obfuscator_;
-    rs->limits = limits_;
 
     // An instance is valid if it contains primitives with side-effects, such as
     // rules or postprocessors.

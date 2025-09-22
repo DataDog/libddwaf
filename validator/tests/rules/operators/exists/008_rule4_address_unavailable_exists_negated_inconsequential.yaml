@@ -3,7 +3,7 @@
     isn't present Note that this is due to the fact that",
   runs: [
     {
-      persistent-input: {
+      input: {
         random-input: {
           "nowhere": "something else"
         }

@@ -2,7 +2,7 @@
   name: "Valid key-path with map, last is a match",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule3-input: {
           keypath: {
             another: value,

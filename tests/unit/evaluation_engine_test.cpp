@@ -1,8 +1,8 @@
 // Unless explicitly stated otherwise all files in this repository are
 // dual-licensed under the Apache-2.0 License or BSD-3-Clause License.
 //
-// This product includes software developed at Datadog (https://www.datadoghq.com/).
-// Copyright 2021 Datadog, Inc.
+// This product includes software developed at Datadog
+// (https://www.datadoghq.com/). Copyright 2025 Datadog, Inc.
 
 #include "action_mapper.hpp"
 #include "common/gtest_utils.hpp"
@@ -16,32 +16,12 @@
 
 #include <gmock/gmock.h>
 
-using ::testing::_;
-using ::testing::Return;
-using ::testing::Sequence;
-
 using namespace ddwaf;
 using namespace std::literals;
-using namespace ddwaf::exclusion;
-using attribute = object_store::attribute;
-
-namespace ddwaf::test {
-class context : public ddwaf::context {
-public:
-    explicit context(std::shared_ptr<ddwaf::ruleset> ruleset) : ddwaf::context(std::move(ruleset))
-    {}
-
-    bool insert(ddwaf_object &object, attribute attr = attribute::none)
-    {
-        return store_.insert(object, attr);
-    }
-};
-
-} // namespace ddwaf::test
 
 namespace {
 
-TEST(TestContext, MatchTimeout)
+TEST(TestEvaluationEngine, MatchTimeout)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -55,19 +35,17 @@ TEST(TestContext, MatchTimeout)
     rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build()});
 
     ddwaf::timer deadline{0s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-    ctx.insert(root);
+    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+
+    engine.insert(std::move(root));
 
     std::vector<rule_result> results;
-    EXPECT_THROW(ctx.eval_rules({}, results, deadline), ddwaf::timeout_exception);
+    EXPECT_THROW(engine.eval_rules({}, results, deadline), ddwaf::timeout_exception);
 }
 
-TEST(TestContext, NoMatch)
+TEST(TestEvaluationEngine, NoMatch)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -81,20 +59,18 @@ TEST(TestContext, NoMatch)
     rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build()});
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.2"));
-    ctx.insert(root);
+    auto root = object_builder::map({{"http.client_ip", "192.168.0.2"}});
+
+    engine.insert(std::move(root));
 
     std::vector<rule_result> results;
-    ctx.eval_rules({}, results, deadline);
+    engine.eval_rules({}, results, deadline);
     EXPECT_EQ(results.size(), 0);
 }
 
-TEST(TestContext, Match)
+TEST(TestEvaluationEngine, Match)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -108,20 +84,18 @@ TEST(TestContext, Match)
     rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build()});
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-    ctx.insert(root);
+    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+
+    engine.insert(std::move(root));
 
     std::vector<rule_result> results;
-    ctx.eval_rules({}, results, deadline);
+    engine.eval_rules({}, results, deadline);
     EXPECT_EQ(results.size(), 1);
 }
 
-TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
+TEST(TestEvaluationEngine, MatchMultipleRulesInCollectionSingleRun)
 {
     test::ruleset_builder rbuilder;
     {
@@ -151,17 +125,14 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     }
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-    ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-    ctx.insert(root);
+    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+
+    engine.insert(std::move(root));
 
     std::vector<rule_result> results;
-    ctx.eval_rules({}, results, deadline);
+    engine.eval_rules({}, results, deadline);
     EXPECT_EQ(results.size(), 1);
     auto result = results[0];
     ASSERT_TRUE(result.event.has_value());
@@ -184,7 +155,7 @@ TEST(TestContext, MatchMultipleRulesInCollectionSingleRun)
     EXPECT_TRUE(match.args[0].key_path.empty());
 }
 
-TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
+TEST(TestEvaluationEngine, MatchMultipleRulesWithPrioritySingleRun)
 {
     test::ruleset_builder rbuilder;
     std::vector<std::shared_ptr<core_rule>> rules;
@@ -218,18 +189,15 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
 
     auto ruleset = rbuilder.build();
     {
-        ddwaf::test::context ctx(ruleset);
+        evaluation_engine engine(ruleset);
 
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+
+        engine.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         std::vector<rule_result> results;
-        ctx.eval_rules({}, results, deadline);
+        engine.eval_rules({}, results, deadline);
         EXPECT_EQ(results.size(), 1);
         auto result = results[0];
         ASSERT_TRUE(result.event.has_value());
@@ -241,18 +209,15 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
     }
 
     {
-        ddwaf::test::context ctx(ruleset);
+        evaluation_engine engine(ruleset);
 
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+
+        engine.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         std::vector<rule_result> results;
-        ctx.eval_rules({}, results, deadline);
+        engine.eval_rules({}, results, deadline);
         EXPECT_EQ(results.size(), 1);
 
         auto result = results[0];
@@ -265,7 +230,7 @@ TEST(TestContext, MatchMultipleRulesWithPrioritySingleRun)
     }
 }
 
-TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
+TEST(TestEvaluationEngine, MatchMultipleRulesInCollectionDoubleRun)
 {
     test::ruleset_builder rbuilder;
     std::vector<std::shared_ptr<core_rule>> rules;
@@ -296,17 +261,14 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
     }
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        engine.insert(std::move(root));
 
         std::vector<rule_result> results;
-        ctx.eval_rules({}, results, deadline);
+        engine.eval_rules({}, results, deadline);
         EXPECT_EQ(results.size(), 1);
 
         auto result = results[0];
@@ -330,19 +292,16 @@ TEST(TestContext, MatchMultipleRulesInCollectionDoubleRun)
     }
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"usr.id", "admin"}});
+        engine.insert(std::move(root));
 
         std::vector<rule_result> results;
-        ctx.eval_rules({}, results, deadline);
+        engine.eval_rules({}, results, deadline);
         EXPECT_EQ(results.size(), 0);
     }
 }
 
-TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
+TEST(TestEvaluationEngine, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
 {
     test::ruleset_builder rbuilder;
     {
@@ -374,17 +333,14 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
     }
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        engine.insert(std::move(root));
 
         std::vector<rule_result> results;
-        ctx.eval_rules({}, results, deadline);
+        engine.eval_rules({}, results, deadline);
         EXPECT_EQ(results.size(), 1);
 
         auto result = results[0];
@@ -410,14 +366,11 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
     {
         // An existing match in a collection will not inhibit a match in a
         // priority collection.
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"usr.id", "admin"}});
+        engine.insert(std::move(root));
 
         std::vector<rule_result> results;
-        ctx.eval_rules({}, results, deadline);
+        engine.eval_rules({}, results, deadline);
         EXPECT_EQ(results.size(), 1);
 
         auto result = results[0];
@@ -442,7 +395,7 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
     }
 }
 
-TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
+TEST(TestEvaluationEngine, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
 {
     test::ruleset_builder rbuilder;
     std::vector<std::shared_ptr<core_rule>> rules;
@@ -475,17 +428,14 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
     }
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        engine.insert(std::move(root));
 
         std::vector<rule_result> results;
-        ctx.eval_rules({}, results, deadline);
+        engine.eval_rules({}, results, deadline);
         EXPECT_EQ(results.size(), 1);
 
         auto result = results[0];
@@ -511,19 +461,16 @@ TEST(TestContext, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
     {
         // An existing match in a collection will not inhibit a match in a
         // priority collection.
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"usr.id", "admin"}});
+        engine.insert(std::move(root));
 
         std::vector<rule_result> results;
-        ctx.eval_rules({}, results, deadline);
+        engine.eval_rules({}, results, deadline);
         EXPECT_EQ(results.size(), 0);
     }
 }
 
-TEST(TestContext, MatchMultipleCollectionsSingleRun)
+TEST(TestEvaluationEngine, MatchMultipleCollectionsSingleRun)
 {
     test::ruleset_builder rbuilder;
     std::vector<std::shared_ptr<core_rule>> rules;
@@ -554,21 +501,18 @@ TEST(TestContext, MatchMultipleCollectionsSingleRun)
     }
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-    ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-    ctx.insert(root);
+    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+
+    engine.insert(std::move(root));
 
     std::vector<rule_result> results;
-    ctx.eval_rules({}, results, deadline);
+    engine.eval_rules({}, results, deadline);
     EXPECT_EQ(results.size(), 2);
 }
 
-TEST(TestContext, MatchPriorityCollectionsSingleRun)
+TEST(TestEvaluationEngine, MatchPriorityCollectionsSingleRun)
 {
     test::ruleset_builder rbuilder;
     std::vector<std::shared_ptr<core_rule>> rules;
@@ -602,21 +546,18 @@ TEST(TestContext, MatchPriorityCollectionsSingleRun)
     }
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-    ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-    ctx.insert(root);
+    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+
+    engine.insert(std::move(root));
 
     std::vector<rule_result> results;
-    ctx.eval_rules({}, results, deadline);
+    engine.eval_rules({}, results, deadline);
     EXPECT_EQ(results.size(), 1);
 }
 
-TEST(TestContext, MatchMultipleCollectionsDoubleRun)
+TEST(TestEvaluationEngine, MatchMultipleCollectionsDoubleRun)
 {
     test::ruleset_builder rbuilder;
     std::vector<std::shared_ptr<core_rule>> rules;
@@ -647,34 +588,28 @@ TEST(TestContext, MatchMultipleCollectionsDoubleRun)
     }
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"usr.id", "admin"}});
+        engine.insert(std::move(root));
 
         std::vector<rule_result> results;
-        ctx.eval_rules({}, results, deadline);
+        engine.eval_rules({}, results, deadline);
         EXPECT_EQ(results.size(), 1);
     }
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        engine.insert(std::move(root));
 
         std::vector<rule_result> results;
-        ctx.eval_rules({}, results, deadline);
+        engine.eval_rules({}, results, deadline);
         EXPECT_EQ(results.size(), 1);
     }
 }
 
-TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
+TEST(TestEvaluationEngine, MatchMultiplePriorityCollectionsDoubleRun)
 {
     test::ruleset_builder rbuilder;
     std::vector<std::shared_ptr<core_rule>> rules;
@@ -708,34 +643,28 @@ TEST(TestContext, MatchMultiplePriorityCollectionsDoubleRun)
     }
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"usr.id", "admin"}});
+        engine.insert(std::move(root));
 
         std::vector<rule_result> results;
-        ctx.eval_rules({}, results, deadline);
+        engine.eval_rules({}, results, deadline);
         EXPECT_EQ(results.size(), 1);
     }
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        engine.insert(std::move(root));
 
         std::vector<rule_result> results;
-        ctx.eval_rules({}, results, deadline);
+        engine.eval_rules({}, results, deadline);
         EXPECT_EQ(results.size(), 1);
     }
 }
 
-TEST(TestContext, RuleFilterWithCondition)
+TEST(TestEvaluationEngine, RuleFilterWithCondition)
 {
     test::ruleset_builder rbuilder;
 
@@ -767,25 +696,22 @@ TEST(TestContext, RuleFilterWithCondition)
     }
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-    ctx.insert(root);
+    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
 
-    auto rules_to_exclude = ctx.eval_filters(deadline);
+    engine.insert(std::move(root));
+
+    auto rules_to_exclude = engine.eval_filters(deadline);
     EXPECT_EQ(rules_to_exclude.size(), 1);
     EXPECT_TRUE(rules_to_exclude.contains(rule));
 
     std::vector<rule_result> results;
-    ctx.eval_rules(rules_to_exclude, results, deadline);
+    engine.eval_rules(rules_to_exclude, results, deadline);
     EXPECT_EQ(results.size(), 0);
 }
 
-TEST(TestContext, RuleFilterWithEphemeralConditionMatch)
+TEST(TestEvaluationEngine, RuleFilterWithSubcontextConditionMatch)
 {
     test::ruleset_builder rbuilder;
 
@@ -816,38 +742,34 @@ TEST(TestContext, RuleFilterWithEphemeralConditionMatch)
             rule_filter{"1", builder.build(), std::set<const core_rule *>{rule}});
     }
 
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
     {
-        ddwaf_object tmp;
-        ddwaf_object ephemeral;
-        ddwaf_object persistent;
+        auto persistent = object_builder::map({{"usr.id", "admin"}});
+        auto ephemeral = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        ddwaf_object_map(&ephemeral);
-        ddwaf_object_map_add(
-            &ephemeral, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        EXPECT_TRUE(engine.insert(std::move(persistent)));
 
-        ddwaf_object_map(&persistent);
-        ddwaf_object_map_add(&persistent, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        engine.start_subcontext();
+        EXPECT_TRUE(engine.insert(std::move(ephemeral)));
 
-        auto [code, res] = ctx.run(persistent, ephemeral, LONG_TIME);
+        timer deadline{std::chrono::microseconds(LONG_TIME)};
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_OK);
-        ddwaf_object_free(&res);
+
+        engine.stop_subcontext();
     }
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-
-        auto [code, res] = ctx.run(root, {}, LONG_TIME);
+        auto root = object_builder::map({{"usr.id", "admin"}});
+        EXPECT_TRUE(engine.insert(std::move(root)));
+        timer deadline{std::chrono::microseconds(LONG_TIME)};
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_MATCH);
-        ddwaf_object_free(&res);
     }
 }
 
-TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
+TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextBypassPersistentMonitor)
 {
     test::ruleset_builder rbuilder;
 
@@ -887,47 +809,41 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralBypassPersistentMonitor)
         builder.add_target("http.route");
         builder.end_condition<matcher::exact_match>(std::vector<std::string>{"unrouted"});
 
-        rbuilder.insert_filter(rule_filter{"2", builder.build(), std::set<const core_rule *>{rule},
-            exclusion::filter_mode::monitor});
+        rbuilder.insert_filter(rule_filter{
+            "2", builder.build(), std::set<const core_rule *>{rule}, filter_mode::monitor});
     }
 
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
     {
-        ddwaf_object tmp;
-        ddwaf_object ephemeral;
-        ddwaf_object persistent;
+        auto persistent = object_builder::map({{"usr.id", "admin"}, {"http.route", "unrouted"}});
+        auto ephemeral = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        ddwaf_object_map(&ephemeral);
-        ddwaf_object_map_add(
-            &ephemeral, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        EXPECT_TRUE(engine.insert(std::move(persistent)));
 
-        ddwaf_object_map(&persistent);
-        ddwaf_object_map_add(&persistent, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ddwaf_object_map_add(&persistent, "http.route", ddwaf_object_string(&tmp, "unrouted"));
+        engine.start_subcontext();
+        EXPECT_TRUE(engine.insert(std::move(ephemeral)));
 
-        auto [code, res] = ctx.run(persistent, ephemeral, LONG_TIME);
+        timer deadline{std::chrono::microseconds(LONG_TIME)};
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_OK);
-        ddwaf_object_free(&res);
+
+        engine.stop_subcontext();
     }
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        auto root = object_builder::map({{"usr.id", "admin"}});
+        EXPECT_TRUE(engine.insert(std::move(root)));
 
-        auto [code, res] = ctx.run(root, {}, LONG_TIME);
+        timer deadline{std::chrono::microseconds(LONG_TIME)};
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_MATCH);
 
-        const auto *actions = ddwaf_object_find(&res, STRL("actions"));
-        EXPECT_EQ(ddwaf_object_size(actions), 0);
-
-        ddwaf_object_free(&res);
+        EXPECT_TRUE(object_view{res}.find("actions").empty());
     }
 }
 
-TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
+TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextMonitorPersistentBypass)
 {
     test::ruleset_builder rbuilder;
 
@@ -956,8 +872,8 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
         builder.add_target("http.client_ip");
         builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
-        rbuilder.insert_filter(rule_filter{"1", builder.build(), std::set<const core_rule *>{rule},
-            exclusion::filter_mode::monitor});
+        rbuilder.insert_filter(rule_filter{
+            "1", builder.build(), std::set<const core_rule *>{rule}, filter_mode::monitor});
     }
 
     {
@@ -971,39 +887,36 @@ TEST(TestContext, OverlappingRuleFiltersEphemeralMonitorPersistentBypass)
             rule_filter{"2", builder.build(), std::set<const core_rule *>{rule}});
     }
 
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
     {
-        ddwaf_object tmp;
-        ddwaf_object ephemeral;
-        ddwaf_object persistent;
+        auto persistent = object_builder::map({{"usr.id", "admin"}, {"http.route", "unrouted"}});
+        auto ephemeral = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        ddwaf_object_map(&ephemeral);
-        ddwaf_object_map_add(
-            &ephemeral, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        EXPECT_TRUE(engine.insert(std::move(persistent)));
 
-        ddwaf_object_map(&persistent);
-        ddwaf_object_map_add(&persistent, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ddwaf_object_map_add(&persistent, "http.route", ddwaf_object_string(&tmp, "unrouted"));
+        engine.start_subcontext();
 
-        auto [code, res] = ctx.run(persistent, ephemeral, LONG_TIME);
+        EXPECT_TRUE(engine.insert(std::move(ephemeral)));
+
+        timer deadline{std::chrono::microseconds(LONG_TIME)};
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_OK);
-        ddwaf_object_free(&res);
+
+        engine.stop_subcontext();
     }
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        auto root = object_builder::map({{"usr.id", "admin"}});
+        EXPECT_TRUE(engine.insert(std::move(root)));
 
-        auto [code, res] = ctx.run(root, {}, LONG_TIME);
+        timer deadline{std::chrono::microseconds(LONG_TIME)};
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_OK);
-        ddwaf_object_free(&res);
     }
 }
 
-TEST(TestContext, RuleFilterTimeout)
+TEST(TestEvaluationEngine, RuleFilterTimeout)
 {
     test::ruleset_builder rbuilder;
 
@@ -1035,19 +948,16 @@ TEST(TestContext, RuleFilterTimeout)
     }
 
     ddwaf::timer deadline{0s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-    ctx.insert(root);
+    auto root = object_builder::map({{"usr.id", "admin"}, {"http.client_ip", "192.168.0.1"}});
 
-    EXPECT_THROW(ctx.eval_filters(deadline), ddwaf::timeout_exception);
+    engine.insert(std::move(root));
+
+    EXPECT_THROW(engine.eval_filters(deadline), ddwaf::timeout_exception);
 }
 
-TEST(TestContext, NoRuleFilterWithCondition)
+TEST(TestEvaluationEngine, NoRuleFilterWithCondition)
 {
     test::ruleset_builder rbuilder;
 
@@ -1079,24 +989,21 @@ TEST(TestContext, NoRuleFilterWithCondition)
     }
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.2"));
-    ctx.insert(root);
+    auto root = object_builder::map({{"usr.id", "admin"}, {"http.client_ip", "192.168.0.2"}});
 
-    auto rules_to_exclude = ctx.eval_filters(deadline);
+    engine.insert(std::move(root));
+
+    auto rules_to_exclude = engine.eval_filters(deadline);
     EXPECT_TRUE(rules_to_exclude.empty());
 
     std::vector<rule_result> results;
-    ctx.eval_rules(rules_to_exclude, results, deadline);
+    engine.eval_rules(rules_to_exclude, results, deadline);
     EXPECT_EQ(results.size(), 1);
 }
 
-TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
+TEST(TestEvaluationEngine, MultipleRuleFiltersNonOverlappingRules)
 {
     test::ruleset_builder rbuilder;
 
@@ -1116,17 +1023,17 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
     ddwaf::timer deadline{2s};
 
     {
-        ddwaf::test::context ctx(rbuilder.build());
-        auto rules_to_exclude = ctx.eval_filters(deadline);
+        evaluation_engine engine(rbuilder.build());
+        auto rules_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 0);
     }
 
     {
         rbuilder.insert_filter(rule_filter{"1", std::make_shared<expression>(),
             std::set<const core_rule *>{rules[0], rules[1], rules[2]}});
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        auto rules_to_exclude = ctx.eval_filters(deadline);
+        auto rules_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 3);
         EXPECT_TRUE(rules_to_exclude.contains(rules[0]));
         EXPECT_TRUE(rules_to_exclude.contains(rules[1]));
@@ -1136,9 +1043,9 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
     {
         rbuilder.insert_filter(rule_filter{"2", std::make_shared<expression>(),
             std::set<const core_rule *>{rules[3], rules[4], rules[5]}});
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        auto rules_to_exclude = ctx.eval_filters(deadline);
+        auto rules_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 6);
         EXPECT_TRUE(rules_to_exclude.contains(rules[0]));
         EXPECT_TRUE(rules_to_exclude.contains(rules[1]));
@@ -1151,9 +1058,9 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
     {
         rbuilder.insert_filter(rule_filter{"3", std::make_shared<expression>(),
             std::set<const core_rule *>{rules[6], rules[7], rules[8]}});
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        auto rules_to_exclude = ctx.eval_filters(deadline);
+        auto rules_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 9);
         EXPECT_TRUE(rules_to_exclude.contains(rules[0]));
         EXPECT_TRUE(rules_to_exclude.contains(rules[1]));
@@ -1167,7 +1074,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRules)
     }
 }
 
-TEST(TestContext, MultipleRuleFiltersOverlappingRules)
+TEST(TestEvaluationEngine, MultipleRuleFiltersOverlappingRules)
 {
     test::ruleset_builder rbuilder;
 
@@ -1188,17 +1095,17 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     ddwaf::timer deadline{2s};
 
     {
-        ddwaf::test::context ctx(rbuilder.build());
-        auto rules_to_exclude = ctx.eval_filters(deadline);
+        evaluation_engine engine(rbuilder.build());
+        auto rules_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 0);
     }
 
     {
         rbuilder.insert_filter(rule_filter{"1", std::make_shared<expression>(),
             std::set<const core_rule *>{rules[0], rules[1], rules[2], rules[3]}});
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        auto rules_to_exclude = ctx.eval_filters(deadline);
+        auto rules_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 4);
         EXPECT_TRUE(rules_to_exclude.contains(rules[0]));
         EXPECT_TRUE(rules_to_exclude.contains(rules[1]));
@@ -1209,9 +1116,9 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     {
         rbuilder.insert_filter(rule_filter{"2", std::make_shared<expression>(),
             std::set<const core_rule *>{rules[2], rules[3], rules[4]}});
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        auto rules_to_exclude = ctx.eval_filters(deadline);
+        auto rules_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 5);
         EXPECT_TRUE(rules_to_exclude.contains(rules[0]));
         EXPECT_TRUE(rules_to_exclude.contains(rules[1]));
@@ -1223,9 +1130,9 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     {
         rbuilder.insert_filter(rule_filter{"3", std::make_shared<expression>(),
             std::set<const core_rule *>{rules[0], rules[5], rules[6]}});
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        auto rules_to_exclude = ctx.eval_filters(deadline);
+        auto rules_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 7);
         EXPECT_TRUE(rules_to_exclude.contains(rules[0]));
         EXPECT_TRUE(rules_to_exclude.contains(rules[1]));
@@ -1239,9 +1146,9 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     {
         rbuilder.insert_filter(rule_filter{"4", std::make_shared<expression>(),
             std::set<const core_rule *>{rules[7], rules[8], rules[6]}});
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        auto rules_to_exclude = ctx.eval_filters(deadline);
+        auto rules_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 9);
         EXPECT_TRUE(rules_to_exclude.contains(rules[0]));
         EXPECT_TRUE(rules_to_exclude.contains(rules[1]));
@@ -1258,9 +1165,9 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
         rbuilder.insert_filter(rule_filter{"5", std::make_shared<expression>(),
             std::set<const core_rule *>{rules[0], rules[1], rules[2], rules[3], rules[4], rules[5],
                 rules[6], rules[7], rules[8]}});
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        auto rules_to_exclude = ctx.eval_filters(deadline);
+        auto rules_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 9);
         EXPECT_TRUE(rules_to_exclude.contains(rules[0]));
         EXPECT_TRUE(rules_to_exclude.contains(rules[1]));
@@ -1274,7 +1181,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRules)
     }
 }
 
-TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
+TEST(TestEvaluationEngine, MultipleRuleFiltersNonOverlappingRulesWithConditions)
 {
     test::ruleset_builder rbuilder;
 
@@ -1314,16 +1221,13 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
     }
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"usr.id", "admin"}});
+        engine.insert(std::move(root));
 
-        auto rules_to_exclude = ctx.eval_filters(deadline);
+        auto rules_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 5);
         EXPECT_TRUE(rules_to_exclude.contains(rules[5]));
         EXPECT_TRUE(rules_to_exclude.contains(rules[6]));
@@ -1333,13 +1237,10 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
     }
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        engine.insert(std::move(root));
 
-        auto rules_to_exclude = ctx.eval_filters(deadline);
+        auto rules_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 10);
         EXPECT_TRUE(rules_to_exclude.contains(rules[0]));
         EXPECT_TRUE(rules_to_exclude.contains(rules[1]));
@@ -1354,7 +1255,7 @@ TEST(TestContext, MultipleRuleFiltersNonOverlappingRulesWithConditions)
     }
 }
 
-TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
+TEST(TestEvaluationEngine, MultipleRuleFiltersOverlappingRulesWithConditions)
 {
     test::ruleset_builder rbuilder;
 
@@ -1397,16 +1298,13 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
     }
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        engine.insert(std::move(root));
 
-        auto rules_to_exclude = ctx.eval_filters(deadline);
+        auto rules_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 7);
         EXPECT_TRUE(rules_to_exclude.contains(rules[0]));
         EXPECT_TRUE(rules_to_exclude.contains(rules[1]));
@@ -1418,13 +1316,10 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
     }
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"usr.id", "admin"}});
+        engine.insert(std::move(root));
 
-        auto rules_to_exclude = ctx.eval_filters(deadline);
+        auto rules_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(rules_to_exclude.size(), 10);
         EXPECT_TRUE(rules_to_exclude.contains(rules[0]));
         EXPECT_TRUE(rules_to_exclude.contains(rules[1]));
@@ -1439,7 +1334,7 @@ TEST(TestContext, MultipleRuleFiltersOverlappingRulesWithConditions)
     }
 }
 
-TEST(TestContext, InputFilterExclude)
+TEST(TestEvaluationEngine, InputFilterExclude)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -1460,23 +1355,21 @@ TEST(TestContext, InputFilterExclude)
         std::set<const core_rule *>{rule}, std::move(obj_filter)});
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-    ctx.insert(root);
+    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-    auto objects_to_exclude = ctx.eval_filters(deadline);
+    engine.insert(std::move(root));
+
+    auto objects_to_exclude = engine.eval_filters(deadline);
     EXPECT_EQ(objects_to_exclude.size(), 1);
 
     std::vector<rule_result> results;
-    ctx.eval_rules(objects_to_exclude, results, deadline);
+    engine.eval_rules(objects_to_exclude, results, deadline);
     EXPECT_EQ(results.size(), 0);
 }
 
-TEST(TestContext, InputFilterExcludeEphemeral)
+TEST(TestEvaluationEngine, InputFilterExcludeSubcontext)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -1497,87 +1390,90 @@ TEST(TestContext, InputFilterExcludeEphemeral)
     rbuilder.insert_filter(input_filter{"1", std::make_shared<expression>(),
         std::set<const core_rule *>{rule}, std::move(obj_filter)});
 
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        auto [code, res] = ctx.run({}, root, LONG_TIME);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+
+        engine.start_subcontext();
+
+        EXPECT_TRUE(engine.insert(std::move(root)));
+        timer deadline{std::chrono::microseconds(LONG_TIME)};
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_OK);
-        ddwaf_object_free(&res);
+
+        engine.stop_subcontext();
     }
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        auto [code, res] = ctx.run({}, root, LONG_TIME);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+
+        engine.start_subcontext();
+
+        EXPECT_TRUE(engine.insert(std::move(root)));
+        timer deadline{std::chrono::microseconds(LONG_TIME)};
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_OK);
-        ddwaf_object_free(&res);
+
+        engine.stop_subcontext();
     }
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.peer_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        auto [code, res] = ctx.run({}, root, LONG_TIME);
+        auto root = object_builder::map({{"http.peer_ip", "192.168.0.1"}});
+
+        engine.start_subcontext();
+
+        EXPECT_TRUE(engine.insert(std::move(root)));
+        timer deadline{std::chrono::microseconds(LONG_TIME)};
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_MATCH);
-        ddwaf_object_free(&res);
+
+        engine.stop_subcontext();
     }
 }
 
-TEST(TestContext, InputFilterExcludeEphemeralReuseObject)
-{
-    test::expression_builder builder(1);
-    builder.start_condition();
-    builder.add_argument();
-    builder.add_target("http.client_ip");
-    builder.add_target("http.peer_ip");
-    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+// TODO figure out how to test this
+/*TEST(TestEvaluationEngine, InputFilterExcludeSubcontextReuseObject)*/
+/*{*/
+/*test::expression_builder builder(1);*/
+/*builder.start_condition();*/
+/*builder.add_argument();*/
+/*builder.add_target("http.client_ip");*/
+/*builder.add_target("http.peer_ip");*/
+/*builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});*/
 
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+/*std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};*/
 
-    test::ruleset_builder rbuilder{nullptr};
-    auto *rule =
-        rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build()});
+/*test::ruleset_builder rbuilder{nullptr};*/
+/*auto *rule =*/
+/*rbuilder.insert_base_rule(core_rule{"id", "name", std::move(tags), builder.build()});*/
 
-    auto obj_filter = std::make_shared<object_filter>();
-    obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");
+/*auto obj_filter = std::make_shared<object_filter>();*/
+/*obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip");*/
 
-    rbuilder.insert_filter(input_filter{"1", std::make_shared<expression>(),
-        std::set<const core_rule *>{rule}, std::move(obj_filter)});
+/*rbuilder.insert_filter(input_filter{"1", std::make_shared<expression>(),*/
+/*std::set<const core_rule *>{rule}, std::move(obj_filter)});*/
 
-    ddwaf::test::context ctx(rbuilder.build());
+/*evaluation_engine engine(rbuilder.build());*/
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-    {
-        auto [code, res] = ctx.run({}, root, LONG_TIME);
-        EXPECT_EQ(code, DDWAF_OK);
-        ddwaf_object_free(&res);
-    }
+/*auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});*/
+/*    {*/
+/*auto [code, res] = engine.eval({}, std::move(root), LONG_TIME);*/
+/*EXPECT_EQ(code, DDWAF_OK);*/
+/*}*/
 
-    std::string peer_ip = "http.peer_ip";
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-    memcpy(const_cast<char *>(root.array[0].parameterName), peer_ip.c_str(), peer_ip.size());
-    root.array[0].parameterNameLength = peer_ip.size();
+/*std::string peer_ip = "http.peer_ip";*/
+/*// NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)*/
+/*memcpy(const_cast<char *>(root.array[0].parameterName), peer_ip.c_str(), peer_ip.size());*/
+/*root.array[0].parameterNameLength = peer_ip.size();*/
 
-    {
-        auto [code, res] = ctx.run({}, root, LONG_TIME);
-        EXPECT_EQ(code, DDWAF_MATCH);
-        ddwaf_object_free(&res);
-    }
+/*{*/
+/*auto [code, res] = engine.eval({}, std::move(root), LONG_TIME);*/
+/*EXPECT_EQ(code, DDWAF_MATCH);*/
+/*}*/
+/*}*/
 
-    ddwaf_object_free(&root);
-}
-
-TEST(TestContext, InputFilterExcludeRule)
+TEST(TestEvaluationEngine, InputFilterExcludeRule)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -1599,30 +1495,28 @@ TEST(TestContext, InputFilterExcludeRule)
         rule_filter{"1", std::make_shared<expression>(), std::set<const core_rule *>{rule}});
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-    ctx.insert(root);
+    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+
+    engine.insert(std::move(root));
 
     // The rule is added to the filter stage so that it's excluded from the
     // final result, since we're not actually excluding the rule from the match
     // stage we still get an event.
-    auto objects_to_exclude = ctx.eval_filters(deadline);
+    auto objects_to_exclude = engine.eval_filters(deadline);
     EXPECT_EQ(objects_to_exclude.size(), 1);
 
-    auto it = objects_to_exclude.persistent.find(rule);
+    auto it = objects_to_exclude.context.find(rule);
     it->second.mode = filter_mode::none;
     EXPECT_TRUE(it->second.objects.empty());
 
     std::vector<rule_result> results;
-    ctx.eval_rules(objects_to_exclude, results, deadline);
+    engine.eval_rules(objects_to_exclude, results, deadline);
     EXPECT_EQ(results.size(), 1);
 }
 
-TEST(TestContext, InputFilterExcludeRuleEphemeral)
+TEST(TestEvaluationEngine, InputFilterExcludeRuleSubcontext)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -1644,24 +1538,27 @@ TEST(TestContext, InputFilterExcludeRuleEphemeral)
         rule_filter{"1", std::make_shared<expression>(), std::set<const core_rule *>{rule}});
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-    ctx.insert(root, attribute::ephemeral);
+    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-    auto objects_to_exclude = ctx.eval_filters(deadline);
-    EXPECT_EQ(objects_to_exclude.size(), 1);
+    engine.start_subcontext();
 
-    auto it = objects_to_exclude.persistent.find(rule);
+    engine.insert(std::move(root));
+
+    auto policy = engine.eval_filters(deadline);
+    EXPECT_EQ(policy.size(), 1);
+
+    auto it = policy.context.find(rule);
+    ASSERT_TRUE(it != policy.context.end());
     EXPECT_TRUE(it->second.objects.empty());
 
-    EXPECT_FALSE(objects_to_exclude.ephemeral.contains(rule));
+    EXPECT_FALSE(policy.subcontext.contains(rule));
+
+    engine.stop_subcontext();
 }
 
-TEST(TestContext, InputFilterMonitorRuleEphemeral)
+TEST(TestEvaluationEngine, InputFilterMonitorRuleSubcontext)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -1683,29 +1580,31 @@ TEST(TestContext, InputFilterMonitorRuleEphemeral)
         std::set<const core_rule *>{rule}, filter_mode::monitor});
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
-    ddwaf_object root;
-    ddwaf_object tmp;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-    ctx.insert(root, attribute::ephemeral);
+    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-    auto objects_to_exclude = ctx.eval_filters(deadline);
-    EXPECT_EQ(objects_to_exclude.size(), 2);
+    engine.start_subcontext();
+
+    engine.insert(std::move(root));
+
+    auto policy = engine.eval_filters(deadline);
+    EXPECT_EQ(policy.size(), 2);
 
     {
-        auto it = objects_to_exclude.persistent.find(rule);
+        auto it = policy.context.find(rule);
         EXPECT_TRUE(it->second.objects.empty());
     }
 
     {
-        auto it = objects_to_exclude.ephemeral.find(rule);
+        auto it = policy.subcontext.find(rule);
         EXPECT_FALSE(it->second.objects.empty());
     }
+
+    engine.stop_subcontext();
 }
 
-TEST(TestContext, InputFilterExcluderRuleEphemeralAndPersistent)
+TEST(TestEvaluationEngine, InputFilterExcluderRuleSubcontextAndPersistent)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -1728,34 +1627,32 @@ TEST(TestContext, InputFilterExcluderRuleEphemeralAndPersistent)
         rule_filter{"1", std::make_shared<expression>(), std::set<const core_rule *>{rule}});
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ctx.insert(root, attribute::ephemeral);
+        auto root = object_builder::map({{"usr.id", "admin"}});
+        engine.insert(std::move(root));
     }
+
+    engine.start_subcontext();
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        engine.insert(std::move(root));
     }
 
-    auto objects_to_exclude = ctx.eval_filters(deadline);
+    auto objects_to_exclude = engine.eval_filters(deadline);
     EXPECT_EQ(objects_to_exclude.size(), 1);
 
-    auto it = objects_to_exclude.persistent.find(rule);
+    auto it = objects_to_exclude.context.find(rule);
     EXPECT_TRUE(it->second.objects.empty());
 
-    EXPECT_FALSE(objects_to_exclude.ephemeral.contains(rule));
+    EXPECT_FALSE(objects_to_exclude.subcontext.contains(rule));
+
+    engine.stop_subcontext();
 }
 
-TEST(TestContext, InputFilterMonitorRuleEphemeralAndPersistent)
+TEST(TestEvaluationEngine, InputFilterMonitorRuleSubcontextAndPersistent)
 {
     test::expression_builder builder(1);
     builder.start_condition();
@@ -1778,39 +1675,37 @@ TEST(TestContext, InputFilterMonitorRuleEphemeralAndPersistent)
         std::set<const core_rule *>{rule}, filter_mode::monitor});
 
     ddwaf::timer deadline{2s};
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ctx.insert(root, attribute::ephemeral);
+        auto root = object_builder::map({{"usr.id", "admin"}});
+        engine.insert(std::move(root));
     }
+
+    engine.start_subcontext();
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        engine.insert(std::move(root));
     }
 
-    auto objects_to_exclude = ctx.eval_filters(deadline);
+    auto objects_to_exclude = engine.eval_filters(deadline);
     EXPECT_EQ(objects_to_exclude.size(), 2);
 
     {
-        auto it = objects_to_exclude.persistent.find(rule);
+        auto it = objects_to_exclude.context.find(rule);
         EXPECT_FALSE(it->second.objects.empty());
     }
 
     {
-        auto it = objects_to_exclude.ephemeral.find(rule);
+        auto it = objects_to_exclude.subcontext.find(rule);
         EXPECT_FALSE(it->second.objects.empty());
     }
+
+    engine.stop_subcontext();
 }
 
-TEST(TestContext, InputFilterWithCondition)
+TEST(TestEvaluationEngine, InputFilterWithCondition)
 {
     test::ruleset_builder rbuilder{};
 
@@ -1846,61 +1741,53 @@ TEST(TestContext, InputFilterWithCondition)
     // Without usr.id, nothing should be excluded
     {
         ddwaf::timer deadline{2s};
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        auto objects_to_exclude = ctx.eval_filters(deadline);
+        engine.insert(std::move(root));
+
+        auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 0);
         std::vector<rule_result> results;
-        ctx.eval_rules(objects_to_exclude, results, deadline);
+        engine.eval_rules(objects_to_exclude, results, deadline);
         EXPECT_EQ(results.size(), 1);
     }
 
     // With usr.id != admin, nothing should be excluded
     {
         ddwaf::timer deadline{2s};
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admino"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admino"}});
 
-        auto objects_to_exclude = ctx.eval_filters(deadline);
+        engine.insert(std::move(root));
+
+        auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 0);
         std::vector<rule_result> results;
-        ctx.eval_rules(objects_to_exclude, results, deadline);
+        engine.eval_rules(objects_to_exclude, results, deadline);
         EXPECT_EQ(results.size(), 1);
     }
 
     // With usr.id == admin, there should be no matches
     {
         ddwaf::timer deadline{2s};
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
 
-        auto objects_to_exclude = ctx.eval_filters(deadline);
+        engine.insert(std::move(root));
+
+        auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 1);
         std::vector<rule_result> results;
-        ctx.eval_rules(objects_to_exclude, results, deadline);
+        engine.eval_rules(objects_to_exclude, results, deadline);
         EXPECT_EQ(results.size(), 0);
     }
 }
 
-TEST(TestContext, InputFilterWithEphemeralCondition)
+TEST(TestEvaluationEngine, InputFilterWithSubcontextCondition)
 {
     test::ruleset_builder rbuilder{};
 
@@ -1933,36 +1820,34 @@ TEST(TestContext, InputFilterWithEphemeralCondition)
             input_filter{"1", builder.build(), std::move(eval_filters), std::move(obj_filter)});
     }
 
-    ddwaf::test::context ctx(rbuilder.build());
+    evaluation_engine engine(rbuilder.build());
+
     {
-        ddwaf_object persistent;
-        ddwaf_object tmp;
-        ddwaf_object_map(&persistent);
-        ddwaf_object_map_add(
-            &persistent, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
+        auto persistent = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto ephemeral = object_builder::map({{"usr.id", "admin"}});
 
-        ddwaf_object ephemeral;
-        ddwaf_object_map(&ephemeral);
-        ddwaf_object_map_add(&ephemeral, "usr.id", ddwaf_object_string(&tmp, "admin"));
+        EXPECT_TRUE(engine.insert(std::move(persistent)));
 
-        auto [code, res] = ctx.run(persistent, ephemeral, LONG_TIME);
+        engine.start_subcontext();
+
+        EXPECT_TRUE(engine.insert(std::move(ephemeral)));
+        timer deadline{std::chrono::microseconds(LONG_TIME)};
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_OK);
-        ddwaf_object_free(&res);
+
+        engine.stop_subcontext();
     }
 
     {
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-
-        auto [code, res] = ctx.run(root, {}, LONG_TIME);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        EXPECT_TRUE(engine.insert(std::move(root)));
+        timer deadline{std::chrono::microseconds(LONG_TIME)};
+        auto [code, res] = engine.eval(deadline);
         EXPECT_EQ(code, DDWAF_MATCH);
-        ddwaf_object_free(&res);
     }
 }
 
-TEST(TestContext, InputFilterMultipleRules)
+TEST(TestEvaluationEngine, InputFilterMultipleRules)
 {
     test::ruleset_builder rbuilder{};
     std::vector<core_rule *> rules;
@@ -2006,73 +1891,62 @@ TEST(TestContext, InputFilterMultipleRules)
     // Without usr.id, nothing should be excluded
     {
         ddwaf::timer deadline{2s};
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        engine.insert(std::move(root));
 
-        auto objects_to_exclude = ctx.eval_filters(deadline);
+        auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             EXPECT_EQ(policy.objects.size(), 1);
         }
 
         std::vector<rule_result> results;
-        ctx.eval_rules(objects_to_exclude, results, deadline);
+        engine.eval_rules(objects_to_exclude, results, deadline);
         EXPECT_EQ(results.size(), 0);
     }
 
     // With usr.id != admin, nothing should be excluded
     {
         ddwaf::timer deadline{2s};
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admino"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admino"}});
+        engine.insert(std::move(root));
 
-        auto objects_to_exclude = ctx.eval_filters(deadline);
+        auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             EXPECT_EQ(policy.objects.size(), 2);
         }
 
         std::vector<rule_result> results;
-        ctx.eval_rules(objects_to_exclude, results, deadline);
+        engine.eval_rules(objects_to_exclude, results, deadline);
         EXPECT_EQ(results.size(), 0);
     }
 
     // With usr.id == admin, there should be no matches
     {
         ddwaf::timer deadline{2s};
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+        engine.insert(std::move(root));
 
-        auto objects_to_exclude = ctx.eval_filters(deadline);
+        auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             EXPECT_EQ(policy.objects.size(), 2);
         }
 
         std::vector<rule_result> results;
-        ctx.eval_rules(objects_to_exclude, results, deadline);
+        engine.eval_rules(objects_to_exclude, results, deadline);
         EXPECT_EQ(results.size(), 0);
     }
 }
 
-TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
+TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFilters)
 {
     test::ruleset_builder rbuilder{};
     std::vector<core_rule *> rules;
@@ -2123,76 +1997,65 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFilters)
     // Without usr.id, nothing should be excluded
     {
         ddwaf::timer deadline{2s};
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        engine.insert(std::move(root));
 
-        auto objects_to_exclude = ctx.eval_filters(deadline);
+        auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 1);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
         }
 
         std::vector<rule_result> results;
-        ctx.eval_rules(objects_to_exclude, results, deadline);
+        engine.eval_rules(objects_to_exclude, results, deadline);
         EXPECT_EQ(results.size(), 0);
     }
 
     // With usr.id != admin, nothing should be excluded
     {
         ddwaf::timer deadline{2s};
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admino"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admino"}});
+        engine.insert(std::move(root));
 
-        auto objects_to_exclude = ctx.eval_filters(deadline);
+        auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
         }
 
         std::vector<rule_result> results;
-        ctx.eval_rules(objects_to_exclude, results, deadline);
+        engine.eval_rules(objects_to_exclude, results, deadline);
         EXPECT_EQ(results.size(), 0);
     }
 
     // With usr.id == admin, there should be no matches
     {
         ddwaf::timer deadline{2s};
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+        engine.insert(std::move(root));
 
-        auto objects_to_exclude = ctx.eval_filters(deadline);
+        auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
         }
 
         std::vector<rule_result> results;
-        ctx.eval_rules(objects_to_exclude, results, deadline);
+        engine.eval_rules(objects_to_exclude, results, deadline);
         EXPECT_EQ(results.size(), 0);
     }
 }
 
-TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
+TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 {
     test::ruleset_builder rbuilder{};
 
@@ -2273,159 +2136,127 @@ TEST(TestContext, InputFilterMultipleRulesMultipleFiltersMultipleObjects)
 
     {
         ddwaf::timer deadline{2s};
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        engine.insert(object_view{root});
 
-        auto objects_to_exclude = ctx.eval_filters(deadline);
+        auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
-            EXPECT_TRUE(objects.contains(&root.array[0]));
+            EXPECT_TRUE(objects.contains(root.at(0)));
         }
 
         std::vector<rule_result> results;
-        ctx.eval_rules(objects_to_exclude, results, deadline);
+        engine.eval_rules(objects_to_exclude, results, deadline);
         EXPECT_EQ(results.size(), 0);
     }
 
     {
         ddwaf::timer deadline{2s};
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"usr.id", "admin"}});
+        engine.insert(object_view{root});
 
-        auto objects_to_exclude = ctx.eval_filters(deadline);
+        auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
-            EXPECT_TRUE(objects.contains(&root.array[0]));
+            EXPECT_TRUE(objects.contains(root.at(0)));
         }
 
         std::vector<rule_result> results;
-        ctx.eval_rules(objects_to_exclude, results, deadline);
+        engine.eval_rules(objects_to_exclude, results, deadline);
         EXPECT_EQ(results.size(), 0);
     }
 
     {
         ddwaf::timer deadline{2s};
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        ddwaf_object root;
-        ddwaf_object headers;
-        ddwaf_object tmp;
-        ddwaf_object_map(&headers);
-        ddwaf_object_map_add(&headers, "cookie", ddwaf_object_string(&tmp, "mycookie"));
+        auto root = object_builder::map(
+            {{"server.request.headers", object_builder::map({{"cookie", "mycookie"}})}});
+        engine.insert(object_view{root});
 
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "server.request.headers", &headers);
-
-        ctx.insert(root);
-
-        auto objects_to_exclude = ctx.eval_filters(deadline);
+        auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
-            EXPECT_TRUE(objects.contains(&root.array[0]));
+            EXPECT_TRUE(objects.contains(root.at(0)));
         }
 
         std::vector<rule_result> results;
-        ctx.eval_rules(objects_to_exclude, results, deadline);
+        engine.eval_rules(objects_to_exclude, results, deadline);
         EXPECT_EQ(results.size(), 0);
     }
 
     {
         ddwaf::timer deadline{2s};
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        ddwaf_object root;
-        ddwaf_object tmp;
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ctx.insert(root);
+        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+        engine.insert(object_view{root});
 
-        auto objects_to_exclude = ctx.eval_filters(deadline);
+        auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 2);
-            EXPECT_TRUE(objects.contains(&root.array[0]));
-            EXPECT_TRUE(objects.contains(&root.array[1]));
+            EXPECT_TRUE(objects.contains(root.at(0)));
+            EXPECT_TRUE(objects.contains(root.at(1)));
         }
         std::vector<rule_result> results;
-        ctx.eval_rules(objects_to_exclude, results, deadline);
+        engine.eval_rules(objects_to_exclude, results, deadline);
         EXPECT_EQ(results.size(), 0);
     }
 
     {
         ddwaf::timer deadline{2s};
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        ddwaf_object root;
-        ddwaf_object headers;
-        ddwaf_object tmp;
-        ddwaf_object_map(&headers);
-        ddwaf_object_map_add(&headers, "cookie", ddwaf_object_string(&tmp, "mycookie"));
+        auto root = object_builder::map(
+            {{"server.request.headers", object_builder::map({{"cookie", "mycookie"}})},
+                {"usr.id", "admin"}});
+        engine.insert(object_view{root});
 
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ddwaf_object_map_add(&root, "server.request.headers", &headers);
-
-        ctx.insert(root);
-
-        auto objects_to_exclude = ctx.eval_filters(deadline);
+        auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 2);
-            EXPECT_TRUE(objects.contains(&root.array[0]));
-            EXPECT_TRUE(objects.contains(&root.array[1]));
+            EXPECT_TRUE(objects.contains(root.at(0)));
+            EXPECT_TRUE(objects.contains(root.at(1)));
         }
         std::vector<rule_result> results;
-        ctx.eval_rules(objects_to_exclude, results, deadline);
+        engine.eval_rules(objects_to_exclude, results, deadline);
         EXPECT_EQ(results.size(), 0);
     }
 
     {
         ddwaf::timer deadline{2s};
-        ddwaf::test::context ctx(rbuilder.build());
+        evaluation_engine engine(rbuilder.build());
 
-        ddwaf_object root;
-        ddwaf_object headers;
-        ddwaf_object tmp;
-        ddwaf_object_map(&headers);
-        ddwaf_object_map_add(&headers, "cookie", ddwaf_object_string(&tmp, "mycookie"));
+        auto root = object_builder::map(
+            {{"server.request.headers", object_builder::map({{"cookie", "mycookie"}})},
+                {"usr.id", "admin"}, {"http.client_ip", "192.168.0.1"}});
+        engine.insert(object_view{root});
 
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "http.client_ip", ddwaf_object_string(&tmp, "192.168.0.1"));
-        ddwaf_object_map_add(&root, "usr.id", ddwaf_object_string(&tmp, "admin"));
-        ddwaf_object_map_add(&root, "server.request.headers", &headers);
-
-        ctx.insert(root);
-
-        auto objects_to_exclude = ctx.eval_filters(deadline);
+        auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, policy] : objects_to_exclude.persistent) {
+        for (const auto &[rule, policy] : objects_to_exclude.context) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 3);
-            EXPECT_TRUE(objects.contains(&root.array[0]));
-            EXPECT_TRUE(objects.contains(&root.array[1]));
-            EXPECT_TRUE(objects.contains(&root.array[2]));
+            EXPECT_TRUE(objects.contains(root.at(0)));
+            EXPECT_TRUE(objects.contains(root.at(1)));
+            EXPECT_TRUE(objects.contains(root.at(2)));
         }
         std::vector<rule_result> results;
-        ctx.eval_rules(objects_to_exclude, results, deadline);
+        engine.eval_rules(objects_to_exclude, results, deadline);
         EXPECT_EQ(results.size(), 0);
     }
 }

@@ -6,11 +6,7 @@
 
 #pragma once
 
-#include <memory>
-#include <span>
 #include <string>
-#include <string_view>
-#include <type_traits>
 #include <vector>
 
 #include "argument_retriever.hpp"
@@ -34,8 +30,8 @@ public:
     base_impl &operator=(base_impl &&) noexcept = default;
 
     [[nodiscard]] eval_result eval(condition_cache &cache, const object_store &store,
-        const exclusion::object_set_ref &objects_excluded, const matcher_mapper & /*unused*/,
-        const object_limits &limits, ddwaf::timer &deadline) const override
+        const object_set_ref &objects_excluded, const matcher_mapper & /*unused*/,
+        ddwaf::timer &deadline) const override
     {
 
         using func_traits = decltype(make_eval_traits(&Self::eval_impl));
@@ -51,8 +47,7 @@ public:
         return std::apply(
             [&](auto &&...args) {
                 return static_cast<const Self *>(this)->eval_impl(
-                    std::forward<decltype(args)>(args)..., cache, objects_excluded, limits,
-                    deadline);
+                    std::forward<decltype(args)>(args)..., cache, objects_excluded, deadline);
             },
             std::move(args));
     }
@@ -86,10 +81,17 @@ public:
     }
 
 protected:
+    template <typename T, typename... Ts>
+    static evaluation_scope resolve_scope(const T &first, Ts... rest)
+    {
+        evaluation_scope result = first.scope;
+        ((result = result.has_lower_precedence_than(rest.scope) ? result : rest.scope), ...);
+        return result;
+    }
+
     template <size_t I, size_t... Is, typename Args>
-    bool resolve_arguments(const object_store &store,
-        const exclusion::object_set_ref &objects_excluded, Args &args,
-        std::index_sequence<I, Is...> /*unused*/) const
+    bool resolve_arguments(const object_store &store, const object_set_ref &objects_excluded,
+        Args &args, std::index_sequence<I, Is...> /*unused*/) const
     {
         using TupleElement = std::tuple_element_t<I, Args>;
         auto arg = resolve_argument<I>(store, objects_excluded);
@@ -117,8 +119,8 @@ protected:
     }
 
     template <size_t I>
-    auto resolve_argument(
-        const object_store &store, const exclusion::object_set_ref &objects_excluded) const
+    [[nodiscard]] auto resolve_argument(
+        const object_store &store, const object_set_ref &objects_excluded) const
     {
         using func_traits = decltype(make_eval_traits(&Self::eval_impl));
         using target_type = typename func_traits::template arg_type<I>;

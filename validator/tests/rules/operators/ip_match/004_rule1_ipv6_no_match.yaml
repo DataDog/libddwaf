@@ -2,7 +2,7 @@
   name: "Basic run with ip_match operator, ipv6 and no match",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule1-input: "abcd::1234:ffff:ffff:fffa"
       },
       code: ok

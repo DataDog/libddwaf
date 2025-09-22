@@ -14,11 +14,11 @@ namespace {
 
 TEST(TestAttributeCollector, InsertNoCopy)
 {
-    ddwaf_object expected;
-    ddwaf_object_string(&expected, "value");
+    std::string_view expected = "value";
+    owned_object input{expected};
 
     attribute_collector collector;
-    EXPECT_TRUE(collector.insert("address", expected, false));
+    EXPECT_TRUE(collector.insert("address", std::move(input)));
 
     object_store store;
     collector.collect_pending(store);
@@ -26,49 +26,21 @@ TEST(TestAttributeCollector, InsertNoCopy)
 
     EXPECT_FALSE(collector.has_pending_attributes());
 
-    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+    EXPECT_EQ(attributes.size(), 1);
 
-    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
-    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
-    EXPECT_EQ(obtained->stringValue, expected.stringValue);
-    EXPECT_STREQ(obtained->stringValue, expected.stringValue);
-
-    ddwaf_object_free(&attributes);
-}
-
-TEST(TestAttributeCollector, InsertCopy)
-{
-    ddwaf_object expected;
-    ddwaf_object_string(&expected, "value");
-
-    attribute_collector collector;
-    EXPECT_TRUE(collector.insert("address", expected, true));
-
-    object_store store;
-    collector.collect_pending(store);
-    auto attributes = collector.get_available_attributes_and_reset();
-
-    EXPECT_FALSE(collector.has_pending_attributes());
-
-    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
-
-    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
-    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
-    EXPECT_NE(obtained->stringValue, expected.stringValue);
-    EXPECT_STREQ(obtained->stringValue, expected.stringValue);
-
-    ddwaf_object_free(&expected);
-    ddwaf_object_free(&attributes);
+    const auto obtained = attributes.at(0);
+    EXPECT_TRUE(obtained.is_string());
+    EXPECT_STRV(obtained.as<std::string_view>(), expected);
 }
 
 TEST(TestAttributeCollector, InsertDuplicate)
 {
-    ddwaf_object expected;
-    ddwaf_object_string(&expected, "value");
+    std::string_view expected = "value";
+    owned_object input{expected};
 
     attribute_collector collector;
-    EXPECT_TRUE(collector.insert("address", expected, true));
-    EXPECT_FALSE(collector.insert("address", expected, true));
+    EXPECT_TRUE(collector.insert("address", input.clone()));
+    EXPECT_FALSE(collector.insert("address", std::move(input)));
 
     object_store store;
     collector.collect_pending(store);
@@ -76,26 +48,20 @@ TEST(TestAttributeCollector, InsertDuplicate)
 
     EXPECT_FALSE(collector.has_pending_attributes());
 
-    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+    EXPECT_EQ(attributes.size(), 1);
 
-    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
-    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
-    EXPECT_NE(obtained->stringValue, expected.stringValue);
-    EXPECT_STREQ(obtained->stringValue, expected.stringValue);
-
-    ddwaf_object_free(&expected);
-    ddwaf_object_free(&attributes);
+    const auto obtained = attributes.at(0);
+    EXPECT_TRUE(obtained.is_string());
+    EXPECT_STRV(obtained.as<std::string_view>(), expected);
 }
 
 TEST(TestAttributeCollector, CollectAvailableScalar)
 {
-    ddwaf_object tmp;
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", ddwaf_object_string(&tmp, "value"));
+    std::string_view expected = "value";
+    auto input = object_builder::map({{"input_address", expected}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input), evaluation_scope::context());
 
     attribute_collector collector;
     EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
@@ -103,34 +69,21 @@ TEST(TestAttributeCollector, CollectAvailableScalar)
 
     EXPECT_FALSE(collector.has_pending_attributes());
 
-    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+    EXPECT_EQ(attributes.size(), 1);
 
-    const auto *expected = ddwaf_object_get_index(&input_map, 0);
-    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
-    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
-    EXPECT_NE(obtained->stringValue, expected->stringValue);
-    EXPECT_STREQ(obtained->stringValue, expected->stringValue);
-
-    ddwaf_object_free(&attributes);
+    const auto obtained = attributes.at(0);
+    EXPECT_TRUE(obtained.is_string());
+    EXPECT_STRV(obtained.as<std::string_view>(), expected);
 }
 
 TEST(TestAttributeCollector, CollectAvailableKeyPathScalar)
 {
-    ddwaf_object tmp;
-    ddwaf_object second_map;
-    ddwaf_object_map(&second_map);
-    ddwaf_object_map_add(&second_map, "second", ddwaf_object_string(&tmp, "value"));
-
-    ddwaf_object first_map;
-    ddwaf_object_map(&first_map);
-    ddwaf_object_map_add(&first_map, "first", &second_map);
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &first_map);
+    std::string_view expected = "value";
+    auto input = object_builder::map({{"input_address",
+        object_builder::map({{"first", object_builder::map({{"second", expected}})}})}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input), evaluation_scope::context());
 
     attribute_collector collector;
     std::vector<std::string> key_path{"first", "second"};
@@ -140,38 +93,22 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathScalar)
 
     EXPECT_FALSE(collector.has_pending_attributes());
 
-    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+    EXPECT_EQ(attributes.size(), 1);
 
-    const auto *expected = ddwaf_object_get_index(&second_map, 0);
-    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
-    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
-    EXPECT_NE(obtained->stringValue, expected->stringValue);
-    EXPECT_STREQ(obtained->stringValue, expected->stringValue);
-
-    ddwaf_object_free(&attributes);
+    const auto obtained = attributes.at(0);
+    EXPECT_TRUE(obtained.is_string());
+    EXPECT_STRV(obtained.as<std::string_view>(), expected);
 }
 
 TEST(TestAttributeCollector, CollectAvailableKeyPathSingleValueArray)
 {
-    ddwaf_object tmp;
-    ddwaf_object third_array;
-    ddwaf_object_array(&third_array);
-    ddwaf_object_array_add(&third_array, ddwaf_object_string(&tmp, "value"));
-
-    ddwaf_object second_map;
-    ddwaf_object_map(&second_map);
-    ddwaf_object_map_add(&second_map, "second", &third_array);
-
-    ddwaf_object first_map;
-    ddwaf_object_map(&first_map);
-    ddwaf_object_map_add(&first_map, "first", &second_map);
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &first_map);
+    std::string_view expected = "value";
+    auto input = object_builder::map({{"input_address",
+        object_builder::map(
+            {{"first", object_builder::map({{"second", object_builder::array({expected})}})}})}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input), evaluation_scope::context());
 
     attribute_collector collector;
     std::vector<std::string> key_path{"first", "second"};
@@ -181,40 +118,23 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathSingleValueArray)
 
     EXPECT_FALSE(collector.has_pending_attributes());
 
-    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+    EXPECT_EQ(attributes.size(), 1);
 
-    const auto *expected = ddwaf_object_get_index(&third_array, 0);
-    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
-    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
-    EXPECT_NE(obtained->stringValue, expected->stringValue);
-    EXPECT_STREQ(obtained->stringValue, expected->stringValue);
-
-    ddwaf_object_free(&attributes);
+    const auto obtained = attributes.at(0);
+    EXPECT_TRUE(obtained.is_string());
+    EXPECT_STRV(obtained.as<std::string_view>(), expected);
 }
 
 TEST(TestAttributeCollector, CollectAvailableKeyPathMultiValueArray)
 {
-    ddwaf_object tmp;
-    ddwaf_object third_array;
-    ddwaf_object_array(&third_array);
-    ddwaf_object_array_add(&third_array, ddwaf_object_string(&tmp, "value0"));
-    ddwaf_object_array_add(&third_array, ddwaf_object_string(&tmp, "value1"));
-    ddwaf_object_array_add(&third_array, ddwaf_object_string(&tmp, "value2"));
-
-    ddwaf_object second_map;
-    ddwaf_object_map(&second_map);
-    ddwaf_object_map_add(&second_map, "second", &third_array);
-
-    ddwaf_object first_map;
-    ddwaf_object_map(&first_map);
-    ddwaf_object_map_add(&first_map, "first", &second_map);
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &first_map);
+    std::string_view expected = "value0";
+    auto input = object_builder::map(
+        {{"input_address", object_builder::map({{"first",
+                               object_builder::map({{"second",
+                                   object_builder::array({expected, "value1", "value2"})}})}})}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input), evaluation_scope::context());
 
     attribute_collector collector;
     std::vector<std::string> key_path{"first", "second"};
@@ -224,34 +144,21 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathMultiValueArray)
 
     EXPECT_FALSE(collector.has_pending_attributes());
 
-    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+    EXPECT_EQ(attributes.size(), 1);
 
-    const auto *expected = ddwaf_object_get_index(&third_array, 0);
-    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
-    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
-    EXPECT_NE(obtained->stringValue, expected->stringValue);
-    EXPECT_STREQ(obtained->stringValue, expected->stringValue);
-
-    ddwaf_object_free(&attributes);
+    const auto obtained = attributes.at(0);
+    EXPECT_TRUE(obtained.is_string());
+    EXPECT_STRV(obtained.as<std::string_view>(), expected);
 }
 
 TEST(TestAttributeCollector, CollectUnavailableKeyPath)
 {
-    ddwaf_object tmp;
-    ddwaf_object second_map;
-    ddwaf_object_map(&second_map);
-    ddwaf_object_map_add(&second_map, "third", ddwaf_object_string(&tmp, "value"));
-
-    ddwaf_object first_map;
-    ddwaf_object_map(&first_map);
-    ddwaf_object_map_add(&first_map, "first", &second_map);
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &first_map);
+    auto input = object_builder::map({{"input_address",
+        object_builder::map({{"first",
+            object_builder::map({{"second", object_builder::map({{"third", "value"}})}})}})}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input), evaluation_scope::context());
 
     attribute_collector collector;
     std::vector<std::string> key_path{"first", "second"};
@@ -261,26 +168,14 @@ TEST(TestAttributeCollector, CollectUnavailableKeyPath)
 
     EXPECT_FALSE(collector.has_pending_attributes());
 
-    EXPECT_EQ(ddwaf_object_size(&attributes), 0);
-
-    ddwaf_object_free(&attributes);
+    EXPECT_EQ(attributes.size(), 0);
 }
 
 TEST(TestAttributeCollector, CollectPendingKeyPathScalar)
 {
-    ddwaf_object tmp;
-    ddwaf_object second_map;
-    ddwaf_object_map(&second_map);
-    ddwaf_object_map_add(&second_map, "second", ddwaf_object_string(&tmp, "value"));
-
-    ddwaf_object first_map;
-    ddwaf_object_map(&first_map);
-    ddwaf_object_map_add(&first_map, "first", &second_map);
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &first_map);
-
+    std::string_view expected = "value";
+    auto input = object_builder::map({{"input_address",
+        object_builder::map({{"first", object_builder::map({{"second", expected}})}})}});
     object_store store;
 
     attribute_collector collector;
@@ -288,41 +183,29 @@ TEST(TestAttributeCollector, CollectPendingKeyPathScalar)
     EXPECT_TRUE(
         collector.collect(store, get_target_index("input_address"), key_path, "output_address"));
     auto attributes = collector.get_available_attributes_and_reset();
-    EXPECT_EQ(ddwaf_object_size(&attributes), 0);
+    EXPECT_EQ(attributes.size(), 0);
     EXPECT_TRUE(collector.has_pending_attributes());
 
-    store.insert(input_map);
+    store.insert(std::move(input), evaluation_scope::context());
     collector.collect_pending(store);
     attributes = collector.get_available_attributes_and_reset();
-    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
     EXPECT_FALSE(collector.has_pending_attributes());
 
-    const auto *expected = ddwaf_object_get_index(&second_map, 0);
-    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
-    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
-    EXPECT_NE(obtained->stringValue, expected->stringValue);
-    EXPECT_STREQ(obtained->stringValue, expected->stringValue);
+    EXPECT_EQ(attributes.size(), 1);
 
-    ddwaf_object_free(&attributes);
+    const auto obtained = attributes.at(0);
+    EXPECT_TRUE(obtained.is_string());
+    EXPECT_STRV(obtained.as<std::string_view>(), expected);
 }
 
 TEST(TestAttributeCollector, CollectAvailableKeyPathInvalidValue)
 {
-    ddwaf_object tmp;
-    ddwaf_object second_map;
-    ddwaf_object_map(&second_map);
-    ddwaf_object_map_add(&second_map, "second", ddwaf_object_map(&tmp));
-
-    ddwaf_object first_map;
-    ddwaf_object_map(&first_map);
-    ddwaf_object_map_add(&first_map, "first", &second_map);
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &first_map);
+    auto input = object_builder::map(
+        {{"input_address", object_builder::map({{"first",
+                               object_builder::map({{"second", object_builder::map()}})}})}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input), evaluation_scope::context());
 
     attribute_collector collector;
     std::vector<std::string> key_path{"first", "second"};
@@ -332,20 +215,16 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathInvalidValue)
 
     EXPECT_FALSE(collector.has_pending_attributes());
 
-    EXPECT_EQ(ddwaf_object_size(&attributes), 0);
-
-    ddwaf_object_free(&attributes);
+    EXPECT_EQ(attributes.size(), 0);
 }
 
 TEST(TestAttributeCollector, CollectDuplicateScalar)
 {
-    ddwaf_object tmp;
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", ddwaf_object_string(&tmp, "value"));
+    std::string_view expected = "value";
+    auto input = object_builder::map({{"input_address", expected}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input), evaluation_scope::context());
 
     attribute_collector collector;
     EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
@@ -354,30 +233,20 @@ TEST(TestAttributeCollector, CollectDuplicateScalar)
 
     EXPECT_FALSE(collector.has_pending_attributes());
 
-    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+    EXPECT_EQ(attributes.size(), 1);
 
-    const auto *expected = ddwaf_object_get_index(&input_map, 0);
-    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
-    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
-    EXPECT_NE(obtained->stringValue, expected->stringValue);
-    EXPECT_STREQ(obtained->stringValue, expected->stringValue);
-
-    ddwaf_object_free(&attributes);
+    const auto obtained = attributes.at(0);
+    EXPECT_TRUE(obtained.is_string());
+    EXPECT_STRV(obtained.as<std::string_view>(), expected);
 }
 
 TEST(TestAttributeCollector, CollectAvailableScalarFromSingleValueArray)
 {
-    ddwaf_object tmp;
-    ddwaf_object intermediate_array;
-    ddwaf_object_array(&intermediate_array);
-    ddwaf_object_array_add(&intermediate_array, ddwaf_object_string(&tmp, "value"));
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &intermediate_array);
+    std::string_view expected = "value";
+    auto input = object_builder::map({{"input_address", object_builder::array({expected})}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input), evaluation_scope::context());
 
     attribute_collector collector;
     EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
@@ -385,32 +254,21 @@ TEST(TestAttributeCollector, CollectAvailableScalarFromSingleValueArray)
 
     EXPECT_FALSE(collector.has_pending_attributes());
 
-    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+    EXPECT_EQ(attributes.size(), 1);
 
-    const auto *expected = ddwaf_object_get_index(ddwaf_object_get_index(&input_map, 0), 0);
-    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
-    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
-    EXPECT_NE(obtained->stringValue, expected->stringValue);
-    EXPECT_STREQ(obtained->stringValue, expected->stringValue);
-
-    ddwaf_object_free(&attributes);
+    const auto obtained = attributes.at(0);
+    EXPECT_TRUE(obtained.is_string());
+    EXPECT_STRV(obtained.as<std::string_view>(), expected);
 }
 
 TEST(TestAttributeCollector, CollectAvailableScalarFromMultiValueArray)
 {
-    ddwaf_object tmp;
-    ddwaf_object intermediate_array;
-    ddwaf_object_array(&intermediate_array);
-    ddwaf_object_array_add(&intermediate_array, ddwaf_object_string(&tmp, "value0"));
-    ddwaf_object_array_add(&intermediate_array, ddwaf_object_string(&tmp, "value1"));
-    ddwaf_object_array_add(&intermediate_array, ddwaf_object_string(&tmp, "value2"));
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &intermediate_array);
+    std::string_view expected = "value0";
+    auto input = object_builder::map(
+        {{"input_address", object_builder::array({expected, "value1", "value2"})}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input), evaluation_scope::context());
 
     attribute_collector collector;
     EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
@@ -418,30 +276,20 @@ TEST(TestAttributeCollector, CollectAvailableScalarFromMultiValueArray)
 
     EXPECT_FALSE(collector.has_pending_attributes());
 
-    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+    EXPECT_EQ(attributes.size(), 1);
 
-    const auto *expected = ddwaf_object_get_index(ddwaf_object_get_index(&input_map, 0), 0);
-    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
-    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
-    EXPECT_NE(obtained->stringValue, expected->stringValue);
-    EXPECT_STREQ(obtained->stringValue, expected->stringValue);
-
-    ddwaf_object_free(&attributes);
+    const auto obtained = attributes.at(0);
+    EXPECT_TRUE(obtained.is_string());
+    EXPECT_STRV(obtained.as<std::string_view>(), expected);
 }
 
 TEST(TestAttributeCollector, CollectInvalidObjectFromArray)
 {
-    ddwaf_object tmp;
-    ddwaf_object intermediate_array;
-    ddwaf_object_array(&intermediate_array);
-    ddwaf_object_array_add(&intermediate_array, ddwaf_object_map(&tmp));
-
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &intermediate_array);
+    auto input =
+        object_builder::map({{"input_address", object_builder::array({object_builder::map()})}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input), evaluation_scope::context());
 
     attribute_collector collector;
     EXPECT_FALSE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
@@ -449,9 +297,7 @@ TEST(TestAttributeCollector, CollectInvalidObjectFromArray)
 
     EXPECT_FALSE(collector.has_pending_attributes());
 
-    EXPECT_EQ(ddwaf_object_size(&attributes), 0);
-
-    ddwaf_object_free(&attributes);
+    EXPECT_EQ(attributes.size(), 0);
 }
 
 TEST(TestAttributeCollector, CollectUnavailableScalar)
@@ -467,29 +313,26 @@ TEST(TestAttributeCollector, CollectUnavailableScalar)
     EXPECT_TRUE(collector.has_pending_attributes());
 
     auto attributes = collector.get_available_attributes_and_reset();
-    EXPECT_EQ(ddwaf_object_size(&attributes), 0);
+    EXPECT_EQ(attributes.size(), 0);
 
     // After adding the attribute, collect_pending should extract, copy and return
     // the expected attribute
-    ddwaf_object tmp;
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", ddwaf_object_string(&tmp, "value"));
+    std::string_view expected = "value";
+    auto input = object_builder::map({{"input_address", expected}});
 
-    store.insert(input_map);
+    store.insert(std::move(input), evaluation_scope::context());
     collector.collect_pending(store);
     EXPECT_FALSE(collector.has_pending_attributes());
 
     attributes = collector.get_available_attributes_and_reset();
-    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
 
-    const auto *expected = ddwaf_object_get_index(&input_map, 0);
-    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
-    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
-    EXPECT_NE(obtained->stringValue, expected->stringValue);
-    EXPECT_STREQ(obtained->stringValue, expected->stringValue);
+    EXPECT_FALSE(collector.has_pending_attributes());
 
-    ddwaf_object_free(&attributes);
+    EXPECT_EQ(attributes.size(), 1);
+
+    const auto obtained = attributes.at(0);
+    EXPECT_TRUE(obtained.is_string());
+    EXPECT_STRV(obtained.as<std::string_view>(), expected);
 }
 
 TEST(TestAttributeCollector, CollectUnavailableScalarFromSingleValueArray)
@@ -505,33 +348,26 @@ TEST(TestAttributeCollector, CollectUnavailableScalarFromSingleValueArray)
     EXPECT_TRUE(collector.has_pending_attributes());
 
     auto attributes = collector.get_available_attributes_and_reset();
-    EXPECT_EQ(ddwaf_object_size(&attributes), 0);
+    EXPECT_EQ(attributes.size(), 0);
 
     // After adding the attribute, collect_pending should extract, copy and return
     // the expected attribute
-    ddwaf_object tmp;
-    ddwaf_object intermediate_array;
-    ddwaf_object_array(&intermediate_array);
-    ddwaf_object_array_add(&intermediate_array, ddwaf_object_string(&tmp, "value"));
+    std::string_view expected = "value";
+    auto input = object_builder::map({{"input_address", object_builder::array({expected})}});
 
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &intermediate_array);
-
-    store.insert(input_map);
+    store.insert(std::move(input), evaluation_scope::context());
     collector.collect_pending(store);
     EXPECT_FALSE(collector.has_pending_attributes());
 
     attributes = collector.get_available_attributes_and_reset();
-    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
 
-    const auto *expected = ddwaf_object_get_index(ddwaf_object_get_index(&input_map, 0), 0);
-    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
-    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
-    EXPECT_NE(obtained->stringValue, expected->stringValue);
-    EXPECT_STREQ(obtained->stringValue, expected->stringValue);
+    EXPECT_FALSE(collector.has_pending_attributes());
 
-    ddwaf_object_free(&attributes);
+    EXPECT_EQ(attributes.size(), 1);
+
+    const auto obtained = attributes.at(0);
+    EXPECT_TRUE(obtained.is_string());
+    EXPECT_STRV(obtained.as<std::string_view>(), expected);
 }
 
 TEST(TestAttributeCollector, CollectUnavailableScalarFromMultiValueArray)
@@ -547,35 +383,27 @@ TEST(TestAttributeCollector, CollectUnavailableScalarFromMultiValueArray)
     EXPECT_TRUE(collector.has_pending_attributes());
 
     auto attributes = collector.get_available_attributes_and_reset();
-    EXPECT_EQ(ddwaf_object_size(&attributes), 0);
+    EXPECT_EQ(attributes.size(), 0);
 
     // After adding the attribute, collect_pending should extract, copy and return
     // the expected attribute
-    ddwaf_object tmp;
-    ddwaf_object intermediate_array;
-    ddwaf_object_array(&intermediate_array);
-    ddwaf_object_array_add(&intermediate_array, ddwaf_object_string(&tmp, "value0"));
-    ddwaf_object_array_add(&intermediate_array, ddwaf_object_string(&tmp, "value1"));
-    ddwaf_object_array_add(&intermediate_array, ddwaf_object_string(&tmp, "value2"));
+    std::string_view expected = "value0";
+    auto input = object_builder::map(
+        {{"input_address", object_builder::array({expected, "value1", "value2"})}});
 
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &intermediate_array);
-
-    store.insert(input_map);
+    store.insert(std::move(input), evaluation_scope::context());
     collector.collect_pending(store);
     EXPECT_FALSE(collector.has_pending_attributes());
 
     attributes = collector.get_available_attributes_and_reset();
-    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
 
-    const auto *expected = ddwaf_object_get_index(ddwaf_object_get_index(&input_map, 0), 0);
-    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
-    EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
-    EXPECT_NE(obtained->stringValue, expected->stringValue);
-    EXPECT_STREQ(obtained->stringValue, expected->stringValue);
+    EXPECT_FALSE(collector.has_pending_attributes());
 
-    ddwaf_object_free(&attributes);
+    EXPECT_EQ(attributes.size(), 1);
+
+    const auto obtained = attributes.at(0);
+    EXPECT_TRUE(obtained.is_string());
+    EXPECT_STRV(obtained.as<std::string_view>(), expected);
 }
 
 TEST(TestAttributeCollector, CollectUnavailableInvalidObject)
@@ -591,23 +419,18 @@ TEST(TestAttributeCollector, CollectUnavailableInvalidObject)
     EXPECT_TRUE(collector.has_pending_attributes());
 
     auto attributes = collector.get_available_attributes_and_reset();
-    EXPECT_EQ(ddwaf_object_size(&attributes), 0);
+    EXPECT_EQ(attributes.size(), 0);
 
     // After adding the attribute, collect_pending should extract, copy and return
     // the expected attribute
-    ddwaf_object tmp;
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", ddwaf_object_array(&tmp));
+    auto input = object_builder::map({{"input_address", object_builder::array()}});
 
-    store.insert(input_map);
+    store.insert(std::move(input), evaluation_scope::context());
     collector.collect_pending(store);
     EXPECT_FALSE(collector.has_pending_attributes());
 
     attributes = collector.get_available_attributes_and_reset();
-    EXPECT_EQ(ddwaf_object_size(&attributes), 0);
-
-    ddwaf_object_free(&attributes);
+    EXPECT_EQ(attributes.size(), 0);
 }
 
 TEST(TestAttributeCollector, CollectMultipleUnavailableScalars)
@@ -626,7 +449,7 @@ TEST(TestAttributeCollector, CollectMultipleUnavailableScalars)
         EXPECT_TRUE(collector.has_pending_attributes());
 
         auto attributes = collector.get_available_attributes_and_reset();
-        EXPECT_EQ(ddwaf_object_size(&attributes), 0);
+        EXPECT_EQ(attributes.size(), 0);
     }
 
     {
@@ -640,18 +463,16 @@ TEST(TestAttributeCollector, CollectMultipleUnavailableScalars)
         EXPECT_TRUE(collector.has_pending_attributes());
 
         auto attributes = collector.get_available_attributes_and_reset();
-        EXPECT_EQ(ddwaf_object_size(&attributes), 0);
+        EXPECT_EQ(attributes.size(), 0);
     }
 
     {
         // After adding the attribute, collect_pending should extract, copy and return
         // the expected attribute
-        ddwaf_object tmp;
-        ddwaf_object input_map;
-        ddwaf_object_map(&input_map);
-        ddwaf_object_map_add(&input_map, "input_address_0", ddwaf_object_string(&tmp, "value"));
+        std::string_view expected = "value";
+        auto input = object_builder::map({{"input_address_0", expected}});
 
-        store.insert(input_map);
+        store.insert(std::move(input), evaluation_scope::context());
 
         EXPECT_TRUE(
             collector.collect(store, get_target_index("input_address_2"), {}, "output_address_2"));
@@ -660,65 +481,50 @@ TEST(TestAttributeCollector, CollectMultipleUnavailableScalars)
         EXPECT_TRUE(collector.has_pending_attributes());
 
         auto attributes = collector.get_available_attributes_and_reset();
-        EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+        EXPECT_EQ(attributes.size(), 1);
 
-        const auto *expected = ddwaf_object_get_index(&input_map, 0);
-        const auto *obtained = ddwaf_object_get_index(&attributes, 0);
-        EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
-        EXPECT_NE(obtained->stringValue, expected->stringValue);
-        EXPECT_STREQ(obtained->stringValue, expected->stringValue);
-
-        ddwaf_object_free(&attributes);
+        const auto obtained = attributes.at(0);
+        EXPECT_TRUE(obtained.is_string());
+        EXPECT_STRV(obtained.as<std::string_view>(), expected);
     }
 
     {
         // After adding the attribute, collect_pending should extract, copy and return
         // the expected attribute
-        ddwaf_object tmp;
-        ddwaf_object input_map;
-        ddwaf_object_map(&input_map);
-        ddwaf_object_map_add(&input_map, "input_address_2", ddwaf_object_string(&tmp, "value"));
 
-        store.insert(input_map);
+        std::string_view expected = "value";
+        auto input = object_builder::map({{"input_address_2", expected}});
+        store.insert(std::move(input), evaluation_scope::context());
 
         collector.collect_pending(store);
         EXPECT_TRUE(collector.has_pending_attributes());
 
         auto attributes = collector.get_available_attributes_and_reset();
-        EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+        EXPECT_EQ(attributes.size(), 1);
 
-        const auto *expected = ddwaf_object_get_index(&input_map, 0);
-        const auto *obtained = ddwaf_object_get_index(&attributes, 0);
-        EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
-        EXPECT_NE(obtained->stringValue, expected->stringValue);
-        EXPECT_STREQ(obtained->stringValue, expected->stringValue);
-
-        ddwaf_object_free(&attributes);
+        const auto obtained = attributes.at(0);
+        EXPECT_TRUE(obtained.is_string());
+        EXPECT_STRV(obtained.as<std::string_view>(), expected);
     }
 
     {
         // After adding the attribute, collect_pending should extract, copy and return
         // the expected attribute
-        ddwaf_object tmp;
-        ddwaf_object input_map;
-        ddwaf_object_map(&input_map);
-        ddwaf_object_map_add(&input_map, "input_address_1", ddwaf_object_string(&tmp, "value"));
 
-        store.insert(input_map);
+        std::string_view expected = "value";
+        auto input = object_builder::map({{"input_address_1", expected}});
+
+        store.insert(std::move(input), evaluation_scope::context());
 
         collector.collect_pending(store);
         EXPECT_FALSE(collector.has_pending_attributes());
 
         auto attributes = collector.get_available_attributes_and_reset();
-        EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+        EXPECT_EQ(attributes.size(), 1);
 
-        const auto *expected = ddwaf_object_get_index(&input_map, 0);
-        const auto *obtained = ddwaf_object_get_index(&attributes, 0);
-        EXPECT_EQ(ddwaf_object_type(obtained), DDWAF_OBJ_STRING);
-        EXPECT_NE(obtained->stringValue, expected->stringValue);
-        EXPECT_STREQ(obtained->stringValue, expected->stringValue);
-
-        ddwaf_object_free(&attributes);
+        const auto obtained = attributes.at(0);
+        EXPECT_TRUE(obtained.is_string());
+        EXPECT_STRV(obtained.as<std::string_view>(), expected);
     }
 }
 

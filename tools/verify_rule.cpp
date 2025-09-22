@@ -13,22 +13,26 @@
 
 ddwaf_object convertRuleToRuleset(const YAML::Node &rulePayload)
 {
-    auto rule = rulePayload.as<ddwaf_object>();
+    auto *alloc = ddwaf_get_default_allocator();
+
     ddwaf_object root;
-    ddwaf_object version;
-    ddwaf_object array;
+    ddwaf_object_set_map(&root, 2, alloc);
+    auto *version = ddwaf_object_insert_key(&root, STRL("version"), alloc);
+    ddwaf_object_set_string_literal(version, STRL("2.1"));
 
-    ddwaf_object_map(&root);
-    ddwaf_object_array(&array);
-    ddwaf_object_array_add(&array, &rule);
+    auto *array = ddwaf_object_insert_key(&root, STRL("rules"), alloc);
+    ddwaf_object_set_array(array, 1, alloc);
 
-    ddwaf_object_map_add(&root, "version", ddwaf_object_string(&version, "2.1"));
-    ddwaf_object_map_add(&root, "rules", &array);
+    auto *rule = ddwaf_object_insert(array, alloc);
+    *rule = rulePayload.as<ddwaf_object>();
+
     return root;
 }
 
 bool runVectors(YAML::Node rule, ddwaf_handle handle, bool runPositiveMatches)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     bool success = true;
     auto ruleID = rule["id"].as<std::string>();
     YAML::Node matches = rule["test_vectors"][runPositiveMatches ? "matches" : "no_matches"];
@@ -38,8 +42,8 @@ bool runVectors(YAML::Node rule, ddwaf_handle handle, bool runPositiveMatches)
              ++vector, ++counter) {
             auto root = vector->as<ddwaf_object>();
             if (root.type != DDWAF_OBJ_INVALID) {
-                ddwaf_context ctx = ddwaf_context_init(handle);
-                DDWAF_RET_CODE ret = ddwaf_run(ctx, &root, nullptr, nullptr, LONG_TIME);
+                ddwaf_context ctx = ddwaf_context_init(handle, alloc);
+                DDWAF_RET_CODE ret = ddwaf_context_eval(ctx, &root, alloc, nullptr, LONG_TIME);
 
                 bool hadError = ret < DDWAF_OK;
                 bool hadMatch = !hadError && ret != DDWAF_OK;
@@ -88,7 +92,7 @@ int main(int argc, char *argv[])
 
         ddwaf_object convertedRule = convertRuleToRuleset(rule);
         ddwaf_handle handle = ddwaf_init(&convertedRule, nullptr, nullptr);
-        ddwaf_object_free(&convertedRule);
+        ddwaf_object_destroy(&convertedRule, ddwaf_get_default_allocator());
 
         if (handle == nullptr) {
             // Verify if the rule should've loaded successfully or not

@@ -2,7 +2,7 @@
   name: "Map with multiple keys, first key is a match",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule1-input: {
           first: rule1,
           other: value,

@@ -38,13 +38,13 @@ struct ruleset {
         rule_modules = builder.build(*base_rules, *user_rules);
     }
 
-    void insert_filters(std::shared_ptr<const std::vector<exclusion::rule_filter>> filters)
+    void insert_filters(std::shared_ptr<const std::vector<rule_filter>> filters)
     {
         rule_filters = std::move(filters);
         for (const auto &filter : *rule_filters) { filter.get_addresses(filter_addresses); }
     }
 
-    void insert_filters(std::shared_ptr<const std::vector<exclusion::input_filter>> filters)
+    void insert_filters(std::shared_ptr<const std::vector<input_filter>> filters)
     {
         input_filters = std::move(filters);
         for (const auto &filter : *input_filters) { filter.get_addresses(filter_addresses); }
@@ -127,15 +127,13 @@ struct ruleset {
         return available_action_types;
     }
 
-    ddwaf_object_free_fn free_fn{ddwaf_object_free};
-    object_limits limits{};
     std::shared_ptr<const match_obfuscator> obfuscator;
 
     std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> preprocessors;
     std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> postprocessors;
 
-    std::shared_ptr<const std::vector<exclusion::rule_filter>> rule_filters;
-    std::shared_ptr<const std::vector<exclusion::input_filter>> input_filters;
+    std::shared_ptr<const std::vector<rule_filter>> rule_filters;
+    std::shared_ptr<const std::vector<input_filter>> input_filters;
 
     std::shared_ptr<const std::vector<core_rule>> base_rules;
     std::shared_ptr<const std::vector<core_rule>> user_rules;

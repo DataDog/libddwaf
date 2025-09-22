@@ -6,21 +6,20 @@
 
 #include <cstdio>
 
-#include "ddwaf.h"
 #include "log.hpp"
 
 namespace ddwaf {
 
-ddwaf_log_cb logger::cb = nullptr;
-DDWAF_LOG_LEVEL logger::min_level = DDWAF_LOG_OFF;
+logger::log_cb_type logger::cb = nullptr;
+log_level logger::min_level = log_level::off;
 
-void logger::init(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level)
+void logger::init(log_cb_type cb, log_level min_level)
 {
     logger::cb = cb;
     logger::min_level = min_level;
 }
 
-void logger::log(DDWAF_LOG_LEVEL level, const char *function, const char *file, unsigned line,
+void logger::log(log_level level, const char *function, const char *file, unsigned line,
     const char *message, size_t length)
 {
     logger::cb(level, function, file, line, message, length);

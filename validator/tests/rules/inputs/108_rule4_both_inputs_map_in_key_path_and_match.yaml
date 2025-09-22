@@ -2,7 +2,7 @@
   name: "Both inputs, map in key-path and match",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule4-input1: {
           keypath: {
             other: rule4

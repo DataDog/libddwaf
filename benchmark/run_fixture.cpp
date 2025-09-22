@@ -20,7 +20,7 @@ run_fixture::run_fixture(ddwaf_handle handle, std::vector<ddwaf_object> &&object
 
 bool run_fixture::set_up()
 {
-    ctx_ = ddwaf_context_init(handle_);
+    ctx_ = ddwaf_context_init(handle_, ddwaf_get_default_allocator());
     return ctx_ != nullptr;
 }
 
@@ -32,17 +32,17 @@ void run_fixture::warmup()
         object_stack.emplace(&object, 0);
         while (!object_stack.empty()) {
             auto &[current, i] = object_stack.top();
-            for (; i < current->nbEntries; ++i) {
-                const auto &next = current->array[i];
+            for (; i < ddwaf_object_get_size(current); ++i) {
+                const auto &next = *ddwaf_object_at_value(current, i);
                 if (object_stack.size() <= max_depth &&
                     (next.type == DDWAF_OBJ_ARRAY || next.type == DDWAF_OBJ_MAP)) {
                     break;
                 }
             }
-            if (i == current->nbEntries) {
+            if (i == ddwaf_object_get_size(current)) {
                 object_stack.pop();
             } else {
-                object_stack.emplace(&current->array[i++], 0);
+                object_stack.emplace(ddwaf_object_at_value(current, i++), 0);
             }
         }
     }
@@ -50,11 +50,16 @@ void run_fixture::warmup()
 
 uint64_t run_fixture::test_main()
 {
+    auto *alloc = ddwaf_get_default_allocator();
     uint64_t total_runtime = 0;
 
     for (auto &object : objects_) {
-        ddwaf_object res;
-        auto code = ddwaf_run(ctx_, nullptr, &object, &res, std::numeric_limits<uint32_t>::max());
+        ddwaf_object res{};
+
+        auto *subctx = ddwaf_subcontext_init(ctx_);
+        auto code = ddwaf_subcontext_eval(
+            subctx, &object, nullptr, &res, std::numeric_limits<uint32_t>::max());
+        ddwaf_subcontext_destroy(subctx);
         if (code < 0) {
             throw std::runtime_error("WAF returned " + std::to_string(code));
         }
@@ -66,7 +71,7 @@ uint64_t run_fixture::test_main()
 
         const auto *duration = ddwaf_object_find(&res, "duration", sizeof("duration") - 1);
         total_runtime += ddwaf_object_get_unsigned(duration);
-        ddwaf_object_free(&res);
+        ddwaf_object_destroy(&res, alloc);
     }
 
     return total_runtime;

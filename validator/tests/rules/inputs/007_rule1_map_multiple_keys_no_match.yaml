@@ -2,7 +2,7 @@
   name: "Map with multiple keys, no match",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule1-input: {
           other: value,
           first: garbage,

@@ -2,7 +2,7 @@
   name: "Basic run with ip_match operator and ipv4",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule1-input: 192.168.1.1
       },
       rules: [

@@ -48,24 +48,18 @@ void match_path_and_input(const std::vector<std::pair<std::string, ssrf_sample>>
     }
 
     for (const auto &[path, sample] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-
-        ddwaf_object_map(&root);
-        ddwaf_object_map_add(&root, "server.io.net.url", ddwaf_object_string(&tmp, path.c_str()));
-
-        auto input = yaml_to_object(sample.yaml);
-        ddwaf_object_map_add(&root, "server.request.query", &input);
+        auto root = object_builder::map({{"server.io.net.url", path},
+            {"server.request.query", yaml_to_object<owned_object>(sample.yaml)}});
 
         object_store store;
-        store.insert(root);
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         if (match) {
             ASSERT_TRUE(res.outcome) << path;
-            EXPECT_FALSE(res.ephemeral);
+            EXPECT_TRUE(res.scope.is_context());
 
             EXPECT_TRUE(cache.match);
             if (cache.match) { // Silence linter

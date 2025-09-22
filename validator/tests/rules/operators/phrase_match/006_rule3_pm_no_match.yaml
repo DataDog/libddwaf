@@ -2,7 +2,7 @@
   name: "Basic run with negated phrase_match, no match",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule3-input: "asjkdansdstring00asdkjasndk"
       },
       code: ok

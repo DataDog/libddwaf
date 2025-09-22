@@ -2,7 +2,7 @@
   name: "Validate that base rules still match when there's no contention",
   runs: [
     {
-      persistent-input: {
+      input: {
         base-rule1-input: admin
       },
       rules: [

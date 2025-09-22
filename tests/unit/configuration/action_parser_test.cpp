@@ -18,7 +18,7 @@ namespace {
 
 TEST(TestActionParser, EmptyActions)
 {
-    auto object = yaml_to_object(R"([])");
+    auto object = yaml_to_object<owned_object>(R"([])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -26,7 +26,6 @@ TEST(TestActionParser, EmptyActions)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     EXPECT_TRUE(change.empty());
     EXPECT_TRUE(change.actions.empty());
@@ -56,7 +55,8 @@ TEST(TestActionParser, EmptyActions)
 
 TEST(TestActionParser, SingleAction)
 {
-    auto object = yaml_to_object(R"([{id: block_1, type: block_request, parameters: {}}])");
+    auto object =
+        yaml_to_object<owned_object>(R"([{id: block_1, type: block_request, parameters: {}}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -64,11 +64,10 @@ TEST(TestActionParser, SingleAction)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -81,8 +80,6 @@ TEST(TestActionParser, SingleAction)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(cfg.actions.size(), 1);
@@ -135,7 +132,7 @@ TEST(TestActionParser, RedirectAction)
             name, url, status_code);
     }
     yaml.append("]");
-    auto object = yaml_to_object(yaml);
+    auto object = yaml_to_object<owned_object>(yaml);
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -143,11 +140,10 @@ TEST(TestActionParser, RedirectAction)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -165,8 +161,6 @@ TEST(TestActionParser, RedirectAction)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -213,7 +207,7 @@ TEST(TestActionParser, RedirectAction)
 
 TEST(TestActionParser, RedirectActionInvalidStatusCode)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: 404}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -222,11 +216,10 @@ TEST(TestActionParser, RedirectActionInvalidStatusCode)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -239,8 +232,6 @@ TEST(TestActionParser, RedirectActionInvalidStatusCode)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -265,7 +256,7 @@ TEST(TestActionParser, RedirectActionInvalidStatusCode)
 
 TEST(TestActionParser, RedirectActionNegativeStatusCode)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: -303}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -274,11 +265,10 @@ TEST(TestActionParser, RedirectActionNegativeStatusCode)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -291,8 +281,6 @@ TEST(TestActionParser, RedirectActionNegativeStatusCode)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -317,7 +305,7 @@ TEST(TestActionParser, RedirectActionNegativeStatusCode)
 
 TEST(TestActionParser, RedirectActionStatusCodeOutOfRange)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: 1000}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -326,11 +314,10 @@ TEST(TestActionParser, RedirectActionStatusCodeOutOfRange)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -343,8 +330,6 @@ TEST(TestActionParser, RedirectActionStatusCodeOutOfRange)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -369,7 +354,7 @@ TEST(TestActionParser, RedirectActionStatusCodeOutOfRange)
 
 TEST(TestActionParser, RedirectActionInvalid300StatusCode)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: 304}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -378,11 +363,10 @@ TEST(TestActionParser, RedirectActionInvalid300StatusCode)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -395,8 +379,6 @@ TEST(TestActionParser, RedirectActionInvalid300StatusCode)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -421,7 +403,7 @@ TEST(TestActionParser, RedirectActionInvalid300StatusCode)
 
 TEST(TestActionParser, RedirectActionStringStatusCode)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: "303"}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -430,11 +412,10 @@ TEST(TestActionParser, RedirectActionStringStatusCode)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -447,8 +428,6 @@ TEST(TestActionParser, RedirectActionStringStatusCode)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -473,7 +452,7 @@ TEST(TestActionParser, RedirectActionStringStatusCode)
 
 TEST(TestActionParser, RedirectActionValidFloatStatusCode)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: 307.0}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -482,11 +461,10 @@ TEST(TestActionParser, RedirectActionValidFloatStatusCode)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -499,8 +477,6 @@ TEST(TestActionParser, RedirectActionValidFloatStatusCode)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -525,7 +501,7 @@ TEST(TestActionParser, RedirectActionValidFloatStatusCode)
 
 TEST(TestActionParser, RedirectActionInvalidFloatStatusCode)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: redirect, parameters: {location: "http://www.google.com", status_code: 303.33}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -534,11 +510,10 @@ TEST(TestActionParser, RedirectActionInvalidFloatStatusCode)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -551,8 +526,6 @@ TEST(TestActionParser, RedirectActionInvalidFloatStatusCode)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -577,7 +550,7 @@ TEST(TestActionParser, RedirectActionInvalidFloatStatusCode)
 
 TEST(TestActionParser, RedirectActionMissingStatusCode)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: redirect, parameters: {location: "http://www.google.com"}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -586,11 +559,10 @@ TEST(TestActionParser, RedirectActionMissingStatusCode)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -603,8 +575,6 @@ TEST(TestActionParser, RedirectActionMissingStatusCode)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -629,7 +599,7 @@ TEST(TestActionParser, RedirectActionMissingStatusCode)
 
 TEST(TestActionParser, RedirectActionMissingLocation)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: redirect, parameters: {status_code: 303}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -638,11 +608,10 @@ TEST(TestActionParser, RedirectActionMissingLocation)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -655,8 +624,6 @@ TEST(TestActionParser, RedirectActionMissingLocation)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -682,7 +649,7 @@ TEST(TestActionParser, RedirectActionMissingLocation)
 
 TEST(TestActionParser, RedirectActionNonHttpURL)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: redirect, parameters: {status_code: 303, location: ftp://myftp.mydomain.com}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -691,11 +658,10 @@ TEST(TestActionParser, RedirectActionNonHttpURL)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -708,8 +674,6 @@ TEST(TestActionParser, RedirectActionNonHttpURL)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -735,7 +699,7 @@ TEST(TestActionParser, RedirectActionNonHttpURL)
 
 TEST(TestActionParser, RedirectActionInvalidRelativePathURL)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: redirect, parameters: {status_code: 303, location: ../../../etc/passwd}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -744,11 +708,10 @@ TEST(TestActionParser, RedirectActionInvalidRelativePathURL)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -761,8 +724,6 @@ TEST(TestActionParser, RedirectActionInvalidRelativePathURL)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -788,7 +749,7 @@ TEST(TestActionParser, RedirectActionInvalidRelativePathURL)
 
 TEST(TestActionParser, OverrideDefaultBlockAction)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: block, parameters: {location: "http://www.google.com", status_code: 302}, type: redirect_request}])");
 
     configuration_spec cfg;
@@ -798,11 +759,9 @@ TEST(TestActionParser, OverrideDefaultBlockAction)
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
 
-    ddwaf_object_free(&object);
-
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -815,8 +774,6 @@ TEST(TestActionParser, OverrideDefaultBlockAction)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -841,7 +798,7 @@ TEST(TestActionParser, OverrideDefaultBlockAction)
 
 TEST(TestActionParser, BlockActionMissingStatusCode)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: block, parameters: {type: "auto", grpc_status_code: 302}, type: block_request}])");
 
     configuration_spec cfg;
@@ -850,11 +807,10 @@ TEST(TestActionParser, BlockActionMissingStatusCode)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -867,8 +823,6 @@ TEST(TestActionParser, BlockActionMissingStatusCode)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -894,7 +848,7 @@ TEST(TestActionParser, BlockActionMissingStatusCode)
 
 TEST(TestActionParser, BlockActionNegativeStatusCode)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: block, parameters: {type: "auto", grpc_status_code: -302, status_code: -10}, type: block_request}])");
 
     configuration_spec cfg;
@@ -903,11 +857,10 @@ TEST(TestActionParser, BlockActionNegativeStatusCode)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -920,8 +873,6 @@ TEST(TestActionParser, BlockActionNegativeStatusCode)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -947,7 +898,7 @@ TEST(TestActionParser, BlockActionNegativeStatusCode)
 
 TEST(TestActionParser, BlockActionStringStatusCode)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: block, parameters: {type: "auto", grpc_status_code: "302", status_code: "10"}, type: block_request}])");
 
     configuration_spec cfg;
@@ -956,11 +907,10 @@ TEST(TestActionParser, BlockActionStringStatusCode)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -973,8 +923,6 @@ TEST(TestActionParser, BlockActionStringStatusCode)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -1000,7 +948,7 @@ TEST(TestActionParser, BlockActionStringStatusCode)
 
 TEST(TestActionParser, BlockActionInvalidFloatStatusCode)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: block, parameters: {type: "auto", grpc_status_code: 302.33, status_code: 110.33}, type: block_request}])");
 
     configuration_spec cfg;
@@ -1009,11 +957,10 @@ TEST(TestActionParser, BlockActionInvalidFloatStatusCode)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1026,8 +973,6 @@ TEST(TestActionParser, BlockActionInvalidFloatStatusCode)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -1053,7 +998,7 @@ TEST(TestActionParser, BlockActionInvalidFloatStatusCode)
 
 TEST(TestActionParser, BlockActionValidFloatStatusCode)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: block, parameters: {type: "auto", grpc_status_code: 302.0, status_code: 110.0}, type: block_request}])");
 
     configuration_spec cfg;
@@ -1062,11 +1007,10 @@ TEST(TestActionParser, BlockActionValidFloatStatusCode)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1079,8 +1023,6 @@ TEST(TestActionParser, BlockActionValidFloatStatusCode)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -1106,7 +1048,7 @@ TEST(TestActionParser, BlockActionValidFloatStatusCode)
 
 TEST(TestActionParser, BlockActionStatusCodeOutOfRange)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: block, parameters: {type: "auto", grpc_status_code: 1000, status_code: 1000}, type: block_request}])");
 
     configuration_spec cfg;
@@ -1115,11 +1057,10 @@ TEST(TestActionParser, BlockActionStatusCodeOutOfRange)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1132,8 +1073,6 @@ TEST(TestActionParser, BlockActionStatusCodeOutOfRange)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -1159,7 +1098,7 @@ TEST(TestActionParser, BlockActionStatusCodeOutOfRange)
 
 TEST(TestActionParser, UnknownActionType)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: sanitize, parameters: {location: "http://www.google.com", status_code: 302}, type: new_action_type}])");
 
     configuration_spec cfg;
@@ -1168,11 +1107,10 @@ TEST(TestActionParser, UnknownActionType)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1185,8 +1123,6 @@ TEST(TestActionParser, UnknownActionType)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -1200,7 +1136,7 @@ TEST(TestActionParser, UnknownActionType)
 
 TEST(TestActionParser, BlockActionMissingGrpcStatusCode)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: block, parameters: {type: "auto", status_code: 302}, type: block_request}])");
 
     configuration_spec cfg;
@@ -1209,11 +1145,10 @@ TEST(TestActionParser, BlockActionMissingGrpcStatusCode)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1226,8 +1161,6 @@ TEST(TestActionParser, BlockActionMissingGrpcStatusCode)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -1253,7 +1186,7 @@ TEST(TestActionParser, BlockActionMissingGrpcStatusCode)
 
 TEST(TestActionParser, BlockActionMissingType)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: block, parameters: {grpc_status_code: 11, status_code: 302}, type: block_request}])");
 
     configuration_spec cfg;
@@ -1262,11 +1195,10 @@ TEST(TestActionParser, BlockActionMissingType)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1279,8 +1211,6 @@ TEST(TestActionParser, BlockActionMissingType)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -1306,7 +1236,8 @@ TEST(TestActionParser, BlockActionMissingType)
 
 TEST(TestActionParser, BlockActionMissingParameters)
 {
-    auto object = yaml_to_object(R"([{id: block, parameters: {}, type: block_request}])");
+    auto object =
+        yaml_to_object<owned_object>(R"([{id: block, parameters: {}, type: block_request}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -1314,11 +1245,10 @@ TEST(TestActionParser, BlockActionMissingParameters)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1331,8 +1261,6 @@ TEST(TestActionParser, BlockActionMissingParameters)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -1358,7 +1286,7 @@ TEST(TestActionParser, BlockActionMissingParameters)
 
 TEST(TestActionParser, MissingID)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{parameters: {location: "http://www.google.com", status_code: 302}, type: new_action_type}])");
 
     configuration_spec cfg;
@@ -1367,14 +1295,13 @@ TEST(TestActionParser, MissingID)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     EXPECT_EQ(change.actions.size(), 0);
     EXPECT_EQ(cfg.actions.size(), 0);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1394,14 +1321,12 @@ TEST(TestActionParser, MissingID)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 }
 
 TEST(TestActionParser, MissingType)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: sanitize, parameters: {location: "http://www.google.com", status_code: 302}}])");
 
     configuration_spec cfg;
@@ -1410,14 +1335,13 @@ TEST(TestActionParser, MissingType)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     EXPECT_EQ(change.actions.size(), 0);
     EXPECT_EQ(cfg.actions.size(), 0);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1437,14 +1361,12 @@ TEST(TestActionParser, MissingType)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("sanitize"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 }
 
 TEST(TestActionParser, MissingParameters)
 {
-    auto object = yaml_to_object(R"([{id: sanitize, type: sanitize_request}])");
+    auto object = yaml_to_object<owned_object>(R"([{id: sanitize, type: sanitize_request}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -1452,14 +1374,13 @@ TEST(TestActionParser, MissingParameters)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     EXPECT_EQ(change.actions.size(), 0);
     EXPECT_EQ(cfg.actions.size(), 0);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1479,14 +1400,12 @@ TEST(TestActionParser, MissingParameters)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("sanitize"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 }
 
 TEST(TestActionParser, DuplicateAction)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: block_1, type: block_request, parameters: {}},{id: block_1, type: block_request, parameters: {}}])");
 
     configuration_spec cfg;
@@ -1495,11 +1414,10 @@ TEST(TestActionParser, DuplicateAction)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1519,8 +1437,6 @@ TEST(TestActionParser, DuplicateAction)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("block_1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -1534,7 +1450,7 @@ TEST(TestActionParser, DuplicateAction)
 
 TEST(TestActionParser, ParameterTypes)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: sanitize, parameters: {string: thisisastring, int64: -200, uint64: 18446744073709551615, double: 22.22, bool: true}, type: new_action_type}])");
 
     configuration_spec cfg;
@@ -1543,11 +1459,10 @@ TEST(TestActionParser, ParameterTypes)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1560,8 +1475,6 @@ TEST(TestActionParser, ParameterTypes)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -1602,7 +1515,8 @@ TEST(TestActionParser, ParameterTypes)
 
 TEST(TestActionParser, InvalidParameterContainer)
 {
-    auto object = yaml_to_object(R"([{id: sanitize, parameters: [], type: new_action_type}])");
+    auto object =
+        yaml_to_object<owned_object>(R"([{id: sanitize, parameters: [], type: new_action_type}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -1610,11 +1524,10 @@ TEST(TestActionParser, InvalidParameterContainer)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1634,15 +1547,13 @@ TEST(TestActionParser, InvalidParameterContainer)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("sanitize"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 }
 
 TEST(TestActionParser, InvalidParameterType)
 {
-    auto object =
-        yaml_to_object(R"([{id: sanitize, parameters: {value: {}}, type: new_action_type}])");
+    auto object = yaml_to_object<owned_object>(
+        R"([{id: sanitize, parameters: {value: {}}, type: new_action_type}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -1650,11 +1561,10 @@ TEST(TestActionParser, InvalidParameterType)
     ruleset_info::section_info section;
     auto actions_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_actions(actions_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -1674,8 +1584,6 @@ TEST(TestActionParser, InvalidParameterType)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("sanitize"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 }
 

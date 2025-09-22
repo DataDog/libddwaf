@@ -2,7 +2,7 @@
   name: "Basic run with negated exact_match operator and no match",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule2-input: "something else"
       },
       code: ok

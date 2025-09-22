@@ -2,7 +2,7 @@
   name: "Basic run with match",
   runs: [
     {
-      persistent-input: {
+      input: {
         server.sys.exec.cmd: ["/usr/bin/bash", "-c", "cat $0", "/etc/passwd"],
         server.request.query: [ "no", "injection", "here" ],
         server.request.body: [ "no", "injection", "before", "cat $0", "or", "after"]

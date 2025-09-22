@@ -2,7 +2,7 @@
   name: "Basic run with exists operator",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule1-input: "something else"
       },
       rules: [

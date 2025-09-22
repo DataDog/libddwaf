@@ -2,7 +2,7 @@
   name: "Match with transformer",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule2-input: "'OR 1=1/*"
       },
       rules: [

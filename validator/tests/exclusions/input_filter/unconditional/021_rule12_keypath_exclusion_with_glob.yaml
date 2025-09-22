@@ -2,10 +2,9 @@
   name: "Keypath exclusion with condition",
   runs: [
     {
-      persistent-input: {
-        exclusion-filter-4-input: exclusion-filter-4,
+      input: {
         rule12-input1: {
-          a: {b: {c: {d: rule12}}}
+          a: {b: {c: {e: rule12}}}
         }
       },
       code: ok
