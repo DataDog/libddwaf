@@ -42,3 +42,47 @@ rules:
         parameters:
           inputs:
             - address: rule4-input
+  - id: "5"
+    name: rule5-exists-array-keypath
+    tags:
+      type: flow5
+      category: category
+    conditions:
+      - operator: exists
+        parameters:
+          inputs:
+            - address: rule5-input
+              key_path: [-1]
+  - id: "6"
+    name: rule6-negated-exists-array-keypath
+    tags:
+      type: flow6
+      category: category
+    conditions:
+      - operator: "!exists"
+        parameters:
+          inputs:
+            - address: rule6-input
+              key_path: [1]
+  - id: "7"
+    name: rule7-exists-mixed-keypath
+    tags:
+      type: flow7
+      category: category
+    conditions:
+      - operator: exists
+        parameters:
+          inputs:
+            - address: rule7-input
+              key_path: ["path", "to", 5, "element"]
+  - id: "8"
+    name: rule8-negated-exists-mixed-keypath
+    tags:
+      type: flow8
+      category: category
+    conditions:
+      - operator: "!exists"
+        parameters:
+          inputs:
+            - address: rule8-input
+              key_path: ["path", "to", -5, "element"]

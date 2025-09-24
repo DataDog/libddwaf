@@ -308,6 +308,8 @@ inline std::vector<std::variant<std::string_view, int64_t>> convert_key_path(
     std::span<const std::variant<std::string, int64_t>> key_path)
 {
     std::vector<std::variant<std::string_view, int64_t>> result;
+    result.reserve(key_path.size());
+
     for (const auto &key : key_path) {
         if (std::holds_alternative<std::string>(key)) {
             result.emplace_back(std::get<std::string>(key));

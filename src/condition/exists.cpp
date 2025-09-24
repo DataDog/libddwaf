@@ -54,12 +54,16 @@ search_outcome exists(object_view root,
         return search_outcome::found;
     }
 
+    auto it = key_path.begin();
+
     // Since there's a key path, the object must be a map
-    if (root.type() != object_type::map) {
+    if (std::holds_alternative<std::string>(*it) && root.type() != object_type::map) {
         return search_outcome::not_found;
     }
 
-    auto it = key_path.begin();
+    if (std::holds_alternative<int64_t>(*it) && root.type() != object_type::array) {
+        return search_outcome::not_found;
+    }
 
     while ((root = get_key(root, *it)).has_value()) {
         if (objects_excluded.contains(root)) {
@@ -72,7 +76,11 @@ search_outcome exists(object_view root,
             return search_outcome::found;
         }
 
-        if (root.type() != object_type::map) {
+        if (std::holds_alternative<std::string>(*it) && root.type() != object_type::map) {
+            return search_outcome::not_found;
+        }
+
+        if (std::holds_alternative<int64_t>(*it) && root.type() != object_type::array) {
             return search_outcome::not_found;
         }
     }
