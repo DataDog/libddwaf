@@ -3,11 +3,13 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "condition/base.hpp"
@@ -82,9 +84,10 @@ std::vector<condition_parameter> parse_arguments(const raw_configuration::map &p
                 throw ddwaf::parsing_error("empty address");
             }
 
-            auto kp = at<std::vector<std::string>>(input, "key_path", {});
+            auto kp = at<std::vector<std::variant<std::string, int64_t>>>(input, "key_path", {});
             for (const auto &path : kp) {
-                if (path.empty()) {
+                if (std::holds_alternative<std::string>(path) &&
+                    std::get<std::string>(path).empty()) {
                     throw ddwaf::parsing_error("empty key_path");
                 }
             }

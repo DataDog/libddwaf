@@ -4,9 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <cstdint>
 #include <exception>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "configuration/common/common.hpp"
@@ -53,9 +55,10 @@ std::vector<processor_mapping> parse_processor_mappings(
             auto input = static_cast<raw_configuration::map>(inputs[0]);
             auto input_address = at<std::string>(input, "address");
 
-            auto kp = at<std::vector<std::string>>(input, "key_path", {});
+            auto kp = at<std::vector<std::variant<std::string, int64_t>>>(input, "key_path", {});
             for (const auto &path : kp) {
-                if (path.empty()) {
+                if (std::holds_alternative<std::string>(path) &&
+                    std::get<std::string>(path).empty()) {
                     throw ddwaf::parsing_error("empty key_path");
                 }
             }

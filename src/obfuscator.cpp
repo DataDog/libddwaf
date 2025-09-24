@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <memory>
 #include <string_view>
+#include <variant>
 
 #include "condition/base.hpp"
 #include "dynamic_string.hpp"
@@ -87,7 +88,8 @@ void match_obfuscator::obfuscate_match(condition_match &match) const
     for (auto &arg : match.args) {
         bool sensitive_key = false;
         for (const auto &key : arg.key_path) {
-            if (is_sensitive_key(key)) {
+            if (std::holds_alternative<std::string_view>(key) &&
+                is_sensitive_key(std::get<std::string_view>(key))) {
                 sensitive_key = true;
                 break;
             }
