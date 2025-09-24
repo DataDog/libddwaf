@@ -35,6 +35,7 @@ TEST(TestActionsIntegration, DefaultActions)
 
         EXPECT_EVENTS(res, {.id = "block-rule",
                                .name = "block-rule",
+                               .block_id = "*",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -46,8 +47,8 @@ TEST(TestActionsIntegration, DefaultActions)
                                    }}}}});
 
         EXPECT_ACTIONS(
-            res, {{"block_request",
-                     {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+            res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}});
         ddwaf_object_free(&res);
     }
 
@@ -179,6 +180,7 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
 
         EXPECT_EVENTS(res, {.id = "block-rule",
                                .name = "block-rule",
+                               .block_id = "*",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -190,8 +192,8 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
                                    }}}}});
 
         EXPECT_ACTIONS(
-            res, {{"block_request",
-                     {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+            res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}});
         ddwaf_object_free(&res);
 
         ddwaf_context_destroy(context);
@@ -350,6 +352,7 @@ TEST(TestActionsIntegration, EmptyOrInvalidActions)
 
     EXPECT_EVENTS(res, {.id = "block-rule",
                            .name = "block-rule",
+                           .block_id = "*",
                            .tags = {{"type", "flow1"}, {"category", "category1"}},
                            .actions = {"block"},
                            .matches = {{.op = "match_regex",
@@ -361,7 +364,7 @@ TEST(TestActionsIntegration, EmptyOrInvalidActions)
                                }}}}});
 
     EXPECT_ACTIONS(res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                               {"type", "auto"}}}});
+                                               {"type", "auto"}, {"block_id", "*"}}}});
     ddwaf_object_free(&res);
 
     ddwaf_context_destroy(context);

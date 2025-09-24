@@ -109,6 +109,9 @@ struct action_tracker {
     // Stack trace ID
     std::string stack_id;
 
+    // Block ID
+    std::string block_id;
+
     // This set contains all remaining actions other than the blocking action
     std::unordered_set<std::string_view> non_blocking_actions;
 
@@ -124,6 +127,10 @@ void add_action_to_tracker(action_tracker &actions, std::string_view id, action_
             actions.blocking_action_type = type;
             actions.blocking_action = id;
         }
+
+        if (type == action_type::block_request) {
+            actions.block_id = uuidv4_generate_pseudo();
+        }
     } else {
         if (type == action_type::generate_stack && actions.stack_id.empty()) {
             // Stack trace actions require a dynamic stack ID, however we
@@ -135,16 +142,21 @@ void add_action_to_tracker(action_tracker &actions, std::string_view id, action_
     }
 }
 
-std::pair<ddwaf_object, /*stack id*/ bool> serialize_and_consolidate_actions(
-    std::string_view action_override, const std::vector<std::string> &rule_actions,
-    action_tracker &actions)
+struct generated_action {
+    ddwaf_object actions_array;
+    bool required_stack_id;
+    bool required_block_id;
+};
+
+generated_action serialize_and_consolidate_actions(std::string_view action_override,
+    const std::vector<std::string> &rule_actions, action_tracker &actions)
 {
     ddwaf_object tmp;
     ddwaf_object actions_array;
     ddwaf_object_array(&actions_array);
 
     if (rule_actions.empty() && action_override.empty()) {
-        return {actions_array, false};
+        return {actions_array, false, false};
     }
 
     if (!action_override.empty()) {
@@ -171,6 +183,7 @@ std::pair<ddwaf_object, /*stack id*/ bool> serialize_and_consolidate_actions(
     }
 
     bool has_stack_id = false;
+    bool has_block_id = false;
     for (const auto &action_id : rule_actions) {
         auto action_it = actions.mapper.find(action_id);
         if (action_it != actions.mapper.end()) {
@@ -186,13 +199,15 @@ std::pair<ddwaf_object, /*stack id*/ bool> serialize_and_consolidate_actions(
             // The stack ID will be generated when adding the action to the tracker
             if (type == action_type::generate_stack) {
                 has_stack_id = true;
+            } else if (type == action_type::block_request) {
+                has_block_id = true;
             }
         }
         // If an action is unspecified, add it and move on
         ddwaf_object_array_add(&actions_array, to_object(tmp, action_id));
     }
 
-    return {actions_array, has_stack_id};
+    return {actions_array, has_stack_id, has_block_id};
 }
 
 void consolidate_actions(std::string_view action_override,
@@ -247,7 +262,7 @@ void serialize_event(rule_event &event, const match_obfuscator &obfuscator,
     ddwaf_object_map_add(&rule_map, "name", to_object(tmp, event.rule.name));
     ddwaf_object_map_add(&rule_map, "tags", &tags_map);
 
-    auto [actions_array, has_stack_id] =
+    auto [actions_array, requires_stack_id, requires_block_id] =
         serialize_and_consolidate_actions(action_override, rule_actions, actions);
     ddwaf_object_map_add(&rule_map, "on_match", &actions_array);
 
@@ -266,10 +281,12 @@ void serialize_event(rule_event &event, const match_obfuscator &obfuscator,
     ddwaf_object_map(&root_map);
     ddwaf_object_map_add(&root_map, "rule", &rule_map);
     ddwaf_object_map_add(&root_map, "rule_matches", &match_array);
-    if (has_stack_id) {
+    if (requires_block_id) {
+        ddwaf_object_map_add(&root_map, "block_id", to_object(tmp, actions.block_id));
+    }
+    if (requires_stack_id) {
         ddwaf_object_map_add(&root_map, "stack_id", to_object(tmp, actions.stack_id));
     }
-
     ddwaf_object_array_add(&event_array, &root_map);
 }
 
@@ -307,9 +324,11 @@ void serialize_action(std::string_view id, ddwaf_object &action_map, const actio
 
             ddwaf_object_map_addl(&param_map, k.data(), k.size(), &value);
         }
+        if (type == action_type::block_request) {
+            ddwaf_object_map_addl(&param_map, STRL("block_id"), to_object(tmp, actions.block_id));
+        }
     } else {
-        ddwaf_object_map_addl(
-            &param_map, "stack_id", sizeof("stack_id") - 1, to_object(tmp, actions.stack_id));
+        ddwaf_object_map_addl(&param_map, STRL("stack_id"), to_object(tmp, actions.stack_id));
     }
 
     ddwaf_object_map_addl(&action_map, type_str.data(), type_str.size(), &param_map);
@@ -352,8 +371,11 @@ void collect_attributes(const object_store &store, const std::vector<rule_attrib
 void result_serializer::serialize(const object_store &store, std::vector<rule_result> &results,
     attribute_collector &collector, const timer &deadline, result_components output) const
 {
-    action_tracker actions{
-        .blocking_action = {}, .stack_id = {}, .non_blocking_actions = {}, .mapper = actions_};
+    action_tracker actions{.blocking_action = {},
+        .stack_id = {},
+        .block_id = {},
+        .non_blocking_actions = {},
+        .mapper = actions_};
 
     // First collect any pending attributes from previous runs
     collector.collect_pending(store);
