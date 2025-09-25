@@ -660,7 +660,8 @@ TEST(TestWafIntegration, UpdateActionsByID)
             result2, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
                                             {"type", "auto"}, {"block_id", "*"}}}});
         EXPECT_ACTIONS(result3,
-            {{"redirect_request", {{"status_code", 303ULL}, {"location", "http://google.com"}}}});
+            {{"redirect_request",
+                {{"status_code", 303ULL}, {"location", "http://google.com"}, {"block_id", "*"}}}});
 
         ddwaf_object_free(&result2);
         ddwaf_object_free(&result3);

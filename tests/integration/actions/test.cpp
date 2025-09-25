@@ -225,6 +225,7 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
 
         EXPECT_EVENTS(res, {.id = "block-rule",
                                .name = "block-rule",
+                               .block_id = "*",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -236,7 +237,8 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
                                    }}}}});
 
         EXPECT_ACTIONS(res,
-            {{"redirect_request", {{"location", "http://google.com"}, {"status_code", 303ULL}}}});
+            {{"redirect_request",
+                {{"location", "http://google.com"}, {"status_code", 303ULL}, {"block_id", "*"}}}});
         ddwaf_object_free(&res);
 
         ddwaf_context_destroy(context);
@@ -413,7 +415,7 @@ TEST(TestActionsIntegration, ActionTypes)
     ddwaf_destroy(handle);
 }
 
-TEST(TestActionsIntegration, PreventBlockIDInjection)
+TEST(TestActionsIntegration, PreventBlockIDInjectionOnBlock)
 {
     ddwaf_builder builder = ddwaf_builder_init(nullptr);
 
@@ -463,7 +465,116 @@ TEST(TestActionsIntegration, PreventBlockIDInjection)
         ddwaf_destroy(handle);
 
         auto actions = yaml_to_object(
-            R"({actions: [{id: block, type: block_request, parameters: {status_code: 404, "block_id": "this is an injected ID"}}]})");
+            R"({actions: [{id: block, type: block_request, parameters: {status_code: 404, "block_id": "this is an injected ID", "display_id": true}}]})");
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("actions"), &actions, nullptr);
+        ddwaf_object_free(&actions);
+    }
+
+    handle = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle, nullptr);
+
+    {
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "block"));
+
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object res;
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
+
+        EXPECT_EVENTS(res, {.id = "block-rule",
+                               .name = "block-rule",
+                               .block_id = "*",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .actions = {"block"},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = "^block",
+                                   .highlight = "block"sv,
+                                   .args = {{
+                                       .value = "block"sv,
+                                       .address = "value",
+                                   }}}}});
+
+        EXPECT_ACTIONS(res,
+            {{"block_request", {{"status_code", 404ULL}, {"grpc_status_code", 10ULL},
+                                   {"type", "auto"}, {"block_id", "*"}, {"display_id", true}}}});
+
+        const auto *actions = ddwaf_object_find(&res, STRL("actions"));
+        ASSERT_NE(actions, nullptr);
+
+        const auto *block_params = ddwaf_object_find(actions, STRL("block_request"));
+        ASSERT_NE(block_params, nullptr);
+
+        const auto *block_id = ddwaf_object_find(block_params, STRL("block_id"));
+        ASSERT_NE(block_id, nullptr);
+
+        std::regex uuid_regex{"^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-1b[a-f0-9]{2}-[a-f0-9]{12}$",
+            std::regex_constants::icase};
+        std::string block_id_str{
+            ddwaf_object_get_string(block_id, nullptr), ddwaf_object_length(block_id)};
+
+        EXPECT_TRUE(std::regex_match(block_id_str, uuid_regex)) << block_id_str;
+
+        ddwaf_object_free(&res);
+
+        ddwaf_context_destroy(context);
+    }
+    ddwaf_destroy(handle);
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestActionsIntegration, PreventBlockIDInjectionOnRedirect)
+{
+    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+
+    {
+        auto rule = read_file("default_actions.yaml", base_dir);
+        ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+        ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &rule, nullptr);
+        ddwaf_object_free(&rule);
+    }
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle, nullptr);
+
+    ddwaf_object tmp;
+    {
+        ddwaf_object parameter = DDWAF_OBJECT_MAP;
+        ddwaf_object_map_add(&parameter, "value", ddwaf_object_string(&tmp, "block"));
+
+        ddwaf_context context = ddwaf_context_init(handle);
+        ASSERT_NE(context, nullptr);
+
+        ddwaf_object res;
+        EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &res, LONG_TIME), DDWAF_MATCH);
+
+        EXPECT_EVENTS(res, {.id = "block-rule",
+                               .name = "block-rule",
+                               .block_id = "*",
+                               .tags = {{"type", "flow1"}, {"category", "category1"}},
+                               .actions = {"block"},
+                               .matches = {{.op = "match_regex",
+                                   .op_value = "^block",
+                                   .highlight = "block"sv,
+                                   .args = {{
+                                       .value = "block"sv,
+                                       .address = "value",
+                                   }}}}});
+
+        EXPECT_ACTIONS(
+            res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}});
+        ddwaf_object_free(&res);
+
+        ddwaf_context_destroy(context);
+    }
+
+    {
+        ddwaf_destroy(handle);
+
+        auto actions = yaml_to_object(
+            R"({actions: [{id: block, type: redirect_request, parameters: {status_code: 303, "location": "http://google.com", "block_id": "this is an injected ID", "display_id": true}}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("actions"), &actions, nullptr);
         ddwaf_object_free(&actions);
     }
@@ -495,13 +606,13 @@ TEST(TestActionsIntegration, PreventBlockIDInjection)
                                    }}}}});
 
         EXPECT_ACTIONS(
-            res, {{"block_request", {{"status_code", 404ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+            res, {{"redirect_request", {{"location", "http://google.com"}, {"status_code", 303ULL},
+                                           {"block_id", "*"}, {"display_id", true}}}});
 
         const auto *actions = ddwaf_object_find(&res, STRL("actions"));
         ASSERT_NE(actions, nullptr);
 
-        const auto *block_params = ddwaf_object_find(actions, STRL("block_request"));
+        const auto *block_params = ddwaf_object_find(actions, STRL("redirect_request"));
         ASSERT_NE(block_params, nullptr);
 
         const auto *block_id = ddwaf_object_find(block_params, STRL("block_id"));

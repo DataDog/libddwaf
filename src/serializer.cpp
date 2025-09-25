@@ -128,7 +128,7 @@ void add_action_to_tracker(action_tracker &actions, std::string_view id, action_
             actions.blocking_action = id;
         }
 
-        if (type == action_type::block_request && actions.block_id.empty()) {
+        if (actions.block_id.empty()) {
             actions.block_id = uuidv4_generate_pseudo();
         }
     } else {
@@ -170,7 +170,7 @@ generated_action serialize_and_consolidate_actions(std::string_view action_overr
             if (type == action_type::monitor || is_blocking_action(type)) {
                 add_action_to_tracker(actions, action_override, type);
 
-                has_block_id = (type == action_type::block_request);
+                has_block_id = is_blocking_action(type);
             } else {
                 // Clear the action override because it's not usable
                 action_override = {};
@@ -202,7 +202,7 @@ generated_action serialize_and_consolidate_actions(std::string_view action_overr
             // The stack ID will be generated when adding the action to the tracker
             if (type == action_type::generate_stack) {
                 has_stack_id = true;
-            } else if (type == action_type::block_request) {
+            } else if (is_blocking_action(type)) {
                 has_block_id = true;
             }
         }
@@ -329,7 +329,7 @@ void serialize_action(std::string_view id, ddwaf_object &action_map, const actio
 
             ddwaf_object_map_addl(&param_map, k.data(), k.size(), &value);
         }
-        if (type == action_type::block_request) {
+        if (is_blocking_action(type)) {
             ddwaf_object_map_addl(&param_map, STRL("block_id"), to_object(tmp, actions.block_id));
         }
     } else {
