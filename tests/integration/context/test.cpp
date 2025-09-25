@@ -649,6 +649,7 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndEphemeralPriority)
         EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
+                               .block_id = "*",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -687,6 +688,7 @@ TEST(TestContextIntegration, EphemeralPriorityAndEphemeralNonPriority)
         EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
+                               .block_id = "*",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -764,6 +766,7 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndPersistentPriority)
         EXPECT_EQ(ddwaf_run(context, &persistent, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
+                               .block_id = "*",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -838,6 +841,7 @@ TEST(TestContextIntegration, EphemeralPriorityAndPersistentNonPriority)
         EXPECT_EQ(ddwaf_run(context, nullptr, &ephemeral, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
+                               .block_id = "*",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -896,6 +900,7 @@ TEST(TestContextIntegration, PersistentPriorityAndEphemeralNonPriority)
         EXPECT_EQ(ddwaf_run(context, &persistent, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
+                               .block_id = "*",
                                .tags = {{"type", "flow1"}, {"category", "category1"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",

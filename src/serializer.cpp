@@ -128,7 +128,7 @@ void add_action_to_tracker(action_tracker &actions, std::string_view id, action_
             actions.blocking_action = id;
         }
 
-        if (type == action_type::block_request) {
+        if (type == action_type::block_request && actions.block_id.empty()) {
             actions.block_id = uuidv4_generate_pseudo();
         }
     } else {
@@ -156,9 +156,11 @@ generated_action serialize_and_consolidate_actions(std::string_view action_overr
     ddwaf_object_array(&actions_array);
 
     if (rule_actions.empty() && action_override.empty()) {
-        return {actions_array, false, false};
+        return {
+            .actions_array = actions_array, .required_stack_id = false, .required_block_id = false};
     }
 
+    bool has_block_id = false;
     if (!action_override.empty()) {
         auto action_it = actions.mapper.find(action_override);
         if (action_it != actions.mapper.end()) {
@@ -167,6 +169,8 @@ generated_action serialize_and_consolidate_actions(std::string_view action_overr
             // The action override must be either a blocking one or monitor
             if (type == action_type::monitor || is_blocking_action(type)) {
                 add_action_to_tracker(actions, action_override, type);
+
+                has_block_id = (type == action_type::block_request);
             } else {
                 // Clear the action override because it's not usable
                 action_override = {};
@@ -176,14 +180,13 @@ generated_action serialize_and_consolidate_actions(std::string_view action_overr
             action_override = {};
         }
 
-        // Tha override might have been clear if no definition was found
+        // Tha override might have been cleared if no definition was found
         if (!action_override.empty()) {
             ddwaf_object_array_add(&actions_array, to_object(tmp, action_override));
         }
     }
 
     bool has_stack_id = false;
-    bool has_block_id = false;
     for (const auto &action_id : rule_actions) {
         auto action_it = actions.mapper.find(action_id);
         if (action_it != actions.mapper.end()) {
@@ -207,7 +210,9 @@ generated_action serialize_and_consolidate_actions(std::string_view action_overr
         ddwaf_object_array_add(&actions_array, to_object(tmp, action_id));
     }
 
-    return {actions_array, has_stack_id, has_block_id};
+    return {.actions_array = actions_array,
+        .required_stack_id = has_stack_id,
+        .required_block_id = has_block_id};
 }
 
 void consolidate_actions(std::string_view action_override,

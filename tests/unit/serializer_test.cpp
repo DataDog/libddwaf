@@ -111,6 +111,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     serializer.serialize(store, results, collector, deadline, output);
     EXPECT_EVENTS(result_object, {.id = "xasd1022",
                                      .name = "random rule",
+                                     .block_id = "*",
                                      .tags = {{"type", "test"}, {"category", "none"}},
                                      .actions = {"block", "monitor_request"},
                                      .matches = {{.op = "random",
@@ -121,10 +122,10 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
                                              .address = "query",
                                              .path = {"root", "key"}}}}}});
 
-    EXPECT_ACTIONS(result_object,
-        {{"block_request",
-             {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}},
-            {"monitor_request", {}}});
+    EXPECT_ACTIONS(
+        result_object, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                              {"type", "auto"}, {"block_id", "*"}}},
+                           {"monitor_request", {}}});
 
     ddwaf_object_free(&result_object);
 }
@@ -191,6 +192,7 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
 
     EXPECT_EVENTS(result_object, {.id = "xasd1022",
                                      .name = "random rule",
+                                     .block_id = "*",
                                      .tags = {{"type", "test"}, {"category", "none"}},
                                      .actions = {"block", "monitor_request"},
                                      .matches = {{.op = "random",
@@ -227,10 +229,10 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
                                                  .path = {"key"},
                                              }}}}});
 
-    EXPECT_ACTIONS(result_object,
-        {{"block_request",
-             {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}},
-            {"monitor_request", {}}});
+    EXPECT_ACTIONS(
+        result_object, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                              {"type", "auto"}, {"block_id", "*"}}},
+                           {"monitor_request", {}}});
 
     ddwaf_object_free(&result_object);
 }
@@ -325,6 +327,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     EXPECT_EVENTS(result_object,
         {.id = "xasd1022",
             .name = "random rule",
+            .block_id = "*",
             .tags = {{"type", "test"}, {"category", "none"}},
             .actions = {"block", "monitor_request"},
             .matches = {{.op = "random",
@@ -360,10 +363,10 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
                 }}}}},
         {});
 
-    EXPECT_ACTIONS(result_object,
-        {{"block_request",
-             {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}},
-            {"monitor_request", {}}, {"unknown", {}}});
+    EXPECT_ACTIONS(
+        result_object, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                              {"type", "auto"}, {"block_id", "*"}}},
+                           {"monitor_request", {}}, {"unknown", {}}});
 
     ddwaf_object_free(&result_object);
 }
