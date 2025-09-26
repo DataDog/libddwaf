@@ -591,9 +591,9 @@ TEST(TestWafIntegration, UpdateActionsByID)
             ddwaf_context_eval(context2, &parameter, alloc, &result2, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result1, {});
-        EXPECT_ACTIONS(result2,
-            {{"block_request",
-                {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(
+            result2, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                            {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&result1, alloc);
         ddwaf_object_destroy(&result2, alloc);
@@ -669,11 +669,12 @@ TEST(TestWafIntegration, UpdateActionsByID)
         EXPECT_EQ(
             ddwaf_context_eval(context3, &parameter, alloc, &result3, LONG_TIME), DDWAF_MATCH);
 
-        EXPECT_ACTIONS(result2,
-            {{"block_request",
-                {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(
+            result2, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                            {"type", "auto"}, {"block_id", "*"}}}});
         EXPECT_ACTIONS(result3,
-            {{"redirect_request", {{"status_code", 303ULL}, {"location", "http://google.com"}}}});
+            {{"redirect_request",
+                {{"status_code", 303ULL}, {"location", "http://google.com"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&result2, alloc);
         ddwaf_object_destroy(&result3, alloc);
@@ -748,9 +749,9 @@ TEST(TestWafIntegration, UpdateActionsByTags)
             ddwaf_context_eval(context2, &parameter, alloc, &result2, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result1, {});
-        EXPECT_ACTIONS(result2,
-            {{"block_request",
-                {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(
+            result2, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                            {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&result1, alloc);
         ddwaf_object_destroy(&result2, alloc);
@@ -1216,6 +1217,7 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
         EXPECT_EVENTS(result2,
             {.id = "1",
                 .name = "rule1",
+                .block_id = "*",
                 .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "1"},
                     {"new_tag", "new_value"}},
                 .actions = {"block"},
@@ -1226,9 +1228,9 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
                         {.name = "input", .value = "rule1"sv, .address = "value1", .path = {}}}}}});
 
         EXPECT_ACTIONS(result1, {});
-        EXPECT_ACTIONS(result2,
-            {{"block_request",
-                {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(
+            result2, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                            {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&result1, alloc);
         ddwaf_object_destroy(&result2, alloc);
@@ -1271,6 +1273,7 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
         EXPECT_EVENTS(result2,
             {.id = "1",
                 .name = "rule1",
+                .block_id = "*",
                 .tags = {{"type", "flow1"}, {"category", "category1"}, {"confidence", "1"},
                     {"new_tag", "new_value"}},
                 .actions = {"block"},
@@ -1290,9 +1293,9 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
                     .args = {
                         {.name = "input", .value = "rule1"sv, .address = "value1", .path = {}}}}}});
 
-        EXPECT_ACTIONS(result2,
-            {{"block_request",
-                {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(
+            result2, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                            {"type", "auto"}, {"block_id", "*"}}}});
         EXPECT_ACTIONS(result3, {});
 
         ddwaf_object_destroy(&result2, alloc);
@@ -1850,9 +1853,9 @@ TEST(TestWafIntegration, UpdateEverything)
             ddwaf_context_eval(context3, &parameter, alloc, &result3, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result2, {});
-        EXPECT_ACTIONS(result3,
-            {{"block_request",
-                {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(
+            result3, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                            {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&result2, alloc);
         ddwaf_object_destroy(&result3, alloc);
@@ -1917,9 +1920,9 @@ TEST(TestWafIntegration, UpdateEverything)
             ddwaf_context_eval(context4, &parameter, alloc, &result4, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result3, {});
-        EXPECT_ACTIONS(result4,
-            {{"block_request",
-                {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(
+            result4, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                            {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&result3, alloc);
         ddwaf_object_destroy(&result4, alloc);
@@ -1979,12 +1982,12 @@ TEST(TestWafIntegration, UpdateEverything)
         EXPECT_EQ(
             ddwaf_context_eval(context5, &parameter, alloc, &result5, LONG_TIME), DDWAF_MATCH);
 
-        EXPECT_ACTIONS(result4,
-            {{"block_request",
-                {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
-        EXPECT_ACTIONS(result5,
-            {{"block_request",
-                {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(
+            result4, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                            {"type", "auto"}, {"block_id", "*"}}}});
+        EXPECT_ACTIONS(
+            result5, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                            {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&result4, alloc);
         ddwaf_object_destroy(&result5, alloc);
@@ -2032,9 +2035,9 @@ TEST(TestWafIntegration, UpdateEverything)
             ddwaf_context_eval(context4, &parameter, nullptr, &result4, LONG_TIME), DDWAF_MATCH);
         EXPECT_EQ(ddwaf_context_eval(context5, &parameter, alloc, &result5, LONG_TIME), DDWAF_OK);
 
-        EXPECT_ACTIONS(result4,
-            {{"block_request",
-                {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(
+            result4, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                            {"type", "auto"}, {"block_id", "*"}}}});
         EXPECT_ACTIONS(result5, {});
 
         ddwaf_object_destroy(&result4, alloc);
@@ -2080,9 +2083,9 @@ TEST(TestWafIntegration, UpdateEverything)
             ddwaf_context_eval(context6, &parameter, alloc, &result6, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result5, {});
-        EXPECT_ACTIONS(result6,
-            {{"block_request",
-                {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(
+            result6, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                            {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&result5, alloc);
         ddwaf_object_destroy(&result6, alloc);
@@ -2112,12 +2115,12 @@ TEST(TestWafIntegration, UpdateEverything)
         EXPECT_EQ(
             ddwaf_context_eval(context6, &parameter, alloc, &result6, LONG_TIME), DDWAF_MATCH);
 
-        EXPECT_ACTIONS(result5,
-            {{"block_request",
-                {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
-        EXPECT_ACTIONS(result6,
-            {{"block_request",
-                {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(
+            result5, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                            {"type", "auto"}, {"block_id", "*"}}}});
+        EXPECT_ACTIONS(
+            result6, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                            {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&result5, alloc);
         ddwaf_object_destroy(&result6, alloc);
@@ -2169,9 +2172,9 @@ TEST(TestWafIntegration, UpdateEverything)
             ddwaf_context_eval(context7, &parameter, alloc, &result7, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_ACTIONS(result6, {});
-        EXPECT_ACTIONS(result7,
-            {{"block_request",
-                {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(
+            result7, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                            {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&result6, alloc);
         ddwaf_object_destroy(&result7, alloc);
@@ -2209,9 +2212,9 @@ TEST(TestWafIntegration, UpdateEverything)
         EXPECT_EQ(
             ddwaf_context_eval(context8, &parameter, alloc, &result8, LONG_TIME), DDWAF_MATCH);
 
-        EXPECT_ACTIONS(result7,
-            {{"block_request",
-                {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(
+            result7, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                            {"type", "auto"}, {"block_id", "*"}}}});
         EXPECT_ACTIONS(result8, {});
 
         ddwaf_object_destroy(&result7, alloc);
@@ -2242,9 +2245,9 @@ TEST(TestWafIntegration, UpdateEverything)
         EXPECT_EQ(
             ddwaf_context_eval(context8, &parameter, alloc, &result8, LONG_TIME), DDWAF_MATCH);
 
-        EXPECT_ACTIONS(result7,
-            {{"block_request",
-                {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+        EXPECT_ACTIONS(
+            result7, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                            {"type", "auto"}, {"block_id", "*"}}}});
         EXPECT_ACTIONS(result8, {});
 
         ddwaf_object_destroy(&result7, alloc);

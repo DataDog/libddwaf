@@ -753,6 +753,7 @@ TEST(TestRuleFilterIntegration, UnconditionalCustomFilterMode)
     EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
+                           .block_id = "*",
                            .tags = {{"type", "type1"}, {"category", "category"}},
                            .actions = {"block"},
                            .matches = {{.op = "ip_match",
@@ -762,7 +763,7 @@ TEST(TestRuleFilterIntegration, UnconditionalCustomFilterMode)
                                    .address = "http.client_ip",
                                }}}}});
     EXPECT_ACTIONS(out, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                               {"type", "auto"}}}})
+                                               {"type", "auto"}, {"block_id", "*"}}}})
 
     ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
@@ -793,6 +794,7 @@ TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
         EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
+                               .block_id = "*",
                                .tags = {{"type", "type1"}, {"category", "category"}},
                                .actions = {"block"},
                                .matches = {{.op = "ip_match",
@@ -801,8 +803,9 @@ TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
                                        .value = "192.168.0.1"sv,
                                        .address = "http.client_ip",
                                    }}}}});
-        EXPECT_ACTIONS(out, {{"block_request", {{"status_code", 403ULL},
-                                                   {"grpc_status_code", 10ULL}, {"type", "auto"}}}})
+        EXPECT_ACTIONS(
+            out, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}})
 
         ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
@@ -903,6 +906,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
         EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(out, {.id = "1",
                                .name = "rule1",
+                               .block_id = "*",
                                .tags = {{"type", "type1"}, {"category", "category"}},
                                .actions = {"block2"},
                                .matches = {{.op = "ip_match",
@@ -911,8 +915,9 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
                                        .value = "192.168.0.1"sv,
                                        .address = "http.client_ip",
                                    }}}}});
-        EXPECT_ACTIONS(out, {{"block_request", {{"status_code", 403ULL},
-                                                   {"grpc_status_code", 10ULL}, {"type", "auto"}}}})
+        EXPECT_ACTIONS(
+            out, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}})
 
         ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
@@ -948,6 +953,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeNonblockingAction)
     EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, &out, LONG_TIME), DDWAF_MATCH);
     EXPECT_EVENTS(out, {.id = "1",
                            .name = "rule1",
+                           .block_id = "*",
                            .tags = {{"type", "type1"}, {"category", "category"}},
                            .actions = {"block"},
                            .matches = {{.op = "ip_match",
@@ -957,7 +963,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeNonblockingAction)
                                    .address = "http.client_ip",
                                }}}}});
     EXPECT_ACTIONS(out, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                               {"type", "auto"}}}})
+                                               {"type", "auto"}, {"block_id", "*"}}}})
 
     ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
