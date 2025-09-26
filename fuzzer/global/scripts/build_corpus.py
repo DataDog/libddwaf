@@ -192,22 +192,40 @@ class InitPayloadGenerator:
 
     # Arrays max sizes
     condition_max_count = 8
-    rule_max_count = 100
-    filter_max_count = 100
+    rule_max_count = 20
+    filter_max_count = 20
     key_path_max_count = 10
 
-    address_max_count = 16
+    address_max_count = 8
     transformation_max_count = 10
 
-    ip_max_count = 100
+    ip_max_count = 10
 
     operators = [
         "match_regex",
+        "!match_regex",
         "phrase_match",
+        "!phrase_match",
         "is_xss",
+        "!is_xss",
         "is_sqli",
+        "!is_sqli",
         "exact_match",
-        "ip_match"
+        "ip_match",
+        "greater_than",
+        "less_than",
+        "equal",
+        "contains",
+        "lfi_detector@v1"
+        "lfi_detector@v2"
+        "sqli_detector@v1"
+        "sqli_detector@v2"
+        "ssrf_detector@v1"
+        "shi_detector@v1"
+        "lfi_detector"
+        "sqli_detector"
+        "ssrf_detector"
+        "shi_detector"
     ]
 
     def __init__(self):
@@ -274,8 +292,8 @@ class InitPayloadGenerator:
                 "id": get_random_rule_id(),
                 "name": get_random_rule_name(),
                 "tags": {
-                    "type": "".join(choices(printable_chars, k=10)),
-                    "crs_id": "".join(choices(printable_chars, k=10)),
+                    "type": "".join(choices(printable_chars, k=5)),
+                    "crs_id": "".join(choices(printable_chars, k=5)),
                 },
                 "on_match": get_random_action_array(),
                 "conditions": get_random_condition_array(),
@@ -390,7 +408,7 @@ class InitPayloadGenerator:
             }
 
             if operator == "phrase_match":
-                result["parameters"]["list"] = [get_random_value(addresses) for _ in range(randint(1, 200))]
+                result["parameters"]["list"] = [get_random_value(addresses) for _ in range(randint(0, 5))]
                 result["parameters"]["options"] = {
                   "enforce_word_boundary": choice((True, False))
                 }
@@ -407,17 +425,17 @@ class InitPayloadGenerator:
                 }
             elif operator == "is_xss":
                 # TODO: get interesting XSS patterns
-                result["parameters"]["list"] = [get_random_value(addresses) for _ in range(randint(1, 200))]
+                result["parameters"]["list"] = [get_random_value(addresses) for _ in range(randint(0, 5))]
 
             elif operator == "is_sqli":
                 # TODO: get interesting SQLI patterns
-                result["parameters"]["list"] = [get_random_value(addresses) for _ in range(randint(1, 200))]
+                result["parameters"]["list"] = [get_random_value(addresses) for _ in range(randint(0, 5))]
 
             elif operator == "exact_match":
-                result["parameters"]["list"] = [get_random_value(addresses) for _ in range(randint(1, 200))]
+                result["parameters"]["list"] = [get_random_value(addresses) for _ in range(randint(0, 5))]
 
             elif operator == "ip_match":
-                result["parameters"]["list"] = [get_random_value(addresses) for _ in range(randint(1, 200))]
+                result["parameters"]["list"] = [get_random_value(addresses) for _ in range(randint(0, 5))]
 
             return result
 

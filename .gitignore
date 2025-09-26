@@ -1,22 +1,25 @@
 /Release
 /Debug
 /build
+build/
+**/build/
 PowerWAF.xcodeproj
 CMakeLists.txt.user
 compile_commands.json
 .cache
 
 .DS_Store
+
+/src/version.hpp
+/tests/common/base_path.hpp
 tests/default.profraw
 
 perf/test_files/parsed_*
 perf/test_files/breakdown.numbers
 
-/fuzzer/global/build
 /fuzzer/global/venv
-/fuzzer/global/corpus
-
 /fuzzer/global/sample_rules.yml
+/fuzzer/e2e/src/ruleset/sample_rules.json
 /fuzzer/global/sample_dict.txt
 /fuzzer/global/fuzzer
 /fuzzer/global/libddwaf.a
@@ -26,14 +29,32 @@ perf/test_files/breakdown.numbers
 /fuzzer/global/coverage.html
 /fuzzer/global/fuzz-*.log
 /fuzzer/global/results/crash-*
+default.profraw
+# AFL++ temporary files
+*.cur_input
+.afl_*
+*.fuzz_*
 
-/fuzzer/*/corpus/*
-!/fuzzer/*/corpus/corpus-*
+# Usual folders for testing afl fuzzers
+o/
+i/
 
-/src/version.hpp
-/tests/common/base_path.hpp
+core.*
+core
+
+# Sanitizer outputs
+*.dSYM/
 
 *.trace
+# Fuzz binary are suffixed with _fuzz
+*_fuzz
+!*_fuzz.cpp
+
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
 .vscode
 *.swp
 *.swo

@@ -1,5 +1,7 @@
 stages:
   - benchmarks
+  - fuzzing
 
-include: ".gitlab/benchmarks.yml"
-
+include:
+  - ".gitlab/benchmarks.yml"
+  - ".gitlab/fuzzing.yml"

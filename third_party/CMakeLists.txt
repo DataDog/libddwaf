@@ -1,6 +1,11 @@
 project(third_party)
 include(ExternalProject)
 
+# Handle CMake policy CMP0135 for ExternalProject timestamp handling
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 set(DOWNLOAD_SUBDIR downloads)
 set(INSTALL_DIR  ${CMAKE_BINARY_DIR}/third_party)
 #get_filename_component(INSTALL_DIR ${CMAKE_BINARY_DIR}/third_party REALPATH)
