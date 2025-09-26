@@ -164,6 +164,7 @@ TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
+                               .block_id = "*",
                                .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -172,8 +173,8 @@ TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
                                    .args = {{.value = "custom_rule"sv, .address = "value4"}}}}});
 
         EXPECT_ACTIONS(
-            res, {{"block_request",
-                     {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+            res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -211,6 +212,7 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
+                               .block_id = "*",
                                .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -218,8 +220,8 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
                                    .highlight = "custom_rule"sv,
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
-            res, {{"block_request",
-                     {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+            res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -275,6 +277,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
+                               .block_id = "*",
                                .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -282,8 +285,8 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
                                    .highlight = "rule"sv,
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
-            res, {{"block_request",
-                     {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+            res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -299,6 +302,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
+                               .block_id = "*",
                                .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -306,8 +310,8 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
                                    .highlight = "custom_rule"sv,
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
-            res, {{"block_request",
-                     {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+            res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -367,6 +371,7 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
+                               .block_id = "*",
                                .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -374,8 +379,8 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
                                    .highlight = "custom_rule"sv,
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
-            res, {{"block_request",
-                     {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+            res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -480,6 +485,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
+                               .block_id = "*",
                                .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -487,8 +493,8 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
                                    .highlight = "custom_rule"sv,
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
-            res, {{"block_request",
-                     {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+            res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -504,6 +510,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
+                               .block_id = "*",
                                .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -511,8 +518,8 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
                                    .highlight = "rule"sv,
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
-            res, {{"block_request",
-                     {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+            res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -572,6 +579,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
+                               .block_id = "*",
                                .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -579,8 +587,8 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
                                    .highlight = "custom_rule"sv,
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
-            res, {{"block_request",
-                     {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+            res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -596,6 +604,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
+                               .block_id = "*",
                                .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -603,8 +612,8 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
                                    .highlight = "custom_rule"sv,
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
-            res, {{"block_request",
-                     {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+            res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -678,6 +687,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
+                               .block_id = "*",
                                .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -685,8 +695,8 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
                                    .highlight = "rule"sv,
                                    .args = {{.value = "custom_rule"sv, .address = "value4"}}}}});
         EXPECT_ACTIONS(
-            res, {{"block_request",
-                     {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+            res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -711,6 +721,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
+                               .block_id = "*",
                                .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -718,8 +729,8 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
                                    .highlight = "custom_rule"sv,
                                    .args = {{.value = "custom_rule"sv, .address = "value4"}}}}});
         EXPECT_ACTIONS(
-            res, {{"block_request",
-                     {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+            res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -780,6 +791,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
 
         EXPECT_EVENTS(res, {.id = "custom_rule4",
                                .name = "custom_rule4",
+                               .block_id = "*",
                                .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -787,8 +799,8 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
                                    .highlight = "custom_rule"sv,
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
-            res, {{"block_request",
-                     {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+            res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -804,6 +816,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
+                               .block_id = "*",
                                .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -811,8 +824,8 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
                                    .highlight = "rule"sv,
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
-            res, {{"block_request",
-                     {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+            res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -886,6 +899,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
 
         EXPECT_EVENTS(res, {.id = "rule4",
                                .name = "rule4",
+                               .block_id = "*",
                                .tags = {{"type", "flow34"}, {"category", "category4"}},
                                .actions = {"block"},
                                .matches = {{.op = "match_regex",
@@ -896,8 +910,8 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
                                        .address = "value34",
                                    }}}}});
         EXPECT_ACTIONS(
-            res, {{"block_request",
-                     {{"status_code", 403ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"}}}});
+            res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
+                                        {"type", "auto"}, {"block_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }

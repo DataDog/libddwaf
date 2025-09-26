@@ -30,7 +30,8 @@ bool operator==(const event &lhs, const event &rhs)
 {
     return lhs.id == rhs.id && lhs.name == rhs.name && lhs.tags == rhs.tags &&
            lhs.actions == rhs.actions && lhs.matches == rhs.matches &&
-           lhs.stack_id.empty() == rhs.stack_id.empty();
+           lhs.stack_id.empty() == rhs.stack_id.empty() &&
+           lhs.block_id.empty() == rhs.block_id.empty();
 }
 
 namespace {
@@ -94,6 +95,7 @@ std::ostream &operator<<(std::ostream &os, const event &e)
        << indent(4) << "id: " << e.id << ",\n"
        << indent(4) << "name: " << e.name << ",\n"
        << indent(4) << "stack_id: " << e.stack_id << ",\n"
+       << indent(4) << "block_id: " << e.block_id << ",\n"
        << indent(4) << "tags: {";
     {
         bool start = true;
@@ -262,7 +264,39 @@ WafResultActionMatcher::WafResultActionMatcher(
 bool WafResultActionMatcher::MatchAndExplain(
     const ddwaf::test::action_map &obtained, ::testing::MatchResultListener * /*unused*/) const
 {
-    return obtained == expected_;
+    if (expected_.size() != obtained.size()) {
+        return false;
+    }
+
+    for (auto [expected_type, expected_params] : expected_) {
+        const auto &it = obtained.find(expected_type);
+        if (it == obtained.end()) {
+            return false;
+        }
+
+        auto obtained_params = it->second;
+
+        if (expected_params.contains("stack_id")) {
+            if (!obtained_params.contains("stack_id")) {
+                return false;
+            }
+            expected_params.erase("stack_id");
+            obtained_params.erase("stack_id");
+        }
+
+        if (expected_params.contains("block_id")) {
+            if (!obtained_params.contains("block_id")) {
+                return false;
+            }
+            expected_params.erase("block_id");
+            obtained_params.erase("block_id");
+        }
+
+        if (expected_params != obtained_params) {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool WafResultDataMatcher::MatchAndExplain(
@@ -430,6 +464,7 @@ event as_if<event, void>::operator()() const
     e.actions = as<std::vector<std::string>>(rule, "on_match");
     e.matches = as<std::vector<match>>(node, "rule_matches");
     e.stack_id = as<std::string>(node, "stack_id");
+    e.block_id = as<std::string>(node, "block_id");
 
     return e;
 }

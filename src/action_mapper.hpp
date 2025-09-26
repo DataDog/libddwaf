@@ -33,6 +33,11 @@ inline bool is_blocking_action(action_type type)
     return type == action_type::block_request || type == action_type::redirect_request;
 }
 
+inline bool is_modal_action(action_type type)
+{
+    return type == action_type::monitor || is_blocking_action(type);
+}
+
 struct action_parameters {
     action_type type;
     std::string type_str;

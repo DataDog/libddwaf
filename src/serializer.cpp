@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -91,12 +92,29 @@ struct action_tracker {
     // Stack trace ID
     std::string stack_id;
 
+    // Block ID
+    std::string block_id;
+
     // This set contains all remaining actions other than the blocking action
     std::unordered_set<std::string_view> non_blocking_actions;
 
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const action_mapper &mapper;
 };
+
+action_type get_action_type(const action_mapper &mapper, std::string_view id)
+{
+    if (id.empty()) {
+        return action_type::none;
+    }
+
+    auto it = mapper.find(id);
+    if (it == mapper.end()) {
+        return action_type::none;
+    }
+
+    return it->second.type;
+}
 
 void add_action_to_tracker(action_tracker &actions, std::string_view id, action_type type)
 {
@@ -105,6 +123,10 @@ void add_action_to_tracker(action_tracker &actions, std::string_view id, action_
             // Only keep a single blocking action
             actions.blocking_action_type = type;
             actions.blocking_action = id;
+        }
+
+        if (actions.block_id.empty()) {
+            actions.block_id = uuidv4_generate_pseudo();
         }
     } else {
         if (type == action_type::generate_stack && actions.stack_id.empty()) {
@@ -117,95 +139,68 @@ void add_action_to_tracker(action_tracker &actions, std::string_view id, action_
     }
 }
 
-std::pair<owned_object, /*stack id*/ bool> serialize_and_consolidate_actions(
-    std::string_view action_override, const std::vector<std::string> &rule_actions,
-    action_tracker &actions, nonnull_ptr<memory::memory_resource> alloc)
+void consolidate_actions(std::string_view action_override,
+    const std::vector<std::string> &rule_actions, action_tracker &actions)
 {
-    auto actions_array = owned_object::make_array(rule_actions.size(), alloc);
-    if (rule_actions.empty() && action_override.empty()) {
-        return {std::move(actions_array), false};
+    if (auto type = get_action_type(actions.mapper, action_override); is_modal_action(type)) {
+        // The action override must be either a blocking one or monitor
+        add_action_to_tracker(actions, action_override, type);
+    } else {
+        // Clear the action override because it's not usable
+        action_override = {};
     }
 
-    if (!action_override.empty()) {
-        auto action_it = actions.mapper.find(action_override);
-        if (action_it != actions.mapper.end()) {
-            const auto &[type, type_str, parameters] = action_it->second;
-
-            // The action override must be either a blocking one or monitor
-            if (type == action_type::monitor || is_blocking_action(type)) {
-                add_action_to_tracker(actions, action_override, type);
-            } else {
-                // Clear the action override because it's not usable
-                action_override = {};
-            }
-        } else {
-            // Without a definition, the override can't be applied
-            action_override = {};
+    for (const auto &action_id : rule_actions) {
+        auto type = get_action_type(actions.mapper, action_id);
+        if (type == action_type::none || (!action_override.empty() && is_modal_action(type))) {
+            // If the rule was in monitor mode, ignore blocking and monitor actions
+            continue;
         }
 
-        // Tha override might have been clear if no definition was found
-        if (!action_override.empty()) {
-            actions_array.emplace_back(action_override);
-        }
+        add_action_to_tracker(actions, action_id, type);
+    }
+}
+
+struct generated_action {
+    owned_object actions_array;
+    bool required_stack_id;
+    bool required_block_id;
+};
+
+generated_action serialize_event_actions(std::string_view action_override,
+    const std::vector<std::string> &rule_actions, action_tracker &actions,
+    nonnull_ptr<memory::memory_resource> alloc)
+{
+    auto actions_array = owned_object::make_array(rule_actions.size(), alloc);
+
+    bool has_block_id = false;
+    if (auto type = get_action_type(actions.mapper, action_override); is_modal_action(type)) {
+        // The action override must be either a blocking one or monitor
+        actions_array.emplace_back(action_override);
+        has_block_id = is_blocking_action(type);
+    } else {
+        // Without a definition, the override can't be applied
+        action_override = {};
     }
 
     bool has_stack_id = false;
     for (const auto &action_id : rule_actions) {
-        auto action_it = actions.mapper.find(action_id);
-        if (action_it != actions.mapper.end()) {
-            const auto &[type, type_str, parameters] = action_it->second;
-            if (!action_override.empty() &&
-                (type == action_type::monitor || is_blocking_action(type))) {
-                // If the rule was in monitor mode, ignore blocking and monitor actions
-                continue;
-            }
-
-            add_action_to_tracker(actions, action_id, type);
-
-            // The stack ID will be generated when adding the action to the tracker
-            if (type == action_type::generate_stack) {
-                has_stack_id = true;
-            }
+        auto type = get_action_type(actions.mapper, action_id);
+        if (!action_override.empty() && is_modal_action(type)) {
+            // If the rule was in monitor mode, ignore blocking and monitor actions
+            continue;
         }
+
+        has_stack_id = has_stack_id || type == action_type::generate_stack;
+        has_block_id = has_block_id || is_blocking_action(type);
+
         // If an action is unspecified, add it and move on
         actions_array.emplace_back(action_id);
     }
 
-    return {std::move(actions_array), has_stack_id};
-}
-
-void consolidate_actions(std::string_view action_override,
-    const std::vector<std::string> &rule_actions, action_tracker &actions)
-{
-    if (rule_actions.empty() && action_override.empty()) {
-        return;
-    }
-
-    if (!action_override.empty()) {
-        auto action_it = actions.mapper.find(action_override);
-        if (action_it != actions.mapper.end()) {
-            const auto &[type, type_str, parameters] = action_it->second;
-
-            // The action override must be either a blocking one or monitor
-            if (type == action_type::monitor || is_blocking_action(type)) {
-                add_action_to_tracker(actions, action_override, type);
-            }
-        }
-    }
-
-    for (const auto &action_id : rule_actions) {
-        auto action_it = actions.mapper.find(action_id);
-        if (action_it != actions.mapper.end()) {
-            const auto &[type, type_str, parameters] = action_it->second;
-            if (!action_override.empty() &&
-                (type == action_type::monitor || is_blocking_action(type))) {
-                // If the rule was in monitor mode, ignore blocking and monitor actions
-                continue;
-            }
-
-            add_action_to_tracker(actions, action_id, type);
-        }
-    }
+    return {.actions_array = std::move(actions_array),
+        .required_stack_id = has_stack_id,
+        .required_block_id = has_block_id};
 }
 
 void serialize_event(rule_event &event, const match_obfuscator &obfuscator,
@@ -214,10 +209,12 @@ void serialize_event(rule_event &event, const match_obfuscator &obfuscator,
 {
     auto alloc = event_array.alloc();
 
-    auto [actions_array, has_stack_id] =
-        serialize_and_consolidate_actions(action_override, rule_actions, actions, alloc);
+    auto [actions_array, requires_stack_id, requires_block_id] =
+        serialize_event_actions(action_override, rule_actions, actions, alloc);
 
-    auto root_map = event_array.emplace_back(owned_object::make_map(has_stack_id ? 3 : 2, alloc));
+    const std::size_t map_size = 2 + (requires_block_id ? 1 : 0) + (requires_stack_id ? 1 : 0);
+
+    auto root_map = event_array.emplace_back(owned_object::make_map(map_size, alloc));
 
     auto rule_map = root_map.emplace("rule", owned_object::make_map(4, alloc));
     rule_map.emplace("id", event.rule.id);
@@ -235,8 +232,12 @@ void serialize_event(rule_event &event, const match_obfuscator &obfuscator,
         match_array.emplace_back(serialize_match(match, alloc));
     }
 
-    if (has_stack_id) {
+    if (requires_stack_id) {
         root_map.emplace("stack_id", actions.stack_id);
+    }
+
+    if (requires_block_id) {
+        root_map.emplace("block_id", actions.block_id);
     }
 }
 
@@ -269,6 +270,9 @@ void serialize_action(
             } else if (std::holds_alternative<double>(v)) {
                 param_map.emplace(k, std::get<double>(v));
             }
+        }
+        if (is_blocking_action(type)) {
+            param_map.emplace("block_id", actions.block_id);
         }
     } else {
         auto param_map =
@@ -314,8 +318,11 @@ void collect_attributes(const object_store &store, const std::vector<rule_attrib
 void result_serializer::serialize(const object_store &store, std::vector<rule_result> &results,
     attribute_collector &collector, const timer &deadline, result_components output)
 {
-    action_tracker actions{
-        .blocking_action = {}, .stack_id = {}, .non_blocking_actions = {}, .mapper = actions_};
+    action_tracker actions{.blocking_action = {},
+        .stack_id = {},
+        .block_id = {},
+        .non_blocking_actions = {},
+        .mapper = actions_};
 
     // First collect any pending attributes from previous runs
     collector.collect_pending(store);
@@ -324,11 +331,13 @@ void result_serializer::serialize(const object_store &store, std::vector<rule_re
     for (auto &result : results) {
         final_keep |= result.keep;
 
+        // Action consolidation should happen before event serialisation to
+        // ensure that any relevant IDs are generated (once).
+        consolidate_actions(result.action_override, result.actions, actions);
+
         if (result.event) {
             serialize_event(result.event.value(), obfuscator_, result.action_override,
                 result.actions, actions, output.events);
-        } else {
-            consolidate_actions(result.action_override, result.actions, actions);
         }
 
         collect_attributes(store, result.attributes.get(), collector);

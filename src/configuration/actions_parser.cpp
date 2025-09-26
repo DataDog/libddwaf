@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <array>
 #include <cstdint>
 #include <exception>
 #include <optional>
@@ -138,6 +139,19 @@ void validate_and_add_redirect(auto &cfg, auto id, auto &type, auto &parameters)
         id, action_spec{action_type_from_string(type), std::move(type), std::move(parameters)});
 }
 
+void remove_reserved_parameters(std::unordered_map<std::string, scalar_type> &params)
+{
+    // Remove any parameters considered "reserved" to avoid potential injections
+    const std::array<std::string, 2> reserved{"block_id", "stack_id"};
+
+    for (const auto &key : reserved) {
+        auto it = params.find(key);
+        if (it != params.end()) {
+            params.erase(it);
+        }
+    }
+}
+
 } // namespace
 
 void parse_actions(const raw_configuration::vector &actions_array, configuration_collector &cfg,
@@ -158,6 +172,8 @@ void parse_actions(const raw_configuration::vector &actions_array, configuration
 
             auto type = at<std::string>(node, "type");
             auto parameters = at<std::unordered_map<std::string, scalar_type>>(node, "parameters");
+
+            remove_reserved_parameters(parameters);
 
             DDWAF_DEBUG("Parsed action {} of type {}", id, type);
 

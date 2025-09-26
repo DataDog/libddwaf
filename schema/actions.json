@@ -16,12 +16,16 @@
         },
         "grpc_status_code": {
           "type": "number"
+        },
+        "block_id": {
+          "type": "string"
         }
       },
       "required": [
         "status_code",
         "type",
-        "grpc_status_code"
+        "grpc_status_code",
+        "block_id"
       ],
       "additionalProperties": true
     },
