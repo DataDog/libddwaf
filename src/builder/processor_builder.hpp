@@ -24,8 +24,14 @@ public:
 
     bool apply_override(const processor_override_spec &ovrd)
     {
-        // TODO error if processor doesn't support scanners
-        spec_.scanners = ovrd.scanners;
+        if (spec_.type != processor_type::extract_schema) {
+            return false;
+        }
+
+        auto &[include, exclude] = spec_.scanners;
+        include.insert(include.end(), ovrd.scanners.include.begin(), ovrd.scanners.include.end());
+        exclude.insert(exclude.end(), ovrd.scanners.exclude.begin(), ovrd.scanners.exclude.end());
+
         return true;
     }
 

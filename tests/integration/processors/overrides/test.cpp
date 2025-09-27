@@ -58,7 +58,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersById)
     ddwaf_destroy(handle);
 
     auto ovrd = json_to_object(
-        R"({"processor_overrides": [{"target":[{"id":"extract-content"}], "scanners": [{"id": "scanner-001"}]}]})");
+        R"({"processor_overrides": [{"target":[{"id":"extract-content"}], "scanners": {"include": [{"id": "scanner-001"}]}}]})");
     ddwaf_builder_add_or_update_config(builder, LSTRARG("override"), &ovrd, nullptr);
     ddwaf_object_free(&ovrd);
 
@@ -143,7 +143,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersByTags)
     ddwaf_destroy(handle);
 
     auto ovrd = json_to_object(
-        R"({"processor_overrides": [{"target":[{"id":"extract-content"}], "scanners": [{"tags": {"type":"email"}}]}]})");
+        R"({"processor_overrides": [{"target":[{"id":"extract-content"}], "scanners": {"include": [{"tags": {"type":"email"}}]}}]})");
     ddwaf_builder_add_or_update_config(builder, LSTRARG("override"), &ovrd, nullptr);
     ddwaf_object_free(&ovrd);
 
@@ -229,8 +229,8 @@ TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
     ddwaf_destroy(handle);
 
     auto ovrd = json_to_object(
-        R"({"processor_overrides": [{"target":[{"id":"extract-headers"}], "scanners": [{"id": "scanner-001"}]}]})");
-    ddwaf_builder_add_or_update_config(builder, LSTRARG("override"), &ovrd, nullptr);
+        R"({"processor_overrides": [{"target":[{"id":"extract-headers"}], "scanners": {"include": [{"id": "scanner-001"}], "exclude": [{"id": "scanner-002"}]}}]})");
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("override1"), &ovrd, nullptr);
     ddwaf_object_free(&ovrd);
 
     handle = ddwaf_builder_build_instance(builder);
@@ -267,8 +267,8 @@ TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
     ddwaf_destroy(handle);
 
     ovrd = json_to_object(
-        R"({"processor_overrides": [{"target":[{"id":"extract-headers"}], "scanners": []}]})");
-    ddwaf_builder_add_or_update_config(builder, LSTRARG("override"), &ovrd, nullptr);
+        R"({"processor_overrides": [{"target":[{"id":"extract-headers"}], "scanners": {"exclude": [{"id": "scanner-001"}]}}]})");
+    ddwaf_builder_add_or_update_config(builder, LSTRARG("override2"), &ovrd, nullptr);
     ddwaf_object_free(&ovrd);
 
     handle = ddwaf_builder_build_instance(builder);
@@ -352,7 +352,7 @@ TEST(TestProcessorOverridesIntegration, DisableDefaultScanners)
     ddwaf_destroy(handle);
 
     auto ovrd = json_to_object(
-        R"({"processor_overrides": [{"target":[{"id":"extract-headers"}], "scanners": []}]})");
+        R"({"processor_overrides": [{"target":[{"id":"extract-headers"}], "scanners": {"exclude": [{"tags": {"type":"token"}}]}}]})");
     ddwaf_builder_add_or_update_config(builder, LSTRARG("override"), &ovrd, nullptr);
     ddwaf_object_free(&ovrd);
 
@@ -436,7 +436,7 @@ TEST(TestProcessorOverridesIntegration, RemoveScannersAfterOverride)
     ddwaf_destroy(handle);
 
     auto ovrd = json_to_object(
-        R"({"processor_overrides": [{"target":[{"id":"extract-content"}], "scanners": [{"id": "scanner-001"}]}]})");
+        R"({"processor_overrides": [{"target":[{"id":"extract-content"}], "scanners": {"include": [{"id": "scanner-001"}]}}]})");
     ddwaf_builder_add_or_update_config(builder, LSTRARG("override"), &ovrd, nullptr);
     ddwaf_object_free(&ovrd);
 
@@ -554,7 +554,7 @@ TEST(TestProcessorOverridesIntegration, RemoveOverride)
     ddwaf_destroy(handle);
 
     auto ovrd = json_to_object(
-        R"({"processor_overrides": [{"target":[{"id":"extract-content"}], "scanners": [{"id": "scanner-001"}]}]})");
+        R"({"processor_overrides": [{"target":[{"id":"extract-content"}], "scanners": {"include": [{"id": "scanner-001"}]}}]})");
     ddwaf_builder_add_or_update_config(builder, LSTRARG("override"), &ovrd, nullptr);
     ddwaf_object_free(&ovrd);
 
@@ -681,7 +681,7 @@ TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
     ddwaf_destroy(handle);
 
     auto ovrd = json_to_object(
-        R"({"processor_overrides": [{"target":[{"id":"extract-content"},{"id":"extract-headers"}], "scanners": [{"id":"scanner-001"}]}]})");
+        R"({"processor_overrides": [{"target":[{"id":"extract-content"},{"id":"extract-headers"}], "scanners": {"include": [{"id":"scanner-001"}], "exclude": [{"tags": {"type": "token"}}]}}]})");
     ddwaf_builder_add_or_update_config(builder, LSTRARG("override"), &ovrd, nullptr);
     ddwaf_object_free(&ovrd);
 
