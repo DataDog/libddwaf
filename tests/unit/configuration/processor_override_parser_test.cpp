@@ -148,7 +148,7 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithTargetByTags)
 
 TEST(TestProcessorOverrideParser, ParseOverrideWithoutScanners)
 {
-    auto object = yaml_to_object(R"([{"target":[{"id":"extract-content"}], "scanners":[]}])");
+    auto object = yaml_to_object(R"([{"target":[{"id":"extract-content"}], "scanners":{}}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -185,7 +185,8 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithoutScanners)
 
     auto &ovrd = cfg.processor_overrides.begin()->second;
     EXPECT_EQ(ovrd.targets.size(), 1);
-    EXPECT_EQ(ovrd.scanners.size(), 0);
+    EXPECT_EQ(ovrd.scanners.include.size(), 0);
+    EXPECT_EQ(ovrd.scanners.exclude.size(), 0);
 
     EXPECT_TRUE(change.actions.empty());
     EXPECT_TRUE(change.base_rules.empty());
@@ -215,7 +216,7 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithoutScanners)
 TEST(TestProcessorOverrideParser, ParseOverrideWithScannerById)
 {
     auto object = yaml_to_object(
-        R"([{"target":[{"id":"extract-content"}], "scanners": [{"id": "scanner-001"}]}])");
+        R"([{"target":[{"id":"extract-content"}], "scanners": {include: [{"id": "scanner-001"}]}}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -252,7 +253,8 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithScannerById)
 
     auto &ovrd = cfg.processor_overrides.begin()->second;
     EXPECT_EQ(ovrd.targets.size(), 1);
-    EXPECT_EQ(ovrd.scanners.size(), 1);
+    EXPECT_EQ(ovrd.scanners.include.size(), 1);
+    EXPECT_EQ(ovrd.scanners.exclude.size(), 0);
 
     EXPECT_TRUE(change.actions.empty());
     EXPECT_TRUE(change.base_rules.empty());
@@ -282,7 +284,7 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithScannerById)
 TEST(TestProcessorOverrideParser, ParseOverrideWithScannerByTags)
 {
     auto object = yaml_to_object(
-        R"([{"target":[{"id":"extract-content"}], "scanners": [{"tags": {"type":"email"}}]}])");
+        R"([{"target":[{"id":"extract-content"}], "scanners": {include: [{"tags": {"type":"email"}}]}}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -319,7 +321,8 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithScannerByTags)
 
     auto &ovrd = cfg.processor_overrides.begin()->second;
     EXPECT_EQ(ovrd.targets.size(), 1);
-    EXPECT_EQ(ovrd.scanners.size(), 1);
+    EXPECT_EQ(ovrd.scanners.include.size(), 1);
+    EXPECT_EQ(ovrd.scanners.exclude.size(), 0);
 
     EXPECT_TRUE(change.actions.empty());
     EXPECT_TRUE(change.base_rules.empty());
@@ -349,7 +352,7 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithScannerByTags)
 TEST(TestProcessorOverrideParser, ParseOverrideWithMultipleTargets)
 {
     auto object = yaml_to_object(
-        R"([{"target":[{"id":"extract-content"}, {"id": "something-else"}, {"id": "extract-headers"}], "scanners": [{"id": "scanner-001"}]}])");
+        R"([{"target":[{"id":"extract-content"}, {"id": "something-else"}, {"id": "extract-headers"}], "scanners": {include: [{"id": "scanner-001"}]}}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -386,7 +389,8 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithMultipleTargets)
 
     auto &ovrd = cfg.processor_overrides.begin()->second;
     EXPECT_EQ(ovrd.targets.size(), 3);
-    EXPECT_EQ(ovrd.scanners.size(), 1);
+    EXPECT_EQ(ovrd.scanners.include.size(), 1);
+    EXPECT_EQ(ovrd.scanners.exclude.size(), 0);
 
     EXPECT_TRUE(change.actions.empty());
     EXPECT_TRUE(change.base_rules.empty());
@@ -416,7 +420,7 @@ TEST(TestProcessorOverrideParser, ParseOverrideWithMultipleTargets)
 TEST(TestProcessorOverrideParser, ParseOverrideWithMultipleTargetsAndScanners)
 {
     auto object = yaml_to_object(
-        R"([{"target":[{"id":"extract-content"}], "scanners": [{"id": "scanner-001"}]},{"target":[{"id": "something-else"}], "scanners": [{"tags": {"type": "value"}}]},{"target":[{"id": "extract-headers"}], "scanners": [{"id": "scanner-002"}]}])");
+        R"([{"target":[{"id":"extract-content"}], "scanners": {include: [{"id": "scanner-001"}]}},{"target":[{"id": "something-else"}], "scanners": {include: [{"tags": {"type": "value"}}]}},{"target":[{"id": "extract-headers"}], "scanners": {include: [{"id": "scanner-002"}]}}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
