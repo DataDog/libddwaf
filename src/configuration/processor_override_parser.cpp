@@ -42,11 +42,20 @@ processor_override_spec parse_override(const raw_configuration::map &node)
         current.targets.emplace_back(std::move(target_spec));
     }
 
-    auto scanners_target_array = at<raw_configuration::vector>(node, "scanners");
-    current.scanners.reserve(scanners_target_array.size());
-    for (const auto &target : scanners_target_array) {
+    auto scanners_target = at<raw_configuration::map>(node, "scanners");
+
+    auto include_scanners = at<raw_configuration::vector>(scanners_target, "include", {});
+    current.scanners.include.reserve(include_scanners.size());
+    for (const auto &target : include_scanners) {
         auto target_spec = parse_reference(static_cast<raw_configuration::map>(target));
-        current.scanners.emplace_back(std::move(target_spec));
+        current.scanners.include.emplace_back(std::move(target_spec));
+    }
+
+    auto exclude_scanners = at<raw_configuration::vector>(scanners_target, "exclude", {});
+    current.scanners.exclude.reserve(exclude_scanners.size());
+    for (const auto &target : exclude_scanners) {
+        auto target_spec = parse_reference(static_cast<raw_configuration::map>(target));
+        current.scanners.exclude.emplace_back(std::move(target_spec));
     }
 
     return current;
