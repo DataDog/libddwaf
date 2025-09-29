@@ -28,9 +28,11 @@ std::set<const scanner *> references_to_scanners(
 {
     std::set<const scanner *> scanner_refs;
 
-    // Precedence:
-    //  - Refs by ID have precedence over refs by tags
-    //  - Exclusions have precedence over inclusions
+    // Precedence order (high to low):
+    //  - Exclusions by ID
+    //  - Inclusions by ID
+    //  - Exclusions by Tags
+    //  - Inclusions by Tags
 
     // Since exclusions have precedence, we extract them first. the exclusions
     // by id apply to inclusion by ID and tags, exclusions by tags only apply to
