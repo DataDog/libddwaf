@@ -21,11 +21,11 @@ actions:
     block_id: "55af6314-9e02-11f0-b0a3-23dee2d4f390"
 ```
 
-#### Identifier validation through checksum
+#### Identifier validation through checksums
 
 A new operator, `match_regex_with_checksum`, has been introduced to improve the accuracy of detections performed using a regular expression, when the identifier itself has a built-in validation mechanism, by performing a secondary validation through a checksum. The checksum may be a purpose-built or generic algorithm, however at this time only the Luhn algorithm is supported.
 
-The configuration of the operator is equivalent to the `match_regex` operator, except for the addition of the checksum parameter:
+The configuration of the operator is equivalent to the `match_regex` operator, except for the addition of the `checksum` parameter:
 
 ```yaml
 operator: match_regex_with_checksum
@@ -38,7 +38,7 @@ parameters:
 
 #### Incremental processor overrides
 
-Processor overrides have been updated to allow for incremental additions or removals of scanners to a given processor. Before this release, processor overrides fully replaced the list of scanners of a processor, however now each override contributes to the list by either adding or removing scanners.
+Processor overrides have been updated to allow for incremental additions or removals of scanners to a given processor. Before this release, processor overrides fully replaced the list of scanners of a processor, however now each override contributes to the set by either adding or removing scanners.
 
 While this is technically a breaking change, processor overrides are not currently in use. An example of a processor override including and excluding scanners can be seen below:
 
