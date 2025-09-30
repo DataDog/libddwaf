@@ -64,7 +64,7 @@ std::pair<bool, dynamic_string> phrase_match::match_impl(std::string_view patter
     auto begin = static_cast<std::size_t>(result.match_begin);
     auto end = static_cast<std::size_t>(result.match_end);
 
-    if (result.match_begin < 0 || result.match_end < 0 || begin >= end ||
+    if (result.match_begin < 0 || result.match_end < 0 ||
         (enforce_word_boundary_ && !is_bounded_word(pattern, begin, end))) {
         return {false, {}};
     }
