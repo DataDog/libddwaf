@@ -4,12 +4,11 @@
 
 ### New Features
 
+This release introduces a focused set of features addressing the most pressing use cases. Barring any necessary patch releases, this will constitute the final v1.x release.
+
 #### Block ID
 
-Block and redirect actions now include a `block_id` in their action parameters. This same ID is
-also included in the generated event, allowing the WAF caller to reference it in the blocking
-response or add it as a query parameter in a redirect. This ensures that each blocking action can
-be reliably correlated with its corresponding event.
+Block and redirect actions now include a `block_id` in their action parameters. This same ID is also included in the generated event, allowing the WAF caller to reference it in the blocking response or add it as a query parameter in a redirect. This ensures that each blocking action can be reliably correlated with its corresponding event.
 
 The following is an example of a block request action, including the new ID:
 
@@ -24,14 +23,9 @@ actions:
 
 #### Identifier validation through checksum
 
-A new operator, `match_regex_with_checksum`, has been introduced to improve the accuracy of
-detections performed using a regular expression, when the identifier itself has a built-in
-validation mechanism, by performing a secondary validation through a checksum. The checksum
-may be a purpose-built or generic algorithm, however at this time only the Luhn algorithm is
-supported.
+A new operator, `match_regex_with_checksum`, has been introduced to improve the accuracy of detections performed using a regular expression, when the identifier itself has a built-in validation mechanism, by performing a secondary validation through a checksum. The checksum may be a purpose-built or generic algorithm, however at this time only the Luhn algorithm is supported.
 
-The configuration of the operator is equivalent to the `match_regex` operator, except for the
-addition of the checksum parameter:
+The configuration of the operator is equivalent to the `match_regex` operator, except for the addition of the checksum parameter:
 
 ```yaml
 operator: match_regex_with_checksum
@@ -44,12 +38,9 @@ parameters:
 
 #### Incremental processor overrides
 
-Processor overrides have been updated to allow for incremental additions or removals of scanners to
-a given processor. Before this release, processor overrides fully replaced the list of scanners of
-a processor, however now each override contributes to the list by either adding or removing scanners.
+Processor overrides have been updated to allow for incremental additions or removals of scanners to a given processor. Before this release, processor overrides fully replaced the list of scanners of a processor, however now each override contributes to the list by either adding or removing scanners.
 
-While this is technically a breaking change, processor overrides are not currently in use. An
-example of a processor override including and excluding scanners can be seen below:
+While this is technically a breaking change, processor overrides are not currently in use. An example of a processor override including and excluding scanners can be seen below:
 
 ```json
 {
