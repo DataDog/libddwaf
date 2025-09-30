@@ -169,7 +169,7 @@ void parse_processors(const raw_configuration::vector &processor_array,
             const processor_spec spec{.type = type,
                 .expr = std::move(expr),
                 .mappings = std::move(mappings),
-                .scanners = std::move(scanners),
+                .scanners = {.include = std::move(scanners), .exclude = {}},
                 .evaluate = eval,
                 .output = output};
 
