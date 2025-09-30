@@ -75,14 +75,20 @@ struct processor_spec {
     processor_type type;
     std::shared_ptr<expression> expr;
     std::vector<processor_mapping> mappings;
-    std::vector<reference_spec> scanners;
+    struct {
+        std::vector<reference_spec> include;
+        std::vector<reference_spec> exclude;
+    } scanners;
     bool evaluate{false};
     bool output{true};
 };
 
 struct processor_override_spec {
     std::vector<reference_spec> targets;
-    std::vector<reference_spec> scanners;
+    struct {
+        std::vector<reference_spec> include;
+        std::vector<reference_spec> exclude;
+    } scanners;
 };
 
 enum class data_type : uint8_t { unknown, data_with_expiration, ip_with_expiration };

@@ -50,6 +50,30 @@
         "type": "token",
         "category": "credential"
       }
+    },
+    {
+      "id": "scanner-003",
+      "key": {
+        "operator": "match_regex",
+        "parameters": {
+          "regex": "(?i)(api[-_ ]?key|apikey|token)",
+          "options": {
+            "case_sensitive": false,
+            "min_length": 3
+          }
+        }
+      },
+      "value": {
+        "operator": "match_regex",
+        "parameters": {
+          "regex": "[A-Za-z0-9_-]{16,}",
+          "options": {
+            "case_sensitive": false,
+            "min_length": 16
+          }
+        }
+      },
+      "tags": { "type": "api_key", "category": "auth" }
     }
   ]
 }
