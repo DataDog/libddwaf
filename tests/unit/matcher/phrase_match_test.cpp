@@ -180,4 +180,25 @@ TEST(TestPhraseMatch, TestInvalidInput)
     EXPECT_FALSE(matcher.match(std::string_view{"*", 0}).first);
 }
 
+TEST(TestPhraseMatch, TestSingleCharMatch)
+{
+    std::vector<const char *> strings{"a", "1"};
+    std::vector<uint32_t> lengths{1, 1};
+
+    phrase_match matcher(strings, lengths);
+
+    EXPECT_STR(matcher.name(), "phrase_match");
+    EXPECT_STR(matcher.to_string(), "");
+
+    owned_object param{"a"};
+
+    auto [res, highlight] = matcher.match(param);
+    EXPECT_TRUE(res);
+    EXPECT_STR(highlight, "a");
+
+    owned_object param2{"2"};
+
+    EXPECT_FALSE(matcher.match(param2).first);
+}
+
 } // namespace
