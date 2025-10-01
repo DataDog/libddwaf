@@ -22,7 +22,7 @@ public:
             throw std::runtime_error("failed to load schema.yaml");
         }
 
-        handle = ddwaf_init(&rule, nullptr, nullptr);
+        handle = ddwaf_init(&rule, nullptr);
         if (handle == nullptr) {
             throw std::runtime_error("failed to obtain waf handle");
         }

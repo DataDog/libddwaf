@@ -17,7 +17,7 @@ TEST(TestEqualsMatcherIntegration, StringEquals)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -53,7 +53,7 @@ TEST(TestEqualsMatcherIntegration, BoolEquals)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -90,7 +90,7 @@ TEST(TestEqualsMatcherIntegration, SignedEquals)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -125,7 +125,7 @@ TEST(TestEqualsMatcherIntegration, UnsignedEquals)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -162,7 +162,7 @@ TEST(TestEqualsMatcherIntegration, FloatEquals)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 

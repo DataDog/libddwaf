@@ -16,7 +16,7 @@ constexpr std::string_view base_dir = "integration/exclusion_data/";
 TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("exclude_one_rule_by_user.yaml", base_dir);
@@ -152,7 +152,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByUserID)
 TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("exclude_one_rule_by_ip.yaml", base_dir);
@@ -288,7 +288,7 @@ TEST(TestExclusionDataIntegration, ExcludeRuleByClientIP)
 TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("exclude_one_rule_by_ip.yaml", base_dir);
@@ -430,7 +430,7 @@ TEST(TestExclusionDataIntegration, UnknownDataTypeOnExclusionData)
 TEST(TestExclusionDataIntegration, ExcludeInputByClientIP)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("exclude_one_input_by_ip.yaml", base_dir);

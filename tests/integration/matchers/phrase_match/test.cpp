@@ -17,7 +17,7 @@ TEST(TestPhraseMatchMatcherIntegration, Match)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("phrase_match.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -53,7 +53,7 @@ TEST(TestPhraseMatchMatcherIntegration, MatchWordBound)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("phrase_match.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 

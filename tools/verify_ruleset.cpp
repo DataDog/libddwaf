@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
         auto rule = YAML::Load(read_file(argv[1])).as<ddwaf_object>();
 
         ddwaf_object diagnostics;
-        ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+        ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
         ddwaf_object_destroy(&rule, alloc);
 
         auto root = object_to_yaml(diagnostics);

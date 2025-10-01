@@ -13,7 +13,6 @@
 #include <cstring>
 #include <exception>
 #include <limits>
-#include <memory>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -27,7 +26,6 @@
 #include "json_utils.hpp"
 #include "log.hpp"
 #include "memory_resource.hpp"
-#include "obfuscator.hpp"
 #include "object.hpp"
 #include "object_type.hpp"
 #include "pointer.hpp"
@@ -134,24 +132,6 @@ static_assert(alignof(DDWAF_LOG_LEVEL) == alignof(log_level));
 
 namespace {
 
-std::shared_ptr<ddwaf::match_obfuscator> obfuscator_from_config(const ddwaf_config *config)
-{
-    std::string_view key_regex;
-    std::string_view value_regex;
-
-    if (config != nullptr) {
-        if (config->obfuscator.key_regex != nullptr) {
-            key_regex = config->obfuscator.key_regex;
-        }
-
-        if (config->obfuscator.value_regex != nullptr) {
-            value_regex = config->obfuscator.value_regex;
-        }
-    }
-
-    return std::make_shared<ddwaf::match_obfuscator>(key_regex, value_regex);
-}
-
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
 detail::object *to_ptr(ddwaf_object *ptr) { return reinterpret_cast<detail::object *>(ptr); }
 const detail::object *to_ptr(const ddwaf_object *ptr)
@@ -185,12 +165,11 @@ memory::memory_resource *to_alloc_ptr(ddwaf_allocator alloc)
 
 // explicit instantiation declaration to suppress warning
 extern "C" {
-ddwaf::waf *ddwaf_init(
-    const ddwaf_object *ruleset, const ddwaf_config *config, ddwaf_object *diagnostics)
+ddwaf::waf *ddwaf_init(const ddwaf_object *ruleset, ddwaf_object *diagnostics)
 {
     try {
         if (ruleset != nullptr) {
-            ddwaf::waf_builder builder(obfuscator_from_config(config));
+            waf_builder builder;
 
             ddwaf::raw_configuration input{to_ref(ruleset)};
             ddwaf::ruleset_info ri;
@@ -398,10 +377,10 @@ bool ddwaf_set_log_cb(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level)
     return true;
 }
 
-ddwaf_builder ddwaf_builder_init(const ddwaf_config *config)
+ddwaf_builder ddwaf_builder_init()
 {
     try {
-        return new ddwaf::waf_builder(obfuscator_from_config(config));
+        return new waf_builder();
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());
     } catch (...) {

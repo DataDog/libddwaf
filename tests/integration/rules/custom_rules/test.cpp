@@ -20,9 +20,7 @@ TEST(TestCustomRulesIntegration, InitWithoutBaseRules)
     auto rule = read_file<ddwaf_object>("custom_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, nullptr}};
-
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -60,9 +58,7 @@ TEST(TestCustomRulesIntegration, InitWithBaseRules)
     auto rule = read_file<ddwaf_object>("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, nullptr}};
-
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -100,9 +96,7 @@ TEST(TestCustomRulesIntegration, RegularCustomRulesPrecedence)
     auto rule = read_file<ddwaf_object>("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, nullptr}};
-
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -141,9 +135,7 @@ TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
     auto rule = read_file<ddwaf_object>("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, nullptr}};
-
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -189,9 +181,7 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
     auto rule = read_file<ddwaf_object>("custom_rules_and_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, nullptr}};
-
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -233,8 +223,7 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
 TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_config config{{nullptr, nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("custom_rules_base_rules_only.yaml", base_dir);
@@ -326,8 +315,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
 TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_config config{{nullptr, nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("custom_rules.yaml", base_dir);
@@ -416,8 +404,7 @@ TEST(TestCustomRulesIntegration, UpdateWithEmptyRules)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_config config{{nullptr, nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     auto rule = read_file<ddwaf_object>("custom_rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -441,8 +428,7 @@ TEST(TestCustomRulesIntegration, UpdateWithEmptyRules)
 TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_config config{{nullptr, nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("custom_rules_base_rules_only.yaml", base_dir);
@@ -534,8 +520,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
 TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_config config{{nullptr, nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("custom_rules.yaml", base_dir);
@@ -628,8 +613,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
 TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_config config{{nullptr, nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("custom_rules_base_rules_only.yaml", base_dir);
@@ -746,8 +730,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
 TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_config config{{nullptr, nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("custom_rules_and_rules.yaml", base_dir);
@@ -840,8 +823,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
 TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_config config{{nullptr, nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("custom_rules_base_rules_only.yaml", base_dir);

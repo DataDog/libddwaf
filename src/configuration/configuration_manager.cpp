@@ -5,6 +5,7 @@
 // (https://www.datadoghq.com/). Copyright 2024 Datadog, Inc.
 
 #include <exception>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -28,6 +29,7 @@
 #include "configuration/scanner_parser.hpp"
 #include "fmt/core.h"
 #include "log.hpp"
+#include "obfuscator.hpp"
 #include "ruleset_info.hpp"
 
 namespace ddwaf {
@@ -232,6 +234,26 @@ bool configuration_manager::load(
         }
     }
 
+    it = root.find("obfuscator");
+    if (it != root.end()) {
+        DDWAF_DEBUG("Parsing obfuscator");
+        auto &section = info.add_section("scanners");
+        try {
+            if (collector.contains_obfuscator()) {
+                throw parsing_error("duplicate obfuscator configuration");
+            }
+
+            auto obfuscator = static_cast<raw_configuration::map>(it->second);
+            collector.set_obfuscator(
+                std::make_shared<match_obfuscator>(at<std::string_view>(obfuscator, "key_regex",
+                                                       match_obfuscator::default_key_regex_str),
+                    at<std::string_view>(
+                        obfuscator, "value_regex", match_obfuscator::default_value_regex_str)));
+        } catch (const std::exception &e) {
+            DDWAF_WARN("Failed to parse obfuscator: {}", e.what());
+            section.set_error(e.what());
+        }
+    }
     return info.state() != ruleset_info_state::invalid;
 }
 
@@ -264,6 +286,10 @@ void configuration_manager::remove_config(const configuration_change_spec &cfg)
             // Should always be true...
             it->second.values.erase(id);
         }
+    }
+
+    if (contains(cfg.content, change_set::obfuscator)) {
+        global_config_.obfuscator.reset();
     }
 }
 

@@ -82,7 +82,7 @@ TEST(TestDiagnosticsV1Integration, Basic)
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -119,7 +119,7 @@ TEST(TestDiagnosticsV1Integration, TestInvalidRule)
 
     ddwaf_object diagnostics;
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -159,7 +159,7 @@ TEST(TestDiagnosticsV1Integration, TestMultipleSameInvalidRules)
 
     ddwaf_object diagnostics;
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -200,7 +200,7 @@ TEST(TestDiagnosticsV1Integration, TestMultipleDiffInvalidRules)
 
     ddwaf_object diagnostics;
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -251,7 +251,7 @@ TEST(TestDiagnosticsV1Integration, TestMultipleMixInvalidRules)
 
     ddwaf_object diagnostics;
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -313,7 +313,7 @@ TEST(TestDiagnosticsV1Integration, TestInvalidDuplicate)
 
     ddwaf_object diagnostics;
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -354,7 +354,7 @@ TEST(TestDiagnosticsV1Integration, TestInvalidTooManyTransformers)
 
     ddwaf_object diagnostics;
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -394,7 +394,7 @@ TEST(TestDiagnosticsV1Integration, InvalidRulesContainer)
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_object diagnostics;
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 

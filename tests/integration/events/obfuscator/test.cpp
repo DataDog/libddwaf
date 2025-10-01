@@ -18,14 +18,23 @@ constexpr std::string_view base_dir = "integration/events/obfuscator/";
 TEST(TestObfuscatorIntegration, TestConfigKeyValue)
 {
     auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{"password", "rule1_obf"}};
+    auto obfuscator =
+        yaml_to_object<ddwaf_object>("{obfuscator: {key_regex: password, value_regex: rule1_obf}}");
+    ASSERT_TRUE(obfuscator.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ddwaf_object_destroy(&rule, alloc);
+    ddwaf_builder builder = ddwaf_builder_init();
+    ddwaf_builder_add_or_update_config(builder, STRL("rules"), &rule, nullptr);
+    ddwaf_builder_add_or_update_config(builder, STRL("obfuscator"), &obfuscator, nullptr);
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
+
+    ddwaf_object_destroy(&rule, alloc);
+    ddwaf_object_destroy(&obfuscator, alloc);
+    ddwaf_builder_destroy(builder);
 
     // No Obfuscation
     {
@@ -141,15 +150,23 @@ TEST(TestObfuscatorIntegration, TestConfigKeyValue)
 TEST(TestObfuscatorIntegration, TestConfigKey)
 {
     auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{"password", nullptr}};
+    auto obfuscator =
+        yaml_to_object<ddwaf_object>("{obfuscator: {key_regex: password, value_regex: ''}}");
+    ASSERT_TRUE(obfuscator.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ddwaf_object_destroy(&rule, alloc);
+    ddwaf_builder builder = ddwaf_builder_init();
+    ddwaf_builder_add_or_update_config(builder, STRL("rules"), &rule, nullptr);
+    ddwaf_builder_add_or_update_config(builder, STRL("obfuscator"), &obfuscator, nullptr);
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
+    ddwaf_object_destroy(&rule, alloc);
+    ddwaf_object_destroy(&obfuscator, alloc);
+    ddwaf_builder_destroy(builder);
     // No Obfuscation
     {
         ddwaf_context context = ddwaf_context_init(handle, alloc);
@@ -235,14 +252,23 @@ TEST(TestObfuscatorIntegration, TestConfigKey)
 TEST(TestObfuscatorIntegration, TestConfigValue)
 {
     auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, "rule1_obf"}};
+    auto obfuscator =
+        yaml_to_object<ddwaf_object>("{obfuscator: {key_regex: '', value_regex: rule1_obf}}");
+    ASSERT_TRUE(obfuscator.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ddwaf_object_destroy(&rule, alloc);
+    ddwaf_builder builder = ddwaf_builder_init();
+    ddwaf_builder_add_or_update_config(builder, STRL("rules"), &rule, nullptr);
+    ddwaf_builder_add_or_update_config(builder, STRL("obfuscator"), &obfuscator, nullptr);
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
+
+    ddwaf_object_destroy(&rule, alloc);
+    ddwaf_object_destroy(&obfuscator, alloc);
+    ddwaf_builder_destroy(builder);
 
     // No Obfuscation
     {
@@ -329,14 +355,23 @@ TEST(TestObfuscatorIntegration, TestConfigValue)
 TEST(TestObfuscatorIntegration, TestConfigHighlight)
 {
     auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = "^badvalue"}};
+    auto obfuscator =
+        yaml_to_object<ddwaf_object>("{obfuscator: {key_regex: '', value_regex: '^badvalue'}}");
+    ASSERT_TRUE(obfuscator.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ddwaf_object_destroy(&rule, alloc);
+    ddwaf_builder builder = ddwaf_builder_init();
+    ddwaf_builder_add_or_update_config(builder, STRL("rules"), &rule, nullptr);
+    ddwaf_builder_add_or_update_config(builder, STRL("obfuscator"), &obfuscator, nullptr);
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
+
+    ddwaf_object_destroy(&rule, alloc);
+    ddwaf_object_destroy(&obfuscator, alloc);
+    ddwaf_builder_destroy(builder);
 
     // Highlight obfuscation
     {
@@ -392,14 +427,23 @@ TEST(TestObfuscatorIntegration, TestConfigHighlight)
 TEST(TestObfuscatorIntegration, TestConfigEmpty)
 {
     auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, ""}};
+    auto obfuscator =
+        yaml_to_object<ddwaf_object>("{obfuscator: {key_regex: '', value_regex: ''}}");
+    ASSERT_TRUE(obfuscator.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ddwaf_object_destroy(&rule, alloc);
+    ddwaf_builder builder = ddwaf_builder_init();
+    ddwaf_builder_add_or_update_config(builder, STRL("rules"), &rule, nullptr);
+    ddwaf_builder_add_or_update_config(builder, STRL("obfuscator"), &obfuscator, nullptr);
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
+
+    ddwaf_object_destroy(&rule, alloc);
+    ddwaf_object_destroy(&obfuscator, alloc);
+    ddwaf_builder_destroy(builder);
 
     // No Obfuscation
     {
@@ -486,15 +530,23 @@ TEST(TestObfuscatorIntegration, TestConfigEmpty)
 TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
 {
     auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{"[", nullptr}};
+    auto obfuscator =
+        yaml_to_object<ddwaf_object>("{obfuscator: {key_regex: '[', value_regex: ''}}");
+    ASSERT_TRUE(obfuscator.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ddwaf_object_destroy(&rule, alloc);
+    ddwaf_builder builder = ddwaf_builder_init();
+    ddwaf_builder_add_or_update_config(builder, STRL("rules"), &rule, nullptr);
+    ddwaf_builder_add_or_update_config(builder, STRL("obfuscator"), &obfuscator, nullptr);
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
 
+    ddwaf_object_destroy(&rule, alloc);
+    ddwaf_object_destroy(&obfuscator, alloc);
+    ddwaf_builder_destroy(builder);
     // No Obfuscation
     {
         ddwaf_context context = ddwaf_context_init(handle, alloc);
@@ -579,15 +631,25 @@ TEST(TestObfuscatorIntegration, TestInvalidConfigKey)
 
 TEST(TestObfuscatorIntegration, TestInvalidConfigValue)
 {
+
     auto *alloc = ddwaf_get_default_allocator();
+
     auto rule = read_file<ddwaf_object>("obfuscator.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, "]"}};
+    auto obfuscator =
+        yaml_to_object<ddwaf_object>("{obfuscator: {key_regex: '', value_regex: ']'}}");
+    ASSERT_TRUE(obfuscator.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
-    ddwaf_object_destroy(&rule, alloc);
+    ddwaf_builder builder = ddwaf_builder_init();
+    ddwaf_builder_add_or_update_config(builder, STRL("rules"), &rule, nullptr);
+    ddwaf_builder_add_or_update_config(builder, STRL("obfuscator"), &obfuscator, nullptr);
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
     ASSERT_NE(handle, nullptr);
+
+    ddwaf_object_destroy(&rule, alloc);
+    ddwaf_object_destroy(&obfuscator, alloc);
+    ddwaf_builder_destroy(builder);
 
     // No Obfuscation
     {

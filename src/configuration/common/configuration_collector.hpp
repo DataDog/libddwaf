@@ -45,6 +45,8 @@ public:
         return config_.actions.contains(id);
     }
 
+    [[nodiscard]] bool contains_obfuscator() const { return config_.obfuscator != nullptr; }
+
     void emplace_rule(std::string id, rule_spec spec)
     {
         if (spec.source == core_rule::source_type::base) {
@@ -155,6 +157,12 @@ public:
             it->second.values.emplace(id, std::move(values));
         }
         change_.exclusion_data.emplace_back(std::move(data_id), std::move(id));
+    }
+
+    void set_obfuscator(std::shared_ptr<match_obfuscator> &&obfuscator)
+    {
+        change_.content |= change_set::obfuscator;
+        config_.obfuscator = std::move(obfuscator);
     }
 
 protected:

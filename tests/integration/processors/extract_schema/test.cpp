@@ -17,7 +17,7 @@ TEST(TestExtractSchemaIntegration, Postprocessor)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("postprocessor.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -61,7 +61,7 @@ TEST(TestExtractSchemaIntegration, Preprocessor)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("preprocessor.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -114,7 +114,7 @@ TEST(TestExtractSchemaIntegration, Processor)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("processor.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -170,7 +170,7 @@ TEST(TestExtractSchemaIntegration, Processor)
 TEST(TestExtractSchemaIntegration, ProcessorWithScannerByTags)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
@@ -220,7 +220,7 @@ TEST(TestExtractSchemaIntegration, ProcessorWithScannerByTags)
 TEST(TestExtractSchemaIntegration, ProcessorWithScannerByID)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     auto rule = read_json_file("processor_with_scanner_by_id.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
@@ -270,7 +270,7 @@ TEST(TestExtractSchemaIntegration, ProcessorWithScannerByID)
 TEST(TestExtractSchemaIntegration, ProcessorUpdate)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
@@ -368,7 +368,7 @@ TEST(TestExtractSchemaIntegration, ProcessorUpdate)
 TEST(TestExtractSchemaIntegration, ScannerUpdate)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
@@ -469,7 +469,7 @@ TEST(TestExtractSchemaIntegration, ScannerUpdate)
 TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
@@ -569,7 +569,7 @@ TEST(TestExtractSchemaIntegration, ProcessorAndScannerUpdate)
 TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
@@ -660,7 +660,7 @@ TEST(TestExtractSchemaIntegration, EmptyScannerUpdate)
 TEST(TestExtractSchemaIntegration, EmptyProcessorUpdate)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_json_file("processor_with_scanner_by_tags.json", base_dir);
@@ -759,7 +759,7 @@ TEST(TestExtractSchemaIntegration, PostprocessorWithSubcontextMapping)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("postprocessor.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -839,7 +839,7 @@ TEST(TestExtractSchemaIntegration, PreprocessorWithSubcontextMapping)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("preprocessor.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -937,7 +937,7 @@ TEST(TestExtractSchemaIntegration, ProcessorSubcontextExpression)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("processor.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 

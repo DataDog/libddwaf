@@ -13,7 +13,7 @@ test_runner::test_runner(const std::string &rule_file)
 {
     YAML::Node doc = YAML::Load(read_file(rule_file));
     auto rule_obj = doc.as<ddwaf_object>();
-    handle_ = ddwaf_init(&rule_obj, nullptr, nullptr);
+    handle_ = ddwaf_init(&rule_obj, nullptr);
     ddwaf_object_destroy(&rule_obj, ddwaf_get_default_allocator());
     if (handle_ == nullptr) {
         throw std::runtime_error("Invalid rule file");

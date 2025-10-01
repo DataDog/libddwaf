@@ -20,7 +20,7 @@ TEST(TestWafIntegration, Empty)
     auto rule = yaml_to_object<ddwaf_object>("{}");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_destroy(&rule, ddwaf_get_default_allocator());
 }
@@ -33,11 +33,10 @@ TEST(TestWafIntegration, GetWafVersion)
 TEST(TestWafIntegration, HandleBad)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
 
     ddwaf_object object;
     ddwaf_object_set_invalid(&object);
-    EXPECT_EQ(ddwaf_init(&object, &config, nullptr), nullptr);
+    EXPECT_EQ(ddwaf_init(&object, nullptr), nullptr);
 
     EXPECT_NO_FATAL_FAILURE(ddwaf_destroy(nullptr));
 
@@ -48,7 +47,7 @@ TEST(TestWafIntegration, HandleBad)
     auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -86,9 +85,7 @@ TEST(TestWafIntegration, RootAddresses)
     auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -111,9 +108,7 @@ TEST(TestWafIntegration, HandleLifetime)
     auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -147,9 +142,7 @@ TEST(TestWafIntegration, HandleLifetimeMultipleContexts)
     auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -187,9 +180,7 @@ TEST(TestWafIntegration, InvalidVersion)
     auto rule = yaml_to_object<ddwaf_object>("{version: 3.0, rules: []}");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_handle handle1 = ddwaf_init(&rule, nullptr);
     ASSERT_EQ(handle1, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 }
@@ -200,9 +191,7 @@ TEST(TestWafIntegration, InvalidVersionNoRules)
     auto rule = yaml_to_object<ddwaf_object>("{version: 3.0}");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-
-    ddwaf_handle handle1 = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_handle handle1 = ddwaf_init(&rule, nullptr);
     ASSERT_EQ(handle1, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 }
@@ -210,7 +199,7 @@ TEST(TestWafIntegration, InvalidVersionNoRules)
 TEST(TestWafIntegration, PreloadRuleData)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     {
@@ -307,9 +296,7 @@ TEST(TestWafIntegration, UpdateRules)
     auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
     ddwaf_builder_add_or_update_config(builder, "default", sizeof("default") - 1, &rule, nullptr);
 
     ddwaf_handle handle = ddwaf_builder_build_instance(builder);
@@ -359,8 +346,7 @@ TEST(TestWafIntegration, UpdateRules)
 TEST(TestWafIntegration, UpdateDisableEnableRuleByID)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     {
@@ -437,8 +423,7 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByTags)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
@@ -533,8 +518,7 @@ TEST(TestWafIntegration, UpdateDisableEnableRuleByTags)
 TEST(TestWafIntegration, UpdateActionsByID)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     {
@@ -692,8 +676,7 @@ TEST(TestWafIntegration, UpdateActionsByID)
 TEST(TestWafIntegration, UpdateActionsByTags)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
@@ -799,8 +782,7 @@ TEST(TestWafIntegration, UpdateActionsByTags)
 TEST(TestWafIntegration, UpdateTagsByID)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
@@ -932,8 +914,7 @@ TEST(TestWafIntegration, UpdateTagsByTags)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
@@ -1160,8 +1141,7 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
@@ -1348,8 +1328,7 @@ TEST(TestWafIntegration, UpdateInvalidOverrides)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
@@ -1376,8 +1355,7 @@ TEST(TestWafIntegration, UpdateRuleData)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("rules_requiring_data.yaml", base_dir);
@@ -1457,8 +1435,7 @@ TEST(TestWafIntegration, UpdateAndRevertRuleData)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("rules_requiring_data.yaml", base_dir);
@@ -1535,8 +1512,7 @@ TEST(TestWafIntegration, UpdateAndRevertRuleData)
 TEST(TestWafIntegration, UpdateRuleExclusions)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
@@ -1632,8 +1608,7 @@ TEST(TestWafIntegration, UpdateRuleExclusions)
 TEST(TestWafIntegration, UpdateInputExclusions)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
@@ -1749,8 +1724,7 @@ TEST(TestWafIntegration, UpdateInputExclusions)
 TEST(TestWafIntegration, UpdateEverything)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("interface_with_data.yaml", base_dir);
@@ -2365,8 +2339,7 @@ TEST(TestWafIntegration, KnownAddressesDisabledRule)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("ruleset_with_disabled_rule.yaml", base_dir);
@@ -2434,8 +2407,7 @@ TEST(TestWafIntegration, KnownActions)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_config config{{.key_regex = nullptr, .value_regex = nullptr}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
@@ -2718,7 +2690,7 @@ TEST(TestWafIntegration, GetConfigPathSingleConfig)
     auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
     ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DD/default"), &rule, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -2748,7 +2720,7 @@ TEST(TestWafIntegration, GetConfigPathMultipleConfigs)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
     {
         auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DD/default"), &rule, nullptr);
@@ -2857,7 +2829,7 @@ TEST(TestWafIntegration, GetFilteredConfigPathSingleConfig)
     auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
     ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DD/default"), &rule, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -2902,7 +2874,7 @@ TEST(TestWafIntegration, GetFilteredConfigPathMultipleConfigs)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
     {
         auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
         ddwaf_builder_add_or_update_config(builder, LSTRARG("ASM_DD/default"), &rule, nullptr);

@@ -105,7 +105,6 @@ typedef void (ddwaf_free_fn_type)(void *, void *, size_t, size_t);
 typedef void (ddwaf_udata_free_fn_type)(void *);
 #endif
 
-typedef struct _ddwaf_config ddwaf_config;
 typedef union _ddwaf_object ddwaf_object;
 
 struct _ddwaf_object_kv;
@@ -195,22 +194,6 @@ static_assert(sizeof(struct _ddwaf_object_kv) == 32);
 #endif
 
 /**
- * @struct ddwaf_config
- *
- * Configuration to be provided to the WAF
- **/
-struct _ddwaf_config
-{
-    /** Obfuscator regexes - the strings are owned by the caller */
-    struct _ddwaf_config_obfuscator {
-        /** Regular expression for key-based obfuscation */
-        const char *key_regex;
-        /** Regular expression for value-based obfuscation */
-        const char *value_regex;
-    } obfuscator;
-};
-
-/**
  * @typedef ddwaf_log_cb
  *
  * Callback that powerwaf will call to relay messages to the binding.
@@ -232,7 +215,6 @@ typedef void (*ddwaf_log_cb)(
  * Initialize a ddwaf instance
  *
  * @param ruleset ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
- * @param config Optional configuration of the WAF. (nullable)
  * @param diagnostics Optional ruleset parsing diagnostics. (nullable)
  *
  * @return Handle to the WAF instance or NULL on error.
@@ -242,8 +224,7 @@ typedef void (*ddwaf_log_cb)(
  *
  * @note If ruleset is NULL, the diagnostics object will not be initialised.
  **/
-ddwaf_handle ddwaf_init(const ddwaf_object *ruleset,
-    const ddwaf_config* config, ddwaf_object *diagnostics);
+ddwaf_handle ddwaf_init(const ddwaf_object *ruleset,  ddwaf_object *diagnostics);
 
 /**
  * ddwaf_destroy
@@ -453,13 +434,11 @@ void ddwaf_subcontext_destroy(ddwaf_subcontext subcontext);
  *
  * Initialize an instace of the waf builder.
  *
- * @param config Optional configuration of the WAF. (nullable)
- *
  * @return Handle to the builer instance or NULL on error.
  *
  * @note If config is NULL, default values will be used
  **/
-ddwaf_builder ddwaf_builder_init(const ddwaf_config *config);
+ddwaf_builder ddwaf_builder_init();
 
 /**
  * ddwaf_builder_add_or_update_config

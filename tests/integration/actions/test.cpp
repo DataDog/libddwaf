@@ -22,7 +22,7 @@ TEST(TestActionsIntegration, DefaultActions)
     auto rule = read_file<ddwaf_object>("default_actions.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -168,7 +168,7 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("default_actions.yaml", base_dir);
@@ -265,7 +265,7 @@ TEST(TestActionsIntegration, AddNewAction)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("default_actions.yaml", base_dir);
@@ -361,7 +361,7 @@ TEST(TestActionsIntegration, EmptyOrInvalidActions)
     auto rule = read_file<ddwaf_object>("invalid_actions.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -404,7 +404,7 @@ TEST(TestActionsIntegration, ActionTypes)
     auto rule = read_file<ddwaf_object>("action_types.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -444,7 +444,7 @@ TEST(TestActionsIntegration, PreventBlockIDInjectionOnBlock)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("default_actions.yaml", base_dir);
@@ -558,7 +558,7 @@ TEST(TestActionsIntegration, PreventBlockIDInjectionOnRedirect)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("default_actions.yaml", base_dir);
@@ -672,7 +672,7 @@ TEST(TestActionsIntegration, PreventStackIDInjection)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     {
         auto rule = read_file<ddwaf_object>("default_actions.yaml", base_dir);

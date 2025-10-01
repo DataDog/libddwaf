@@ -23,6 +23,7 @@
 #include "indexer.hpp"
 #include "log.hpp"
 #include "matcher/base.hpp"
+#include "obfuscator.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
 #include "ruleset.hpp"
@@ -242,6 +243,12 @@ std::shared_ptr<ruleset> ruleset_builder::build(
             matchers.emplace(id, matcher_builder::build(spec));
         }
         exclusion_matchers_ = std::make_shared<matcher_mapper>(std::move(matchers));
+    }
+
+    if (contains(current_changes, change_set::obfuscator)) {
+        obfuscator_ = global_config.obfuscator;
+    } else if (obfuscator_ == nullptr) {
+        obfuscator_ = std::make_shared<match_obfuscator>();
     }
 
     auto rs = std::make_shared<ruleset>();
