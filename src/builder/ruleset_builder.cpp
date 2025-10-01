@@ -23,7 +23,6 @@
 #include "indexer.hpp"
 #include "log.hpp"
 #include "matcher/base.hpp"
-#include "obfuscator.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
 #include "ruleset.hpp"
@@ -247,12 +246,6 @@ std::shared_ptr<ruleset> ruleset_builder::build(
 
     if (contains(current_changes, change_set::obfuscator)) {
         obfuscator_ = global_config.obfuscator;
-    }
-
-    // Ensure the obfuscator is never nullptr
-    // TODO: update the serializer to accept a nullptr obfuscator
-    if (obfuscator_ == nullptr) {
-        obfuscator_ = std::make_shared<match_obfuscator>();
     }
 
     auto rs = std::make_shared<ruleset>();
