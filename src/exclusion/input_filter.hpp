@@ -7,19 +7,18 @@
 #pragma once
 
 #include <set>
-#include <stack>
-#include <vector>
 
 #include "clock.hpp"
 #include "exclusion/object_filter.hpp"
 #include "object_store.hpp"
 #include "rule.hpp"
 
-namespace ddwaf::exclusion {
+namespace ddwaf {
 
 class input_filter {
 public:
     struct excluded_set {
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
         const std::set<const core_rule *> &rules;
         object_set objects;
     };
@@ -38,7 +37,7 @@ public:
     ~input_filter() = default;
 
     std::optional<excluded_set> match(const object_store &store, cache_type &cache,
-        const matcher_mapper &dynamic_matchers, const object_limits &limits,
+        const matcher_mapper &dynamic_matchers, evaluation_scope scope,
         ddwaf::timer &deadline) const;
 
     std::string_view get_id() { return id_; }
@@ -56,4 +55,4 @@ protected:
     std::shared_ptr<object_filter> filter_;
 };
 
-} // namespace ddwaf::exclusion
+} // namespace ddwaf

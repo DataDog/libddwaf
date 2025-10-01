@@ -11,6 +11,7 @@
 #include <limits>
 
 #include "cow_string.hpp"
+#include "memory_resource.hpp" // IWYU pragma: keep
 #include "transformer/base64_encode.hpp"
 
 namespace ddwaf::transformer {
@@ -23,8 +24,10 @@ bool base64_encode::transform_impl(cow_string &str)
 
     // We need to allocate a buffer to contain the base64 encoded string
     const size_t encoded_length = (str.length() + 2) / 3 * 4;
-    // NOLINTNEXTLINE(cppcoreguidelines-no-malloc,hicpp-no-malloc)
-    auto *new_string = static_cast<char *>(malloc(encoded_length + 1));
+
+    // NOLINTNEXTLINE(misc-include-cleaner)
+    auto *alloc = memory::get_default_resource();
+    auto *new_string = static_cast<char *>(alloc->allocate(encoded_length, alignof(char)));
 
     // We don't have a good way to make this test fail in the CI, thus crapping on the coverage
     if (new_string == nullptr) {
@@ -79,9 +82,8 @@ bool base64_encode::transform_impl(cow_string &str)
         new_string[write++] = '=';
     }
 
-    new_string[write] = 0;
-
-    str.replace_buffer(new_string, write);
+    // NOLINTNEXTLINE(readability-suspicious-call-argument)
+    str.replace_buffer(new_string, write, encoded_length);
 
     return true;
 }

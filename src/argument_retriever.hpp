@@ -6,16 +6,16 @@
 
 #pragma once
 
-#include <memory>
 #include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
 #include <vector>
 
-#include "condition/base.hpp"
+#include "exclusion/common.hpp"
+#include "object.hpp"
+#include "object_store.hpp"
 #include "traits.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -25,7 +25,7 @@ template <typename T> struct unary_argument {
     // by either the condition (condition_target) or the processor (processor_target).
     std::string_view address{};
     std::span<const std::string> key_path;
-    bool ephemeral{false};
+    evaluation_scope scope{evaluation_scope::context()};
     T value;
 };
 
@@ -44,39 +44,18 @@ template <typename T> using variadic_argument = std::vector<unary_argument<T>>;
 template <typename T, typename = void> struct is_variadic_argument : std::false_type {};
 template <typename T> struct is_variadic_argument<variadic_argument<T>> : std::true_type {};
 
-template <typename T> std::optional<T> convert(const ddwaf_object *obj)
+template <typename T> std::optional<T> convert(object_view obj)
 {
-    if constexpr (std::is_same_v<T, decltype(obj)>) {
+    if constexpr (std::is_same_v<std::decay_t<T>, object_view>) {
         return obj;
-    }
-
-    if constexpr (std::is_same_v<T, std::string_view> || std::is_same_v<T, std::string>) {
-        if (obj->type == DDWAF_OBJ_STRING) {
-            return T{obj->stringValue, static_cast<std::size_t>(obj->nbEntries)};
+    } else if constexpr (is_type_in_set_v<T, uint64_t, unsigned, int64_t, int, bool, std::string,
+                             std::string_view, array_view, map_view>) {
+        if (obj.is<T>()) {
+            return obj.as<T>();
         }
+    } else {
+        static_assert(!std::is_same_v<T, T>, "unsupported type on argument_retriever::convert<T>");
     }
-
-    if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, unsigned>) {
-        using limits = std::numeric_limits<T>;
-        if (obj->type == DDWAF_OBJ_UNSIGNED && obj->uintValue <= limits::max()) {
-            return static_cast<T>(obj->uintValue);
-        }
-    }
-
-    if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, int>) {
-        using limits = std::numeric_limits<T>;
-        if (obj->type == DDWAF_OBJ_SIGNED && obj->intValue >= limits::min() &&
-            obj->intValue <= limits::max()) {
-            return static_cast<T>(obj->intValue);
-        }
-    }
-
-    if constexpr (std::is_same_v<T, bool>) {
-        if (obj->type == DDWAF_OBJ_BOOL) {
-            return static_cast<T>(obj->boolean);
-        }
-    }
-
     return {};
 }
 
@@ -89,11 +68,11 @@ template <typename T> struct argument_retriever : default_argument_retriever {};
 
 template <typename T> struct argument_retriever<unary_argument<T>> : default_argument_retriever {
     template <typename TargetType>
-    static std::optional<unary_argument<T>> retrieve(const object_store &store,
-        const exclusion::object_set_ref &objects_excluded, const TargetType &target)
+    static std::optional<unary_argument<T>> retrieve(
+        const object_store &store, const object_set_ref &objects_excluded, const TargetType &target)
     {
-        auto [object, attr] = store.get_target(target.index);
-        if (object == nullptr || objects_excluded.contains(object)) {
+        auto [object, scope] = store.get_target(target.index);
+        if (!object.has_value() || objects_excluded.contains(object)) {
             return std::nullopt;
         }
 
@@ -102,8 +81,7 @@ template <typename T> struct argument_retriever<unary_argument<T>> : default_arg
             return std::nullopt;
         }
 
-        return unary_argument<T>{target.name, target.key_path,
-            attr == object_store::attribute::ephemeral, std::move(converted.value())};
+        return unary_argument<T>{target.name, target.key_path, scope, std::move(converted.value())};
     }
 };
 
@@ -111,8 +89,8 @@ template <typename T> struct argument_retriever<optional_argument<T>> : default_
     static constexpr bool is_optional = true;
 
     template <typename TargetType>
-    static optional_argument<T> retrieve(const object_store &store,
-        const exclusion::object_set_ref &objects_excluded, const TargetType &target)
+    static optional_argument<T> retrieve(
+        const object_store &store, const object_set_ref &objects_excluded, const TargetType &target)
     {
         return argument_retriever<unary_argument<T>>::retrieve(store, objects_excluded, target);
     }
@@ -123,7 +101,7 @@ template <typename T> struct argument_retriever<variadic_argument<T>> : default_
 
     template <typename TargetType>
     static variadic_argument<T> retrieve(const object_store &store,
-        const exclusion::object_set_ref &objects_excluded, const std::vector<TargetType> &targets)
+        const object_set_ref &objects_excluded, const std::vector<TargetType> &targets)
     {
         variadic_argument<T> args;
         for (const auto &target : targets) {

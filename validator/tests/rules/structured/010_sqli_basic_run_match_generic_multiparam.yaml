@@ -2,7 +2,7 @@
   name: "Basic run with match, using the generic tokenizer",
   runs: [
     {
-      persistent-input: {
+      input: {
         server.db.statement: "SELECT * FROM users WHERE id ='' OR 1=1; --';",
         server.request.query: [ "somevalue", "irrelevant", "no injection",  "1", "value" ],
         server.request.body: [ "somevalue", "irrelevant", "no injection",  "1", "' OR 1=1; --", "1", "value" ],

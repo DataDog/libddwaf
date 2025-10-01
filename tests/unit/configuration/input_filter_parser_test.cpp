@@ -16,7 +16,7 @@ namespace {
 
 TEST(TestInputFilterParser, ParseEmpty)
 {
-    auto object = yaml_to_object(R"([{id: 1, inputs: []}])");
+    auto object = yaml_to_object<owned_object>(R"([{id: 1, inputs: []}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -24,11 +24,10 @@ TEST(TestInputFilterParser, ParseEmpty)
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -47,8 +46,6 @@ TEST(TestInputFilterParser, ParseEmpty)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -79,7 +76,7 @@ TEST(TestInputFilterParser, ParseEmpty)
 
 TEST(TestInputFilterParser, ParseFilterWithoutID)
 {
-    auto object = yaml_to_object(R"([{inputs: [{address: http.client_ip}]}])");
+    auto object = yaml_to_object<owned_object>(R"([{inputs: [{address: http.client_ip}]}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -87,11 +84,10 @@ TEST(TestInputFilterParser, ParseFilterWithoutID)
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -110,8 +106,6 @@ TEST(TestInputFilterParser, ParseFilterWithoutID)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("index:0"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -142,7 +136,7 @@ TEST(TestInputFilterParser, ParseFilterWithoutID)
 
 TEST(TestInputFilterParser, ParseDuplicateFilters)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, inputs: [{address: http.client_ip}]}, {id: 1, inputs: [{address: usr.id}]}])");
 
     configuration_spec cfg;
@@ -151,11 +145,10 @@ TEST(TestInputFilterParser, ParseDuplicateFilters)
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -175,8 +168,6 @@ TEST(TestInputFilterParser, ParseDuplicateFilters)
         auto error_rules = static_cast<raw_configuration::string_set>(it->second);
         EXPECT_EQ(error_rules.size(), 1);
         EXPECT_NE(error_rules.find("1"), error_rules.end());
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -192,7 +183,7 @@ TEST(TestInputFilterParser, ParseDuplicateFilters)
 
 TEST(TestInputFilterParser, ParseUnconditionalNoTargets)
 {
-    auto object = yaml_to_object(R"([{id: 1, inputs: [{address: http.client_ip}]}])");
+    auto object = yaml_to_object<owned_object>(R"([{id: 1, inputs: [{address: http.client_ip}]}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -200,11 +191,10 @@ TEST(TestInputFilterParser, ParseUnconditionalNoTargets)
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -217,8 +207,6 @@ TEST(TestInputFilterParser, ParseUnconditionalNoTargets)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_EQ(cfg.rule_filters.size(), 0);
@@ -234,7 +222,7 @@ TEST(TestInputFilterParser, ParseUnconditionalNoTargets)
 
 TEST(TestInputFilterParser, ParseUnconditionalTargetID)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}]}])");
 
     configuration_spec cfg;
@@ -243,11 +231,10 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetID)
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -260,8 +247,6 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetID)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -289,7 +274,7 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetID)
 
 TEST(TestInputFilterParser, ParseUnconditionalTargetTags)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     configuration_spec cfg;
@@ -298,11 +283,10 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetTags)
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -315,8 +299,6 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetTags)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -345,7 +327,7 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetTags)
 
 TEST(TestInputFilterParser, ParseUnconditionalTargetPriority)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939, tags: {type: rule, category: unknown}}]}])");
 
     configuration_spec cfg;
@@ -354,11 +336,10 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetPriority)
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -371,8 +352,6 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetPriority)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -400,7 +379,7 @@ TEST(TestInputFilterParser, ParseUnconditionalTargetPriority)
 TEST(TestInputFilterParser, ParseUnconditionalMultipleTargets)
 {
 
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}, {tags: {type: rule, category: unknown}}]}])");
 
     configuration_spec cfg;
@@ -409,11 +388,10 @@ TEST(TestInputFilterParser, ParseUnconditionalMultipleTargets)
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -426,8 +404,6 @@ TEST(TestInputFilterParser, ParseUnconditionalMultipleTargets)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -465,7 +441,7 @@ TEST(TestInputFilterParser, ParseUnconditionalMultipleTargets)
 
 TEST(TestInputFilterParser, ParseMultipleUnconditional)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}]}, {id: 2, inputs: [{address: usr.id}], rules_target: [{tags: {type: rule, category: unknown}}]}])");
 
     configuration_spec cfg;
@@ -474,11 +450,10 @@ TEST(TestInputFilterParser, ParseMultipleUnconditional)
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -492,8 +467,6 @@ TEST(TestInputFilterParser, ParseMultipleUnconditional)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -539,7 +512,7 @@ TEST(TestInputFilterParser, ParseMultipleUnconditional)
 
 TEST(TestInputFilterParser, ParseConditionalSingleCondition)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
     configuration_spec cfg;
@@ -548,11 +521,10 @@ TEST(TestInputFilterParser, ParseConditionalSingleCondition)
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -565,8 +537,6 @@ TEST(TestInputFilterParser, ParseConditionalSingleCondition)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -593,7 +563,7 @@ TEST(TestInputFilterParser, ParseConditionalSingleCondition)
 
 TEST(TestInputFilterParser, ParseConditionalMultipleConditions)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, inputs: [{address: http.client_ip}], rules_target: [{rule_id: 2939}], conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}])");
 
     configuration_spec cfg;
@@ -602,11 +572,10 @@ TEST(TestInputFilterParser, ParseConditionalMultipleConditions)
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -619,8 +588,6 @@ TEST(TestInputFilterParser, ParseConditionalMultipleConditions)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());
@@ -647,8 +614,8 @@ TEST(TestInputFilterParser, ParseConditionalMultipleConditions)
 
 TEST(TestInputFilterParser, IncompatibleMinVersion)
 {
-    auto object =
-        yaml_to_object(R"([{id: 1, inputs: [{address: http.client_ip}], min_version: 99.0.0}])");
+    auto object = yaml_to_object<owned_object>(
+        R"([{id: 1, inputs: [{address: http.client_ip}], min_version: 99.0.0}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -656,11 +623,10 @@ TEST(TestInputFilterParser, IncompatibleMinVersion)
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -676,8 +642,6 @@ TEST(TestInputFilterParser, IncompatibleMinVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -708,8 +672,8 @@ TEST(TestInputFilterParser, IncompatibleMinVersion)
 
 TEST(TestInputFilterParser, IncompatibleMaxVersion)
 {
-    auto object =
-        yaml_to_object(R"([{id: 1, inputs: [{address: http.client_ip}], max_version: 0.0.99}])");
+    auto object = yaml_to_object<owned_object>(
+        R"([{id: 1, inputs: [{address: http.client_ip}], max_version: 0.0.99}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
@@ -717,11 +681,10 @@ TEST(TestInputFilterParser, IncompatibleMaxVersion)
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -737,8 +700,6 @@ TEST(TestInputFilterParser, IncompatibleMaxVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_TRUE(change.empty());
@@ -769,7 +730,7 @@ TEST(TestInputFilterParser, IncompatibleMaxVersion)
 
 TEST(TestInputFilterParser, CompatibleVersion)
 {
-    auto object = yaml_to_object(
+    auto object = yaml_to_object<owned_object>(
         R"([{id: 1, inputs: [{address: http.client_ip}], min_version: 0.0.99, max_version: 2.0.0}])");
 
     configuration_spec cfg;
@@ -778,11 +739,10 @@ TEST(TestInputFilterParser, CompatibleVersion)
     ruleset_info::section_info section;
     auto filters_array = static_cast<raw_configuration::vector>(raw_configuration(object));
     parse_filters(filters_array, collector, section);
-    ddwaf_object_free(&object);
 
     {
-        raw_configuration root;
-        section.to_object(root);
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
 
         auto root_map = static_cast<raw_configuration::map>(root);
 
@@ -795,8 +755,6 @@ TEST(TestInputFilterParser, CompatibleVersion)
 
         auto errors = at<raw_configuration::map>(root_map, "errors");
         EXPECT_EQ(errors.size(), 0);
-
-        ddwaf_object_free(&root);
     }
 
     EXPECT_FALSE(change.empty());

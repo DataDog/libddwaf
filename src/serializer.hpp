@@ -8,39 +8,43 @@
 
 #include "action_mapper.hpp"
 #include "attribute_collector.hpp"
-#include "ddwaf.h"
+#include "memory_resource.hpp"
 #include "obfuscator.hpp"
+#include "object.hpp"
 #include "rule.hpp"
 
 namespace ddwaf {
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
 struct result_components {
-    ddwaf_object &events;
-    ddwaf_object &actions;
-    ddwaf_object &duration;
-    ddwaf_object &timeout;
-    ddwaf_object &attributes;
-    ddwaf_object &keep;
+    borrowed_object events;
+    borrowed_object actions;
+    borrowed_object duration;
+    borrowed_object timeout;
+    borrowed_object attributes;
+    borrowed_object keep;
 };
 // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 
 class result_serializer {
 public:
-    explicit result_serializer(const match_obfuscator &obfuscator, const action_mapper &actions)
-        : obfuscator_(obfuscator), actions_(actions)
+    explicit result_serializer(const match_obfuscator &obfuscator, const action_mapper &actions,
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+        : obfuscator_(obfuscator), actions_(actions), alloc_(alloc)
     {}
 
     void serialize(const object_store &store, std::vector<rule_result> &results,
-        attribute_collector &collector, const timer &deadline, result_components output) const;
+        attribute_collector &collector, const timer &deadline, result_components output);
 
-    static std::pair<ddwaf_object, result_components> initialise_result_object();
+    std::pair<owned_object, result_components> initialise_result_object();
 
 protected:
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const match_obfuscator &obfuscator_;
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const action_mapper &actions_;
+
+    nonnull_ptr<memory::memory_resource> alloc_;
 };
 
 } // namespace ddwaf

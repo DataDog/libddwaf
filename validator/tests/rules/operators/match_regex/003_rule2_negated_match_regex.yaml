@@ -2,7 +2,7 @@
   name: "Basic run with negated match_regex operator",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule2-input: "something else or other"
       },
       rules: [

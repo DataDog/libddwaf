@@ -37,19 +37,15 @@ TEST(TestCmdiDetector, InvalidType)
 {
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.sys.exec.cmd", ddwaf_object_map(&tmp));
-    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "whatever"));
+    auto root = object_builder::map(
+        {{"server.sys.exec.cmd", object_builder::map()}, {"server.request.query", "whatever"}});
 
     object_store store;
-    store.insert(root);
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
 
@@ -57,19 +53,15 @@ TEST(TestCmdiDetector, EmptyResource)
 {
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
-    ddwaf_object tmp;
-    ddwaf_object root;
-
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "server.sys.exec.cmd", ddwaf_object_array(&tmp));
-    ddwaf_object_map_add(&root, "server.request.query", ddwaf_object_string(&tmp, "whatever"));
+    auto root = object_builder::map(
+        {{"server.sys.exec.cmd", object_builder::array()}, {"server.request.query", "whatever"}});
 
     object_store store;
-    store.insert(root);
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
 
@@ -106,29 +98,21 @@ TEST(TestCmdiDetector, NoInjection)
     };
 
     for (const auto &[resource, param] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-        ddwaf_object_map(&root);
+        auto root = object_builder::map({{"server.request.query", param}});
+
+        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
         std::string resource_str = generate_resource_string(resource);
-        ddwaf_object array;
-        ddwaf_object_array(&array);
-        for (const auto &arg : resource) {
-            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
-        }
-        ddwaf_object_map_add(&root, "server.sys.exec.cmd", &array);
-
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
+        for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(root);
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << param;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
     }
 }
 
@@ -154,29 +138,21 @@ TEST(TestCmdiDetector, NoExecutableInjection)
     };
 
     for (const auto &[resource, param] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-        ddwaf_object_map(&root);
+        auto root = object_builder::map({{"server.request.query", param}});
+
+        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
         std::string resource_str = generate_resource_string(resource);
-        ddwaf_object array;
-        ddwaf_object_array(&array);
-        for (const auto &arg : resource) {
-            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
-        }
-        ddwaf_object_map_add(&root, "server.sys.exec.cmd", &array);
-
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
+        for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(root);
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << param;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
     }
 }
 
@@ -219,29 +195,21 @@ TEST(TestCmdiDetector, NoShellInjection)
     };
 
     for (const auto &[resource, param] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-        ddwaf_object_map(&root);
+        auto root = object_builder::map({{"server.request.query", param}});
+
+        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
         std::string resource_str = generate_resource_string(resource);
-        ddwaf_object array;
-        ddwaf_object_array(&array);
-        for (const auto &arg : resource) {
-            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
-        }
-        ddwaf_object_map_add(&root, "server.sys.exec.cmd", &array);
-
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
+        for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(root);
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << resource_str;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
     }
 }
 
@@ -263,29 +231,21 @@ TEST(TestCmdiDetector, ExecutableInjectionLinux)
     };
 
     for (const auto &[resource, param, expected] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-        ddwaf_object_map(&root);
+        auto root = object_builder::map({{"server.request.query", param}});
+
+        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
         std::string resource_str = generate_resource_string(resource);
-        ddwaf_object array;
-        ddwaf_object_array(&array);
-        for (const auto &arg : resource) {
-            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
-        }
-        ddwaf_object_map_add(&root, "server.sys.exec.cmd", &array);
-
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
+        for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(root);
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << param;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -293,10 +253,10 @@ TEST(TestCmdiDetector, ExecutableInjectionLinux)
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, expected.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, expected);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], expected.c_str());
+        EXPECT_STR(cache.match->highlights[0], expected);
     }
 }
 
@@ -321,40 +281,32 @@ TEST(TestCmdiDetector, ExecutableInjectionWindows)
     };
 
     for (const auto &[resource, param, expected] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-        ddwaf_object_map(&root);
+        auto root = object_builder::map({{"server.request.query", param}});
+
+        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
         std::string resource_str = generate_resource_string(resource);
-        ddwaf_object array;
-        ddwaf_object_array(&array);
-        for (const auto &arg : resource) {
-            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
-        }
-        ddwaf_object_map_add(&root, "server.sys.exec.cmd", &array);
-
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
+        for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(root);
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << param;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, resource_str);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, expected.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, expected);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], expected.c_str());
+        EXPECT_STR(cache.match->highlights[0], expected);
     }
 }
 
@@ -374,40 +326,32 @@ TEST(TestCmdiDetector, ExecutableWithSpacesInjection)
     };
 
     for (const auto &[resource, param, expected] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-        ddwaf_object_map(&root);
+        auto root = object_builder::map({{"server.request.query", param}});
+
+        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
         std::string resource_str = generate_resource_string(resource);
-        ddwaf_object array;
-        ddwaf_object_array(&array);
-        for (const auto &arg : resource) {
-            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
-        }
-        ddwaf_object_map_add(&root, "server.sys.exec.cmd", &array);
-
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
+        for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(root);
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << param;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, resource_str);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, expected.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, expected);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], expected.c_str());
+        EXPECT_STR(cache.match->highlights[0], expected);
     }
 }
 
@@ -610,40 +554,32 @@ TEST(TestCmdiDetector, LinuxShellInjection)
     };
 
     for (const auto &[resource, param] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-        ddwaf_object_map(&root);
+        auto root = object_builder::map({{"server.request.query", param}});
+
+        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
         std::string resource_str = generate_resource_string(resource);
-        ddwaf_object array;
-        ddwaf_object_array(&array);
-        for (const auto &arg : resource) {
-            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
-        }
-        ddwaf_object_map_add(&root, "server.sys.exec.cmd", &array);
-
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
+        for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(root);
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource_str;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, resource_str);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, param.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, param);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], param.c_str());
+        EXPECT_STR(cache.match->highlights[0], param);
     }
 }
 
@@ -707,81 +643,64 @@ TEST(TestCmdiDetector, WindowsShellInjection)
     };
 
     for (const auto &[resource, param] : samples) {
-        ddwaf_object tmp;
-        ddwaf_object root;
-        ddwaf_object_map(&root);
+        auto root = object_builder::map({{"server.request.query", param}});
+
+        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
         std::string resource_str = generate_resource_string(resource);
-        ddwaf_object array;
-        ddwaf_object_array(&array);
-        for (const auto &arg : resource) {
-            ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
-        }
-        ddwaf_object_map_add(&root, "server.sys.exec.cmd", &array);
-
-        ddwaf_object_map_add(
-            &root, "server.request.query", ddwaf_object_string(&tmp, param.c_str()));
+        for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(root);
+        store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+        auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << resource_str;
-        EXPECT_FALSE(res.ephemeral);
+        EXPECT_TRUE(res.scope.is_context());
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+        EXPECT_STR(cache.match->args[0].resolved, resource_str);
         EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
         EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, param.c_str());
+        EXPECT_STR(cache.match->args[1].resolved, param);
         EXPECT_TRUE(cache.match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], param.c_str());
+        EXPECT_STR(cache.match->highlights[0], param);
     }
 }
 
 TEST(TestCmdiDetector, ExecutableInjectionMultipleArguments)
 {
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
 
     std::vector<std::string> resource{"/usr/bin/halt", "-h"};
     std::unordered_map<std::string, std::string> params{
         {"halt", "bin"}, {"-h", "usr"}, {"executable", "/usr/bin/halt"}};
-
     std::string resource_str = generate_resource_string(resource);
-    ddwaf_object array;
-    ddwaf_object_array(&array);
-    for (const auto &arg : resource) {
-        ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
-    }
-    ddwaf_object_map_add(&root, "server.sys.exec.cmd", &array);
 
-    ddwaf_object map;
-    ddwaf_object_map(&map);
-    for (const auto &[key, value] : params) {
-        ddwaf_object_map_add(&map, key.c_str(), ddwaf_object_string(&tmp, value.c_str()));
-    }
-    ddwaf_object_map_add(&root, "server.request.query", &map);
+    auto root = object_builder::map();
+    auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
+
+    for (const auto &arg : resource) { array.emplace_back(arg); }
+
+    auto map = root.emplace("server.request.query", object_builder::map());
+    for (const auto &[key, value] : params) { map.emplace(key, value); }
 
     object_store store;
-    store.insert(root);
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome) << resource[0];
-    EXPECT_FALSE(res.ephemeral);
+    EXPECT_TRUE(res.scope.is_context());
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
-    EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+    EXPECT_STR(cache.match->args[0].resolved, resource_str);
     EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
     EXPECT_STRV(cache.match->args[1].address, "server.request.query");
@@ -794,77 +713,61 @@ TEST(TestCmdiDetector, ExecutableInjectionMultipleArguments)
 TEST(TestCmdiDetector, EmptyExecutable)
 {
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
 
     std::vector<std::string> resource{"", "-h"};
     std::unordered_map<std::string, std::string> params{
         {"halt", "bin"}, {"-h", "usr"}, {"executable", "/usr/bin/halt"}};
 
     std::string resource_str = generate_resource_string(resource);
-    ddwaf_object array;
-    ddwaf_object_array(&array);
-    for (const auto &arg : resource) {
-        ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
-    }
-    ddwaf_object_map_add(&root, "server.sys.exec.cmd", &array);
 
-    ddwaf_object map;
-    ddwaf_object_map(&map);
-    for (const auto &[key, value] : params) {
-        ddwaf_object_map_add(&map, key.c_str(), ddwaf_object_string(&tmp, value.c_str()));
-    }
-    ddwaf_object_map_add(&root, "server.request.query", &map);
+    auto root = object_builder::map();
+    auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
+
+    for (const auto &arg : resource) { array.emplace_back(arg); }
+
+    auto map = root.emplace("server.request.query", object_builder::map());
+    for (const auto &[key, value] : params) { map.emplace(key, value); }
 
     object_store store;
-    store.insert(root);
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome) << resource[0];
-    EXPECT_FALSE(res.ephemeral);
+    EXPECT_TRUE(res.scope.is_context());
 }
 
 TEST(TestCmdiDetector, ShellInjectionMultipleArguments)
 {
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
-    ddwaf_object tmp;
-    ddwaf_object root;
-    ddwaf_object_map(&root);
 
     std::vector<std::string> resource{"/usr/bin/sh", "-c", "ls -l $file; $(cat /etc/passwd)"};
     std::unordered_map<std::string, std::string> params{
         {"-l $file", "bin"}, {"-h", "usr"}, {"shell", "; $(cat /etc/passwd)"}};
 
     std::string resource_str = generate_resource_string(resource);
-    ddwaf_object array;
-    ddwaf_object_array(&array);
-    for (const auto &arg : resource) {
-        ddwaf_object_array_add(&array, ddwaf_object_string(&tmp, arg.c_str()));
-    }
-    ddwaf_object_map_add(&root, "server.sys.exec.cmd", &array);
 
-    ddwaf_object map;
-    ddwaf_object_map(&map);
-    for (const auto &[key, value] : params) {
-        ddwaf_object_map_add(&map, key.c_str(), ddwaf_object_string(&tmp, value.c_str()));
-    }
-    ddwaf_object_map_add(&root, "server.request.query", &map);
+    auto root = object_builder::map();
+    auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
+
+    for (const auto &arg : resource) { array.emplace_back(arg); }
+
+    auto map = root.emplace("server.request.query", object_builder::map());
+    for (const auto &[key, value] : params) { map.emplace(key, value); }
 
     object_store store;
-    store.insert(root);
+    store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, {}, deadline);
+    auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome) << resource[0];
-    EXPECT_FALSE(res.ephemeral);
+    EXPECT_TRUE(res.scope.is_context());
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
-    EXPECT_STR(cache.match->args[0].resolved, resource_str.c_str());
+    EXPECT_STR(cache.match->args[0].resolved, resource_str);
     EXPECT_TRUE(cache.match->args[0].key_path.empty());
 
     EXPECT_STRV(cache.match->args[1].address, "server.request.query");

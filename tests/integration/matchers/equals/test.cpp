@@ -14,22 +14,23 @@ constexpr std::string_view base_dir = "integration/matchers/equals/";
 
 TEST(TestEqualsMatcherIntegration, StringEquals)
 {
-    auto rule = read_file("equals.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object value;
-    ddwaf_object_string(&value, "arachni");
-    ddwaf_object_map_add(&map, "input", &value);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("input"), alloc), STRL("arachni"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -42,29 +43,29 @@ TEST(TestEqualsMatcherIntegration, StringEquals)
                                    .address = "input",
                                }}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestEqualsMatcherIntegration, BoolEquals)
 {
-    auto rule = read_file("equals.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object value;
-    ddwaf_object_bool(&value, false);
-    ddwaf_object_map_add(&map, "input", &value);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_bool(ddwaf_object_insert_key(&map, STRL("input"), alloc), false);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -79,29 +80,29 @@ TEST(TestEqualsMatcherIntegration, BoolEquals)
                                }},
                            }}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestEqualsMatcherIntegration, SignedEquals)
 {
-    auto rule = read_file("equals.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object value;
-    ddwaf_object_signed(&value, -42);
-    ddwaf_object_map_add(&map, "input", &value);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_signed(ddwaf_object_insert_key(&map, STRL("input"), alloc), -42);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "3",
@@ -114,29 +115,29 @@ TEST(TestEqualsMatcherIntegration, SignedEquals)
                                    .address = "input",
                                }}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestEqualsMatcherIntegration, UnsignedEquals)
 {
-    auto rule = read_file("equals.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object value;
-    ddwaf_object_unsigned(&value, 42);
-    ddwaf_object_map_add(&map, "input", &value);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_unsigned(ddwaf_object_insert_key(&map, STRL("input"), alloc), 42);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "4",
@@ -151,29 +152,29 @@ TEST(TestEqualsMatcherIntegration, UnsignedEquals)
                                }},
                            }}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestEqualsMatcherIntegration, FloatEquals)
 {
-    auto rule = read_file("equals.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("equals.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object value;
-    ddwaf_object_float(&value, 42.01);
-    ddwaf_object_map_add(&map, "input", &value);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_float(ddwaf_object_insert_key(&map, STRL("input"), alloc), 42.01);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "5",
@@ -188,7 +189,7 @@ TEST(TestEqualsMatcherIntegration, FloatEquals)
                                }},
                            }}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }

@@ -8,8 +8,9 @@
 
 #include "argument_retriever.hpp"
 #include "clock.hpp"
-#include "ddwaf.h"
-#include "object_store.hpp"
+#include "memory_resource.hpp"
+#include "object.hpp"
+#include "pointer.hpp"
 #include "processor/base.hpp"
 #include "uri_utils.hpp"
 #include "utils.hpp"
@@ -24,25 +25,15 @@ namespace ddwaf {
 
 namespace {
 
-ddwaf_object string_view_to_object(std::string_view str)
-{
-    ddwaf_object obj;
-    if (!str.empty()) {
-        ddwaf_object_stringl(&obj, str.data(), str.size());
-    } else {
-        ddwaf_object_string(&obj, "");
-    }
-    return obj;
-}
-
-ddwaf_object split_query_parameters(const uri_decomposed &decomposed)
+owned_object split_query_parameters(
+    const uri_decomposed &decomposed, nonnull_ptr<memory::memory_resource> alloc)
 {
     // This map is used to track if there are multiple instances of the same key, the
     // value will either be a:
     //   - A boolean if it's a flag
     //   - A string if there's only one value
     //   - An array if there are multiple values
-    std::unordered_map<std::string_view, ddwaf_object> query_keys;
+    std::unordered_map<std::string_view, owned_object> query_keys;
     auto query_remaining = decomposed.query;
     while (!query_remaining.empty()) {
         // Get the next query parameter
@@ -57,7 +48,7 @@ ddwaf_object split_query_parameters(const uri_decomposed &decomposed)
         }
 
         std::string_view key;
-        ddwaf_object value;
+        owned_object value;
 
         // Check if it's in the key=value format
         //  - key= is considered an empty string value
@@ -72,7 +63,7 @@ ddwaf_object split_query_parameters(const uri_decomposed &decomposed)
             }
 
             // We can consider this a modifier rather than a kv pair
-            ddwaf_object_bool(&value, true);
+            value = owned_object::make_boolean(true);
         } else {
             key = parameter.substr(0, assignment_pos);
             // Ignore empty keys
@@ -80,8 +71,7 @@ ddwaf_object split_query_parameters(const uri_decomposed &decomposed)
                 continue;
             }
 
-            auto value_str = parameter.substr(assignment_pos + 1);
-            ddwaf_object_stringl(&value, value_str.data(), value_str.size());
+            value = owned_object::make_string(parameter.substr(assignment_pos + 1), alloc);
         }
 
         // Check if the key has the array suffix ([]) and strip it, if the suffix
@@ -92,25 +82,21 @@ ddwaf_object split_query_parameters(const uri_decomposed &decomposed)
 
         auto it = query_keys.find(key);
         if (it == query_keys.end()) {
-            query_keys.emplace(key, value);
+            query_keys.emplace(key, std::move(value));
         } else {
             // Duplicate! We need to create an array or add to it
-            if (it->second.type != DDWAF_OBJ_ARRAY) {
-                ddwaf_object array;
-                ddwaf_object_array(&array);
-                ddwaf_object_array_add(&array, &it->second);
-                it->second = array;
+            if (!it->second.is_array()) {
+                auto array = owned_object::make_array(2, alloc);
+                array.emplace_back(std::move(it->second));
+                it->second = std::move(array);
             }
 
-            ddwaf_object_array_add(&it->second, &value);
+            it->second.emplace_back(std::move(value));
         }
     }
 
-    ddwaf_object query;
-    ddwaf_object_map(&query);
-    for (auto &[key, value] : query_keys) {
-        ddwaf_object_map_addl(&query, key.data(), key.size(), &value);
-    }
+    auto query = owned_object::make_map(query_keys.size(), alloc);
+    for (auto &[key, value] : query_keys) { query.emplace(key, std::move(value)); }
 
     return query;
 }
@@ -118,40 +104,25 @@ ddwaf_object split_query_parameters(const uri_decomposed &decomposed)
 } // namespace
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-std::pair<ddwaf_object, object_store::attribute> uri_parse_processor::eval_impl(
+std::pair<owned_object, evaluation_scope> uri_parse_processor::eval_impl(
     const unary_argument<std::string_view> &input, processor_cache & /*cache*/,
-    ddwaf::timer & /*deadline*/) const
+    nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer & /*deadline*/) const
 {
-    const object_store::attribute attr =
-        input.ephemeral ? object_store::attribute::ephemeral : object_store::attribute::none;
-
     auto decomposed = uri_parse(input.value);
     if (!decomposed.has_value()) {
         return {};
     }
 
-    ddwaf_object scheme = string_view_to_object(decomposed->scheme);
-    ddwaf_object userinfo = string_view_to_object(decomposed->authority.userinfo);
-    ddwaf_object host = string_view_to_object(decomposed->authority.host);
+    auto output = owned_object::make_map(7, alloc);
+    output.emplace("scheme", decomposed->scheme);
+    output.emplace("userinfo", decomposed->authority.userinfo);
+    output.emplace("host", decomposed->authority.host);
+    output.emplace("port", decomposed->authority.port);
+    output.emplace("path", decomposed->path);
+    output.emplace("query", split_query_parameters(*decomposed, alloc));
+    output.emplace("fragment", decomposed->fragment);
 
-    ddwaf_object port;
-    ddwaf_object_unsigned(&port, decomposed->authority.port);
-
-    ddwaf_object path = string_view_to_object(decomposed->path);
-    ddwaf_object query = split_query_parameters(*decomposed);
-    ddwaf_object fragment = string_view_to_object(decomposed->fragment);
-
-    ddwaf_object output;
-    ddwaf_object_map(&output);
-    ddwaf_object_map_addl(&output, STRL("scheme"), &scheme);
-    ddwaf_object_map_addl(&output, STRL("userinfo"), &userinfo);
-    ddwaf_object_map_addl(&output, STRL("host"), &host);
-    ddwaf_object_map_addl(&output, STRL("port"), &port);
-    ddwaf_object_map_addl(&output, STRL("path"), &path);
-    ddwaf_object_map_addl(&output, STRL("query"), &query);
-    ddwaf_object_map_addl(&output, STRL("fragment"), &fragment);
-
-    return {output, attr};
+    return {std::move(output), input.scope};
 }
 
 } // namespace ddwaf

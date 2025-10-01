@@ -2,7 +2,7 @@
   name: "Match with stack_trace action",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule3-input: "abcd::1234:0:ab11:0"
       },
       rules: [

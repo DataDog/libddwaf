@@ -8,7 +8,7 @@
 
 #include <span>
 
-#include "ddwaf.h"
+#include "object.hpp"
 #include "transformer/base.hpp"
 
 namespace ddwaf::transformer {
@@ -18,8 +18,8 @@ namespace ddwaf::transformer {
 // this will also host the cache and will have to be shared by all conditions.
 class manager {
 public:
-    static bool transform(const ddwaf_object &source, ddwaf_object &destination,
-        const std::span<const transformer_id> &transformers);
+    static std::optional<cow_string> transform(
+        object_view source, const std::span<const transformer_id> &transformers);
 };
 
 } // namespace ddwaf::transformer

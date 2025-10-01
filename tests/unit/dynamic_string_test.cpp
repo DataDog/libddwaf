@@ -19,15 +19,11 @@ TEST(TestDynamicString, DefaultConstructor)
 {
     dynamic_string str;
 
-    // +1 for nul-character
-    EXPECT_EQ(str.capacity(), 1);
+    EXPECT_EQ(str.capacity(), 0);
 
     EXPECT_EQ(str.size(), 0);
     EXPECT_TRUE(str.empty());
-    EXPECT_NE(str.data(), nullptr);
-    EXPECT_STREQ(str.data(), "");
-    EXPECT_STR(static_cast<std::string_view>(str), "");
-    EXPECT_STR(static_cast<std::string>(str), "");
+    EXPECT_EQ(str.data(), nullptr);
     EXPECT_EQ(str, str);
 }
 
@@ -35,15 +31,11 @@ TEST(TestDynamicString, PreallocatedConstructor)
 {
     dynamic_string str{20};
 
-    // +1 for nul-character
-    EXPECT_EQ(str.capacity(), 21);
+    EXPECT_EQ(str.capacity(), 20);
 
     EXPECT_EQ(str.size(), 0);
     EXPECT_TRUE(str.empty());
     EXPECT_NE(str.data(), nullptr);
-    EXPECT_STREQ(str.data(), "");
-    EXPECT_STR(static_cast<std::string_view>(str), "");
-    EXPECT_STR(static_cast<std::string>(str), "");
     EXPECT_EQ(str, str);
 }
 
@@ -51,13 +43,11 @@ TEST(TestDynamicString, StringViewConstructor)
 {
     dynamic_string str{"thisisastring"sv};
 
-    // +1 for nul-character
-    EXPECT_EQ(str.capacity(), 14);
+    EXPECT_EQ(str.capacity(), 13);
 
     EXPECT_EQ(str.size(), 13);
     EXPECT_FALSE(str.empty());
     EXPECT_NE(str.data(), nullptr);
-    EXPECT_STREQ(str.data(), "thisisastring");
     EXPECT_STR(static_cast<std::string_view>(str), "thisisastring");
     EXPECT_STR(static_cast<std::string>(str), "thisisastring");
     EXPECT_EQ(str, str);
@@ -67,13 +57,10 @@ TEST(TestDynamicString, StringConstructor)
 {
     dynamic_string str{"thisisastring"s};
 
-    // +1 for nul-character
-    EXPECT_EQ(str.capacity(), 14);
-
+    EXPECT_EQ(str.capacity(), 13);
     EXPECT_EQ(str.size(), 13);
     EXPECT_FALSE(str.empty());
     EXPECT_NE(str.data(), nullptr);
-    EXPECT_STREQ(str.data(), "thisisastring");
     EXPECT_STR(static_cast<std::string_view>(str), "thisisastring");
     EXPECT_STR(static_cast<std::string>(str), "thisisastring");
     EXPECT_EQ(str, str);
@@ -88,8 +75,8 @@ TEST(TestDynamicString, CopyConstructor)
     dynamic_string copy{str};
     EXPECT_NE(copy.data(), nullptr);
     EXPECT_NE(str.data(), copy.data());
-    EXPECT_STREQ(str.data(), "thisisastring");
-    EXPECT_STREQ(copy.data(), "thisisastring");
+    EXPECT_STR(static_cast<std::string_view>(str), "thisisastring");
+    EXPECT_STR(static_cast<std::string_view>(copy), "thisisastring");
     EXPECT_EQ(str, copy);
 }
 
@@ -99,12 +86,12 @@ TEST(TestDynamicString, CopyAssignment)
     EXPECT_NE(str.data(), nullptr);
 
     dynamic_string copy;
-    EXPECT_NE(copy.data(), nullptr);
+    EXPECT_EQ(copy.data(), nullptr);
 
     copy = str;
     EXPECT_NE(str.data(), copy.data());
-    EXPECT_STREQ(str.data(), "thisisastring");
-    EXPECT_STREQ(copy.data(), "thisisastring");
+    EXPECT_STR(static_cast<std::string_view>(str), "thisisastring");
+    EXPECT_STR(static_cast<std::string>(str), "thisisastring");
     EXPECT_EQ(str, copy);
 }
 
@@ -123,7 +110,7 @@ TEST(TestDynamicString, MoveConstructor)
 
     EXPECT_NE(copy.data(), nullptr);
     EXPECT_NE(str.data(), copy.data());
-    EXPECT_STREQ(copy.data(), "thisisastring");
+    EXPECT_STR(copy, "thisisastring");
     EXPECT_EQ(copy, copy);
 }
 
@@ -133,7 +120,7 @@ TEST(TestDynamicString, MoveAssignment)
     EXPECT_NE(str.data(), nullptr);
 
     dynamic_string copy;
-    EXPECT_NE(copy.data(), nullptr);
+    EXPECT_EQ(copy.data(), nullptr);
 
     copy = std::move(str);
     EXPECT_EQ(str.capacity(), 0);
@@ -143,7 +130,7 @@ TEST(TestDynamicString, MoveAssignment)
 
     EXPECT_NE(copy.data(), nullptr);
     EXPECT_NE(str.data(), copy.data());
-    EXPECT_STREQ(copy.data(), "thisisastring");
+    EXPECT_STR(copy, "thisisastring");
     EXPECT_EQ(copy, copy);
 }
 
@@ -154,69 +141,130 @@ TEST(TestDynamicString, MoveToObject)
 
     auto object = str.to_object();
 
-    std::size_t length;
-    const char *cstr = ddwaf_object_get_string(&object, &length);
+    auto str_view = object.as<std::string_view>();
 
     EXPECT_EQ(str.capacity(), 0);
     EXPECT_EQ(str.size(), 0);
     EXPECT_TRUE(str.empty());
     EXPECT_EQ(str.data(), nullptr);
 
-    EXPECT_NE(cstr, nullptr);
-    EXPECT_STREQ(cstr, "thisisastring");
-    EXPECT_EQ(length, 13);
+    EXPECT_NE(str_view.data(), nullptr);
+    EXPECT_STR(str_view, "thisisastring");
+}
 
-    ddwaf_object_free(&object);
+TEST(TestDynamicString, MoveToObjectDifferentCapacity)
+{
+    dynamic_string str{32};
+    str.append("thisisastring");
+    EXPECT_NE(str.data(), nullptr);
+
+    EXPECT_EQ(str.capacity(), 32);
+    EXPECT_EQ(str.size(), 13);
+
+    auto object = str.to_object();
+
+    auto str_view = object.as<std::string_view>();
+
+    EXPECT_EQ(str.capacity(), 0);
+    EXPECT_EQ(str.size(), 0);
+    EXPECT_TRUE(str.empty());
+    EXPECT_EQ(str.data(), nullptr);
+
+    EXPECT_NE(str_view.data(), nullptr);
+    EXPECT_STR(str_view, "thisisastring");
+}
+
+TEST(TestDynamicString, MoveToObjectIncompatibleAllocatorAndDifferentCapacity)
+{
+    dynamic_string str{32};
+    str.append("thisisnotasmallstring");
+    EXPECT_NE(str.data(), nullptr);
+
+    EXPECT_EQ(str.capacity(), 32);
+    EXPECT_EQ(str.size(), 21);
+
+    memory::monotonic_buffer_resource resource;
+    auto object = str.to_object(&resource);
+    EXPECT_EQ(object.alloc(), &resource);
+
+    auto str_view = object.as<std::string_view>();
+
+    EXPECT_EQ(str.capacity(), 0);
+    EXPECT_EQ(str.size(), 0);
+    EXPECT_TRUE(str.empty());
+    EXPECT_EQ(str.data(), nullptr);
+
+    EXPECT_NE(str_view.data(), nullptr);
+    EXPECT_STR(str_view, "thisisnotasmallstring");
+}
+
+TEST(TestDynamicString, MoveToObjectIncompatibleAllocatorAnEqualCapacity)
+{
+    dynamic_string str{"thisisnotasmallstring"sv};
+    EXPECT_NE(str.data(), nullptr);
+
+    EXPECT_EQ(str.capacity(), 21);
+    EXPECT_EQ(str.size(), 21);
+
+    memory::monotonic_buffer_resource resource;
+    auto object = str.to_object(&resource);
+    EXPECT_EQ(object.alloc(), &resource);
+
+    auto str_view = object.as<std::string_view>();
+
+    EXPECT_EQ(str.capacity(), 0);
+    EXPECT_EQ(str.size(), 0);
+    EXPECT_TRUE(str.empty());
+    EXPECT_EQ(str.data(), nullptr);
+
+    EXPECT_NE(str_view.data(), nullptr);
+    EXPECT_STR(str_view, "thisisnotasmallstring");
 }
 
 TEST(TestDynamicString, AppendDefaultString)
 {
     dynamic_string str;
 
-    // +1 for nul-character
-    EXPECT_EQ(str.capacity(), 1);
+    EXPECT_EQ(str.capacity(), 0);
     EXPECT_EQ(str.size(), 0);
-    EXPECT_STREQ(str.data(), "");
+    EXPECT_STR(str, "");
 
     str.append('c');
-    EXPECT_GT(str.capacity(), 2);
+    EXPECT_GE(str.capacity(), 1);
     EXPECT_EQ(str.size(), 1);
-    EXPECT_STREQ(str.data(), "c");
+    EXPECT_STR(str, "c");
 
     str.append("string");
-    EXPECT_GT(str.capacity(), 8);
+    EXPECT_GE(str.capacity(), 7);
     EXPECT_EQ(str.size(), 7);
-    EXPECT_STREQ(str.data(), "cstring");
+    EXPECT_STR(str, "cstring");
 }
 
 TEST(TestDynamicString, AppendPreallocatedString)
 {
     dynamic_string str{20};
 
-    // +1 for nul-character
-    EXPECT_EQ(str.capacity(), 21);
+    EXPECT_EQ(str.capacity(), 20);
     EXPECT_EQ(str.size(), 0);
-    EXPECT_STREQ(str.data(), "");
+    EXPECT_STR(str, "");
 
     str.append('c');
-    EXPECT_EQ(str.capacity(), 21);
+    EXPECT_EQ(str.capacity(), 20);
     EXPECT_EQ(str.size(), 1);
-    EXPECT_STREQ(str.data(), "c");
+    EXPECT_STR(str, "c");
 
     str.append("string");
-    EXPECT_EQ(str.capacity(), 21);
+    EXPECT_EQ(str.capacity(), 20);
     EXPECT_EQ(str.size(), 7);
-    EXPECT_STREQ(str.data(), "cstring");
+    EXPECT_STR(str, "cstring");
 }
 
 TEST(TestDynamicString, AppendCharsAndStrings)
 {
     dynamic_string str;
 
-    // +1 for nul-character
-    EXPECT_EQ(str.capacity(), 1);
+    EXPECT_EQ(str.capacity(), 0);
     EXPECT_EQ(str.size(), 0);
-    EXPECT_STREQ(str.data(), "");
 
     str.append("this");
     str.append(' ');
@@ -233,7 +281,7 @@ TEST(TestDynamicString, AppendCharsAndStrings)
     str.append("ere");
 
     EXPECT_EQ(str.size(), 44);
-    EXPECT_STREQ(str.data(), "this is a string that has been appended here");
+    EXPECT_STR(str, "this is a string that has been appended here");
 }
 
 TEST(TestDynamicString, Equality)

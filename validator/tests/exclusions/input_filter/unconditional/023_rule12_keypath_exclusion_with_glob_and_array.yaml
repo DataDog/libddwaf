@@ -1,0 +1,13 @@
+{
+  name: "Keypath with array exclusion",
+  runs: [
+    {
+      input: {
+        rule12-input1: {
+          a: [{c: {e: rule12}}]
+        }
+      },
+      code: ok
+    },
+  ],
+}

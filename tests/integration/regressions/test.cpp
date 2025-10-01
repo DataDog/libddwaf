@@ -12,61 +12,28 @@ using namespace std::literals;
 namespace {
 constexpr std::string_view base_dir = "integration/regressions/";
 
-TEST(TestRegressionsIntegration, TruncatedUTF8)
-{
-    auto rule = read_file("regressions.yaml", base_dir);
-    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
-    ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
-
-    ddwaf_context context = ddwaf_context_init(handle);
-    ASSERT_NE(context, nullptr);
-
-    char buffer[DDWAF_MAX_STRING_LENGTH + 4] = {0};
-    const uint8_t emoji[] = {0xe2, 0x98, 0xa2};
-    memset(buffer, 'A', sizeof(buffer));
-    memcpy(&buffer[DDWAF_MAX_STRING_LENGTH - 2], emoji, sizeof(emoji));
-
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_stringl(&string, buffer, sizeof(buffer));
-    ddwaf_object_map_add(&map, "value", &string);
-
-    ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
-    const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
-    EXPECT_FALSE(ddwaf_object_get_bool(timeout));
-
-    // The emoji should be trimmed out of the result
-    const auto *events = ddwaf_object_find(&out, STRL("events"));
-    std::string data = ddwaf::test::object_to_json(*events);
-    EXPECT_TRUE(memchr(data.c_str(), emoji[0], data.size()) == nullptr);
-
-    ddwaf_object_free(&out);
-    ddwaf_context_destroy(context);
-    ddwaf_destroy(handle);
-}
-
 TEST(TestRegressionsIntegration, DuplicateFlowMatches)
 {
-    auto rule = read_file("regressions2.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("regressions2.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object parameter = DDWAF_OBJECT_MAP;
-    ddwaf_object tmp;
-    ddwaf_object_map_add(&parameter, "param1", ddwaf_object_string(&tmp, "Sqreen"));
-    ddwaf_object_map_add(&parameter, "param2", ddwaf_object_string(&tmp, "Duplicate"));
+    ddwaf_object parameter;
+    ddwaf_object_set_map(&parameter, 2, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&parameter, STRL("param1"), alloc), STRL("Sqreen"), alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&parameter, STRL("param2"), alloc), STRL("Duplicate"), alloc);
 
     ddwaf_object ret;
-    EXPECT_EQ(ddwaf_run(context, &parameter, nullptr, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EQ(ddwaf_context_eval(context, &parameter, alloc, &ret, LONG_TIME), DDWAF_MATCH);
 
     const auto *timeout = ddwaf_object_find(&ret, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
@@ -88,7 +55,7 @@ TEST(TestRegressionsIntegration, DuplicateFlowMatches)
                                        .address = "param2",
                                    }}}}});
 
-    ddwaf_object_free(&ret);
+    ddwaf_object_destroy(&ret, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }

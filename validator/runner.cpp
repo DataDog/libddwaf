@@ -6,15 +6,15 @@
 
 #include "runner.hpp"
 #include "assert.hpp"
+#include "ddwaf.h"
 #include "utils.hpp"
-#include <unordered_set>
 
 test_runner::test_runner(const std::string &rule_file)
 {
     YAML::Node doc = YAML::Load(read_file(rule_file));
     auto rule_obj = doc.as<ddwaf_object>();
     handle_ = ddwaf_init(&rule_obj, nullptr, nullptr);
-    ddwaf_object_free(&rule_obj);
+    ddwaf_object_destroy(&rule_obj, ddwaf_get_default_allocator());
     if (handle_ == nullptr) {
         throw std::runtime_error("Invalid rule file");
     }
@@ -59,46 +59,81 @@ bool test_runner::run_self_test(const YAML::Node &runs)
 
 bool test_runner::run_test(const YAML::Node &runs)
 {
+    auto *alloc = ddwaf_get_default_allocator();
+
     bool passed = false;
     std::unique_ptr<std::remove_pointer_t<ddwaf_context>, decltype(&ddwaf_context_destroy)> ctx(
-        ddwaf_context_init(handle_), ddwaf_context_destroy);
+        ddwaf_context_init(handle_, alloc), ddwaf_context_destroy);
 
-    ddwaf_object res_mem;
-    ddwaf_object_invalid(&res_mem);
-    std::unique_ptr<ddwaf_object, decltype(&ddwaf_object_free)> res{&res_mem, ddwaf_object_free};
+    ddwaf_object res_mem{};
+    ddwaf_object_set_invalid(&res_mem);
+
+    auto destroy_fn = [alloc](ddwaf_object *ptr) { ddwaf_object_destroy(ptr, alloc); };
+    std::unique_ptr<ddwaf_object, decltype(destroy_fn)> res{&res_mem, destroy_fn};
 
     try {
         expect(true, runs.IsDefined());
         expect(true, runs.size() > 0);
         for (auto it = runs.begin(); it != runs.end(); ++it) {
-            YAML::Node run = *it;
-            DDWAF_RET_CODE code = DDWAF_OK;
-            if (run["code"].as<std::string>() == "match") {
-                code = DDWAF_MATCH;
-            }
+            if (it->IsMap()) { // context
+                YAML::Node run = *it;
+                DDWAF_RET_CODE code = DDWAF_OK;
+                if (run["code"].as<std::string>() == "match") {
+                    code = DDWAF_MATCH;
+                }
 
-            ddwaf_object *persistent_ptr = nullptr;
-            auto persistent = run["persistent-input"].as<ddwaf_object>();
-            if (ddwaf_object_type(&persistent) != DDWAF_OBJ_INVALID) {
-                persistent_ptr = &persistent;
-            }
+                ddwaf_object *data_ptr = nullptr;
+                auto data = run["input"].as<ddwaf_object>();
+                if (ddwaf_object_get_type(&data) != DDWAF_OBJ_INVALID) {
+                    data_ptr = &data;
+                }
 
-            ddwaf_object *ephemeral_ptr = nullptr;
-            auto ephemeral = run["ephemeral-input"].as<ddwaf_object>();
-            if (ddwaf_object_type(&ephemeral) != DDWAF_OBJ_INVALID) {
-                ephemeral_ptr = &ephemeral;
-            }
+                auto retval = ddwaf_context_eval(ctx.get(), data_ptr, alloc, res.get(), timeout);
 
-            auto retval = ddwaf_run(ctx.get(), persistent_ptr, ephemeral_ptr, res.get(), timeout);
+                expect(retval, code);
 
-            expect(retval, code);
-            if (code == DDWAF_MATCH) {
                 auto res_yaml = object_to_yaml(*res);
                 validate(run["rules"], res_yaml["events"]);
                 validate_actions(run["actions"], res_yaml["actions"]);
-            }
+                validate_attributes(run["attributes"], res_yaml["attributes"]);
 
-            ddwaf_object_free(res.get());
+                ddwaf_object_destroy(res.get(), alloc);
+            } else { // subcontext sequence
+                YAML::Node sub_runs = *it;
+                expect(true, sub_runs.size() > 0);
+
+                std::unique_ptr<std::remove_pointer_t<ddwaf_subcontext>,
+                    decltype(&ddwaf_subcontext_destroy)>
+                    sctx(ddwaf_subcontext_init(ctx.get()), ddwaf_subcontext_destroy);
+
+                for (auto sub_it = sub_runs.begin(); sub_it != sub_runs.end(); ++sub_it) {
+                    YAML::Node run = *sub_it;
+
+                    DDWAF_RET_CODE code = DDWAF_OK;
+                    if (run["code"].as<std::string>() == "match") {
+                        code = DDWAF_MATCH;
+                    }
+
+                    ddwaf_object *data_ptr = nullptr;
+                    auto data = run["input"].as<ddwaf_object>();
+                    if (ddwaf_object_get_type(&data) != DDWAF_OBJ_INVALID) {
+                        data_ptr = &data;
+                    }
+
+                    auto retval =
+                        ddwaf_subcontext_eval(sctx.get(), data_ptr, alloc, res.get(), timeout);
+
+                    expect(retval, code);
+                    if (code == DDWAF_MATCH) {
+                        auto res_yaml = object_to_yaml(*res);
+                        validate(run["rules"], res_yaml["events"]);
+                        validate_actions(run["actions"], res_yaml["actions"]);
+                        validate_attributes(run["attributes"], res_yaml["attributes"]);
+                    }
+
+                    ddwaf_object_destroy(res.get(), alloc);
+                }
+            }
         }
         passed = true;
     } catch (const std::exception &e) {
@@ -175,6 +210,7 @@ void test_runner::validate(const YAML::Node &expected, const YAML::Node &obtaine
             } else {
                 rule = custom_rules_[id];
             }
+
             validate_rule(rule, obtained_rule_match["rule"]);
             validate_conditions(rule["conditions"], obtained_rule_match["rule_matches"]);
             validate_matches(expected_rule_match, obtained_rule_match["rule_matches"]);
@@ -186,6 +222,7 @@ void test_runner::validate(const YAML::Node &expected, const YAML::Node &obtaine
     for (bool v : seen) { expect(true, v); }
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void test_runner::validate_rule(const YAML::Node &expected, const YAML::Node &obtained)
 {
     expect(expected["id"], obtained["id"]);
@@ -197,15 +234,14 @@ void test_runner::validate_rule(const YAML::Node &expected, const YAML::Node &ob
     expect(expected_tags["type"], obtained_tags["type"]);
     expect(expected_tags["category"], obtained_tags["category"]);
 
-    if (expected["on_match"].IsDefined()) {
-        auto expected_actions = expected["on_match"];
-        auto obtained_actions = obtained["on_match"];
+    auto expected_actions = expected["on_match"];
+    auto obtained_actions = obtained["on_match"];
+    if (expected_actions.IsDefined()) {
+        expect(true, obtained_actions.IsDefined());
 
         if (obtained_actions.size() == 1 && obtained_actions[0].as<std::string>() == "monitor") {
             return;
         }
-
-        expect(true, obtained_actions.IsDefined());
         expect(expected_actions.size(), obtained_actions.size());
 
         expect(expected_actions, obtained_actions);
@@ -310,12 +346,56 @@ void test_runner::validate_action_params(const YAML::Node &expected, const YAML:
         return;
     }
 
-    expect(expected.size(), obtained.size());
-    for (YAML::const_iterator it = expected.begin(); it != expected.end(); ++it) {
-        auto key = it->first.as<std::string>();
-        auto expected_param = it->second.as<std::string>();
-        auto obtained_param = obtained[key].as<std::string>();
+    validate_equals(expected, obtained);
+}
 
-        expect(expected_param, obtained_param);
+void test_runner::validate_attributes(const YAML::Node &expected, const YAML::Node &obtained)
+{
+    if (!expected.IsDefined()) {
+        return;
+    }
+
+    validate_equals(expected, obtained);
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+void test_runner::validate_equals(const YAML::Node &expected, const YAML::Node &obtained)
+{
+    expect(true, obtained.IsDefined());
+    expect(expected.Type(), obtained.Type());
+
+    switch (expected.Type()) {
+    case YAML::NodeType::Map: {
+        expect(expected.size(), obtained.size());
+
+        for (auto it = expected.begin(); it != expected.end(); ++it) {
+            validate_equals(it->second, obtained[it->first.as<std::string>()]);
+        }
+        break;
+    }
+    case YAML::NodeType::Sequence: {
+        expect(expected.size(), obtained.size());
+
+        std::vector<bool> seen(expected.size(), false);
+        for (unsigned i = 0; i < expected.size(); ++i) {
+            bool found = false;
+            for (unsigned j = 0; j < obtained.size(); ++j) {
+                try {
+                    if (!seen[j]) {
+                        validate_equals(expected[i], obtained[j]);
+                        seen[j] = found = true;
+                        break;
+                    }
+                } catch (...) {}
+            }
+            expect(true, found);
+        }
+        break;
+    }
+    case YAML::NodeType::Scalar:
+        expect(expected.as<std::string>(), obtained.as<std::string>());
+        break;
+    default:
+        break;
     }
 }

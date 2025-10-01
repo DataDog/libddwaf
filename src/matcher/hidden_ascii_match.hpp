@@ -23,10 +23,11 @@ public:
     hidden_ascii_match &operator=(hidden_ascii_match &&) noexcept = default;
 
 protected:
+    // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     [[nodiscard]] std::string_view to_string_impl() const { return ""; }
-    static constexpr bool is_supported_type_impl(DDWAF_OBJ_TYPE type)
+    static constexpr bool is_supported_type_impl(object_type type)
     {
-        return type == DDWAF_OBJ_STRING;
+        return type == object_type::string;
     }
 
     [[nodiscard]] static std::pair<bool, dynamic_string> match_impl(std::string_view pattern);

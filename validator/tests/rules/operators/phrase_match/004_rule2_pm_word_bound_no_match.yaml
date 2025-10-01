@@ -2,7 +2,7 @@
   name: "Basic run with phrase_match and word bounding, no match",
   runs: [
     {
-      persistent-input: {
+      input: {
         rule2-input: "asjkdansdstring00asdkjasndk"
       },
       code: ok

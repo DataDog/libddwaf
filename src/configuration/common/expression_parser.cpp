@@ -83,10 +83,6 @@ std::vector<condition_parameter> parse_arguments(const raw_configuration::map &p
             }
 
             auto kp = at<std::vector<std::string>>(input, "key_path", {});
-            if (kp.size() > object_limits::max_key_path_depth) {
-                throw ddwaf::parsing_error("key_path beyond maximum container depth");
-            }
-
             for (const auto &path : kp) {
                 if (path.empty()) {
                     throw ddwaf::parsing_error("empty key_path");
@@ -102,7 +98,7 @@ std::vector<condition_parameter> parse_arguments(const raw_configuration::map &p
                     .source = source});
             } else {
                 auto input_transformers = static_cast<raw_configuration::vector>(it->second);
-                if (input_transformers.size() > object_limits::max_transformers_per_address) {
+                if (input_transformers.size() > max_transformers_per_address) {
                     throw ddwaf::parsing_error("number of transformers beyond allowed limit");
                 }
 

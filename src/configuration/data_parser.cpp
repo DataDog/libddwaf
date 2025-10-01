@@ -30,7 +30,7 @@ template <>
 std::vector<data_spec::value_type> parse_data<data_spec::value_type>(raw_configuration &input)
 {
     std::vector<data_spec::value_type> data;
-    data.reserve(input.nbEntries);
+    data.reserve(input->size());
 
     auto array = static_cast<raw_configuration::vector>(input);
     for (const auto &values_param : array) {

@@ -12,11 +12,24 @@
 #include <vector>
 
 #include "ddwaf.h"
+#include "object.hpp"
 
 namespace ddwaf::test {
 
 std::string object_to_json(const ddwaf_object &obj);
+inline std::string object_to_json(const ddwaf::detail::object &obj)
+{
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    return object_to_json(reinterpret_cast<const ddwaf_object &>(obj));
+}
+
 rapidjson::Document object_to_rapidjson(const ddwaf_object &obj);
+inline rapidjson::Document object_to_rapidjson(const ddwaf::detail::object &obj)
+{
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    return object_to_rapidjson(reinterpret_cast<const ddwaf_object &>(obj));
+}
+
 std::unordered_map<std::string_view, std::string_view> object_to_map(const ddwaf_object &obj);
 
 } // namespace ddwaf::test

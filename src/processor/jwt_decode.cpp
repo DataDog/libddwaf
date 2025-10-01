@@ -9,10 +9,10 @@
 #include "argument_retriever.hpp"
 #include "clock.hpp"
 #include "cow_string.hpp"
-#include "ddwaf.h"
 #include "json_utils.hpp"
-#include "object_helpers.hpp"
-#include "object_store.hpp"
+#include "memory_resource.hpp"
+#include "object.hpp"
+#include "pointer.hpp"
 #include "processor/base.hpp"
 #include "transformer/base64_decode.hpp"
 #include "utils.hpp"
@@ -66,52 +66,48 @@ std::pair<bool, exploded_jwt> split_token(std::string_view source)
     return {true, parts};
 }
 
-ddwaf_object decode_and_parse(std::string_view source)
+owned_object decode_and_parse(std::string_view source, nonnull_ptr<memory::memory_resource> alloc)
 {
     cow_string cstr{source};
     if (!transformer::base64url_decode::transform(cstr)) {
         return {};
     }
 
-    return json_to_object(static_cast<std::string_view>(cstr));
+    return json_to_object(static_cast<std::string_view>(cstr), alloc);
 }
 
-std::string_view find_token(const ddwaf_object &root, std::span<const std::string> key_path)
+std::string_view find_token(object_view root, std::span<const std::string> key_path)
 {
-    const ddwaf_object *object = &root;
+    object_view object = root;
     if (!key_path.empty()) {
-        object = object::find_key_path(object, key_path, {}, {});
-        if (object == nullptr) {
+        object = root.find_key_path(key_path);
+        if (!object.has_value()) {
             return {};
         }
     }
 
-    if (object->type == DDWAF_OBJ_ARRAY && object->nbEntries >= 1) {
+    if (object.is_array() && !object.empty()) {
         // If the object is an array (which can happen due to serialisation)
         // take only the first element. Otherwise, the next if statement will
         // already take care of bailing out.
-        object = &object->array[0];
+        object = object.at_value(0);
     }
 
-    if (object->type != DDWAF_OBJ_STRING || object->nbEntries == 0 ||
-        object->stringValue == nullptr) {
+    if (!object.is_string() || object.empty()) {
         return {};
     }
 
-    return {object->stringValue, static_cast<std::size_t>(object->nbEntries)};
+    return object.as<std::string_view>();
 }
 
 } // namespace
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-std::pair<ddwaf_object, object_store::attribute> jwt_decode::eval_impl(
-    const unary_argument<const ddwaf_object *> &input, processor_cache & /*cache*/,
-    ddwaf::timer & /*deadline*/) const
+std::pair<owned_object, evaluation_scope> jwt_decode::eval_impl(
+    const unary_argument<object_view> &input, processor_cache & /*cache*/,
+    nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer & /*deadline*/) const
 {
-    const object_store::attribute attr =
-        input.ephemeral ? object_store::attribute::ephemeral : object_store::attribute::none;
-
-    std::string_view token = find_token(*input.value, input.key_path);
+    std::string_view token = find_token(input.value, input.key_path);
     if (token.empty()) {
         return {};
     }
@@ -126,7 +122,7 @@ std::pair<ddwaf_object, object_store::attribute> jwt_decode::eval_impl(
     token.remove_prefix(prefix.size());
 
     std::size_t spaces = 0;
-    while (!token.empty() && ddwaf::isspace(token[spaces])) { ++spaces; }
+    while (spaces < token.size() && ddwaf::isspace(token[spaces])) { ++spaces; }
 
     token.remove_prefix(spaces);
 
@@ -137,27 +133,12 @@ std::pair<ddwaf_object, object_store::attribute> jwt_decode::eval_impl(
         return {};
     }
 
-    // Decode header and payload
-    auto header = decode_and_parse(jwt.header);
-    auto payload = decode_and_parse(jwt.payload);
+    // Decode header and payload and generate output
+    auto output = object_builder::map({{"header", decode_and_parse(jwt.header, alloc)},
+        {"payload", decode_and_parse(jwt.payload, alloc)},
+        {"signature", object_builder::map({{"available", !jwt.signature.empty()}}, alloc)}});
 
-    // Generate output
-    ddwaf_object output;
-    ddwaf_object_map(&output);
-    ddwaf_object_map_addl(&output, STRL("header"), &header);
-    ddwaf_object_map_addl(&output, STRL("payload"), &payload);
-
-    ddwaf_object signature_map;
-    ddwaf_object_map(&signature_map);
-
-    ddwaf_object signature_available;
-    ddwaf_object_bool(&signature_available, !jwt.signature.empty());
-
-    ddwaf_object_map_addl(&signature_map, STRL("available"), &signature_available);
-
-    ddwaf_object_map_addl(&output, STRL("signature"), &signature_map);
-
-    return {output, attr};
+    return {std::move(output), input.scope};
 }
 
 } // namespace ddwaf

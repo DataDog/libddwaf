@@ -6,6 +6,7 @@
 
 #include <cstdlib>
 #include <ddwaf.h>
+#include <iostream>
 #include <stdexcept>
 #include <utility>
 #include <yaml-cpp/yaml.h>
@@ -21,56 +22,91 @@ public:
     [[nodiscard]] const char *what() const noexcept override { return what_.c_str(); }
 
 protected:
-    const std::string what_;
+    std::string what_;
 };
 
+namespace {
 // NOLINTNEXTLINE(misc-no-recursion)
-ddwaf_object yaml_to_object(const Node &node)
+void node_to_ddwaf_object(ddwaf_object *root, const Node &node)
 {
+    auto *alloc = ddwaf_get_default_allocator();
     switch (node.Type()) {
     case NodeType::Sequence: {
-        ddwaf_object arg;
-        ddwaf_object_array(&arg);
+        ddwaf_object_set_array(root, node.size(), alloc);
         for (auto it = node.begin(); it != node.end(); ++it) {
-            ddwaf_object child = yaml_to_object(*it);
-            ddwaf_object_array_add(&arg, &child);
+            auto *child = ddwaf_object_insert(root, alloc);
+            node_to_ddwaf_object(child, *it);
         }
-        return arg;
+        return;
     }
     case NodeType::Map: {
-        ddwaf_object arg;
-        ddwaf_object_map(&arg);
+        ddwaf_object_set_map(root, node.size(), alloc);
         for (auto it = node.begin(); it != node.end(); ++it) {
             auto key = it->first.as<std::string>();
-            ddwaf_object child = yaml_to_object(it->second);
-            ddwaf_object_map_addl(&arg, key.c_str(), key.size(), &child);
+            auto *child = ddwaf_object_insert_key(root, key.data(), key.size(), alloc);
+            node_to_ddwaf_object(child, it->second);
         }
-        return arg;
+        return;
     }
     case NodeType::Scalar: {
         const std::string &value = node.Scalar();
-        ddwaf_object arg;
-        ddwaf_object_stringl(&arg, value.c_str(), value.size());
-        return arg;
+
+        if (node.Tag() == "?") {
+            try {
+                ddwaf_object_set_unsigned(root, node.as<uint64_t>());
+                return;
+            } catch (...) {}
+
+            try {
+                ddwaf_object_set_signed(root, node.as<int64_t>());
+                return;
+            } catch (...) {}
+
+            try {
+                ddwaf_object_set_float(root, node.as<double>());
+                return;
+            } catch (...) {}
+
+            try {
+                if (!value.empty() && value[0] != 'Y' && value[0] != 'y' && value[0] != 'n' &&
+                    value[0] != 'N') {
+                    // Skip the yes / no variants of boolean
+                    ddwaf_object_set_bool(root, node.as<bool>());
+                    return;
+                }
+            } catch (...) {}
+        }
+
+        ddwaf_object_set_string(root, value.data(), value.size(), alloc);
+        return;
     }
-    case NodeType::Null:
+    case NodeType::Null: {
+        ddwaf_object_set_null(root);
+        return;
+    }
     case NodeType::Undefined: {
-        ddwaf_object arg;
-        ddwaf_object_invalid(&arg);
-        return arg;
+        ddwaf_object_set_invalid(root);
+        return;
     }
     }
 
     throw parsing_error("Invalid YAML node type");
 }
 
+} // namespace
+
 template <> as_if<ddwaf_object, void>::as_if(const Node &node_) : node(node_) {}
 
 template <> ddwaf_object as_if<ddwaf_object, void>::operator()() const
 {
-    return yaml_to_object(node);
+    ddwaf_object object;
+    node_to_ddwaf_object(&object, node);
+    return object;
 }
+
 } // namespace YAML
+
+namespace {
 
 ddwaf_object file_to_object(std::string_view filename)
 {
@@ -78,41 +114,43 @@ ddwaf_object file_to_object(std::string_view filename)
     return doc.as<ddwaf_object>();
 }
 
+} // namespace
+
 ddwaf_handle init_waf()
 {
-    ddwaf_config config{{0, 0, 0},
-        {R"((p(ass)?w(or)?d|pass(_?phrase)?|secret|(api_?|private_?|public_?)key)|token|consumer_?(id|key|secret)|sign(ed|ature)|bearer|authorization)",
-            R"(^(?:\d[ -]*?){13,16}$)"},
-        ddwaf_object_free};
+    ddwaf_config config{
+        {.key_regex =
+                R"((p(ass)?w(or)?d|pass(_?phrase)?|secret|(api_?|private_?|public_?)key)|token|consumer_?(id|key|secret)|sign(ed|ature)|bearer|authorization)",
+            .value_regex = R"(^(?:\d[ -]*?){13,16}$)"}};
     ddwaf_object rule = file_to_object("sample_rules.yml");
     ddwaf_object ruleset_info;
     ddwaf_handle handle = ddwaf_init(&rule, &config, &ruleset_info);
-    ddwaf_object_free(&rule);
-    ddwaf_object_free(&ruleset_info);
+    ddwaf_object_destroy(&rule, ddwaf_get_default_allocator());
+    ddwaf_object_destroy(&ruleset_info, ddwaf_get_default_allocator());
     return handle;
 }
 
 void run_waf(ddwaf_handle handle, ddwaf_object args, bool ephemeral, size_t timeLeftInUs)
 {
-    ddwaf_context context = ddwaf_context_init(handle);
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
     if (context == nullptr) {
-        __builtin_trap();
+        ddwaf_object_destroy(&args, alloc);
+        return;
     }
 
     ddwaf_object res;
-    auto code = DDWAF_OK;
     if (ephemeral) {
-        ddwaf_run(context, nullptr, &args, &res, timeLeftInUs);
+        auto *subctx = ddwaf_subcontext_init(context);
+        ddwaf_subcontext_eval(subctx, &args, alloc, &res, timeLeftInUs);
+        ddwaf_subcontext_destroy(subctx);
     } else {
-        ddwaf_run(context, &args, nullptr, &res, timeLeftInUs);
+        ddwaf_context_eval(context, &args, alloc, &res, timeLeftInUs);
     }
 
-    // TODO split input in several ddwaf_object, and call ddwaf_run on the same context
+    // TODO split input in several ddwaf_object, and call ddwaf_context_eval on the same context
 
-    if (code == DDWAF_ERR_INTERNAL) {
-        __builtin_trap();
-    }
-
-    ddwaf_object_free(&res);
+    ddwaf_object_destroy(&res, alloc);
     ddwaf_context_destroy(context);
 }

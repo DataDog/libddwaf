@@ -1,0 +1,24 @@
+{
+  name: "Match with on_match actions",
+  runs: [
+    {
+      input: {
+        proc-input-001: "http://user@google.com:443/path/to/nowhere?token=42#frag"
+      },
+      attributes: {
+        proc-output-001: {
+          scheme: http,
+          userinfo: user,
+          host: google.com,
+          port: 443,
+          path: /path/to/nowhere,
+          query: {
+            token: 42
+          },
+          fragment: frag
+        }
+      },
+      code: match
+    }
+  ]
+}

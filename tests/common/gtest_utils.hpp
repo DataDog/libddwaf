@@ -12,14 +12,13 @@
 #include <rapidjson/document.h>
 #include <yaml-cpp/yaml.h>
 
-#include "condition/base.hpp"
-#include "condition/scalar_condition.hpp"
-#include "ddwaf.h"
-
 #include "common/base_utils.hpp"
 #include "common/json_utils.hpp"
 #include "common/yaml_utils.hpp"
 
+#include "condition/base.hpp"
+#include "condition/scalar_condition.hpp"
+#include "ddwaf.h"
 #include "dynamic_string.hpp"
 
 #define EXPECT_STR(a, b) EXPECT_EQ(std::string_view{a}, std::string_view{b})
@@ -27,6 +26,7 @@
 
 namespace ddwaf::test {
 
+// NOLINTBEGIN(readability-redundant-member-init)
 struct event {
     struct match {
         struct argument {
@@ -38,17 +38,18 @@ struct event {
         std::string op{};
         std::string op_value{};
         dynamic_string highlight{};
-        std::vector<argument> args;
+        std::vector<argument> args{};
     };
 
-    std::string id;
-    std::string name;
+    std::string id{};
+    std::string name{};
     std::string stack_id{};
     std::string block_id{};
     std::map<std::string, std::string> tags{{"type", ""}, {"category", ""}};
     std::vector<std::string> actions{};
-    std::vector<match> matches;
+    std::vector<match> matches{};
 };
+// NOLINTEND(readability-redundant-member-init)
 
 using scalar_type = std::variant<bool, int64_t, uint64_t, double, std::string>;
 using action_map = ::std::map<::std::string, ::std::map<::std::string, scalar_type>>;
@@ -61,7 +62,6 @@ bool operator==(const event &lhs, const event &rhs);
 ::std::ostream &operator<<(::std::ostream &os, const event::match &m);
 
 // Required by gtest to pretty print relevant types
-void PrintTo(const ddwaf_object &actions, ::std::ostream *os);
 void PrintTo(const std::list<ddwaf::test::event> &events, ::std::ostream *os);
 void PrintTo(const std::list<ddwaf::test::event::match> &matches, ::std::ostream *os);
 
@@ -75,12 +75,14 @@ namespace YAML {
 template <> struct as_if<ddwaf::test::event::match, void> {
     explicit as_if(const Node &node_) : node(node_) {}
     ddwaf::test::event::match operator()() const;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const Node &node;
 };
 
 template <> struct as_if<ddwaf::test::event, void> {
     explicit as_if(const Node &node_) : node(node_) {}
     ddwaf::test::event operator()() const;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const Node &node;
 };
 
@@ -93,6 +95,7 @@ template <> struct as_if<std::map<std::string, ddwaf::test::scalar_type>, void> 
 template <> struct as_if<ddwaf::test::action_map, void> {
     explicit as_if(const Node &node_) : node(node_) {}
     ddwaf::test::action_map operator()() const;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const Node &node;
 };
 
@@ -181,54 +184,20 @@ inline ::testing::PolymorphicMatcher<MatchMatcher> WithMatches(
 std::list<ddwaf::test::event::match> from_matches(
     const std::vector<ddwaf::condition_match> &matches);
 
-/*inline bool operator==(const ddwaf::test::scalar_type& left, const ddwaf::test::scalar_type&
- * right)*/
-/*{*/
-/*if (std::holds_alternative<std::string>(left)) {*/
-/*return std::holds_alternative<std::string>(right) && std::get<std::string>(left) ==
- * std::get<std::string>(right);*/
-/*}*/
-
-/*if (std::holds_alternative<uint64_t>(left)) {*/
-/*return std::holds_alternative<uint64_t>(right) && std::get<uint64_t>(left) ==
- * std::get<uint64_t>(right);*/
-/*}*/
-
-/*if (std::holds_alternative<int64_t>(left)) {*/
-/*return std::holds_alternative<int64_t>(right) && std::get<int64_t>(left) ==
- * std::get<int64_t>(right);*/
-/*}*/
-
-/*if (std::holds_alternative<double>(left)) {*/
-/*return std::holds_alternative<double>(right) && std::get<double>(left) ==
- * std::get<double>(right);*/
-/*}*/
-
-/*if (std::holds_alternative<bool>(left)) {*/
-/*return std::holds_alternative<bool>(right) && std::get<bool>(left) == std::get<bool>(right);*/
-/*}*/
-
-/*return false;*/
-/*}*/
-
-/*template <typename T>*/
-/*inline bool operator==(const ddwaf::test::scalar_type& left, const T& right)*/
-/*{*/
-/*return std::holds_alternative<T>(left) && std::get<T>(left) == right;*/
-/*}*/
-
-/*template <typename T>*/
-/*inline bool operator==(const T& left, const ddwaf::test::scalar_type& right)*/
-/*{*/
-/*return std::holds_alternative<T>(right) && left == std::get<T>(right);*/
-/*}*/
+template <typename T> ddwaf::object_view to_view(T &value)
+{
+    if constexpr (std::is_same_v<std::decay_t<T>, ddwaf_object>) {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        return ddwaf::object_view{reinterpret_cast<const ddwaf::detail::object &>(value)};
+    } else {
+        return ddwaf::object_view{value};
+    }
+}
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define EXPECT_EVENTS(result, ...)                                                                 \
     {                                                                                              \
-        const auto *object = ddwaf_object_find(&result, STRL("events"));                           \
-        EXPECT_NE(object, nullptr);                                                                \
-        auto data = ddwaf::test::object_to_json(*object);                                          \
+        auto data = ddwaf::test::object_to_json(to_view(result).find("events").ref());             \
         EXPECT_TRUE(ValidateEventSchema(data));                                                    \
         YAML::Node doc = YAML::Load(data.c_str());                                                 \
         auto events = doc.as<std::list<ddwaf::test::event>>();                                     \
@@ -249,9 +218,7 @@ std::list<ddwaf::test::event::match> from_matches(
 
 #define EXPECT_ACTIONS(result, ...)                                                                \
     {                                                                                              \
-        const auto *object = ddwaf_object_find(&result, STRL("actions"));                          \
-        EXPECT_NE(object, nullptr);                                                                \
-        auto data = ddwaf::test::object_to_json(*object);                                          \
+        auto data = ddwaf::test::object_to_json(to_view(result).find("actions").ref());            \
         EXPECT_TRUE(ValidateActionsSchema(data));                                                  \
         YAML::Node doc = YAML::Load(data.c_str());                                                 \
         auto obtained = doc.as<ddwaf::test::action_map>();                                         \

@@ -2,7 +2,7 @@
   name: "SSRF due to query inspection",
   runs: [
     {
-      persistent-input: {
+      input: {
         server.io.net.url.2: "https://google.com/somewhere/?param=value&something=somethingelse",
         server.request.body: "value&something=somethingelse"
       },

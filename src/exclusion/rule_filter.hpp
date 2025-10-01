@@ -7,21 +7,20 @@
 #pragma once
 
 #include <set>
-#include <stack>
-#include <vector>
 
 #include "clock.hpp"
 #include "exclusion/common.hpp"
 #include "object_store.hpp"
 #include "rule.hpp"
 
-namespace ddwaf::exclusion {
+namespace ddwaf {
 
 class rule_filter {
 public:
     struct excluded_set {
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
         const std::unordered_set<const core_rule *> &rules;
-        bool ephemeral{false};
+        evaluation_scope scope;
         filter_mode mode{filter_mode::none};
         std::string_view action;
     };
@@ -38,8 +37,7 @@ public:
     ~rule_filter() = default;
 
     std::optional<excluded_set> match(const object_store &store, cache_type &cache,
-        const matcher_mapper &dynamic_matchers, const object_limits &limits,
-        ddwaf::timer &deadline) const;
+        const matcher_mapper &dynamic_matchers, evaluation_scope scope, timer &deadline) const;
 
     std::string_view get_id() const { return id_; }
 
@@ -58,4 +56,4 @@ protected:
     std::string action_;
 };
 
-} // namespace ddwaf::exclusion
+} // namespace ddwaf

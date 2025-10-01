@@ -79,13 +79,13 @@ public:
 
     static semantic_version max()
     {
-        static semantic_version v{"999.999.999", 999, 999, 999, 999999999};
+        static const semantic_version v{"999.999.999", 999, 999, 999, 999999999};
         return v;
     }
 
     static semantic_version min()
     {
-        static semantic_version v{"0.0.0", 0, 0, 0, 0};
+        static const semantic_version v{"0.0.0", 0, 0, 0, 0};
         return v;
     }
 

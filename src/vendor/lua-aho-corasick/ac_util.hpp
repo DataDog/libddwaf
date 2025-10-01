@@ -56,10 +56,6 @@ typedef unsigned char InputTy;
 #define unlikely(x) (x)
 #endif
 
-#ifndef offsetof
-#define offsetof(st, m) ((size_t)(&((st *)0)->m))
-#endif
-
 typedef enum {
     IMPL_SLOW_VARIANT = 1,
     IMPL_FAST_VARIANT = 2,

@@ -10,27 +10,24 @@
 #include <iterator>
 #include <set>
 #include <unordered_map>
-#include <vector>
 
 #include "traits.hpp"
 
 namespace ddwaf {
-template <typename Key, typename T, class Compare = std::less<Key>,
-    typename = std::enable_if_t<std::is_copy_constructible_v<std::remove_cv_t<std::decay_t<T>>>>>
+template <typename Key, typename T, class Compare = std::less<Key>>
+    requires std::is_copy_constructible_v<std::decay_t<T>>
 class multi_key_map {
 public:
-    template <typename U,
-        typename = typename std::enable_if_t<is_pair<typename U::iterator::value_type>::value,
-            typename U::iterator>>
+    template <typename U>
     void insert(const U &keys, const T &value)
+        requires is_pair<typename U::iterator::value_type>::value
     {
         for (const auto &key : keys) { data_[key.first][key.second].emplace(value); }
     }
 
-    template <typename U,
-        typename = typename std::enable_if_t<is_pair<typename U::iterator::value_type>::value,
-            typename U::iterator>>
+    template <typename U>
     void erase(const U &keys, const T &value)
+        requires is_pair<typename U::iterator::value_type>::value
     {
         for (const auto &key : keys) { data_[key.first][key.second].erase(value); }
     }
@@ -54,7 +51,7 @@ public:
     template <typename CompatKey>
     const std::set<T> &find_ref(const std::pair<CompatKey, CompatKey> &key) const
     {
-        static std::set<T> empty;
+        static const std::set<T> empty;
         auto first_it = data_.find(Key(key.first));
         if (first_it == data_.end()) {
             return empty;
@@ -91,7 +88,7 @@ public:
 
     template <typename U> std::set<T> multifind(const U &keys) const
     {
-        std::pair<Key, Key> first = *keys.begin();
+        const std::pair<Key, Key> first = *keys.begin();
 
         switch (keys.size()) {
         case 0:
@@ -99,7 +96,7 @@ public:
         case 1:
             return find(first);
         case 2: {
-            std::pair<Key, Key> second = *(++keys.begin());
+            const std::pair<Key, Key> second = *(++keys.begin());
             return find2(first, second);
         }
         }

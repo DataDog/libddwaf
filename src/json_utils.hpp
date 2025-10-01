@@ -8,10 +8,12 @@
 
 #include <string_view>
 
-#include "ddwaf.h"
+#include "memory_resource.hpp"
+#include "object.hpp"
 
 namespace ddwaf {
 
-ddwaf_object json_to_object(std::string_view json);
+owned_object json_to_object(std::string_view json,
+    nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource());
 
 } // namespace ddwaf

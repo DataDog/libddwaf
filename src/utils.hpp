@@ -24,65 +24,95 @@
 #include <variant>
 #include <vector>
 
-#include "ddwaf.h"
-
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
 // Convert numbers to strings
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
 // (string, length), only for literals
 #define STRL(value) value, sizeof(value) - 1
+// NOLINTEND(cppcoreguidelines-macro-usage)
 
 template <typename T> using optional_ref = std::optional<std::reference_wrapper<T>>;
 using scalar_type = std::variant<bool, int64_t, uint64_t, double, std::string>;
 
 namespace ddwaf {
 
-struct eval_result {
-    bool outcome;
-    bool ephemeral;
-};
+enum class scope_kind : uint8_t { context = 0, subcontext = 1 };
 
-struct object_limits {
-    static constexpr uint32_t default_max_container_depth{DDWAF_MAX_CONTAINER_DEPTH};
-    static constexpr uint32_t default_max_container_size{DDWAF_MAX_CONTAINER_SIZE};
-    static constexpr uint32_t default_max_string_length{DDWAF_MAX_STRING_LENGTH};
+class evaluation_scope {
+public:
+    evaluation_scope() = default;
 
-    // Non-overridable limits
-    static constexpr uint32_t max_transformers_per_address{10};
-    static constexpr uint32_t max_key_path_depth{DDWAF_MAX_CONTAINER_DEPTH};
+    static evaluation_scope context() { return evaluation_scope{scope_kind::context}; }
+    static evaluation_scope subcontext() { return evaluation_scope{scope_kind::subcontext}; }
 
-    // User provided limits
-    uint32_t max_container_depth{DDWAF_MAX_CONTAINER_DEPTH};
-    uint32_t max_container_size{DDWAF_MAX_CONTAINER_SIZE};
-    uint32_t max_string_length{DDWAF_MAX_STRING_LENGTH};
-};
-
-inline size_t find_string_cutoff(const char *str, size_t length, object_limits limits = {})
-{
-    // If the string is shorter than our cap, then fine
-    if (length <= limits.max_string_length) {
-        return length;
+    static evaluation_scope next_subcontext(evaluation_scope root)
+    {
+        ++root.id_;
+        return root;
     }
 
-    // If it's longer, we need to truncate it. However, we don't want to cut a UTF-8 byte sequence
-    // in the middle of it! Valid UTF8 has a specific binary format. 	If it's a single byte UTF8
-    // character, then it is always of form '0xxxxxxx', where 'x' is any binary digit. 	If it's a
-    // two byte UTF8 character, then it's always of form '110xxxxx 10xxxxxx'. 	Similarly for three
-    // and four byte UTF8 characters it starts with '1110xxxx' and '11110xxx' followed 		by
-    // '10xxxxxx' one less times as there are bytes.
+    [[nodiscard]] bool is_context() const { return kind_ == scope_kind::context; }
+    [[nodiscard]] bool is_subcontext() const { return kind_ == scope_kind::subcontext; }
+    [[nodiscard]] bool is_subcontext_and_equal_to(evaluation_scope other) const
+    {
+        return kind_ == scope_kind::subcontext && other.kind_ == scope_kind::subcontext &&
+               id_ == other.id_;
+    }
 
-    // We take the two strongest bits of the first trimmed character. We have four possibilities:
-    //  - 00 or 01: single UTF-8 byte, no risk trimming
-    //  - 11: New multi-byte sequence, we can ignore it, no risk trimming
-    //  - 10: Middle of multi byte sequence, we need to step back
-    //  We therefore loop as long as we see the '10' sequence
+    bool operator==(scope_kind other) const { return kind_ == other; }
 
-    size_t pos = limits.max_string_length;
-    // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-    while (pos != 0 && (str[pos] & 0xC0) == 0x80) { pos -= 1; }
+    bool operator==(const evaluation_scope other) const
+    {
+        return kind_ == other.kind_ && id_ == other.id_;
+    }
 
-    return pos;
+    bool has_higher_precedence_than(evaluation_scope other)
+    {
+        return static_cast<uint8_t>(kind_) < static_cast<uint8_t>(other.kind_);
+    }
+
+    bool has_higher_precedence_or_is_equal_to(evaluation_scope other)
+    {
+        return has_higher_precedence_than(other) || *this == other;
+    }
+
+    bool has_lower_precedence_than(evaluation_scope other)
+    {
+        return static_cast<uint8_t>(kind_) > static_cast<uint8_t>(other.kind_);
+    }
+
+    // For testing
+    [[nodiscard]] uint32_t id() const { return id_; }
+
+private:
+    explicit evaluation_scope(scope_kind kind) : kind_(kind){};
+
+    scope_kind kind_{scope_kind::context};
+    uint32_t id_{0};
+};
+
+inline std::ostream &operator<<(std::ostream &os, evaluation_scope scope)
+{
+    if (scope.is_context()) {
+        os << "scope::context";
+    } else {
+        os << "scope::subcontext::" << scope.id();
+    }
+    return os;
 }
+
+struct eval_result {
+    bool outcome{false};
+    evaluation_scope scope;
+
+    static eval_result match(evaluation_scope scope) { return {.outcome = true, .scope = scope}; }
+
+    static eval_result no_match()
+    {
+        return {.outcome = false, .scope = evaluation_scope::context()};
+    }
+};
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 inline bool isalpha(char c) { return (static_cast<unsigned>(c) | 32) - 'a' < 26; }
@@ -92,11 +122,11 @@ inline bool isspace(char c)
 {
     return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v';
 }
-inline constexpr bool isupper(char c) { return static_cast<unsigned>(c) - 'A' < 26; }
+inline bool isupper(char c) { return static_cast<unsigned>(c) - 'A' < 26; }
 inline bool islower(char c) { return static_cast<unsigned>(c) - 'a' < 26; }
 inline bool isalnum(char c) { return isalpha(c) || isdigit(c); }
 inline bool isboundary(char c) { return !isalnum(c) && c != '_'; }
-inline constexpr char tolower(char c) { return isupper(c) ? static_cast<char>(c | 32) : c; }
+inline char tolower(char c) { return isupper(c) ? static_cast<char>(c | 32) : c; }
 inline uint8_t from_hex(char c)
 {
     auto uc = static_cast<uint8_t>(c);
@@ -104,15 +134,15 @@ inline uint8_t from_hex(char c)
 }
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
-template <class Fn> class scope_exit {
+template <class Fn> class defer {
 public:
-    explicit scope_exit(Fn &&fn) noexcept : fn_(std::move(fn)) {}
-    ~scope_exit() { fn_(); }
+    explicit defer(Fn &&fn) noexcept : fn_(std::move(fn)) {}
+    ~defer() { fn_(); }
 
-    scope_exit(const scope_exit &) = delete;
-    scope_exit(scope_exit &&) = delete;
-    scope_exit &operator=(const scope_exit &) = delete;
-    scope_exit &operator=(scope_exit &&) = delete;
+    defer(const defer &) = delete;
+    defer(defer &&) = delete;
+    defer &operator=(const defer &) = delete;
+    defer &operator=(defer &&) = delete;
 
 protected:
     Fn fn_;
@@ -196,6 +226,7 @@ template <typename T> std::pair<bool, T> from_string(std::string_view str)
             return {true, result};
         }
     } else {
+        // NOLINTNEXTLINE(misc-const-correctness)
         std::istringstream iss(std::string{str});
         iss >> result;
         if (!iss.fail() && iss.eof()) {
@@ -204,31 +235,6 @@ template <typename T> std::pair<bool, T> from_string(std::string_view str)
     }
 
     return {false, {}};
-}
-
-inline std::string object_to_string(const ddwaf_object &object)
-{
-    if (object.type == DDWAF_OBJ_STRING) {
-        return std::string{object.stringValue, static_cast<std::size_t>(object.nbEntries)};
-    }
-
-    if (object.type == DDWAF_OBJ_BOOL) {
-        return to_string<std::string>(object.boolean);
-    }
-
-    if (object.type == DDWAF_OBJ_SIGNED) {
-        return to_string<std::string>(object.intValue);
-    }
-
-    if (object.type == DDWAF_OBJ_UNSIGNED) {
-        return to_string<std::string>(object.uintValue);
-    }
-
-    if (object.type == DDWAF_OBJ_FLOAT) {
-        return to_string<std::string>(object.f64);
-    }
-
-    return {};
 }
 
 inline std::vector<std::string_view> split(std::string_view str, char sep)
@@ -273,14 +279,17 @@ template <class T> const null_ostream &operator<<(null_ostream &os, const T & /*
 {
     return os;
 }
+
 template <std::size_t N, std::size_t... I>
+// NOLINTNEXTLINE(modernize-avoid-c-arrays,readability-named-parameter)
 constexpr std::array<char, N> make_array(const char (&str)[N], std::index_sequence<I...>)
 {
     return std::array<char, N>{tolower(str[I])...};
 }
 
 template <std::size_t N>
-constexpr inline bool string_iequals_literal(std::string_view left, const char (&right)[N])
+// NOLINTNEXTLINE(modernize-avoid-c-arrays)
+constexpr bool string_iequals_literal(std::string_view left, const char (&right)[N])
 {
     return left.size() == (N - 1) && std::equal(left.begin(), left.end(),
                                          make_array(right, std::make_index_sequence<N>()).begin(),
@@ -293,5 +302,4 @@ inline bool string_iequals(std::string_view left, std::string_view right)
            std::equal(left.begin(), left.end(), right.begin(),
                [](char l, char r) { return tolower(l) == tolower(r); });
 }
-
 } // namespace ddwaf

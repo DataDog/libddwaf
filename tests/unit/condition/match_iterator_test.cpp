@@ -13,12 +13,11 @@ namespace {
 
 TEST(TestMatchIterator, InvalidIterator)
 {
-    ddwaf_object object;
-    ddwaf_object_invalid(&object);
+    owned_object object;
 
     std::string resource = "this is the resource";
-    exclusion::object_set_ref exclude;
-    ddwaf::match_iterator it(resource, &object, exclude);
+    object_set_ref exclude;
+    ddwaf::match_iterator it(resource, object, exclude);
     EXPECT_FALSE((bool)it);
 
     auto path = it.get_current_path();
@@ -29,30 +28,26 @@ TEST(TestMatchIterator, InvalidIterator)
 
 TEST(TestMatchIterator, NoMatch)
 {
-    ddwaf_object object;
-    ddwaf_object_string(&object, "no match");
+    owned_object object{"no match"};
 
     std::string resource = "this is the resource";
-    exclusion::object_set_ref exclude;
-    ddwaf::match_iterator it(resource, &object, exclude);
+    object_set_ref exclude;
+    ddwaf::match_iterator it(resource, object, exclude);
     EXPECT_FALSE((bool)it);
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 0);
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestMatchIterator, SingleMatch)
 {
-    ddwaf_object object;
-    ddwaf_object_string(&object, "resource");
+    owned_object object{"resource"};
 
     std::string resource = "this is the resource";
-    exclusion::object_set_ref exclude;
-    ddwaf::match_iterator it(resource, &object, exclude);
+    object_set_ref exclude;
+    ddwaf::match_iterator it(resource, object, exclude);
     EXPECT_TRUE((bool)it);
 
     auto [param, index] = *it;
@@ -63,18 +58,15 @@ TEST(TestMatchIterator, SingleMatch)
     EXPECT_EQ(path.size(), 0);
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestMatchIterator, MultipleMatches)
 {
-    ddwaf_object object;
-    ddwaf_object_string(&object, "resource");
+    owned_object object{"resource"};
 
     std::string resource = "resource resource resource resource";
-    exclusion::object_set_ref exclude;
-    ddwaf::match_iterator it(resource, &object, exclude);
+    object_set_ref exclude;
+    ddwaf::match_iterator it(resource, object, exclude);
 
     for (std::size_t i = 0; i < 4; ++i) {
         EXPECT_TRUE((bool)it);
@@ -89,18 +81,15 @@ TEST(TestMatchIterator, MultipleMatches)
     }
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 TEST(TestMatchIterator, OverlappingMatches)
 {
-    ddwaf_object object;
-    ddwaf_object_string(&object, "ee");
+    owned_object object{"ee"};
 
     std::string resource = "eeeeeeeeee";
-    exclusion::object_set_ref exclude;
-    ddwaf::match_iterator it(resource, &object, exclude);
+    object_set_ref exclude;
+    ddwaf::match_iterator it(resource, object, exclude);
     EXPECT_TRUE((bool)it);
 
     for (std::size_t i = 0; i < 9; ++i) {
@@ -115,8 +104,6 @@ TEST(TestMatchIterator, OverlappingMatches)
     }
 
     EXPECT_FALSE(++it);
-
-    ddwaf_object_free(&object);
 }
 
 } // namespace

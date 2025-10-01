@@ -8,23 +8,22 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 
 #include "attribute_collector.hpp"
-#include "ddwaf.h"
 #include "log.hpp"
-#include "object_helpers.hpp"
+#include "object.hpp"
 #include "object_store.hpp"
 #include "target_address.hpp"
 
 namespace ddwaf {
 
-bool attribute_collector::insert(std::string_view key, const ddwaf_object &value, bool copy)
+bool attribute_collector::insert(std::string_view key, owned_object &&object)
 {
     if (inserted_or_pending_attributes_.contains(key)) {
         return false;
     }
-
-    return insert_helper(key, value, copy);
+    return insert_helper(key, std::move(object));
 }
 
 bool attribute_collector::collect(const object_store &store, target_index input_target,
@@ -67,45 +66,38 @@ attribute_collector::collection_state attribute_collector::collect_helper(const 
     std::string_view attribute_key)
 {
     auto [object, attr] = store.get_target(input_target);
-    if (object == nullptr) {
+    if (!object.has_value()) {
         return collection_state::unavailable;
     }
 
-    const auto *resolved = object::find_key_path(object, input_key_path, {}, {});
-    if (resolved == nullptr) {
+    auto resolved = object.find_key_path(input_key_path);
+    if (!resolved.has_value()) {
         // The key path is not expected to be provided later on, therefore
         // we mark it as failed.
         return collection_state::failed;
     }
 
-    if (object::is_scalar(resolved)) {
-        insert_helper(attribute_key, *resolved, true);
+    if (resolved.is_scalar()) {
+        insert_helper(attribute_key, resolved.clone(attributes_.alloc()));
         return collection_state::success;
     }
 
-    if (resolved->type == DDWAF_OBJ_ARRAY && resolved->nbEntries > 0) {
-        auto &candidate = resolved->array[0];
-        if (object::is_scalar(&candidate)) {
-            insert_helper(attribute_key, candidate, true);
+    if (resolved.is_array() && !resolved.empty()) {
+        auto candidate = resolved.at_value(0);
+        if (candidate.is_scalar()) {
+            insert_helper(attribute_key, candidate.clone(attributes_.alloc()));
             return collection_state::success;
         }
     }
     return collection_state::failed;
 }
 
-bool attribute_collector::insert_helper(std::string_view key, const ddwaf_object &value, bool copy)
+bool attribute_collector::insert_helper(std::string_view key, owned_object &&object)
 {
-    auto object = copy ? object::clone(&value) : value;
-    auto res = ddwaf_object_map_addl(&attributes_, key.data(), key.size(), &object);
-    if (!res) {
-        if (copy) {
-            ddwaf_object_free(&object);
-        }
-    } else {
-        DDWAF_DEBUG("Collected attribute: {}", key);
-        inserted_or_pending_attributes_.insert(key);
-    }
-    return res;
+    attributes_.emplace(key, std::move(object));
+    DDWAF_DEBUG("Collected attribute: {}", key);
+    inserted_or_pending_attributes_.insert(key);
+    return true;
 }
 
 } // namespace ddwaf

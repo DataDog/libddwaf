@@ -13,10 +13,10 @@
 #include "clock.hpp"
 #include "condition/base.hpp"
 #include "condition/exists.hpp"
-#include "ddwaf.h"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
-#include "object_helpers.hpp"
+#include "object.hpp"
+#include "object_type.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
@@ -25,23 +25,21 @@ namespace {
 
 enum class search_outcome : uint8_t { found, not_found, unknown };
 
-search_outcome exists(const ddwaf_object *root, std::span<const std::string> key_path,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits)
+search_outcome exists(
+    object_view root, std::span<const std::string> key_path, const object_set_ref &objects_excluded)
 {
     if (key_path.empty()) {
         return search_outcome::found;
     }
 
     // Since there's a key path, the object must be a map
-    if (root->type != DDWAF_OBJ_MAP) {
+    if (root.type() != object_type::map) {
         return search_outcome::not_found;
     }
 
     auto it = key_path.begin();
 
-    // The parser ensures that the key path is within the limits specified by
-    // the user, hence we don't need to check for depth
-    while ((root = object::find_key(*root, *it, limits)) != nullptr) {
+    while ((root = root.find(*it)).has_value()) {
         if (objects_excluded.contains(root)) {
             // We found the next root but it has been excluded, so we
             // can't know for sure if the required key path exists
@@ -52,7 +50,7 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
             return search_outcome::found;
         }
 
-        if (root->type != DDWAF_OBJ_MAP) {
+        if (root.type() != object_type::map) {
             return search_outcome::not_found;
         }
     }
@@ -63,18 +61,15 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
 } // namespace
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-[[nodiscard]] eval_result exists_condition::eval_impl(
-    const variadic_argument<const ddwaf_object *> &inputs, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer &deadline) const
+[[nodiscard]] eval_result exists_condition::eval_impl(const variadic_argument<object_view> &inputs,
+    condition_cache &cache, const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     for (const auto &input : inputs) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        if (exists(input.value, input.key_path, objects_excluded, limits) ==
-            search_outcome::found) {
+        if (exists(input.value, input.key_path, objects_excluded) == search_outcome::found) {
             std::vector<std::string> key_path{input.key_path.begin(), input.key_path.end()};
             cache.match = {{.args = {{.name = "input",
                                 .resolved = {},
@@ -83,25 +78,23 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
                 .highlights = {},
                 .operator_name = "exists",
                 .operator_value = {},
-                .ephemeral = input.ephemeral}};
-            return {.outcome = true, .ephemeral = input.ephemeral};
+                .scope = input.scope}};
+            return {.outcome = true, .scope = input.scope};
         }
     }
-    return {.outcome = false, .ephemeral = false};
+    return eval_result::no_match();
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[nodiscard]] eval_result negated_exists_condition::eval_impl(
-    const unary_argument<const ddwaf_object *> &input, condition_cache &cache,
-    const exclusion::object_set_ref &objects_excluded, const object_limits &limits,
-    ddwaf::timer & /*deadline*/) const
+    const unary_argument<object_view> &input, condition_cache &cache,
+    const object_set_ref &objects_excluded, ddwaf::timer & /*deadline*/) const
 {
     // We need to make sure the key path hasn't been found. If the result is
     // unknown, we can't guarantee that the key path isn't actually present in
     // the data set
-    if (exists(input.value, input.key_path, objects_excluded, limits) !=
-        search_outcome::not_found) {
-        return {.outcome = false, .ephemeral = false};
+    if (exists(input.value, input.key_path, objects_excluded) != search_outcome::not_found) {
+        return eval_result::no_match();
     }
 
     std::vector<std::string> key_path{input.key_path.begin(), input.key_path.end()};
@@ -112,8 +105,8 @@ search_outcome exists(const ddwaf_object *root, std::span<const std::string> key
         .highlights = {},
         .operator_name = "!exists",
         .operator_value = {},
-        .ephemeral = input.ephemeral}};
-    return {.outcome = true, .ephemeral = input.ephemeral};
+        .scope = input.scope}};
+    return {.outcome = true, .scope = input.scope};
 }
 
 } // namespace ddwaf

@@ -2,7 +2,7 @@
   name: "No valid address",
   runs: [
     {
-      persistent-input: {
+      input: {
         random: rule1
       },
       code: ok

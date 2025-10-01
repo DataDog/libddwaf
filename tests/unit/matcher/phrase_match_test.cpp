@@ -8,6 +8,7 @@
 
 #include "common/gtest_utils.hpp"
 
+using namespace ddwaf;
 using namespace ddwaf::matcher;
 
 namespace {
@@ -19,23 +20,18 @@ TEST(TestPhraseMatch, TestBasic)
 
     phrase_match matcher(strings, lengths);
 
-    EXPECT_STR(matcher.name(), "phrase_match");
-    EXPECT_STR(matcher.to_string(), "");
+    EXPECT_STRV(matcher.name(), "phrase_match");
+    EXPECT_STRV(matcher.to_string(), "");
 
-    ddwaf_object param;
-    ddwaf_object_string(&param, "bbbb");
+    owned_object param{"bbbb"};
 
     auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
     EXPECT_STR(highlight, "bbbb");
 
-    ddwaf_object param2;
-    ddwaf_object_string(&param2, "dddd");
+    owned_object param2{"dddd"};
 
     EXPECT_FALSE(matcher.match(param2).first);
-
-    ddwaf_object_free(&param2);
-    ddwaf_object_free(&param);
 }
 
 TEST(TestPhraseMatch, TestEmptyArrays)
@@ -44,14 +40,11 @@ TEST(TestPhraseMatch, TestEmptyArrays)
     std::vector<uint32_t> lengths;
     phrase_match matcher(strings, lengths);
 
-    EXPECT_STR(matcher.name(), "phrase_match");
+    EXPECT_STRV(matcher.name(), "phrase_match");
 
-    ddwaf_object param;
-    ddwaf_object_string(&param, "bbbb");
+    owned_object param{"bbbb"};
 
     EXPECT_FALSE(matcher.match(param).first);
-
-    ddwaf_object_free(&param);
 }
 
 TEST(TestPhraseMatch, TestInconsistentArrays)
@@ -71,16 +64,14 @@ TEST(TestPhraseMatch, TestComplex)
     phrase_match matcher(strings, lengths);
 
     auto run = [&matcher](const char *str, const char *expect) {
-        ddwaf_object param;
-        ddwaf_object_string(&param, str);
+        owned_object param{str};
         if (expect != nullptr) {
-            auto [res, highlight] = matcher.match(param);
+            auto [res, highlight] = matcher.match(ddwaf::object_view{param});
             EXPECT_TRUE(res);
             EXPECT_STR(highlight, expect);
         } else {
-            EXPECT_FALSE(matcher.match(param).first);
+            EXPECT_FALSE(matcher.match(ddwaf::object_view{param}).first);
         }
-        ddwaf_object_free(&param);
     };
 
     run("bla_String1_bla", "String1");
@@ -106,16 +97,14 @@ TEST(TestPhraseMatch, TestWordBoundary)
     phrase_match matcher(strings, lengths, true);
 
     auto run = [&matcher](const char *str, const char *expect) {
-        ddwaf_object param;
-        ddwaf_object_string(&param, str);
+        owned_object param{str};
         if (expect != nullptr) {
-            auto [res, highlight] = matcher.match(param);
+            auto [res, highlight] = matcher.match(ddwaf::object_view{param});
             EXPECT_TRUE(res);
             EXPECT_STR(highlight, expect);
         } else {
-            EXPECT_FALSE(matcher.match(param).first);
+            EXPECT_FALSE(matcher.match(ddwaf::object_view{param}).first);
         }
-        ddwaf_object_free(&param);
     };
 
     run("banana", "banana");
@@ -201,20 +190,15 @@ TEST(TestPhraseMatch, TestSingleCharMatch)
     EXPECT_STR(matcher.name(), "phrase_match");
     EXPECT_STR(matcher.to_string(), "");
 
-    ddwaf_object param;
-    ddwaf_object_string(&param, "a");
+    owned_object param{"a"};
 
     auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
     EXPECT_STR(highlight, "a");
 
-    ddwaf_object param2;
-    ddwaf_object_string(&param2, "2");
+    owned_object param2{"2"};
 
     EXPECT_FALSE(matcher.match(param2).first);
-
-    ddwaf_object_free(&param2);
-    ddwaf_object_free(&param);
 }
 
 } // namespace

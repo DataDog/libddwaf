@@ -14,22 +14,23 @@ constexpr std::string_view base_dir = "integration/transformers/";
 
 TEST(TestTransformers, Base64Decode)
 {
-    auto rule = read_file("base64_decode.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("base64_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "J09SIDE9MS8q");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("J09SIDE9MS8q"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -39,29 +40,30 @@ TEST(TestTransformers, Base64Decode)
                                .highlight = "s&1c"sv,
                                .args = {{.value = "'OR 1=1/*"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, Base64DecodeAlias)
 {
-    auto rule = read_file("base64_decode.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("base64_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "J09SIDE9MS8q");
-    ddwaf_object_map_add(&map, "value2", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("J09SIDE9MS8q"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -71,29 +73,30 @@ TEST(TestTransformers, Base64DecodeAlias)
                                .highlight = "s&1c"sv,
                                .args = {{.value = "'OR 1=1/*"sv, .address = "value2"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, Base64UrlDecode)
 {
-    auto rule = read_file("base64url_decode.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("base64url_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "J09SIDE9MS8q");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("J09SIDE9MS8q"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -103,29 +106,30 @@ TEST(TestTransformers, Base64UrlDecode)
                                .highlight = "s&1c"sv,
                                .args = {{.value = "'OR 1=1/*"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, Base64Encode)
 {
-    auto rule = read_file("base64_encode.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("base64_encode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "'OR 1=1/*");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("'OR 1=1/*"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -136,29 +140,30 @@ TEST(TestTransformers, Base64Encode)
                                .highlight = "J09SIDE9MS8q"sv,
                                .args = {{.value = "J09SIDE9MS8q"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, Base64EncodeAlias)
 {
-    auto rule = read_file("base64_encode.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("base64_encode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "'OR 1=1/*");
-    ddwaf_object_map_add(&map, "value2", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("'OR 1=1/*"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -169,29 +174,30 @@ TEST(TestTransformers, Base64EncodeAlias)
                                .highlight = "J09SIDE9MS8q"sv,
                                .args = {{.value = "J09SIDE9MS8q"sv, .address = "value2"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, CompressWhitespace)
 {
-    auto rule = read_file("compress_whitespace.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("compress_whitespace.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "attack      value");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("attack      value"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -202,29 +208,30 @@ TEST(TestTransformers, CompressWhitespace)
                                .highlight = "attack value"sv,
                                .args = {{.value = "attack value"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, CompressWhitespaceAlias)
 {
-    auto rule = read_file("compress_whitespace.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("compress_whitespace.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "attack      value");
-    ddwaf_object_map_add(&map, "value2", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("attack      value"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -235,29 +242,30 @@ TEST(TestTransformers, CompressWhitespaceAlias)
                                .highlight = "attack value"sv,
                                .args = {{.value = "attack value"sv, .address = "value2"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, CssDecode)
 {
-    auto rule = read_file("css_decode.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("css_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "CSS\\\n tran\\sformations");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("CSS\\\n tran\\sformations"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -269,29 +277,30 @@ TEST(TestTransformers, CssDecode)
                      .highlight = "CSS transformations"sv,
                      .args = {{.value = "CSS transformations"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, CssDecodeAlias)
 {
-    auto rule = read_file("css_decode.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("css_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "CSS\\\n tran\\sformations");
-    ddwaf_object_map_add(&map, "value2", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("CSS\\\n tran\\sformations"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -303,29 +312,30 @@ TEST(TestTransformers, CssDecodeAlias)
                      .highlight = "CSS transformations"sv,
                      .args = {{.value = "CSS transformations"sv, .address = "value2"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, HtmlEntityDecode)
 {
-    auto rule = read_file("html_entity_decode.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("html_entity_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "HTML &#x0000000000000000000000000000041 &#x41; transformation");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(ddwaf_object_insert_key(&map, STRL("value1"), alloc),
+        STRL("HTML &#x0000000000000000000000000000041 &#x41; transformation"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -337,29 +347,30 @@ TEST(TestTransformers, HtmlEntityDecode)
                      .highlight = "HTML A A transformation"sv,
                      .args = {{.value = "HTML A A transformation"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, HtmlEntityDecodeAlias)
 {
-    auto rule = read_file("html_entity_decode.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("html_entity_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "HTML &#x0000000000000000000000000000041 &#x41; transformation");
-    ddwaf_object_map_add(&map, "value2", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(ddwaf_object_insert_key(&map, STRL("value2"), alloc),
+        STRL("HTML &#x0000000000000000000000000000041 &#x41; transformation"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -371,29 +382,30 @@ TEST(TestTransformers, HtmlEntityDecodeAlias)
                      .highlight = "HTML A A transformation"sv,
                      .args = {{.value = "HTML A A transformation"sv, .address = "value2"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, JsDecode)
 {
-    auto rule = read_file("js_decode.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("js_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, R"(\x41\x20\x4aS\x20transf\x6Frmation)");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(ddwaf_object_insert_key(&map, STRL("value1"), alloc),
+        STRL(R"(\x41\x20\x4aS\x20transf\x6Frmation)"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -405,29 +417,30 @@ TEST(TestTransformers, JsDecode)
                      .highlight = "A JS transformation"sv,
                      .args = {{.value = "A JS transformation"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, JsDecodeAlias)
 {
-    auto rule = read_file("js_decode.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("js_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, R"(\x41\x20\x4aS\x20transf\x6Frmation)");
-    ddwaf_object_map_add(&map, "value2", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(ddwaf_object_insert_key(&map, STRL("value2"), alloc),
+        STRL(R"(\x41\x20\x4aS\x20transf\x6Frmation)"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -439,29 +452,30 @@ TEST(TestTransformers, JsDecodeAlias)
                      .highlight = "A JS transformation"sv,
                      .args = {{.value = "A JS transformation"sv, .address = "value2"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, Lowercase)
 {
-    auto rule = read_file("lowercase.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("lowercase.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "ArAcHnI");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("ArAcHnI"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -472,29 +486,30 @@ TEST(TestTransformers, Lowercase)
                                .highlight = "arachni"sv,
                                .args = {{.value = "arachni"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, NormalizePath)
 {
-    auto rule = read_file("normalize_path.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("normalize_path.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "/etc/dir1/dir2/../../passwd");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("/etc/dir1/dir2/../../passwd"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -505,29 +520,30 @@ TEST(TestTransformers, NormalizePath)
                                .highlight = "/etc/passwd"sv,
                                .args = {{.value = "/etc/passwd"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, NormalizePathAlias)
 {
-    auto rule = read_file("normalize_path.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("normalize_path.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "/etc/dir1/dir2/../../passwd");
-    ddwaf_object_map_add(&map, "value2", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("/etc/dir1/dir2/../../passwd"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -538,29 +554,30 @@ TEST(TestTransformers, NormalizePathAlias)
                                .highlight = "/etc/passwd"sv,
                                .args = {{.value = "/etc/passwd"sv, .address = "value2"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, NormalizePathWin)
 {
-    auto rule = read_file("normalize_path_win.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("normalize_path_win.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, R"(\etc\dir1\dir2\..\..\passwd)");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(ddwaf_object_insert_key(&map, STRL("value1"), alloc),
+        STRL(R"(\etc\dir1\dir2\..\..\passwd)"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -571,29 +588,30 @@ TEST(TestTransformers, NormalizePathWin)
                                .highlight = "/etc/passwd"sv,
                                .args = {{.value = "/etc/passwd"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, NormalizePathAliasWin)
 {
-    auto rule = read_file("normalize_path_win.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("normalize_path_win.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, R"(\etc\dir1\dir2\..\..\passwd)");
-    ddwaf_object_map_add(&map, "value2", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(ddwaf_object_insert_key(&map, STRL("value2"), alloc),
+        STRL(R"(\etc\dir1\dir2\..\..\passwd)"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -604,29 +622,30 @@ TEST(TestTransformers, NormalizePathAliasWin)
                                .highlight = "/etc/passwd"sv,
                                .args = {{.value = "/etc/passwd"sv, .address = "value2"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, RemoveComments)
 {
-    auto rule = read_file("remove_comments.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("remove_comments.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "passwd#asdsd");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("passwd#asdsd"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -637,29 +656,30 @@ TEST(TestTransformers, RemoveComments)
                                .highlight = "passwd"sv,
                                .args = {{.value = "passwd"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, RemoveCommentsAlias)
 {
-    auto rule = read_file("remove_comments.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("remove_comments.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "passwd#asdsd");
-    ddwaf_object_map_add(&map, "value2", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("passwd#asdsd"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -670,29 +690,30 @@ TEST(TestTransformers, RemoveCommentsAlias)
                                .highlight = "passwd"sv,
                                .args = {{.value = "passwd"sv, .address = "value2"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, RemoveNulls)
 {
-    auto rule = read_file("remove_nulls.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("remove_nulls.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_stringl(&string, "/etc/\0passwd", sizeof("/etc/\0passwd") - 1);
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("/etc/\0passwd"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -703,29 +724,30 @@ TEST(TestTransformers, RemoveNulls)
                                .highlight = "/etc/passwd"sv,
                                .args = {{.value = "/etc/passwd"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, RemoveNullsAlias)
 {
-    auto rule = read_file("remove_nulls.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("remove_nulls.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_stringl(&string, "/etc/\0passwd", sizeof("/etc/\0passwd") - 1);
-    ddwaf_object_map_add(&map, "value2", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(ddwaf_object_insert_key(&map, STRL("value2"), alloc),
+        "/etc/\0passwd", sizeof("/etc/\0passwd") - 1);
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -736,29 +758,30 @@ TEST(TestTransformers, RemoveNullsAlias)
                                .highlight = "/etc/passwd"sv,
                                .args = {{.value = "/etc/passwd"sv, .address = "value2"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, ShellUnescape)
 {
-    auto rule = read_file("shell_unescape.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("shell_unescape.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "/\\etc/\"pass^wd");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("/\\etc/\"pass^wd"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -769,29 +792,30 @@ TEST(TestTransformers, ShellUnescape)
                                .highlight = "/etc/passwd"sv,
                                .args = {{.value = "/etc/passwd"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, ShellUnescapeAlias)
 {
-    auto rule = read_file("shell_unescape.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("shell_unescape.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "/\\etc/\"pass^wd");
-    ddwaf_object_map_add(&map, "value2", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("/\\etc/\"pass^wd"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -802,29 +826,30 @@ TEST(TestTransformers, ShellUnescapeAlias)
                                .highlight = "/etc/passwd"sv,
                                .args = {{.value = "/etc/passwd"sv, .address = "value2"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, UnicodeNormalize)
 {
-    auto rule = read_file("unicode_normalize.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("unicode_normalize.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "/étc/p𝑎ßwd");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("/étc/p𝑎ßwd"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -835,29 +860,30 @@ TEST(TestTransformers, UnicodeNormalize)
                                .highlight = "/etc/passwd"sv,
                                .args = {{.value = "/etc/passwd"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, UrlBasename)
 {
-    auto rule = read_file("url_basename.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("url_basename.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "/path/to/index.php?a=b#frag");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("/path/to/index.php?a=b#frag"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -868,29 +894,30 @@ TEST(TestTransformers, UrlBasename)
                                .highlight = "index.php"sv,
                                .args = {{.value = "index.php"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, UrlBasenameAlias)
 {
-    auto rule = read_file("url_basename.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("url_basename.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "/path/to/index.php?a=b#frag");
-    ddwaf_object_map_add(&map, "value2", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("/path/to/index.php?a=b#frag"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -901,29 +928,30 @@ TEST(TestTransformers, UrlBasenameAlias)
                                .highlight = "index.php"sv,
                                .args = {{.value = "index.php"sv, .address = "value2"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, UrlDecode)
 {
-    auto rule = read_file("url_decode.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("url_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "%61n+%61ttack%20valu%65");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("%61n+%61ttack%20valu%65"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -934,29 +962,30 @@ TEST(TestTransformers, UrlDecode)
                                .highlight = "an attack value"sv,
                                .args = {{.value = "an attack value"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, UrlDecodeAlias)
 {
-    auto rule = read_file("url_decode.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("url_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "%61n+%61ttack%20valu%65");
-    ddwaf_object_map_add(&map, "value2", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("%61n+%61ttack%20valu%65"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -967,29 +996,30 @@ TEST(TestTransformers, UrlDecodeAlias)
                                .highlight = "an attack value"sv,
                                .args = {{.value = "an attack value"sv, .address = "value2"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, UrlDecodeIis)
 {
-    auto rule = read_file("url_decode_iis.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("url_decode_iis.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "%61n+%61ttack%20valu%65");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("%61n+%61ttack%20valu%65"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -1000,29 +1030,30 @@ TEST(TestTransformers, UrlDecodeIis)
                                .highlight = "an attack value"sv,
                                .args = {{.value = "an attack value"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, UrlDecodeIisAlias)
 {
-    auto rule = read_file("url_decode_iis.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("url_decode_iis.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "%61n+%61ttack%20valu%65");
-    ddwaf_object_map_add(&map, "value2", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("%61n+%61ttack%20valu%65"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -1033,29 +1064,30 @@ TEST(TestTransformers, UrlDecodeIisAlias)
                                .highlight = "an attack value"sv,
                                .args = {{.value = "an attack value"sv, .address = "value2"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, UrlPath)
 {
-    auto rule = read_file("url_path.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("url_path.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "/path/to/index.php?a=b#frag");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("/path/to/index.php?a=b#frag"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -1066,29 +1098,30 @@ TEST(TestTransformers, UrlPath)
                                .highlight = "/path/to/index.php"sv,
                                .args = {{.value = "/path/to/index.php"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, UrlPathAlias)
 {
-    auto rule = read_file("url_path.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("url_path.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "/path/to/index.php?a=b#frag");
-    ddwaf_object_map_add(&map, "value2", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("/path/to/index.php?a=b#frag"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -1099,29 +1132,30 @@ TEST(TestTransformers, UrlPathAlias)
                                .highlight = "/path/to/index.php"sv,
                                .args = {{.value = "/path/to/index.php"sv, .address = "value2"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, UrlQuerystring)
 {
-    auto rule = read_file("url_querystring.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("url_querystring.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "/path/to/index.php?a=b#frag");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value1"), alloc), STRL("/path/to/index.php?a=b#frag"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "1",
@@ -1132,29 +1166,30 @@ TEST(TestTransformers, UrlQuerystring)
                                .highlight = "a=b"sv,
                                .args = {{.value = "a=b"sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, UrlQuerystringAlias)
 {
-    auto rule = read_file("url_querystring.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("url_querystring.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "/path/to/index.php?a=b#frag");
-    ddwaf_object_map_add(&map, "value2", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&map, STRL("value2"), alloc), STRL("/path/to/index.php?a=b#frag"));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(out, {.id = "2",
@@ -1165,29 +1200,30 @@ TEST(TestTransformers, UrlQuerystringAlias)
                                .highlight = "a=b"sv,
                                .args = {{.value = "a=b"sv, .address = "value2"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
 
 TEST(TestTransformers, Mixed)
 {
-    auto rule = read_file("mixed.yaml", base_dir);
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("mixed.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
     ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
     ASSERT_NE(handle, nullptr);
-    ddwaf_object_free(&rule);
+    ddwaf_object_destroy(&rule, alloc);
 
-    ddwaf_context context = ddwaf_context_init(handle);
+    ddwaf_context context = ddwaf_context_init(handle, ddwaf_get_default_allocator());
     ASSERT_NE(context, nullptr);
 
-    ddwaf_object map = DDWAF_OBJECT_MAP;
-    ddwaf_object string;
-    ddwaf_object_string(&string, "L3AgIGEgIHRIL3QgIE8vRmlsRS5QSFA/YT1iI2ZyYWc=");
-    ddwaf_object_map_add(&map, "value1", &string);
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    ddwaf_object_set_string_literal(ddwaf_object_insert_key(&map, STRL("value1"), alloc),
+        STRL("L3AgIGEgIHRIL3QgIE8vRmlsRS5QSFA/YT1iI2ZyYWc="));
 
     ddwaf_object out;
-    ASSERT_EQ(ddwaf_run(context, &map, nullptr, &out, LONG_TIME), DDWAF_MATCH);
+    ASSERT_EQ(ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME), DDWAF_MATCH);
     const auto *timeout = ddwaf_object_find(&out, STRL("timeout"));
     EXPECT_FALSE(ddwaf_object_get_bool(timeout));
     EXPECT_EVENTS(
@@ -1199,7 +1235,7 @@ TEST(TestTransformers, Mixed)
                      .highlight = "L3AgYSB0aC90IG8vZmlsZS5waHA="sv,
                      .args = {{.value = "L3AgYSB0aC90IG8vZmlsZS5waHA="sv, .address = "value1"}}}}});
 
-    ddwaf_object_free(&out);
+    ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }

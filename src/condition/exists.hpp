@@ -21,9 +21,9 @@ public:
     {}
 
 protected:
-    [[nodiscard]] eval_result eval_impl(const variadic_argument<const ddwaf_object *> &inputs,
-        condition_cache &cache, const exclusion::object_set_ref &objects_excluded,
-        const object_limits &limits, ddwaf::timer &deadline) const;
+    [[nodiscard]] eval_result eval_impl(const variadic_argument<object_view> &inputs,
+        condition_cache &cache, const object_set_ref &objects_excluded,
+        ddwaf::timer &deadline) const;
 
     friend class base_impl<exists_condition>;
 };
@@ -37,9 +37,9 @@ public:
     {}
 
 protected:
-    [[nodiscard]] eval_result eval_impl(const unary_argument<const ddwaf_object *> &input,
-        condition_cache &cache, const exclusion::object_set_ref &objects_excluded,
-        const object_limits &limits, ddwaf::timer & /*deadline*/) const;
+    [[nodiscard]] eval_result eval_impl(const unary_argument<object_view> &input,
+        condition_cache &cache, const object_set_ref &objects_excluded,
+        ddwaf::timer & /*deadline*/) const;
 
     friend class base_impl<negated_exists_condition>;
 };

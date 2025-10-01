@@ -9,17 +9,18 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <memory>
 #include <rapidjson/encodings.h>
 #include <rapidjson/error/error.h>
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/reader.h>
 #include <string_view>
+#include <utility>
 #include <vector>
 
-#include "ddwaf.h"
 #include "json_utils.hpp"
-#include "utils.hpp"
+#include "memory_resource.hpp"
+#include "object.hpp"
+#include "pointer.hpp"
 
 namespace ddwaf {
 
@@ -64,12 +65,11 @@ struct string_view_stream {
 class object_reader_handler
     : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, object_reader_handler> {
 public:
-    object_reader_handler() { stack_.reserve(max_depth + 1); }
-    ~object_reader_handler()
+    explicit object_reader_handler(nonnull_ptr<memory::memory_resource> alloc) : alloc_(alloc)
     {
-        // Cleanup
-        ddwaf_object_free(&root_);
+        stack_.reserve(max_depth + 1);
     }
+    ~object_reader_handler() = default;
     object_reader_handler(object_reader_handler &&) = delete;
     object_reader_handler(const object_reader_handler &) = delete;
     object_reader_handler &operator=(object_reader_handler &&) = delete;
@@ -81,8 +81,7 @@ public:
             return true;
         }
 
-        ddwaf_object object;
-        return emplace(ddwaf_object_null(&object));
+        return emplace(owned_object::make_null());
     }
 
     bool Bool(bool b)
@@ -91,8 +90,7 @@ public:
             return true;
         }
 
-        ddwaf_object object;
-        return emplace(ddwaf_object_bool(&object, b));
+        return emplace(owned_object::make_boolean(b));
     }
 
     bool Int(int i)
@@ -101,8 +99,7 @@ public:
             return true;
         }
 
-        ddwaf_object object;
-        return emplace(ddwaf_object_signed(&object, i));
+        return emplace(owned_object::make_signed(i));
     }
 
     bool Uint(unsigned u)
@@ -111,8 +108,7 @@ public:
             return true;
         }
 
-        ddwaf_object object;
-        return emplace(ddwaf_object_unsigned(&object, u));
+        return emplace(owned_object::make_unsigned(u));
     }
 
     bool Int64(int64_t i)
@@ -121,8 +117,7 @@ public:
             return true;
         }
 
-        ddwaf_object object;
-        return emplace(ddwaf_object_signed(&object, i));
+        return emplace(owned_object::make_signed(i));
     }
 
     bool Uint64(uint64_t u)
@@ -131,8 +126,7 @@ public:
             return true;
         }
 
-        ddwaf_object object;
-        return emplace(ddwaf_object_unsigned(&object, u));
+        return emplace(owned_object::make_unsigned(u));
     }
 
     bool Double(double d)
@@ -141,8 +135,7 @@ public:
             return true;
         }
 
-        ddwaf_object object;
-        return emplace(ddwaf_object_float(&object, d));
+        return emplace(owned_object::make_float(d));
     }
 
     bool String(const char *str, rapidjson::SizeType length, bool /*copy*/)
@@ -151,8 +144,7 @@ public:
             return true;
         }
 
-        ddwaf_object object;
-        return emplace(ddwaf_object_stringl(&object, str, length));
+        return emplace(owned_object::make_string(str, length));
     }
 
     bool Key(const char *str, rapidjson::SizeType length, bool /*copy*/)
@@ -161,16 +153,9 @@ public:
             return true;
         }
 
-        assert(key_ == nullptr && key_size_ == 0);
+        assert(key_.is_invalid());
 
-        // NOLINTNEXTLINE(hicpp-no-malloc)
-        key_.reset(static_cast<char *>(malloc(length)));
-        if (key_ == nullptr) {
-            return false;
-        }
-
-        memcpy(key_.get(), str, length);
-        key_size_ = length;
+        key_ = owned_object::make_string(str, length, alloc_);
 
         return true;
     }
@@ -182,8 +167,7 @@ public:
             return true;
         }
 
-        ddwaf_object object;
-        return emplace(ddwaf_object_map(&object));
+        return emplace(owned_object::make_map(0, alloc_));
     }
 
     // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
@@ -204,8 +188,7 @@ public:
             return true;
         }
 
-        ddwaf_object object;
-        return emplace(ddwaf_object_array(&object));
+        return emplace(owned_object::make_array(0, alloc_));
     }
 
     // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
@@ -219,68 +202,57 @@ public:
         return true;
     }
 
-    ddwaf_object finalize()
+    owned_object finalize()
     {
-        auto final_object = root_;
-        root_ = {};
         stack_.clear();
-        return final_object;
+        return std::move(root_);
     }
 
 private:
-    bool emplace(ddwaf_object *object)
+    bool emplace(owned_object &&object)
     {
+        try {
+            if (stack_.empty()) {
+                assert(root_.is_invalid());
 
-        bool res = true;
-        const bool is_container = (object->type & (DDWAF_OBJ_MAP | DDWAF_OBJ_ARRAY)) != 0;
-
-        if (stack_.empty()) {
-            assert(root_.type == DDWAF_OBJ_INVALID);
-            root_ = *object;
-            if (is_container) {
-                stack_.push_back(&root_);
-                // No need to check the depth limit given that it's larger than 1
-            }
-        } else {
-            auto *container = stack_.back();
-            if (container->type == DDWAF_OBJ_MAP) {
-                res = ddwaf_object_map_addl_nc(container, key_.release(), key_size_, object);
-
-                // Reset key
-                key_size_ = 0;
-            } else if (container->type == DDWAF_OBJ_ARRAY) {
-                res = ddwaf_object_array_add(container, object);
+                root_ = std::move(object);
+                if (root_.is_container()) {
+                    stack_.emplace_back(root_);
+                    // No need to check the depth limit given that it's larger than 1
+                }
             } else {
-                // Shouldn't happen
-                ddwaf_object_free(object);
-                res = false;
-            }
-
-            if (res && is_container) {
-                stack_.push_back(&container->array[container->nbEntries - 1]);
-                if (stack_.size() > max_depth) {
-                    depth_skip_count_ = 1;
+                auto &container = stack_.back();
+                auto child = container.is_map()
+                                 ? container.emplace(std::move(key_), std::move(object))
+                                 : container.emplace_back(std::move(object));
+                if (child.is_container()) {
+                    stack_.push_back(child);
+                    if (stack_.size() > max_depth) {
+                        depth_skip_count_ = 1;
+                    }
                 }
             }
+        } catch (...) {
+            return false;
         }
 
-        return res;
+        return true;
     }
 
-    ddwaf_object root_{};
-    std::vector<ddwaf_object *> stack_;
+    nonnull_ptr<memory::memory_resource> alloc_{memory::get_default_resource()};
+    owned_object root_;
+    std::vector<borrowed_object> stack_;
 
-    std::unique_ptr<char, decltype(&free)> key_{nullptr, free};
-    std::size_t key_size_{0};
+    owned_object key_;
 
     std::size_t depth_skip_count_{0};
 
-    static constexpr std::size_t max_depth = object_limits::default_max_container_depth;
+    static constexpr std::size_t max_depth = 20;
 };
 
-ddwaf_object json_to_object(std::string_view json)
+owned_object json_to_object(std::string_view json, nonnull_ptr<memory::memory_resource> alloc)
 {
-    object_reader_handler handler;
+    object_reader_handler handler{alloc};
     string_view_stream ss(json);
 
     rapidjson::Reader reader;

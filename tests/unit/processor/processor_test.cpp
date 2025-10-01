@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include "attribute_collector.hpp"
 #include "exception.hpp"
 #include "matcher/equals.hpp"
 #include "processor/base.hpp"
@@ -14,6 +13,7 @@
 #include "common/gtest_utils.hpp"
 
 using ::testing::_;
+using ::testing::ByMove;
 using ::testing::Return;
 
 using namespace ddwaf;
@@ -32,26 +32,23 @@ public:
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
     {}
 
-    MOCK_METHOD((std::pair<ddwaf_object, object_store::attribute>), eval_impl,
-        (const unary_argument<const ddwaf_object *> &, processor_cache &, ddwaf::timer &), (const));
+    MOCK_METHOD((std::pair<owned_object, evaluation_scope>), eval_impl,
+        (const unary_argument<object_view> &, processor_cache &,
+            nonnull_ptr<memory::memory_resource>, ddwaf::timer &),
+        (const));
 };
 
 } // namespace mock
 
 TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
 {
-    ddwaf_object output;
-    ddwaf_object_string(&output, "output_string");
+    auto *alloc = memory::get_default_resource();
 
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
+    owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
-
+    auto input_map = object_builder::map({{"input_address", "input_string"}});
     object_store store;
-    store.insert(input_map);
+    store.insert(input_map, evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -63,9 +60,9 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
 
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
-    EXPECT_CALL(proc, eval_impl(_, _, _))
-        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
-            output, object_store::attribute::none}));
+    EXPECT_CALL(proc, eval_impl(_, _, _, _))
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context()})));
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
@@ -73,36 +70,27 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, {}, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
-    auto output_map = collector.get_available_attributes_and_reset();
-    EXPECT_EQ(ddwaf_object_size(&output_map), 1);
-    const auto *obtained = ddwaf_object_get_index(&output_map, 0);
-    EXPECT_STREQ(obtained->parameterName, "output_address");
-    EXPECT_STREQ(obtained->stringValue, "output_string");
-
-    ddwaf_object_free(&output_map);
+    auto attributes = collector.get_available_attributes_and_reset();
+    EXPECT_EQ(attributes.size(), 1);
+    const auto [obtained_key, obtained_value] = object_view{attributes}.at(0);
+    EXPECT_STRV(obtained_key.as<std::string_view>(), "output_address");
+    EXPECT_STRV(obtained_value.as<std::string_view>(), "output_string");
 }
 
 TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
 {
-    ddwaf_object first_output;
-    ddwaf_object second_output;
-    ddwaf_object_string(&first_output, "first_output_string");
-    ddwaf_object_string(&second_output, "second_output_string");
+    auto *alloc = memory::get_default_resource();
 
-    ddwaf_object first_input;
-    ddwaf_object second_input;
-    ddwaf_object_string(&first_input, "first_input_string");
-    ddwaf_object_string(&second_input, "second_input_string");
+    owned_object first_output = owned_object::make_string("first_output_string");
+    owned_object second_output = owned_object::make_string("second_output_string");
 
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address.first", &first_input);
-    ddwaf_object_map_add(&input_map, "input_address.second", &second_input);
+    auto input_map = object_builder::map({{"input_address.first", "first_input_string"},
+        {"input_address.second", "second_input_string"}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(input_map, evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address.first"),
@@ -121,51 +109,43 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _, _))
-        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>(
-            first_output, object_store::attribute::none)))
-        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>(
-            second_output, object_store::attribute::none)));
+    EXPECT_CALL(proc, eval_impl(_, _, _, _))
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>(
+            std::move(first_output), evaluation_scope::context()))))
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>(
+            std::move(second_output), evaluation_scope::context()))));
 
     processor_cache cache;
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, {}, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
-    auto output_map = collector.get_available_attributes_and_reset();
-    EXPECT_EQ(ddwaf_object_size(&output_map), 2);
+    auto attributes = collector.get_available_attributes_and_reset();
+    EXPECT_EQ(attributes.size(), 2);
     {
-        const auto *obtained = ddwaf_object_get_index(&output_map, 0);
-        EXPECT_STREQ(obtained->parameterName, "output_address.first");
-        EXPECT_STREQ(obtained->stringValue, "first_output_string");
+        const auto [obtained_key, obtained_value] = object_view{attributes}.at(0);
+        EXPECT_STRV(obtained_key.as<std::string_view>(), "output_address.first");
+        EXPECT_STRV(obtained_value.as<std::string_view>(), "first_output_string");
     }
 
     {
-        const auto *obtained = ddwaf_object_get_index(&output_map, 1);
-        EXPECT_STREQ(obtained->parameterName, "output_address.second");
-        EXPECT_STREQ(obtained->stringValue, "second_output_string");
+        const auto [obtained_key, obtained_value] = object_view{attributes}.at(1);
+        EXPECT_STRV(obtained_key.as<std::string_view>(), "output_address.second");
+        EXPECT_STRV(obtained_value.as<std::string_view>(), "second_output_string");
     }
-
-    ddwaf_object_free(&output_map);
 }
 
 TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
 {
-    ddwaf_object output;
-    ddwaf_object_string(&output, "output_string");
+    auto *alloc = memory::get_default_resource();
 
-    ddwaf_object tmp;
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
+    owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
-    ddwaf_object_map_add(&input_map, "enabled?", ddwaf_object_bool(&tmp, true));
+    auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", true}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(input_map, evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -184,37 +164,33 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
     mock::processor proc{"id", builder.build(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _, _))
-        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
-            output, object_store::attribute::none}));
+    EXPECT_CALL(proc, eval_impl(_, _, _, _))
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context()})));
 
     processor_cache cache;
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, {}, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
-    auto output_map = collector.get_available_attributes_and_reset();
-    EXPECT_EQ(ddwaf_object_size(&output_map), 1);
-    const auto *obtained = ddwaf_object_get_index(&output_map, 0);
-    EXPECT_STREQ(obtained->parameterName, "output_address");
-    EXPECT_STREQ(obtained->stringValue, "output_string");
-
-    ddwaf_object_free(&output_map);
+    auto attributes = collector.get_available_attributes_and_reset();
+    EXPECT_EQ(attributes.size(), 1);
+    const auto [obtained_key, obtained_value] = object_view{attributes}.at(0);
+    EXPECT_STRV(obtained_key.as<std::string_view>(), "output_address");
+    EXPECT_STRV(obtained_value.as<std::string_view>(), "output_string");
 }
 
 TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
 {
-    ddwaf_object output;
-    ddwaf_object_string(&output, "output_string");
+    auto *alloc = memory::get_default_resource();
 
-    ddwaf_object tmp;
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "enabled?", ddwaf_object_bool(&tmp, true));
+    owned_object output = owned_object::make_string("output_string");
+
+    auto input_map = object_builder::map({{"enabled?", true}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -233,59 +209,52 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     mock::processor proc{"id", builder.build(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _, _))
-        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
-            output, object_store::attribute::none}));
+    EXPECT_CALL(proc, eval_impl(_, _, _, _))
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context()})));
 
     processor_cache cache;
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, {}, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
-    auto output_map = collector.get_available_attributes_and_reset();
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
+    auto attributes = collector.get_available_attributes_and_reset();
+    EXPECT_EQ(attributes.size(), 0);
 
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
+    input_map = object_builder::map({
+        {"input_address", "input_string"},
+    });
 
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
+    store.insert(std::move(input_map), evaluation_scope::context());
 
-    store.insert(input_map);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
+    attributes = collector.get_available_attributes_and_reset();
+    EXPECT_EQ(attributes.size(), 1);
 
-    proc.eval(store, collector, cache, {}, deadline);
-
-    output_map = collector.get_available_attributes_and_reset();
-    EXPECT_EQ(ddwaf_object_size(&output_map), 1);
-
-    const auto *obtained = ddwaf_object_get_index(&output_map, 0);
-    EXPECT_STREQ(obtained->parameterName, "output_address");
-    EXPECT_STREQ(obtained->stringValue, "output_string");
-
-    ddwaf_object_free(&output_map);
+    const auto [obtained_key, obtained_value] = object_view{attributes}.at(0);
+    EXPECT_STRV(obtained_key.as<std::string_view>(), "output_address");
+    EXPECT_STRV(obtained_value.as<std::string_view>(), "output_string");
 }
 
 TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
 {
-    ddwaf_object output;
-    ddwaf_object_string(&output, "output_string");
+    auto *alloc = memory::get_default_resource();
 
-    ddwaf_object tmp;
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
+    owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
-    ddwaf_object_map_add(&input_map, "enabled?", ddwaf_object_bool(&tmp, false));
+    auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", false}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
-        {{{{{get_target_index("input_address"), "input_address", {}}}}},
-            {get_target_index("output_address"), "output_address", {}}}};
+        {.inputs = {{{{.index = get_target_index("input_address"),
+             .name = "input_address",
+             .key_path = {}}}}},
+            .output = {.index = get_target_index("output_address"),
+                .name = "output_address",
+                .key_path = {}}}};
 
     test::expression_builder builder(1);
     builder.start_condition();
@@ -300,29 +269,24 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, {}, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
-    auto output_map = collector.get_available_attributes_and_reset();
-    EXPECT_EQ(ddwaf_object_size(&output_map), 0);
-
-    ddwaf_object_free(&output_map);
-    ddwaf_object_free(&output);
+    auto attributes = collector.get_available_attributes_and_reset();
+    EXPECT_EQ(attributes.size(), 0);
 }
 
 TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
 {
-    ddwaf_object output;
-    ddwaf_object_string(&output, "output_string");
+    auto *alloc = memory::get_default_resource();
 
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
+    owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
+    auto input_map = object_builder::map({
+        {"input_address", "input_string"},
+    });
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -335,44 +299,40 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _, _))
-        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
-            output, object_store::attribute::none}));
+    EXPECT_CALL(proc, eval_impl(_, _, _, _))
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context()})));
 
     processor_cache cache;
     timer deadline{2s};
 
+    owned_object attributes;
+
     {
-        auto *obtained = store.get_target(get_target_index("output_address")).first;
-        EXPECT_EQ(obtained, nullptr);
+        auto obtained = store.get_target("output_address").first;
+        EXPECT_FALSE(obtained.has_value());
     }
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, {}, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address")).first;
-        EXPECT_NE(obtained, nullptr);
-        EXPECT_STREQ(obtained->stringValue, "output_string");
+        auto obtained = store.get_target("output_address").first;
+        EXPECT_TRUE(obtained.has_value());
+        EXPECT_STRV(obtained.as<std::string_view>(), "output_string");
     }
 }
 
 TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
 {
-    ddwaf_object output;
-    ddwaf_object_string(&output, "output_string");
+    auto *alloc = memory::get_default_resource();
 
-    ddwaf_object tmp;
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
+    owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
-    ddwaf_object_map_add(&input_map, "enabled?", ddwaf_object_bool(&tmp, true));
+    auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", true}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -391,41 +351,37 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
     mock::processor proc{"id", builder.build(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _, _))
-        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
-            output, object_store::attribute::none}));
+    EXPECT_CALL(proc, eval_impl(_, _, _, _))
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context()})));
     processor_cache cache;
 
     timer deadline{2s};
 
-    EXPECT_EQ(store.get_target(get_target_index("output_address")).first, nullptr);
+    owned_object attributes;
+
+    EXPECT_FALSE(store.get_target("output_address").first.has_value());
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, {}, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address")).first;
-        EXPECT_NE(obtained, nullptr);
-        EXPECT_STREQ(obtained->stringValue, "output_string");
+        auto obtained = store.get_target("output_address").first;
+        EXPECT_TRUE(obtained.has_value());
+        EXPECT_STRV(obtained.as<std::string_view>(), "output_string");
     }
 }
 
 TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
 {
-    ddwaf_object output;
-    ddwaf_object_string(&output, "output_string");
+    auto *alloc = memory::get_default_resource();
 
-    ddwaf_object tmp;
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
+    owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
-    ddwaf_object_map_add(&input_map, "enabled?", ddwaf_object_bool(&tmp, false));
+    auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", false}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -447,35 +403,27 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
     processor_cache cache;
     timer deadline{2s};
 
-    EXPECT_EQ(store.get_target(get_target_index("output_address")).first, nullptr);
+    owned_object attributes;
 
+    EXPECT_FALSE(store.get_target("output_address").first.has_value());
     attribute_collector collector;
-    proc.eval(store, collector, cache, {}, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
-    EXPECT_EQ(store.get_target(get_target_index("output_address")).first, nullptr);
-
-    ddwaf_object_free(&output);
+    EXPECT_FALSE(store.get_target("output_address").first.has_value());
 }
 
 TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
 {
-    ddwaf_object first_output;
-    ddwaf_object second_output;
-    ddwaf_object_string(&first_output, "first_output_string");
-    ddwaf_object_string(&second_output, "second_output_string");
+    auto *alloc = memory::get_default_resource();
 
-    ddwaf_object first_input;
-    ddwaf_object second_input;
-    ddwaf_object_string(&first_input, "first_input_string");
-    ddwaf_object_string(&second_input, "second_input_string");
+    owned_object first_output = owned_object::make_string("first_output_string");
+    owned_object second_output = owned_object::make_string("second_output_string");
 
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address.first", &first_input);
-    ddwaf_object_map_add(&input_map, "input_address.second", &second_input);
+    auto input_map = object_builder::map({{"input_address.first", "first_input_string"},
+        {"input_address.second", "second_input_string"}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address.first"),
@@ -494,48 +442,47 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _, _))
-        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>(
-            first_output, object_store::attribute::none)))
-        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>(
-            second_output, object_store::attribute::none)));
+    EXPECT_CALL(proc, eval_impl(_, _, _, _))
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>(
+            std::move(first_output), evaluation_scope::context()))))
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>(
+            std::move(second_output), evaluation_scope::context()))));
 
     processor_cache cache;
     timer deadline{2s};
+    owned_object attributes;
 
-    EXPECT_EQ(store.get_target(get_target_index("output_address.first")).first, nullptr);
-    EXPECT_EQ(store.get_target(get_target_index("output_address.second")).first, nullptr);
+    EXPECT_FALSE(store.get_target("output_address.first").first.has_value());
+    EXPECT_FALSE(store.get_target("output_address.second").first.has_value());
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, {}, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address.first")).first;
-        EXPECT_NE(obtained, nullptr);
-        EXPECT_STREQ(obtained->stringValue, "first_output_string");
+        auto obtained = store.get_target("output_address.first").first;
+        EXPECT_TRUE(obtained.has_value());
+        EXPECT_STRV(obtained.as<std::string_view>(), "first_output_string");
     }
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address.second")).first;
-        EXPECT_NE(obtained, nullptr);
-        EXPECT_STREQ(obtained->stringValue, "second_output_string");
+        auto obtained = store.get_target("output_address.second").first;
+        EXPECT_TRUE(obtained.has_value());
+        EXPECT_STRV(obtained.as<std::string_view>(), "second_output_string");
     }
 }
 
 TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
 {
-    ddwaf_object output;
-    ddwaf_object_string(&output, "output_string");
+    auto *alloc = memory::get_default_resource();
 
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
+    owned_object output = owned_object::make_string("output_string");
 
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
+    auto input_map = object_builder::map({
+        {"input_address", "input_string"},
+    });
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -548,49 +495,45 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), true, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _, _))
-        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
-            output, object_store::attribute::none}));
+    EXPECT_CALL(proc, eval_impl(_, _, _, _))
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context()})));
 
     processor_cache cache;
     timer deadline{2s};
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address")).first;
-        EXPECT_EQ(obtained, nullptr);
+        auto obtained = store.get_target("output_address").first;
+        EXPECT_FALSE(obtained.has_value());
     }
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, {}, deadline);
-    auto output_map = collector.get_available_attributes_and_reset();
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 
     {
-        auto *obtained = store.get_target(get_target_index("output_address")).first;
-        EXPECT_NE(obtained, nullptr);
-        EXPECT_STREQ(obtained->stringValue, "output_string");
+        auto obtained = store.get_target("output_address").first;
+        EXPECT_TRUE(obtained.has_value());
+        EXPECT_STRV(obtained.as<std::string_view>(), "output_string");
     }
 
     {
-        EXPECT_EQ(ddwaf_object_size(&output_map), 1);
-        const auto *obtained = ddwaf_object_get_index(&output_map, 0);
-        EXPECT_STREQ(obtained->parameterName, "output_address");
-        EXPECT_STREQ(obtained->stringValue, "output_string");
+        auto attributes = collector.get_available_attributes_and_reset();
+        EXPECT_EQ(attributes.size(), 1);
+        const auto [obtained_key, obtained_value] = object_view{attributes}.at(0);
+        EXPECT_STRV(obtained_key.as<std::string_view>(), "output_address");
+        EXPECT_STRV(obtained_value.as<std::string_view>(), "output_string");
     }
-    ddwaf_object_free(&output_map);
 }
 
 TEST(TestProcessor, OutputAlreadyAvailableInStore)
 {
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
+    auto *alloc = memory::get_default_resource();
 
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
-    ddwaf_object_map_add(&input_map, "output_address", ddwaf_object_null(&input));
+    auto input_map = object_builder::map(
+        {{"input_address", "input_string"}, {"output_address", owned_object::make_null()}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -603,26 +546,25 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _, _)).Times(0);
+    EXPECT_CALL(proc, eval_impl(_, _, _, _)).Times(0);
 
     processor_cache cache;
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, {}, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 }
 
 TEST(TestProcessor, OutputAlreadyGenerated)
 {
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
+    auto *alloc = memory::get_default_resource();
 
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
+    auto input_map = object_builder::map({
+        {"input_address", "input_string"},
+    });
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -635,28 +577,25 @@ TEST(TestProcessor, OutputAlreadyGenerated)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _, _)).Times(1);
+    EXPECT_CALL(proc, eval_impl(_, _, _, _)).Times(1);
 
     processor_cache cache;
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, {}, deadline);
-    proc.eval(store, collector, cache, {}, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
 }
 
 TEST(TestProcessor, EvalAlreadyAvailableInStore)
 {
-    ddwaf_object input;
-    ddwaf_object_string(&input, "input_string");
+    auto *alloc = memory::get_default_resource();
 
-    ddwaf_object input_map;
-    ddwaf_object_map(&input_map);
-    ddwaf_object_map_add(&input_map, "input_address", &input);
-    ddwaf_object_map_add(&input_map, "output_address", ddwaf_object_null(&input));
+    auto input_map = object_builder::map(
+        {{"input_address", "input_string"}, {"output_address", owned_object::make_null()}});
 
     object_store store;
-    store.insert(input_map);
+    store.insert(std::move(input_map), evaluation_scope::context());
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),
@@ -669,17 +608,68 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _, _)).Times(0);
+    EXPECT_CALL(proc, eval_impl(_, _, _, _)).Times(0);
+
+    processor_cache cache;
+    timer deadline{2s};
+    owned_object attributes;
+
+    attribute_collector collector;
+    proc.eval(store, collector, cache, alloc, {}, deadline);
+}
+
+TEST(TestProcessor, OutputEvalWithoutattributesMap)
+{
+    auto *alloc = memory::get_default_resource();
+
+    owned_object output = owned_object::make_string("output_string");
+
+    auto input_map = object_builder::map({
+        {"input_address", "input_string"},
+    });
+
+    object_store store;
+    store.insert(std::move(input_map), evaluation_scope::context());
+
+    std::vector<processor_mapping> mappings{
+        {.inputs = {{{{.index = get_target_index("input_address"),
+             .name = "input_address",
+             .key_path = {}}}}},
+            .output = {.index = get_target_index("output_address"),
+                .name = "output_address",
+                .key_path = {}}}};
+
+    mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), true, true};
+    EXPECT_STREQ(proc.get_id().c_str(), "id");
+
+    EXPECT_CALL(proc, eval_impl(_, _, _, _))
+        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
+            std::move(output), evaluation_scope::context()})));
 
     processor_cache cache;
     timer deadline{2s};
 
+    owned_object attributes;
+
+    {
+        auto obtained = store.get_target("output_address").first;
+        EXPECT_FALSE(obtained.has_value());
+    }
+
     attribute_collector collector;
-    proc.eval(store, collector, cache, {}, deadline);
+    proc.eval(store, collector, cache, alloc, {}, deadline);
+
+    {
+        auto obtained = store.get_target("output_address").first;
+        EXPECT_TRUE(obtained.has_value());
+        EXPECT_STRV(obtained.as<std::string_view>(), "output_string");
+    }
 }
 
 TEST(TestProcessor, Timeout)
 {
+    auto *alloc = memory::get_default_resource();
+
     object_store store;
 
     std::vector<processor_mapping> mappings{
@@ -693,13 +683,14 @@ TEST(TestProcessor, Timeout)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _, _)).Times(0);
+    EXPECT_CALL(proc, eval_impl(_, _, _, _)).Times(0);
 
     processor_cache cache;
     timer deadline{0s};
+    owned_object attributes;
 
     attribute_collector collector;
-    EXPECT_THROW(proc.eval(store, collector, cache, {}, deadline), ddwaf::timeout_exception);
+    EXPECT_THROW(proc.eval(store, collector, cache, alloc, {}, deadline), ddwaf::timeout_exception);
 }
 
 } // namespace
