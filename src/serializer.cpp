@@ -203,7 +203,7 @@ generated_action serialize_event_actions(std::string_view action_override,
         .required_block_id = has_block_id};
 }
 
-void serialize_event(rule_event &event, const match_obfuscator &obfuscator,
+void serialize_event(rule_event &event, const match_obfuscator *obfuscator,
     std::string_view action_override, const std::vector<std::string> &rule_actions,
     action_tracker &actions, borrowed_object &event_array)
 {
@@ -228,7 +228,9 @@ void serialize_event(rule_event &event, const match_obfuscator &obfuscator,
     auto match_array =
         root_map.emplace("rule_matches", owned_object::make_array(event.matches.size(), alloc));
     for (auto &match : event.matches) {
-        obfuscator.obfuscate_match(match);
+        if (obfuscator != nullptr) {
+            obfuscator->obfuscate_match(match);
+        }
         match_array.emplace_back(serialize_match(match, alloc));
     }
 

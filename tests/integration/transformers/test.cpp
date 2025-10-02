@@ -17,7 +17,7 @@ TEST(TestTransformers, Base64Decode)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("base64_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -50,7 +50,7 @@ TEST(TestTransformers, Base64DecodeAlias)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("base64_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -83,7 +83,7 @@ TEST(TestTransformers, Base64UrlDecode)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("base64url_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -116,7 +116,7 @@ TEST(TestTransformers, Base64Encode)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("base64_encode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -150,7 +150,7 @@ TEST(TestTransformers, Base64EncodeAlias)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("base64_encode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -184,7 +184,7 @@ TEST(TestTransformers, CompressWhitespace)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("compress_whitespace.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -218,7 +218,7 @@ TEST(TestTransformers, CompressWhitespaceAlias)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("compress_whitespace.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -252,7 +252,7 @@ TEST(TestTransformers, CssDecode)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("css_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -287,7 +287,7 @@ TEST(TestTransformers, CssDecodeAlias)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("css_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -322,7 +322,7 @@ TEST(TestTransformers, HtmlEntityDecode)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("html_entity_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -357,7 +357,7 @@ TEST(TestTransformers, HtmlEntityDecodeAlias)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("html_entity_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -392,7 +392,7 @@ TEST(TestTransformers, JsDecode)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("js_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -427,7 +427,7 @@ TEST(TestTransformers, JsDecodeAlias)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("js_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -462,7 +462,7 @@ TEST(TestTransformers, Lowercase)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("lowercase.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -496,7 +496,7 @@ TEST(TestTransformers, NormalizePath)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("normalize_path.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -530,7 +530,7 @@ TEST(TestTransformers, NormalizePathAlias)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("normalize_path.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -564,7 +564,7 @@ TEST(TestTransformers, NormalizePathWin)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("normalize_path_win.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -598,7 +598,7 @@ TEST(TestTransformers, NormalizePathAliasWin)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("normalize_path_win.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -632,7 +632,7 @@ TEST(TestTransformers, RemoveComments)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("remove_comments.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -666,7 +666,7 @@ TEST(TestTransformers, RemoveCommentsAlias)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("remove_comments.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -700,7 +700,7 @@ TEST(TestTransformers, RemoveNulls)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("remove_nulls.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -734,7 +734,7 @@ TEST(TestTransformers, RemoveNullsAlias)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("remove_nulls.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -768,7 +768,7 @@ TEST(TestTransformers, ShellUnescape)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("shell_unescape.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -802,7 +802,7 @@ TEST(TestTransformers, ShellUnescapeAlias)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("shell_unescape.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -836,7 +836,7 @@ TEST(TestTransformers, UnicodeNormalize)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("unicode_normalize.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -870,7 +870,7 @@ TEST(TestTransformers, UrlBasename)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("url_basename.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -904,7 +904,7 @@ TEST(TestTransformers, UrlBasenameAlias)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("url_basename.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -938,7 +938,7 @@ TEST(TestTransformers, UrlDecode)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("url_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -972,7 +972,7 @@ TEST(TestTransformers, UrlDecodeAlias)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("url_decode.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -1006,7 +1006,7 @@ TEST(TestTransformers, UrlDecodeIis)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("url_decode_iis.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -1040,7 +1040,7 @@ TEST(TestTransformers, UrlDecodeIisAlias)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("url_decode_iis.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -1074,7 +1074,7 @@ TEST(TestTransformers, UrlPath)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("url_path.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -1108,7 +1108,7 @@ TEST(TestTransformers, UrlPathAlias)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("url_path.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -1142,7 +1142,7 @@ TEST(TestTransformers, UrlQuerystring)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("url_querystring.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -1176,7 +1176,7 @@ TEST(TestTransformers, UrlQuerystringAlias)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("url_querystring.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -1210,7 +1210,7 @@ TEST(TestTransformers, Mixed)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("mixed.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 

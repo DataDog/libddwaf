@@ -50,11 +50,6 @@ auto parse_args(int argc, char *argv[])
     return args;
 }
 
-const char *key_regex {
-        R"((?i)pass|pw(?:or)?d|secret|(?:api|private|public|access)[_-]?key|token|consumer[_-]?(?:id|key|secret)|sign(?:ed|ature)|bearer|authorization|jsessionid|phpsessid|asp\.net[_-]sessionid|sid|jwt)"};
-
-const char *value_regex{R"((?i)(?:p(?:ass)?w(?:or)?d|pass(?:[_-]?phrase)?|secret(?:[_-]?key)?|(?:(?:api|private|public|access)[_-]?)key(?:[_-]?id)?|(?:(?:auth|access|id|refresh)[_-]?)?token|consumer[_-]?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?|jsessionid|phpsessid|asp\.net(?:[_-]|-)sessionid|sid|jwt)(?:\s*=([^;&]+)|"\s*:\s*("[^"]+"|\d+))|bearer\s+([a-z0-9\._\-]+)|token\s*:\s*([a-z0-9]{13})|gh[opsu]_([0-9a-zA-Z]{36})|ey[I-L][\w=-]+\.(ey[I-L][\w=-]+(?:\.[\w.+\/=-]+)?)|[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}([^\-]+)[\-]{5}END[a-z\s]+PRIVATE\sKEY|ssh-rsa\s*([a-z0-9\/\.+]{100,}))"};
-
 } // namespace
 
 int main(int argc, char *argv[])
@@ -79,8 +74,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    const ddwaf_config config{{.key_regex=key_regex, .value_regex=value_regex}};
-    ddwaf_builder builder = ddwaf_builder_init(&config);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     std::size_t index = 0;
     for (const auto & config : rulesets) {

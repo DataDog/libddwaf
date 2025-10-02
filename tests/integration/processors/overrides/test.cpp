@@ -16,7 +16,7 @@ constexpr std::string_view base_dir = "integration/processors/overrides";
 TEST(TestProcessorOverridesIntegration, AddScannersById)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    auto *builder = ddwaf_builder_init(nullptr);
+    auto *builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     auto processors = read_json_file("processors.json", base_dir);
@@ -102,7 +102,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersById)
 TEST(TestProcessorOverridesIntegration, AddScannersByTags)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    auto *builder = ddwaf_builder_init(nullptr);
+    auto *builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     auto processors = read_json_file("processors.json", base_dir);
@@ -188,7 +188,7 @@ TEST(TestProcessorOverridesIntegration, AddScannersByTags)
 TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    auto *builder = ddwaf_builder_init(nullptr);
+    auto *builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     auto processors = read_json_file("processors.json", base_dir);
@@ -312,7 +312,7 @@ TEST(TestProcessorOverridesIntegration, AddScannerToPopulatedProcessor)
 TEST(TestProcessorOverridesIntegration, DisableDefaultScanners)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    auto *builder = ddwaf_builder_init(nullptr);
+    auto *builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     auto processors = read_json_file("processors.json", base_dir);
@@ -398,7 +398,7 @@ TEST(TestProcessorOverridesIntegration, DisableDefaultScanners)
 TEST(TestProcessorOverridesIntegration, RemoveScannersAfterOverride)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    auto *builder = ddwaf_builder_init(nullptr);
+    auto *builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     auto processors = read_json_file("processors.json", base_dir);
@@ -517,7 +517,7 @@ TEST(TestProcessorOverridesIntegration, RemoveScannersAfterOverride)
 TEST(TestProcessorOverridesIntegration, RemoveOverride)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    auto *builder = ddwaf_builder_init(nullptr);
+    auto *builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     auto processors = read_json_file("processors.json", base_dir);
@@ -636,7 +636,7 @@ TEST(TestProcessorOverridesIntegration, RemoveOverride)
 TEST(TestProcessorOverridesIntegration, OverrideMultipleProcessors)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    auto *builder = ddwaf_builder_init(nullptr);
+    auto *builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     auto processors = read_json_file("processors.json", base_dir);
@@ -750,7 +750,7 @@ TEST(TestProcessorOverridesIntegration, ScannersPrecedenceIdVsTagsOnEmptyProcess
 
     // Scenario A: include by tags, exclude by ID (exclude wins)
     {
-        auto *builder = ddwaf_builder_init(nullptr);
+        auto *builder = ddwaf_builder_init();
         ASSERT_NE(builder, nullptr);
 
         auto processors = read_json_file("processors.json", base_dir);
@@ -799,7 +799,7 @@ TEST(TestProcessorOverridesIntegration, ScannersPrecedenceIdVsTagsOnEmptyProcess
 
     // Scenario B: include by ID, exclude by tags (include ID wins)
     {
-        auto *builder = ddwaf_builder_init(nullptr);
+        auto *builder = ddwaf_builder_init();
         ASSERT_NE(builder, nullptr);
 
         auto processors = read_json_file("processors.json", base_dir);
@@ -849,7 +849,7 @@ TEST(TestProcessorOverridesIntegration, ScannersPrecedenceIdVsTagsOnEmptyProcess
 
     // Scenario C: include by tags and exclude by tags (exclude tags wins)
     {
-        auto *builder = ddwaf_builder_init(nullptr);
+        auto *builder = ddwaf_builder_init();
         ASSERT_NE(builder, nullptr);
 
         auto processors = read_json_file("processors.json", base_dir);
@@ -898,7 +898,7 @@ TEST(TestProcessorOverridesIntegration, ScannersPrecedenceIdVsTagsOnEmptyProcess
 
     // Scenario D: include by ID and exclude by ID (exclude ID wins)
     {
-        auto *builder = ddwaf_builder_init(nullptr);
+        auto *builder = ddwaf_builder_init();
         ASSERT_NE(builder, nullptr);
 
         auto processors = read_json_file("processors.json", base_dir);
@@ -951,7 +951,7 @@ TEST(TestProcessorOverridesIntegration, ScannersPrecedenceOnDefaultProcessor)
     auto *alloc = ddwaf_get_default_allocator();
 
     // Start from processor with default tag-based scanners (headers -> token/credential)
-    auto *builder = ddwaf_builder_init(nullptr);
+    auto *builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     auto processors = read_json_file("processors.json", base_dir);
@@ -1006,7 +1006,7 @@ TEST(TestProcessorOverridesIntegration, IncludeMultipleScannersById)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    auto *builder = ddwaf_builder_init(nullptr);
+    auto *builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     auto processors = read_json_file("processors.json", base_dir);
@@ -1063,7 +1063,7 @@ TEST(TestProcessorOverridesIntegration, IncludeMultipleScannersByTags)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    auto *builder = ddwaf_builder_init(nullptr);
+    auto *builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     auto processors = read_json_file("processors.json", base_dir);
@@ -1120,7 +1120,7 @@ TEST(TestProcessorOverridesIntegration, IncludeThenExcludeMultipleScannersByIdOn
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    auto *builder = ddwaf_builder_init(nullptr);
+    auto *builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     auto processors = read_json_file("processors.json", base_dir);
@@ -1226,7 +1226,7 @@ TEST(TestProcessorOverridesIntegration, IncludeMultipleByTagsExcludeOneById)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    auto *builder = ddwaf_builder_init(nullptr);
+    auto *builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     auto processors = read_json_file("processors.json", base_dir);

@@ -244,6 +244,10 @@ std::shared_ptr<ruleset> ruleset_builder::build(
         exclusion_matchers_ = std::make_shared<matcher_mapper>(std::move(matchers));
     }
 
+    if (contains(current_changes, change_set::obfuscator)) {
+        obfuscator_ = global_config.obfuscator;
+    }
+
     auto rs = std::make_shared<ruleset>();
     rs->insert_rules(final_base_rules_, final_user_rules_);
     rs->insert_filters(rule_filters_);

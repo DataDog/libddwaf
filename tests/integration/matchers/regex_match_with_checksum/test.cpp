@@ -22,7 +22,7 @@ TEST(TestRegexMatchWithChecksumIntegration, LuhnChecksumMatch)
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex_with_checksum, parameters: {inputs: [{address: arg1}], regex: '\b4\d{3}(?:(?:,\d{4}){3}|(?:\s\d{4}){3}|(?:\.\d{4}){3}|(?:-\d{4}){3})\b', options: {min_length: 16}, checksum: luhn}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -88,7 +88,7 @@ TEST(TestRegexMatchWithChecksumIntegration, MinLengthBeyondInput)
         R"({version: '2.1', rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex_with_checksum, parameters: {inputs: [{address: arg1}], regex: '\b4\d{3}(?:(?:,\d{4}){3}|(?:\s\d{4}){3}|(?:\.\d{4}){3}|(?:-\d{4}){3})\b', options: {min_length: 20}, checksum: luhn}}]}]})");
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -122,7 +122,7 @@ TEST(TestRegexMatchWithChecksumIntegration, InvalidChecksum)
 
     ddwaf_object diagnostics;
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -162,7 +162,7 @@ TEST(TestRegexMatchWithChecksumIntegration, InvalidMinLength)
 
     ddwaf_object diagnostics;
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 

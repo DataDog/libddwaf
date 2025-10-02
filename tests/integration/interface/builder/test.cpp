@@ -21,7 +21,7 @@ TEST(TestEngineBuilderFunctional, InvalidConfigType)
     auto config = yaml_to_object<ddwaf_object>("[]");
     ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     ASSERT_FALSE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
@@ -40,7 +40,7 @@ TEST(TestEngineBuilderFunctional, InvalidSectionType)
     auto config = yaml_to_object<ddwaf_object>("{rules: {}}");
     ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     ASSERT_FALSE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
@@ -59,7 +59,7 @@ TEST(TestEngineBuilderFunctional, EmptyConfig)
     auto config = yaml_to_object<ddwaf_object>("{}");
     ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     ASSERT_TRUE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
@@ -78,7 +78,7 @@ TEST(TestEngineBuilderFunctional, ConfigWithAllSkippedItems)
     auto config = read_file<ddwaf_object>("all_skipped_items.yaml", base_dir);
     ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     ASSERT_TRUE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
@@ -97,7 +97,7 @@ TEST(TestEngineBuilderFunctional, ConfigWithNoItemsButMultipleSections)
     auto config = read_file<ddwaf_object>("multiple_sections_empty_config.yaml", base_dir);
     ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     ASSERT_TRUE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
@@ -117,7 +117,7 @@ TEST(TestEngineBuilderFunctional, AllLoadableItemsFailedSingleSection)
         read_file<ddwaf_object>("multiple_sections_one_with_invalid_items.yaml", base_dir);
     ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     ASSERT_FALSE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
@@ -136,7 +136,7 @@ TEST(TestEngineBuilderFunctional, AllLoadableItemsFailedMultipleSection)
     auto config = read_file<ddwaf_object>("multiple_empty_sections_invalid_items.yaml", base_dir);
     ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     ASSERT_FALSE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
@@ -156,7 +156,7 @@ TEST(TestEngineBuilderFunctional, OneLoadedItemEverythingElseFailed)
         read_file<ddwaf_object>("multiple_empty_sections_invalid_and_valid_items.yaml", base_dir);
     ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     ASSERT_TRUE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
@@ -176,7 +176,7 @@ TEST(TestEngineBuilderFunctional, InvalidSectionAndLoadableItems)
     auto config = read_file<ddwaf_object>("invalid_section_and_loadable_items.yaml", base_dir);
     ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     ASSERT_TRUE(ddwaf_builder_add_or_update_config(builder, LSTRARG("default"), &config, nullptr));
@@ -192,7 +192,7 @@ TEST(TestEngineBuilderFunctional, InvalidSectionAndLoadableItems)
 TEST(TestEngineBuilderFunctional, BaseRules)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     // Add the first config
@@ -263,7 +263,7 @@ TEST(TestEngineBuilderFunctional, BaseRules)
 TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     // Add the first config
@@ -339,7 +339,7 @@ TEST(TestEngineBuilderFunctional, RemoveDuplicateBaseRules)
 TEST(TestEngineBuilderFunctional, CustomRules)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
     ASSERT_NE(builder, nullptr);
 
     // Add the first config

@@ -18,6 +18,11 @@
 #include "ddwaf.h"
 #include "log.hpp"
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
+// Convert numbers to strings
+#define STRL(value) value, sizeof(value) - 1
+// NOLINTEND(cppcoreguidelines-macro-usage)
+
 
 namespace YAML
 {

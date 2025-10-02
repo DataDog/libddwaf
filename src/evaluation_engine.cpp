@@ -53,7 +53,7 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
     // new targets in the next eval
     auto on_exit = defer([this]() { store_.clear_last_batch(); });
 
-    result_serializer serializer(*ruleset_->obfuscator, *ruleset_->actions, output_alloc_);
+    result_serializer serializer(ruleset_->obfuscator.get(), *ruleset_->actions, output_alloc_);
 
     // Generate result object once relevant checks have been made
     auto [result_object, output] = serializer.initialise_result_object();

@@ -19,7 +19,7 @@ TEST(TestRuleAttributesIntegration, SingleValueOutputNoEvent)
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -76,7 +76,7 @@ TEST(TestRuleAttributesIntegration, SingleValueOutputAndEvent)
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -136,7 +136,7 @@ TEST(TestRuleAttributesIntegration, SingleTargetOutputNoEvent)
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -193,7 +193,7 @@ TEST(TestRuleAttributesIntegration, MultipleValuesOutputNoEvent)
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -268,7 +268,7 @@ TEST(TestRuleAttributesIntegration, AttributesWithActions)
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -333,7 +333,7 @@ TEST(TestRuleAttributesIntegration, MultipleAttributesAndActions)
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -420,7 +420,7 @@ TEST(TestRuleAttributesIntegration, AttributesAndMonitorRuleFilter)
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -482,7 +482,7 @@ TEST(TestRuleAttributesIntegration, AttributesAndBlockingRuleFilter)
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -547,7 +547,7 @@ TEST(TestRuleAttributesIntegration, AttributesAndEphemeralMatches)
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -652,7 +652,7 @@ TEST(TestRuleAttributesIntegration, AttributesEventsAndSubcontextMatches)
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 

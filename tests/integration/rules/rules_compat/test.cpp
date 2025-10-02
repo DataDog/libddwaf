@@ -21,7 +21,7 @@ TEST(TestRulesCompatIntegration, VerifyBothBaseAndCompat)
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -92,7 +92,7 @@ TEST(TestRulesCompatIntegration, DuplicateRules)
 
     ddwaf_object diagnostics{};
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -184,7 +184,7 @@ TEST(TestRulesCompatIntegration, InvalidConfigType)
 {
     auto *alloc = ddwaf_get_default_allocator();
 
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules_compat: {}})");

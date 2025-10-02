@@ -19,8 +19,7 @@ namespace {
 TEST(TestEventSerializer, SerializeNothing)
 {
     ddwaf::action_mapper actions;
-    ddwaf::match_obfuscator obfuscator;
-    result_serializer serializer(obfuscator, actions);
+    result_serializer serializer(nullptr, actions);
 
     std::vector<rule_result> results;
     object_store store;
@@ -36,8 +35,7 @@ TEST(TestEventSerializer, SerializeNothing)
 
 TEST(TestEventSerializer, SerializeEmptyEvent)
 {
-    ddwaf::match_obfuscator obfuscator;
-    result_serializer serializer(obfuscator, action_mapper_builder().build());
+    result_serializer serializer(nullptr, action_mapper_builder().build());
 
     object_store store;
     attribute_collector collector;
@@ -73,8 +71,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     builder.set_action("monitor_request", "monitor_request", {});
     auto action_definitions = builder.build();
 
-    ddwaf::match_obfuscator obfuscator;
-    result_serializer serializer(obfuscator, action_definitions);
+    result_serializer serializer(nullptr, action_definitions);
 
     std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"}};
     std::vector<std::string> actions{"block", "monitor_request"};
@@ -130,8 +127,7 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     builder.set_action("monitor_request", "monitor_request", {});
     auto action_definitions = builder.build();
 
-    ddwaf::match_obfuscator obfuscator;
-    result_serializer serializer(obfuscator, action_definitions);
+    result_serializer serializer(nullptr, action_definitions);
 
     std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"}};
     std::vector<std::string> actions{"block", "monitor_request"};
@@ -236,8 +232,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     builder.set_action("unblock", "unknown", {});
     auto action_definitions = builder.build();
 
-    ddwaf::match_obfuscator obfuscator;
-    result_serializer serializer(obfuscator, action_definitions);
+    result_serializer serializer(nullptr, action_definitions);
 
     std::vector<rule_attribute> attributes;
 
@@ -367,8 +362,7 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     builder.set_action("monitor_request", "monitor_request", {});
     auto action_definitions = builder.build();
 
-    ddwaf::match_obfuscator obfuscator;
-    result_serializer serializer(obfuscator, action_definitions);
+    result_serializer serializer(nullptr, action_definitions);
 
     std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"}};
     std::vector<std::string> actions;
@@ -423,8 +417,7 @@ TEST(TestEventSerializer, SerializeAllTags)
     builder.set_action("unblock", "unknown", {});
     auto action_definitions = builder.build();
 
-    ddwaf::match_obfuscator obfuscator;
-    result_serializer serializer(obfuscator, action_definitions);
+    result_serializer serializer(nullptr, action_definitions);
 
     std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"},
         {"tag0", "value0"}, {"tag1", "value1"}, {"confidence", "none"}};
@@ -481,8 +474,7 @@ TEST(TestEventSerializer, NoMonitorActions)
 {
     auto action_definitions = action_mapper_builder().build();
 
-    ddwaf::match_obfuscator obfuscator;
-    result_serializer serializer(obfuscator, action_definitions);
+    result_serializer serializer(nullptr, action_definitions);
 
     std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"},
         {"tag0", "value0"}, {"tag1", "value1"}, {"confidence", "none"}};
@@ -540,8 +532,7 @@ TEST(TestEventSerializer, UndefinedActions)
 {
     auto action_definitions = action_mapper_builder().build();
 
-    ddwaf::match_obfuscator obfuscator;
-    result_serializer serializer(obfuscator, action_definitions);
+    result_serializer serializer(nullptr, action_definitions);
 
     std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"},
         {"tag0", "value0"}, {"tag1", "value1"}, {"confidence", "none"}};
@@ -599,8 +590,7 @@ TEST(TestEventSerializer, StackTraceAction)
 {
     auto action_definitions = action_mapper_builder().build();
 
-    ddwaf::match_obfuscator obfuscator;
-    result_serializer serializer(obfuscator, action_definitions);
+    result_serializer serializer(nullptr, action_definitions);
 
     std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"},
         {"tag0", "value0"}, {"tag1", "value1"}, {"confidence", "none"}};

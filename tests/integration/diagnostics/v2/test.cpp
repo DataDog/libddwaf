@@ -24,7 +24,7 @@ TEST(TestDiagnosticsV2Integration, InvalidConfigType)
 
     ddwaf_object diagnostics;
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -50,7 +50,7 @@ TEST(TestDiagnosticsV2Integration, UnsupportedSchema)
 
     ddwaf_object diagnostics;
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -76,7 +76,7 @@ TEST(TestDiagnosticsV2Integration, NoSchema)
 
     ddwaf_object diagnostics;
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -114,7 +114,7 @@ TEST(TestDiagnosticsV2Integration, BasicRule)
 
     ddwaf_object diagnostics;
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -146,7 +146,7 @@ TEST(TestDiagnosticsV2Integration, BasicRule)
 TEST(TestDiagnosticsV2Integration, BasicRuleWithUpdate)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [x]}], regex: .*}}, {operator: match_regex, parameters: {inputs: [{address: arg2, key_path: [y]}], regex: .*}}]}]})");
@@ -213,7 +213,7 @@ TEST(TestDiagnosticsV2Integration, NullRuleset)
 {
     ddwaf_object diagnostics;
     ddwaf_object_set_invalid(&diagnostics);
-    ddwaf_handle handle = ddwaf_init(nullptr, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(nullptr, &diagnostics);
     ASSERT_EQ(handle, nullptr);
 
     EXPECT_EQ(diagnostics.type, DDWAF_OBJ_INVALID);
@@ -227,7 +227,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRule)
 
     ddwaf_object diagnostics;
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -266,7 +266,7 @@ TEST(TestDiagnosticsV2Integration, MultipleSameInvalidRules)
 
     ddwaf_object diagnostics;
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -307,7 +307,7 @@ TEST(TestDiagnosticsV2Integration, MultipleDiffInvalidRules)
 
     ddwaf_object diagnostics;
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -360,7 +360,7 @@ TEST(TestDiagnosticsV2Integration, MultipleMixInvalidRules)
 
     ddwaf_object diagnostics;
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -427,7 +427,7 @@ TEST(TestDiagnosticsV2Integration, InvalidDuplicate)
 
     ddwaf_object diagnostics;
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -469,7 +469,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleset)
 
     ddwaf_object diagnostics;
 
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_EQ(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -511,10 +511,8 @@ TEST(TestDiagnosticsV2Integration, MultipleRules)
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, nullptr}};
-
     ddwaf_object diagnostics;
-    ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -558,10 +556,8 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
     auto rule = read_file<ddwaf_object>("rules_min_version.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, nullptr}};
-
     ddwaf_object diagnostics;
-    ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -603,10 +599,8 @@ TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
     auto rule = read_file<ddwaf_object>("rules_max_version.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, nullptr}};
-
     ddwaf_object diagnostics;
-    ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -648,10 +642,8 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
     auto rule = read_file<ddwaf_object>("rules_min_max_version.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, nullptr}};
-
     ddwaf_object diagnostics;
-    ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -694,10 +686,8 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
     auto rule = read_file<ddwaf_object>("rules_with_errors.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, nullptr}};
-
     ddwaf_object diagnostics;
-    ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -780,10 +770,8 @@ TEST(TestDiagnosticsV2Integration, CustomRules)
     auto rule = read_file<ddwaf_object>("custom_rules.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, nullptr}};
-
     ddwaf_object diagnostics;
-    ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -827,10 +815,8 @@ TEST(TestDiagnosticsV2Integration, InputFilter)
     auto rule = read_file<ddwaf_object>("input_filter.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, nullptr}};
-
     ddwaf_object diagnostics;
-    ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -868,10 +854,8 @@ TEST(TestDiagnosticsV2Integration, RuleData)
     auto rule = read_file<ddwaf_object>("rule_data.yaml", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, nullptr}};
-
     ddwaf_object diagnostics;
-    ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -910,10 +894,8 @@ TEST(TestDiagnosticsV2Integration, Processor)
     auto rule = read_json_file("processor.json", base_dir);
     ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
 
-    ddwaf_config config{{nullptr, nullptr}};
-
     ddwaf_object diagnostics;
-    ddwaf_handle handle = ddwaf_init(&rule, &config, &diagnostics);
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -948,7 +930,7 @@ TEST(TestDiagnosticsV2Integration, Processor)
 TEST(TestDiagnosticsV2Integration, InvalidRulesContainer)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules: {}})");
@@ -981,7 +963,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRulesContainer)
 TEST(TestDiagnosticsV2Integration, InvalidCustomRulesContainer)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, custom_rules: {}})");
@@ -1014,7 +996,7 @@ TEST(TestDiagnosticsV2Integration, InvalidCustomRulesContainer)
 TEST(TestDiagnosticsV2Integration, InvalidExclusionsContainer)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, exclusions: {}})");
@@ -1047,7 +1029,7 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionsContainer)
 TEST(TestDiagnosticsV2Integration, InvalidOverridesContainer)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules_override: {}})");
@@ -1080,7 +1062,7 @@ TEST(TestDiagnosticsV2Integration, InvalidOverridesContainer)
 TEST(TestDiagnosticsV2Integration, InvalidScannersContainer)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, scanners: {}})");
@@ -1113,7 +1095,7 @@ TEST(TestDiagnosticsV2Integration, InvalidScannersContainer)
 TEST(TestDiagnosticsV2Integration, InvalidProcessorsContainer)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, processors: {}})");
@@ -1146,7 +1128,7 @@ TEST(TestDiagnosticsV2Integration, InvalidProcessorsContainer)
 TEST(TestDiagnosticsV2Integration, InvalidActionsContainer)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, actions: {}})");
@@ -1179,7 +1161,7 @@ TEST(TestDiagnosticsV2Integration, InvalidActionsContainer)
 TEST(TestDiagnosticsV2Integration, InvalidRuleDataContainer)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, rules_data: {}})");
@@ -1212,7 +1194,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleDataContainer)
 TEST(TestDiagnosticsV2Integration, InvalidExclusionDataContainer)
 {
     auto *alloc = ddwaf_get_default_allocator();
-    ddwaf_builder builder = ddwaf_builder_init(nullptr);
+    ddwaf_builder builder = ddwaf_builder_init();
 
     auto rule = yaml_to_object<ddwaf_object>(
         R"({version: '2.1', metadata: {rules_version: '1.2.7'}, exclusion_data: {}})");

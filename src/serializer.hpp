@@ -28,7 +28,7 @@ struct result_components {
 
 class result_serializer {
 public:
-    explicit result_serializer(const match_obfuscator &obfuscator, const action_mapper &actions,
+    explicit result_serializer(const match_obfuscator *obfuscator, const action_mapper &actions,
         nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
         : obfuscator_(obfuscator), actions_(actions), alloc_(alloc)
     {}
@@ -40,7 +40,7 @@ public:
 
 protected:
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
-    const match_obfuscator &obfuscator_;
+    const match_obfuscator *obfuscator_;
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const action_mapper &actions_;
 

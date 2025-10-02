@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
         rule["enabled"] = true;
 
         ddwaf_object convertedRule = convertRuleToRuleset(rule);
-        ddwaf_handle handle = ddwaf_init(&convertedRule, nullptr, nullptr);
+        ddwaf_handle handle = ddwaf_init(&convertedRule, nullptr);
         ddwaf_object_destroy(&convertedRule, ddwaf_get_default_allocator());
 
         if (handle == nullptr) {

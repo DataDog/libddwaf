@@ -23,7 +23,7 @@ ddwaf::waf build_instance(std::string_view rule_file)
     }
 
     raw_configuration ruleset{object};
-    waf_builder builder{std::make_shared<match_obfuscator>()};
+    waf_builder builder{};
 
     ddwaf::ruleset_info info;
     auto res = builder.add_or_update("default", ruleset, info);

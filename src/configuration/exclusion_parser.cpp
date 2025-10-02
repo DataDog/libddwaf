@@ -137,7 +137,7 @@ void parse_filters(const raw_configuration::vector &filter_array, configuration_
                 continue;
             }
 
-            if (node.find("inputs") != node.end()) {
+            if (node.contains("inputs")) {
                 auto filter = parse_input_filter(node);
                 cfg.emplace_filter(id, std::move(filter));
             } else {

@@ -17,7 +17,7 @@ TEST(TestFingerprintIntegration, Postprocessor)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("postprocessor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -130,7 +130,7 @@ TEST(TestFingerprintIntegration, PostprocessorRegeneration)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("postprocessor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -339,7 +339,7 @@ TEST(TestFingerprintIntegration, Preprocessor)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("preprocessor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -497,7 +497,7 @@ TEST(TestFingerprintIntegration, PreprocessorRegeneration)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("preprocessor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -722,7 +722,7 @@ TEST(TestFingerprintIntegration, Processor)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("processor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -887,7 +887,7 @@ TEST(TestFingerprintIntegration, ProcessorRegeneration)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("processor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -1134,7 +1134,7 @@ TEST(TestFingerprintIntegration, InvalidBodyType)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("postprocessor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -1183,7 +1183,7 @@ TEST(TestFingerprintIntegration, InvalidQueryType)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("postprocessor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -1232,7 +1232,7 @@ TEST(TestFingerprintIntegration, InvalidQueryAndBodyType)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("postprocessor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -1281,7 +1281,7 @@ TEST(TestFingerprintIntegration, InvalidHeader)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("postprocessor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 
@@ -1339,7 +1339,7 @@ TEST(TestFingerprintIntegration, InvalidCookies)
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("postprocessor.json", base_dir);
     ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ASSERT_NE(handle, nullptr);
     ddwaf_object_destroy(&rule, alloc);
 

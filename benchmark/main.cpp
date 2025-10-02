@@ -147,8 +147,7 @@ int main(int argc, char *argv[])
             auto name = spec["scenario"].as<std::string>();
             auto ruleset = spec["ruleset"].as<ddwaf_object>();
 
-            ddwaf_config config{{}};
-            ddwaf_handle handle = ddwaf_init(&ruleset, &config, nullptr);
+            ddwaf_handle handle = ddwaf_init(&ruleset, nullptr);
             ddwaf_object_destroy(&ruleset, ddwaf_get_default_allocator());
             if (handle == nullptr) {
                 std::cerr << "Invalid ruleset file\n";

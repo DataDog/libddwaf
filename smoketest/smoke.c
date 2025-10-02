@@ -229,7 +229,7 @@ int main() {
     ddwaf_object rule = prepare_rule(alloc);
     dump(&rule);
 
-    ddwaf_handle handle = ddwaf_init(&rule, NULL, NULL);
+    ddwaf_handle handle = ddwaf_init(&rule, NULL);
     if (!handle) {
         puts("handle is null");
         return 1;

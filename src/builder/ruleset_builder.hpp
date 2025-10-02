@@ -7,7 +7,6 @@
 #pragma once
 
 #include <memory>
-#include <unordered_map>
 
 #include "configuration/common/configuration.hpp"
 #include "indexer.hpp"
@@ -18,11 +17,7 @@ namespace ddwaf {
 
 class ruleset_builder {
 public:
-    explicit ruleset_builder(
-        std::shared_ptr<match_obfuscator> obfuscator = std::make_shared<match_obfuscator>())
-        : obfuscator_(std::move(obfuscator))
-    {}
-
+    ruleset_builder() = default;
     ~ruleset_builder() = default;
     ruleset_builder(ruleset_builder &&) = default;
     ruleset_builder(const ruleset_builder &) = delete;
@@ -33,10 +28,6 @@ public:
         const configuration_spec &global_config, change_set current_changes);
 
 protected:
-    // These members are obtained through ddwaf_config and are persistent across
-    // all updates.
-    std::shared_ptr<match_obfuscator> obfuscator_;
-
     // These contain the specification of each main component obtained directly
     // from the parser. These are only modified on update, if the relevant key
     // is present and valid, otherwise they aren't be updated.
@@ -67,6 +58,9 @@ protected:
 
     // Actions
     std::shared_ptr<const action_mapper> actions_;
+
+    // Obfuscator
+    std::shared_ptr<match_obfuscator> obfuscator_;
 };
 
 } // namespace ddwaf

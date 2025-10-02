@@ -14,7 +14,7 @@
 #include "action_mapper.hpp"
 #include "exclusion/object_filter.hpp"
 #include "indexed_multivector.hpp"
-#include "indexer.hpp"
+#include "obfuscator.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
 #include "scanner.hpp"
@@ -117,6 +117,7 @@ enum class change_set : uint16_t {
     scanners = 128,
     actions = 256,
     exclusion_data = 512,
+    obfuscator = 1024,
 };
 
 // NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange)
@@ -198,10 +199,11 @@ struct configuration_spec {
     // Obtained from 'processor_override'
     std::unordered_map<std::string, processor_override_spec> processor_overrides;
     // Obtained from 'scanners'
-    // Scanners are stored directly in an indexer to simplify their use
     std::unordered_map<std::string, scanner> scanners;
     // Obtained from 'actions'
     std::unordered_map<std::string, action_spec> actions;
+    // Obtained from 'obfuscator'
+    std::shared_ptr<match_obfuscator> obfuscator;
 };
 
 } // namespace ddwaf
