@@ -245,7 +245,7 @@ bool configuration_manager::load(
 
             auto obfuscator = static_cast<raw_configuration::map>(it->second);
             collector.set_obfuscator(
-                std::make_shared<match_obfuscator>(at<std::string_view>(obfuscator, "key_regex",
+                std::make_unique<match_obfuscator>(at<std::string_view>(obfuscator, "key_regex",
                                                        match_obfuscator::default_key_regex_str),
                     at<std::string_view>(
                         obfuscator, "value_regex", match_obfuscator::default_value_regex_str)));

@@ -159,7 +159,7 @@ public:
         change_.exclusion_data.emplace_back(std::move(data_id), std::move(id));
     }
 
-    void set_obfuscator(std::shared_ptr<match_obfuscator> &&obfuscator)
+    void set_obfuscator(std::unique_ptr<match_obfuscator> &&obfuscator)
     {
         change_.content |= change_set::obfuscator;
         config_.obfuscator = std::move(obfuscator);
