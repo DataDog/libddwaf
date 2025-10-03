@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <fmt/core.h>
@@ -174,10 +173,11 @@ public:
     template <typename T> static dynamic_string from_movable_string(T &str)
     {
         dynamic_string dynstr;
-        auto [ptr, size, alloc] = str.move();
+        auto [ptr, size, capacity, alloc] = str.move();
         dynstr.alloc_ = alloc;
         dynstr.buffer_ = ptr;
         dynstr.size_ = size;
+        dynstr.capacity_ = capacity;
         return dynstr;
     }
 

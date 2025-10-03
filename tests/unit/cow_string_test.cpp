@@ -91,7 +91,7 @@ TEST(TestCoWString, WriteAndMove)
     EXPECT_TRUE(str.modified());
     EXPECT_NE(str.data(), nullptr);
 
-    auto [buffer, length, alloc] = str.move();
+    auto [buffer, length, capacity, alloc] = str.move();
     EXPECT_STR((std::string_view{buffer, length}), "valee");
     EXPECT_EQ(length, 5);
 
@@ -108,7 +108,7 @@ TEST(TestCoWString, MoveUnmodified)
     EXPECT_EQ(str.length(), 5);
     EXPECT_FALSE(str.modified());
 
-    auto [buffer, length, alloc] = str.move();
+    auto [buffer, length, capacity, alloc] = str.move();
     EXPECT_STR((std::string_view{buffer, length}), "value");
     EXPECT_EQ(length, 5);
     str.alloc()->deallocate(buffer, length, alignof(char));
@@ -126,7 +126,7 @@ TEST(TestCoWString, MoveAfterTruncate)
 
     str.truncate(4);
 
-    auto [buffer, length, alloc] = str.move();
+    auto [buffer, length, capacity, alloc] = str.move();
     EXPECT_STR((std::string_view{buffer, length}), "valu");
     EXPECT_EQ(length, 4);
     str.alloc()->deallocate(buffer, length, alignof(char));
