@@ -76,7 +76,11 @@ std::ostream &operator<<(std::ostream &os, const event::match &m)
             } else {
                 start = false;
             }
-            os << p;
+            if (std::holds_alternative<std::string>(p)) {
+                os << std::get<std::string>(p);
+            } else {
+                os << std::get<int64_t>(p);
+            }
         }
 
         os << "],\n" << indent(16) << "value: " << arg.value << ",\n" << indent(12) << "}\n";
@@ -141,7 +145,11 @@ std::ostream &operator<<(std::ostream &os, const event &e)
                 } else {
                     start = false;
                 }
-                os << p;
+                if (std::holds_alternative<std::string>(p)) {
+                    os << std::get<std::string>(p);
+                } else {
+                    os << std::get<int64_t>(p);
+                }
             }
 
             os << "],\n" << indent(20) << "value: " << arg.value << ",\n" << indent(16) << "}\n";
@@ -362,8 +370,17 @@ std::list<ddwaf::test::event::match> from_matches(
         new_match.op = m.operator_name;
         new_match.op_value = m.operator_value;
         for (const auto &arg : m.args) {
+            std::vector<std::variant<std::string, int64_t>> arg_kp;
+            for (const auto &key : arg.key_path) {
+                if (std::holds_alternative<std::string_view>(key)) {
+                    arg_kp.emplace_back(std::string{std::get<std::string_view>(key)});
+                } else {
+                    arg_kp.emplace_back(std::get<int64_t>(key));
+                }
+            }
+
             new_match.args.emplace_back(ddwaf::test::event::match::argument{
-                std::string{arg.name}, arg.resolved, std::string{arg.address}, arg.key_path});
+                std::string{arg.name}, arg.resolved, std::string{arg.address}, arg_kp});
         }
 
         match_list.emplace_back(std::move(new_match));
@@ -424,13 +441,13 @@ match as_if<match, void>::operator()() const
     if (parameters["address"].IsDefined()) {
         m.args.emplace_back(match::argument{"input", as<std::string>(parameters, "value"),
             as<std::string>(parameters, "address"),
-            as<std::vector<std::string>>(parameters, "key_path")});
+            as<std::vector<std::variant<std::string, int64_t>>>(parameters, "key_path")});
     } else {
         for (auto it = parameters.begin(); it != parameters.end(); ++it) {
             if (it->second.IsMap()) {
                 m.args.emplace_back(match::argument{it->first.as<std::string>(),
                     as<std::string>(it->second, "value"), as<std::string>(it->second, "address"),
-                    as<std::vector<std::string>>(it->second, "key_path")});
+                    as<std::vector<std::variant<std::string, int64_t>>>(it->second, "key_path")});
             }
         }
     }
@@ -507,6 +524,30 @@ as_if<std::map<std::string, ddwaf::test::scalar_type>, void>::operator()() const
     }
 
     return parameters;
+}
+
+std::vector<std::variant<std::string, int64_t>>
+as_if<std::vector<std::variant<std::string, int64_t>>, void>::operator()() const
+{
+    std::vector<std::variant<std::string, int64_t>> vec;
+
+    for (auto it = node.begin(); it != node.end(); ++it) {
+        if (it->Tag() == "?") {
+            try {
+                vec.emplace_back(static_cast<int64_t>(it->as<uint64_t>()));
+                continue;
+            } catch (...) {}
+
+            try {
+                vec.emplace_back(it->as<int64_t>());
+                continue;
+            } catch (...) {}
+        }
+
+        vec.emplace_back(it->as<std::string>());
+    }
+
+    return vec;
 }
 
 action_map as_if<action_map, void>::operator()() const

@@ -24,7 +24,7 @@ namespace ddwaf {
 struct processor_target {
     target_index index;
     std::string name;
-    std::vector<std::string> key_path;
+    std::vector<std::variant<std::string, int64_t>> key_path;
 };
 
 struct processor_parameter {
