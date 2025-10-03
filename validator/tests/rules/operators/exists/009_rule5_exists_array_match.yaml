@@ -1,0 +1,21 @@
+{
+  name: "Exists operator on array key path",
+  runs: [
+    {
+      input: {
+        rule5-input: [ 20 ]
+      },
+      rules: [
+        {
+          5: [
+            {
+              address: rule5-input,
+              key_path: [ -1 ]
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

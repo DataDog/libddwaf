@@ -146,7 +146,7 @@ TEST(TestLFIDetector, MatchWithKeyPath)
     EXPECT_STRV(cache.match->args[1].address, "server.request.query");
     EXPECT_STR(cache.match->args[1].resolved, "../etc/passwd");
 
-    std::vector<std::string> kp{"array", "0", "map"};
+    std::vector<std::variant<std::string_view, int64_t>> kp{"array", 0, "map"};
     EXPECT_EQ(cache.match->args[1].key_path, kp);
 
     EXPECT_STR(cache.match->highlights[0], "../etc/passwd");

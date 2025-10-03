@@ -72,7 +72,7 @@ public:
 
     [[nodiscard]] explicit operator bool() const { return static_cast<bool>(it_); }
 
-    [[nodiscard]] std::vector<std::string> get_current_path() const
+    [[nodiscard]] std::vector<std::variant<std::string_view, int64_t>> get_current_path() const
     {
         return it_.get_current_path();
     }

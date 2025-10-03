@@ -425,7 +425,7 @@ public:
     {
         if constexpr (std::is_same_v<std::decay_t<T>, object_view>) {
             return ptr() == other.ptr();
-        } else if constexpr (std::is_same_v<std::decay_t<T>, std::string_view>) {
+        } else if constexpr (is_type_in_set_v<std::decay_t<T>, std::string_view, std::string>) {
             return has_value() && is_string() && as<std::string_view>() == other;
         } else {
             static_assert(!std::is_same_v<T, T>, "unsupported type for object_view::operator==");
@@ -435,7 +435,7 @@ public:
     {
         if constexpr (std::is_same_v<std::decay_t<T>, object_view>) {
             return ptr() != other.ptr();
-        } else if constexpr (std::is_same_v<std::decay_t<T>, std::string_view>) {
+        } else if constexpr (is_type_in_set_v<std::decay_t<T>, std::string_view, std::string>) {
             return has_value() && (!is_string() || as<std::string_view>() != other);
         } else {
             static_assert(!std::is_same_v<T, T>, "unsupported type for object_view::operator!=");
@@ -520,6 +520,37 @@ public:
         return current;
     }
 
+    object_view find_key_path(std::span<const std::variant<std::string, int64_t>> key_path)
+    {
+        auto root = *this;
+        auto current = root;
+        for (auto it = key_path.begin(); current.has_value() && it != key_path.end(); ++it) {
+            root = current;
+            current = {};
+            if (root.is_map() && std::holds_alternative<std::string>(*it)) {
+                const auto &expected_key = std::get<std::string>(*it);
+                for (std::size_t i = 0; i < root.size(); ++i) {
+                    const auto &[key, child] = root.at(i);
+
+                    auto child_key = key.as<std::string_view>();
+                    if (expected_key == child_key) {
+                        current = child;
+                        break;
+                    }
+                }
+            } else if (root.is_array() && std::holds_alternative<int64_t>(*it)) {
+                const auto &expected_index = std::get<int64_t>(*it);
+                if (expected_index >= 0 && root.size() > static_cast<std::size_t>(expected_index)) {
+                    current = root.at_value(expected_index);
+                } else if (expected_index < 0 &&
+                           root.size() >= static_cast<std::size_t>(-expected_index)) {
+                    current = root.at_value(root.size() + expected_index);
+                }
+            }
+        }
+        return current;
+    }
+
     template <typename T>
     object_view find_key_path(std::span<const std::string> key_path, const T &exclusion)
     {
@@ -540,6 +571,44 @@ public:
                 if (*it == child_key) {
                     current = child;
                     break;
+                }
+            }
+        }
+        return current;
+    }
+
+    template <typename T>
+    object_view find_key_path(
+        std::span<const std::variant<std::string, int64_t>> key_path, const T &exclusion)
+    {
+        auto root = *this;
+        auto current = root;
+        for (auto it = key_path.begin(); current.has_value() && it != key_path.end(); ++it) {
+            root = current;
+            current = {};
+
+            if (exclusion.contains(root)) {
+                return {};
+            }
+
+            if (root.is_map() && std::holds_alternative<std::string>(*it)) {
+                const auto &expected_key = std::get<std::string>(*it);
+                for (std::size_t i = 0; i < root.size(); ++i) {
+                    const auto &[key, child] = root.at(i);
+
+                    auto child_key = key.as<std::string_view>();
+                    if (expected_key == child_key) {
+                        current = child;
+                        break;
+                    }
+                }
+            } else if (root.is_array() && std::holds_alternative<int64_t>(*it)) {
+                const auto &expected_index = std::get<int64_t>(*it);
+                if (expected_index >= 0 && root.size() > static_cast<std::size_t>(expected_index)) {
+                    current = root.at_value(expected_index);
+                } else if (expected_index < 0 &&
+                           root.size() >= static_cast<std::size_t>(-expected_index)) {
+                    current = root.at_value(root.size() + expected_index);
                 }
             }
         }

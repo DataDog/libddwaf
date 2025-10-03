@@ -47,7 +47,7 @@ enum class sqli_error : uint8_t {
     invalid_sql,
 };
 
-using matched_param = std::pair<std::string, std::vector<std::string>>;
+using matched_param = std::pair<std::string, std::vector<std::variant<std::string_view, int64_t>>>;
 using sqli_result = std::variant<std::monostate, sqli_error, matched_param>;
 
 bool is_literal(sql_token_type type)
@@ -532,8 +532,6 @@ sqli_detector::sqli_detector(std::vector<condition_parameter> args)
         auto res = internal::sqli_impl(
             sql.value, resource_tokens, param.value, dialect, objects_excluded, deadline);
         if (std::holds_alternative<internal::matched_param>(res)) {
-            const std::vector<std::string> sql_kp{sql.key_path.begin(), sql.key_path.end()};
-
             const evaluation_scope scope = resolve_scope(sql, param);
 
             auto stripped_stmt = internal::strip_literals(sql.value, resource_tokens);
@@ -545,7 +543,7 @@ sqli_detector::sqli_detector(std::vector<condition_parameter> args)
             cache.match = condition_match{.args = {{.name = "resource"sv,
                                                        .resolved = stripped_stmt,
                                                        .address = sql.address,
-                                                       .key_path = sql_kp},
+                                                       .key_path = convert_key_path(sql.key_path)},
                                               {.name = "params"sv,
                                                   .resolved = highlight,
                                                   .address = param.address,

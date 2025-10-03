@@ -24,7 +24,7 @@ template <typename T> struct unary_argument {
     // The memory associated with the address and the key path is owned
     // by either the condition (condition_target) or the processor (processor_target).
     std::string_view address{};
-    std::span<const std::string> key_path;
+    std::span<const std::variant<std::string, int64_t>> key_path;
     evaluation_scope scope{evaluation_scope::context()};
     T value;
 };

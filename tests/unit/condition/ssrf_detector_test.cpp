@@ -22,7 +22,7 @@ struct ssrf_sample {
     std::string resolved{};
     std::string address{"server.request.query"};
     std::string highlight{};
-    std::vector<std::string> key_path{};
+    std::vector<std::variant<std::string_view, int64_t>> key_path{};
 };
 
 void match_path_and_input(const std::vector<std::pair<std::string, ssrf_sample>> &samples,
