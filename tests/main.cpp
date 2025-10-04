@@ -8,6 +8,7 @@
 #include "log.hpp"
 
 #include "common/gtest_utils.hpp"
+#include "memory_resource.hpp"
 
 #include <string_view>
 
@@ -85,10 +86,60 @@ DDWAF_LOG_LEVEL find_log_level(int argc, char *argv[])
     }
     return level;
 }
+
+class tracking_resource : public ddwaf::memory::memory_resource {
+public:
+    [[nodiscard]] bool verify() const noexcept
+    {
+        std::cout << "[  ALLOC  ] " << count_allocated << ", " << bytes_allocated << " bytes\n"
+                  << "[ DEALLOC ] " << count_deallocated << ", " << bytes_deallocated << " bytes\n";
+
+        return count_allocated == count_deallocated && bytes_allocated == bytes_deallocated;
+    }
+
+protected:
+    void *do_allocate(size_t bytes, size_t align) override
+    {
+        bytes_allocated += bytes;
+        ++count_allocated;
+        return upstream->allocate(bytes, align);
+    }
+
+    void do_deallocate(void *p, size_t bytes, size_t align) override
+    {
+        bytes_deallocated += bytes;
+        ++count_deallocated;
+        upstream->deallocate(p, bytes, align);
+    }
+
+    [[nodiscard]] bool do_is_equal(const memory_resource &other) const noexcept override
+    {
+        return &other == this;
+    }
+
+    size_t bytes_allocated{0};
+    size_t bytes_deallocated{0};
+    size_t count_allocated{0};
+    size_t count_deallocated{0};
+
+    ddwaf::memory::memory_resource *upstream{ddwaf::memory::get_default_resource()};
+};
+
 int main(int argc, char *argv[])
 {
+    tracking_resource resource;
+    ddwaf::memory::set_default_resource(&resource);
+
     ddwaf_set_log_cb(log_cb, find_log_level(argc, argv));
-    ddwaf::memory::set_local_memory_resource(std::pmr::new_delete_resource());
+    ddwaf::memory::set_local_memory_resource(&resource);
+
     testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+
+    auto res = RUN_ALL_TESTS();
+
+    if (res == 0 && resource.verify()) {
+        return EXIT_SUCCESS;
+    }
+
+    return EXIT_FAILURE;
 }

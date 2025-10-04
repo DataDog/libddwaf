@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <fmt/core.h>
@@ -53,6 +52,12 @@ public:
     dynamic_string(std::string_view str,
         nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
         : dynamic_string(str.data(), str.size(), alloc)
+    {}
+
+    dynamic_string(
+        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+        char *ptr, size_type size, size_type capacity, nonnull_ptr<memory::memory_resource> alloc)
+        : alloc_(alloc), buffer_(ptr), size_(size), capacity_(capacity)
     {}
 
     dynamic_string(const char *str) = delete;
@@ -169,16 +174,6 @@ public:
     bool operator==(const dynamic_string &other) const noexcept
     {
         return size_ == other.size_ && (size_ == 0 || memcmp(buffer_, other.buffer_, size_) == 0);
-    }
-
-    template <typename T> static dynamic_string from_movable_string(T &str)
-    {
-        dynamic_string dynstr;
-        auto [ptr, size, alloc] = str.move();
-        dynstr.alloc_ = alloc;
-        dynstr.buffer_ = ptr;
-        dynstr.size_ = size;
-        return dynstr;
     }
 
 protected:
