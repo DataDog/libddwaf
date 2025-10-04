@@ -305,12 +305,4 @@ TEST(TestDynamicString, Equality)
     EXPECT_NE(hello_plus, hello);
 }
 
-TEST(TestDynamicString, FromMovableString)
-{
-    cow_string str_lc{"VaLuE To LoWeRCasE"};
-    transformer::lowercase::transform(str_lc);
-
-    auto str = dynamic_string::from_movable_string(str_lc);
-    EXPECT_STR(str, "value to lowercase");
-}
 } // namespace

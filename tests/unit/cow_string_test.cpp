@@ -91,11 +91,9 @@ TEST(TestCoWString, WriteAndMove)
     EXPECT_TRUE(str.modified());
     EXPECT_NE(str.data(), nullptr);
 
-    auto [buffer, length, capacity, alloc] = str.move();
-    EXPECT_STR((std::string_view{buffer, length}), "valee");
-    EXPECT_EQ(length, 5);
-
-    str.alloc()->deallocate(buffer, length, alignof(char));
+    auto dstr = static_cast<dynamic_string>(str);
+    EXPECT_STR(dstr, "valee");
+    EXPECT_EQ(dstr.size(), 5);
 
     EXPECT_EQ(str.length(), 0);
     EXPECT_FALSE(str.modified());
@@ -108,10 +106,9 @@ TEST(TestCoWString, MoveUnmodified)
     EXPECT_EQ(str.length(), 5);
     EXPECT_FALSE(str.modified());
 
-    auto [buffer, length, capacity, alloc] = str.move();
-    EXPECT_STR((std::string_view{buffer, length}), "value");
-    EXPECT_EQ(length, 5);
-    str.alloc()->deallocate(buffer, length, alignof(char));
+    auto dstr = static_cast<dynamic_string>(str);
+    EXPECT_STR(dstr, "value");
+    EXPECT_EQ(dstr.size(), 5);
 
     EXPECT_EQ(str.length(), 0);
     EXPECT_FALSE(str.modified());
@@ -126,10 +123,9 @@ TEST(TestCoWString, MoveAfterTruncate)
 
     str.truncate(4);
 
-    auto [buffer, length, capacity, alloc] = str.move();
-    EXPECT_STR((std::string_view{buffer, length}), "valu");
-    EXPECT_EQ(length, 4);
-    str.alloc()->deallocate(buffer, length, alignof(char));
+    auto dstr = static_cast<dynamic_string>(str);
+    EXPECT_STR(dstr, "valu");
+    EXPECT_EQ(dstr.size(), 4);
 
     EXPECT_EQ(str.length(), 0);
     EXPECT_FALSE(str.modified());

@@ -167,7 +167,7 @@ struct string_field : field_generator<string_field> {
     {
         cow_string str_lc{value};
         transformer::lowercase::transform(str_lc);
-        return dynamic_string::from_movable_string(str_lc);
+        return static_cast<dynamic_string>(str_lc);
     }
 
     std::string_view value;

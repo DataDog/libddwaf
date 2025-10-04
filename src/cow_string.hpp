@@ -10,8 +10,8 @@
 #include <cstring>
 #include <stdexcept>
 #include <string_view>
-#include <type_traits>
 
+#include "dynamic_string.hpp"
 #include "memory_resource.hpp"
 #include "pointer.hpp"
 
@@ -19,6 +19,8 @@ namespace ddwaf {
 
 class cow_string {
 public:
+    using size_type = uint32_t;
+
     explicit cow_string(std::string_view original)
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
         : buffer_(const_cast<char *>(original.data())), length_(original.length())
@@ -44,18 +46,18 @@ public:
         }
     }
 
-    template <typename T = char> [[nodiscard]] constexpr T at(std::size_t idx) const
+    template <typename T = char> [[nodiscard]] constexpr T at(size_type idx) const
     {
         return static_cast<T>(buffer_[idx]);
     }
 
-    char &operator[](std::size_t idx)
+    char &operator[](size_type idx)
     {
         force_copy(length_);
         return buffer_[idx];
     }
 
-    bool copy_char(std::size_t from, std::size_t to)
+    bool copy_char(size_type from, size_type to)
     {
         if (to < from && from < length_) {
             force_copy(length_);
@@ -68,7 +70,7 @@ public:
     constexpr explicit operator std::string_view() { return {buffer_, length_}; }
 
     [[nodiscard]] nonnull_ptr<memory::memory_resource> alloc() const noexcept { return alloc_; }
-    [[nodiscard]] constexpr std::size_t length() const noexcept { return length_; }
+    [[nodiscard]] constexpr size_type length() const noexcept { return length_; }
     [[nodiscard]] constexpr const char *data() const noexcept { return buffer_; }
     [[nodiscard]] char *modifiable_data()
     {
@@ -76,9 +78,9 @@ public:
         return buffer_;
     }
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    [[nodiscard]] std::pair<bool, std::size_t> find(char c, std::size_t start = 0) const
+    [[nodiscard]] std::pair<bool, size_type> find(char c, size_type start = 0) const
     {
-        for (std::size_t i = start; i < length_; ++i) {
+        for (size_type i = start; i < length_; ++i) {
             if (buffer_[i] == c) {
                 return {true, i};
             }
@@ -88,7 +90,7 @@ public:
 
     // Replaces the internal buffer, ownership is transferred
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    void replace_buffer(char *str, std::size_t length, std::size_t capacity,
+    void replace_buffer(char *str, size_type length, size_type capacity,
         nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
     {
         [[likely]] if (capacity_ > 0) {
@@ -103,20 +105,21 @@ public:
 
     // Moves the contents and invalidates the string if the buffer has been
     // modified, otherwise it does nothing
-    std::tuple<char *, std::size_t, std::size_t, nonnull_ptr<memory::memory_resource>> move()
+    explicit operator dynamic_string()
     {
         force_copy(length_);
 
-        std::tuple<char *, std::size_t, std::size_t, nonnull_ptr<memory::memory_resource>> res{
-            buffer_, length_, capacity_, alloc_};
+        dynamic_string dynstr{buffer_, length_, capacity_, alloc_};
+
         buffer_ = nullptr;
         length_ = 0;
         capacity_ = 0;
-        return res;
+
+        return dynstr;
     }
 
     // Update length and nul-terminate, allocate if not allocated
-    void truncate(std::size_t length)
+    void truncate(size_type length)
     {
         [[likely]] if (capacity_ > 0) {
             length_ = length;
@@ -130,7 +133,7 @@ public:
 
 protected:
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    void force_copy(std::size_t bytes)
+    void force_copy(size_type bytes)
     {
         if (capacity_ == 0) {
             // Avoid allocating 0-sized strings
@@ -152,8 +155,8 @@ protected:
     nonnull_ptr<memory::memory_resource> alloc_{memory::get_default_resource()};
 
     char *buffer_;
-    std::size_t length_;
-    std::size_t capacity_{0};
+    size_type length_;
+    size_type capacity_{0};
 };
 
 } // namespace ddwaf
