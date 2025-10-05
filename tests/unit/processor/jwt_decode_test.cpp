@@ -31,7 +31,7 @@ TEST(TestJwtDecoder, Basic)
     std::vector<std::string> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
             alloc, deadline);
@@ -62,7 +62,7 @@ TEST(TestJwtDecoder, KeyPathLeadsToSingleValueArray)
     std::vector<std::string> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
             alloc, deadline);
@@ -94,7 +94,7 @@ TEST(TestJwtDecoder, KeyPathLeadsToValidMultiValueArray)
     std::vector<std::string> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
             alloc, deadline);
@@ -127,7 +127,7 @@ TEST(TestJwtDecoder, KeyPathLeadsToInvalidMultiValueArray)
     std::vector<std::string> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
             alloc, deadline);
@@ -153,7 +153,7 @@ TEST(TestJwtDecoder, MissingKeypath)
     std::vector<std::string> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
             alloc, deadline);
@@ -179,7 +179,7 @@ TEST(TestJwtDecoder, EmptyHeader)
     std::vector<std::string> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
             alloc, deadline);
@@ -208,7 +208,7 @@ TEST(TestJwtDecoder, EmptyPayload)
     std::vector<std::string> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
             alloc, deadline);
@@ -236,7 +236,7 @@ TEST(TestJwtDecoder, LargePayloadBeyondLimit)
     std::vector<std::string> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
             alloc, deadline);
@@ -262,7 +262,7 @@ TEST(TestJwtDecoder, NoSignature)
     std::vector<std::string> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
             alloc, deadline);
@@ -285,7 +285,7 @@ TEST(TestJwtDecoder, NoPayloadNoSignatureMissingDelim)
     std::vector<std::string> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
             alloc, deadline);
@@ -304,7 +304,7 @@ TEST(TestJwtDecoder, NoPayloadNoSignatureMissingAllDelim)
     std::vector<std::string> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
             alloc, deadline);
@@ -327,7 +327,7 @@ TEST(TestJwtDecoder, NoSignatureNoDelim)
     std::vector<std::string> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] =
         gen.eval_impl({.address = {}, .key_path = key_path, .scope = {}, .value = headers}, cache,
             alloc, deadline);

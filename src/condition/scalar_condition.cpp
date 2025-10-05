@@ -111,7 +111,7 @@ const matcher::base *get_matcher(const std::unique_ptr<matcher::base> &matcher,
 
 } // namespace
 
-eval_result scalar_condition::eval(condition_cache &cache, const object_store &store,
+eval_result scalar_condition::eval(base_cache_type &cache, const object_store &store,
     const object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
@@ -120,8 +120,8 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
         return {};
     }
 
-    if (cache.targets.size() != targets_.size()) {
-        cache.targets.assign(targets_.size(), {});
+    if (cache->targets.size() != targets_.size()) {
+        cache->targets.assign(targets_.size(), {});
     }
 
     for (unsigned i = 0; i < targets_.size(); ++i) {
@@ -132,11 +132,11 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
         const auto &target = targets_[i];
         auto [object, scope] = store.get_target(target.index);
         if (!object.has_value() ||
-            (object == cache.targets[i].object && scope == cache.targets[i].scope)) {
+            (object == cache->targets[i].object && scope == cache->targets[i].scope)) {
             continue;
         }
 
-        cache.targets[i] = {.object = object, .scope = scope};
+        cache->targets[i] = {.object = object, .scope = scope};
 
         std::optional<condition_match> match;
         // TODO: iterators could be cached to avoid reinitialisation
@@ -149,7 +149,7 @@ eval_result scalar_condition::eval(condition_cache &cache, const object_store &s
         }
 
         if (match.has_value()) {
-            cache.match = std::move(match);
+            cache->match = std::move(match);
             return eval_result::match(scope);
         }
     }

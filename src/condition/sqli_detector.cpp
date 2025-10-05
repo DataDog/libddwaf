@@ -522,7 +522,7 @@ sqli_detector::sqli_detector(std::vector<condition_parameter> args)
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[nodiscard]] eval_result sqli_detector::eval_impl(const unary_argument<std::string_view> &sql,
     const variadic_argument<object_view> &params, const unary_argument<std::string_view> &db_type,
-    condition_cache &cache, const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
+    base_cache_type &cache, const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     auto dialect = sql_dialect_from_type(db_type.value);
 
@@ -542,18 +542,18 @@ sqli_detector::sqli_detector(std::vector<condition_parameter> args)
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
 
-            cache.match = condition_match{.args = {{.name = "resource"sv,
-                                                       .resolved = stripped_stmt,
-                                                       .address = sql.address,
-                                                       .key_path = sql_kp},
-                                              {.name = "params"sv,
-                                                  .resolved = highlight,
-                                                  .address = param.address,
-                                                  .key_path = param_kp},
-                                              {.name = "db_type"sv,
-                                                  .resolved = std::string{db_type.value},
-                                                  .address = db_type.address,
-                                                  .key_path = {}}},
+            cache->match = condition_match{.args = {{.name = "resource"sv,
+                                                        .resolved = stripped_stmt,
+                                                        .address = sql.address,
+                                                        .key_path = sql_kp},
+                                               {.name = "params"sv,
+                                                   .resolved = highlight,
+                                                   .address = param.address,
+                                                   .key_path = param_kp},
+                                               {.name = "db_type"sv,
+                                                   .resolved = std::string{db_type.value},
+                                                   .address = db_type.address,
+                                                   .key_path = {}}},
                 .highlights = {std::move(highlight)},
                 .operator_name = "sqli_detector",
                 .operator_value = {},

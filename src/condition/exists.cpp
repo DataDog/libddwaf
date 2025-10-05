@@ -62,7 +62,7 @@ search_outcome exists(
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[nodiscard]] eval_result exists_condition::eval_impl(const variadic_argument<object_view> &inputs,
-    condition_cache &cache, const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
+    base_cache_type &cache, const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     for (const auto &input : inputs) {
         if (deadline.expired()) {
@@ -71,10 +71,10 @@ search_outcome exists(
 
         if (exists(input.value, input.key_path, objects_excluded) == search_outcome::found) {
             std::vector<std::string> key_path{input.key_path.begin(), input.key_path.end()};
-            cache.match = {{.args = {{.name = "input",
-                                .resolved = {},
-                                .address = input.address,
-                                .key_path = std::move(key_path)}},
+            cache->match = {{.args = {{.name = "input",
+                                 .resolved = {},
+                                 .address = input.address,
+                                 .key_path = std::move(key_path)}},
                 .highlights = {},
                 .operator_name = "exists",
                 .operator_value = {},
@@ -87,7 +87,7 @@ search_outcome exists(
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 [[nodiscard]] eval_result negated_exists_condition::eval_impl(
-    const unary_argument<object_view> &input, condition_cache &cache,
+    const unary_argument<object_view> &input, base_cache_type &cache,
     const object_set_ref &objects_excluded, ddwaf::timer & /*deadline*/) const
 {
     // We need to make sure the key path hasn't been found. If the result is
@@ -98,10 +98,10 @@ search_outcome exists(
     }
 
     std::vector<std::string> key_path{input.key_path.begin(), input.key_path.end()};
-    cache.match = {{.args = {{.name = "input",
-                        .resolved = {},
-                        .address = input.address,
-                        .key_path = std::move(key_path)}},
+    cache->match = {{.args = {{.name = "input",
+                         .resolved = {},
+                         .address = input.address,
+                         .key_path = std::move(key_path)}},
         .highlights = {},
         .operator_name = "!exists",
         .operator_value = {},

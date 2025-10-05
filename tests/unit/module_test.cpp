@@ -45,8 +45,7 @@ TEST(TestModuleUngrouped, SingleRuleMatch)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -110,8 +109,7 @@ TEST(TestModuleUngrouped, MultipleMonitoringRuleMatch)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -178,8 +176,7 @@ TEST(TestModuleUngrouped, BlockingRuleMatch)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -235,8 +232,7 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -305,8 +301,7 @@ TEST(TestModuleUngrouped, BlockingRuleMatchBasePrecedence)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -365,8 +360,7 @@ TEST(TestModuleUngrouped, BlockingRuleMatchUserPrecedence)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -404,8 +398,7 @@ TEST(TestModuleUngrouped, NonExpiringModule)
     auto mod = mod_builder.build();
     EXPECT_FALSE(mod.may_expire());
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -441,8 +434,7 @@ TEST(TestModuleUngrouped, ExpiringModule)
     auto mod = mod_builder.build();
     EXPECT_TRUE(mod.may_expire());
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -480,8 +472,7 @@ TEST(TestModuleUngrouped, DisabledRules)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -532,8 +523,7 @@ TEST(TestModuleGrouped, MultipleGroupsMonitoringRuleMatch)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -588,8 +578,7 @@ TEST(TestModuleGrouped, MultipleGroupsBlockingRuleMatch)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -643,8 +632,7 @@ TEST(TestModuleGrouped, SingleGroupBlockingRuleMatch)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -697,8 +685,7 @@ TEST(TestModuleGrouped, SingleGroupMonitoringRuleMatch)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -752,8 +739,7 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupMonitoringUserMatch)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -807,8 +793,7 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupMonitoringBaseMatch)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -863,8 +848,7 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingBaseMatch)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -919,8 +903,7 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingUserMatch)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -975,8 +958,7 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingBaseMatch)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -1031,8 +1013,7 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingUserMatch)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -1086,8 +1067,7 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsMonitoringMatch)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -1142,8 +1122,7 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsBlockingMatch)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -1197,8 +1176,7 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsMonitoringMatch)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -1253,8 +1231,7 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsBlockingMatch)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -1398,8 +1375,7 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
     auto mod = mod_builder.build();
 
     {
-        rule_module_cache cache;
-        mod.init_cache(cache);
+        rule_module::cache_type cache;
 
         ddwaf::object_store store;
 
@@ -1500,8 +1476,7 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
     auto mod = mod_builder.build();
 
     {
-        rule_module_cache cache;
-        mod.init_cache(cache);
+        rule_module::cache_type cache;
 
         ddwaf::object_store store;
 
@@ -1603,8 +1578,7 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
     auto mod = mod_builder.build();
 
     {
-        rule_module_cache cache;
-        mod.init_cache(cache);
+        rule_module::cache_type cache;
 
         ddwaf::object_store store;
 
@@ -1644,8 +1618,7 @@ TEST(TestModuleGrouped, DisabledRules)
 
     auto mod = mod_builder.build();
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -1679,8 +1652,7 @@ TEST(TestModuleGrouped, NonExpiringModule)
     auto mod = mod_builder.build();
     EXPECT_FALSE(mod.may_expire());
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {
@@ -1716,8 +1688,7 @@ TEST(TestModuleGrouped, ExpiringModule)
     auto mod = mod_builder.build();
     EXPECT_TRUE(mod.may_expire());
 
-    rule_module_cache cache;
-    mod.init_cache(cache);
+    rule_module::cache_type cache;
 
     ddwaf::object_store store;
     {

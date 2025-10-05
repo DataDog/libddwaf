@@ -29,7 +29,7 @@ public:
     base_impl(base_impl &&) noexcept = default;
     base_impl &operator=(base_impl &&) noexcept = default;
 
-    [[nodiscard]] eval_result eval(condition_cache &cache, const object_store &store,
+    [[nodiscard]] eval_result eval(base_cache_type &cache, const object_store &store,
         const object_set_ref &objects_excluded, const matcher_mapper & /*unused*/,
         ddwaf::timer &deadline) const override
     {

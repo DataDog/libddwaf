@@ -28,7 +28,7 @@ TEST(TestShiDetectorArray, InvalidType)
     store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
-    condition_cache cache;
+    base_condition::cache_type cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
@@ -44,7 +44,7 @@ TEST(TestShiDetectorArray, EmptyResource)
     store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
-    condition_cache cache;
+    base_condition::cache_type cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
@@ -60,21 +60,21 @@ TEST(TestShiDetectorArray, InvalidTypeWithinArray)
     store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
-    condition_cache cache;
+    base_condition::cache_type cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
     EXPECT_TRUE(res.scope.is_context());
 
-    EXPECT_TRUE(cache.match);
-    EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
-    EXPECT_STR(cache.match->args[0].resolved, "ls -l ; cat /etc/passwd");
-    EXPECT_TRUE(cache.match->args[0].key_path.empty());
+    EXPECT_TRUE(cache->match);
+    EXPECT_STRV(cache->match->args[0].address, "server.sys.shell.cmd");
+    EXPECT_STR(cache->match->args[0].resolved, "ls -l ; cat /etc/passwd");
+    EXPECT_TRUE(cache->match->args[0].key_path.empty());
 
-    EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-    EXPECT_STR(cache.match->args[1].resolved, "cat /etc/passwd");
-    EXPECT_TRUE(cache.match->args[1].key_path.empty());
+    EXPECT_STRV(cache->match->args[1].address, "server.request.query");
+    EXPECT_STR(cache->match->args[1].resolved, "cat /etc/passwd");
+    EXPECT_TRUE(cache->match->args[1].key_path.empty());
 
-    EXPECT_STR(cache.match->highlights[0], "cat /etc/passwd");
+    EXPECT_STR(cache->match->highlights[0], "cat /etc/passwd");
 }
 
 TEST(TestShiDetectorArray, NoMatchAndFalsePositives)
@@ -118,7 +118,7 @@ TEST(TestShiDetectorArray, NoMatchAndFalsePositives)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << param;
     }
@@ -162,21 +162,21 @@ TEST(TestShiDetectorArray, ExecutablesAndRedirections)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << param;
         EXPECT_TRUE(res.scope.is_context());
 
-        EXPECT_TRUE(cache.match);
-        EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource_str);
-        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+        EXPECT_TRUE(cache->match);
+        EXPECT_STRV(cache->match->args[0].address, "server.sys.shell.cmd");
+        EXPECT_STR(cache->match->args[0].resolved, resource_str);
+        EXPECT_TRUE(cache->match->args[0].key_path.empty());
 
-        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, param);
-        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+        EXPECT_STRV(cache->match->args[1].address, "server.request.query");
+        EXPECT_STR(cache->match->args[1].resolved, param);
+        EXPECT_TRUE(cache->match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], param);
+        EXPECT_STR(cache->match->highlights[0], param);
     }
 }
 
@@ -217,7 +217,7 @@ TEST(TestShiDetectorArray, OverlappingInjections)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << param;
     }
@@ -257,21 +257,21 @@ TEST(TestShiDetectorArray, InjectionsWithinCommandSubstitution)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << param;
         EXPECT_TRUE(res.scope.is_context());
 
-        EXPECT_TRUE(cache.match);
-        EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource_str);
-        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+        EXPECT_TRUE(cache->match);
+        EXPECT_STRV(cache->match->args[0].address, "server.sys.shell.cmd");
+        EXPECT_STR(cache->match->args[0].resolved, resource_str);
+        EXPECT_TRUE(cache->match->args[0].key_path.empty());
 
-        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, param);
-        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+        EXPECT_STRV(cache->match->args[1].address, "server.request.query");
+        EXPECT_STR(cache->match->args[1].resolved, param);
+        EXPECT_TRUE(cache->match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], param);
+        EXPECT_STR(cache->match->highlights[0], param);
     }
 }
 
@@ -302,21 +302,21 @@ TEST(TestShiDetectorArray, InjectionsWithinProcessSubstitution)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << param;
         EXPECT_TRUE(res.scope.is_context());
 
-        EXPECT_TRUE(cache.match);
-        EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource_str);
-        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+        EXPECT_TRUE(cache->match);
+        EXPECT_STRV(cache->match->args[0].address, "server.sys.shell.cmd");
+        EXPECT_STR(cache->match->args[0].resolved, resource_str);
+        EXPECT_TRUE(cache->match->args[0].key_path.empty());
 
-        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, param);
-        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+        EXPECT_STRV(cache->match->args[1].address, "server.request.query");
+        EXPECT_STR(cache->match->args[1].resolved, param);
+        EXPECT_TRUE(cache->match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], param);
+        EXPECT_STR(cache->match->highlights[0], param);
     }
 }
 
@@ -353,21 +353,21 @@ TEST(TestShiDetectorArray, OffByOnePayloadsMatch)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << param;
         EXPECT_TRUE(res.scope.is_context());
 
-        EXPECT_TRUE(cache.match);
-        EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
-        EXPECT_STR(cache.match->args[0].resolved, resource_str);
-        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+        EXPECT_TRUE(cache->match);
+        EXPECT_STRV(cache->match->args[0].address, "server.sys.shell.cmd");
+        EXPECT_STR(cache->match->args[0].resolved, resource_str);
+        EXPECT_TRUE(cache->match->args[0].key_path.empty());
 
-        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, param);
-        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+        EXPECT_STRV(cache->match->args[1].address, "server.request.query");
+        EXPECT_STR(cache->match->args[1].resolved, param);
+        EXPECT_TRUE(cache->match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], param);
+        EXPECT_STR(cache->match->highlights[0], param);
     }
 }
 

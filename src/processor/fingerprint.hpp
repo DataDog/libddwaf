@@ -26,7 +26,7 @@ public:
     std::pair<owned_object, evaluation_scope> eval_impl(
         const unary_argument<std::string_view> &method,
         const unary_argument<std::string_view> &uri_raw, const optional_argument<map_view> &query,
-        const optional_argument<map_view> &body, processor_cache &cache,
+        const optional_argument<map_view> &body, base_cache_type &cache,
         nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const;
 };
 
@@ -41,7 +41,7 @@ public:
     {}
 
     std::pair<owned_object, evaluation_scope> eval_impl(const unary_argument<map_view> &headers,
-        processor_cache &cache, nonnull_ptr<memory::memory_resource> alloc,
+        base_cache_type &cache, nonnull_ptr<memory::memory_resource> alloc,
         ddwaf::timer &deadline) const;
 };
 
@@ -56,7 +56,7 @@ public:
     {}
 
     std::pair<owned_object, evaluation_scope> eval_impl(const unary_argument<map_view> &headers,
-        processor_cache &cache, nonnull_ptr<memory::memory_resource> alloc,
+        base_cache_type &cache, nonnull_ptr<memory::memory_resource> alloc,
         ddwaf::timer &deadline) const;
 };
 
@@ -73,7 +73,7 @@ public:
 
     std::pair<owned_object, evaluation_scope> eval_impl(const optional_argument<map_view> &cookies,
         const optional_argument<std::string_view> &session_id,
-        const optional_argument<std::string_view> &user_id, processor_cache &cache,
+        const optional_argument<std::string_view> &user_id, base_cache_type &cache,
         nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const;
 };
 

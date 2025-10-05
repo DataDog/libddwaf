@@ -33,7 +33,7 @@ public:
     {}
 
     MOCK_METHOD((std::pair<owned_object, evaluation_scope>), eval_impl,
-        (const unary_argument<object_view> &, processor_cache &,
+        (const unary_argument<object_view> &, base_processor::base_cache_type &,
             nonnull_ptr<memory::memory_resource>, ddwaf::timer &),
         (const));
 };
@@ -66,7 +66,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     timer deadline{2s};
 
     attribute_collector collector;
@@ -115,7 +115,7 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>(
             std::move(second_output), evaluation_scope::context()))));
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     timer deadline{2s};
 
     attribute_collector collector;
@@ -168,7 +168,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
             std::move(output), evaluation_scope::context()})));
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     timer deadline{2s};
 
     attribute_collector collector;
@@ -213,7 +213,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
             std::move(output), evaluation_scope::context()})));
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     timer deadline{2s};
 
     attribute_collector collector;
@@ -265,7 +265,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
     mock::processor proc{"id", builder.build(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     timer deadline{2s};
 
     attribute_collector collector;
@@ -303,7 +303,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
             std::move(output), evaluation_scope::context()})));
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     timer deadline{2s};
 
     owned_object attributes;
@@ -354,7 +354,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
     EXPECT_CALL(proc, eval_impl(_, _, _, _))
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
             std::move(output), evaluation_scope::context()})));
-    processor_cache cache;
+    base_processor::cache_type cache;
 
     timer deadline{2s};
 
@@ -400,7 +400,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
     mock::processor proc{"id", builder.build(), std::move(mappings), true, false};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     timer deadline{2s};
 
     owned_object attributes;
@@ -448,7 +448,7 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>(
             std::move(second_output), evaluation_scope::context()))));
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     timer deadline{2s};
     owned_object attributes;
 
@@ -499,7 +499,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
             std::move(output), evaluation_scope::context()})));
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     timer deadline{2s};
 
     {
@@ -548,7 +548,7 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _)).Times(0);
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     timer deadline{2s};
 
     attribute_collector collector;
@@ -579,7 +579,7 @@ TEST(TestProcessor, OutputAlreadyGenerated)
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _)).Times(1);
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     timer deadline{2s};
 
     attribute_collector collector;
@@ -610,7 +610,7 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _)).Times(0);
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     timer deadline{2s};
     owned_object attributes;
 
@@ -646,7 +646,7 @@ TEST(TestProcessor, OutputEvalWithoutattributesMap)
         .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
             std::move(output), evaluation_scope::context()})));
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     timer deadline{2s};
 
     owned_object attributes;
@@ -685,7 +685,7 @@ TEST(TestProcessor, Timeout)
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _)).Times(0);
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     timer deadline{0s};
     owned_object attributes;
 

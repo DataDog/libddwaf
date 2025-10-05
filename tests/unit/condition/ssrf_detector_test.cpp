@@ -55,38 +55,38 @@ void match_path_and_input(const std::vector<std::pair<std::string, ssrf_sample>>
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         if (match) {
             ASSERT_TRUE(res.outcome) << path;
             EXPECT_TRUE(res.scope.is_context());
 
-            EXPECT_TRUE(cache.match);
-            if (cache.match) { // Silence linter
-                EXPECT_STRV(cache.match->args[0].address, "server.io.net.url");
-                EXPECT_STR(cache.match->args[0].resolved, path);
-                EXPECT_TRUE(cache.match->args[0].key_path.empty());
+            EXPECT_TRUE(cache->match);
+            if (cache->match) { // Silence linter
+                EXPECT_STRV(cache->match->args[0].address, "server.io.net.url");
+                EXPECT_STR(cache->match->args[0].resolved, path);
+                EXPECT_TRUE(cache->match->args[0].key_path.empty());
 
-                EXPECT_STRV(cache.match->args[1].address, sample.address);
+                EXPECT_STRV(cache->match->args[1].address, sample.address);
                 if (sample.resolved.empty()) {
-                    EXPECT_STR(cache.match->args[1].resolved, sample.yaml);
+                    EXPECT_STR(cache->match->args[1].resolved, sample.yaml);
                 } else {
-                    EXPECT_STR(cache.match->args[1].resolved, sample.resolved);
+                    EXPECT_STR(cache->match->args[1].resolved, sample.resolved);
                 }
                 if (sample.highlight.empty()) {
                     if (sample.resolved.empty()) {
-                        EXPECT_STR(cache.match->highlights[0], sample.yaml);
+                        EXPECT_STR(cache->match->highlights[0], sample.yaml);
                     } else {
-                        EXPECT_STR(cache.match->highlights[0], sample.resolved);
+                        EXPECT_STR(cache->match->highlights[0], sample.resolved);
                     }
                 } else {
-                    EXPECT_STR(cache.match->highlights[0], sample.highlight);
+                    EXPECT_STR(cache->match->highlights[0], sample.highlight);
                 }
-                EXPECT_TRUE(cache.match->args[1].key_path == sample.key_path) << path;
+                EXPECT_TRUE(cache->match->args[1].key_path == sample.key_path) << path;
             }
         } else {
             EXPECT_FALSE(res.outcome) << path;
-            EXPECT_FALSE(cache.match);
+            EXPECT_FALSE(cache->match);
         }
     }
 }
@@ -379,7 +379,7 @@ TEST(TestSSRFDetector, NoMatchPotentialFalsePositives)
             {"http://threatguard-prod-tg-api.iaas.checkpoint.com/api/v1/lookalike/"
              "screenshotB64?date=2020-01-17&lookalike=base64=",
                 {.yaml = R"({query: {lookalike: base64=}})"}},
-            {"http://cn-cache.ryzerobotics.com/support/"
+            {"http://cn-cache->ryzerobotics.com/support/"
              "service-policies?cache=update&cache-gateway=1",
                 {.yaml = R"({path: "/support/service-policies?cache=update"})"}},
             {"http://s3.eu-central-1.amazonaws.com/bla/production/p/bla/blablabla.../"

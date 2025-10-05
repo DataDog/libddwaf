@@ -123,7 +123,7 @@ lfi_result lfi_impl(std::string_view path, object_view params,
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path,
-    const variadic_argument<object_view> &params, condition_cache &cache,
+    const variadic_argument<object_view> &params, base_cache_type &cache,
     const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     for (const auto &param : params) {
@@ -137,14 +137,14 @@ eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
 
-            cache.match = condition_match{.args = {{.name = "resource"sv,
-                                                       .resolved = path.value,
-                                                       .address = path.address,
-                                                       .key_path = path_kp},
-                                              {.name = "params"sv,
-                                                  .resolved = highlight,
-                                                  .address = param.address,
-                                                  .key_path = param_kp}},
+            cache->match = condition_match{.args = {{.name = "resource"sv,
+                                                        .resolved = path.value,
+                                                        .address = path.address,
+                                                        .key_path = path_kp},
+                                               {.name = "params"sv,
+                                                   .resolved = highlight,
+                                                   .address = param.address,
+                                                   .key_path = param_kp}},
                 .highlights = {highlight},
                 .operator_name = "lfi_detector",
                 .operator_value = {},

@@ -12,6 +12,7 @@
 
 #include "argument_retriever.hpp"
 #include "attribute_collector.hpp"
+#include "evaluation_cache.hpp"
 #include "exception.hpp"
 #include "expression.hpp"
 #include "log.hpp"
@@ -20,6 +21,8 @@
 #include "utils.hpp"
 
 namespace ddwaf {
+
+class base_processor;
 
 struct processor_target {
     target_index index;
@@ -42,7 +45,6 @@ struct resolved_argument_count {
 };
 
 struct processor_cache {
-    expression::cache_type expr_cache;
     std::unordered_map<target_index, evaluation_scope> generated;
 
     struct {
@@ -82,6 +84,9 @@ concept is_tuple_with_optional = tuple_optionals_trait<T>::value;
 
 class base_processor {
 public:
+    using cache_type = cache_entry<processor_cache, cache_entry<expression::cache_type>>;
+    using base_cache_type = cache_type::base_type;
+
     base_processor() = default;
     base_processor(const base_processor &) = delete;
     base_processor &operator=(const base_processor &) = delete;
@@ -90,7 +95,7 @@ public:
     base_processor &operator=(base_processor &&rhs) noexcept = default;
     virtual ~base_processor() = default;
 
-    virtual void eval(object_store &store, attribute_collector &collector, processor_cache &cache,
+    virtual void eval(object_store &store, attribute_collector &collector, base_cache_type &cache,
         nonnull_ptr<memory::memory_resource> alloc, evaluation_scope scope,
         ddwaf::timer &deadline) const = 0;
 
@@ -114,13 +119,14 @@ public:
     structured_processor &operator=(structured_processor &&rhs) noexcept = default;
     ~structured_processor() override = default;
 
-    void eval(object_store &store, attribute_collector &collector, processor_cache &cache,
+    void eval(object_store &store, attribute_collector &collector, base_cache_type &cache,
         nonnull_ptr<memory::memory_resource> alloc, evaluation_scope scope,
         ddwaf::timer &deadline) const override
     {
         DDWAF_DEBUG("Evaluating processor '{}'", id_);
 
-        if (!expr_->eval(cache.expr_cache, store, {}, {}, scope, deadline).outcome) {
+        auto &expr_cache = cache.nested_cache();
+        if (!expr_->eval(*expr_cache.get(), store, {}, {}, scope, deadline).outcome) {
             return;
         }
 
@@ -128,7 +134,8 @@ public:
         using tuple_type = typename func_traits::tuple_type;
         static_assert(func_traits::nargs == Self::param_names.size());
 
-        auto &evaluated = scope.is_context() ? cache.context.evaluated : cache.subcontext.evaluated;
+        auto &evaluated =
+            scope.is_context() ? cache->context.evaluated : cache->subcontext.evaluated;
 
         if constexpr (is_tuple_with_optional<tuple_type>) {
             // If the processor has optional parameters, initialise the cache to
@@ -138,13 +145,13 @@ public:
                 evaluated.resize(mappings_.size());
             }
 
-            if (scope.is_subcontext() && scope != cache.subcontext.scope) {
-                cache.subcontext.scope = scope;
+            if (scope.is_subcontext() && scope != cache->subcontext.scope) {
+                cache->subcontext.scope = scope;
 
                 // If the context has a cache of arguments evaluated, copy it
                 // otherwise initialise this one.
-                if (cache.context.evaluated.size() == mappings_.size()) {
-                    evaluated = cache.context.evaluated;
+                if (cache->context.evaluated.size() == mappings_.size()) {
+                    evaluated = cache->context.evaluated;
                 } else {
                     if (evaluated.size() == mappings_.size()) {
                         std::fill(evaluated.begin(), evaluated.end(), resolved_argument_count{});
@@ -170,8 +177,8 @@ public:
 
             if (!maybe_skip_output) {
                 // Check if it has already been generated within this scope
-                auto it = cache.generated.find(mapping.output.index);
-                maybe_skip_output = it != cache.generated.end() &&
+                auto it = cache->generated.find(mapping.output.index);
+                maybe_skip_output = it != cache->generated.end() &&
                                     it->second.has_higher_precedence_or_is_equal_to(scope);
             }
 
@@ -214,7 +221,7 @@ public:
                 std::move(args));
 
             // Whatever the outcome, we don't want to try and generate it again within this scope
-            cache.generated.emplace(mapping.output.index, scope);
+            cache->generated.emplace(mapping.output.index, scope);
 
             // TODO: fix this for subcontexts
 

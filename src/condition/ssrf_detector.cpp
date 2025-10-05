@@ -290,7 +290,7 @@ ssrf_detector::ssrf_detector(std::vector<condition_parameter> args, const ssrf_o
 {}
 
 eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri,
-    const variadic_argument<object_view> &params, condition_cache &cache,
+    const variadic_argument<object_view> &params, base_cache_type &cache,
     const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     auto decomposed = uri_parse(uri.value);
@@ -305,7 +305,7 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
 
         DDWAF_TRACE("Resource {} matched policy", uri.value);
 
-        cache.match = condition_match{
+        cache->match = condition_match{
             .args = {{.name = "resource"sv,
                          .resolved = std::string{uri.value},
                          .address = uri.address,
@@ -331,14 +331,14 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
 
-            cache.match = condition_match{.args = {{.name = "resource"sv,
-                                                       .resolved = std::string{uri.value},
-                                                       .address = uri.address,
-                                                       .key_path = uri_kp},
-                                              {.name = "params"sv,
-                                                  .resolved = highlight,
-                                                  .address = param.address,
-                                                  .key_path = param_kp}},
+            cache->match = condition_match{.args = {{.name = "resource"sv,
+                                                        .resolved = std::string{uri.value},
+                                                        .address = uri.address,
+                                                        .key_path = uri_kp},
+                                               {.name = "params"sv,
+                                                   .resolved = highlight,
+                                                   .address = param.address,
+                                                   .key_path = param_kp}},
                 .highlights = {std::move(highlight)},
                 .operator_name = "ssrf_detector",
                 .operator_value = {},

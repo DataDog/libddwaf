@@ -34,7 +34,7 @@ add_custom_target(test
 add_dependencies(test waf_test)
 
 add_custom_target(test_valgrind
-    COMMAND valgrind --leak-check=full --show-reachable=yes --suppressions=re2.supp  ${CMAKE_BINARY_DIR}/tests/waf_test --gtest_filter=-TestTimer.*
+    COMMAND valgrind --leak-check=full --show-reachable=yes  --show-leak-kinds=all --track-origins=yes --track-fds=yes --suppressions=re2.supp  ${CMAKE_BINARY_DIR}/tests/waf_test --gtest_filter=-TestTimer.*
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)
 add_dependencies(test_valgrind waf_test)
 

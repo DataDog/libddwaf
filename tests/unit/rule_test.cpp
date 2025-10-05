@@ -73,7 +73,7 @@ TEST(TestRule, Match)
         EXPECT_FALSE(result.has_value());
     }
 
-    EXPECT_TRUE(cache.result);
+    EXPECT_TRUE(cache->result);
 }
 
 TEST(TestRule, SubcontextMatch)
@@ -123,8 +123,8 @@ TEST(TestRule, SubcontextMatch)
         EXPECT_TRUE(result->scope.is_subcontext());
     }
 
-    EXPECT_TRUE(cache.result);
-    EXPECT_EQ(cache.scope, scope);
+    EXPECT_TRUE(cache->result);
+    EXPECT_EQ(cache->scope, scope);
 }
 
 TEST(TestRule, NoMatch)

@@ -434,7 +434,7 @@ cmdi_detector::cmdi_detector(std::vector<condition_parameter> args)
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 eval_result cmdi_detector::eval_impl(const unary_argument<object_view> &resource,
-    const variadic_argument<object_view> &params, condition_cache &cache,
+    const variadic_argument<object_view> &params, base_cache_type &cache,
     const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     if (resource.value.type() != object_type::array || resource.value.empty()) {
@@ -455,7 +455,7 @@ eval_result cmdi_detector::eval_impl(const unary_argument<object_view> &resource
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
 
-            cache.match =
+            cache->match =
                 condition_match{.args = {{.name = "resource"sv,
                                              .resolved = generate_string_resource(resource.value),
                                              .address = resource.address,

@@ -338,7 +338,7 @@ owned_object generate(object_view object, const std::set<const scanner *> &scann
 } // namespace schema
 
 std::pair<owned_object, evaluation_scope> extract_schema::eval_impl(
-    const unary_argument<object_view> &input, processor_cache & /*cache*/,
+    const unary_argument<object_view> &input, base_cache_type & /*cache*/,
     nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const
 {
     if (!input.value.has_value()) {

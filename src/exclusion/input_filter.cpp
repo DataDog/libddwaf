@@ -35,19 +35,20 @@ input_filter::input_filter(std::string id, std::shared_ptr<expression> expr,
     }
 }
 
-std::optional<excluded_set> input_filter::match(const object_store &store, cache_type &cache,
+std::optional<excluded_set> input_filter::match(const object_store &store, base_cache_type &cache,
     const matcher_mapper &dynamic_matchers, evaluation_scope scope, timer &deadline) const
 {
     DDWAF_DEBUG("Evaluating input filter '{}'", id_);
 
     // An event was already produced, so we skip the rule
     // Note that conditions in a filter are optional
-    auto res = expr_->eval(cache.expr_cache, store, {}, dynamic_matchers, scope, deadline);
+    auto res = expr_->eval(*cache, store, {}, dynamic_matchers, scope, deadline);
     if (!res.outcome) {
         return std::nullopt;
     }
 
-    auto objects = filter_->match(store, cache.object_filter_cache, res.scope, deadline);
+    auto &object_filter_cache = cache.nested_cache();
+    auto objects = filter_->match(store, object_filter_cache, res.scope, deadline);
     if (objects.empty()) {
         return std::nullopt;
     }

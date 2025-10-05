@@ -104,7 +104,7 @@ std::string_view find_token(object_view root, std::span<const std::string> key_p
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<owned_object, evaluation_scope> jwt_decode::eval_impl(
-    const unary_argument<object_view> &input, processor_cache & /*cache*/,
+    const unary_argument<object_view> &input, base_cache_type & /*cache*/,
     nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer & /*deadline*/) const
 {
     std::string_view token = find_token(input.value, input.key_path);

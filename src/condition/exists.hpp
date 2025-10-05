@@ -22,7 +22,7 @@ public:
 
 protected:
     [[nodiscard]] eval_result eval_impl(const variadic_argument<object_view> &inputs,
-        condition_cache &cache, const object_set_ref &objects_excluded,
+        base_cache_type &cache, const object_set_ref &objects_excluded,
         ddwaf::timer &deadline) const;
 
     friend class base_impl<exists_condition>;
@@ -38,7 +38,7 @@ public:
 
 protected:
     [[nodiscard]] eval_result eval_impl(const unary_argument<object_view> &input,
-        condition_cache &cache, const object_set_ref &objects_excluded,
+        base_cache_type &cache, const object_set_ref &objects_excluded,
         ddwaf::timer & /*deadline*/) const;
 
     friend class base_impl<negated_exists_condition>;

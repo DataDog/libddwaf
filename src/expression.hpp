@@ -24,11 +24,13 @@ namespace ddwaf {
 
 class expression {
 public:
-    struct cache_type {
+    struct cache_data {
         bool result{false};
         evaluation_scope scope;
-        memory::vector<condition_cache> conditions;
     };
+
+    using cache_type = cache_entry<cache_data, sequential_cache_store<base_condition::cache_type>>;
+    using base_cache_type = cache_type::base_type;
 
     expression() = default;
 
@@ -36,7 +38,7 @@ public:
         : conditions_(std::move(conditions))
     {}
 
-    eval_result eval(cache_type &cache, const object_store &store,
+    eval_result eval(base_cache_type &cache, const object_store &store,
         const object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
         evaluation_scope scope, ddwaf::timer &deadline) const;
 
@@ -46,22 +48,24 @@ public:
     }
 
     static std::vector<condition_match> get_matches(
-        cache_type &cache, evaluation_scope scope = evaluation_scope::context())
+        base_cache_type &cache, evaluation_scope scope = evaluation_scope::context())
     {
         std::vector<condition_match> matches;
-        matches.reserve(cache.conditions.size());
-        for (auto &cond_cache : cache.conditions) {
-            if (cond_cache.match.has_value() &&
-                cond_cache.match->scope.has_higher_precedence_or_is_equal_to(scope)) {
-                matches.emplace_back(cond_cache.match.value());
+        matches.reserve(cache.size());
+
+        for (std::size_t i = 0; i < cache.size(); ++i) {
+            auto &cond_cache = cache[i];
+            if (cond_cache->match.has_value() &&
+                cond_cache->match->scope.has_higher_precedence_or_is_equal_to(scope)) {
+                matches.emplace_back(cond_cache->match.value());
             }
         }
         return matches;
     }
 
-    static bool get_result(cache_type &cache, evaluation_scope scope)
+    static bool get_result(base_cache_type &cache, evaluation_scope scope)
     {
-        return cache.scope.has_higher_precedence_or_is_equal_to(scope) && cache.result;
+        return cache->scope.has_higher_precedence_or_is_equal_to(scope) && cache->result;
     }
 
     [[nodiscard]] bool empty() const { return conditions_.empty(); }

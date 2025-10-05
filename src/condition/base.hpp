@@ -12,6 +12,7 @@
 #include "clock.hpp"
 #include "context_allocator.hpp"
 #include "dynamic_string.hpp"
+#include "evaluation_cache.hpp"
 #include "exclusion/common.hpp"
 #include "matcher/base.hpp"
 #include "object_store.hpp"
@@ -76,6 +77,9 @@ struct condition_parameter {
 
 class base_condition {
 public:
+    using cache_type = cache_entry<condition_cache>;
+    using base_cache_type = cache_type::base_type;
+
     base_condition() = default;
     virtual ~base_condition() = default;
     base_condition(const base_condition &) = default;
@@ -83,7 +87,7 @@ public:
     base_condition(base_condition &&) = default;
     base_condition &operator=(base_condition &&) = default;
 
-    virtual eval_result eval(condition_cache &cache, const object_store &store,
+    virtual eval_result eval(base_cache_type &cache, const object_store &store,
         const object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
         ddwaf::timer &deadline) const = 0;
 

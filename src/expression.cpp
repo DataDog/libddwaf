@@ -16,7 +16,7 @@
 
 namespace ddwaf {
 
-eval_result expression::eval(cache_type &cache, const object_store &store,
+eval_result expression::eval(base_cache_type &cache, const object_store &store,
     const object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
     evaluation_scope scope, ddwaf::timer &deadline) const
 {
@@ -29,17 +29,13 @@ eval_result expression::eval(cache_type &cache, const object_store &store,
         return {.outcome = true, .scope = scope};
     }
 
-    if (cache.conditions.size() < conditions_.size()) {
-        cache.conditions.assign(conditions_.size(), condition_cache{});
-    }
-
     evaluation_scope final_scope;
     for (unsigned i = 0; i < conditions_.size(); ++i) {
         const auto &cond = conditions_[i];
-        auto &cond_cache = cache.conditions[i];
+        auto &cond_cache = cache[i];
 
-        if (cond_cache.match.has_value() &&
-            cond_cache.match->scope.has_higher_precedence_or_is_equal_to(scope)) {
+        if (cond_cache->match.has_value() &&
+            cond_cache->match->scope.has_higher_precedence_or_is_equal_to(scope)) {
             continue;
         }
 
@@ -53,8 +49,8 @@ eval_result expression::eval(cache_type &cache, const object_store &store,
             final_scope = cond_eval_scope;
         }
     }
-    cache.result = true;
-    cache.scope = final_scope;
+    cache->result = true;
+    cache->scope = final_scope;
 
     return {.outcome = true, .scope = final_scope};
 }

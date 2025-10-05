@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "clock.hpp"
+#include "evaluation_cache.hpp"
 #include "exclusion/common.hpp"
 #include "expression.hpp"
 #include "matcher/base.hpp"
@@ -97,6 +98,8 @@ public:
     using verdict_type = rule_verdict;
 
     using cache_type = expression::cache_type;
+    using base_cache_type = cache_type::base_type;
+
     core_rule(std::string id,                              // Required: Unique identifier
         std::string name,                                  // Required: Human-readable name
         std::unordered_map<std::string, std::string> tags, // Required: Rule metadata
@@ -136,7 +139,7 @@ public:
     ~core_rule() = default;
 
     std::pair<verdict_type, std::optional<rule_result>> match(const object_store &store,
-        cache_type &cache, const object_set_ref &objects_excluded,
+        base_cache_type &cache, const object_set_ref &objects_excluded,
         const matcher_mapper &dynamic_matchers, evaluation_scope scope, timer &deadline) const;
 
     [[nodiscard]] bool is_enabled() const { return enabled_; }

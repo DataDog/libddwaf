@@ -9,6 +9,7 @@
 #include <set>
 
 #include "clock.hpp"
+#include "evaluation_cache.hpp"
 #include "exclusion/object_filter.hpp"
 #include "object_store.hpp"
 #include "rule.hpp"
@@ -23,10 +24,8 @@ public:
         object_set objects;
     };
 
-    struct cache_type {
-        expression::cache_type expr_cache;
-        object_filter::cache_type object_filter_cache;
-    };
+    using cache_type = cache_entry<expression::cache_type, object_filter::cache_type>;
+    using base_cache_type = cache_type::base_type;
 
     input_filter(std::string id, std::shared_ptr<expression> expr,
         std::set<const core_rule *> rule_targets, std::shared_ptr<object_filter> filter);
@@ -36,7 +35,7 @@ public:
     input_filter &operator=(input_filter &&) = delete;
     ~input_filter() = default;
 
-    std::optional<excluded_set> match(const object_store &store, cache_type &cache,
+    std::optional<excluded_set> match(const object_store &store, base_cache_type &cache,
         const matcher_mapper &dynamic_matchers, evaluation_scope scope,
         ddwaf::timer &deadline) const;
 

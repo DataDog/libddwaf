@@ -26,7 +26,7 @@ namespace {
 using verdict_type = rule_module::verdict_type;
 
 std::pair<verdict_type, std::optional<rule_result>> eval_rule(const core_rule &rule,
-    const object_store &store, core_rule::cache_type &cache, const exclusion_policy &policy,
+    const object_store &store, core_rule::base_cache_type &cache, const exclusion_policy &policy,
     const matcher_mapper &dynamic_matchers, evaluation_scope scope, ddwaf::timer &deadline)
 {
     const auto &id = rule.get_id();
@@ -91,13 +91,13 @@ ddwaf::timer &rule_module::get_deadline(ddwaf::timer &deadline) const
 }
 
 verdict_type rule_module::eval_with_collections(std::vector<rule_result> &results,
-    object_store &store, cache_type &cache, const exclusion_policy &exclusion,
+    object_store &store, base_cache_type &cache, const exclusion_policy &exclusion,
     const matcher_mapper &dynamic_matchers, evaluation_scope scope, ddwaf::timer &deadline) const
 {
     verdict_type final_verdict = verdict_type::none;
     for (const auto &collection : collections_) {
         DDWAF_DEBUG("Evaluating collection: {}", collection.name);
-        auto &collection_cache = cache.collections[collection.name];
+        auto &collection_cache = cache->collections[collection.name];
         if (collection_cache.context.type >= collection.type) {
             continue;
         }
@@ -109,8 +109,8 @@ verdict_type rule_module::eval_with_collections(std::vector<rule_result> &result
 
         for (std::size_t i = collection.begin; i < collection.end; ++i) {
             const auto &rule = *rules_[i];
-            auto [verdict, outcome] = eval_rule(
-                rule, store, cache.rules[i], exclusion, dynamic_matchers, scope, deadline);
+            auto [verdict, outcome] =
+                eval_rule(rule, store, cache[i], exclusion, dynamic_matchers, scope, deadline);
             if (outcome.has_value()) {
                 if (outcome->scope.is_context()) {
                     collection_cache.context.type = verdict;
@@ -135,8 +135,8 @@ verdict_type rule_module::eval_with_collections(std::vector<rule_result> &result
 }
 
 verdict_type rule_module::eval(std::vector<rule_result> &results, object_store &store,
-    cache_type &cache, const exclusion_policy &exclusion, const matcher_mapper &dynamic_matchers,
-    evaluation_scope scope, ddwaf::timer &deadline) const
+    base_cache_type &cache, const exclusion_policy &exclusion,
+    const matcher_mapper &dynamic_matchers, evaluation_scope scope, ddwaf::timer &deadline) const
 {
     auto &apt_deadline = get_deadline(deadline);
 
@@ -144,7 +144,7 @@ verdict_type rule_module::eval(std::vector<rule_result> &results, object_store &
         auto final_verdict = verdict_type::none;
         for (std::size_t i = 0; i < rules_.size(); ++i) {
             const auto &rule = *rules_[i];
-            auto &rule_cache = cache.rules[i];
+            auto &rule_cache = cache[i];
 
             auto [verdict, outcome] = eval_rule(
                 rule, store, rule_cache, exclusion, dynamic_matchers, scope, apt_deadline);

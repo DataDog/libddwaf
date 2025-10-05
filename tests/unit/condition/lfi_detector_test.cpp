@@ -41,21 +41,21 @@ TEST(TestLFIDetector, MatchBasicUnix)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome);
         EXPECT_TRUE(res.scope.is_context());
 
-        EXPECT_TRUE(cache.match);
-        EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
-        EXPECT_STR(cache.match->args[0].resolved, path);
-        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+        EXPECT_TRUE(cache->match);
+        EXPECT_STRV(cache->match->args[0].address, "server.io.fs.file");
+        EXPECT_STR(cache->match->args[0].resolved, path);
+        EXPECT_TRUE(cache->match->args[0].key_path.empty());
 
-        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input);
-        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+        EXPECT_STRV(cache->match->args[1].address, "server.request.query");
+        EXPECT_STR(cache->match->args[1].resolved, input);
+        EXPECT_TRUE(cache->match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input);
+        EXPECT_STR(cache->match->highlights[0], input);
     }
 }
 
@@ -105,21 +105,21 @@ TEST(TestLFIDetector, MatchBasicWindows)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         EXPECT_TRUE(res.outcome) << path;
         EXPECT_TRUE(res.scope.is_context());
 
-        EXPECT_TRUE(cache.match);
-        EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
-        EXPECT_STR(cache.match->args[0].resolved, path);
-        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+        EXPECT_TRUE(cache->match);
+        EXPECT_STRV(cache->match->args[0].address, "server.io.fs.file");
+        EXPECT_STR(cache->match->args[0].resolved, path);
+        EXPECT_TRUE(cache->match->args[0].key_path.empty());
 
-        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input);
-        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+        EXPECT_STRV(cache->match->args[1].address, "server.request.query");
+        EXPECT_STR(cache->match->args[1].resolved, input);
+        EXPECT_TRUE(cache->match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input);
+        EXPECT_STR(cache->match->highlights[0], input);
     }
 }
 
@@ -135,21 +135,21 @@ TEST(TestLFIDetector, MatchWithKeyPath)
     store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
-    condition_cache cache;
+    base_condition::cache_type cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
     EXPECT_TRUE(res.scope.is_context());
 
-    EXPECT_TRUE(cache.match);
-    EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
-    EXPECT_STR(cache.match->args[0].resolved, "documents/../etc/passwd");
-    EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-    EXPECT_STR(cache.match->args[1].resolved, "../etc/passwd");
+    EXPECT_TRUE(cache->match);
+    EXPECT_STRV(cache->match->args[0].address, "server.io.fs.file");
+    EXPECT_STR(cache->match->args[0].resolved, "documents/../etc/passwd");
+    EXPECT_STRV(cache->match->args[1].address, "server.request.query");
+    EXPECT_STR(cache->match->args[1].resolved, "../etc/passwd");
 
     std::vector<std::string> kp{"array", "0", "map"};
-    EXPECT_EQ(cache.match->args[1].key_path, kp);
+    EXPECT_EQ(cache->match->args[1].key_path, kp);
 
-    EXPECT_STR(cache.match->highlights[0], "../etc/passwd");
+    EXPECT_STR(cache->match->highlights[0], "../etc/passwd");
 }
 
 TEST(TestLFIDetector, PartiallySubcontextMatch)
@@ -170,21 +170,21 @@ TEST(TestLFIDetector, PartiallySubcontextMatch)
     }
 
     ddwaf::timer deadline{2s};
-    condition_cache cache;
+    base_condition::cache_type cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
     EXPECT_TRUE(res.scope.is_subcontext());
 
-    EXPECT_TRUE(cache.match);
-    EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
-    EXPECT_STR(cache.match->args[0].resolved, "/var/www/html/../../../etc/passwd");
-    EXPECT_TRUE(cache.match->args[0].key_path.empty());
+    EXPECT_TRUE(cache->match);
+    EXPECT_STRV(cache->match->args[0].address, "server.io.fs.file");
+    EXPECT_STR(cache->match->args[0].resolved, "/var/www/html/../../../etc/passwd");
+    EXPECT_TRUE(cache->match->args[0].key_path.empty());
 
-    EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-    EXPECT_STR(cache.match->args[1].resolved, "../../../etc/passwd");
-    EXPECT_TRUE(cache.match->args[1].key_path.empty());
+    EXPECT_STRV(cache->match->args[1].address, "server.request.query");
+    EXPECT_STR(cache->match->args[1].resolved, "../../../etc/passwd");
+    EXPECT_TRUE(cache->match->args[1].key_path.empty());
 
-    EXPECT_STR(cache.match->highlights[0], "../../../etc/passwd");
+    EXPECT_STR(cache->match->highlights[0], "../../../etc/passwd");
 }
 
 TEST(TestLFIDetector, SubcontextMatch)
@@ -199,21 +199,21 @@ TEST(TestLFIDetector, SubcontextMatch)
     store.insert(std::move(root), evaluation_scope::subcontext());
 
     ddwaf::timer deadline{2s};
-    condition_cache cache;
+    base_condition::cache_type cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     EXPECT_TRUE(res.outcome);
     EXPECT_TRUE(res.scope.is_subcontext());
 
-    EXPECT_TRUE(cache.match);
-    EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
-    EXPECT_STR(cache.match->args[0].resolved, "/var/www/html/../../../etc/passwd");
-    EXPECT_TRUE(cache.match->args[0].key_path.empty());
+    EXPECT_TRUE(cache->match);
+    EXPECT_STRV(cache->match->args[0].address, "server.io.fs.file");
+    EXPECT_STR(cache->match->args[0].resolved, "/var/www/html/../../../etc/passwd");
+    EXPECT_TRUE(cache->match->args[0].key_path.empty());
 
-    EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-    EXPECT_STR(cache.match->args[1].resolved, "../../../etc/passwd");
-    EXPECT_TRUE(cache.match->args[1].key_path.empty());
+    EXPECT_STRV(cache->match->args[1].address, "server.request.query");
+    EXPECT_STR(cache->match->args[1].resolved, "../../../etc/passwd");
+    EXPECT_TRUE(cache->match->args[1].key_path.empty());
 
-    EXPECT_STR(cache.match->highlights[0], "../../../etc/passwd");
+    EXPECT_STR(cache->match->highlights[0], "../../../etc/passwd");
 }
 
 TEST(TestLFIDetector, NoMatchUnix)
@@ -238,11 +238,11 @@ TEST(TestLFIDetector, NoMatchUnix)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome) << path;
         EXPECT_TRUE(res.scope.is_context()) << path;
-        EXPECT_FALSE(cache.match);
+        EXPECT_FALSE(cache->match);
     }
 }
 
@@ -277,11 +277,11 @@ TEST(TestLFIDetector, NoMatchWindows)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         EXPECT_FALSE(res.outcome) << path;
         EXPECT_TRUE(res.scope.is_context()) << path;
-        EXPECT_FALSE(cache.match);
+        EXPECT_FALSE(cache->match);
     }
 }
 
@@ -302,11 +302,11 @@ TEST(TestLFIDetector, NoMatchExcludedPath)
     store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
-    condition_cache cache;
+    base_condition::cache_type cache;
     auto res = cond.eval(cache, store, exclusion, {}, deadline);
     EXPECT_FALSE(res.outcome);
     EXPECT_TRUE(res.scope.is_context());
-    EXPECT_FALSE(cache.match);
+    EXPECT_FALSE(cache->match);
 }
 
 TEST(TestLFIDetector, NoMatchExcludedAddress)
@@ -323,11 +323,11 @@ TEST(TestLFIDetector, NoMatchExcludedAddress)
     store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
-    condition_cache cache;
+    base_condition::cache_type cache;
     auto res = cond.eval(cache, store, exclusion, {}, deadline);
     EXPECT_FALSE(res.outcome);
     EXPECT_TRUE(res.scope.is_context());
-    EXPECT_FALSE(cache.match);
+    EXPECT_FALSE(cache->match);
 }
 
 TEST(TestLFIDetector, Timeout)
@@ -344,11 +344,11 @@ TEST(TestLFIDetector, Timeout)
     store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{0s};
-    condition_cache cache;
+    base_condition::cache_type cache;
     auto res = cond.eval(cache, store, exclusion, {}, deadline);
     EXPECT_FALSE(res.outcome);
     EXPECT_TRUE(res.scope.is_context());
-    EXPECT_FALSE(cache.match);
+    EXPECT_FALSE(cache->match);
 }
 
 TEST(TestLFIDetector, NoParams)
@@ -365,11 +365,11 @@ TEST(TestLFIDetector, NoParams)
     store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{0s};
-    condition_cache cache;
+    base_condition::cache_type cache;
     auto res = cond.eval(cache, store, exclusion, {}, deadline);
     EXPECT_FALSE(res.outcome);
     EXPECT_TRUE(res.scope.is_context());
-    EXPECT_FALSE(cache.match);
+    EXPECT_FALSE(cache->match);
 }
 
 } // namespace
