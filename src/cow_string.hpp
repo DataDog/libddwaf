@@ -103,8 +103,6 @@ public:
         alloc_ = alloc;
     }
 
-    // Moves the contents and invalidates the string if the buffer has been
-    // modified, otherwise it does nothing
     explicit operator dynamic_string()
     {
         force_copy(length_);
