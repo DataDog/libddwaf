@@ -190,7 +190,7 @@ def upload_binary(pkgname, binary, git_sha) -> bool:
     return False
 
 def get_headers():
-    auth_header = os.popen("vault read -field=token identity/oidc/token/security-fuzzing-platform").read().strip()
+    auth_header = os.popen("/usr/bin/vault read -field=token identity/oidc/token/security-fuzzing-platform").read().strip()
     return {"Authorization": f"Bearer {auth_header}", "Content-Type": "application/json"}
 
 if __name__ == "__main__":
