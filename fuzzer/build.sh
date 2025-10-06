@@ -1,8 +1,8 @@
 #!/bin/bash
 set -eu
 
-export CC=clang-17
-export CXX=clang++-17
+export CC=clang-19
+export CXX=clang++-19
 
 mkdir -p /workspace/build
 cd /workspace/build

@@ -13,16 +13,6 @@ run-fuzzing:
     - when: manual
       allow_failure: true
     # This makes the job always available as a manual trigger from any branch, not just web pipelines
-  before_script: |
-    VAULT_VERSION=1.20.2
-    wget https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip
-    unzip vault_${VAULT_VERSION}_linux_amd64.zip
-    mv vault /usr/bin/vault
-    chmod +x /usr/bin/vault
-    export PATH=/usr/bin:$PATH
-    .github/workflows/scripts/llvm.sh 17
-    DEBIAN_FRONTEND="noninteractive" apt-get -y install python3-pip
-
   script: |
     # TODO: figure out what's the actual path to the source code instead of hardcoding it?
     # Copy source code to /workspace where the build scripts expect it
