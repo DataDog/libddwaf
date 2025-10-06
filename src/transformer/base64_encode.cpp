@@ -5,9 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <array>
-#include <cstddef>
 #include <cstdint>
-#include <cstdlib>
 #include <limits>
 
 #include "cow_string.hpp"
@@ -18,12 +16,12 @@ namespace ddwaf::transformer {
 
 bool base64_encode::transform_impl(cow_string &str)
 {
-    if (str.length() >= std::numeric_limits<std::size_t>::max() / 4 * 3) {
+    if (str.length() >= std::numeric_limits<cow_string::size_type>::max() / 4 * 3) {
         return false;
     }
 
     // We need to allocate a buffer to contain the base64 encoded string
-    const size_t encoded_length = (str.length() + 2) / 3 * 4;
+    const cow_string::size_type encoded_length = (str.length() + 2) / 3 * 4;
 
     // NOLINTNEXTLINE(misc-include-cleaner)
     auto *alloc = memory::get_default_resource();
@@ -40,8 +38,8 @@ bool base64_encode::transform_impl(cow_string &str)
         't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+',
         '-'};
 
-    uint64_t read = 0;
-    uint64_t write = 0;
+    cow_string::size_type read = 0;
+    cow_string::size_type write = 0;
 
     for (; read + 2 < str.length(); read += 3) {
         const std::array<uint8_t, 4> quartet{str.at<uint8_t>(read) >> 2,
