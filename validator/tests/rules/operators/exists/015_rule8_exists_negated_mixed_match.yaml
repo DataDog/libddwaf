@@ -1,0 +1,25 @@
+{
+  name: "!Exists operator on mixed key path",
+  runs: [
+    {
+      input: {
+        rule8-input: {
+          path: {
+            to: [ 0, 1, 2, 3, 4, { element: hello }, 6, 7 ]
+          }
+        }
+      },
+      rules: [
+        {
+          8: [
+            {
+              address: rule8-input,
+              key_path: [ path, to, -5, element ]
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}
