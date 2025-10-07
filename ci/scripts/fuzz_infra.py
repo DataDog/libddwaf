@@ -18,6 +18,13 @@ BUILD_SCRIPT_PATH = "/workspace/fuzzer/build.sh"
 CORPUS_PATH_PATTERN = "/workspace/{}/corpus"
 API_URL = "https://fuzzing-api.us1.ddbuild.io/api/v1"
 MAX_PKG_NAME_LENGTH = 50
+VAULT_PATH = "/usr/bin/vault"
+
+def ensure_vault_available():
+    """Ensure /usr/bin/vault exists and is executable; exit early otherwise."""
+    if not os.path.isfile(VAULT_PATH) or not os.access(VAULT_PATH, os.X_OK):
+        print(f"❌ Required dependency missing: {VAULT_PATH} not found or not executable")
+        sys.exit(1)
 
 def build_and_upload_fuzz(team="k9-libddwaf", core_count=2, duration=3600, proc_count=2, memory=4):
     """
@@ -190,10 +197,11 @@ def upload_binary(pkgname, binary, git_sha) -> bool:
     return False
 
 def get_headers():
-    auth_header = os.popen("/usr/bin/vault read -field=token identity/oidc/token/security-fuzzing-platform").read().strip()
+    auth_header = os.popen(f"{VAULT_PATH} read -field=token identity/oidc/token/security-fuzzing-platform").read().strip()
     return {"Authorization": f"Bearer {auth_header}", "Content-Type": "application/json"}
 
 if __name__ == "__main__":
+    ensure_vault_available()
     print("🚀 Starting fuzzing infrastructure setup...")
     try:
         build_and_upload_fuzz()
