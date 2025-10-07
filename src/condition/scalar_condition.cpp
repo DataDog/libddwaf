@@ -51,8 +51,8 @@ std::optional<condition_match> eval_object(Iterator &it, std::string_view addres
 
                 DDWAF_TRACE("Target {} matched parameter value {}", address, highlight);
 
-                return {{{{"input"sv, dynamic_string::from_movable_string(transformed.value()),
-                             address, it.get_current_path()}},
+                return {{{{"input"sv, static_cast<dynamic_string>(transformed.value()), address,
+                             it.get_current_path()}},
                     {std::move(highlight)}, matcher.name(), matcher.to_string(), scope}};
             }
         }

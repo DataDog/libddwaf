@@ -6,7 +6,9 @@
 
 #include <stdexcept>
 
+#include <cow_string.hpp>
 #include <dynamic_string.hpp>
+#include <transformer/lowercase.hpp>
 
 #include "common/gtest_utils.hpp"
 
