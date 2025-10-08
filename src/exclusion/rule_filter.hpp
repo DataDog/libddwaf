@@ -9,6 +9,7 @@
 #include <set>
 
 #include "clock.hpp"
+#include "evaluation_cache.hpp"
 #include "exclusion/common.hpp"
 #include "object_store.hpp"
 #include "rule.hpp"
@@ -26,6 +27,7 @@ public:
     };
 
     using cache_type = expression::cache_type;
+    using base_cache_type = cache_type::base_type;
 
     rule_filter(std::string id, std::shared_ptr<expression> expr,
         std::set<const core_rule *> rule_targets, filter_mode mode = filter_mode::bypass,
@@ -36,7 +38,7 @@ public:
     rule_filter &operator=(rule_filter &&) = default;
     ~rule_filter() = default;
 
-    std::optional<excluded_set> match(const object_store &store, cache_type &cache,
+    std::optional<excluded_set> match(const object_store &store, base_cache_type &cache,
         const matcher_mapper &dynamic_matchers, evaluation_scope scope, timer &deadline) const;
 
     std::string_view get_id() const { return id_; }

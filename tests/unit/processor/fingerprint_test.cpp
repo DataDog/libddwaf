@@ -29,7 +29,7 @@ TEST(TestHttpEndpointFingerprint, Basic)
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
         {.address = {}, .key_path = {}, .scope = {}, .value = "/path/to/whatever?param=hello"},
@@ -58,7 +58,7 @@ TEST(TestHttpEndpointFingerprint, EmptyQuery)
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
         {.address = {}, .key_path = {}, .scope = {}, .value = "/path/to/whatever?param=hello"},
@@ -85,7 +85,7 @@ TEST(TestHttpEndpointFingerprint, EmptyBody)
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
         {.address = {}, .key_path = {}, .scope = {}, .value = "/path/to/whatever?param=hello"},
@@ -107,7 +107,7 @@ TEST(TestHttpEndpointFingerprint, EmptyEverything)
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl({.address = {}, .key_path = {}, .scope = {}, .value = ""},
         {.address = {}, .key_path = {}, .scope = {}, .value = ""},
         {{.address = {}, .key_path = {}, .scope = {}, .value = {query}}},
@@ -139,7 +139,7 @@ TEST(TestHttpEndpointFingerprint, KeyConsistency)
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
         {.address = {}, .key_path = {}, .scope = {}, .value = "/path/to/whatever?param=hello"},
@@ -172,7 +172,7 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
     {
         ddwaf::timer deadline{2s};
-        processor_cache cache;
+        base_processor::cache_type cache;
         auto [output, attr] = gen.eval_impl(
             {.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
             {.address = {}, .key_path = {}, .scope = {}, .value = "/path/to/whatever?param=hello"},
@@ -188,7 +188,7 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
 
     {
         ddwaf::timer deadline{2s};
-        processor_cache cache;
+        base_processor::cache_type cache;
         auto [output, attr] =
             gen.eval_impl({.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
                 {.address = {}, .key_path = {}, .scope = {}, .value = "/path/to/whatever#fragment"},
@@ -204,7 +204,7 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
 
     {
         ddwaf::timer deadline{2s};
-        processor_cache cache;
+        base_processor::cache_type cache;
         auto [output, attr] =
             gen.eval_impl({.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
                 {.address = {},
@@ -223,7 +223,7 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
 
     {
         ddwaf::timer deadline{2s};
-        processor_cache cache;
+        base_processor::cache_type cache;
         auto [output, attr] =
             gen.eval_impl({.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
                 {.address = {}, .key_path = {}, .scope = {}, .value = "/path/to/whatever"},
@@ -239,7 +239,7 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
 
     {
         ddwaf::timer deadline{2s};
-        processor_cache cache;
+        base_processor::cache_type cache;
         auto [output, attr] =
             gen.eval_impl({.address = {}, .key_path = {}, .scope = {}, .value = "GET"},
                 {.address = {}, .key_path = {}, .scope = {}, .value = "/PaTh/To/WhAtEVER"},
@@ -265,7 +265,7 @@ TEST(TestHttpEndpointFingerprint, Regeneration)
     });
 
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
-    processor_cache cache;
+    base_processor::cache_type cache;
 
     {
         ddwaf::timer deadline{2s};
@@ -324,7 +324,7 @@ TEST(TestHttpHeaderFingerprint, AllKnownHeaders)
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
@@ -342,7 +342,7 @@ TEST(TestHttpHeaderFingerprint, NoHeaders)
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
@@ -368,7 +368,7 @@ TEST(TestHttpHeaderFingerprint, SomeKnownHeaders)
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
@@ -399,7 +399,7 @@ TEST(TestHttpHeaderFingerprint, UserAgent)
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
@@ -430,7 +430,7 @@ TEST(TestHttpHeaderFingerprint, UserAgentAsArray)
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
@@ -460,7 +460,7 @@ TEST(TestHttpHeaderFingerprint, UserAgentAsArrayInvalidType)
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
@@ -490,7 +490,7 @@ TEST(TestHttpHeaderFingerprint, MultipleUserAgents)
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
@@ -534,7 +534,7 @@ TEST(TestHttpHeaderFingerprint, ExcludedUnknownHeaders)
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
@@ -582,7 +582,7 @@ TEST(TestHttpHeaderFingerprint, UnknownHeaders)
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
@@ -612,7 +612,7 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeaders)
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
@@ -629,7 +629,7 @@ TEST(TestHttpNetworkFingerprint, NoHeaders)
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
@@ -659,7 +659,7 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPs)
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
@@ -688,7 +688,7 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPsAsArray)
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
@@ -718,7 +718,7 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPsAsArrayInvalidTyp
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
@@ -748,7 +748,7 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPsDuplicateXFF)
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
@@ -778,7 +778,7 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersRandomChosenHeader)
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache, alloc, deadline);
     EXPECT_TRUE(output.is_string());
@@ -813,7 +813,7 @@ TEST(TestHttpNetworkFingerprint, HeaderPrecedence)
 
     auto match_frag = [&](owned_object headers, const std::string &expected) {
         ddwaf::timer deadline{2s};
-        processor_cache cache;
+        base_processor::cache_type cache;
         auto [output, attr] =
             gen.eval_impl({.address = {}, .key_path = {}, .scope = {}, .value = {headers}}, cache,
                 alloc, deadline);
@@ -844,7 +844,7 @@ TEST(TestSessionFingerprint, UserOnly)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
         {{.address = {}, .key_path = {}, .scope = {}, .value = {}}},
@@ -865,7 +865,7 @@ TEST(TestSessionFingerprint, SessionOnly)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] =
         gen.eval_impl({{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
             {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}},
@@ -895,7 +895,7 @@ TEST(TestSessionFingerprint, CookiesOnly)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] =
         gen.eval_impl({{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
             {{.address = {}, .key_path = {}, .scope = {}, .value = {}}},
@@ -925,7 +925,7 @@ TEST(TestSessionFingerprint, UserCookieAndSession)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
         {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}},
@@ -955,7 +955,7 @@ TEST(TestSessionFingerprint, CookieKeysNormalization)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
         {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}},
@@ -985,7 +985,7 @@ TEST(TestSessionFingerprint, CookieValuesNormalization)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
         {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}},
@@ -1015,7 +1015,7 @@ TEST(TestSessionFingerprint, CookieValuesAsArray)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
         {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}},
@@ -1045,7 +1045,7 @@ TEST(TestSessionFingerprint, CookieValuesAsArrayInvalidType)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
         {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}},
@@ -1075,7 +1075,7 @@ TEST(TestSessionFingerprint, CookieValuesArrayMultiples)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
         {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}},
@@ -1105,7 +1105,7 @@ TEST(TestSessionFingerprint, CookieEmptyValues)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
         {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}},
@@ -1135,7 +1135,7 @@ TEST(TestSessionFingerprint, CookieEmptyKeys)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
         {{.address = {}, .key_path = {}, .scope = {}, .value = "ansd0182u2n"}},
@@ -1156,7 +1156,7 @@ TEST(TestSessionFingerprint, EmptyEverything)
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] =
         gen.eval_impl({{.address = {}, .key_path = {}, .scope = {}, .value = {cookies}}},
             {{.address = {}, .key_path = {}, .scope = {}, .value = {}}},
@@ -1174,7 +1174,7 @@ TEST(TestSessionFingerprint, Regeneration)
     auto *alloc = memory::get_default_resource();
 
     session_fingerprint gen{"id", {}, {}, false, true};
-    processor_cache cache;
+    base_processor::cache_type cache;
 
     {
         ddwaf::timer deadline{2s};

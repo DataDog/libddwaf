@@ -21,7 +21,7 @@ public:
 
 protected:
     [[nodiscard]] eval_result eval_impl(const unary_argument<std::string_view> &path,
-        const variadic_argument<object_view> &params, condition_cache &cache,
+        const variadic_argument<object_view> &params, base_cache_type &cache,
         const object_set_ref &objects_excluded, ddwaf::timer &deadline) const;
 
     friend class base_impl<lfi_detector>;

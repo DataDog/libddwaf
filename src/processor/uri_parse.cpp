@@ -105,7 +105,7 @@ owned_object split_query_parameters(
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<owned_object, evaluation_scope> uri_parse_processor::eval_impl(
-    const unary_argument<std::string_view> &input, processor_cache & /*cache*/,
+    const unary_argument<std::string_view> &input, base_cache_type & /*cache*/,
     nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer & /*deadline*/) const
 {
     auto decomposed = uri_parse(input.value);

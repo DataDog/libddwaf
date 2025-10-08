@@ -48,7 +48,7 @@ TEST(TestUriParseProcessor, QueryParameters)
 
     for (auto &[url, result] : samples) {
         ddwaf::timer deadline{2s};
-        processor_cache cache;
+        base_processor::cache_type cache;
         auto [output, attr] = gen.eval_impl(
             {.address = {}, .key_path = {}, .scope = {}, .value = url}, cache, alloc, deadline);
         EXPECT_TRUE(output.is_map());
@@ -77,7 +77,7 @@ TEST(TestUriParseProcessor, MixedUrls)
 
     for (auto &[url, result] : samples) {
         ddwaf::timer deadline{2s};
-        processor_cache cache;
+        base_processor::cache_type cache;
         auto [output, attr] = gen.eval_impl(
             {.address = {}, .key_path = {}, .scope = {}, .value = url}, cache, alloc, deadline);
         EXPECT_TRUE(output.is_map());
@@ -98,7 +98,7 @@ TEST(TestUriParseProcessor, Subcontext)
     uri_parse_processor gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = evaluation_scope::subcontext(), .value = url},
         cache, alloc, deadline);
@@ -119,7 +119,7 @@ TEST(TestUriParseProcessor, Malformed)
 
     for (auto &url : samples) {
         ddwaf::timer deadline{2s};
-        processor_cache cache;
+        base_processor::cache_type cache;
         auto [output, attr] = gen.eval_impl(
             {.address = {}, .key_path = {}, .scope = {}, .value = url}, cache, alloc, deadline);
         EXPECT_TRUE(output.is_invalid());

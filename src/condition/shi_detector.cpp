@@ -27,7 +27,7 @@ using namespace std::literals;
 namespace ddwaf {
 
 eval_result shi_detector::eval_string(const unary_argument<object_view> &resource,
-    const variadic_argument<object_view> &params, condition_cache &cache,
+    const variadic_argument<object_view> &params, base_cache_type &cache,
     const object_set_ref &objects_excluded, ddwaf::timer &deadline)
 {
     if (resource.value.empty()) {
@@ -50,14 +50,14 @@ eval_result shi_detector::eval_string(const unary_argument<object_view> &resourc
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
 
-            cache.match = condition_match{.args = {{.name = "resource"sv,
-                                                       .resolved = std::string{resource_sv},
-                                                       .address = resource.address,
-                                                       .key_path = resource_kp},
-                                              {.name = "params"sv,
-                                                  .resolved = highlight,
-                                                  .address = param.address,
-                                                  .key_path = param_kp}},
+            cache->match = condition_match{.args = {{.name = "resource"sv,
+                                                        .resolved = std::string{resource_sv},
+                                                        .address = resource.address,
+                                                        .key_path = resource_kp},
+                                               {.name = "params"sv,
+                                                   .resolved = highlight,
+                                                   .address = param.address,
+                                                   .key_path = param_kp}},
                 .highlights = {std::move(highlight)},
                 .operator_name = "shi_detector",
                 .operator_value = {},
@@ -71,7 +71,7 @@ eval_result shi_detector::eval_string(const unary_argument<object_view> &resourc
 }
 
 eval_result shi_detector::eval_array(const unary_argument<object_view> &resource,
-    const variadic_argument<object_view> &params, condition_cache &cache,
+    const variadic_argument<object_view> &params, base_cache_type &cache,
     const object_set_ref &objects_excluded, ddwaf::timer &deadline)
 {
     shell_argument_array arguments{resource.value};
@@ -93,14 +93,14 @@ eval_result shi_detector::eval_array(const unary_argument<object_view> &resource
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
 
-            cache.match = condition_match{.args = {{.name = "resource"sv,
-                                                       .resolved = std::move(arguments.resource),
-                                                       .address = resource.address,
-                                                       .key_path = resource_kp},
-                                              {.name = "params"sv,
-                                                  .resolved = highlight,
-                                                  .address = param.address,
-                                                  .key_path = param_kp}},
+            cache->match = condition_match{.args = {{.name = "resource"sv,
+                                                        .resolved = std::move(arguments.resource),
+                                                        .address = resource.address,
+                                                        .key_path = resource_kp},
+                                               {.name = "params"sv,
+                                                   .resolved = highlight,
+                                                   .address = param.address,
+                                                   .key_path = param_kp}},
                 .highlights = {std::move(highlight)},
                 .operator_name = "shi_detector",
                 .operator_value = {},
@@ -121,7 +121,7 @@ shi_detector::shi_detector(std::vector<condition_parameter> args)
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 eval_result shi_detector::eval_impl(const unary_argument<object_view> &resource,
-    const variadic_argument<object_view> &params, condition_cache &cache,
+    const variadic_argument<object_view> &params, base_cache_type &cache,
     const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     if (resource.value.is_string()) {

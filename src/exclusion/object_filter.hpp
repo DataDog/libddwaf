@@ -19,6 +19,7 @@
 
 #include "clock.hpp"
 #include "context_allocator.hpp"
+#include "evaluation_cache.hpp"
 #include "exclusion/common.hpp"
 #include "log.hpp"
 #include "object_store.hpp"
@@ -237,14 +238,15 @@ inline std::ostream &operator<<(std::ostream &os, const path_trie::traverser::st
 
 class object_filter {
 public:
-    struct cache_entry {
+    struct cached_object_and_scope {
         object_cache_key object;
         evaluation_scope scope;
     };
 
     // cache_type will always be limited by target_paths_.size(), so it can use
     // the context allocator
-    using cache_type = memory::unordered_map<target_index, cache_entry>;
+    using cache_type = cache_entry<memory::unordered_map<target_index, cached_object_and_scope>>;
+    using base_cache_type = cache_type::base_type;
 
     object_filter() = default;
 
@@ -257,7 +259,7 @@ public:
 
     [[nodiscard]] bool empty() const { return target_paths_.empty(); }
 
-    object_set match(const object_store &store, cache_type &cache, evaluation_scope scope,
+    object_set match(const object_store &store, base_cache_type &cache, evaluation_scope scope,
         ddwaf::timer &deadline) const;
 
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const

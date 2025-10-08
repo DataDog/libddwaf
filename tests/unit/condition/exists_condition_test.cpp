@@ -29,7 +29,7 @@ TEST(TestExistsCondition, AddressAvailable)
     store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
-    condition_cache cache;
+    base_condition::cache_type cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
 }
@@ -47,7 +47,7 @@ TEST(TestExistsCondition, KeyPathAvailable)
     store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
-    condition_cache cache;
+    base_condition::cache_type cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
 }
@@ -62,7 +62,7 @@ TEST(TestExistsCondition, AddressNotAvaialble)
     store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
-    condition_cache cache;
+    base_condition::cache_type cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
@@ -79,7 +79,7 @@ TEST(TestExistsCondition, KeyPathNotAvailable)
     store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
-    condition_cache cache;
+    base_condition::cache_type cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
@@ -98,7 +98,7 @@ TEST(TestExistsCondition, KeyPathAvailableButExcluded)
     store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
-    condition_cache cache;
+    base_condition::cache_type cache;
 
     object_set_ref excluded_ref;
     excluded_ref.context = excluded;
@@ -122,7 +122,7 @@ TEST(TestExistsCondition, MultipleAddresses)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_EQ(res.outcome, expected);
     };
@@ -154,7 +154,7 @@ TEST(TestExistsCondition, MultipleAddressesAndKeyPaths)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_EQ(res.outcome, expected);
     };
@@ -184,7 +184,7 @@ TEST(TestNegatedExistsCondition, KeyPathAvailable)
     store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
-    condition_cache cache;
+    base_condition::cache_type cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_FALSE(res.outcome);
 }
@@ -200,7 +200,7 @@ TEST(TestNegatedExistsCondition, KeyPathNotAvailable)
     store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
-    condition_cache cache;
+    base_condition::cache_type cache;
     auto res = cond.eval(cache, store, {}, {}, deadline);
     ASSERT_TRUE(res.outcome);
 }
@@ -220,7 +220,7 @@ TEST(TestNegatedExistsCondition, KeyPathAvailableButExcluded)
     store.insert(std::move(root), evaluation_scope::context());
 
     ddwaf::timer deadline{2s};
-    condition_cache cache;
+    base_condition::cache_type cache;
 
     object_set_ref excluded_ref;
     excluded_ref.context = excluded;

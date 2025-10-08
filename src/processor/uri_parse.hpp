@@ -21,7 +21,7 @@ public:
     {}
 
     std::pair<owned_object, evaluation_scope> eval_impl(
-        const unary_argument<std::string_view> &input, processor_cache &cache,
+        const unary_argument<std::string_view> &input, base_cache_type &cache,
         nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const;
 };
 

@@ -22,7 +22,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 
     jwt_decode gen{"id", {}, {}, false, true};
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     ddwaf::timer deadline{2s};
     static const std::vector<std::string> key_path{"authorization"};
     auto [output, attr] =

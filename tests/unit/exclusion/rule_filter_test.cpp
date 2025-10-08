@@ -427,7 +427,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
 
         ddwaf::timer deadline{2s};
         EXPECT_FALSE(filter.match(store, cache, {}, {}, deadline)->rules.empty());
-        EXPECT_TRUE(cache.result);
+        EXPECT_TRUE(cache->result);
     }
 
     {

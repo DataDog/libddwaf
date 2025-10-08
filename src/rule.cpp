@@ -21,7 +21,7 @@ std::vector<rule_attribute> empty_attributes{};
 } // namespace
 
 std::pair<rule_verdict, std::optional<rule_result>> core_rule::match(const object_store &store,
-    cache_type &cache, const object_set_ref &objects_excluded,
+    base_cache_type &cache, const object_set_ref &objects_excluded,
     const matcher_mapper &dynamic_matchers, evaluation_scope scope, timer &deadline) const
 {
     // We don't need to reevaluate the rule if it has already had a  match or,

@@ -10,6 +10,7 @@
 
 #include "attribute_collector.hpp"
 #include "context_allocator.hpp"
+#include "evaluation_cache.hpp"
 #include "exclusion/common.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
@@ -26,16 +27,7 @@ public:
     explicit evaluation_engine(std::shared_ptr<ruleset> ruleset,
         nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
         : output_alloc_(output_alloc), ruleset_(std::move(ruleset)), collector_(output_alloc)
-    {
-        processor_cache_.reserve(
-            ruleset_->preprocessors->size() + ruleset_->postprocessors->size());
-        rule_filter_cache_.reserve(ruleset_->rule_filters->size());
-        input_filter_cache_.reserve(ruleset_->input_filters->size());
-
-        for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
-            ruleset_->rule_modules[i].init_cache(rule_module_cache_[i]);
-        }
-    }
+    {}
 
     evaluation_engine(const evaluation_engine &) = delete;
     evaluation_engine &operator=(const evaluation_engine &) = delete;
@@ -134,13 +126,14 @@ protected:
     attribute_collector collector_;
 
     // Caches
-    memory::unordered_map<base_processor *, processor_cache> processor_cache_;
+    // memory::unordered_map<base_processor *, processor_cache> processor_cache_;
+    cache_store<const base_processor *, base_processor::cache_type> processor_cache_;
 
-    memory::unordered_map<const rule_filter *, rule_filter::cache_type> rule_filter_cache_;
-    memory::unordered_map<const input_filter *, input_filter::cache_type> input_filter_cache_;
+    cache_store<const rule_filter *, rule_filter::cache_type> rule_filter_cache_;
+    cache_store<const input_filter *, input_filter::cache_type> input_filter_cache_;
     exclusion_policy exclusions_;
 
-    std::array<rule_module_cache, rule_module_count> rule_module_cache_;
+    sequential_cache_store<rule_module::cache_type> rule_module_cache_;
 };
 
 } // namespace ddwaf

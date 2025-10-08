@@ -509,7 +509,7 @@ std::pair<header_type, unsigned> get_header_type_and_index(std::string_view head
 std::pair<owned_object, evaluation_scope> http_endpoint_fingerprint::eval_impl(
     const unary_argument<std::string_view> &method, const unary_argument<std::string_view> &uri_raw,
     const optional_argument<map_view> &query, const optional_argument<map_view> &body,
-    processor_cache &cache, nonnull_ptr<memory::memory_resource> alloc,
+    base_cache_type &cache, nonnull_ptr<memory::memory_resource> alloc,
     ddwaf::timer &deadline) const
 {
     if (deadline.expired()) {
@@ -525,7 +525,7 @@ std::pair<owned_object, evaluation_scope> http_endpoint_fingerprint::eval_impl(
 
     owned_object res;
     try {
-        res = generate_fragment_cached("http", alloc, cache.fingerprint.fragment_fields,
+        res = generate_fragment_cached("http", alloc, cache->fingerprint.fragment_fields,
             string_field{method.value}, string_hash_field{stripped_uri},
             optional_generator<key_hash_field>{query}, optional_generator<key_hash_field>{body});
     } catch (const std::out_of_range &e) {
@@ -537,7 +537,7 @@ std::pair<owned_object, evaluation_scope> http_endpoint_fingerprint::eval_impl(
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<owned_object, evaluation_scope> http_header_fingerprint::eval_impl(
-    const unary_argument<map_view> &headers, processor_cache & /*cache*/,
+    const unary_argument<map_view> &headers, base_cache_type & /*cache*/,
     nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const
 {
     dynamic_string known_header_bitset;
@@ -580,7 +580,7 @@ std::pair<owned_object, evaluation_scope> http_header_fingerprint::eval_impl(
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 std::pair<owned_object, evaluation_scope> http_network_fingerprint::eval_impl(
-    const unary_argument<map_view> &headers, processor_cache & /*cache*/,
+    const unary_argument<map_view> &headers, base_cache_type & /*cache*/,
     nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const
 {
     dynamic_string ip_origin_bitset;
@@ -635,7 +635,7 @@ std::pair<owned_object, evaluation_scope> session_fingerprint::eval_impl(
     const optional_argument<map_view> &cookies,
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     const optional_argument<std::string_view> &session_id,
-    const optional_argument<std::string_view> &user_id, processor_cache &cache,
+    const optional_argument<std::string_view> &user_id, base_cache_type &cache,
     nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const
 {
     if (deadline.expired()) {
@@ -644,7 +644,7 @@ std::pair<owned_object, evaluation_scope> session_fingerprint::eval_impl(
 
     owned_object res;
     try {
-        res = generate_fragment_cached("ssn", alloc, cache.fingerprint.fragment_fields,
+        res = generate_fragment_cached("ssn", alloc, cache->fingerprint.fragment_fields,
             optional_generator<string_hash_field>{user_id},
             optional_generator<kv_hash_fields>{cookies},
             optional_generator<string_hash_field>{session_id});

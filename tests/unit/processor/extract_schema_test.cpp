@@ -23,7 +23,7 @@ TEST(TestExtractSchema, UnknownScalarSchema)
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([0])");
@@ -38,7 +38,7 @@ TEST(TestExtractSchema, NullScalarSchema)
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([1])");
@@ -53,7 +53,7 @@ TEST(TestExtractSchema, BoolScalarSchema)
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([2])");
@@ -69,7 +69,7 @@ TEST(TestExtractSchema, IntScalarSchema)
         extract_schema gen{"id", {}, {}, {}, false, true};
 
         ddwaf::timer deadline{2s};
-        processor_cache cache;
+        base_processor::cache_type cache;
         auto [output, attr] = gen.eval_impl(
             {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
         EXPECT_SCHEMA_EQ(output.ref(), R"([4])");
@@ -80,7 +80,7 @@ TEST(TestExtractSchema, IntScalarSchema)
         extract_schema gen{"id", {}, {}, {}, false, true};
 
         ddwaf::timer deadline{2s};
-        processor_cache cache;
+        base_processor::cache_type cache;
         auto [output, attr] = gen.eval_impl(
             {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
         EXPECT_SCHEMA_EQ(output.ref(), R"([4])");
@@ -96,7 +96,7 @@ TEST(TestExtractSchema, StringScalarSchema)
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([8])");
@@ -111,7 +111,7 @@ TEST(TestExtractSchema, FloatScalarSchema)
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([16])");
@@ -126,7 +126,7 @@ TEST(TestExtractSchema, EmptyArraySchema)
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([[],{"len":0}])");
@@ -141,7 +141,7 @@ TEST(TestExtractSchema, ArraySchema)
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([[[1],[0],[8],[4]],{"len":4}])");
@@ -156,7 +156,7 @@ TEST(TestExtractSchema, ArrayWithDuplicateScalarSchema)
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([[[8]],{"len":4}])");
@@ -173,7 +173,7 @@ TEST(TestExtractSchema, ArrayWithDuplicateMapsSchema)
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(),
@@ -191,7 +191,7 @@ TEST(TestExtractSchema, ArrayWithDuplicateArraysSchema)
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([[[[[4]],{"len":1}],[[[8],[4]],{"len":2}]],{"len":4}])");
@@ -208,7 +208,7 @@ TEST(TestExtractSchema, ArrayWithDuplicateContainersSchema)
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(
@@ -224,7 +224,7 @@ TEST(TestExtractSchema, EmptyMapSchema)
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([{}])");
@@ -242,7 +242,7 @@ TEST(TestExtractSchema, MapSchema)
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(),
@@ -262,7 +262,7 @@ TEST(TestExtractSchema, DepthLimit)
     extract_schema gen{"id", {}, {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(),
@@ -280,7 +280,7 @@ TEST(TestExtractSchema, ArrayNodesLimit)
 
     extract_schema gen{"id", {}, {}, {}, false, true};
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([[[[],{"len":0}]],{"len":20,"truncated":true}])");
@@ -297,7 +297,7 @@ TEST(TestExtractSchema, RecordNodesLimit)
 
     extract_schema gen{"id", {}, {}, {}, false, true};
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([{"child":[[],{"len":0}]},{"truncated":true}])");
@@ -315,7 +315,7 @@ TEST(TestExtractSchema, SchemaWithSingleScanner)
     extract_schema gen{"id", {}, {}, {&scnr}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([8,{"type":"PII","category":"IP"}])");
@@ -337,7 +337,7 @@ TEST(TestExtractSchema, SchemaWithMultipleScanners)
     extract_schema gen{"id", {}, {}, {&scnr0, &scnr1, &scnr2}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([8,{"type":"PII","category":"second"}])");
@@ -359,7 +359,7 @@ TEST(TestExtractSchema, SchemaWithScannerNoMatch)
     extract_schema gen{"id", {}, {}, {&scnr0, &scnr1, &scnr2}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([8])");
@@ -378,7 +378,7 @@ TEST(TestExtractSchema, SchemaWithScannerSingleValueNoKey)
     extract_schema gen{"id", {}, {}, {&scnr}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([8])");
@@ -397,7 +397,7 @@ TEST(TestExtractSchema, SchemaWithScannerArrayNoKey)
     extract_schema gen{"id", {}, {}, {&scnr}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(), R"([[[8]],{"len":1}])");
@@ -416,7 +416,7 @@ TEST(TestExtractSchema, SchemaWithScannerArrayWithKey)
     extract_schema gen{"id", {}, {}, {&scnr}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(
@@ -437,7 +437,7 @@ TEST(TestExtractSchema, SchemaWithScannerNestedArrayWithKey)
     extract_schema gen{"id", {}, {}, {&scnr}, false, true};
 
     ddwaf::timer deadline{2s};
-    processor_cache cache;
+    base_processor::cache_type cache;
     auto [output, attr] = gen.eval_impl(
         {.address = {}, .key_path = {}, .scope = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(),

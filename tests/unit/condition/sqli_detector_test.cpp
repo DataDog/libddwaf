@@ -41,7 +41,7 @@ TEST_P(DialectTestFixture, InvalidSql)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << statement;
     }
@@ -66,7 +66,7 @@ TEST_P(DialectTestFixture, InjectionWithoutTokens)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << statement;
     }
@@ -103,7 +103,7 @@ TEST_P(DialectTestFixture, BenignInjections)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome) << statement;
     }
@@ -153,21 +153,21 @@ TEST_P(DialectTestFixture, MaliciousInjections)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_TRUE(res.scope.is_context());
 
-        EXPECT_TRUE(cache.match);
-        EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, obfuscated);
-        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+        EXPECT_TRUE(cache->match);
+        EXPECT_STRV(cache->match->args[0].address, "server.db.statement");
+        EXPECT_STR(cache->match->args[0].resolved, obfuscated);
+        EXPECT_TRUE(cache->match->args[0].key_path.empty());
 
-        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input);
-        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+        EXPECT_STRV(cache->match->args[1].address, "server.request.query");
+        EXPECT_STR(cache->match->args[1].resolved, input);
+        EXPECT_TRUE(cache->match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input);
+        EXPECT_STR(cache->match->highlights[0], input);
     }
 }
 
@@ -224,21 +224,21 @@ TEST_P(DialectTestFixture, Tautologies)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_TRUE(res.scope.is_context());
 
-        EXPECT_TRUE(cache.match);
-        EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, obfuscated);
-        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+        EXPECT_TRUE(cache->match);
+        EXPECT_STRV(cache->match->args[0].address, "server.db.statement");
+        EXPECT_STR(cache->match->args[0].resolved, obfuscated);
+        EXPECT_TRUE(cache->match->args[0].key_path.empty());
 
-        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input);
-        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+        EXPECT_STRV(cache->match->args[1].address, "server.request.query");
+        EXPECT_STR(cache->match->args[1].resolved, input);
+        EXPECT_TRUE(cache->match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input);
+        EXPECT_STR(cache->match->highlights[0], input);
     }
 }
 
@@ -269,21 +269,21 @@ TEST_P(DialectTestFixture, Comments)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_TRUE(res.scope.is_context());
 
-        EXPECT_TRUE(cache.match);
-        EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, obfuscated);
-        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+        EXPECT_TRUE(cache->match);
+        EXPECT_STRV(cache->match->args[0].address, "server.db.statement");
+        EXPECT_STR(cache->match->args[0].resolved, obfuscated);
+        EXPECT_TRUE(cache->match->args[0].key_path.empty());
 
-        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input);
-        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+        EXPECT_STRV(cache->match->args[1].address, "server.request.query");
+        EXPECT_STR(cache->match->args[1].resolved, input);
+        EXPECT_TRUE(cache->match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input);
+        EXPECT_STR(cache->match->highlights[0], input);
     }
 }
 
@@ -311,21 +311,21 @@ TEST(TestSqliDetectorMySql, Comments)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_TRUE(res.scope.is_context());
 
-        EXPECT_TRUE(cache.match);
-        EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, obfuscated);
-        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+        EXPECT_TRUE(cache->match);
+        EXPECT_STRV(cache->match->args[0].address, "server.db.statement");
+        EXPECT_STR(cache->match->args[0].resolved, obfuscated);
+        EXPECT_TRUE(cache->match->args[0].key_path.empty());
 
-        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input);
-        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+        EXPECT_STRV(cache->match->args[1].address, "server.request.query");
+        EXPECT_STR(cache->match->args[1].resolved, input);
+        EXPECT_TRUE(cache->match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input);
+        EXPECT_STR(cache->match->highlights[0], input);
     }
 }
 
@@ -356,21 +356,21 @@ TEST(TestSqliDetectorMySql, Tautologies)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_TRUE(res.scope.is_context());
 
-        EXPECT_TRUE(cache.match);
-        EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, obfuscated);
-        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+        EXPECT_TRUE(cache->match);
+        EXPECT_STRV(cache->match->args[0].address, "server.db.statement");
+        EXPECT_STR(cache->match->args[0].resolved, obfuscated);
+        EXPECT_TRUE(cache->match->args[0].key_path.empty());
 
-        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input);
-        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+        EXPECT_STRV(cache->match->args[1].address, "server.request.query");
+        EXPECT_STR(cache->match->args[1].resolved, input);
+        EXPECT_TRUE(cache->match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input);
+        EXPECT_STR(cache->match->highlights[0], input);
     }
 }
 
@@ -404,21 +404,21 @@ TEST(TestSqliDetectorPgSql, Tautologies)
         store.insert(std::move(root), evaluation_scope::context());
 
         ddwaf::timer deadline{2s};
-        condition_cache cache;
+        base_condition::cache_type cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome) << statement;
         EXPECT_TRUE(res.scope.is_context());
 
-        EXPECT_TRUE(cache.match);
-        EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
-        EXPECT_STR(cache.match->args[0].resolved, obfuscated);
-        EXPECT_TRUE(cache.match->args[0].key_path.empty());
+        EXPECT_TRUE(cache->match);
+        EXPECT_STRV(cache->match->args[0].address, "server.db.statement");
+        EXPECT_STR(cache->match->args[0].resolved, obfuscated);
+        EXPECT_TRUE(cache->match->args[0].key_path.empty());
 
-        EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-        EXPECT_STR(cache.match->args[1].resolved, input);
-        EXPECT_TRUE(cache.match->args[1].key_path.empty());
+        EXPECT_STRV(cache->match->args[1].address, "server.request.query");
+        EXPECT_STR(cache->match->args[1].resolved, input);
+        EXPECT_TRUE(cache->match->args[1].key_path.empty());
 
-        EXPECT_STR(cache.match->highlights[0], input);
+        EXPECT_STR(cache->match->highlights[0], input);
     }
 }
 } // namespace

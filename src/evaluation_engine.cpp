@@ -113,13 +113,8 @@ void evaluation_engine::eval_preprocessors(timer &deadline)
             throw timeout_exception();
         }
 
-        auto it = processor_cache_.find(preproc.get());
-        if (it == processor_cache_.end()) {
-            auto [new_it, res] = processor_cache_.emplace(preproc.get(), processor_cache{});
-            it = new_it;
-        }
-
-        preproc->eval(store_, collector_, it->second, output_alloc_, current_scope_, deadline);
+        auto &cache = processor_cache_[preproc.get()];
+        preproc->eval(store_, collector_, cache, output_alloc_, current_scope_, deadline);
     }
 }
 
@@ -133,13 +128,8 @@ void evaluation_engine::eval_postprocessors(timer &deadline)
             throw timeout_exception();
         }
 
-        auto it = processor_cache_.find(postproc.get());
-        if (it == processor_cache_.end()) {
-            auto [new_it, res] = processor_cache_.emplace(postproc.get(), processor_cache{});
-            it = new_it;
-        }
-
-        postproc->eval(store_, collector_, it->second, output_alloc_, current_scope_, deadline);
+        auto &cache = processor_cache_[postproc.get()];
+        postproc->eval(store_, collector_, cache, output_alloc_, current_scope_, deadline);
     }
 }
 
@@ -153,13 +143,7 @@ exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
             throw timeout_exception();
         }
 
-        auto it = rule_filter_cache_.find(&filter);
-        if (it == rule_filter_cache_.end()) {
-            auto [new_it, res] = rule_filter_cache_.emplace(&filter, rule_filter::cache_type{});
-            it = new_it;
-        }
-
-        rule_filter::cache_type &cache = it->second;
+        auto &cache = rule_filter_cache_[&filter];
         auto exclusion =
             filter.match(store_, cache, *ruleset_->exclusion_matchers, current_scope_, deadline);
         if (exclusion.has_value()) {
@@ -178,13 +162,7 @@ exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
             throw timeout_exception();
         }
 
-        auto it = input_filter_cache_.find(&filter);
-        if (it == input_filter_cache_.end()) {
-            auto [new_it, res] = input_filter_cache_.emplace(&filter, input_filter::cache_type{});
-            it = new_it;
-        }
-
-        input_filter::cache_type &cache = it->second;
+        auto &cache = input_filter_cache_[&filter];
         auto exclusion =
             filter.match(store_, cache, *ruleset_->exclusion_matchers, current_scope_, deadline);
         if (exclusion.has_value()) {

@@ -34,7 +34,7 @@ public:
     MOCK_METHOD((std::pair<owned_object, evaluation_scope>), eval_impl,
         (const unary_argument<object_view> &unary,
             const optional_argument<std::string_view> &optional,
-            const variadic_argument<uint64_t> &variadic, processor_cache &,
+            const variadic_argument<uint64_t> &variadic, base_processor::base_cache_type &,
             nonnull_ptr<memory::memory_resource>, ddwaf::timer &),
         (const));
 };
@@ -78,7 +78,7 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     timer deadline{2s};
 
     attribute_collector collector;
@@ -128,7 +128,7 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     timer deadline{2s};
 
     attribute_collector collector;
@@ -174,7 +174,7 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     timer deadline{2s};
 
     attribute_collector collector;
@@ -218,7 +218,7 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    processor_cache cache;
+    base_processor::cache_type cache;
     timer deadline{2s};
 
     attribute_collector collector;

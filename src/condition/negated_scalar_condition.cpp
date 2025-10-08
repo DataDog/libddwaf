@@ -15,6 +15,7 @@
 #include "clock.hpp"
 #include "condition/base.hpp"
 #include "dynamic_string.hpp"
+#include "evaluation_cache.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
@@ -118,7 +119,7 @@ const matcher::base *get_matcher(const std::unique_ptr<matcher::base> &matcher,
 
 } // namespace
 
-eval_result negated_scalar_condition::eval(condition_cache &cache, const object_store &store,
+eval_result negated_scalar_condition::eval(base_cache_type &cache, const object_store &store,
     const object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
@@ -131,18 +132,18 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
         return {};
     }
 
-    if (cache.targets.size() != 1) {
-        cache.targets.assign(
+    if (cache->targets.size() != 1) {
+        cache->targets.assign(
             1, condition_cache::cache_entry{.object = {}, .scope = evaluation_scope::context()});
     }
 
     auto [object, scope] = store.get_target(target_.index);
     if (!object.has_value() ||
-        (object == cache.targets[0].object && scope == cache.targets[0].scope)) {
+        (object == cache->targets[0].object && scope == cache->targets[0].scope)) {
         return {};
     }
 
-    cache.targets[0] = {.object = object, .scope = scope};
+    cache->targets[0] = {.object = object, .scope = scope};
 
     auto target_object = object.find_key_path(target_.key_path, objects_excluded);
     if (!target_object.has_value()) {
@@ -165,10 +166,10 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
         auto result = eval_target(it, target_.name, *matcher, target_.transformers, deadline);
 
         if (result == match_result::no_match) {
-            cache.match = {{.args = {{.name = "input"sv,
-                                .resolved = {},
-                                .address = target_.name,
-                                .key_path = {target_.key_path.begin(), target_.key_path.end()}}},
+            cache->match = {{.args = {{.name = "input"sv,
+                                 .resolved = {},
+                                 .address = target_.name,
+                                 .key_path = {target_.key_path.begin(), target_.key_path.end()}}},
                 .highlights = {},
                 .operator_name = matcher->negated_name(),
                 .operator_value = matcher->to_string(),
@@ -194,10 +195,10 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
                 highlights.emplace_back(resolved);
             }
 
-            cache.match = {{.args = {{.name = "input"sv,
-                                .resolved = std::move(resolved),
-                                .address = target_.name,
-                                .key_path = {target_.key_path.begin(), target_.key_path.end()}}},
+            cache->match = {{.args = {{.name = "input"sv,
+                                 .resolved = std::move(resolved),
+                                 .address = target_.name,
+                                 .key_path = {target_.key_path.begin(), target_.key_path.end()}}},
                 .highlights = std::move(highlights),
                 .operator_name = matcher->negated_name(),
                 .operator_value = matcher->to_string(),

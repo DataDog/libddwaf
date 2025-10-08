@@ -7,6 +7,7 @@
 #pragma once
 
 #include "context_allocator.hpp"
+#include "evaluation_cache.hpp"
 #include "rule.hpp"
 
 #include <vector>
@@ -25,14 +26,16 @@ struct rule_collection_cache {
 };
 
 struct rule_module_cache {
-    memory::vector<core_rule::cache_type> rules;
-    memory::unordered_map<std::string_view, rule_collection_cache> collections;
+    std::unordered_map<std::string_view, rule_collection_cache> collections;
 };
 
 class rule_module {
 public:
     using verdict_type = core_rule::verdict_type;
-    using cache_type = rule_module_cache;
+    using cache_type =
+        cache_entry<rule_module_cache, sequential_cache_store<core_rule::cache_type>>;
+    using base_cache_type = cache_type::base_type;
+
     using iterator = std::vector<core_rule *>::iterator;
     using const_iterator = std::vector<core_rule *>::const_iterator;
 
@@ -48,21 +51,16 @@ public:
     rule_module &operator=(const rule_module &) = default;
     rule_module &operator=(rule_module &&) noexcept = default;
 
-    void init_cache(cache_type &cache) const
-    {
-        cache.rules.resize(rules_.size());
-        cache.collections.reserve(collections_.size());
-    }
-
     [[nodiscard]] bool may_expire() const { return policy_ == expiration_policy::expiring; }
 
-    verdict_type eval(std::vector<rule_result> &results, object_store &store, cache_type &cache,
-        const exclusion_policy &exclusion, const matcher_mapper &dynamic_matchers,
-        evaluation_scope scope, ddwaf::timer &deadline) const;
+    verdict_type eval(std::vector<rule_result> &results, object_store &store,
+        base_cache_type &cache, const exclusion_policy &exclusion,
+        const matcher_mapper &dynamic_matchers, evaluation_scope scope,
+        ddwaf::timer &deadline) const;
 
 protected:
     verdict_type eval_with_collections(std::vector<rule_result> &results, object_store &store,
-        cache_type &cache, const exclusion_policy &exclusion,
+        base_cache_type &cache, const exclusion_policy &exclusion,
         const matcher_mapper &dynamic_matchers, evaluation_scope scope,
         ddwaf::timer &deadline) const;
 
