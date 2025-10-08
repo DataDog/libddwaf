@@ -32,7 +32,7 @@ eval_result expression::eval(base_cache_type &cache, const object_store &store,
     evaluation_scope final_scope;
     for (unsigned i = 0; i < conditions_.size(); ++i) {
         const auto &cond = conditions_[i];
-        auto &cond_cache = cache[i];
+        auto &cond_cache = cache.second()[i];
 
         if (cond_cache->match.has_value() &&
             cond_cache->match->scope.has_higher_precedence_or_is_equal_to(scope)) {

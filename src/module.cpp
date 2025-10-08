@@ -109,8 +109,8 @@ verdict_type rule_module::eval_with_collections(std::vector<rule_result> &result
 
         for (std::size_t i = collection.begin; i < collection.end; ++i) {
             const auto &rule = *rules_[i];
-            auto [verdict, outcome] =
-                eval_rule(rule, store, cache[i], exclusion, dynamic_matchers, scope, deadline);
+            auto [verdict, outcome] = eval_rule(
+                rule, store, cache.second()[i], exclusion, dynamic_matchers, scope, deadline);
             if (outcome.has_value()) {
                 if (outcome->scope.is_context()) {
                     collection_cache.context.type = verdict;
@@ -144,7 +144,7 @@ verdict_type rule_module::eval(std::vector<rule_result> &results, object_store &
         auto final_verdict = verdict_type::none;
         for (std::size_t i = 0; i < rules_.size(); ++i) {
             const auto &rule = *rules_[i];
-            auto &rule_cache = cache[i];
+            auto &rule_cache = cache.second()[i];
 
             auto [verdict, outcome] = eval_rule(
                 rule, store, rule_cache, exclusion, dynamic_matchers, scope, apt_deadline);

@@ -109,7 +109,7 @@ object_set object_filter::match(const object_store &store, base_cache_type &cach
             continue;
         }
 
-        auto &[cached_object, cached_scope] = (*cache)[target];
+        auto &[cached_object, cached_scope] = cache.first()[target];
         if (cached_object == object && cached_scope == object_scope) {
             continue;
         }

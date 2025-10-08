@@ -44,16 +44,19 @@ template <typename T> inline constexpr bool is_cache_store_v = is_cache_store<T>
 template <typename T>
 concept CacheStore = is_cache_store_v<std::remove_cvref_t<T>>;
 
+template <typename T>
+concept CacheOfAnyType =
+    is_cache_store_v<std::remove_cvref_t<T>> || is_cache_entry_v<std::remove_cvref_t<T>>;
+
 // Base cache entry
 template <typename T, typename Nested>
-    requires CacheStore<Nested>
+    requires(!CacheOfAnyType<T>) && CacheOfAnyType<Nested>
 class base_cache_entry<T, Nested> {
 public:
-    using value_type = T;
     using base_type = base_cache_entry<T, Nested>;
 
-    using nested_key_type = typename Nested::key_type;
-    using nested_base_type = typename Nested::base_type;
+    using value_type = T;
+    using nested_value_type = typename Nested::base_type;
 
     base_cache_entry() = default;
     base_cache_entry(const base_cache_entry &) = default;
@@ -64,21 +67,21 @@ public:
 
     virtual const value_type *operator->() const = 0;
     virtual value_type *operator->() = 0;
-    virtual value_type &operator*() = 0;
-    virtual value_type *get() = 0;
 
-    [[nodiscard]] virtual std::size_t size() const = 0;
-    virtual nested_base_type &operator[](const nested_key_type &key) = 0;
+    virtual const value_type &first() const = 0;
+    virtual value_type &first() = 0;
+    virtual const nested_value_type &second() const = 0;
+    virtual nested_value_type &second() = 0;
 };
 
 template <typename T, typename Nested>
-    requires(!CacheStore<Nested>)
+    requires CacheOfAnyType<T> && CacheOfAnyType<Nested>
 class base_cache_entry<T, Nested> {
 public:
-    using value_type = T;
     using base_type = base_cache_entry<T, Nested>;
 
-    using nested_base_type = typename Nested::base_type;
+    using value_type = T::base_type;
+    using nested_value_type = typename Nested::base_type;
 
     base_cache_entry() = default;
     base_cache_entry(const base_cache_entry &) = default;
@@ -87,15 +90,15 @@ public:
     base_cache_entry &operator=(base_cache_entry &&) = default;
     virtual ~base_cache_entry() = default;
 
-    virtual const value_type *operator->() const = 0;
-    virtual value_type *operator->() = 0;
-    virtual value_type &operator*() = 0;
-    virtual value_type *get() = 0;
-
-    virtual nested_base_type &nested_cache() = 0;
+    virtual const value_type &first() const = 0;
+    virtual value_type &first() = 0;
+    virtual const nested_value_type &second() const = 0;
+    virtual nested_value_type &second() = 0;
 };
 
-template <typename T> class base_cache_entry<T, void> {
+template <typename T>
+    requires(!CacheOfAnyType<T>)
+class base_cache_entry<T, void> {
 public:
     using value_type = T;
     using base_type = base_cache_entry<T, void>;
@@ -109,50 +112,48 @@ public:
 
     virtual const value_type *operator->() const = 0;
     virtual value_type *operator->() = 0;
-    virtual value_type &operator*() = 0;
-    virtual value_type *get() = 0;
+
+    virtual const value_type &first() const = 0;
+    virtual value_type &first() = 0;
 };
 
 // Cache entry
 template <typename T, typename Nested>
-    requires CacheStore<Nested>
+    requires(!CacheOfAnyType<T>) && CacheOfAnyType<Nested>
 class cache_entry<T, Nested> : public base_cache_entry<T, Nested> {
 public:
-    using value_type = T;
     using base_type = base_cache_entry<T, Nested>;
 
-    using nested_key_type = typename Nested::key_type;
-    using nested_base_type = typename Nested::base_type;
+    using value_type = T;
+    using nested_value_type = typename Nested::base_type;
 
     const value_type *operator->() const override { return &data_; }
     value_type *operator->() override { return &data_; }
-    value_type &operator*() override { return data_; }
-    value_type *get() override { return &data_; }
 
-    [[nodiscard]] std::size_t size() const override { return store_.size(); }
-    nested_base_type &operator[](const nested_key_type &key) override { return store_[key]; }
+    const value_type &first() const override { return data_; }
+    value_type &first() override { return data_; }
+    const nested_value_type &second() const override { return nested_; }
+    nested_value_type &second() override { return nested_; }
 
 protected:
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     value_type data_;
-    Nested store_;
+    Nested nested_;
 };
 
 template <typename T, typename Nested>
-    requires(!CacheStore<Nested>)
+    requires CacheOfAnyType<T> && CacheOfAnyType<Nested>
 class cache_entry<T, Nested> : public base_cache_entry<T, Nested> {
 public:
-    using value_type = T;
     using base_type = base_cache_entry<T, Nested>;
 
-    using nested_base_type = typename Nested::base_type;
+    using value_type = T;
+    using nested_value_type = typename Nested::base_type;
 
-    const value_type *operator->() const override { return &data_; }
-    value_type *operator->() override { return &data_; }
-    value_type &operator*() override { return data_; }
-    value_type *get() override { return &data_; }
-
-    nested_base_type &nested_cache() override { return nested_; }
+    const value_type &first() const override { return data_; }
+    value_type &first() override { return data_; }
+    const nested_value_type &second() const override { return nested_; }
+    nested_value_type &second() override { return nested_; }
 
 protected:
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
@@ -162,73 +163,75 @@ protected:
 
 template <typename T> class cache_entry<T, void> : public base_cache_entry<T, void> {
 public:
-    using value_type = T;
     using base_type = base_cache_entry<T>;
+
+    using value_type = T;
 
     const value_type *operator->() const override { return &data_; }
     value_type *operator->() override { return &data_; }
-    value_type &operator*() override { return data_; }
-    value_type *get() override { return &data_; }
+
+    const value_type &first() const override { return data_; }
+    value_type &first() override { return data_; }
 
 protected:
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     value_type data_;
 };
 
-template <typename T> class cache_entry_ref<T, void> : public base_cache_entry<T, void> {
-public:
-    using value_type = T;
-    using base_type = base_cache_entry<T>;
-
-    explicit cache_entry_ref(cache_entry<T> &ref) : data_(*ref) {}
-
-    const value_type *operator->() const override { return &data_; }
-    value_type *operator->() override { return &data_; }
-    value_type &operator*() override { return data_; }
-    value_type *get() override { return &data_; }
-
-protected:
-    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
-    value_type &data_;
-};
-
-template <typename Key, CacheEntry T> class cache_store {
+template <typename Key, CacheEntry T> class base_cache_store {
 public:
     using key_type = Key;
-    using base_type = typename T::base_type;
+    using value_type = typename T::base_type;
 
-    base_type &operator[](const key_type &key) { return data_[key]; }
+    [[nodiscard]] virtual std::size_t size() const = 0;
+    virtual value_type &operator[](const key_type &key) = 0;
 
-    [[nodiscard]] std::size_t size() const { return data_.size(); }
+    virtual optional_ref<value_type> find(const key_type &key) = 0;
+};
 
-    optional_ref<base_type &> find(const key_type &key)
+template <typename Key, CacheEntry T> class cache_store : public base_cache_store<Key, T> {
+public:
+    using base_type = base_cache_store<Key, T>;
+
+    using key_type = Key;
+    using value_type = typename T::base_type;
+
+    value_type &operator[](const key_type &key) override { return data_[key]; }
+
+    [[nodiscard]] std::size_t size() const override { return data_.size(); }
+
+    optional_ref<value_type> find(const key_type &key) override
     {
         auto it = data_.find(key);
         if (it == data_.end()) {
             return std::nullopt;
         }
-        return {it->second};
+        return it->second;
     }
 
 protected:
     std::unordered_map<key_type, T> data_;
 };
 
-template <CacheEntry T> class sequential_cache_store {
+template <CacheEntry T> class sequential_cache_store : public base_cache_store<std::size_t, T> {
 public:
+    using base_type = base_cache_store<std::size_t, T>;
+
     using key_type = std::size_t;
-    using base_type = typename T::base_type;
+    using value_type = typename T::base_type;
 
-    [[nodiscard]] std::size_t size() const { return data_.size(); }
+    [[nodiscard]] std::size_t size() const override { return data_.size(); }
 
-    base_type &operator[](std::size_t i)
+    value_type &operator[](const key_type &key) override
     {
-        if (data_.size() <= i) {
-            data_.resize(i + 1);
+        if (data_.size() <= key) {
+            data_.resize(key + 1);
         }
 
-        return data_[i];
+        return data_[key];
     }
+
+    optional_ref<value_type> find(const key_type &key) override { return operator[](key); }
 
 protected:
     std::vector<T> data_;

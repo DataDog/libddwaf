@@ -84,7 +84,7 @@ concept is_tuple_with_optional = tuple_optionals_trait<T>::value;
 
 class base_processor {
 public:
-    using cache_type = cache_entry<processor_cache, cache_entry<expression::cache_type>>;
+    using cache_type = cache_entry<processor_cache, expression::cache_type>;
     using base_cache_type = cache_type::base_type;
 
     base_processor() = default;
@@ -125,8 +125,8 @@ public:
     {
         DDWAF_DEBUG("Evaluating processor '{}'", id_);
 
-        auto &expr_cache = cache.nested_cache();
-        if (!expr_->eval(*expr_cache.get(), store, {}, {}, scope, deadline).outcome) {
+        auto &expr_cache = cache.second();
+        if (!expr_->eval(expr_cache, store, {}, {}, scope, deadline).outcome) {
             return;
         }
 

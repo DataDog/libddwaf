@@ -42,12 +42,12 @@ std::optional<excluded_set> input_filter::match(const object_store &store, base_
 
     // An event was already produced, so we skip the rule
     // Note that conditions in a filter are optional
-    auto res = expr_->eval(*cache, store, {}, dynamic_matchers, scope, deadline);
+    auto res = expr_->eval(cache.first(), store, {}, dynamic_matchers, scope, deadline);
     if (!res.outcome) {
         return std::nullopt;
     }
 
-    auto &object_filter_cache = cache.nested_cache();
+    auto &object_filter_cache = cache.second();
     auto objects = filter_->match(store, object_filter_cache, res.scope, deadline);
     if (objects.empty()) {
         return std::nullopt;

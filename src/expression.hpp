@@ -15,6 +15,7 @@
 #include "clock.hpp"
 #include "condition/base.hpp"
 #include "context_allocator.hpp"
+#include "evaluation_cache.hpp"
 #include "exclusion/common.hpp"
 #include "matcher/base.hpp"
 #include "object_store.hpp"
@@ -51,10 +52,12 @@ public:
         base_cache_type &cache, evaluation_scope scope = evaluation_scope::context())
     {
         std::vector<condition_match> matches;
-        matches.reserve(cache.size());
 
-        for (std::size_t i = 0; i < cache.size(); ++i) {
-            auto &cond_cache = cache[i];
+        auto &condition_cache = cache.second();
+        matches.reserve(condition_cache.size());
+
+        for (std::size_t i = 0; i < condition_cache.size(); ++i) {
+            auto &cond_cache = condition_cache[i];
             if (cond_cache->match.has_value() &&
                 cond_cache->match->scope.has_higher_precedence_or_is_equal_to(scope)) {
                 matches.emplace_back(cond_cache->match.value());
