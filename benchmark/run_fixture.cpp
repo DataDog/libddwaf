@@ -14,6 +14,13 @@
 
 namespace ddwaf::benchmark {
 
+namespace {
+
+// Must be deterministic, 50% change for now
+bool should_eval_in_context(std::size_t i) { return (i % 1) == 0; }
+
+} // namespace
+
 run_fixture::run_fixture(ddwaf_handle handle, std::vector<ddwaf_object> &&objects)
     : objects_(std::move(objects)), handle_(handle)
 {}
@@ -53,13 +60,21 @@ uint64_t run_fixture::test_main()
     auto *alloc = ddwaf_get_default_allocator();
     uint64_t total_runtime = 0;
 
+    std::size_t n = 0;
     for (auto &object : objects_) {
         ddwaf_object res{};
 
-        auto *subctx = ddwaf_subcontext_init(ctx_);
-        auto code = ddwaf_subcontext_eval(
-            subctx, &object, nullptr, &res, std::numeric_limits<uint32_t>::max());
-        ddwaf_subcontext_destroy(subctx);
+        int code = DDWAF_OK;
+        if (should_eval_in_context(n++)) {
+            code = ddwaf_context_eval(
+                ctx_, &object, nullptr, &res, std::numeric_limits<uint32_t>::max());
+        } else {
+            auto *subctx = ddwaf_subcontext_init(ctx_);
+            code = ddwaf_subcontext_eval(
+                subctx, &object, nullptr, &res, std::numeric_limits<uint32_t>::max());
+            ddwaf_subcontext_destroy(subctx);
+        }
+
         if (code < 0) {
             throw std::runtime_error("WAF returned " + std::to_string(code));
         }
