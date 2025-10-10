@@ -135,7 +135,7 @@ public:
 
     ~core_rule() = default;
 
-    std::pair<verdict_type, std::optional<rule_result>> match(const object_store &store,
+    std::pair<verdict_type, std::optional<rule_result>> match(const base_object_store &store,
         cache_type &cache, const object_set_ref &objects_excluded,
         const matcher_mapper &dynamic_matchers, evaluation_scope scope, timer &deadline) const;
 

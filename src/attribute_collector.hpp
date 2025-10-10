@@ -50,10 +50,10 @@ public:
 
     bool insert(std::string_view key, owned_object &&object);
 
-    bool collect(const object_store &store, target_index input_target,
+    bool collect(const base_object_store &store, target_index input_target,
         std::span<const std::string> input_key_path, std::string_view attribute_key);
 
-    void collect_pending(const object_store &store);
+    void collect_pending(const base_object_store &store);
 
     // This method returns the object map containing all the inserted and
     // collected attributes and resets both the internal object (to an empty map)
@@ -74,7 +74,7 @@ public:
 protected:
     enum class collection_state : uint8_t { success, unavailable, failed };
 
-    collection_state collect_helper(const object_store &store, target_index input_target,
+    collection_state collect_helper(const base_object_store &store, target_index input_target,
         std::span<const std::string> input_key_path, std::string_view attribute_key);
     bool insert_helper(std::string_view key, owned_object &&object);
 

@@ -38,7 +38,7 @@ rule_filter::rule_filter(std::string id, std::shared_ptr<expression> expr,
     }
 }
 
-std::optional<excluded_set> rule_filter::match(const object_store &store, cache_type &cache,
+std::optional<excluded_set> rule_filter::match(const base_object_store &store, cache_type &cache,
     const matcher_mapper &dynamic_matchers, evaluation_scope scope, timer &deadline) const
 {
     DDWAF_DEBUG("Evaluating rule filter '{}'", id_);
