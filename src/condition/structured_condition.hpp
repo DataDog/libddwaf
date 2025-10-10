@@ -29,7 +29,7 @@ public:
     base_impl(base_impl &&) noexcept = default;
     base_impl &operator=(base_impl &&) noexcept = default;
 
-    [[nodiscard]] eval_result eval(condition_cache &cache, const object_store &store,
+    [[nodiscard]] eval_result eval(condition_cache &cache, const base_object_store &store,
         const object_set_ref &objects_excluded, const matcher_mapper & /*unused*/,
         ddwaf::timer &deadline) const override
     {
@@ -90,7 +90,7 @@ protected:
     }
 
     template <size_t I, size_t... Is, typename Args>
-    bool resolve_arguments(const object_store &store, const object_set_ref &objects_excluded,
+    bool resolve_arguments(const base_object_store &store, const object_set_ref &objects_excluded,
         Args &args, std::index_sequence<I, Is...> /*unused*/) const
     {
         using TupleElement = std::tuple_element_t<I, Args>;
@@ -120,7 +120,7 @@ protected:
 
     template <size_t I>
     [[nodiscard]] auto resolve_argument(
-        const object_store &store, const object_set_ref &objects_excluded) const
+        const base_object_store &store, const object_set_ref &objects_excluded) const
     {
         using func_traits = decltype(make_eval_traits(&Self::eval_impl));
         using target_type = typename func_traits::template arg_type<I>;

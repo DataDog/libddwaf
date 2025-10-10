@@ -56,12 +56,13 @@ public:
 
     [[nodiscard]] bool may_expire() const { return policy_ == expiration_policy::expiring; }
 
-    verdict_type eval(std::vector<rule_result> &results, object_store &store, cache_type &cache,
-        const exclusion_policy &exclusion, const matcher_mapper &dynamic_matchers,
-        evaluation_scope scope, ddwaf::timer &deadline) const;
+    verdict_type eval(std::vector<rule_result> &results, base_object_store &store,
+        cache_type &cache, const exclusion_policy &exclusion,
+        const matcher_mapper &dynamic_matchers, evaluation_scope scope,
+        ddwaf::timer &deadline) const;
 
 protected:
-    verdict_type eval_with_collections(std::vector<rule_result> &results, object_store &store,
+    verdict_type eval_with_collections(std::vector<rule_result> &results, base_object_store &store,
         cache_type &cache, const exclusion_policy &exclusion,
         const matcher_mapper &dynamic_matchers, evaluation_scope scope,
         ddwaf::timer &deadline) const;

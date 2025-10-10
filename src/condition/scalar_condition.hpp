@@ -27,7 +27,7 @@ public:
         targets_ = std::move(args[0].targets);
     }
 
-    eval_result eval(condition_cache &cache, const object_store &store,
+    eval_result eval(condition_cache &cache, const base_object_store &store,
         const object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
         ddwaf::timer &deadline) const override;
 

@@ -9,7 +9,6 @@
 #include <memory>
 
 #include "attribute_collector.hpp"
-#include "context_allocator.hpp"
 #include "exclusion/common.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
@@ -21,19 +20,30 @@
 
 namespace ddwaf {
 
+struct evaluation_cache {
+    std::unordered_map<base_processor *, processor_cache> processor_;
+    std::unordered_map<const rule_filter *, rule_filter::cache_type> rule_filter_;
+    std::unordered_map<const input_filter *, input_filter::cache_type> input_filter_;
+    std::array<rule_module_cache, rule_module_count> rule_module_;
+
+    exclusion_policy exclusions_;
+};
+
 class evaluation_engine {
 public:
-    explicit evaluation_engine(std::shared_ptr<ruleset> ruleset,
+    explicit evaluation_engine(std::shared_ptr<ruleset> ruleset, base_object_store &store,
+        evaluation_scope scope, evaluation_cache &cache,
         nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
-        : output_alloc_(output_alloc), ruleset_(std::move(ruleset)), collector_(output_alloc)
+        : scope_(scope), output_alloc_(output_alloc), ruleset_(std::move(ruleset)), store_(store),
+          collector_(output_alloc), cache_(cache)
     {
-        processor_cache_.reserve(
+        cache_.processor_.reserve(
             ruleset_->preprocessors->size() + ruleset_->postprocessors->size());
-        rule_filter_cache_.reserve(ruleset_->rule_filters->size());
-        input_filter_cache_.reserve(ruleset_->input_filters->size());
+        cache.rule_filter_.reserve(ruleset_->rule_filters->size());
+        cache.input_filter_.reserve(ruleset_->input_filters->size());
 
         for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
-            ruleset_->rule_modules[i].init_cache(rule_module_cache_[i]);
+            ruleset_->rule_modules[i].init_cache(cache_.rule_module_[i]);
         }
     }
 
@@ -42,48 +52,6 @@ public:
     evaluation_engine(evaluation_engine &&) = delete;
     evaluation_engine &operator=(evaluation_engine &&) = delete;
     ~evaluation_engine() = default;
-
-    void start_subcontext()
-    {
-        if (current_scope_.is_subcontext()) {
-            throw std::runtime_error("subcontext already started");
-        }
-
-        subcontext_scope_ = evaluation_scope::next_subcontext(subcontext_scope_);
-        current_scope_ = subcontext_scope_;
-    }
-
-    void stop_subcontext()
-    {
-        if (!current_scope_.is_subcontext()) {
-            return;
-        }
-
-        exclusions_.subcontext.clear();
-        store_.clear_subcontext_objects();
-
-        current_scope_ = evaluation_scope::context();
-    }
-
-    bool in_subcontext() { return current_scope_.is_subcontext(); }
-
-    bool insert(owned_object data) noexcept
-    {
-        if (!store_.insert(std::move(data), current_scope_)) {
-            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
-            return false;
-        }
-        return true;
-    }
-
-    bool insert(map_view data) noexcept
-    {
-        if (!store_.insert(data, current_scope_)) {
-            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
-            return false;
-        }
-        return true;
-    }
 
     std::pair<bool, owned_object> eval(timer &deadline);
 
@@ -119,28 +87,18 @@ protected:
         return false;
     }
 
-    // TODO Create a subcontext scope tracker instead of this
-    evaluation_scope subcontext_scope_{evaluation_scope::subcontext()};
-
     // The current scope: context or subcontext
-    evaluation_scope current_scope_;
+    evaluation_scope scope_;
 
     // This memory resource is used primarily for the allocation of memory
     // which will be returned to the user.
     nonnull_ptr<memory::memory_resource> output_alloc_;
 
     std::shared_ptr<ruleset> ruleset_;
-    object_store store_;
+    base_object_store &store_;
     attribute_collector collector_;
 
-    // Caches
-    memory::unordered_map<base_processor *, processor_cache> processor_cache_;
-
-    memory::unordered_map<const rule_filter *, rule_filter::cache_type> rule_filter_cache_;
-    memory::unordered_map<const input_filter *, input_filter::cache_type> input_filter_cache_;
-    exclusion_policy exclusions_;
-
-    std::array<rule_module_cache, rule_module_count> rule_module_cache_;
+    evaluation_cache &cache_;
 };
 
 } // namespace ddwaf

@@ -68,8 +68,8 @@ template <typename T> struct argument_retriever : default_argument_retriever {};
 
 template <typename T> struct argument_retriever<unary_argument<T>> : default_argument_retriever {
     template <typename TargetType>
-    static std::optional<unary_argument<T>> retrieve(
-        const object_store &store, const object_set_ref &objects_excluded, const TargetType &target)
+    static std::optional<unary_argument<T>> retrieve(const base_object_store &store,
+        const object_set_ref &objects_excluded, const TargetType &target)
     {
         auto [object, scope] = store.get_target(target.index);
         if (!object.has_value() || objects_excluded.contains(object)) {
@@ -89,8 +89,8 @@ template <typename T> struct argument_retriever<optional_argument<T>> : default_
     static constexpr bool is_optional = true;
 
     template <typename TargetType>
-    static optional_argument<T> retrieve(
-        const object_store &store, const object_set_ref &objects_excluded, const TargetType &target)
+    static optional_argument<T> retrieve(const base_object_store &store,
+        const object_set_ref &objects_excluded, const TargetType &target)
     {
         return argument_retriever<unary_argument<T>>::retrieve(store, objects_excluded, target);
     }
@@ -100,7 +100,7 @@ template <typename T> struct argument_retriever<variadic_argument<T>> : default_
     static constexpr bool is_variadic = true;
 
     template <typename TargetType>
-    static variadic_argument<T> retrieve(const object_store &store,
+    static variadic_argument<T> retrieve(const base_object_store &store,
         const object_set_ref &objects_excluded, const std::vector<TargetType> &targets)
     {
         variadic_argument<T> args;

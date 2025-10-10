@@ -257,7 +257,7 @@ public:
 
     [[nodiscard]] bool empty() const { return target_paths_.empty(); }
 
-    object_set match(const object_store &store, cache_type &cache, evaluation_scope scope,
+    object_set match(const base_object_store &store, cache_type &cache, evaluation_scope scope,
         ddwaf::timer &deadline) const;
 
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
