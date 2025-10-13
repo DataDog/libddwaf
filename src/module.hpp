@@ -25,8 +25,8 @@ struct rule_collection_cache {
 };
 
 struct rule_module_cache {
-    memory::vector<core_rule::cache_type> rules;
-    memory::unordered_map<std::string_view, rule_collection_cache> collections;
+    std::vector<core_rule::cache_type> rules;
+    std::unordered_map<std::string_view, rule_collection_cache> collections;
 };
 
 class rule_module {

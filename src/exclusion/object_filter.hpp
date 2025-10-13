@@ -244,7 +244,7 @@ public:
 
     // cache_type will always be limited by target_paths_.size(), so it can use
     // the context allocator
-    using cache_type = memory::unordered_map<target_index, cache_entry>;
+    using cache_type = std::unordered_map<target_index, cache_entry>;
 
     object_filter() = default;
 

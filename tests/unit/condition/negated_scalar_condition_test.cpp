@@ -51,8 +51,8 @@ TEST(TestNegatedScalarCondition, NoMatch)
 
     auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
 
-    object_store store;
-    store.insert(root, evaluation_scope::context());
+    context_object_store store;
+    store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -73,8 +73,8 @@ TEST(TestNegatedScalarCondition, NoMatchWithKeyPath)
             object_builder::map({{"to",
                 object_builder::map({{"object", object_builder::array({{"bye"}})}})}})}})}});
 
-    object_store store;
-    store.insert(root, evaluation_scope::context());
+    context_object_store store;
+    store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -90,8 +90,8 @@ TEST(TestNegatedScalarCondition, Timeout)
 
     auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
 
-    object_store store;
-    store.insert(root, evaluation_scope::context());
+    context_object_store store;
+    store.insert(root);
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
@@ -105,8 +105,8 @@ TEST(TestNegatedScalarCondition, SimpleMatch)
 
     auto root = object_builder::map({{"server.request.uri.raw", "bye"}});
 
-    object_store store;
-    store.insert(root, evaluation_scope::context());
+    context_object_store store;
+    store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -131,8 +131,8 @@ TEST(TestNegatedScalarCondition, SimpleMatchWithKeyPath)
         object_builder::map(
             {{"path", object_builder::map({{"to", object_builder::map({{"object", "bye"}})}})}})}});
 
-    object_store store;
-    store.insert(root, evaluation_scope::context());
+    context_object_store store;
+    store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -154,8 +154,8 @@ TEST(TestNegatedScalarCondition, SingleValueArrayMatch)
 
     auto root = object_builder::map({{"server.request.uri.raw", object_builder::array({"bye"})}});
 
-    object_store store;
-    store.insert(root, evaluation_scope::context());
+    context_object_store store;
+    store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -182,8 +182,8 @@ TEST(TestNegatedScalarCondition, SingleValueArrayMatchWithKeyPath)
             object_builder::map(
                 {{"to", object_builder::map({{"object", object_builder::array({"bye"})}})}})}})}});
 
-    object_store store;
-    store.insert(root, evaluation_scope::context());
+    context_object_store store;
+    store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -206,8 +206,8 @@ TEST(TestNegatedScalarCondition, MultiValueArrayMatch)
     auto root = object_builder::map(
         {{"server.request.uri.raw", object_builder::array({"bye", "greetings"})}});
 
-    object_store store;
-    store.insert(root, evaluation_scope::context());
+    context_object_store store;
+    store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -234,8 +234,8 @@ TEST(TestNegatedScalarCondition, MultiValueArrayMatchWithKeyPath)
             object_builder::map({{"to", object_builder::map({{"object",
                                             object_builder::array({"bye", "greetings"})}})}})}})}});
 
-    object_store store;
-    store.insert(root, evaluation_scope::context());
+    context_object_store store;
+    store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -263,8 +263,8 @@ TEST(TestNegatedScalarCondition, ExcludedRootObject)
             object_builder::map({{"to", object_builder::map({{"object",
                                             object_builder::array({"bye", "greetings"})}})}})}})}});
 
-    object_store store;
-    store.insert(root, evaluation_scope::context());
+    context_object_store store;
+    store.insert(root);
 
     std::unordered_set<object_cache_key> excluded_objects;
     excluded_objects.emplace(store.get_target(target_index).first);
@@ -294,8 +294,8 @@ TEST(TestNegatedScalarCondition, ExcludedIntermediateObject)
     std::unordered_set<object_cache_key> excluded_objects;
     excluded_objects.emplace(object_view{root}.find_key_path(kp).at_value(0));
 
-    object_store store;
-    store.insert(root, evaluation_scope::context());
+    context_object_store store;
+    store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -322,8 +322,8 @@ TEST(TestNegatedScalarCondition, ExcludedFinalObject)
 
     std::unordered_set<object_cache_key> excluded_objects;
     excluded_objects.emplace(object_view{root}.find_key_path(kp).at_value(0));
-    object_store store;
-    store.insert(root, evaluation_scope::context());
+    context_object_store store;
+    store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -344,8 +344,8 @@ TEST(TestNegatedScalarCondition, CachedMatch)
     auto root = object_builder::map({{"server.request.uri.raw", "bye"}});
 
     {
-        object_store store;
-        store.insert(root, evaluation_scope::context());
+        context_object_store store;
+        store.insert(root);
 
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
@@ -353,8 +353,8 @@ TEST(TestNegatedScalarCondition, CachedMatch)
     }
 
     {
-        object_store store;
-        store.insert(root, evaluation_scope::context());
+        context_object_store store;
+        store.insert(root);
 
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome);
@@ -373,8 +373,8 @@ TEST(TestNegatedScalarCondition, SimpleMatchOnKeys)
     auto root =
         object_builder::map({{"server.request.uri.raw", object_builder::map({{"bye", "hello"}})}});
 
-    object_store store;
-    store.insert(root, evaluation_scope::context());
+    context_object_store store;
+    store.insert(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -390,27 +390,25 @@ TEST(TestNegatedScalarCondition, SimplesubcontextMatch)
 
     auto root = object_builder::map({{"server.request.uri.raw", "bye"}});
 
-    object_store store;
+    context_object_store ctx_store;
     {
-        defer cleanup{[&]() { store.clear_subcontext_objects(); }};
-
-        store.insert(root, evaluation_scope::subcontext());
+        subcontext_object_store sctx_store(ctx_store);
+        sctx_store.insert(root);
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, sctx_store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         EXPECT_TRUE(res.scope.is_subcontext());
     }
 
     {
-        defer cleanup{[&]() { store.clear_subcontext_objects(); }};
-
-        store.insert(root, evaluation_scope::subcontext());
+        subcontext_object_store sctx_store(ctx_store);
+        sctx_store.insert(root);
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, sctx_store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         EXPECT_TRUE(res.scope.is_subcontext());
     }

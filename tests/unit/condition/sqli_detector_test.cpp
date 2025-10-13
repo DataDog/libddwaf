@@ -37,8 +37,8 @@ TEST_P(DialectTestFixture, InvalidSql)
         auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
-        object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        context_object_store store;
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -62,8 +62,8 @@ TEST_P(DialectTestFixture, InjectionWithoutTokens)
         auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
-        object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        context_object_store store;
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -99,8 +99,8 @@ TEST_P(DialectTestFixture, BenignInjections)
         auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
-        object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        context_object_store store;
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -149,8 +149,8 @@ TEST_P(DialectTestFixture, MaliciousInjections)
         auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
-        object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        context_object_store store;
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -220,8 +220,8 @@ TEST_P(DialectTestFixture, Tautologies)
         auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
-        object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        context_object_store store;
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -265,8 +265,8 @@ TEST_P(DialectTestFixture, Comments)
         auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
-        object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        context_object_store store;
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -307,8 +307,8 @@ TEST(TestSqliDetectorMySql, Comments)
         auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", "mysql"}, {"server.request.query", input}});
 
-        object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        context_object_store store;
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -352,8 +352,8 @@ TEST(TestSqliDetectorMySql, Tautologies)
         auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", "mysql"}, {"server.request.query", input}});
 
-        object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        context_object_store store;
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -400,8 +400,8 @@ TEST(TestSqliDetectorPgSql, Tautologies)
         auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", "pgsql"}, {"server.request.query", input}});
 
-        object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        context_object_store store;
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;

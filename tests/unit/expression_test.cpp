@@ -25,8 +25,8 @@ TEST(TestExpression, SimpleMatch)
 
     auto root = object_builder::map({{"server.request.query", "value"}});
 
-    ddwaf::object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    context_object_store store;
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -59,8 +59,8 @@ TEST(TestExpression, SimpleNegatedMatch)
 
     auto root = object_builder::map({{"server.request.query", "val"}});
 
-    ddwaf::object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    context_object_store store;
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -93,8 +93,8 @@ TEST(TestExpression, SubcontextMatch)
 
     auto root = object_builder::map({{"server.request.query", "value"}});
 
-    ddwaf::object_store store;
-    store.insert(std::move(root), evaluation_scope::subcontext());
+    subcontext_object_store store;
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -126,7 +126,7 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
 
     auto expr = builder.build();
 
-    ddwaf::object_store store;
+    context_object_store store;
     expression::cache_type cache;
 
     {
@@ -134,7 +134,7 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
 
         auto root = object_builder::map({{"server.request.query", "bad"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -148,7 +148,7 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
 
         auto root = object_builder::map({{"server.request.body", "value"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -177,45 +177,34 @@ TEST(TestExpression, SubcontextMatchOnSecondEval)
 
     auto expr = builder.build();
 
-    ddwaf::object_store store;
     expression::cache_type cache;
 
-    auto scope = evaluation_scope::subcontext();
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
-
         auto root = object_builder::map({{"server.request.body", "bad"}});
 
-        store.insert(std::move(root), scope);
+        subcontext_object_store store;
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, scope, deadline);
+        auto res = expr->eval(cache, store, {}, {}, evaluation_scope::subcontext(), deadline);
         EXPECT_FALSE(res.outcome);
         EXPECT_TRUE(res.scope.is_context());
     }
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
-
-        scope = evaluation_scope::next_subcontext(scope);
         auto root = object_builder::map({{"server.request.body", "value"}});
 
-        store.insert(std::move(root), scope);
+        subcontext_object_store store;
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, scope, deadline);
+        auto res = expr->eval(cache, store, {}, {}, evaluation_scope::subcontext(), deadline);
         EXPECT_TRUE(res.outcome);
         EXPECT_TRUE(res.scope.is_subcontext());
 
-        auto matches = ddwaf::expression::get_matches(cache, scope);
+        auto matches = ddwaf::expression::get_matches(cache, evaluation_scope::subcontext());
         EXPECT_MATCHES(matches, {.op = "match_regex",
                                     .op_value = "^value$",
                                     .highlight = "value"sv,
@@ -241,17 +230,17 @@ TEST(TestExpression, SubcontextMatchTwoConditions)
 
     auto expr = builder.build();
 
-    ddwaf::object_store store;
+    subcontext_object_store store;
     expression::cache_type cache;
 
     {
         auto root = object_builder::map({{"server.request.body", "value"}});
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
     }
 
     {
         auto root = object_builder::map({{"server.request.query", "value"}});
-        store.insert(std::move(root), evaluation_scope::subcontext());
+        store.insert(std::move(root));
     }
 
     ddwaf::timer deadline{2s};
@@ -293,18 +282,13 @@ TEST(TestExpression, SubcontextMatchOnFirstConditionFirstEval)
 
     auto expr = builder.build();
 
-    ddwaf::object_store store;
     expression::cache_type cache;
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
-
         auto root = object_builder::map({{"server.request.query", "value"}});
 
-        store.insert(std::move(root), evaluation_scope::subcontext());
+        subcontext_object_store store;
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -313,14 +297,10 @@ TEST(TestExpression, SubcontextMatchOnFirstConditionFirstEval)
     }
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
-
         auto root = object_builder::map({{"server.request.body", "value"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        context_object_store store;
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -344,39 +324,32 @@ TEST(TestExpression, SubcontextMatchOnFirstConditionSecondEval)
 
     auto expr = builder.build();
 
-    ddwaf::object_store store;
+    context_object_store ctx_store;
     expression::cache_type cache;
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
+        defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
 
         auto root = object_builder::map({{"server.request.body", "value"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        ctx_store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, {}, deadline);
+        auto res = expr->eval(cache, ctx_store, {}, {}, {}, deadline);
         EXPECT_FALSE(res.outcome);
         EXPECT_TRUE(res.scope.is_context());
     }
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
-
+        subcontext_object_store sctx_store{ctx_store};
         auto root = object_builder::map({{"server.request.query", "value"}});
 
-        store.insert(std::move(root), evaluation_scope::subcontext());
+        sctx_store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, evaluation_scope::subcontext(), deadline);
+        auto res = expr->eval(cache, sctx_store, {}, {}, evaluation_scope::subcontext(), deadline);
         EXPECT_TRUE(res.outcome);
         EXPECT_TRUE(res.scope.is_subcontext());
     }
@@ -393,17 +366,14 @@ TEST(TestExpression, DuplicateInput)
     auto expr = builder.build();
 
     expression::cache_type cache;
-    ddwaf::object_store store;
+    context_object_store store;
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
+        defer cleanup{[&]() { store.clear_last_batch(); }};
 
         auto root = object_builder::map({{"server.request.query", "bad"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -413,14 +383,11 @@ TEST(TestExpression, DuplicateInput)
     }
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
+        defer cleanup{[&]() { store.clear_last_batch(); }};
 
         auto root = object_builder::map({{"server.request.query", "value"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -441,40 +408,27 @@ TEST(TestExpression, DuplicateSubcontextInput)
     auto expr = builder.build();
 
     expression::cache_type cache;
-    ddwaf::object_store store;
-
-    auto scope = evaluation_scope::subcontext();
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
-
         auto root = object_builder::map({{"server.request.query", "value"}});
-
-        store.insert(std::move(root), scope);
+        subcontext_object_store store;
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, scope, deadline);
+        auto res = expr->eval(cache, store, {}, {}, evaluation_scope::subcontext(), deadline);
         EXPECT_TRUE(res.outcome);
         EXPECT_TRUE(res.scope.is_subcontext());
     }
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
-
-        scope = evaluation_scope::next_subcontext(scope);
         auto root = object_builder::map({{"server.request.query", "value"}});
 
-        store.insert(std::move(root), scope);
+        subcontext_object_store store;
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
 
-        auto res = expr->eval(cache, store, {}, {}, scope, deadline);
+        auto res = expr->eval(cache, store, {}, {}, evaluation_scope::subcontext(), deadline);
         EXPECT_TRUE(res.outcome);
         EXPECT_TRUE(res.scope.is_subcontext());
     }
@@ -490,16 +444,13 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
 
     auto expr = builder.build();
 
-    ddwaf::object_store store;
+    context_object_store store;
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
+        defer cleanup{[&]() { store.clear_last_batch(); }};
 
         auto root = object_builder::map({{"server.request.query", "bad"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -508,14 +459,11 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
     }
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
+        defer cleanup{[&]() { store.clear_last_batch(); }};
 
         auto root = object_builder::map({{"server.request.query", "value"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -551,17 +499,14 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
     auto expr = builder.build();
 
     expression::cache_type cache;
-    ddwaf::object_store store;
+    context_object_store store;
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
+        defer cleanup{[&]() { store.clear_last_batch(); }};
 
         auto root = object_builder::map({{"server.request.query", "bad_value"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -569,14 +514,11 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
     }
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
+        defer cleanup{[&]() { store.clear_last_batch(); }};
 
         auto root = object_builder::map({{"server.request.query", "value"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -601,8 +543,8 @@ TEST(TestExpression, TwoConditionsSingleInputMatch)
 
     auto root = object_builder::map({{"server.request.query", "value"}});
 
-    ddwaf::object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    context_object_store store;
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -625,13 +567,13 @@ TEST(TestExpression, TwoConditionsMultiInputSingleEvalMatch)
 
     auto expr = builder.build();
 
-    ddwaf::object_store store;
+    context_object_store store;
     expression::cache_type cache;
 
     auto root =
         object_builder::map({{"server.request.query", "query"}, {"server.request.body", "body"}});
 
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -653,18 +595,15 @@ TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
 
     auto expr = builder.build();
 
-    ddwaf::object_store store;
+    context_object_store store;
     expression::cache_type cache;
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
+        defer cleanup{[&]() { store.clear_last_batch(); }};
 
         auto root = object_builder::map({{"server.request.query", "query"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -672,15 +611,12 @@ TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
     }
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
+        defer cleanup{[&]() { store.clear_last_batch(); }};
 
         auto root = object_builder::map(
             {{"server.request.query", "red-herring"}, {"server.request.body", "body"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -700,8 +636,8 @@ TEST(TestExpression, MatchWithKeyPath)
     auto root =
         object_builder::map({{"server.request.query", object_builder::map({{"key", "value"}})}});
 
-    ddwaf::object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    context_object_store store;
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -729,8 +665,8 @@ TEST(TestExpression, MatchWithTransformer)
 
     auto root = object_builder::map({{"server.request.query", "VALUE"}});
 
-    ddwaf::object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    context_object_store store;
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -758,8 +694,8 @@ TEST(TestExpression, MatchWithMultipleTransformers)
 
     auto root = object_builder::map({{"server.request.query", "    VALUE    "}});
 
-    ddwaf::object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    context_object_store store;
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -787,8 +723,8 @@ TEST(TestExpression, MatchOnKeys)
     auto root =
         object_builder::map({{"server.request.query", object_builder::map({{"value", "1729"}})}});
 
-    ddwaf::object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    context_object_store store;
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -817,8 +753,8 @@ TEST(TestExpression, MatchOnKeysWithTransformer)
     auto root =
         object_builder::map({{"server.request.query", object_builder::map({{"VALUE", "1729"}})}});
 
-    ddwaf::object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    context_object_store store;
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -846,8 +782,8 @@ TEST(TestExpression, ExcludeInput)
 
     auto root = object_builder::map({{"server.request.query", "value"}});
 
-    ddwaf::object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    context_object_store store;
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     std::unordered_set<object_cache_key> excluded_objects{
@@ -869,8 +805,8 @@ TEST(TestExpression, ExcludeKeyPath)
     auto root =
         object_builder::map({{"server.request.query", object_builder::map({{"key", "value"}})}});
 
-    ddwaf::object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    context_object_store store;
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     std::unordered_set<object_cache_key> excluded_objects{

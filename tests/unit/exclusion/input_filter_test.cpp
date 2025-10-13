@@ -15,10 +15,10 @@ using namespace std::literals;
 
 TEST(TestInputFilter, InputExclusionNoConditions)
 {
-    object_store store;
+    context_object_store store;
 
     auto root = object_builder::map({{"query", "value"}});
-    store.insert(root, evaluation_scope::context());
+    store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {});
@@ -40,10 +40,10 @@ TEST(TestInputFilter, InputExclusionNoConditions)
 
 TEST(TestInputFilter, SubcontextInputExclusionNoConditions)
 {
-    object_store store;
+    subcontext_object_store store;
 
     auto root = object_builder::map({{"query", "value"}});
-    store.insert(root, evaluation_scope::subcontext());
+    store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {});
@@ -65,13 +65,13 @@ TEST(TestInputFilter, SubcontextInputExclusionNoConditions)
 
 TEST(TestInputFilter, ObjectExclusionNoConditions)
 {
-    object_store store;
+    context_object_store store;
 
     auto root = object_builder::map();
     auto child = root.emplace("query", object_builder::map());
     child.emplace("params", "param");
 
-    store.insert(root, evaluation_scope::context());
+    store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
@@ -93,13 +93,13 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
 
 TEST(TestInputFilter, SubcontextObjectExclusionNoConditions)
 {
-    object_store store;
+    subcontext_object_store store;
 
     auto root = object_builder::map();
     auto child = root.emplace("query", object_builder::map());
     child.emplace("params", "param");
 
-    store.insert(root, evaluation_scope::subcontext());
+    store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
@@ -128,8 +128,8 @@ TEST(TestInputFilter, PersistentInputExclusionWithPersistentCondition)
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-    ddwaf::object_store store;
-    store.insert(root, evaluation_scope::context());
+    context_object_store store;
+    store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -158,8 +158,8 @@ TEST(TestInputFilter, SubcontextInputExclusionWithSubcontextCondition)
 
     auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-    ddwaf::object_store store;
-    store.insert(root, evaluation_scope::subcontext());
+    subcontext_object_store store;
+    store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -186,13 +186,13 @@ TEST(TestInputFilter, PersistentInputExclusionWithSubcontextCondition)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    ddwaf::object_store store;
-
+    context_object_store ctx_store;
     auto root = object_builder::map({{"usr.id", "admin"}});
-    store.insert(std::move(root), evaluation_scope::subcontext());
+    ctx_store.insert(std::move(root));
 
+    subcontext_object_store sctx_store(ctx_store);
     root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-    store.insert(root, evaluation_scope::context());
+    sctx_store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -202,7 +202,7 @@ TEST(TestInputFilter, PersistentInputExclusionWithSubcontextCondition)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, {}, evaluation_scope::subcontext(), deadline);
+    auto opt_spec = filter.match(sctx_store, cache, {}, evaluation_scope::subcontext(), deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -219,13 +219,13 @@ TEST(TestInputFilter, SubcontextInputExclusionWithPersistentCondition)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    ddwaf::object_store store;
-
+    context_object_store ctx_store;
     auto root = object_builder::map({{"usr.id", "admin"}});
-    store.insert(std::move(root), evaluation_scope::context());
+    ctx_store.insert(std::move(root));
 
+    subcontext_object_store sctx_store(ctx_store);
     root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-    store.insert(root, evaluation_scope::subcontext());
+    sctx_store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -235,7 +235,7 @@ TEST(TestInputFilter, SubcontextInputExclusionWithPersistentCondition)
     ddwaf::timer deadline{2s};
     input_filter::cache_type cache;
 
-    auto opt_spec = filter.match(store, cache, {}, evaluation_scope::subcontext(), deadline);
+    auto opt_spec = filter.match(sctx_store, cache, {}, evaluation_scope::subcontext(), deadline);
     ASSERT_TRUE(opt_spec.has_value());
     EXPECT_EQ(opt_spec->rules.size(), 1);
     EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -254,8 +254,8 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
 
     auto root = object_builder::map({{"usr.id", "ADMIN"}});
 
-    ddwaf::object_store store;
-    store.insert(root, evaluation_scope::context());
+    context_object_store store;
+    store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("usr.id"), "usr.id", {});
@@ -283,8 +283,8 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
 
     auto root = object_builder::map({{"http.client_ip", "192.168.0.2"}});
 
-    ddwaf::object_store store;
-    store.insert(root, evaluation_scope::context());
+    context_object_store store;
+    store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -312,8 +312,8 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
 
     auto child = root.emplace("query", object_builder::map({{"params", "value"}}));
 
-    ddwaf::object_store store;
-    store.insert(root, evaluation_scope::context());
+    context_object_store store;
+    store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
@@ -343,8 +343,8 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
     auto root = object_builder::map(
         {{"http.client_ip", "192.168.0.2"}, {"query", object_builder::map({{"params", "value"}})}});
 
-    ddwaf::object_store store;
-    store.insert(root, evaluation_scope::context());
+    context_object_store store;
+    store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
@@ -384,8 +384,8 @@ TEST(TestInputFilter, InputValidateCachedMatch)
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        ddwaf::object_store store;
-        store.insert(root, evaluation_scope::context());
+        context_object_store store;
+        store.insert(root);
 
         ddwaf::timer deadline{2s};
         EXPECT_FALSE(
@@ -395,8 +395,8 @@ TEST(TestInputFilter, InputValidateCachedMatch)
     {
         auto root = object_builder::map({{"usr.id", "admin"}});
 
-        ddwaf::object_store store;
-        store.insert(root, evaluation_scope::context());
+        context_object_store store;
+        store.insert(root);
 
         ddwaf::timer deadline{2s};
         auto opt_spec = filter.match(store, cache, {}, evaluation_scope::context(), deadline);
@@ -432,20 +432,18 @@ TEST(TestInputFilter, InputValidateCachedSubcontextMatch)
     objects.emplace_back(object_builder::map({{"usr.id", "admin"}}));
 
     input_filter::cache_type cache;
-    ddwaf::object_store store;
+    context_object_store ctx_store;
+    ctx_store.insert(objects[1]);
 
-    auto scope = evaluation_scope::subcontext();
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
+        defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
 
-        store.insert(objects[0], scope);
-        store.insert(objects[1], evaluation_scope::context());
+        subcontext_object_store sctx_store(ctx_store);
+        sctx_store.insert(objects[0]);
 
         ddwaf::timer deadline{2s};
-        auto opt_spec = filter.match(store, cache, {}, scope, deadline);
+        auto opt_spec =
+            filter.match(sctx_store, cache, {}, evaluation_scope::subcontext(), deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -455,29 +453,23 @@ TEST(TestInputFilter, InputValidateCachedSubcontextMatch)
     }
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
+        defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
 
-        store.insert(objects[2], evaluation_scope::context());
+        ctx_store.insert(objects[2]);
 
         ddwaf::timer deadline{2s};
-        ASSERT_FALSE(filter.match(store, cache, {}, {}, deadline));
+        ASSERT_FALSE(filter.match(ctx_store, cache, {}, {}, deadline));
     }
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
+        defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
 
-        scope = evaluation_scope::next_subcontext(scope);
-
-        store.insert(objects[3], evaluation_scope::subcontext());
+        subcontext_object_store sctx_store(ctx_store);
+        sctx_store.insert(objects[3]);
 
         ddwaf::timer deadline{2s};
-        auto opt_spec = filter.match(store, cache, {}, scope, deadline);
+        auto opt_spec =
+            filter.match(sctx_store, cache, {}, evaluation_scope::subcontext(), deadline);
         ASSERT_TRUE(opt_spec.has_value());
         EXPECT_EQ(opt_spec->rules.size(), 1);
         EXPECT_EQ(opt_spec->objects.size(), 1);
@@ -509,8 +501,8 @@ TEST(TestInputFilter, InputMatchWithoutCache)
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        ddwaf::object_store store;
-        store.insert(root, evaluation_scope::context());
+        context_object_store store;
+        store.insert(root);
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
@@ -521,8 +513,8 @@ TEST(TestInputFilter, InputMatchWithoutCache)
     {
         auto root = object_builder::map({{"usr.id", "admin"}});
 
-        ddwaf::object_store store;
-        store.insert(root, evaluation_scope::context());
+        context_object_store store;
+        store.insert(root);
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
@@ -552,14 +544,14 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
     // the second run when there isn't a cached match.
-    ddwaf::object_store store;
+    context_object_store store;
 
     std::vector<owned_object> objects;
     objects.emplace_back(object_builder::map({{"http.client_ip", "192.168.0.1"}}));
     objects.emplace_back(object_builder::map({{"usr.id", "admin"}}));
 
     {
-        store.insert(objects[0], evaluation_scope::context());
+        store.insert(objects[0]);
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
@@ -568,7 +560,7 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
     }
 
     {
-        store.insert(objects[1], evaluation_scope::context());
+        store.insert(objects[1]);
 
         auto client_ip_ptr = store.get_target("http.client_ip").first;
 
@@ -604,7 +596,7 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
     // the second run when there isn't a cached match.
-    ddwaf::object_store store;
+    context_object_store store;
     input_filter::cache_type cache;
 
     std::vector<owned_object> objects;
@@ -613,11 +605,8 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     objects.emplace_back(object_builder::map({{"random", "random"}}));
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
-        store.insert(objects[0], evaluation_scope::context());
+        defer cleanup{[&]() { store.clear_last_batch(); }};
+        store.insert(objects[0]);
 
         ddwaf::timer deadline{2s};
         auto opt_spec = filter.match(store, cache, {}, evaluation_scope::context(), deadline);
@@ -629,11 +618,8 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     }
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
-        store.insert(objects[1], evaluation_scope::context());
+        defer cleanup{[&]() { store.clear_last_batch(); }};
+        store.insert(objects[1]);
 
         ddwaf::timer deadline{2s};
         ASSERT_FALSE(
@@ -671,8 +657,8 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
         {{"usr.id", "admin"}, {"query", object_builder::map({{"params", "value"}})}}));
 
     {
-        ddwaf::object_store store;
-        store.insert(objects[0], evaluation_scope::context());
+        context_object_store store;
+        store.insert(objects[0]);
 
         ddwaf::timer deadline{2s};
         EXPECT_FALSE(
@@ -680,8 +666,8 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
     }
 
     {
-        ddwaf::object_store store;
-        store.insert(objects[1], evaluation_scope::context());
+        context_object_store store;
+        store.insert(objects[1]);
 
         ddwaf::timer deadline{2s};
         auto opt_spec = filter.match(store, cache, {}, evaluation_scope::context(), deadline);
@@ -715,8 +701,8 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"},
             {"query", object_builder::map({{"params", "value"}})}});
-        ddwaf::object_store store;
-        store.insert(root, evaluation_scope::context());
+        context_object_store store;
+        store.insert(root);
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
@@ -728,8 +714,8 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
 
         auto root = object_builder::map(
             {{"usr.id", "admin"}, {"query", object_builder::map({{"params", "value"}})}});
-        ddwaf::object_store store;
-        store.insert(root, evaluation_scope::context());
+        context_object_store store;
+        store.insert(root);
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
@@ -759,7 +745,7 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
     // the second run when there isn't a cached match.
-    ddwaf::object_store store;
+    context_object_store store;
 
     std::vector<owned_object> objects;
     objects.emplace_back(object_builder::map({{"http.client_ip", "192.168.0.1"},
@@ -767,7 +753,7 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
     objects.emplace_back(object_builder::map({{"usr.id", "admin"}}));
 
     {
-        store.insert(objects[0], evaluation_scope::context());
+        store.insert(objects[0]);
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
@@ -776,7 +762,7 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
     }
 
     {
-        store.insert(objects[1], evaluation_scope::context());
+        store.insert(objects[1]);
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
@@ -809,7 +795,7 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
     // the second run when there isn't a cached match.
-    ddwaf::object_store store;
+    context_object_store store;
     input_filter::cache_type cache;
 
     std::vector<owned_object> objects;
@@ -818,11 +804,8 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     objects.emplace_back(object_builder::map({{"random", "random"}}));
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
-        store.insert(objects[0], evaluation_scope::context());
+        defer cleanup{[&]() { store.clear_last_batch(); }};
+        store.insert(objects[0]);
 
         ddwaf::timer deadline{2s};
         auto opt_spec = filter.match(store, cache, {}, evaluation_scope::context(), deadline);
@@ -833,11 +816,8 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     }
 
     {
-        defer cleanup{[&]() {
-            store.clear_last_batch();
-            store.clear_subcontext_objects();
-        }};
-        store.insert(objects[1], evaluation_scope::context());
+        defer cleanup{[&]() { store.clear_last_batch(); }};
+        store.insert(objects[1]);
 
         ddwaf::timer deadline{2s};
         ASSERT_FALSE(
@@ -870,10 +850,10 @@ TEST(TestInputFilter, MatchWithDynamicMatcher)
         {"usr.id", "admin"}, {"query", object_builder::map({{"params", "value"}})}}));
 
     {
-        ddwaf::object_store store;
+        context_object_store store;
         input_filter::cache_type cache;
 
-        store.insert(objects[0], evaluation_scope::context());
+        store.insert(objects[0]);
 
         ddwaf::timer deadline{2s};
         auto opt_spec = filter.match(store, cache, {}, evaluation_scope::context(), deadline);
@@ -881,10 +861,10 @@ TEST(TestInputFilter, MatchWithDynamicMatcher)
     }
 
     {
-        ddwaf::object_store store;
+        context_object_store store;
         input_filter::cache_type cache;
 
-        store.insert(objects[1], evaluation_scope::context());
+        store.insert(objects[1]);
 
         std::unordered_map<std::string, std::unique_ptr<matcher::base>> matchers;
         matchers["ip_data"] =

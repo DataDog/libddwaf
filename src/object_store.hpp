@@ -177,12 +177,19 @@ protected:
 
 class subcontext_object_store : public base_object_store_impl<subcontext_object_store> {
 public:
-    explicit subcontext_object_store(const context_object_store &upstream, evaluation_scope scope)
+    explicit subcontext_object_store(evaluation_scope scope = evaluation_scope::subcontext())
+        : scope_(scope)
+    {}
+
+    explicit subcontext_object_store(const context_object_store &upstream,
+        evaluation_scope scope = evaluation_scope::subcontext())
         : scope_(scope)
     {
         for (const auto &[target, object_and_scope] : upstream.objects_) {
             objects_.emplace(target, object_and_scope);
         }
+
+        for (const auto target : upstream.latest_batch_) { latest_batch_.emplace(target); }
     }
 
     ~subcontext_object_store() override = default;

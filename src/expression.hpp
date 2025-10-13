@@ -27,7 +27,7 @@ public:
     struct cache_type {
         bool result{false};
         evaluation_scope scope;
-        memory::vector<condition_cache> conditions;
+        std::vector<condition_cache> conditions;
     };
 
     expression() = default;

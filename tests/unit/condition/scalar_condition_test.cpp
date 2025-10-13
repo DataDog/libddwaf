@@ -42,8 +42,8 @@ TEST(TestScalarCondition, NoMatch)
 
     auto root = object_builder::map({{"server.request.uri.raw", owned_object{}}});
 
-    object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    context_object_store store;
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -59,8 +59,8 @@ TEST(TestScalarCondition, Timeout)
 
     auto root = object_builder::map({{"server.request.uri.raw", owned_object{}}});
 
-    object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    context_object_store store;
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
@@ -74,8 +74,8 @@ TEST(TestScalarCondition, SimpleMatch)
 
     auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
 
-    object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    context_object_store store;
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -95,8 +95,8 @@ TEST(TestScalarCondition, CachedMatch)
     auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
 
     {
-        object_store store;
-        store.insert(root, evaluation_scope::context());
+        context_object_store store;
+        store.insert(root);
 
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
@@ -104,8 +104,8 @@ TEST(TestScalarCondition, CachedMatch)
     }
 
     {
-        object_store store;
-        store.insert(root, evaluation_scope::context());
+        context_object_store store;
+        store.insert(root);
 
         auto res = cond.eval(cache, store, {}, {}, deadline);
         ASSERT_FALSE(res.outcome);
@@ -124,8 +124,8 @@ TEST(TestScalarCondition, SimpleMatchOnKeys)
     auto root = object_builder::map(
         {{"server.request.uri.raw", object_builder::map({{"hello", "hello"}})}});
 
-    object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    context_object_store store;
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -141,27 +141,25 @@ TEST(TestScalarCondition, SimpleSubcontextMatch)
 
     auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
 
-    object_store store;
+    context_object_store ctx_store;
     {
-        defer cleanup{[&]() { store.clear_subcontext_objects(); }};
-
-        store.insert(root.clone(), evaluation_scope::subcontext());
+        subcontext_object_store sctx_store(ctx_store);
+        sctx_store.insert(root);
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, sctx_store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         EXPECT_TRUE(res.scope.is_subcontext());
     }
 
     {
-        defer cleanup{[&]() { store.clear_subcontext_objects(); }};
-
-        store.insert(std::move(root), evaluation_scope::subcontext());
+        subcontext_object_store sctx_store(ctx_store);
+        sctx_store.insert(root);
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
+        auto res = cond.eval(cache, sctx_store, {}, {}, deadline);
         ASSERT_TRUE(res.outcome);
         EXPECT_TRUE(res.scope.is_subcontext());
     }
