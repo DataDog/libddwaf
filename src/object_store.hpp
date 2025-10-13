@@ -155,14 +155,14 @@ private:
 
 class subcontext_object_store;
 
-class object_store : public base_object_store_impl<object_store> {
+class context_object_store : public base_object_store_impl<context_object_store> {
 public:
-    object_store() = default;
-    ~object_store() override = default;
-    object_store(const object_store &) = delete;
-    object_store(object_store &&) = delete;
-    object_store &operator=(const object_store &) = delete;
-    object_store &operator=(object_store &&) = delete;
+    context_object_store() = default;
+    ~context_object_store() override = default;
+    context_object_store(const context_object_store &) = delete;
+    context_object_store(context_object_store &&) = delete;
+    context_object_store &operator=(const context_object_store &) = delete;
+    context_object_store &operator=(context_object_store &&) = delete;
 
 protected:
     evaluation_scope scope_{evaluation_scope::context()};
@@ -171,13 +171,13 @@ protected:
     memory::unordered_set<target_index> latest_batch_;
     memory::unordered_map<target_index, std::pair<object_view, evaluation_scope>> objects_;
 
-    friend class base_object_store_impl<object_store>;
+    friend class base_object_store_impl<context_object_store>;
     friend class subcontext_object_store;
 };
 
 class subcontext_object_store : public base_object_store_impl<subcontext_object_store> {
 public:
-    explicit subcontext_object_store(const object_store &upstream, evaluation_scope scope)
+    explicit subcontext_object_store(const context_object_store &upstream, evaluation_scope scope)
         : scope_(scope)
     {
         for (const auto &[target, object_and_scope] : upstream.objects_) {

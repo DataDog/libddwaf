@@ -51,14 +51,14 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
 {
     // Clear the last batch of targets on exit so that the process can identify
     // new targets in the next eval
-    auto on_exit = defer([this]() { store_.clear_last_batch(); });
+    auto on_exit = defer([this]() { store_->clear_last_batch(); });
 
     result_serializer serializer(ruleset_->obfuscator.get(), *ruleset_->actions, output_alloc_);
 
     // Generate result object once relevant checks have been made
     auto [result_object, output] = serializer.initialise_result_object();
 
-    if (!store_.has_new_targets()) {
+    if (!store_->has_new_targets()) {
         return {false, std::move(result_object)};
     }
 
@@ -85,7 +85,7 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
             if (should_eval_rules) {
                 eval_rules(policy, results, deadline);
                 if (!results.empty()) {
-                    set_context_event_address(store_);
+                    set_context_event_address(*store_);
                 }
             }
         }
@@ -98,7 +98,7 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
     // available (e.g. from a postprocessor) and return a map of all attributes
     // generated during this call.
     // object::assign(result.attributes, collector_.collect_pending(store));
-    serializer.serialize(store_, results, collector_, deadline, output);
+    serializer.serialize(*store_, results, collector_, deadline, output);
     return {!output.attributes.empty() || !output.actions.empty() || !output.events.empty(),
         std::move(result_object)};
 }
@@ -113,13 +113,13 @@ void evaluation_engine::eval_preprocessors(timer &deadline)
             throw timeout_exception();
         }
 
-        auto it = cache_.processor_.find(preproc.get());
-        if (it == cache_.processor_.end()) {
-            auto [new_it, res] = cache_.processor_.emplace(preproc.get(), processor_cache{});
+        auto it = cache_.processors.find(preproc.get());
+        if (it == cache_.processors.end()) {
+            auto [new_it, res] = cache_.processors.emplace(preproc.get(), processor_cache{});
             it = new_it;
         }
 
-        preproc->eval(store_, collector_, it->second, output_alloc_, scope_, deadline);
+        preproc->eval(*store_, collector_, it->second, output_alloc_, scope_, deadline);
     }
 }
 
@@ -133,13 +133,13 @@ void evaluation_engine::eval_postprocessors(timer &deadline)
             throw timeout_exception();
         }
 
-        auto it = cache_.processor_.find(postproc.get());
-        if (it == cache_.processor_.end()) {
-            auto [new_it, res] = cache_.processor_.emplace(postproc.get(), processor_cache{});
+        auto it = cache_.processors.find(postproc.get());
+        if (it == cache_.processors.end()) {
+            auto [new_it, res] = cache_.processors.emplace(postproc.get(), processor_cache{});
             it = new_it;
         }
 
-        postproc->eval(store_, collector_, it->second, output_alloc_, scope_, deadline);
+        postproc->eval(*store_, collector_, it->second, output_alloc_, scope_, deadline);
     }
 }
 
@@ -153,18 +153,18 @@ exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
             throw timeout_exception();
         }
 
-        auto it = cache_.rule_filter_.find(&filter);
-        if (it == cache_.rule_filter_.end()) {
-            auto [new_it, res] = cache_.rule_filter_.emplace(&filter, rule_filter::cache_type{});
+        auto it = cache_.rule_filters.find(&filter);
+        if (it == cache_.rule_filters.end()) {
+            auto [new_it, res] = cache_.rule_filters.emplace(&filter, rule_filter::cache_type{});
             it = new_it;
         }
 
         rule_filter::cache_type &cache = it->second;
         auto exclusion =
-            filter.match(store_, cache, *ruleset_->exclusion_matchers, scope_, deadline);
+            filter.match(*store_, cache, *ruleset_->exclusion_matchers, scope_, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
-                cache_.exclusions_.add_rule_exclusion(
+                cache_.exclusions.add_rule_exclusion(
                     rule, exclusion->mode, exclusion->action, exclusion->scope);
             }
         }
@@ -178,23 +178,23 @@ exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
             throw timeout_exception();
         }
 
-        auto it = cache_.input_filter_.find(&filter);
-        if (it == cache_.input_filter_.end()) {
-            auto [new_it, res] = cache_.input_filter_.emplace(&filter, input_filter::cache_type{});
+        auto it = cache_.input_filters.find(&filter);
+        if (it == cache_.input_filters.end()) {
+            auto [new_it, res] = cache_.input_filters.emplace(&filter, input_filter::cache_type{});
             it = new_it;
         }
 
         input_filter::cache_type &cache = it->second;
         auto exclusion =
-            filter.match(store_, cache, *ruleset_->exclusion_matchers, scope_, deadline);
+            filter.match(*store_, cache, *ruleset_->exclusion_matchers, scope_, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
-                cache_.exclusions_.add_input_exclusion(rule, exclusion->objects);
+                cache_.exclusions.add_input_exclusion(rule, exclusion->objects);
             }
         }
     }
 
-    return cache_.exclusions_;
+    return cache_.exclusions;
 }
 
 void evaluation_engine::eval_rules(
@@ -202,10 +202,10 @@ void evaluation_engine::eval_rules(
 {
     for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
         const auto &mod = ruleset_->rule_modules[i];
-        auto &cache = cache_.rule_module_[i];
+        auto &cache = cache_.rule_modules[i];
 
         auto verdict =
-            mod.eval(results, store_, cache, policy, *ruleset_->rule_matchers, scope_, deadline);
+            mod.eval(results, *store_, cache, policy, *ruleset_->rule_matchers, scope_, deadline);
         if (verdict == rule_module::verdict_type::block) {
             break;
         }

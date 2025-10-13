@@ -21,38 +21,39 @@
 namespace ddwaf {
 
 struct evaluation_cache {
-    std::unordered_map<base_processor *, processor_cache> processor_;
-    std::unordered_map<const rule_filter *, rule_filter::cache_type> rule_filter_;
-    std::unordered_map<const input_filter *, input_filter::cache_type> input_filter_;
-    std::array<rule_module_cache, rule_module_count> rule_module_;
+    std::unordered_map<base_processor *, processor_cache> processors;
+    std::unordered_map<const rule_filter *, rule_filter::cache_type> rule_filters;
+    std::unordered_map<const input_filter *, input_filter::cache_type> input_filters;
+    std::array<rule_module_cache, rule_module_count> rule_modules;
 
-    exclusion_policy exclusions_;
+    exclusion_policy exclusions;
 };
 
 class evaluation_engine {
 public:
-    explicit evaluation_engine(std::shared_ptr<ruleset> ruleset, base_object_store &store,
-        evaluation_scope scope, evaluation_cache &cache,
-        nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
-        : scope_(scope), output_alloc_(output_alloc), ruleset_(std::move(ruleset)), store_(store),
-          collector_(output_alloc), cache_(cache)
-    {
-        cache_.processor_.reserve(
-            ruleset_->preprocessors->size() + ruleset_->postprocessors->size());
-        cache.rule_filter_.reserve(ruleset_->rule_filters->size());
-        cache.input_filter_.reserve(ruleset_->input_filters->size());
-
-        for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
-            ruleset_->rule_modules[i].init_cache(cache_.rule_module_[i]);
-        }
-    }
-
     evaluation_engine(const evaluation_engine &) = delete;
     evaluation_engine &operator=(const evaluation_engine &) = delete;
-    evaluation_engine(evaluation_engine &&) = delete;
-    evaluation_engine &operator=(evaluation_engine &&) = delete;
+    evaluation_engine(evaluation_engine &&) = default;
+    evaluation_engine &operator=(evaluation_engine &&) = default;
     ~evaluation_engine() = default;
 
+    bool insert(owned_object data) noexcept
+    {
+        if (!store_->insert(std::move(data))) {
+            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+            return false;
+        }
+        return true;
+    }
+
+    bool insert(map_view data) noexcept
+    {
+        if (!store_->insert(data)) {
+            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+            return false;
+        }
+        return true;
+    }
     std::pair<bool, owned_object> eval(timer &deadline);
 
     // Internals exposed for testing
@@ -64,12 +65,43 @@ public:
     void eval_rules(
         const exclusion_policy &policy, std::vector<rule_result> &results, timer &deadline);
 
+    static evaluation_engine context_engine(std::shared_ptr<ruleset> ruleset,
+        nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
+    {
+        return evaluation_engine{std::move(ruleset), std::make_unique<context_object_store>(),
+            evaluation_scope::context(), evaluation_cache{}, output_alloc};
+    }
+
+    static evaluation_engine subcontext_engine(evaluation_engine &engine)
+    {
+        const auto &ctx_store = *dynamic_cast<const context_object_store *>(engine.store_.get());
+        return evaluation_engine{engine.ruleset_,
+            std::make_unique<subcontext_object_store>(ctx_store, evaluation_scope::subcontext()),
+            evaluation_scope::subcontext(), engine.cache_, engine.output_alloc_};
+    }
+
 protected:
+    explicit evaluation_engine(std::shared_ptr<ruleset> ruleset,
+        std::unique_ptr<base_object_store> &&store, evaluation_scope scope, evaluation_cache cache,
+        nonnull_ptr<memory::memory_resource> output_alloc)
+        : scope_(scope), output_alloc_(output_alloc), ruleset_(std::move(ruleset)),
+          store_(std::move(store)), collector_(output_alloc), cache_(std::move(cache))
+    {
+        cache_.processors.reserve(
+            ruleset_->preprocessors->size() + ruleset_->postprocessors->size());
+        cache.rule_filters.reserve(ruleset_->rule_filters->size());
+        cache.input_filters.reserve(ruleset_->input_filters->size());
+
+        for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
+            ruleset_->rule_modules[i].init_cache(cache_.rule_modules[i]);
+        }
+    }
+
     bool check_new_rule_targets() const
     {
         // NOLINTNEXTLINE(readability-use-anyofallof)
         for (const auto &[target, str] : ruleset_->rule_addresses) {
-            if (store_.is_new_target(target)) {
+            if (store_->is_new_target(target)) {
                 return true;
             }
         }
@@ -80,7 +112,7 @@ protected:
     {
         // NOLINTNEXTLINE(readability-use-anyofallof)
         for (const auto &[target, str] : ruleset_->filter_addresses) {
-            if (store_.is_new_target(target)) {
+            if (store_->is_new_target(target)) {
                 return true;
             }
         }
@@ -95,10 +127,11 @@ protected:
     nonnull_ptr<memory::memory_resource> output_alloc_;
 
     std::shared_ptr<ruleset> ruleset_;
-    base_object_store &store_;
+    std::unique_ptr<base_object_store> store_;
     attribute_collector collector_;
 
-    evaluation_cache &cache_;
+    // Caches
+    evaluation_cache cache_;
 };
 
 } // namespace ddwaf
