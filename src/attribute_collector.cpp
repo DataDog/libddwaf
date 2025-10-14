@@ -65,7 +65,7 @@ attribute_collector::collection_state attribute_collector::collect_helper(const 
     target_index input_target, std::span<const std::string> input_key_path,
     std::string_view attribute_key)
 {
-    auto [object, attr] = store.get_target(input_target);
+    auto object = store.get_target(input_target);
     if (!object.has_value()) {
         return collection_state::unavailable;
     }

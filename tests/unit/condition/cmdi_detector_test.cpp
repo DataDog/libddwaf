@@ -45,8 +45,7 @@ TEST(TestCmdiDetector, InvalidType)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_FALSE(res.outcome);
+    ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestCmdiDetector, EmptyResource)
@@ -61,8 +60,7 @@ TEST(TestCmdiDetector, EmptyResource)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_FALSE(res.outcome);
+    ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestCmdiDetector, NoInjection)
@@ -102,7 +100,6 @@ TEST(TestCmdiDetector, NoInjection)
 
         auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
-        std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         auto store = object_store::make_context_store();
@@ -110,9 +107,7 @@ TEST(TestCmdiDetector, NoInjection)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_FALSE(res.outcome) << param;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
     }
 }
 
@@ -142,7 +137,6 @@ TEST(TestCmdiDetector, NoExecutableInjection)
 
         auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
-        std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         auto store = object_store::make_context_store();
@@ -150,9 +144,7 @@ TEST(TestCmdiDetector, NoExecutableInjection)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_FALSE(res.outcome) << param;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
     }
 }
 
@@ -199,7 +191,6 @@ TEST(TestCmdiDetector, NoShellInjection)
 
         auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
-        std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         auto store = object_store::make_context_store();
@@ -207,9 +198,7 @@ TEST(TestCmdiDetector, NoShellInjection)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_FALSE(res.outcome) << resource_str;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
     }
 }
 
@@ -243,9 +232,7 @@ TEST(TestCmdiDetector, ExecutableInjectionLinux)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome) << param;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -293,9 +280,7 @@ TEST(TestCmdiDetector, ExecutableInjectionWindows)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome) << param;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -338,9 +323,7 @@ TEST(TestCmdiDetector, ExecutableWithSpacesInjection)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome) << param;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -566,9 +549,7 @@ TEST(TestCmdiDetector, LinuxShellInjection)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome) << resource_str;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -655,9 +636,7 @@ TEST(TestCmdiDetector, WindowsShellInjection)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome) << resource_str;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -694,9 +673,7 @@ TEST(TestCmdiDetector, ExecutableInjectionMultipleArguments)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome) << resource[0];
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -718,8 +695,6 @@ TEST(TestCmdiDetector, EmptyExecutable)
     std::unordered_map<std::string, std::string> params{
         {"halt", "bin"}, {"-h", "usr"}, {"executable", "/usr/bin/halt"}};
 
-    std::string resource_str = generate_resource_string(resource);
-
     auto root = object_builder::map();
     auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
@@ -733,9 +708,7 @@ TEST(TestCmdiDetector, EmptyExecutable)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_FALSE(res.outcome) << resource[0];
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestCmdiDetector, ShellInjectionMultipleArguments)
@@ -761,9 +734,7 @@ TEST(TestCmdiDetector, ShellInjectionMultipleArguments)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome) << resource[0];
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");

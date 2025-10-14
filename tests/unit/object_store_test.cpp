@@ -24,8 +24,8 @@ TEST(TestObjectStore, InsertInvalidObject)
     EXPECT_FALSE(store.has_new_targets());
     EXPECT_FALSE(store.is_new_target(query));
     EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_FALSE(store.get_target(query).first.has_value());
-    EXPECT_FALSE(store.get_target(url).first.has_value());
+    EXPECT_FALSE(store.get_target(query).has_value());
+    EXPECT_FALSE(store.get_target(url).has_value());
 }
 
 TEST(TestObjectStore, InsertStringObject)
@@ -41,8 +41,8 @@ TEST(TestObjectStore, InsertStringObject)
     EXPECT_FALSE(store.has_new_targets());
     EXPECT_FALSE(store.is_new_target(query));
     EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_FALSE(store.get_target(query).first.has_value());
-    EXPECT_FALSE(store.get_target(url).first.has_value());
+    EXPECT_FALSE(store.get_target(query).has_value());
+    EXPECT_FALSE(store.get_target(url).has_value());
 }
 
 TEST(TestObjectStore, InsertAndGetObject)
@@ -60,8 +60,8 @@ TEST(TestObjectStore, InsertAndGetObject)
     EXPECT_TRUE(store.has_new_targets());
     EXPECT_TRUE(store.is_new_target(query));
     EXPECT_FALSE(store.is_new_target(url));
-    EXPECT_TRUE(store.get_target(query).first.has_value());
-    EXPECT_FALSE(store.get_target(url).first.has_value());
+    EXPECT_TRUE(store.get_target(query).has_value());
+    EXPECT_FALSE(store.get_target(url).has_value());
 }
 
 TEST(TestObjectStore, InsertAndGetSubcontextObject)
@@ -83,17 +83,16 @@ TEST(TestObjectStore, InsertAndGetSubcontextObject)
         EXPECT_TRUE(sctx_store.has_new_targets());
         EXPECT_TRUE(sctx_store.is_new_target(query));
         EXPECT_FALSE(sctx_store.is_new_target(url));
-        EXPECT_TRUE(sctx_store.get_target(query).first.has_value());
-        EXPECT_TRUE(sctx_store.get_target(query).second.is_subcontext());
-        EXPECT_FALSE(sctx_store.get_target(url).first.has_value());
+        EXPECT_TRUE(sctx_store.get_target(query).has_value());
+        EXPECT_FALSE(sctx_store.get_target(url).has_value());
     }
 
     EXPECT_TRUE(ctx_store.empty());
     EXPECT_FALSE(ctx_store.has_new_targets());
     EXPECT_FALSE(ctx_store.is_new_target(query));
     EXPECT_FALSE(ctx_store.is_new_target(url));
-    EXPECT_FALSE(ctx_store.get_target(query).first.has_value());
-    EXPECT_FALSE(ctx_store.get_target(url).first.has_value());
+    EXPECT_FALSE(ctx_store.get_target(query).has_value());
+    EXPECT_FALSE(ctx_store.get_target(url).has_value());
 }
 
 TEST(TestObjectStore, InsertMultipleUniqueObjects)
@@ -110,9 +109,8 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
         EXPECT_TRUE(ctx_store.has_new_targets());
         EXPECT_TRUE(ctx_store.is_new_target(query));
         EXPECT_FALSE(ctx_store.is_new_target(url));
-        EXPECT_TRUE(ctx_store.get_target(query).first.has_value());
-        EXPECT_TRUE(ctx_store.get_target(query).second.is_context());
-        EXPECT_FALSE(ctx_store.get_target(url).first.has_value());
+        EXPECT_TRUE(ctx_store.get_target(query).has_value());
+        EXPECT_FALSE(ctx_store.get_target(url).has_value());
     }
 
     {
@@ -123,10 +121,8 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
         EXPECT_TRUE(sctx_store.has_new_targets());
         EXPECT_TRUE(sctx_store.is_new_target(query));
         EXPECT_TRUE(sctx_store.is_new_target(url));
-        EXPECT_TRUE(sctx_store.get_target(query).first.has_value());
-        EXPECT_TRUE(sctx_store.get_target(query).second.is_context());
-        EXPECT_TRUE(sctx_store.get_target(url).first.has_value());
-        EXPECT_TRUE(sctx_store.get_target(url).second.is_subcontext());
+        EXPECT_TRUE(sctx_store.get_target(query).has_value());
+        EXPECT_TRUE(sctx_store.get_target(url).has_value());
     }
 
     {
@@ -136,9 +132,8 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
         EXPECT_TRUE(ctx_store.has_new_targets());
         EXPECT_TRUE(ctx_store.is_new_target(query));
         EXPECT_FALSE(ctx_store.is_new_target(url));
-        EXPECT_TRUE(ctx_store.get_target(query).first.has_value());
-        EXPECT_TRUE(ctx_store.get_target(query).second.is_context());
-        EXPECT_FALSE(ctx_store.get_target(url).first.has_value());
+        EXPECT_TRUE(ctx_store.get_target(query).has_value());
+        EXPECT_FALSE(ctx_store.get_target(url).has_value());
     }
 
     ctx_store.clear_last_batch();
@@ -147,8 +142,8 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     EXPECT_FALSE(ctx_store.has_new_targets());
     EXPECT_FALSE(ctx_store.is_new_target(query));
     EXPECT_FALSE(ctx_store.is_new_target(url));
-    EXPECT_TRUE(ctx_store.get_target(query).first.has_value());
-    EXPECT_FALSE(ctx_store.get_target(url).first.has_value());
+    EXPECT_TRUE(ctx_store.get_target(query).has_value());
+    EXPECT_FALSE(ctx_store.get_target(url).has_value());
 }
 
 TEST(TestObjectStore, InsertMultipleUniqueObjectBatches)
@@ -169,8 +164,8 @@ TEST(TestObjectStore, InsertMultipleUniqueObjectBatches)
         EXPECT_TRUE(store.has_new_targets());
         EXPECT_TRUE(store.is_new_target(query));
         EXPECT_FALSE(store.is_new_target(url));
-        EXPECT_TRUE(store.get_target(query).first.has_value());
-        EXPECT_FALSE(store.get_target(url).first.has_value());
+        EXPECT_TRUE(store.get_target(query).has_value());
+        EXPECT_FALSE(store.get_target(url).has_value());
     }
 
     {
@@ -185,8 +180,8 @@ TEST(TestObjectStore, InsertMultipleUniqueObjectBatches)
         EXPECT_TRUE(store.has_new_targets());
         EXPECT_FALSE(store.is_new_target(query));
         EXPECT_TRUE(store.is_new_target(url));
-        EXPECT_TRUE(store.get_target(query).first.has_value());
-        EXPECT_TRUE(store.get_target(url).first.has_value());
+        EXPECT_TRUE(store.get_target(query).has_value());
+        EXPECT_TRUE(store.get_target(url).has_value());
     }
 
     {
@@ -198,8 +193,8 @@ TEST(TestObjectStore, InsertMultipleUniqueObjectBatches)
         EXPECT_FALSE(store.has_new_targets());
         EXPECT_FALSE(store.is_new_target(query));
         EXPECT_FALSE(store.is_new_target(url));
-        EXPECT_TRUE(store.get_target(query).first.has_value());
-        EXPECT_TRUE(store.get_target(url).first.has_value());
+        EXPECT_TRUE(store.get_target(query).has_value());
+        EXPECT_TRUE(store.get_target(url).has_value());
     }
 }
 
@@ -220,10 +215,10 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
         EXPECT_TRUE(store.has_new_targets());
         EXPECT_TRUE(store.is_new_target(query));
         EXPECT_FALSE(store.is_new_target(url));
-        EXPECT_TRUE(store.get_target(query).first.has_value());
-        EXPECT_FALSE(store.get_target(url).first.has_value());
+        EXPECT_TRUE(store.get_target(query).has_value());
+        EXPECT_FALSE(store.get_target(url).has_value());
 
-        auto object = store.get_target(query).first;
+        auto object = store.get_target(query);
         EXPECT_TRUE(object.has_value());
         EXPECT_TRUE(object.is_string());
         EXPECT_STRV(object.as<std::string_view>(), "hello");
@@ -244,14 +239,14 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
         EXPECT_TRUE(store.is_new_target(url));
 
         {
-            auto object = store.get_target(url).first;
+            auto object = store.get_target(url);
             EXPECT_TRUE(object.has_value());
             EXPECT_TRUE(object.is_string());
             EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
 
         {
-            auto object = store.get_target(query).first;
+            auto object = store.get_target(query);
             EXPECT_TRUE(object.has_value());
             EXPECT_TRUE(object.is_string());
             EXPECT_STRV(object.as<std::string_view>(), "bye");
@@ -269,9 +264,9 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
         EXPECT_TRUE(store.has_new_targets());
         EXPECT_FALSE(store.is_new_target(query));
         EXPECT_TRUE(store.is_new_target(url));
-        EXPECT_TRUE(store.get_target(query).first.has_value());
+        EXPECT_TRUE(store.get_target(query).has_value());
 
-        auto object = store.get_target(url).first;
+        auto object = store.get_target(url);
         EXPECT_TRUE(object.has_value());
         EXPECT_TRUE(object.is_string());
         EXPECT_STRV(object.as<std::string_view>(), "bye");
@@ -291,8 +286,8 @@ TEST(TestObjectStore, InsertSingleTargets)
     EXPECT_TRUE(ctx_store.has_new_targets());
     EXPECT_TRUE(ctx_store.is_new_target(query));
     EXPECT_FALSE(ctx_store.is_new_target(url));
-    EXPECT_TRUE(ctx_store.get_target(query).first.has_value());
-    EXPECT_FALSE(ctx_store.get_target(url).first.has_value());
+    EXPECT_TRUE(ctx_store.get_target(query).has_value());
+    EXPECT_FALSE(ctx_store.get_target(url).has_value());
 
     {
         auto sctx_store = object_store::make_subcontext_store(ctx_store);
@@ -302,8 +297,8 @@ TEST(TestObjectStore, InsertSingleTargets)
         EXPECT_TRUE(sctx_store.has_new_targets());
         EXPECT_TRUE(sctx_store.is_new_target(query));
         EXPECT_TRUE(sctx_store.is_new_target(url));
-        EXPECT_TRUE(sctx_store.get_target(query).first.has_value());
-        EXPECT_TRUE(sctx_store.get_target(url).first.has_value());
+        EXPECT_TRUE(sctx_store.get_target(query).has_value());
+        EXPECT_TRUE(sctx_store.get_target(url).has_value());
     }
 
     ctx_store.clear_last_batch();
@@ -312,8 +307,8 @@ TEST(TestObjectStore, InsertSingleTargets)
     EXPECT_FALSE(ctx_store.has_new_targets());
     EXPECT_FALSE(ctx_store.is_new_target(query));
     EXPECT_FALSE(ctx_store.is_new_target(url));
-    EXPECT_TRUE(ctx_store.get_target(query).first.has_value());
-    EXPECT_FALSE(ctx_store.get_target(url).first.has_value());
+    EXPECT_TRUE(ctx_store.get_target(query).has_value());
+    EXPECT_FALSE(ctx_store.get_target(url).has_value());
 }
 
 TEST(TestObjectStore, InsertSingleTargetBatches)
@@ -331,8 +326,8 @@ TEST(TestObjectStore, InsertSingleTargetBatches)
         EXPECT_TRUE(ctx_store.has_new_targets());
         EXPECT_TRUE(ctx_store.is_new_target(query));
         EXPECT_FALSE(ctx_store.is_new_target(url));
-        EXPECT_TRUE(ctx_store.get_target(query).first.has_value());
-        EXPECT_FALSE(ctx_store.get_target(url).first.has_value());
+        EXPECT_TRUE(ctx_store.get_target(query).has_value());
+        EXPECT_FALSE(ctx_store.get_target(url).has_value());
     }
 
     {
@@ -345,16 +340,16 @@ TEST(TestObjectStore, InsertSingleTargetBatches)
         EXPECT_TRUE(sctx_store.has_new_targets());
         EXPECT_FALSE(sctx_store.is_new_target(query));
         EXPECT_TRUE(sctx_store.is_new_target(url));
-        EXPECT_TRUE(sctx_store.get_target(query).first.has_value());
-        EXPECT_TRUE(sctx_store.get_target(url).first.has_value());
+        EXPECT_TRUE(sctx_store.get_target(query).has_value());
+        EXPECT_TRUE(sctx_store.get_target(url).has_value());
     }
 
     EXPECT_FALSE(ctx_store.empty());
     EXPECT_FALSE(ctx_store.has_new_targets());
     EXPECT_FALSE(ctx_store.is_new_target(query));
     EXPECT_FALSE(ctx_store.is_new_target(url));
-    EXPECT_TRUE(ctx_store.get_target(query).first.has_value());
-    EXPECT_FALSE(ctx_store.get_target(url).first.has_value());
+    EXPECT_TRUE(ctx_store.get_target(query).has_value());
+    EXPECT_FALSE(ctx_store.get_target(url).has_value());
 }
 
 TEST(TestObjectStore, DuplicatePersistentTarget)
@@ -371,8 +366,7 @@ TEST(TestObjectStore, DuplicatePersistentTarget)
         EXPECT_TRUE(store.has_new_targets());
         EXPECT_TRUE(store.is_new_target(query));
 
-        auto [object, attr] = store.get_target(query);
-        EXPECT_TRUE(attr.is_context());
+        auto object = store.get_target(query);
         EXPECT_TRUE(object.has_value());
         EXPECT_STRV(object.as<std::string_view>(), "hello");
     }
@@ -385,10 +379,9 @@ TEST(TestObjectStore, DuplicatePersistentTarget)
         EXPECT_FALSE(store.empty());
         EXPECT_TRUE(store.has_new_targets());
         EXPECT_TRUE(store.is_new_target(query));
-        EXPECT_TRUE(store.get_target(query).first.has_value());
+        EXPECT_TRUE(store.get_target(query).has_value());
 
-        auto [object, attr] = store.get_target(query);
-        EXPECT_TRUE(attr.is_context());
+        auto object = store.get_target(query);
         EXPECT_TRUE(object.has_value());
         EXPECT_STRV(object.as<std::string_view>(), "bye");
     }
@@ -396,7 +389,7 @@ TEST(TestObjectStore, DuplicatePersistentTarget)
     EXPECT_FALSE(store.empty());
     EXPECT_FALSE(store.has_new_targets());
     EXPECT_FALSE(store.is_new_target(query));
-    EXPECT_TRUE(store.get_target(query).first.has_value());
+    EXPECT_TRUE(store.get_target(query).has_value());
 }
 
 TEST(TestObjectStore, DuplicateSubcontextTarget)
@@ -414,8 +407,7 @@ TEST(TestObjectStore, DuplicateSubcontextTarget)
             EXPECT_TRUE(store.has_new_targets());
             EXPECT_TRUE(store.is_new_target(query));
 
-            auto [object, attr] = store.get_target(query);
-            EXPECT_TRUE(attr.is_subcontext());
+            auto object = store.get_target(query);
             EXPECT_TRUE(object.has_value());
             EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
@@ -426,10 +418,9 @@ TEST(TestObjectStore, DuplicateSubcontextTarget)
             EXPECT_FALSE(store.empty());
             EXPECT_TRUE(store.has_new_targets());
             EXPECT_TRUE(store.is_new_target(query));
-            EXPECT_TRUE(store.get_target(query).first.has_value());
+            EXPECT_TRUE(store.get_target(query).has_value());
 
-            auto [object, attr] = store.get_target(query);
-            EXPECT_TRUE(attr.is_subcontext());
+            auto object = store.get_target(query);
             EXPECT_TRUE(object.has_value());
             EXPECT_STRV(object.as<std::string_view>(), "bye");
         }
@@ -438,7 +429,7 @@ TEST(TestObjectStore, DuplicateSubcontextTarget)
     EXPECT_FALSE(store.empty());
     EXPECT_FALSE(store.has_new_targets());
     EXPECT_FALSE(store.is_new_target(query));
-    EXPECT_TRUE(store.get_target(query).first.has_value());
+    EXPECT_TRUE(store.get_target(query).has_value());
 }
 
 TEST(TestObjectStore, ReplaceSubcontextWithPersistent)
@@ -457,8 +448,7 @@ TEST(TestObjectStore, ReplaceSubcontextWithPersistent)
             EXPECT_TRUE(sctx_store.has_new_targets());
             EXPECT_TRUE(sctx_store.is_new_target(query));
 
-            auto [object, attr] = sctx_store.get_target(query);
-            EXPECT_TRUE(attr.is_subcontext());
+            auto object = sctx_store.get_target(query);
             EXPECT_TRUE(object.has_value());
             EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
@@ -469,10 +459,9 @@ TEST(TestObjectStore, ReplaceSubcontextWithPersistent)
             EXPECT_FALSE(ctx_store.empty());
             EXPECT_TRUE(ctx_store.has_new_targets());
             EXPECT_TRUE(ctx_store.is_new_target(query));
-            EXPECT_TRUE(ctx_store.get_target(query).first.has_value());
+            EXPECT_TRUE(ctx_store.get_target(query).has_value());
 
-            auto [object, attr] = ctx_store.get_target(query);
-            EXPECT_TRUE(attr.is_context());
+            auto object = ctx_store.get_target(query);
             EXPECT_TRUE(object.has_value());
             EXPECT_STRV(object.as<std::string_view>(), "bye");
         }
@@ -481,7 +470,7 @@ TEST(TestObjectStore, ReplaceSubcontextWithPersistent)
     EXPECT_FALSE(ctx_store.empty());
     EXPECT_FALSE(ctx_store.has_new_targets());
     EXPECT_FALSE(ctx_store.is_new_target(query));
-    EXPECT_TRUE(ctx_store.get_target(query).first.has_value());
+    EXPECT_TRUE(ctx_store.get_target(query).has_value());
 }
 
 TEST(TestObjectStore, ReplacePersistentWithSubcontextSameBatch)
@@ -499,8 +488,7 @@ TEST(TestObjectStore, ReplacePersistentWithSubcontextSameBatch)
             EXPECT_TRUE(ctx_store.has_new_targets());
             EXPECT_TRUE(ctx_store.is_new_target(query));
 
-            auto [object, attr] = ctx_store.get_target(query);
-            EXPECT_TRUE(attr.is_context());
+            auto object = ctx_store.get_target(query);
             EXPECT_TRUE(object.has_value());
             EXPECT_STRV(object.as<std::string_view>(), "hello");
         }
@@ -512,10 +500,9 @@ TEST(TestObjectStore, ReplacePersistentWithSubcontextSameBatch)
             EXPECT_FALSE(sctx_store.empty());
             EXPECT_TRUE(sctx_store.has_new_targets());
             EXPECT_TRUE(sctx_store.is_new_target(query));
-            EXPECT_TRUE(sctx_store.get_target(query).first.has_value());
+            EXPECT_TRUE(sctx_store.get_target(query).has_value());
 
-            auto [object, attr] = sctx_store.get_target(query);
-            EXPECT_TRUE(attr.is_subcontext());
+            auto object = sctx_store.get_target(query);
             EXPECT_TRUE(object.has_value());
             EXPECT_STRV(object.as<std::string_view>(), "bye");
         }
@@ -524,7 +511,7 @@ TEST(TestObjectStore, ReplacePersistentWithSubcontextSameBatch)
     EXPECT_FALSE(ctx_store.empty());
     EXPECT_FALSE(ctx_store.has_new_targets());
     EXPECT_FALSE(ctx_store.is_new_target(query));
-    EXPECT_TRUE(ctx_store.get_target(query).first.has_value());
+    EXPECT_TRUE(ctx_store.get_target(query).has_value());
 }
 
 TEST(TestObjectStore, ReplacePersistentWithSubcontextDifferentBatch)
@@ -542,8 +529,7 @@ TEST(TestObjectStore, ReplacePersistentWithSubcontextDifferentBatch)
         EXPECT_TRUE(ctx_store.has_new_targets());
         EXPECT_TRUE(ctx_store.is_new_target(query));
 
-        auto [object, attr] = ctx_store.get_target(query);
-        EXPECT_TRUE(attr.is_context());
+        auto object = ctx_store.get_target(query);
         EXPECT_TRUE(object.has_value());
         EXPECT_STRV(object.as<std::string_view>(), "hello");
     }
@@ -555,10 +541,9 @@ TEST(TestObjectStore, ReplacePersistentWithSubcontextDifferentBatch)
         EXPECT_FALSE(sctx_store.empty());
         EXPECT_TRUE(sctx_store.has_new_targets());
         EXPECT_TRUE(sctx_store.is_new_target(query));
-        EXPECT_TRUE(sctx_store.get_target(query).first.has_value());
+        EXPECT_TRUE(sctx_store.get_target(query).has_value());
 
-        auto [object, attr] = sctx_store.get_target(query);
-        EXPECT_TRUE(attr.is_subcontext());
+        auto object = sctx_store.get_target(query);
         EXPECT_TRUE(object.has_value());
         EXPECT_STRV(object.as<std::string_view>(), "bye");
     }
@@ -566,7 +551,7 @@ TEST(TestObjectStore, ReplacePersistentWithSubcontextDifferentBatch)
     EXPECT_FALSE(ctx_store.empty());
     EXPECT_FALSE(ctx_store.has_new_targets());
     EXPECT_FALSE(ctx_store.is_new_target(query));
-    EXPECT_TRUE(ctx_store.get_target(query).first.has_value());
+    EXPECT_TRUE(ctx_store.get_target(query).has_value());
 }
 
 } // namespace

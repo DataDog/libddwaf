@@ -34,19 +34,13 @@ struct condition_match {
     std::vector<dynamic_string> highlights;
     std::string_view operator_name;
     std::string_view operator_value;
-    evaluation_scope scope;
 };
 
 struct condition_cache {
-    struct cache_entry {
-        object_cache_key object;
-        evaluation_scope scope;
-    };
-
     // Stores the pointer to the object of the i-th target of the condition,
     // used in the previous evaluation. This ensures that the evaluation of
     // the condition can be skipped for the same object in the future.
-    memory::vector<cache_entry> targets;
+    memory::vector<object_cache_key> targets;
     std::optional<condition_match> match;
 };
 
@@ -83,7 +77,7 @@ public:
     base_condition(base_condition &&) = default;
     base_condition &operator=(base_condition &&) = default;
 
-    virtual eval_result eval(condition_cache &cache, const object_store &store,
+    virtual bool eval(condition_cache &cache, const object_store &store,
         const object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
         ddwaf::timer &deadline) const = 0;
 

@@ -56,9 +56,7 @@ TEST(TestNegatedScalarCondition, NoMatch)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_FALSE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestNegatedScalarCondition, NoMatchWithKeyPath)
@@ -78,9 +76,7 @@ TEST(TestNegatedScalarCondition, NoMatchWithKeyPath)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_FALSE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestNegatedScalarCondition, Timeout)
@@ -110,9 +106,7 @@ TEST(TestNegatedScalarCondition, SimpleMatch)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
     // Ensure the resolved value is the single one that didn't match
     ASSERT_TRUE(cache.match.has_value());
@@ -136,9 +130,7 @@ TEST(TestNegatedScalarCondition, SimpleMatchWithKeyPath)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
     // Ensure the resolved value is the single one that didn't match
     ASSERT_TRUE(cache.match.has_value());
@@ -159,9 +151,7 @@ TEST(TestNegatedScalarCondition, SingleValueArrayMatch)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
     // Ensure the resolved value is the single one that didn't match
     ASSERT_TRUE(cache.match.has_value());
@@ -187,9 +177,7 @@ TEST(TestNegatedScalarCondition, SingleValueArrayMatchWithKeyPath)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
     // Ensure the resolved value is the single one that didn't match
     ASSERT_TRUE(cache.match.has_value());
@@ -211,9 +199,7 @@ TEST(TestNegatedScalarCondition, MultiValueArrayMatch)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
     // Ensure the resolved value is the single one that didn't match
     ASSERT_TRUE(cache.match.has_value());
@@ -239,9 +225,7 @@ TEST(TestNegatedScalarCondition, MultiValueArrayMatchWithKeyPath)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
     // Ensure the resolved value is the single one that didn't match
     ASSERT_TRUE(cache.match.has_value());
@@ -267,14 +251,11 @@ TEST(TestNegatedScalarCondition, ExcludedRootObject)
     store.insert(root);
 
     std::unordered_set<object_cache_key> excluded_objects;
-    excluded_objects.emplace(store.get_target(target_index).first);
+    excluded_objects.emplace(store.get_target(target_index));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res =
-        cond.eval(cache, store, {.context = excluded_objects, .subcontext = {}}, {}, deadline);
-    ASSERT_FALSE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_FALSE(cond.eval(cache, store, excluded_objects, {}, deadline));
 }
 
 TEST(TestNegatedScalarCondition, ExcludedIntermediateObject)
@@ -299,10 +280,7 @@ TEST(TestNegatedScalarCondition, ExcludedIntermediateObject)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res =
-        cond.eval(cache, store, {.context = excluded_objects, .subcontext = {}}, {}, deadline);
-    ASSERT_FALSE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_FALSE(cond.eval(cache, store, excluded_objects, {}, deadline));
 }
 
 TEST(TestNegatedScalarCondition, ExcludedFinalObject)
@@ -327,10 +305,7 @@ TEST(TestNegatedScalarCondition, ExcludedFinalObject)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res =
-        cond.eval(cache, store, {.context = excluded_objects, .subcontext = {}}, {}, deadline);
-    ASSERT_FALSE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_FALSE(cond.eval(cache, store, excluded_objects, {}, deadline));
 }
 
 TEST(TestNegatedScalarCondition, CachedMatch)
@@ -347,18 +322,14 @@ TEST(TestNegatedScalarCondition, CachedMatch)
         auto store = object_store::make_context_store();
         store.insert(root);
 
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome);
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
     }
 
     {
         auto store = object_store::make_context_store();
         store.insert(root);
 
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_FALSE(res.outcome);
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
     }
 }
 
@@ -378,9 +349,7 @@ TEST(TestNegatedScalarCondition, SimpleMatchOnKeys)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestNegatedScalarCondition, SimplesubcontextMatch)
@@ -397,9 +366,7 @@ TEST(TestNegatedScalarCondition, SimplesubcontextMatch)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, sctx_store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome);
-        EXPECT_TRUE(res.scope.is_subcontext());
+        ASSERT_TRUE(cond.eval(cache, sctx_store, {}, {}, deadline));
     }
 
     {
@@ -408,9 +375,7 @@ TEST(TestNegatedScalarCondition, SimplesubcontextMatch)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, sctx_store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome);
-        EXPECT_TRUE(res.scope.is_subcontext());
+        ASSERT_TRUE(cond.eval(cache, sctx_store, {}, {}, deadline));
     }
 }
 

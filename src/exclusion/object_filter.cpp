@@ -15,7 +15,6 @@
 #include "log.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -95,8 +94,8 @@ void iterate_object(const path_trie::traverser &filter, object_view object,
 
 } // namespace
 
-object_set object_filter::match(const object_store &store, cache_type &cache,
-    evaluation_scope scope, ddwaf::timer &deadline) const
+object_set object_filter::match(
+    const object_store &store, cache_type &cache, ddwaf::timer &deadline) const
 {
     object_set objects_to_exclude;
     for (const auto &[target, filter] : target_paths_) {
@@ -104,24 +103,18 @@ object_set object_filter::match(const object_store &store, cache_type &cache,
             throw ddwaf::timeout_exception();
         }
 
-        auto [object, object_scope] = store.get_target(target);
+        auto object = store.get_target(target);
         if (!object.has_value()) {
             continue;
         }
 
-        auto &[cached_object, cached_scope] = cache[target];
-        if (cached_object == object && cached_scope == object_scope) {
+        auto &cached_object = cache[target];
+        if (cached_object == object) {
             continue;
         }
 
         cached_object = object;
-        if (scope.is_context() && object_scope.is_context()) {
-            cached_scope = evaluation_scope::context();
-            iterate_object(filter.get_traverser(), object, objects_to_exclude.context);
-        } else {
-            cached_scope = scope.is_subcontext() ? scope : object_scope;
-            iterate_object(filter.get_traverser(), object, objects_to_exclude.subcontext);
-        }
+        iterate_object(filter.get_traverser(), object, objects_to_exclude);
     }
 
     return objects_to_exclude;

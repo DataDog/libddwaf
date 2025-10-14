@@ -1495,7 +1495,7 @@ TEST(TestEvaluationEngine, InputFilterExcludeRule)
     auto objects_to_exclude = engine.eval_filters(deadline);
     EXPECT_EQ(objects_to_exclude.size(), 1);
 
-    auto it = objects_to_exclude.context.find(rule);
+    auto it = objects_to_exclude.per_rule.find(rule);
     it->second.mode = filter_mode::none;
     EXPECT_TRUE(it->second.objects.empty());
 
@@ -1537,11 +1537,9 @@ TEST(TestEvaluationEngine, InputFilterExcludeRuleSubcontext)
     auto policy = sctx_engine.eval_filters(deadline);
     EXPECT_EQ(policy.size(), 1);
 
-    auto it = policy.context.find(rule);
-    ASSERT_TRUE(it != policy.context.end());
+    auto it = policy.per_rule.find(rule);
+    ASSERT_TRUE(it != policy.per_rule.end());
     EXPECT_TRUE(it->second.objects.empty());
-
-    EXPECT_FALSE(policy.subcontext.contains(rule));
 }
 
 TEST(TestEvaluationEngine, InputFilterMonitorRuleSubcontext)
@@ -1575,17 +1573,10 @@ TEST(TestEvaluationEngine, InputFilterMonitorRuleSubcontext)
     sctx_engine.insert(std::move(root));
 
     auto policy = sctx_engine.eval_filters(deadline);
-    EXPECT_EQ(policy.size(), 2);
+    EXPECT_EQ(policy.size(), 1);
 
-    {
-        auto it = policy.context.find(rule);
-        EXPECT_TRUE(it->second.objects.empty());
-    }
-
-    {
-        auto it = policy.subcontext.find(rule);
-        EXPECT_FALSE(it->second.objects.empty());
-    }
+    auto it = policy.per_rule.find(rule);
+    EXPECT_FALSE(it->second.objects.empty());
 }
 
 TEST(TestEvaluationEngine, InputFilterExcluderRuleSubcontextAndPersistent)
@@ -1628,10 +1619,8 @@ TEST(TestEvaluationEngine, InputFilterExcluderRuleSubcontextAndPersistent)
     auto objects_to_exclude = sctx_engine.eval_filters(deadline);
     EXPECT_EQ(objects_to_exclude.size(), 1);
 
-    auto it = objects_to_exclude.context.find(rule);
+    auto it = objects_to_exclude.per_rule.find(rule);
     EXPECT_TRUE(it->second.objects.empty());
-
-    EXPECT_FALSE(objects_to_exclude.subcontext.contains(rule));
 }
 
 TEST(TestEvaluationEngine, InputFilterMonitorRuleSubcontextAndPersistent)
@@ -1672,17 +1661,10 @@ TEST(TestEvaluationEngine, InputFilterMonitorRuleSubcontextAndPersistent)
     }
 
     auto objects_to_exclude = sctx_engine.eval_filters(deadline);
-    EXPECT_EQ(objects_to_exclude.size(), 2);
+    EXPECT_EQ(objects_to_exclude.size(), 1);
 
-    {
-        auto it = objects_to_exclude.context.find(rule);
-        EXPECT_FALSE(it->second.objects.empty());
-    }
-
-    {
-        auto it = objects_to_exclude.subcontext.find(rule);
-        EXPECT_FALSE(it->second.objects.empty());
-    }
+    auto it = objects_to_exclude.per_rule.find(rule);
+    EXPECT_FALSE(it->second.objects.empty());
 }
 
 TEST(TestEvaluationEngine, InputFilterWithCondition)
@@ -1876,7 +1858,7 @@ TEST(TestEvaluationEngine, InputFilterMultipleRules)
 
         auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, policy] : objects_to_exclude.context) {
+        for (const auto &[rule, policy] : objects_to_exclude.per_rule) {
             EXPECT_EQ(policy.objects.size(), 1);
         }
 
@@ -1895,7 +1877,7 @@ TEST(TestEvaluationEngine, InputFilterMultipleRules)
 
         auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, policy] : objects_to_exclude.context) {
+        for (const auto &[rule, policy] : objects_to_exclude.per_rule) {
             EXPECT_EQ(policy.objects.size(), 2);
         }
 
@@ -1914,7 +1896,7 @@ TEST(TestEvaluationEngine, InputFilterMultipleRules)
 
         auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, policy] : objects_to_exclude.context) {
+        for (const auto &[rule, policy] : objects_to_exclude.per_rule) {
             EXPECT_EQ(policy.objects.size(), 2);
         }
 
@@ -1982,7 +1964,7 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFilters)
 
         auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 1);
-        for (const auto &[rule, policy] : objects_to_exclude.context) {
+        for (const auto &[rule, policy] : objects_to_exclude.per_rule) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
         }
@@ -2002,7 +1984,7 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFilters)
 
         auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, policy] : objects_to_exclude.context) {
+        for (const auto &[rule, policy] : objects_to_exclude.per_rule) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
         }
@@ -2022,7 +2004,7 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFilters)
 
         auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 2);
-        for (const auto &[rule, policy] : objects_to_exclude.context) {
+        for (const auto &[rule, policy] : objects_to_exclude.per_rule) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
         }
@@ -2121,7 +2103,7 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFiltersMultipleObject
 
         auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, policy] : objects_to_exclude.context) {
+        for (const auto &[rule, policy] : objects_to_exclude.per_rule) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
             EXPECT_TRUE(objects.contains(root.at(0)));
@@ -2141,7 +2123,7 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFiltersMultipleObject
 
         auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, policy] : objects_to_exclude.context) {
+        for (const auto &[rule, policy] : objects_to_exclude.per_rule) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
             EXPECT_TRUE(objects.contains(root.at(0)));
@@ -2162,7 +2144,7 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFiltersMultipleObject
 
         auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, policy] : objects_to_exclude.context) {
+        for (const auto &[rule, policy] : objects_to_exclude.per_rule) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 1);
             EXPECT_TRUE(objects.contains(root.at(0)));
@@ -2182,7 +2164,7 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFiltersMultipleObject
 
         auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, policy] : objects_to_exclude.context) {
+        for (const auto &[rule, policy] : objects_to_exclude.per_rule) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 2);
             EXPECT_TRUE(objects.contains(root.at(0)));
@@ -2204,7 +2186,7 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFiltersMultipleObject
 
         auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, policy] : objects_to_exclude.context) {
+        for (const auto &[rule, policy] : objects_to_exclude.per_rule) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 2);
             EXPECT_TRUE(objects.contains(root.at(0)));
@@ -2226,7 +2208,7 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFiltersMultipleObject
 
         auto objects_to_exclude = engine.eval_filters(deadline);
         EXPECT_EQ(objects_to_exclude.size(), 3);
-        for (const auto &[rule, policy] : objects_to_exclude.context) {
+        for (const auto &[rule, policy] : objects_to_exclude.per_rule) {
             const auto &objects = policy.objects;
             EXPECT_EQ(objects.size(), 3);
             EXPECT_TRUE(objects.contains(root.at(0)));

@@ -26,7 +26,6 @@ class expression {
 public:
     struct cache_type {
         bool result{false};
-        evaluation_scope scope;
         memory::vector<condition_cache> conditions;
     };
 
@@ -36,33 +35,27 @@ public:
         : conditions_(std::move(conditions))
     {}
 
-    eval_result eval(cache_type &cache, const object_store &store,
-        const object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
-        evaluation_scope scope, ddwaf::timer &deadline) const;
+    bool eval(cache_type &cache, const object_store &store, const object_set_ref &objects_excluded,
+        const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const;
 
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
         for (const auto &cond : conditions_) { cond->get_addresses(addresses); }
     }
 
-    static std::vector<condition_match> get_matches(
-        cache_type &cache, evaluation_scope scope = evaluation_scope::context())
+    static std::vector<condition_match> get_matches(cache_type &cache)
     {
         std::vector<condition_match> matches;
         matches.reserve(cache.conditions.size());
         for (auto &cond_cache : cache.conditions) {
-            if (cond_cache.match.has_value() &&
-                cond_cache.match->scope.has_higher_precedence_or_is_equal_to(scope)) {
+            if (cond_cache.match.has_value()) {
                 matches.emplace_back(cond_cache.match.value());
             }
         }
         return matches;
     }
 
-    static bool get_result(cache_type &cache, evaluation_scope scope)
-    {
-        return cache.scope.has_higher_precedence_or_is_equal_to(scope) && cache.result;
-    }
+    static bool get_result(cache_type &cache) { return cache.result; }
 
     [[nodiscard]] bool empty() const { return conditions_.empty(); }
     [[nodiscard]] std::size_t size() const { return conditions_.size(); }

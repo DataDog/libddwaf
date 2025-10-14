@@ -119,7 +119,7 @@ void evaluation_engine::eval_preprocessors(timer &deadline)
             it = new_it;
         }
 
-        preproc->eval(store_, collector_, it->second, output_alloc_, scope_, deadline);
+        preproc->eval(store_, collector_, it->second, output_alloc_, deadline);
     }
 }
 
@@ -139,7 +139,7 @@ void evaluation_engine::eval_postprocessors(timer &deadline)
             it = new_it;
         }
 
-        postproc->eval(store_, collector_, it->second, output_alloc_, scope_, deadline);
+        postproc->eval(store_, collector_, it->second, output_alloc_, deadline);
     }
 }
 
@@ -160,12 +160,10 @@ exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
         }
 
         rule_filter::cache_type &cache = it->second;
-        auto exclusion =
-            filter.match(store_, cache, *ruleset_->exclusion_matchers, scope_, deadline);
+        auto exclusion = filter.match(store_, cache, *ruleset_->exclusion_matchers, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
-                cache_.exclusions.add_rule_exclusion(
-                    rule, exclusion->mode, exclusion->action, exclusion->scope);
+                cache_.exclusions.add_rule_exclusion(rule, exclusion->mode, exclusion->action);
             }
         }
     }
@@ -185,8 +183,7 @@ exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
         }
 
         input_filter::cache_type &cache = it->second;
-        auto exclusion =
-            filter.match(store_, cache, *ruleset_->exclusion_matchers, scope_, deadline);
+        auto exclusion = filter.match(store_, cache, *ruleset_->exclusion_matchers, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 cache_.exclusions.add_input_exclusion(rule, exclusion->objects);
@@ -204,8 +201,7 @@ void evaluation_engine::eval_rules(
         const auto &mod = ruleset_->rule_modules[i];
         auto &cache = cache_.rule_modules[i];
 
-        auto verdict =
-            mod.eval(results, store_, cache, policy, *ruleset_->rule_matchers, scope_, deadline);
+        auto verdict = mod.eval(results, store_, cache, policy, *ruleset_->rule_matchers, deadline);
         if (verdict == rule_module::verdict_type::block) {
             break;
         }

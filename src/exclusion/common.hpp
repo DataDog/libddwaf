@@ -17,15 +17,29 @@ class core_rule;
 
 enum class filter_mode : uint8_t { none = 0, custom = 1, monitor = 2, bypass = 3 };
 
-struct object_set {
-    std::unordered_set<object_cache_key> context;
-    std::unordered_set<object_cache_key> subcontext;
-    bool empty() const { return context.empty() && subcontext.empty(); }
-    [[nodiscard]] std::size_t size() const { return context.size() + subcontext.size(); }
+using object_set = std::unordered_set<object_cache_key>;
 
-    bool contains(object_view obj) const
+struct object_set_ref {
+    optional_ref<const object_set> objects;
+
+    object_set_ref() = default;
+
+    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
+    object_set_ref(std::nullopt_t /*unused*/) {}
+
+    // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
+    object_set_ref(const object_set &original) : objects(original) {}
+
+    [[nodiscard]] bool empty() const { return !objects.has_value() || objects->get().empty(); }
+
+    [[nodiscard]] std::size_t size() const
     {
-        return context.contains(obj) || subcontext.contains(obj);
+        return objects.has_value() ? objects->get().size() : 0;
+    }
+
+    [[nodiscard]] bool contains(object_view obj) const
+    {
+        return objects.has_value() && objects->get().contains(obj);
     }
 };
 
@@ -35,29 +49,6 @@ struct rule_policy {
     std::unordered_set<object_cache_key> objects;
 };
 
-struct object_set_ref {
-    optional_ref<const std::unordered_set<object_cache_key>> context{std::nullopt};
-    optional_ref<const std::unordered_set<object_cache_key>> subcontext{std::nullopt};
-
-    [[nodiscard]] bool empty() const
-    {
-        return (!context.has_value() || context->get().empty()) &&
-               (!subcontext.has_value() || subcontext->get().empty());
-    }
-
-    [[nodiscard]] std::size_t size() const
-    {
-        return (context.has_value() ? context->get().size() : 0) +
-               (subcontext.has_value() ? subcontext->get().size() : 0);
-    }
-
-    [[nodiscard]] bool contains(object_view obj) const
-    {
-        return (context.has_value() && context->get().contains(obj)) ||
-               (subcontext.has_value() && subcontext->get().contains(obj));
-    }
-};
-
 struct rule_policy_ref {
     filter_mode mode{filter_mode::none};
     std::string_view action_override;
@@ -65,59 +56,30 @@ struct rule_policy_ref {
 };
 
 struct exclusion_policy {
-    std::unordered_map<const core_rule *, rule_policy> context;
-    std::unordered_map<const core_rule *, rule_policy> subcontext;
+    std::unordered_map<const core_rule *, rule_policy> per_rule;
 
-    [[nodiscard]] bool empty() const { return context.empty() && subcontext.empty(); }
+    [[nodiscard]] bool empty() const { return per_rule.empty(); }
 
-    [[nodiscard]] std::size_t size() const { return context.size() + subcontext.size(); }
+    [[nodiscard]] std::size_t size() const { return per_rule.size(); }
 
-    bool contains(const core_rule *key) const
-    {
-        return context.contains(key) || subcontext.contains(key);
-    }
+    bool contains(const core_rule *key) const { return per_rule.contains(key); }
 
     rule_policy_ref find(const core_rule *key) const
     {
-        auto p_it = context.find(key);
-        auto e_it = subcontext.find(key);
-
-        if (p_it == context.end()) {
-            if (e_it == subcontext.end()) {
-                return {.mode = filter_mode::none,
-                    .action_override = {},
-                    .objects = {.context = std::nullopt, .subcontext = std::nullopt}};
-            }
-
-            const auto &e_policy = e_it->second;
-            return {.mode = e_policy.mode,
-                .action_override = e_policy.action_override,
-                .objects = {.context = std::nullopt, .subcontext = e_policy.objects}};
+        auto it = per_rule.find(key);
+        if (it == per_rule.end()) {
+            return {.mode = filter_mode::none, .action_override = {}, .objects = std::nullopt};
         }
 
-        if (e_it == subcontext.end()) {
-            const auto &p_policy = p_it->second;
-            p_policy.objects.size();
-            return {.mode = p_policy.mode,
-                .action_override = p_policy.action_override,
-                .objects = {.context = p_policy.objects, .subcontext = std::nullopt}};
-        }
-
-        const auto &p_policy = p_it->second;
-        const auto &e_policy = e_it->second;
-
-        const auto &effective_policy = p_policy.mode > e_policy.mode ? p_policy : e_policy;
-        return {.mode = effective_policy.mode,
-            .action_override = effective_policy.action_override,
-            .objects = {.context = p_policy.objects, .subcontext = e_policy.objects}};
+        const auto &policy = it->second;
+        return {.mode = policy.mode,
+            .action_override = policy.action_override,
+            .objects = policy.objects};
     }
 
-    void add_rule_exclusion(
-        const core_rule *rule, filter_mode mode, std::string_view action, evaluation_scope scope)
+    void add_rule_exclusion(const core_rule *rule, filter_mode mode, std::string_view action)
     {
-        auto &rule_policy = scope.is_context() ? context : subcontext;
-
-        auto &policy = rule_policy[rule];
+        auto &policy = per_rule[rule];
         // Bypass has precedence over monitor
         if (policy.mode < mode) {
             policy.mode = mode;
@@ -127,28 +89,12 @@ struct exclusion_policy {
 
     void add_input_exclusion(const core_rule *rule, const object_set &objects)
     {
-        if (!objects.context.empty()) {
-            auto &rule_policy = context[rule];
-            if (rule_policy.mode == filter_mode::bypass) {
-                // If the rule has been bypassed, there is no need to
-                // add context or subcontext objects to it.
-                return;
-            }
-            rule_policy.objects.insert(objects.context.begin(), objects.context.end());
-        } else {
-            auto it = context.find(rule);
-            if (it != context.end() && it->second.mode == filter_mode::bypass) {
-                return;
-            }
+        auto &rule_policy = per_rule[rule];
+        if (rule_policy.mode == filter_mode::bypass) {
+            // If the rule has been bypassed, there is no need to add objects to it.
+            return;
         }
-
-        if (!objects.subcontext.empty()) {
-            auto &rule_policy = subcontext[rule];
-            // Bypass has precedence over monitor
-            if (rule_policy.mode != filter_mode::bypass) {
-                rule_policy.objects.insert(objects.subcontext.begin(), objects.subcontext.end());
-            }
-        }
+        rule_policy.objects.insert(objects.begin(), objects.end());
     }
 };
 

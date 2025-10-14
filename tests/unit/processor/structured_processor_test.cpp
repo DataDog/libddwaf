@@ -31,7 +31,7 @@ public:
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
     {}
 
-    MOCK_METHOD((std::pair<owned_object, evaluation_scope>), eval_impl,
+    MOCK_METHOD((owned_object), eval_impl,
         (const unary_argument<object_view> &unary,
             const optional_argument<std::string_view> &optional,
             const variadic_argument<uint64_t> &variadic, processor_cache &,
@@ -73,8 +73,7 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
-            std::move(output), evaluation_scope::context()})));
+        .WillOnce(Return(ByMove(owned_object{std::move(output)})));
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
@@ -82,7 +81,7 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, {}, deadline);
+    proc.eval(store, collector, cache, alloc, deadline);
 
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 1);
@@ -123,8 +122,7 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
 
     EXPECT_CALL(proc, eval_impl(_, _, _, _, _, _))
-        .WillOnce(Return(ByMove(std::pair<owned_object, evaluation_scope>{
-            std::move(output), evaluation_scope::context()})));
+        .WillOnce(Return(ByMove(owned_object{std::move(output)})));
 
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
@@ -132,7 +130,7 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, {}, deadline);
+    proc.eval(store, collector, cache, alloc, deadline);
 
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 1);
@@ -178,7 +176,7 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, {}, deadline);
+    proc.eval(store, collector, cache, alloc, deadline);
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 0);
 }
@@ -222,7 +220,7 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
     timer deadline{2s};
 
     attribute_collector collector;
-    proc.eval(store, collector, cache, alloc, {}, deadline);
+    proc.eval(store, collector, cache, alloc, deadline);
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 0);
 }

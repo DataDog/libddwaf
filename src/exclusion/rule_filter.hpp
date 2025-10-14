@@ -20,7 +20,6 @@ public:
     struct excluded_set {
         // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
         const std::unordered_set<const core_rule *> &rules;
-        evaluation_scope scope;
         filter_mode mode{filter_mode::none};
         std::string_view action;
     };
@@ -37,7 +36,7 @@ public:
     ~rule_filter() = default;
 
     std::optional<excluded_set> match(const object_store &store, cache_type &cache,
-        const matcher_mapper &dynamic_matchers, evaluation_scope scope, timer &deadline) const;
+        const matcher_mapper &dynamic_matchers, timer &deadline) const;
 
     std::string_view get_id() const { return id_; }
 

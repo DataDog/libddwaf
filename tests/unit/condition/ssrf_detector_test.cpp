@@ -58,8 +58,7 @@ void match_path_and_input(const std::vector<std::pair<std::string, ssrf_sample>>
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         if (match) {
-            ASSERT_TRUE(res.outcome) << path;
-            EXPECT_TRUE(res.scope.is_context());
+            ASSERT_TRUE(res) << path;
 
             EXPECT_TRUE(cache.match);
             if (cache.match) { // Silence linter
@@ -85,7 +84,7 @@ void match_path_and_input(const std::vector<std::pair<std::string, ssrf_sample>>
                 EXPECT_TRUE(cache.match->args[1].key_path == sample.key_path) << path;
             }
         } else {
-            EXPECT_FALSE(res.outcome) << path;
+            EXPECT_FALSE(res) << path;
             EXPECT_FALSE(cache.match);
         }
     }

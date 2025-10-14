@@ -56,7 +56,7 @@ TEST(TestModuleUngrouped, SingleRuleMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 1);
     }
@@ -67,8 +67,8 @@ TEST(TestModuleUngrouped, SingleRuleMatch)
         store.insert(root);
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        mod.eval(results, store, cache, {}, {}, {}, deadline);
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        mod.eval(results, store, cache, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::none);
         EXPECT_EQ(results.size(), 0);
     }
@@ -121,7 +121,7 @@ TEST(TestModuleUngrouped, MultipleMonitoringRuleMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 2);
         EXPECT_TRUE(contains(results, "id1"));
@@ -134,8 +134,8 @@ TEST(TestModuleUngrouped, MultipleMonitoringRuleMatch)
         store.insert(root);
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        mod.eval(results, store, cache, {}, {}, {}, deadline);
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        mod.eval(results, store, cache, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::none);
         EXPECT_EQ(results.size(), 0);
     }
@@ -189,7 +189,7 @@ TEST(TestModuleUngrouped, BlockingRuleMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id2"));
@@ -246,7 +246,7 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id1"));
@@ -259,7 +259,7 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
     }
@@ -316,7 +316,7 @@ TEST(TestModuleUngrouped, BlockingRuleMatchBasePrecedence)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id2"));
@@ -376,7 +376,7 @@ TEST(TestModuleUngrouped, BlockingRuleMatchUserPrecedence)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id1"));
@@ -415,7 +415,7 @@ TEST(TestModuleUngrouped, NonExpiringModule)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline{0s};
-        mod.eval(results, store, cache, {}, {}, {}, deadline);
+        mod.eval(results, store, cache, {}, {}, deadline);
 
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id"));
@@ -452,8 +452,7 @@ TEST(TestModuleUngrouped, ExpiringModule)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline{0s};
-        EXPECT_THROW(
-            mod.eval(results, store, cache, {}, {}, {}, deadline), ddwaf::timeout_exception);
+        EXPECT_THROW(mod.eval(results, store, cache, {}, {}, deadline), ddwaf::timeout_exception);
     }
 }
 
@@ -491,7 +490,7 @@ TEST(TestModuleUngrouped, DisabledRules)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::none);
     }
 }
@@ -543,7 +542,7 @@ TEST(TestModuleGrouped, MultipleGroupsMonitoringRuleMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 2);
         EXPECT_TRUE(contains(results, "id1"));
@@ -599,7 +598,7 @@ TEST(TestModuleGrouped, MultipleGroupsBlockingRuleMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id2"));
@@ -654,7 +653,7 @@ TEST(TestModuleGrouped, SingleGroupBlockingRuleMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id2"));
@@ -708,7 +707,7 @@ TEST(TestModuleGrouped, SingleGroupMonitoringRuleMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id1"));
@@ -763,7 +762,7 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupMonitoringUserMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id2"));
@@ -818,7 +817,7 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupMonitoringBaseMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id1"));
@@ -874,7 +873,7 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingBaseMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id1"));
@@ -930,7 +929,7 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingUserMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id2"));
@@ -986,7 +985,7 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingBaseMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id1"));
@@ -1042,7 +1041,7 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingUserMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id2"));
@@ -1097,7 +1096,7 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsMonitoringMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 2);
         EXPECT_TRUE(contains(results, "id1"));
@@ -1153,7 +1152,7 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsBlockingMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id2"));
@@ -1208,7 +1207,7 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsMonitoringMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 2);
         EXPECT_TRUE(contains(results, "id1"));
@@ -1264,7 +1263,7 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsBlockingMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id1"));
@@ -1408,7 +1407,7 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 4);
         EXPECT_TRUE(contains(results, "id2"));
@@ -1511,7 +1510,7 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 3);
 
@@ -1614,7 +1613,7 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id3"));
@@ -1655,7 +1654,7 @@ TEST(TestModuleGrouped, DisabledRules)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::none);
     }
 }
@@ -1690,7 +1689,7 @@ TEST(TestModuleGrouped, NonExpiringModule)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline{0s};
-        mod.eval(results, store, cache, {}, {}, {}, deadline);
+        mod.eval(results, store, cache, {}, {}, deadline);
 
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id"));
@@ -1727,8 +1726,7 @@ TEST(TestModuleGrouped, ExpiringModule)
 
         std::vector<rule_result> results;
         ddwaf::timer deadline{0s};
-        EXPECT_THROW(
-            mod.eval(results, store, cache, {}, {}, {}, deadline), ddwaf::timeout_exception);
+        EXPECT_THROW(mod.eval(results, store, cache, {}, {}, deadline), ddwaf::timeout_exception);
     }
 }
 

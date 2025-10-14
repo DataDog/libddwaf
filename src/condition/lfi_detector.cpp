@@ -122,7 +122,7 @@ lfi_result lfi_impl(std::string_view path, object_view params,
 } // namespace
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path,
+bool lfi_detector::eval_impl(const unary_argument<std::string_view> &path,
     const variadic_argument<object_view> &params, condition_cache &cache,
     const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
@@ -130,8 +130,6 @@ eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path
         auto res = lfi_impl(path.value, param.value, objects_excluded, deadline);
         if (res.has_value()) {
             const std::vector<std::string> path_kp{path.key_path.begin(), path.key_path.end()};
-
-            const evaluation_scope scope = resolve_scope(path, param);
 
             auto &[highlight, param_kp] = res.value();
 
@@ -147,10 +145,9 @@ eval_result lfi_detector::eval_impl(const unary_argument<std::string_view> &path
                                                   .key_path = param_kp}},
                 .highlights = {highlight},
                 .operator_name = "lfi_detector",
-                .operator_value = {},
-                .scope = scope};
+                .operator_value = {}};
 
-            return eval_result::match(scope);
+            return true;
         }
     }
 

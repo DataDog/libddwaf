@@ -47,9 +47,7 @@ TEST(TestScalarCondition, NoMatch)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_FALSE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestScalarCondition, Timeout)
@@ -79,9 +77,7 @@ TEST(TestScalarCondition, SimpleMatch)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestScalarCondition, CachedMatch)
@@ -98,18 +94,14 @@ TEST(TestScalarCondition, CachedMatch)
         auto store = object_store::make_context_store();
         store.insert(root);
 
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome);
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
     }
 
     {
         auto store = object_store::make_context_store();
         store.insert(root);
 
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_FALSE(res.outcome);
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
     }
 }
 
@@ -129,9 +121,7 @@ TEST(TestScalarCondition, SimpleMatchOnKeys)
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestScalarCondition, SimpleSubcontextMatch)
@@ -148,9 +138,7 @@ TEST(TestScalarCondition, SimpleSubcontextMatch)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, sctx_store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome);
-        EXPECT_TRUE(res.scope.is_subcontext());
+        ASSERT_TRUE(cond.eval(cache, sctx_store, {}, {}, deadline));
     }
 
     {
@@ -159,9 +147,7 @@ TEST(TestScalarCondition, SimpleSubcontextMatch)
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, sctx_store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome);
-        EXPECT_TRUE(res.scope.is_subcontext());
+        ASSERT_TRUE(cond.eval(cache, sctx_store, {}, {}, deadline));
     }
 }
 

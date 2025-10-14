@@ -16,7 +16,6 @@
 #include "pointer.hpp"
 #include "processor/base.hpp"
 #include "ruleset.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -69,22 +68,21 @@ public:
         nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
     {
         return evaluation_engine{std::move(ruleset), object_store::make_context_store(),
-            evaluation_scope::context(), evaluation_cache{}, output_alloc};
+            evaluation_cache{}, output_alloc};
     }
 
     static evaluation_engine subcontext_engine(evaluation_engine &engine)
     {
         return evaluation_engine{engine.ruleset_,
-            object_store::make_subcontext_store(engine.store_), evaluation_scope::subcontext(),
-            engine.cache_, engine.output_alloc_};
+            object_store::make_subcontext_store(engine.store_), engine.cache_,
+            engine.output_alloc_};
     }
 
 protected:
     explicit evaluation_engine(std::shared_ptr<ruleset> ruleset, object_store &&store,
-        evaluation_scope scope, evaluation_cache cache,
-        nonnull_ptr<memory::memory_resource> output_alloc)
-        : scope_(scope), output_alloc_(output_alloc), ruleset_(std::move(ruleset)),
-          store_(std::move(store)), collector_(output_alloc), cache_(std::move(cache))
+        evaluation_cache cache, nonnull_ptr<memory::memory_resource> output_alloc)
+        : output_alloc_(output_alloc), ruleset_(std::move(ruleset)), store_(std::move(store)),
+          collector_(output_alloc), cache_(std::move(cache))
     {
         cache_.processors.reserve(
             ruleset_->preprocessors->size() + ruleset_->postprocessors->size());
@@ -117,9 +115,6 @@ protected:
         }
         return false;
     }
-
-    // The current scope: context or subcontext
-    evaluation_scope scope_;
 
     // This memory resource is used primarily for the allocation of memory
     // which will be returned to the user.

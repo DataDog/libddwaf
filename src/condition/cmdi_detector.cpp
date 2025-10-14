@@ -31,7 +31,6 @@
 #include "platform.hpp"
 #include "tokenizer/shell.hpp"
 #include "transformer/lowercase.hpp"
-#include "utils.hpp"
 
 using namespace std::literals;
 
@@ -433,7 +432,7 @@ cmdi_detector::cmdi_detector(std::vector<condition_parameter> args)
 {}
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-eval_result cmdi_detector::eval_impl(const unary_argument<object_view> &resource,
+bool cmdi_detector::eval_impl(const unary_argument<object_view> &resource,
     const variadic_argument<object_view> &params, condition_cache &cache,
     const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
@@ -448,8 +447,6 @@ eval_result cmdi_detector::eval_impl(const unary_argument<object_view> &resource
         if (res.has_value()) {
             const std::vector<std::string> resource_kp{
                 resource.key_path.begin(), resource.key_path.end()};
-
-            const evaluation_scope scope = resolve_scope(resource, param);
 
             auto &[highlight, param_kp] = res.value();
 
@@ -466,13 +463,12 @@ eval_result cmdi_detector::eval_impl(const unary_argument<object_view> &resource
                                         .key_path = param_kp}},
                     .highlights = {std::move(highlight)},
                     .operator_name = "cmdi_detector"sv,
-                    .operator_value = {},
-                    .scope = scope};
+                    .operator_value = {}};
 
-            return eval_result::match(scope);
+            return true;
         }
     }
 
-    return eval_result::no_match();
+    return false;
 }
 } // namespace ddwaf

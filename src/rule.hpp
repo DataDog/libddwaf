@@ -77,7 +77,6 @@ struct rule_event {
 
 struct rule_result {
     bool keep{false};
-    evaluation_scope scope;
 
     std::optional<rule_event> event{std::nullopt};
 
@@ -137,7 +136,7 @@ public:
 
     std::pair<verdict_type, std::optional<rule_result>> match(const object_store &store,
         cache_type &cache, const object_set_ref &objects_excluded,
-        const matcher_mapper &dynamic_matchers, evaluation_scope scope, timer &deadline) const;
+        const matcher_mapper &dynamic_matchers, timer &deadline) const;
 
     [[nodiscard]] bool is_enabled() const { return enabled_; }
 

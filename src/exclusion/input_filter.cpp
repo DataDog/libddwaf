@@ -19,7 +19,6 @@
 #include "matcher/base.hpp"
 #include "object_store.hpp"
 #include "rule.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -36,18 +35,17 @@ input_filter::input_filter(std::string id, std::shared_ptr<expression> expr,
 }
 
 std::optional<excluded_set> input_filter::match(const object_store &store, cache_type &cache,
-    const matcher_mapper &dynamic_matchers, evaluation_scope scope, timer &deadline) const
+    const matcher_mapper &dynamic_matchers, timer &deadline) const
 {
     DDWAF_DEBUG("Evaluating input filter '{}'", id_);
 
     // An event was already produced, so we skip the rule
     // Note that conditions in a filter are optional
-    auto res = expr_->eval(cache.expr_cache, store, {}, dynamic_matchers, scope, deadline);
-    if (!res.outcome) {
+    if (!expr_->eval(cache.expr_cache, store, {}, dynamic_matchers, deadline)) {
         return std::nullopt;
     }
 
-    auto objects = filter_->match(store, cache.object_filter_cache, res.scope, deadline);
+    auto objects = filter_->match(store, cache.object_filter_cache, deadline);
     if (objects.empty()) {
         return std::nullopt;
     }

@@ -10,7 +10,6 @@
 #include "log.hpp"
 #include "object.hpp"
 #include "target_address.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -53,7 +52,7 @@ public:
 
             auto key = key_obj.as<std::string_view>();
             auto target = get_target_index(key);
-            insert_target_helper(target, key, value, scope_);
+            insert_target_helper(target, key, value);
         }
 
         return true;
@@ -63,20 +62,20 @@ public:
     {
         object_view view = input_objects_.emplace_back(std::move(input));
 
-        return insert_target_helper(target, key, view, scope_);
+        return insert_target_helper(target, key, view);
     }
 
-    [[nodiscard]] std::pair<object_view, evaluation_scope> get_target(target_index target) const
+    [[nodiscard]] object_view get_target(target_index target) const
     {
         auto it = objects_.find(target);
         if (it != objects_.end()) {
-            return {it->second.first, it->second.second};
+            return it->second;
         }
-        return {nullptr, evaluation_scope::context()};
+        return nullptr;
     }
 
     // Used for testing
-    [[nodiscard]] std::pair<object_view, evaluation_scope> get_target(std::string_view name) const
+    [[nodiscard]] object_view get_target(std::string_view name) const
     {
         return get_target(get_target_index(name));
     }
@@ -90,45 +89,38 @@ public:
     [[nodiscard]] bool empty() const { return objects_.empty(); }
     void clear_last_batch() { latest_batch_.clear(); }
 
-    static object_store make_context_store() { return object_store{evaluation_scope::context()}; }
+    static object_store make_context_store() { return {}; }
     static object_store make_subcontext_store(const object_store &upstream)
     {
-        auto store = object_store{evaluation_scope::subcontext()};
+        object_store store;
         store.latest_batch_ = upstream.latest_batch_;
         store.objects_ = upstream.objects_;
         return store;
     }
     // For testing purposes
-    static object_store make_subcontext_store()
-    {
-        return object_store{evaluation_scope::subcontext()};
-    }
+    static object_store make_subcontext_store() { return {}; }
 
 private:
-    explicit object_store(evaluation_scope scope) : scope_(scope) {}
+    object_store() = default;
 
-    bool insert_target_helper(
-        target_index target, std::string_view key, object_view view, evaluation_scope scope)
+    bool insert_target_helper(target_index target, std::string_view key, object_view view)
     {
         if (objects_.contains(target)) {
-            DDWAF_DEBUG("Replacing {} target '{}' in object store",
-                scope.is_subcontext() ? "subcontext" : "context", key);
+            DDWAF_DEBUG("Replacing target '{}' in object store", key);
         } else {
-            DDWAF_DEBUG("Inserting {} target '{}' into object store",
-                scope.is_subcontext() ? "subcontext" : "context", key);
+            DDWAF_DEBUG("Inserting target '{}' into object store", key);
         }
 
-        objects_[target] = {view, scope};
+        objects_[target] = view;
         latest_batch_.emplace(target);
 
         return true;
     }
 
-    evaluation_scope scope_;
     memory::list<owned_object> input_objects_;
 
     memory::unordered_set<target_index> latest_batch_;
-    memory::unordered_map<target_index, std::pair<object_view, evaluation_scope>> objects_;
+    memory::unordered_map<target_index, object_view> objects_;
 };
 
 } // namespace ddwaf

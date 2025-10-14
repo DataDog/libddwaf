@@ -14,14 +14,7 @@
 namespace ddwaf {
 
 struct rule_collection_cache {
-    struct {
-        core_rule::verdict_type type{core_rule::verdict_type::none};
-    } context;
-
-    struct {
-        core_rule::verdict_type type{core_rule::verdict_type::none};
-        evaluation_scope scope;
-    } subcontext;
+    core_rule::verdict_type type{core_rule::verdict_type::none};
 };
 
 struct rule_module_cache {
@@ -58,13 +51,12 @@ public:
 
     verdict_type eval(std::vector<rule_result> &results, object_store &store, cache_type &cache,
         const exclusion_policy &exclusion, const matcher_mapper &dynamic_matchers,
-        evaluation_scope scope, ddwaf::timer &deadline) const;
+        ddwaf::timer &deadline) const;
 
 protected:
     verdict_type eval_with_collections(std::vector<rule_result> &results, object_store &store,
         cache_type &cache, const exclusion_policy &exclusion,
-        const matcher_mapper &dynamic_matchers, evaluation_scope scope,
-        ddwaf::timer &deadline) const;
+        const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const;
 
     ddwaf::timer &get_deadline(ddwaf::timer &deadline) const;
 

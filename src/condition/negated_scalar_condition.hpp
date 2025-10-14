@@ -31,7 +31,7 @@ public:
         target_ = std::move(args[0].targets[0]);
     }
 
-    eval_result eval(condition_cache &cache, const object_store &store,
+    bool eval(condition_cache &cache, const object_store &store,
         const object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
         ddwaf::timer &deadline) const override;
 
