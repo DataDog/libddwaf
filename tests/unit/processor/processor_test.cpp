@@ -47,7 +47,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
     owned_object output = owned_object::make_string("output_string");
 
     auto input_map = object_builder::map({{"input_address", "input_string"}});
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
@@ -89,7 +89,7 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
     auto input_map = object_builder::map({{"input_address.first", "first_input_string"},
         {"input_address.second", "second_input_string"}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
@@ -144,7 +144,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
 
     auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", true}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
@@ -189,7 +189,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
 
     auto input_map = object_builder::map({{"enabled?", true}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
@@ -245,7 +245,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
 
     auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", false}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
@@ -285,7 +285,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
         {"input_address", "input_string"},
     });
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
@@ -331,7 +331,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
 
     auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", true}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
@@ -380,7 +380,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
 
     auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", false}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
@@ -422,7 +422,7 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
     auto input_map = object_builder::map({{"input_address.first", "first_input_string"},
         {"input_address.second", "second_input_string"}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
@@ -481,7 +481,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
         {"input_address", "input_string"},
     });
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
@@ -532,7 +532,7 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
     auto input_map = object_builder::map(
         {{"input_address", "input_string"}, {"output_address", owned_object::make_null()}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
@@ -563,7 +563,7 @@ TEST(TestProcessor, OutputAlreadyGenerated)
         {"input_address", "input_string"},
     });
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
@@ -594,7 +594,7 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
     auto input_map = object_builder::map(
         {{"input_address", "input_string"}, {"output_address", owned_object::make_null()}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
@@ -628,7 +628,7 @@ TEST(TestProcessor, OutputEvalWithoutattributesMap)
         {"input_address", "input_string"},
     });
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input_map));
 
     std::vector<processor_mapping> mappings{
@@ -670,7 +670,7 @@ TEST(TestProcessor, Timeout)
 {
     auto *alloc = memory::get_default_resource();
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
 
     std::vector<processor_mapping> mappings{
         {.inputs = {{{{.index = get_target_index("input_address"),

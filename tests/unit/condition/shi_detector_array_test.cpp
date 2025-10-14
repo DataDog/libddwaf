@@ -24,7 +24,7 @@ TEST(TestShiDetectorArray, InvalidType)
     auto root = object_builder::map(
         {{"server.sys.shell.cmd", object_builder::map()}, {"server.request.query", "whatever"}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -40,7 +40,7 @@ TEST(TestShiDetectorArray, EmptyResource)
     auto root = object_builder::map(
         {{"server.sys.shell.cmd", object_builder::array()}, {"server.request.query", "whatever"}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -56,7 +56,7 @@ TEST(TestShiDetectorArray, InvalidTypeWithinArray)
         {"server.sys.shell.cmd", object_builder::array({"ls", "-l", ";", 22, object_builder::map(),
                                      "cat /etc/passwd"})}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -114,7 +114,7 @@ TEST(TestShiDetectorArray, NoMatchAndFalsePositives)
         auto array = root.emplace("server.sys.shell.cmd", object_builder::array());
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -158,7 +158,7 @@ TEST(TestShiDetectorArray, ExecutablesAndRedirections)
             resource_str.append(arg);
         }
 
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -213,7 +213,7 @@ TEST(TestShiDetectorArray, OverlappingInjections)
             resource_str.append(arg);
         }
 
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -253,7 +253,7 @@ TEST(TestShiDetectorArray, InjectionsWithinCommandSubstitution)
             resource_str.append(arg);
         }
 
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -298,7 +298,7 @@ TEST(TestShiDetectorArray, InjectionsWithinProcessSubstitution)
             resource_str.append(arg);
         }
 
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -349,7 +349,7 @@ TEST(TestShiDetectorArray, OffByOnePayloadsMatch)
             resource_str.append(arg);
         }
 
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};

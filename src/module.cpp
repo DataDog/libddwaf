@@ -26,7 +26,7 @@ namespace {
 using verdict_type = rule_module::verdict_type;
 
 std::pair<verdict_type, std::optional<rule_result>> eval_rule(const core_rule &rule,
-    const base_object_store &store, core_rule::cache_type &cache, const exclusion_policy &policy,
+    const object_store &store, core_rule::cache_type &cache, const exclusion_policy &policy,
     const matcher_mapper &dynamic_matchers, evaluation_scope scope, ddwaf::timer &deadline)
 {
     const auto &id = rule.get_id();
@@ -91,7 +91,7 @@ ddwaf::timer &rule_module::get_deadline(ddwaf::timer &deadline) const
 }
 
 verdict_type rule_module::eval_with_collections(std::vector<rule_result> &results,
-    base_object_store &store, cache_type &cache, const exclusion_policy &exclusion,
+    object_store &store, cache_type &cache, const exclusion_policy &exclusion,
     const matcher_mapper &dynamic_matchers, evaluation_scope scope, ddwaf::timer &deadline) const
 {
     verdict_type final_verdict = verdict_type::none;
@@ -134,7 +134,7 @@ verdict_type rule_module::eval_with_collections(std::vector<rule_result> &result
     return final_verdict;
 }
 
-verdict_type rule_module::eval(std::vector<rule_result> &results, base_object_store &store,
+verdict_type rule_module::eval(std::vector<rule_result> &results, object_store &store,
     cache_type &cache, const exclusion_policy &exclusion, const matcher_mapper &dynamic_matchers,
     evaluation_scope scope, ddwaf::timer &deadline) const
 {

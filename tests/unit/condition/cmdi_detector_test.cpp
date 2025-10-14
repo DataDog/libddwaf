@@ -40,7 +40,7 @@ TEST(TestCmdiDetector, InvalidType)
     auto root = object_builder::map(
         {{"server.sys.exec.cmd", object_builder::map()}, {"server.request.query", "whatever"}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -56,7 +56,7 @@ TEST(TestCmdiDetector, EmptyResource)
     auto root = object_builder::map(
         {{"server.sys.exec.cmd", object_builder::array()}, {"server.request.query", "whatever"}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -105,7 +105,7 @@ TEST(TestCmdiDetector, NoInjection)
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -145,7 +145,7 @@ TEST(TestCmdiDetector, NoExecutableInjection)
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -202,7 +202,7 @@ TEST(TestCmdiDetector, NoShellInjection)
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -238,7 +238,7 @@ TEST(TestCmdiDetector, ExecutableInjectionLinux)
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -288,7 +288,7 @@ TEST(TestCmdiDetector, ExecutableInjectionWindows)
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -333,7 +333,7 @@ TEST(TestCmdiDetector, ExecutableWithSpacesInjection)
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -561,7 +561,7 @@ TEST(TestCmdiDetector, LinuxShellInjection)
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -650,7 +650,7 @@ TEST(TestCmdiDetector, WindowsShellInjection)
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -689,7 +689,7 @@ TEST(TestCmdiDetector, ExecutableInjectionMultipleArguments)
     auto map = root.emplace("server.request.query", object_builder::map());
     for (const auto &[key, value] : params) { map.emplace(key, value); }
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -728,7 +728,7 @@ TEST(TestCmdiDetector, EmptyExecutable)
     auto map = root.emplace("server.request.query", object_builder::map());
     for (const auto &[key, value] : params) { map.emplace(key, value); }
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -756,7 +756,7 @@ TEST(TestCmdiDetector, ShellInjectionMultipleArguments)
     auto map = root.emplace("server.request.query", object_builder::map());
     for (const auto &[key, value] : params) { map.emplace(key, value); }
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};

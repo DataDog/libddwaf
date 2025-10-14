@@ -118,7 +118,7 @@ const matcher::base *get_matcher(const std::unique_ptr<matcher::base> &matcher,
 
 } // namespace
 
-eval_result negated_scalar_condition::eval(condition_cache &cache, const base_object_store &store,
+eval_result negated_scalar_condition::eval(condition_cache &cache, const object_store &store,
     const object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
     ddwaf::timer &deadline) const
 {

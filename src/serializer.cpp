@@ -294,8 +294,8 @@ void serialize_actions(const action_tracker &actions, borrowed_object action_map
     }
 }
 
-void collect_attributes(const base_object_store &store,
-    const std::vector<rule_attribute> &attributes, attribute_collector &collector)
+void collect_attributes(const object_store &store, const std::vector<rule_attribute> &attributes,
+    attribute_collector &collector)
 {
     for (const auto &attr : attributes) {
         if (std::holds_alternative<rule_attribute::input_target>(attr.value_or_target)) {
@@ -317,7 +317,7 @@ void collect_attributes(const base_object_store &store,
 
 } // namespace
 
-void result_serializer::serialize(const base_object_store &store, std::vector<rule_result> &results,
+void result_serializer::serialize(const object_store &store, std::vector<rule_result> &results,
     attribute_collector &collector, const timer &deadline, result_components output)
 {
     action_tracker actions{.blocking_action = {},

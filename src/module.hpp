@@ -25,8 +25,8 @@ struct rule_collection_cache {
 };
 
 struct rule_module_cache {
-    std::vector<core_rule::cache_type> rules;
-    std::unordered_map<std::string_view, rule_collection_cache> collections;
+    memory::vector<core_rule::cache_type> rules;
+    memory::unordered_map<std::string_view, rule_collection_cache> collections;
 };
 
 class rule_module {
@@ -56,13 +56,12 @@ public:
 
     [[nodiscard]] bool may_expire() const { return policy_ == expiration_policy::expiring; }
 
-    verdict_type eval(std::vector<rule_result> &results, base_object_store &store,
-        cache_type &cache, const exclusion_policy &exclusion,
-        const matcher_mapper &dynamic_matchers, evaluation_scope scope,
-        ddwaf::timer &deadline) const;
+    verdict_type eval(std::vector<rule_result> &results, object_store &store, cache_type &cache,
+        const exclusion_policy &exclusion, const matcher_mapper &dynamic_matchers,
+        evaluation_scope scope, ddwaf::timer &deadline) const;
 
 protected:
-    verdict_type eval_with_collections(std::vector<rule_result> &results, base_object_store &store,
+    verdict_type eval_with_collections(std::vector<rule_result> &results, object_store &store,
         cache_type &cache, const exclusion_policy &exclusion,
         const matcher_mapper &dynamic_matchers, evaluation_scope scope,
         ddwaf::timer &deadline) const;

@@ -22,7 +22,7 @@ TEST(TestEventSerializer, SerializeNothing)
     result_serializer serializer(nullptr, actions);
 
     std::vector<rule_result> results;
-    context_object_store store;
+    auto store = object_store::make_context_store();
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
@@ -37,7 +37,7 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
 {
     result_serializer serializer(nullptr, action_mapper_builder().build());
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     attribute_collector collector;
     ddwaf::timer deadline{2s};
     auto [result_object, output] = serializer.initialise_result_object();
@@ -96,7 +96,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
     };
 
     std::vector<rule_result> results{result};
-    context_object_store store;
+    auto store = object_store::make_context_store();
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
@@ -173,7 +173,7 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
     };
 
     std::vector<rule_result> results{result};
-    context_object_store store;
+    auto store = object_store::make_context_store();
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
@@ -305,7 +305,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
     };
 
     std::vector<rule_result> results{result0, result1, result2};
-    context_object_store store;
+    auto store = object_store::make_context_store();
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
@@ -390,7 +390,7 @@ TEST(TestEventSerializer, SerializeEventNoActions)
     };
 
     std::vector<rule_result> results{result};
-    context_object_store store;
+    auto store = object_store::make_context_store();
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
@@ -446,7 +446,7 @@ TEST(TestEventSerializer, SerializeAllTags)
     };
 
     std::vector<rule_result> results{result};
-    context_object_store store;
+    auto store = object_store::make_context_store();
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
@@ -503,7 +503,7 @@ TEST(TestEventSerializer, NoMonitorActions)
     };
 
     std::vector<rule_result> results{result};
-    context_object_store store;
+    auto store = object_store::make_context_store();
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
@@ -561,7 +561,7 @@ TEST(TestEventSerializer, UndefinedActions)
     };
 
     std::vector<rule_result> results{result};
-    context_object_store store;
+    auto store = object_store::make_context_store();
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};
@@ -619,7 +619,7 @@ TEST(TestEventSerializer, StackTraceAction)
     };
 
     std::vector<rule_result> results{result};
-    context_object_store store;
+    auto store = object_store::make_context_store();
     attribute_collector collector;
 
     ddwaf::timer deadline{2s};

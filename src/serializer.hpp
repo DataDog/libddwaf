@@ -33,7 +33,7 @@ public:
         : obfuscator_(obfuscator), actions_(actions), alloc_(alloc)
     {}
 
-    void serialize(const base_object_store &store, std::vector<rule_result> &results,
+    void serialize(const object_store &store, std::vector<rule_result> &results,
         attribute_collector &collector, const timer &deadline, result_components output);
 
     std::pair<owned_object, result_components> initialise_result_object();

@@ -95,7 +95,7 @@ void iterate_object(const path_trie::traverser &filter, object_view object,
 
 } // namespace
 
-object_set object_filter::match(const base_object_store &store, cache_type &cache,
+object_set object_filter::match(const object_store &store, cache_type &cache,
     evaluation_scope scope, ddwaf::timer &deadline) const
 {
     object_set objects_to_exclude;

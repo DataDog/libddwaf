@@ -33,7 +33,7 @@ namespace {
 // This function adds the waf.context.event "virtual" address, specifically
 // meant to be used to tryigger post-processors when there has been an event
 // during the lifecycle of the context.
-void set_context_event_address(base_object_store &store)
+void set_context_event_address(object_store &store)
 {
     static const std::string_view event_addr = "waf.context.event";
     static auto event_addr_idx = get_target_index(event_addr);
@@ -51,14 +51,14 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
 {
     // Clear the last batch of targets on exit so that the process can identify
     // new targets in the next eval
-    auto on_exit = defer([this]() { store_->clear_last_batch(); });
+    auto on_exit = defer([this]() { store_.clear_last_batch(); });
 
     result_serializer serializer(ruleset_->obfuscator.get(), *ruleset_->actions, output_alloc_);
 
     // Generate result object once relevant checks have been made
     auto [result_object, output] = serializer.initialise_result_object();
 
-    if (!store_->has_new_targets()) {
+    if (!store_.has_new_targets()) {
         return {false, std::move(result_object)};
     }
 
@@ -85,7 +85,7 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
             if (should_eval_rules) {
                 eval_rules(policy, results, deadline);
                 if (!results.empty()) {
-                    set_context_event_address(*store_);
+                    set_context_event_address(store_);
                 }
             }
         }
@@ -98,7 +98,7 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
     // available (e.g. from a postprocessor) and return a map of all attributes
     // generated during this call.
     // object::assign(result.attributes, collector_.collect_pending(store));
-    serializer.serialize(*store_, results, collector_, deadline, output);
+    serializer.serialize(store_, results, collector_, deadline, output);
     return {!output.attributes.empty() || !output.actions.empty() || !output.events.empty(),
         std::move(result_object)};
 }
@@ -119,7 +119,7 @@ void evaluation_engine::eval_preprocessors(timer &deadline)
             it = new_it;
         }
 
-        preproc->eval(*store_, collector_, it->second, output_alloc_, scope_, deadline);
+        preproc->eval(store_, collector_, it->second, output_alloc_, scope_, deadline);
     }
 }
 
@@ -139,7 +139,7 @@ void evaluation_engine::eval_postprocessors(timer &deadline)
             it = new_it;
         }
 
-        postproc->eval(*store_, collector_, it->second, output_alloc_, scope_, deadline);
+        postproc->eval(store_, collector_, it->second, output_alloc_, scope_, deadline);
     }
 }
 
@@ -161,7 +161,7 @@ exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
 
         rule_filter::cache_type &cache = it->second;
         auto exclusion =
-            filter.match(*store_, cache, *ruleset_->exclusion_matchers, scope_, deadline);
+            filter.match(store_, cache, *ruleset_->exclusion_matchers, scope_, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 cache_.exclusions.add_rule_exclusion(
@@ -186,7 +186,7 @@ exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
 
         input_filter::cache_type &cache = it->second;
         auto exclusion =
-            filter.match(*store_, cache, *ruleset_->exclusion_matchers, scope_, deadline);
+            filter.match(store_, cache, *ruleset_->exclusion_matchers, scope_, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
                 cache_.exclusions.add_input_exclusion(rule, exclusion->objects);
@@ -205,7 +205,7 @@ void evaluation_engine::eval_rules(
         auto &cache = cache_.rule_modules[i];
 
         auto verdict =
-            mod.eval(results, *store_, cache, policy, *ruleset_->rule_matchers, scope_, deadline);
+            mod.eval(results, store_, cache, policy, *ruleset_->rule_matchers, scope_, deadline);
         if (verdict == rule_module::verdict_type::block) {
             break;
         }

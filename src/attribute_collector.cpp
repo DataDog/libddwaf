@@ -26,7 +26,7 @@ bool attribute_collector::insert(std::string_view key, owned_object &&object)
     return insert_helper(key, std::move(object));
 }
 
-bool attribute_collector::collect(const base_object_store &store, target_index input_target,
+bool attribute_collector::collect(const object_store &store, target_index input_target,
     std::span<const std::string> input_key_path, std::string_view attribute_key)
 {
     if (inserted_or_pending_attributes_.contains(attribute_key)) {
@@ -43,7 +43,7 @@ bool attribute_collector::collect(const base_object_store &store, target_index i
     return state != collection_state::failed;
 }
 
-void attribute_collector::collect_pending(const base_object_store &store)
+void attribute_collector::collect_pending(const object_store &store)
 {
     for (auto it = pending_.begin(); it != pending_.end();) {
         auto attribute_key = it->first;
@@ -61,9 +61,9 @@ void attribute_collector::collect_pending(const base_object_store &store)
     }
 }
 
-attribute_collector::collection_state attribute_collector::collect_helper(
-    const base_object_store &store, target_index input_target,
-    std::span<const std::string> input_key_path, std::string_view attribute_key)
+attribute_collector::collection_state attribute_collector::collect_helper(const object_store &store,
+    target_index input_target, std::span<const std::string> input_key_path,
+    std::string_view attribute_key)
 {
     auto [object, attr] = store.get_target(input_target);
     if (!object.has_value()) {

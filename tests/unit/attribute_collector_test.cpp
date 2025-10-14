@@ -20,7 +20,7 @@ TEST(TestAttributeCollector, InsertNoCopy)
     attribute_collector collector;
     EXPECT_TRUE(collector.insert("address", std::move(input)));
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     collector.collect_pending(store);
     auto attributes = collector.get_available_attributes_and_reset();
 
@@ -42,7 +42,7 @@ TEST(TestAttributeCollector, InsertDuplicate)
     EXPECT_TRUE(collector.insert("address", input.clone()));
     EXPECT_FALSE(collector.insert("address", std::move(input)));
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     collector.collect_pending(store);
     auto attributes = collector.get_available_attributes_and_reset();
 
@@ -60,7 +60,7 @@ TEST(TestAttributeCollector, CollectAvailableScalar)
     std::string_view expected = "value";
     auto input = object_builder::map({{"input_address", expected}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input));
 
     attribute_collector collector;
@@ -82,7 +82,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathScalar)
     auto input = object_builder::map({{"input_address",
         object_builder::map({{"first", object_builder::map({{"second", expected}})}})}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input));
 
     attribute_collector collector;
@@ -107,7 +107,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathSingleValueArray)
         object_builder::map(
             {{"first", object_builder::map({{"second", object_builder::array({expected})}})}})}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input));
 
     attribute_collector collector;
@@ -133,7 +133,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathMultiValueArray)
                                object_builder::map({{"second",
                                    object_builder::array({expected, "value1", "value2"})}})}})}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input));
 
     attribute_collector collector;
@@ -157,7 +157,7 @@ TEST(TestAttributeCollector, CollectUnavailableKeyPath)
         object_builder::map({{"first",
             object_builder::map({{"second", object_builder::map({{"third", "value"}})}})}})}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input));
 
     attribute_collector collector;
@@ -176,7 +176,7 @@ TEST(TestAttributeCollector, CollectPendingKeyPathScalar)
     std::string_view expected = "value";
     auto input = object_builder::map({{"input_address",
         object_builder::map({{"first", object_builder::map({{"second", expected}})}})}});
-    context_object_store store;
+    auto store = object_store::make_context_store();
 
     attribute_collector collector;
     std::vector<std::string> key_path{"first", "second"};
@@ -204,7 +204,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathInvalidValue)
         {{"input_address", object_builder::map({{"first",
                                object_builder::map({{"second", object_builder::map()}})}})}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input));
 
     attribute_collector collector;
@@ -223,7 +223,7 @@ TEST(TestAttributeCollector, CollectDuplicateScalar)
     std::string_view expected = "value";
     auto input = object_builder::map({{"input_address", expected}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input));
 
     attribute_collector collector;
@@ -245,7 +245,7 @@ TEST(TestAttributeCollector, CollectAvailableScalarFromSingleValueArray)
     std::string_view expected = "value";
     auto input = object_builder::map({{"input_address", object_builder::array({expected})}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input));
 
     attribute_collector collector;
@@ -267,7 +267,7 @@ TEST(TestAttributeCollector, CollectAvailableScalarFromMultiValueArray)
     auto input = object_builder::map(
         {{"input_address", object_builder::array({expected, "value1", "value2"})}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input));
 
     attribute_collector collector;
@@ -288,7 +288,7 @@ TEST(TestAttributeCollector, CollectInvalidObjectFromArray)
     auto input =
         object_builder::map({{"input_address", object_builder::array({object_builder::map()})}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(input));
 
     attribute_collector collector;
@@ -302,7 +302,7 @@ TEST(TestAttributeCollector, CollectInvalidObjectFromArray)
 
 TEST(TestAttributeCollector, CollectUnavailableScalar)
 {
-    context_object_store store;
+    auto store = object_store::make_context_store();
     attribute_collector collector;
 
     // The attribute should be in the pending queue
@@ -337,7 +337,7 @@ TEST(TestAttributeCollector, CollectUnavailableScalar)
 
 TEST(TestAttributeCollector, CollectUnavailableScalarFromSingleValueArray)
 {
-    context_object_store store;
+    auto store = object_store::make_context_store();
     attribute_collector collector;
 
     // The attribute should be in the pending queue
@@ -372,7 +372,7 @@ TEST(TestAttributeCollector, CollectUnavailableScalarFromSingleValueArray)
 
 TEST(TestAttributeCollector, CollectUnavailableScalarFromMultiValueArray)
 {
-    context_object_store store;
+    auto store = object_store::make_context_store();
     attribute_collector collector;
 
     // The attribute should be in the pending queue
@@ -408,7 +408,7 @@ TEST(TestAttributeCollector, CollectUnavailableScalarFromMultiValueArray)
 
 TEST(TestAttributeCollector, CollectUnavailableInvalidObject)
 {
-    context_object_store store;
+    auto store = object_store::make_context_store();
     attribute_collector collector;
 
     // The attribute should be in the pending queue
@@ -435,7 +435,7 @@ TEST(TestAttributeCollector, CollectUnavailableInvalidObject)
 
 TEST(TestAttributeCollector, CollectMultipleUnavailableScalars)
 {
-    context_object_store store;
+    auto store = object_store::make_context_store();
     attribute_collector collector;
 
     {

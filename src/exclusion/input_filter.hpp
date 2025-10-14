@@ -36,7 +36,7 @@ public:
     input_filter &operator=(input_filter &&) = delete;
     ~input_filter() = default;
 
-    std::optional<excluded_set> match(const base_object_store &store, cache_type &cache,
+    std::optional<excluded_set> match(const object_store &store, cache_type &cache,
         const matcher_mapper &dynamic_matchers, evaluation_scope scope,
         ddwaf::timer &deadline) const;
 

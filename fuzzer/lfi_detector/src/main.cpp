@@ -98,7 +98,7 @@ extern "C" size_t LLVMFuzzerCustomMutator(
     resource_buffer.resize(new_size);
 
     auto param_idx = rng() % new_size;
-    auto param_size = 1 + rng() % (new_size - param_idx);
+    auto param_size = 1 + (rng() % (new_size - param_idx));
 
     // std::cout << "max_size: " << MaxSize << ", new_size: " << new_size << ", idx: " << param_idx
     // << ", size: " << param_size << '\n';
@@ -115,7 +115,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     root.emplace("server.request.query", owned_object::make_string(param));
     root.emplace("server.io.fs.file", owned_object::make_string(resource));
 
-    subcontext_object_store store;
+    auto store = object_store::make_subcontext_store();
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};

@@ -15,7 +15,7 @@ using namespace std::literals;
 
 TEST(TestInputFilter, InputExclusionNoConditions)
 {
-    context_object_store store;
+    auto store = object_store::make_context_store();
 
     auto root = object_builder::map({{"query", "value"}});
     store.insert(root);
@@ -40,7 +40,7 @@ TEST(TestInputFilter, InputExclusionNoConditions)
 
 TEST(TestInputFilter, SubcontextInputExclusionNoConditions)
 {
-    subcontext_object_store store;
+    auto store = object_store::make_subcontext_store();
 
     auto root = object_builder::map({{"query", "value"}});
     store.insert(root);
@@ -65,7 +65,7 @@ TEST(TestInputFilter, SubcontextInputExclusionNoConditions)
 
 TEST(TestInputFilter, ObjectExclusionNoConditions)
 {
-    context_object_store store;
+    auto store = object_store::make_context_store();
 
     auto root = object_builder::map();
     auto child = root.emplace("query", object_builder::map());
@@ -93,7 +93,7 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
 
 TEST(TestInputFilter, SubcontextObjectExclusionNoConditions)
 {
-    subcontext_object_store store;
+    auto store = object_store::make_subcontext_store();
 
     auto root = object_builder::map();
     auto child = root.emplace("query", object_builder::map());
@@ -128,7 +128,7 @@ TEST(TestInputFilter, PersistentInputExclusionWithPersistentCondition)
     builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 
     auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
@@ -158,7 +158,7 @@ TEST(TestInputFilter, SubcontextInputExclusionWithSubcontextCondition)
 
     auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-    subcontext_object_store store;
+    auto store = object_store::make_subcontext_store();
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
@@ -186,11 +186,11 @@ TEST(TestInputFilter, PersistentInputExclusionWithSubcontextCondition)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    context_object_store ctx_store;
+    auto ctx_store = object_store::make_context_store();
     auto root = object_builder::map({{"usr.id", "admin"}});
     ctx_store.insert(std::move(root));
 
-    subcontext_object_store sctx_store(ctx_store);
+    auto sctx_store = object_store::make_subcontext_store(ctx_store);
     root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
     sctx_store.insert(root);
 
@@ -219,11 +219,11 @@ TEST(TestInputFilter, SubcontextInputExclusionWithPersistentCondition)
     builder.add_target("usr.id");
     builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
 
-    context_object_store ctx_store;
+    auto ctx_store = object_store::make_context_store();
     auto root = object_builder::map({{"usr.id", "admin"}});
     ctx_store.insert(std::move(root));
 
-    subcontext_object_store sctx_store(ctx_store);
+    auto sctx_store = object_store::make_subcontext_store(ctx_store);
     root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
     sctx_store.insert(root);
 
@@ -254,7 +254,7 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
 
     auto root = object_builder::map({{"usr.id", "ADMIN"}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
@@ -283,7 +283,7 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
 
     auto root = object_builder::map({{"http.client_ip", "192.168.0.2"}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
@@ -312,7 +312,7 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
 
     auto child = root.emplace("query", object_builder::map({{"params", "value"}}));
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
@@ -343,7 +343,7 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
     auto root = object_builder::map(
         {{"http.client_ip", "192.168.0.2"}, {"query", object_builder::map({{"params", "value"}})}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(root);
 
     auto obj_filter = std::make_shared<object_filter>();
@@ -384,7 +384,7 @@ TEST(TestInputFilter, InputValidateCachedMatch)
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -395,7 +395,7 @@ TEST(TestInputFilter, InputValidateCachedMatch)
     {
         auto root = object_builder::map({{"usr.id", "admin"}});
 
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -432,13 +432,13 @@ TEST(TestInputFilter, InputValidateCachedSubcontextMatch)
     objects.emplace_back(object_builder::map({{"usr.id", "admin"}}));
 
     input_filter::cache_type cache;
-    context_object_store ctx_store;
+    auto ctx_store = object_store::make_context_store();
     ctx_store.insert(objects[1]);
 
     {
         defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
 
-        subcontext_object_store sctx_store(ctx_store);
+        auto sctx_store = object_store::make_subcontext_store(ctx_store);
         sctx_store.insert(objects[0]);
 
         ddwaf::timer deadline{2s};
@@ -464,7 +464,7 @@ TEST(TestInputFilter, InputValidateCachedSubcontextMatch)
     {
         defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
 
-        subcontext_object_store sctx_store(ctx_store);
+        auto sctx_store = object_store::make_subcontext_store(ctx_store);
         sctx_store.insert(objects[3]);
 
         ddwaf::timer deadline{2s};
@@ -501,7 +501,7 @@ TEST(TestInputFilter, InputMatchWithoutCache)
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -513,7 +513,7 @@ TEST(TestInputFilter, InputMatchWithoutCache)
     {
         auto root = object_builder::map({{"usr.id", "admin"}});
 
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -544,7 +544,7 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
     // the second run when there isn't a cached match.
-    context_object_store store;
+    auto store = object_store::make_context_store();
 
     std::vector<owned_object> objects;
     objects.emplace_back(object_builder::map({{"http.client_ip", "192.168.0.1"}}));
@@ -596,7 +596,7 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
     // the second run when there isn't a cached match.
-    context_object_store store;
+    auto store = object_store::make_context_store();
     input_filter::cache_type cache;
 
     std::vector<owned_object> objects;
@@ -657,7 +657,7 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
         {{"usr.id", "admin"}, {"query", object_builder::map({{"params", "value"}})}}));
 
     {
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(objects[0]);
 
         ddwaf::timer deadline{2s};
@@ -666,7 +666,7 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
     }
 
     {
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(objects[1]);
 
         ddwaf::timer deadline{2s};
@@ -701,7 +701,7 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"},
             {"query", object_builder::map({{"params", "value"}})}});
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -714,7 +714,7 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
 
         auto root = object_builder::map(
             {{"usr.id", "admin"}, {"query", object_builder::map({{"params", "value"}})}});
-        context_object_store store;
+        auto store = object_store::make_context_store();
         store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -745,7 +745,7 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
     // the second run when there isn't a cached match.
-    context_object_store store;
+    auto store = object_store::make_context_store();
 
     std::vector<owned_object> objects;
     objects.emplace_back(object_builder::map({{"http.client_ip", "192.168.0.1"},
@@ -795,7 +795,7 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
     // the second run when there isn't a cached match.
-    context_object_store store;
+    auto store = object_store::make_context_store();
     input_filter::cache_type cache;
 
     std::vector<owned_object> objects;
@@ -850,7 +850,7 @@ TEST(TestInputFilter, MatchWithDynamicMatcher)
         {"usr.id", "admin"}, {"query", object_builder::map({{"params", "value"}})}}));
 
     {
-        context_object_store store;
+        auto store = object_store::make_context_store();
         input_filter::cache_type cache;
 
         store.insert(objects[0]);
@@ -861,7 +861,7 @@ TEST(TestInputFilter, MatchWithDynamicMatcher)
     }
 
     {
-        context_object_store store;
+        auto store = object_store::make_context_store();
         input_filter::cache_type cache;
 
         store.insert(objects[1]);

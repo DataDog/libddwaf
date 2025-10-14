@@ -21,9 +21,9 @@
 namespace ddwaf {
 
 struct evaluation_cache {
-    std::unordered_map<base_processor *, processor_cache> processors;
-    std::unordered_map<const rule_filter *, rule_filter::cache_type> rule_filters;
-    std::unordered_map<const input_filter *, input_filter::cache_type> input_filters;
+    memory::unordered_map<base_processor *, processor_cache> processors;
+    memory::unordered_map<const rule_filter *, rule_filter::cache_type> rule_filters;
+    memory::unordered_map<const input_filter *, input_filter::cache_type> input_filters;
     std::array<rule_module_cache, rule_module_count> rule_modules;
 
     exclusion_policy exclusions;
@@ -39,7 +39,7 @@ public:
 
     bool insert(owned_object data) noexcept
     {
-        if (!store_->insert(std::move(data))) {
+        if (!store_.insert(std::move(data))) {
             DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
             return false;
         }
@@ -48,7 +48,7 @@ public:
 
     bool insert(map_view data) noexcept
     {
-        if (!store_->insert(data)) {
+        if (!store_.insert(data)) {
             DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
             return false;
         }
@@ -68,21 +68,20 @@ public:
     static evaluation_engine context_engine(std::shared_ptr<ruleset> ruleset,
         nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
     {
-        return evaluation_engine{std::move(ruleset), std::make_unique<context_object_store>(),
+        return evaluation_engine{std::move(ruleset), object_store::make_context_store(),
             evaluation_scope::context(), evaluation_cache{}, output_alloc};
     }
 
     static evaluation_engine subcontext_engine(evaluation_engine &engine)
     {
-        const auto &ctx_store = *dynamic_cast<const context_object_store *>(engine.store_.get());
         return evaluation_engine{engine.ruleset_,
-            std::make_unique<subcontext_object_store>(ctx_store, evaluation_scope::subcontext()),
-            evaluation_scope::subcontext(), engine.cache_, engine.output_alloc_};
+            object_store::make_subcontext_store(engine.store_), evaluation_scope::subcontext(),
+            engine.cache_, engine.output_alloc_};
     }
 
 protected:
-    explicit evaluation_engine(std::shared_ptr<ruleset> ruleset,
-        std::unique_ptr<base_object_store> &&store, evaluation_scope scope, evaluation_cache cache,
+    explicit evaluation_engine(std::shared_ptr<ruleset> ruleset, object_store &&store,
+        evaluation_scope scope, evaluation_cache cache,
         nonnull_ptr<memory::memory_resource> output_alloc)
         : scope_(scope), output_alloc_(output_alloc), ruleset_(std::move(ruleset)),
           store_(std::move(store)), collector_(output_alloc), cache_(std::move(cache))
@@ -101,7 +100,7 @@ protected:
     {
         // NOLINTNEXTLINE(readability-use-anyofallof)
         for (const auto &[target, str] : ruleset_->rule_addresses) {
-            if (store_->is_new_target(target)) {
+            if (store_.is_new_target(target)) {
                 return true;
             }
         }
@@ -112,7 +111,7 @@ protected:
     {
         // NOLINTNEXTLINE(readability-use-anyofallof)
         for (const auto &[target, str] : ruleset_->filter_addresses) {
-            if (store_->is_new_target(target)) {
+            if (store_.is_new_target(target)) {
                 return true;
             }
         }
@@ -127,7 +126,7 @@ protected:
     nonnull_ptr<memory::memory_resource> output_alloc_;
 
     std::shared_ptr<ruleset> ruleset_;
-    std::unique_ptr<base_object_store> store_;
+    object_store store_;
     attribute_collector collector_;
 
     // Caches

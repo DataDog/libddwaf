@@ -46,7 +46,7 @@ struct condition_cache {
     // Stores the pointer to the object of the i-th target of the condition,
     // used in the previous evaluation. This ensures that the evaluation of
     // the condition can be skipped for the same object in the future.
-    std::vector<cache_entry> targets;
+    memory::vector<cache_entry> targets;
     std::optional<condition_match> match;
 };
 
@@ -83,7 +83,7 @@ public:
     base_condition(base_condition &&) = default;
     base_condition &operator=(base_condition &&) = default;
 
-    virtual eval_result eval(condition_cache &cache, const base_object_store &store,
+    virtual eval_result eval(condition_cache &cache, const object_store &store,
         const object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
         ddwaf::timer &deadline) const = 0;
 

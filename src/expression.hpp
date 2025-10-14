@@ -27,7 +27,7 @@ public:
     struct cache_type {
         bool result{false};
         evaluation_scope scope;
-        std::vector<condition_cache> conditions;
+        memory::vector<condition_cache> conditions;
     };
 
     expression() = default;
@@ -36,7 +36,7 @@ public:
         : conditions_(std::move(conditions))
     {}
 
-    eval_result eval(cache_type &cache, const base_object_store &store,
+    eval_result eval(cache_type &cache, const object_store &store,
         const object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
         evaluation_scope scope, ddwaf::timer &deadline) const;
 

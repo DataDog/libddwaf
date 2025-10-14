@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <algorithm>
 #include <cstdint>
 #include <random>
 
@@ -172,10 +173,10 @@ extern "C" size_t LLVMFuzzerCustomMutator(
     }
     MaxSize -= total_size;
 
-    std::size_t possible_param_size =
-        std::min(MaxSize, std::min(max_param_size, resource_str.size()));
+    std::size_t possible_param_size = std::min({MaxSize, max_param_size, resource_str.size()});
     auto param_idx = rng() % resource_str.size();
-    auto param_size = 1 + rng() % std::min(possible_param_size, (resource_str.size() - param_idx));
+    auto param_size =
+        1 + (rng() % std::min(possible_param_size, (resource_str.size() - param_idx)));
 
     auto param_buffer = resource_str.substr(param_idx, param_size);
     return serializer{Data}.serialize(new_resource, param_buffer);
@@ -193,7 +194,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     auto array = root.emplace("server.sys.exec.cmd", owned_object::make_array());
     for (auto arg : resource) { array.emplace_back(owned_object::make_string(arg)); }
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};

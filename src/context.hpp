@@ -21,7 +21,11 @@ class context;
 
 class subcontext {
 public:
-    ~subcontext() = default;
+    ~subcontext()
+    {
+        const memory::memory_resource_guard guard(mr_.get());
+        engine_.reset();
+    }
 
     subcontext(subcontext &&) noexcept = delete;
     subcontext(const subcontext &) = delete;
@@ -47,9 +51,8 @@ public:
     }
 
 protected:
-    explicit subcontext(
-        evaluation_engine &ctx_engine, std::shared_ptr<memory::monotonic_buffer_resource> mr)
-        : mr_(std::move(mr))
+    explicit subcontext(evaluation_engine &ctx_engine)
+        : mr_(std::make_shared<memory::monotonic_buffer_resource>())
     {
         const memory::memory_resource_guard guard(mr_.get());
         engine_ =
@@ -106,7 +109,7 @@ public:
         return engine_->eval(deadline);
     }
 
-    subcontext create_subcontext() { return subcontext{*engine_, mr_}; }
+    subcontext create_subcontext() { return subcontext{*engine_}; }
 
 protected:
     std::unique_ptr<evaluation_engine> engine_;

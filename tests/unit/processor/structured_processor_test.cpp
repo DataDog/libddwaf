@@ -50,7 +50,7 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
     auto input_map = object_builder::map(
         {{"unary_address", "unary_string"}, {"optional_address", "optional_string"},
             {"variadic_address_1", 1U}, {"variadic_address_2", 1U}});
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
@@ -100,7 +100,7 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
     auto input_map = object_builder::map({{"unary_address", "unary_string"},
         {"variadic_address_1", 1U}, {"variadic_address_2", 1U}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
@@ -148,7 +148,7 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
     auto input_map = object_builder::map({{"optional_address", "optional_string"},
         {"variadic_address_1", 1U}, {"variadic_address_2", 1U}});
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
@@ -192,7 +192,7 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
         {"optional_address", "optional_string"},
     });
 
-    context_object_store store;
+    auto store = object_store::make_context_store();
     store.insert(input_map);
 
     std::vector<processor_mapping> mappings{
