@@ -51,7 +51,7 @@ void match_path_and_input(const std::vector<std::pair<std::string, ssrf_sample>>
         auto root = object_builder::map({{"server.io.net.url", path},
             {"server.request.query", yaml_to_object<owned_object>(sample.yaml)}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};

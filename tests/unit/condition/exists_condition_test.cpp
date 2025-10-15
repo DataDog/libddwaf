@@ -25,7 +25,7 @@ TEST(TestExistsCondition, AddressAvailable)
 
     auto root = object_builder::map({{"server.request.uri_raw", owned_object{}}});
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -43,7 +43,7 @@ TEST(TestExistsCondition, KeyPathAvailable)
         object_builder::map({{"path",
             object_builder::map({{"to", object_builder::map({{"object", owned_object{}}})}})}})}});
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -57,7 +57,7 @@ TEST(TestExistsCondition, AddressNotAvaialble)
 
     auto root = object_builder::map({{"server.request.query", owned_object{}}});
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -74,7 +74,7 @@ TEST(TestExistsCondition, KeyPathNotAvailable)
     auto root = object_builder::map({{"server.request.uri_raw",
         object_builder::map({{"path", object_builder::map({{"to", owned_object{}}})}})}});
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -93,7 +93,7 @@ TEST(TestExistsCondition, KeyPathAvailableButExcluded)
             object_builder::map({{"to", object_builder::map({{"object", owned_object{}}})}})}})}});
 
     std::unordered_set<object_cache_key> excluded = {root.at(0)};
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -113,7 +113,7 @@ TEST(TestExistsCondition, MultipleAddresses)
     auto validate_address = [&](const std::string &address, bool expected = true) {
         auto root = object_builder::map({{address, owned_object{}}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -147,7 +147,7 @@ TEST(TestExistsCondition, MultipleAddressesAndKeyPaths)
             map = map.emplace(*it, object_builder::map());
         }
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -177,7 +177,7 @@ TEST(TestNegatedExistsCondition, KeyPathAvailable)
         object_builder::map({{"path",
             object_builder::map({{"to", object_builder::map({{"object", owned_object{}}})}})}})}});
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -193,7 +193,7 @@ TEST(TestNegatedExistsCondition, KeyPathNotAvailable)
 
     auto root = object_builder::map({{"server.request.uri_raw",
         object_builder::map({{"path", object_builder::map({{"to", owned_object{}}})}})}});
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -213,7 +213,7 @@ TEST(TestNegatedExistsCondition, KeyPathAvailableButExcluded)
 
     std::unordered_set<object_cache_key> excluded = {root.at(0)};
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};

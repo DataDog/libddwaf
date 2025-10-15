@@ -37,7 +37,7 @@ TEST(TestLFIDetector, MatchBasicUnix)
         auto root =
             object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -99,7 +99,7 @@ TEST(TestLFIDetector, MatchBasicWindows)
         auto root =
             object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -127,7 +127,7 @@ TEST(TestLFIDetector, MatchWithKeyPath)
         R"({server.io.fs.file: documents/../etc/passwd,
         server.request.query: {array: [ {map: ../etc/passwd}]}})");
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -150,14 +150,14 @@ TEST(TestLFIDetector, PartiallySubcontextMatch)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
-    auto ctx_store = object_store::make_context_store();
+    object_store ctx_store;
     {
         auto root =
             object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"}});
         ctx_store.insert(std::move(root));
     }
 
-    auto sctx_store = object_store::make_subcontext_store(ctx_store);
+    object_store sctx_store{ctx_store};
     {
         auto root = object_builder::map({{"server.request.query", "../../../etc/passwd"}});
         sctx_store.insert(std::move(root));
@@ -183,7 +183,7 @@ TEST(TestLFIDetector, SubcontextMatch)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
-    auto store = object_store::make_subcontext_store();
+    object_store store;
 
     auto root = object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
         {"server.request.query", "../../../etc/passwd"}});
@@ -224,7 +224,7 @@ TEST(TestLFIDetector, NoMatchUnix)
         auto root =
             object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -261,7 +261,7 @@ TEST(TestLFIDetector, NoMatchWindows)
         auto root =
             object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -283,7 +283,7 @@ TEST(TestLFIDetector, NoMatchExcludedPath)
 
     std::unordered_set<object_cache_key> exclusion{params_map.at(0)};
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -301,7 +301,7 @@ TEST(TestLFIDetector, NoMatchExcludedAddress)
 
     std::unordered_set<object_cache_key> exclusion{root.at(1)};
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -319,7 +319,7 @@ TEST(TestLFIDetector, Timeout)
 
     std::unordered_set<object_cache_key> exclusion{root.at(1)};
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{0s};
@@ -336,7 +336,7 @@ TEST(TestLFIDetector, NoParams)
         {"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
     });
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{0s};

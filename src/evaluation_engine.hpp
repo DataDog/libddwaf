@@ -67,15 +67,13 @@ public:
     static evaluation_engine context_engine(std::shared_ptr<ruleset> ruleset,
         nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
     {
-        return evaluation_engine{std::move(ruleset), object_store::make_context_store(),
-            evaluation_cache{}, output_alloc};
+        return evaluation_engine{std::move(ruleset), {}, {}, output_alloc};
     }
 
     static evaluation_engine subcontext_engine(evaluation_engine &engine)
     {
-        return evaluation_engine{engine.ruleset_,
-            object_store::make_subcontext_store(engine.store_), engine.cache_,
-            engine.output_alloc_};
+        return evaluation_engine{
+            engine.ruleset_, object_store{engine.store_}, engine.cache_, engine.output_alloc_};
     }
 
 protected:

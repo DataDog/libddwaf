@@ -24,7 +24,7 @@ TEST(TestShiDetectorString, InvalidType)
     auto root = object_builder::map(
         {{"server.sys.shell.cmd", owned_object{}}, {"server.request.query", "whatever"}});
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -39,7 +39,7 @@ TEST(TestShiDetectorString, EmptyResource)
     auto root =
         object_builder::map({{"server.sys.shell.cmd", ""}, {"server.request.query", "whatever"}});
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -79,7 +79,7 @@ TEST(TestShiDetectorString, NoMatchAndFalsePositives)
             {"server.request.query", param},
         });
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -109,7 +109,7 @@ TEST(TestShiDetectorString, ExecutablesAndRedirections)
             {"server.request.query", param},
         });
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -151,7 +151,7 @@ TEST(TestShiDetectorString, InjectionsWithinCommandSubstitution)
             {"server.request.query", param},
         });
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -186,7 +186,7 @@ TEST(TestShiDetectorString, InjectionsWithinProcessSubstitution)
             {"server.request.query", param},
         });
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -223,7 +223,7 @@ TEST(TestShiDetectorString, OffByOnePayloadsMatch)
             {"server.request.query", param},
         });
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -281,7 +281,7 @@ TEST(TestShiDetectorString, MultipleArgumentsMatch)
         auto root = object_builder::map({{"server.sys.shell.cmd", resource},
             {"server.request.query", yaml_to_object<owned_object>(params)}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};

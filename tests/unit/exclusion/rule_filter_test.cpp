@@ -33,7 +33,7 @@ TEST(TestRuleFilter, Match)
 
     auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -65,7 +65,7 @@ TEST(TestRuleFilter, MatchWithDynamicMatcher)
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -78,7 +78,7 @@ TEST(TestRuleFilter, MatchWithDynamicMatcher)
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -114,7 +114,7 @@ TEST(TestRuleFilter, SubcontextMatch)
 
     auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-    auto store = object_store::make_subcontext_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -139,7 +139,7 @@ TEST(TestRuleFilter, NoMatch)
 
     auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -173,7 +173,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -183,7 +183,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
     {
         auto root = object_builder::map({{"usr.id", "admin"}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -215,7 +215,7 @@ TEST(TestRuleFilter, CachedMatchAndSubcontextMatch)
 
     ddwaf::rule_filter::cache_type cache;
 
-    auto store = object_store::make_context_store();
+    object_store store;
     // To validate that the cache works, we pass an object store containing
     // only the latest address. This ensures that the IP condition can't be
     // matched on the second run.
@@ -231,7 +231,7 @@ TEST(TestRuleFilter, CachedMatchAndSubcontextMatch)
     {
         auto root = object_builder::map({{"usr.id", "admin"}});
 
-        auto sctx_store = object_store::make_subcontext_store(store);
+        object_store sctx_store{store};
         sctx_store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -265,7 +265,7 @@ TEST(TestRuleFilter, ValidateSubcontextMatchCache)
     // matched on the second run.
     {
         ddwaf::rule_filter::cache_type cache;
-        auto store = object_store::make_subcontext_store();
+        object_store store;
         store.insert(object_builder::map({{"http.client_ip", "192.168.0.1"}}));
 
         ddwaf::timer deadline{2s};
@@ -274,7 +274,7 @@ TEST(TestRuleFilter, ValidateSubcontextMatchCache)
 
     {
         ddwaf::rule_filter::cache_type cache;
-        auto store = object_store::make_subcontext_store();
+        object_store store;
         store.insert(object_builder::map({{"usr.id", "admin"}}));
 
         ddwaf::timer deadline{2s};
@@ -302,7 +302,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
     // In this instance we pass a complete store with both addresses but an
     // empty cache on every run to ensure that both conditions are matched on
     // the second run when there isn't a cached match.
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         ddwaf::rule_filter::cache_type cache;
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
@@ -347,7 +347,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
         ddwaf::rule_filter::cache_type cache;
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -358,7 +358,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
         ddwaf::rule_filter::cache_type cache;
         auto root = object_builder::map({{"usr.id", "admin"}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -383,7 +383,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
     auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
     ddwaf::rule_filter filter{"filter", builder.build(), {rule.get()}};
 
-    auto store = object_store::make_context_store();
+    object_store store;
     ddwaf::rule_filter::cache_type cache;
 
     // In this test we validate that when a match has already occurred, the

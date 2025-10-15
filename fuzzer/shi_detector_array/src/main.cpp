@@ -194,7 +194,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     auto array = root.emplace("server.sys.shell.cmd", owned_object::make_array());
     for (auto arg : resource) { array.emplace_back(owned_object::make_string(arg)); }
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};

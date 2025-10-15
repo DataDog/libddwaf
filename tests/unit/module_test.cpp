@@ -48,7 +48,7 @@ TEST(TestModuleUngrouped, SingleRuleMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -113,7 +113,7 @@ TEST(TestModuleUngrouped, MultipleMonitoringRuleMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -181,7 +181,7 @@ TEST(TestModuleUngrouped, BlockingRuleMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -238,7 +238,7 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -308,7 +308,7 @@ TEST(TestModuleUngrouped, BlockingRuleMatchBasePrecedence)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -368,7 +368,7 @@ TEST(TestModuleUngrouped, BlockingRuleMatchUserPrecedence)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -407,7 +407,7 @@ TEST(TestModuleUngrouped, NonExpiringModule)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -444,7 +444,7 @@ TEST(TestModuleUngrouped, ExpiringModule)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -482,7 +482,7 @@ TEST(TestModuleUngrouped, DisabledRules)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -534,7 +534,7 @@ TEST(TestModuleGrouped, MultipleGroupsMonitoringRuleMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -590,7 +590,7 @@ TEST(TestModuleGrouped, MultipleGroupsBlockingRuleMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -645,7 +645,7 @@ TEST(TestModuleGrouped, SingleGroupBlockingRuleMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -699,7 +699,7 @@ TEST(TestModuleGrouped, SingleGroupMonitoringRuleMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -754,7 +754,7 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupMonitoringUserMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -809,7 +809,7 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupMonitoringBaseMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -865,7 +865,7 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingBaseMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -921,7 +921,7 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingUserMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -977,7 +977,7 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingBaseMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -1033,7 +1033,7 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingUserMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -1088,7 +1088,7 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsMonitoringMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -1144,7 +1144,7 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsBlockingMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -1199,7 +1199,7 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsMonitoringMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -1255,7 +1255,7 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsBlockingMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -1400,7 +1400,7 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
         rule_module_cache cache;
         mod.init_cache(cache);
 
-        auto store = object_store::make_context_store();
+        object_store store;
 
         auto root = object_builder::map({{"http.client_ip", "192.168.0.2"}});
         store.insert(std::move(root));
@@ -1502,7 +1502,7 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
         rule_module_cache cache;
         mod.init_cache(cache);
 
-        auto store = object_store::make_context_store();
+        object_store store;
 
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -1605,7 +1605,7 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
         rule_module_cache cache;
         mod.init_cache(cache);
 
-        auto store = object_store::make_context_store();
+        object_store store;
 
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -1646,7 +1646,7 @@ TEST(TestModuleGrouped, DisabledRules)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -1681,7 +1681,7 @@ TEST(TestModuleGrouped, NonExpiringModule)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
@@ -1718,7 +1718,7 @@ TEST(TestModuleGrouped, ExpiringModule)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 

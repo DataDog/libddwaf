@@ -114,7 +114,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     root.emplace("server.request.query", owned_object::make_string(param));
     root.emplace("server.sys.shell.cmd", owned_object::make_string(resource));
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};

@@ -42,7 +42,7 @@ TEST(TestScalarCondition, NoMatch)
 
     auto root = object_builder::map({{"server.request.uri.raw", owned_object{}}});
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -57,7 +57,7 @@ TEST(TestScalarCondition, Timeout)
 
     auto root = object_builder::map({{"server.request.uri.raw", owned_object{}}});
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{0s};
@@ -72,7 +72,7 @@ TEST(TestScalarCondition, SimpleMatch)
 
     auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -91,14 +91,14 @@ TEST(TestScalarCondition, CachedMatch)
     auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
 
     {
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(root);
 
         ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
     }
 
     {
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(root);
 
         ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
@@ -116,7 +116,7 @@ TEST(TestScalarCondition, SimpleMatchOnKeys)
     auto root = object_builder::map(
         {{"server.request.uri.raw", object_builder::map({{"hello", "hello"}})}});
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
@@ -131,9 +131,9 @@ TEST(TestScalarCondition, SimpleSubcontextMatch)
 
     auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
 
-    auto ctx_store = object_store::make_context_store();
+    object_store ctx_store;
     {
-        auto sctx_store = object_store::make_subcontext_store(ctx_store);
+        object_store sctx_store{ctx_store};
         sctx_store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -142,7 +142,7 @@ TEST(TestScalarCondition, SimpleSubcontextMatch)
     }
 
     {
-        auto sctx_store = object_store::make_subcontext_store(ctx_store);
+        object_store sctx_store{ctx_store};
         sctx_store.insert(root);
 
         ddwaf::timer deadline{2s};

@@ -37,7 +37,7 @@ TEST_P(DialectTestFixture, InvalidSql)
         auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -61,7 +61,7 @@ TEST_P(DialectTestFixture, InjectionWithoutTokens)
         auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -97,7 +97,7 @@ TEST_P(DialectTestFixture, BenignInjections)
         auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -146,7 +146,7 @@ TEST_P(DialectTestFixture, MaliciousInjections)
         auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -215,7 +215,7 @@ TEST_P(DialectTestFixture, Tautologies)
         auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -258,7 +258,7 @@ TEST_P(DialectTestFixture, Comments)
         auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -298,7 +298,7 @@ TEST(TestSqliDetectorMySql, Comments)
         auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", "mysql"}, {"server.request.query", input}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -341,7 +341,7 @@ TEST(TestSqliDetectorMySql, Tautologies)
         auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", "mysql"}, {"server.request.query", input}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -387,7 +387,7 @@ TEST(TestSqliDetectorPgSql, Tautologies)
         auto root = object_builder::map({{"server.db.statement", statement},
             {"server.db.system", "pgsql"}, {"server.request.query", input}});
 
-        auto store = object_store::make_context_store();
+        object_store store;
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};

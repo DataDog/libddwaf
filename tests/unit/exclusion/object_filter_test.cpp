@@ -17,7 +17,7 @@ TEST(TestObjectFilter, RootTarget)
 {
     auto query = get_target_index("query");
 
-    auto store = object_store::make_context_store();
+    object_store store;
 
     auto root = object_builder::map({
         {"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
@@ -41,7 +41,7 @@ TEST(TestObjectFilter, RootTargetSubcontext)
 {
     auto query = get_target_index("query");
 
-    auto store = object_store::make_subcontext_store();
+    object_store store;
 
     auto root = object_builder::map({
         {"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
@@ -65,7 +65,7 @@ TEST(TestObjectFilter, DuplicateTarget)
 {
     auto query = get_target_index("query");
 
-    auto store = object_store::make_context_store();
+    object_store store;
 
     object_filter filter;
     filter.insert(query, "query", {});
@@ -103,7 +103,7 @@ TEST(TestObjectFilter, DuplicateCachedTarget)
 {
     auto query = get_target_index("query");
 
-    auto store = object_store::make_context_store();
+    object_store store;
 
     object_filter filter;
     filter.insert(query, "query", {});
@@ -147,7 +147,7 @@ TEST(TestObjectFilter, DuplicateTargetSubcontext)
     }));
 
     {
-        auto store = object_store::make_subcontext_store();
+        object_store store;
         store.insert(objects[0]);
 
         auto objects_filtered = filter.match(store, cache, deadline);
@@ -159,7 +159,7 @@ TEST(TestObjectFilter, DuplicateTargetSubcontext)
     }
 
     {
-        auto store = object_store::make_subcontext_store();
+        object_store store;
         store.insert(objects[1]);
 
         auto objects_filtered = filter.match(store, cache, deadline);
@@ -175,7 +175,7 @@ TEST(TestObjectFilter, SingleTarget)
 {
     auto query = get_target_index("query");
 
-    auto store = object_store::make_context_store();
+    object_store store;
 
     auto root = object_builder::map();
     auto child = root.emplace(
@@ -198,7 +198,7 @@ TEST(TestObjectFilter, DuplicateSingleTarget)
 {
     auto query = get_target_index("query");
 
-    auto store = object_store::make_context_store();
+    object_store store;
 
     object_filter filter;
     filter.insert(query, "query", {"params"});
@@ -236,7 +236,7 @@ TEST(TestObjectFilter, MultipleTargets)
     auto query = get_target_index("query");
     auto path_params = get_target_index("path_params");
 
-    auto store = object_store::make_context_store();
+    object_store store;
 
     auto root = object_builder::map();
 
@@ -270,7 +270,7 @@ TEST(TestObjectFilter, DuplicateMultipleTargets)
     auto query = get_target_index("query");
     auto path_params = get_target_index("path_params");
 
-    auto store = object_store::make_context_store();
+    object_store store;
 
     object_filter filter;
     filter.insert(query, "query", {"uri"});
@@ -328,7 +328,7 @@ TEST(TestObjectFilter, MissingTarget)
     get_target_index("path_params");
     auto status = get_target_index("status");
 
-    auto store = object_store::make_context_store();
+    object_store store;
 
     auto root = object_builder::map({
         {"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
@@ -351,7 +351,7 @@ TEST(TestObjectFilter, SingleTargetCache)
 {
     auto query = get_target_index("query");
 
-    auto store = object_store::make_context_store();
+    object_store store;
 
     auto root = object_builder::map();
     auto child = root.emplace(
@@ -381,7 +381,7 @@ TEST(TestObjectFilter, MultipleTargetsCache)
     auto query = get_target_index("query");
     auto path_params = get_target_index("path_params");
 
-    auto store = object_store::make_context_store();
+    object_store store;
 
     object_filter filter;
     filter.insert(query, "query", {"uri"});
@@ -431,7 +431,7 @@ TEST(TestObjectFilter, SingleGlobTarget)
 
     ddwaf::timer deadline{2s};
     {
-        auto store = object_store::make_context_store();
+        object_store store;
         object_filter::cache_type cache;
         auto root = object_builder::map();
         auto child = root.emplace(
@@ -446,7 +446,7 @@ TEST(TestObjectFilter, SingleGlobTarget)
     }
 
     {
-        auto store = object_store::make_context_store();
+        object_store store;
         object_filter::cache_type cache;
 
         auto root = object_builder::map();
@@ -463,7 +463,7 @@ TEST(TestObjectFilter, SingleGlobTarget)
     }
 
     {
-        auto store = object_store::make_context_store();
+        object_store store;
         object_filter::cache_type cache;
 
         auto root = object_builder::map({{"query", owned_object{}}});
@@ -484,7 +484,7 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
 
     ddwaf::timer deadline{2s};
     {
-        auto store = object_store::make_context_store();
+        object_store store;
         object_filter::cache_type cache;
 
         auto root = object_builder::map();
@@ -500,7 +500,7 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
     }
 
     {
-        auto store = object_store::make_context_store();
+        object_store store;
         object_filter::cache_type cache;
 
         auto root = object_builder::map();
@@ -517,7 +517,7 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
     }
 
     {
-        auto store = object_store::make_context_store();
+        object_store store;
         object_filter::cache_type cache;
 
         auto root = object_builder::map({{"query", owned_object{}}});
@@ -539,7 +539,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
     ddwaf::timer deadline{2s};
 
     {
-        auto store = object_store::make_context_store();
+        object_store store;
         object_filter::cache_type cache;
 
         owned_object root = object_builder::map();
@@ -555,7 +555,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
     }
 
     {
-        auto store = object_store::make_context_store();
+        object_store store;
         object_filter::cache_type cache;
 
         owned_object root = object_builder::map();
@@ -572,7 +572,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
     }
 
     {
-        auto store = object_store::make_context_store();
+        object_store store;
         object_filter::cache_type cache;
         owned_object root = object_builder::map({{"query",
             object_builder::map({{"value", object_builder::map({{"whatever", "paramsvalue"}})},
@@ -585,7 +585,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
     }
 
     {
-        auto store = object_store::make_context_store();
+        object_store store;
         object_filter::cache_type cache;
 
         owned_object root =
@@ -608,7 +608,7 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
     ddwaf::timer deadline{2s};
 
     {
-        auto store = object_store::make_context_store();
+        object_store store;
         object_filter::cache_type cache;
 
         owned_object root = object_builder::map();
@@ -631,7 +631,7 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
     }
 
     {
-        auto store = object_store::make_context_store();
+        object_store store;
         object_filter::cache_type cache;
 
         auto root = object_builder::map({{"query",
@@ -645,7 +645,7 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
     }
 
     {
-        auto store = object_store::make_context_store();
+        object_store store;
         object_filter::cache_type cache;
 
         auto root = object_builder::map(
@@ -684,7 +684,7 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
         };
 
         for (auto &[object, result] : tests) {
-            auto store = object_store::make_context_store();
+            object_store store;
             object_filter::cache_type cache;
             auto root = yaml_to_object<owned_object>(object);
             store.insert(root);
@@ -711,7 +711,7 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
         };
 
         for (auto &object : tests) {
-            auto store = object_store::make_context_store();
+            object_store store;
             object_filter::cache_type cache;
             auto root = yaml_to_object<owned_object>(object);
             store.insert(root);
@@ -731,7 +731,7 @@ TEST(TestObjectFilter, ArrayWithGlobTargets)
     filter.insert(query, "query", {"a", "*", "c", "d"});
 
     {
-        auto store = object_store::make_context_store();
+        object_store store;
         object_filter::cache_type cache;
         auto root = object_builder::map({{"query",
             object_builder::map({{"a", object_builder::array({object_builder::map(
@@ -749,7 +749,7 @@ TEST(TestObjectFilter, Timeout)
 {
     auto query = get_target_index("query");
 
-    auto store = object_store::make_context_store();
+    object_store store;
 
     auto root = object_builder::map(
         {{"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})}});

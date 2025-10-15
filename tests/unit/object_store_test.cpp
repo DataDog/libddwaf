@@ -17,7 +17,7 @@ TEST(TestObjectStore, InsertInvalidObject)
     auto query = get_target_index("query");
     auto url = get_target_index("url");
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(owned_object{});
 
     EXPECT_TRUE(store.empty());
@@ -33,7 +33,7 @@ TEST(TestObjectStore, InsertStringObject)
     auto query = get_target_index("query");
     auto url = get_target_index("url");
 
-    auto store = object_store::make_context_store();
+    object_store store;
 
     store.insert(owned_object::make_string("hello"));
 
@@ -53,7 +53,7 @@ TEST(TestObjectStore, InsertAndGetObject)
     auto root = owned_object::make_map();
     root.emplace("query", owned_object::make_string("hello"));
 
-    auto store = object_store::make_context_store();
+    object_store store;
     store.insert(std::move(root));
 
     EXPECT_FALSE(store.empty());
@@ -69,14 +69,14 @@ TEST(TestObjectStore, InsertAndGetSubcontextObject)
     auto query = get_target_index("query");
     auto url = get_target_index("url");
 
-    auto ctx_store = object_store::make_context_store();
+    object_store ctx_store;
     {
         defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
 
         auto root = owned_object::make_map();
         root.emplace("query", owned_object::make_string("hello"));
 
-        auto sctx_store = object_store::make_subcontext_store(ctx_store);
+        object_store sctx_store{ctx_store};
         sctx_store.insert(std::move(root));
 
         EXPECT_FALSE(sctx_store.empty());
@@ -100,7 +100,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     auto query = get_target_index("query");
     auto url = get_target_index("url");
 
-    auto ctx_store = object_store::make_context_store();
+    object_store ctx_store;
 
     {
         ctx_store.insert(object_builder::map({{"query", "hello"}}));
@@ -114,7 +114,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     }
 
     {
-        auto sctx_store = object_store::make_subcontext_store(ctx_store);
+        object_store sctx_store{ctx_store};
         sctx_store.insert(object_builder::map({{"url", "hello"}}));
 
         EXPECT_FALSE(sctx_store.empty());
@@ -151,7 +151,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjectBatches)
     auto query = get_target_index("query");
     auto url = get_target_index("url");
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         defer cleanup{[&]() { store.clear_last_batch(); }};
 
@@ -203,7 +203,7 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     auto query = get_target_index("query");
     auto url = get_target_index("url");
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         defer cleanup{[&]() { store.clear_last_batch(); }};
 
@@ -278,7 +278,7 @@ TEST(TestObjectStore, InsertSingleTargets)
     auto query = get_target_index("query");
     auto url = get_target_index("url");
 
-    auto ctx_store = object_store::make_context_store();
+    object_store ctx_store;
 
     ctx_store.insert(query, "query", owned_object::make_string("hello"));
 
@@ -290,7 +290,7 @@ TEST(TestObjectStore, InsertSingleTargets)
     EXPECT_FALSE(ctx_store.get_target(url).has_value());
 
     {
-        auto sctx_store = object_store::make_subcontext_store(ctx_store);
+        object_store sctx_store{ctx_store};
         sctx_store.insert(url, "url", owned_object::make_string("hello"));
 
         EXPECT_FALSE(sctx_store.empty());
@@ -316,7 +316,7 @@ TEST(TestObjectStore, InsertSingleTargetBatches)
     auto query = get_target_index("query");
     auto url = get_target_index("url");
 
-    auto ctx_store = object_store::make_context_store();
+    object_store ctx_store;
     {
         defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
 
@@ -333,7 +333,7 @@ TEST(TestObjectStore, InsertSingleTargetBatches)
     {
         defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
 
-        auto sctx_store = object_store::make_subcontext_store(ctx_store);
+        object_store sctx_store{ctx_store};
         sctx_store.insert(url, "url", owned_object::make_string("hello"));
 
         EXPECT_FALSE(sctx_store.empty());
@@ -356,7 +356,7 @@ TEST(TestObjectStore, DuplicatePersistentTarget)
 {
     auto query = get_target_index("query");
 
-    auto store = object_store::make_context_store();
+    object_store store;
     {
         defer cleanup{[&]() { store.clear_last_batch(); }};
 
@@ -396,7 +396,7 @@ TEST(TestObjectStore, DuplicateSubcontextTarget)
 {
     auto query = get_target_index("query");
 
-    auto store = object_store::make_subcontext_store();
+    object_store store;
 
     {
         defer cleanup{[&]() { store.clear_last_batch(); }};
@@ -436,12 +436,12 @@ TEST(TestObjectStore, ReplaceSubcontextWithPersistent)
 {
     auto query = get_target_index("query");
 
-    auto ctx_store = object_store::make_context_store();
+    object_store ctx_store;
 
     {
         defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
         {
-            auto sctx_store = object_store::make_subcontext_store();
+            object_store sctx_store;
             EXPECT_TRUE(sctx_store.insert(query, "query", owned_object::make_string("hello")));
 
             EXPECT_FALSE(sctx_store.empty());
@@ -477,7 +477,7 @@ TEST(TestObjectStore, ReplacePersistentWithSubcontextSameBatch)
 {
     auto query = get_target_index("query");
 
-    auto ctx_store = object_store::make_context_store();
+    object_store ctx_store;
 
     {
         defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
@@ -494,7 +494,7 @@ TEST(TestObjectStore, ReplacePersistentWithSubcontextSameBatch)
         }
 
         {
-            auto sctx_store = object_store::make_subcontext_store();
+            object_store sctx_store;
             EXPECT_TRUE(sctx_store.insert(query, "query", owned_object::make_string("bye")));
 
             EXPECT_FALSE(sctx_store.empty());
@@ -518,7 +518,7 @@ TEST(TestObjectStore, ReplacePersistentWithSubcontextDifferentBatch)
 {
     auto query = get_target_index("query");
 
-    auto ctx_store = object_store::make_context_store();
+    object_store ctx_store;
 
     {
         defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
@@ -535,7 +535,7 @@ TEST(TestObjectStore, ReplacePersistentWithSubcontextDifferentBatch)
     }
 
     {
-        auto sctx_store = object_store::make_subcontext_store(ctx_store);
+        object_store sctx_store{ctx_store};
         EXPECT_TRUE(sctx_store.insert(query, "query", owned_object::make_string("bye")));
 
         EXPECT_FALSE(sctx_store.empty());
