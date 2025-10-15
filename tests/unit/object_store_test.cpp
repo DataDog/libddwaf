@@ -76,7 +76,7 @@ TEST(TestObjectStore, InsertAndGetSubcontextObject)
         auto root = owned_object::make_map();
         root.emplace("query", owned_object::make_string("hello"));
 
-        object_store sctx_store{ctx_store};
+        auto sctx_store = object_store::from_upstream_store(ctx_store);
         sctx_store.insert(std::move(root));
 
         EXPECT_FALSE(sctx_store.empty());
@@ -114,7 +114,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     }
 
     {
-        object_store sctx_store{ctx_store};
+        auto sctx_store = object_store::from_upstream_store(ctx_store);
         sctx_store.insert(object_builder::map({{"url", "hello"}}));
 
         EXPECT_FALSE(sctx_store.empty());
@@ -290,7 +290,7 @@ TEST(TestObjectStore, InsertSingleTargets)
     EXPECT_FALSE(ctx_store.get_target(url).has_value());
 
     {
-        object_store sctx_store{ctx_store};
+        auto sctx_store = object_store::from_upstream_store(ctx_store);
         sctx_store.insert(url, "url", owned_object::make_string("hello"));
 
         EXPECT_FALSE(sctx_store.empty());
@@ -333,7 +333,7 @@ TEST(TestObjectStore, InsertSingleTargetBatches)
     {
         defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
 
-        object_store sctx_store{ctx_store};
+        auto sctx_store = object_store::from_upstream_store(ctx_store);
         sctx_store.insert(url, "url", owned_object::make_string("hello"));
 
         EXPECT_FALSE(sctx_store.empty());
@@ -535,7 +535,7 @@ TEST(TestObjectStore, ReplacePersistentWithSubcontextDifferentBatch)
     }
 
     {
-        object_store sctx_store{ctx_store};
+        auto sctx_store = object_store::from_upstream_store(ctx_store);
         EXPECT_TRUE(sctx_store.insert(query, "query", owned_object::make_string("bye")));
 
         EXPECT_FALSE(sctx_store.empty());

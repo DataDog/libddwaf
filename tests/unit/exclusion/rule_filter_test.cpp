@@ -231,7 +231,7 @@ TEST(TestRuleFilter, CachedMatchAndSubcontextMatch)
     {
         auto root = object_builder::map({{"usr.id", "admin"}});
 
-        object_store sctx_store{store};
+        auto sctx_store = object_store::from_upstream_store(store);
         sctx_store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};

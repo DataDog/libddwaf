@@ -71,11 +71,12 @@ typedef enum
  **/
 typedef enum
 {
-    DDWAF_ERR_INTERNAL         = -3,
-    DDWAF_ERR_INVALID_OBJECT   = -2,
-    DDWAF_ERR_INVALID_ARGUMENT = -1,
-    DDWAF_OK                   = 0,
-    DDWAF_MATCH                = 1,
+    DDWAF_ERR_INTERNAL          = -4,
+    DDWAF_ERR_ACTIVE_SUBCONTEXT = -3,
+    DDWAF_ERR_INVALID_OBJECT    = -2,
+    DDWAF_ERR_INVALID_ARGUMENT  = -1,
+    DDWAF_OK                    = 0,
+    DDWAF_MATCH                 = 1,
 } DDWAF_RET_CODE;
 
 /**

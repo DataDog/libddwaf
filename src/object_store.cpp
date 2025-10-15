@@ -32,7 +32,7 @@ bool object_store::insert(map_view input)
         return true;
     }
 
-    objects_.reserve(objects_.size() + size);
+    targets_.reserve(targets_.size() + size);
     latest_batch_.reserve(latest_batch_.size() + size);
 
     for (std::size_t i = 0; i < size; ++i) {
@@ -58,13 +58,13 @@ bool object_store::insert(target_index target, std::string_view key, owned_objec
 
 bool object_store::insert_target_helper(target_index target, std::string_view key, object_view view)
 {
-    if (objects_.contains(target)) {
+    if (targets_.contains(target)) {
         DDWAF_DEBUG("Replacing target '{}' in object store", key);
     } else {
         DDWAF_DEBUG("Inserting target '{}' into object store", key);
     }
 
-    objects_[target] = view;
+    targets_[target] = view;
     latest_batch_.emplace(target);
 
     return true;

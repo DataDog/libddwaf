@@ -17,25 +17,9 @@ public:
     object_store() = default;
 
     ~object_store() = default;
-    // NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
-    object_store(const object_store &other)
-        : latest_batch_(other.latest_batch_), objects_(other.objects_)
-    {}
-
-    // NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
+    object_store(const object_store &other) = delete;
     object_store(object_store &&) = default;
-
-    object_store &operator=(const object_store &other)
-    {
-        if (&other == this) {
-            return *this;
-        }
-
-        latest_batch_ = other.latest_batch_;
-        objects_ = other.objects_;
-        return *this;
-    }
-
+    object_store &operator=(const object_store &other) = delete;
     object_store &operator=(object_store &&) = default;
 
     bool insert(owned_object &&input);
@@ -44,8 +28,8 @@ public:
 
     [[nodiscard]] object_view get_target(target_index target) const
     {
-        auto it = objects_.find(target);
-        if (it != objects_.end()) {
+        auto it = targets_.find(target);
+        if (it != targets_.end()) {
             return it->second;
         }
         return nullptr;
@@ -57,14 +41,25 @@ public:
         return get_target(get_target_index(name));
     }
 
-    [[nodiscard]] bool has_target(target_index target) const { return objects_.contains(target); }
+    [[nodiscard]] bool has_target(target_index target) const { return targets_.contains(target); }
     [[nodiscard]] bool is_new_target(const target_index target) const
     {
         return latest_batch_.contains(target);
     }
     [[nodiscard]] bool has_new_targets() const { return !latest_batch_.empty(); }
-    [[nodiscard]] bool empty() const { return objects_.empty(); }
+    [[nodiscard]] bool empty() const { return targets_.empty(); }
     void clear_last_batch() { latest_batch_.clear(); }
+
+    // An object store created from an upstream store assumes that the original
+    // store retains ownership and will outlive this store, therefore only the
+    // targets are copied.
+    static object_store from_upstream_store(const object_store &upstream)
+    {
+        object_store store;
+        store.latest_batch_ = upstream.latest_batch_;
+        store.targets_ = upstream.targets_;
+        return store;
+    }
 
 private:
     bool insert_target_helper(target_index target, std::string_view key, object_view view);
@@ -72,7 +67,7 @@ private:
     memory::list<owned_object> input_objects_;
 
     memory::unordered_set<target_index> latest_batch_;
-    memory::unordered_map<target_index, object_view> objects_;
+    memory::unordered_map<target_index, object_view> targets_;
 };
 
 } // namespace ddwaf

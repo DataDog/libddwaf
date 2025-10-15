@@ -33,7 +33,7 @@ public:
     evaluation_engine(const evaluation_engine &) = delete;
     evaluation_engine &operator=(const evaluation_engine &) = delete;
     evaluation_engine(evaluation_engine &&) = default;
-    evaluation_engine &operator=(evaluation_engine &&) = default;
+    evaluation_engine &operator=(evaluation_engine &&) = delete;
     ~evaluation_engine() = default;
 
     bool insert(owned_object data) noexcept
@@ -55,6 +55,19 @@ public:
     }
     std::pair<bool, owned_object> eval(timer &deadline);
 
+    static evaluation_engine context_engine(std::shared_ptr<ruleset> ruleset, object_store &store,
+        nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
+    {
+        return evaluation_engine{
+            std::move(ruleset), store, {}, attribute_collector{output_alloc}, output_alloc};
+    }
+
+    static evaluation_engine subcontext_engine(evaluation_engine &engine, object_store &store)
+    {
+        return evaluation_engine{engine.ruleset_, store, engine.cache_,
+            attribute_collector::from_upstream_collector(engine.collector_), engine.output_alloc_};
+    }
+
     // Internals exposed for testing
     void eval_preprocessors(timer &deadline);
     void eval_postprocessors(timer &deadline);
@@ -64,23 +77,12 @@ public:
     void eval_rules(
         const exclusion_policy &policy, std::vector<rule_result> &results, timer &deadline);
 
-    static evaluation_engine context_engine(std::shared_ptr<ruleset> ruleset,
-        nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
-    {
-        return evaluation_engine{std::move(ruleset), {}, {}, output_alloc};
-    }
-
-    static evaluation_engine subcontext_engine(evaluation_engine &engine)
-    {
-        return evaluation_engine{
-            engine.ruleset_, object_store{engine.store_}, engine.cache_, engine.output_alloc_};
-    }
-
 protected:
-    explicit evaluation_engine(std::shared_ptr<ruleset> ruleset, object_store &&store,
-        evaluation_cache cache, nonnull_ptr<memory::memory_resource> output_alloc)
-        : output_alloc_(output_alloc), ruleset_(std::move(ruleset)), store_(std::move(store)),
-          collector_(output_alloc), cache_(std::move(cache))
+    explicit evaluation_engine(std::shared_ptr<ruleset> ruleset, object_store &store,
+        evaluation_cache cache, attribute_collector &&collector,
+        nonnull_ptr<memory::memory_resource> output_alloc)
+        : output_alloc_(output_alloc), ruleset_(std::move(ruleset)), store_(store),
+          collector_(std::move(collector)), cache_(std::move(cache))
     {
         cache_.processors.reserve(
             ruleset_->preprocessors->size() + ruleset_->postprocessors->size());
@@ -119,7 +121,8 @@ protected:
     nonnull_ptr<memory::memory_resource> output_alloc_;
 
     std::shared_ptr<ruleset> ruleset_;
-    object_store store_;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
+    object_store &store_;
     attribute_collector collector_;
 
     // Caches

@@ -157,7 +157,7 @@ TEST(TestLFIDetector, PartiallySubcontextMatch)
         ctx_store.insert(std::move(root));
     }
 
-    object_store sctx_store{ctx_store};
+    auto sctx_store = object_store::from_upstream_store(ctx_store);
     {
         auto root = object_builder::map({{"server.request.query", "../../../etc/passwd"}});
         sctx_store.insert(std::move(root));

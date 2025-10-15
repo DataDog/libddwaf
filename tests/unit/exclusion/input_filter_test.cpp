@@ -178,7 +178,7 @@ TEST(TestInputFilter, PersistentInputExclusionWithSubcontextCondition)
     auto root = object_builder::map({{"usr.id", "admin"}});
     ctx_store.insert(std::move(root));
 
-    object_store sctx_store{ctx_store};
+    auto sctx_store = object_store::from_upstream_store(ctx_store);
     root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
     sctx_store.insert(root);
 
@@ -209,7 +209,7 @@ TEST(TestInputFilter, SubcontextInputExclusionWithPersistentCondition)
     auto root = object_builder::map({{"usr.id", "admin"}});
     ctx_store.insert(std::move(root));
 
-    object_store sctx_store{ctx_store};
+    auto sctx_store = object_store::from_upstream_store(ctx_store);
     root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
     sctx_store.insert(root);
 
@@ -426,7 +426,7 @@ TEST(TestInputFilter, InputValidateCachedSubcontextMatch)
     {
         defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
 
-        object_store sctx_store{ctx_store};
+        auto sctx_store = object_store::from_upstream_store(ctx_store);
         sctx_store.insert(objects[0]);
 
         input_filter::cache_type sctx_cache = ctx_cache;
@@ -450,7 +450,7 @@ TEST(TestInputFilter, InputValidateCachedSubcontextMatch)
     {
         defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
 
-        object_store sctx_store{ctx_store};
+        auto sctx_store = object_store::from_upstream_store(ctx_store);
         sctx_store.insert(objects[3]);
 
         input_filter::cache_type sctx_cache = ctx_cache;

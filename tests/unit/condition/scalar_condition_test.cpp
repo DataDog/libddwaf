@@ -133,7 +133,7 @@ TEST(TestScalarCondition, SimpleSubcontextMatch)
 
     object_store ctx_store;
     {
-        object_store sctx_store{ctx_store};
+        auto sctx_store = object_store::from_upstream_store(ctx_store);
         sctx_store.insert(root);
 
         ddwaf::timer deadline{2s};
@@ -142,7 +142,7 @@ TEST(TestScalarCondition, SimpleSubcontextMatch)
     }
 
     {
-        object_store sctx_store{ctx_store};
+        auto sctx_store = object_store::from_upstream_store(ctx_store);
         sctx_store.insert(root);
 
         ddwaf::timer deadline{2s};

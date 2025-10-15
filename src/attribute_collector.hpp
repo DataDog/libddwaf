@@ -71,6 +71,14 @@ public:
     // Only used for testing
     [[nodiscard]] bool has_pending_attributes() const { return !pending_.empty(); }
 
+    static attribute_collector from_upstream_collector(const attribute_collector &upstream)
+    {
+        attribute_collector collector{upstream.attributes_.alloc()};
+        collector.pending_ = upstream.pending_;
+        collector.inserted_or_pending_attributes_ = upstream.inserted_or_pending_attributes_;
+        return collector;
+    }
+
 protected:
     enum class collection_state : uint8_t { success, unavailable, failed };
 
