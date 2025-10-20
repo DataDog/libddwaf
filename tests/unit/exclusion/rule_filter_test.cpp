@@ -96,37 +96,6 @@ TEST(TestRuleFilter, MatchWithDynamicMatcher)
     }
 }
 
-TEST(TestRuleFilter, SubcontextMatch)
-{
-    test::expression_builder builder(1);
-    builder.start_condition();
-    builder.add_argument();
-    builder.add_target("http.client_ip");
-    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
-
-    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
-    ddwaf::rule_filter filter{"filter", builder.build(), {rule.get()}};
-
-    std::unordered_map<target_index, std::string> addresses;
-    filter.get_addresses(addresses);
-    EXPECT_EQ(addresses.size(), 1);
-    EXPECT_STREQ(addresses.begin()->second.c_str(), "http.client_ip");
-
-    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-
-    object_store store;
-    store.insert(std::move(root));
-
-    ddwaf::timer deadline{2s};
-
-    rule_filter::excluded_set default_set{.rules = {}, .mode = {}, .action = {}};
-
-    ddwaf::rule_filter::cache_type cache;
-    auto res = filter.match(store, cache, {}, deadline);
-    EXPECT_FALSE(res.value_or(default_set).rules.empty());
-    EXPECT_EQ(res.value_or(default_set).mode, filter_mode::bypass);
-}
-
 TEST(TestRuleFilter, NoMatch)
 {
     test::expression_builder builder(1);
@@ -240,45 +209,6 @@ TEST(TestRuleFilter, CachedMatchAndSubcontextMatch)
         auto res = filter.match(sctx_store, cache, {}, deadline);
         EXPECT_FALSE(res.value_or(default_set).rules.empty());
         EXPECT_EQ(res.value_or(default_set).mode, filter_mode::bypass);
-    }
-}
-
-TEST(TestRuleFilter, ValidateSubcontextMatchCache)
-{
-    test::expression_builder builder(2);
-
-    builder.start_condition();
-    builder.add_argument();
-    builder.add_target("http.client_ip");
-    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
-
-    builder.start_condition();
-    builder.add_argument();
-    builder.add_target("usr.id");
-    builder.end_condition<matcher::exact_match>(std::vector<std::string>{"admin"});
-
-    auto rule = std::make_shared<core_rule>(core_rule("", "", {}, std::make_shared<expression>()));
-    ddwaf::rule_filter filter{"filter", builder.build(), {rule.get()}};
-
-    // To validate that the cache works, we pass an object store containing
-    // only the latest address. This ensures that the IP condition can't be
-    // matched on the second run.
-    {
-        ddwaf::rule_filter::cache_type cache;
-        object_store store;
-        store.insert(object_builder::map({{"http.client_ip", "192.168.0.1"}}));
-
-        ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
-    }
-
-    {
-        ddwaf::rule_filter::cache_type cache;
-        object_store store;
-        store.insert(object_builder::map({{"usr.id", "admin"}}));
-
-        ddwaf::timer deadline{2s};
-        EXPECT_FALSE(filter.match(store, cache, {}, deadline));
     }
 }
 

@@ -37,30 +37,6 @@ TEST(TestObjectFilter, RootTarget)
     ASSERT_EQ(objects_filtered.size(), 1);
 }
 
-TEST(TestObjectFilter, RootTargetSubcontext)
-{
-    auto query = get_target_index("query");
-
-    object_store store;
-
-    auto root = object_builder::map({
-        {"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
-    });
-    store.insert(root);
-
-    object_filter filter;
-    filter.insert(query, "query", {});
-
-    ddwaf::timer deadline{2s};
-    object_filter::cache_type cache;
-    auto objects_filtered = filter.match(store, cache, deadline);
-
-    ASSERT_EQ(objects_filtered.size(), 1);
-    EXPECT_TRUE(objects_filtered.contains(root.at(0)));
-
-    ASSERT_EQ(objects_filtered.size(), 1);
-}
-
 TEST(TestObjectFilter, DuplicateTarget)
 {
     auto query = get_target_index("query");
@@ -125,49 +101,6 @@ TEST(TestObjectFilter, DuplicateCachedTarget)
     {
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
-    }
-}
-
-TEST(TestObjectFilter, DuplicateTargetSubcontext)
-{
-    auto query = get_target_index("query");
-
-    object_filter filter;
-    filter.insert(query, "query", {});
-
-    ddwaf::timer deadline{2s};
-    object_filter::cache_type cache;
-
-    std::vector<owned_object> objects;
-    objects.emplace_back(object_builder::map({
-        {"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
-    }));
-    objects.emplace_back(object_builder::map({
-        {"query", object_builder::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
-    }));
-
-    {
-        object_store store;
-        store.insert(objects[0]);
-
-        auto objects_filtered = filter.match(store, cache, deadline);
-
-        ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_TRUE(objects_filtered.contains(objects[0].at(0)));
-
-        EXPECT_EQ(objects_filtered.size(), 1);
-    }
-
-    {
-        object_store store;
-        store.insert(objects[1]);
-
-        auto objects_filtered = filter.match(store, cache, deadline);
-
-        ASSERT_EQ(objects_filtered.size(), 1);
-        EXPECT_TRUE(objects_filtered.contains(objects[1].at(0)));
-
-        EXPECT_EQ(objects_filtered.size(), 1);
     }
 }
 

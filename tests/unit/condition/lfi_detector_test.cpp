@@ -146,7 +146,7 @@ TEST(TestLFIDetector, MatchWithKeyPath)
     EXPECT_STR(cache.match->highlights[0], "../etc/passwd");
 }
 
-TEST(TestLFIDetector, PartiallySubcontextMatch)
+TEST(TestLFIDetector, PartialSubcontextMatch)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
@@ -166,33 +166,6 @@ TEST(TestLFIDetector, PartiallySubcontextMatch)
     ddwaf::timer deadline{2s};
     condition_cache cache;
     EXPECT_TRUE(cond.eval(cache, sctx_store, {}, {}, deadline));
-
-    EXPECT_TRUE(cache.match);
-    EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
-    EXPECT_STR(cache.match->args[0].resolved, "/var/www/html/../../../etc/passwd");
-    EXPECT_TRUE(cache.match->args[0].key_path.empty());
-
-    EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-    EXPECT_STR(cache.match->args[1].resolved, "../../../etc/passwd");
-    EXPECT_TRUE(cache.match->args[1].key_path.empty());
-
-    EXPECT_STR(cache.match->highlights[0], "../../../etc/passwd");
-}
-
-TEST(TestLFIDetector, SubcontextMatch)
-{
-    lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
-
-    object_store store;
-
-    auto root = object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
-        {"server.request.query", "../../../etc/passwd"}});
-
-    store.insert(std::move(root));
-
-    ddwaf::timer deadline{2s};
-    condition_cache cache;
-    EXPECT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");

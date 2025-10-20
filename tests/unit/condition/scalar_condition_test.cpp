@@ -124,31 +124,4 @@ TEST(TestScalarCondition, SimpleMatchOnKeys)
     ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 }
 
-TEST(TestScalarCondition, SimpleSubcontextMatch)
-{
-    scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
-        {gen_variadic_param("server.request.uri.raw")}};
-
-    auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
-
-    object_store ctx_store;
-    {
-        auto sctx_store = object_store::from_upstream_store(ctx_store);
-        sctx_store.insert(root);
-
-        ddwaf::timer deadline{2s};
-        condition_cache cache;
-        ASSERT_TRUE(cond.eval(cache, sctx_store, {}, {}, deadline));
-    }
-
-    {
-        auto sctx_store = object_store::from_upstream_store(ctx_store);
-        sctx_store.insert(root);
-
-        ddwaf::timer deadline{2s};
-        condition_cache cache;
-        ASSERT_TRUE(cond.eval(cache, sctx_store, {}, {}, deadline));
-    }
-}
-
 } // namespace

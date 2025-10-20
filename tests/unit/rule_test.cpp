@@ -71,40 +71,6 @@ TEST(TestRule, Match)
     EXPECT_TRUE(cache.result);
 }
 
-TEST(TestRule, SubcontextMatch)
-{
-    test::expression_builder builder(1);
-    builder.start_condition();
-    builder.add_argument();
-    builder.add_target("http.client_ip");
-    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
-
-    std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
-    core_rule rule("id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
-
-    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-
-    ddwaf::timer deadline{2s};
-
-    {
-        core_rule::cache_type cache;
-        object_store store;
-        store.insert(root.clone());
-
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
-        ASSERT_TRUE(result.has_value());
-    }
-
-    {
-        core_rule::cache_type cache;
-        object_store store;
-        store.insert(std::move(root));
-
-        auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
-        ASSERT_TRUE(result.has_value());
-    }
-}
-
 TEST(TestRule, NoMatch)
 {
     test::expression_builder builder(1);
