@@ -63,7 +63,7 @@ public:
         auto output_object = std::move(attributes_);
         // Reset attributes
         attributes_ = owned_object::make_map(0, output_object.alloc());
-        inserted_or_pending_attributes_.clear();
+        inserted_.clear();
 
         return output_object;
     }
@@ -75,7 +75,6 @@ public:
     {
         attribute_collector collector{upstream.attributes_.alloc()};
         collector.pending_ = upstream.pending_;
-        collector.inserted_or_pending_attributes_ = upstream.inserted_or_pending_attributes_;
         return collector;
     }
 
@@ -84,7 +83,7 @@ protected:
 
     collection_state collect_helper(const object_store &store, target_index input_target,
         std::span<const std::string> input_key_path, std::string_view attribute_key);
-    bool insert_helper(std::string_view key, owned_object &&object);
+    void insert_helper(std::string_view key, owned_object &&object);
 
     // The views and spans used here are owned by rules and processors, these
     // are part of their definition and are unchanging during the lifetime of
@@ -94,7 +93,7 @@ protected:
     using target_type = std::pair<target_index, std::span<const std::string>>;
     std::unordered_map<std::string_view, target_type> pending_;
 
-    std::unordered_set<std::string_view> inserted_or_pending_attributes_;
+    std::unordered_set<std::string_view> inserted_;
     owned_object attributes_;
 };
 

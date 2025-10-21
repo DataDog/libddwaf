@@ -10,7 +10,6 @@
 
 namespace ddwaf {
 
-class active_subcontext_exception : public std::exception {};
 class timeout_exception : public std::exception {};
 class incomplete_ruleset : public std::exception {};
 

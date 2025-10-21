@@ -23,7 +23,6 @@
 #include "configuration/common/raw_configuration.hpp"
 #include "context.hpp"
 #include "ddwaf.h"
-#include "exception.hpp"
 #include "json_utils.hpp"
 #include "log.hpp"
 #include "memory_resource.hpp"
@@ -282,9 +281,6 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
             to_borrowed(result) = std::move(res);
         }
         return code ? DDWAF_MATCH : DDWAF_OK;
-    } catch (const active_subcontext_exception & /*e*/) {
-        DDWAF_ERROR("Context eval failed: active subcontext");
-        return DDWAF_ERR_ACTIVE_SUBCONTEXT;
     } catch (const std::exception &e) {
         DDWAF_ERROR("{}", e.what());
     } catch (...) {

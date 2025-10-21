@@ -11,7 +11,6 @@
 
 #include "context_allocator.hpp"
 #include "evaluation_engine.hpp"
-#include "exception.hpp"
 #include "memory_resource.hpp"
 #include "pointer.hpp"
 #include "ruleset.hpp"
@@ -138,30 +137,18 @@ public:
 
     bool insert(owned_object data)
     {
-        if (store_.use_count() > 1) {
-            throw active_subcontext_exception();
-        }
-
         const memory::memory_resource_guard guard(mr_.get());
         return engine_->insert(std::move(data));
     }
 
     bool insert(map_view data)
     {
-        if (store_.use_count() > 1) {
-            throw active_subcontext_exception();
-        }
-
         const memory::memory_resource_guard guard(mr_.get());
         return engine_->insert(data);
     }
 
     std::pair<bool, owned_object> eval(timer &deadline)
     {
-        if (store_.use_count() > 1) {
-            throw active_subcontext_exception();
-        }
-
         const memory::memory_resource_guard guard(mr_.get());
         return engine_->eval(deadline);
     }

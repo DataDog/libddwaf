@@ -86,8 +86,8 @@ protected:
     {
         cache_.processors.reserve(
             ruleset_->preprocessors->size() + ruleset_->postprocessors->size());
-        cache.rule_filters.reserve(ruleset_->rule_filters->size());
-        cache.input_filters.reserve(ruleset_->input_filters->size());
+        cache_.rule_filters.reserve(ruleset_->rule_filters->size());
+        cache_.input_filters.reserve(ruleset_->input_filters->size());
 
         for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
             ruleset_->rule_modules[i].init_cache(cache_.rule_modules[i]);
