@@ -20,13 +20,12 @@
 #include "object.hpp"
 #include "object_type.hpp"
 #include "tokenizer/shell.hpp"
-#include "utils.hpp"
 
 using namespace std::literals;
 
 namespace ddwaf {
 
-eval_result shi_detector::eval_string(const unary_argument<object_view> &resource,
+bool shi_detector::eval_string(const unary_argument<object_view> &resource,
     const variadic_argument<object_view> &params, condition_cache &cache,
     const object_set_ref &objects_excluded, ddwaf::timer &deadline)
 {
@@ -41,8 +40,6 @@ eval_result shi_detector::eval_string(const unary_argument<object_view> &resourc
         auto res = find_shi_from_params(
             resource_sv, resource_tokens, param.value, objects_excluded, deadline);
         if (res.has_value()) {
-            const evaluation_scope scope = resolve_scope(resource, param);
-
             auto &[highlight, param_kp] = res.value();
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
@@ -58,17 +55,16 @@ eval_result shi_detector::eval_string(const unary_argument<object_view> &resourc
                                         .key_path = param_kp}},
                     .highlights = {std::move(highlight)},
                     .operator_name = "shi_detector",
-                    .operator_value = {},
-                    .scope = scope};
+                    .operator_value = {}};
 
-            return eval_result::match(scope);
+            return true;
         }
     }
 
     return {};
 }
 
-eval_result shi_detector::eval_array(const unary_argument<object_view> &resource,
+bool shi_detector::eval_array(const unary_argument<object_view> &resource,
     const variadic_argument<object_view> &params, condition_cache &cache,
     const object_set_ref &objects_excluded, ddwaf::timer &deadline)
 {
@@ -82,8 +78,6 @@ eval_result shi_detector::eval_array(const unary_argument<object_view> &resource
         auto res = find_shi_from_params(
             arguments, resource_tokens, param.value, objects_excluded, deadline);
         if (res.has_value()) {
-            const evaluation_scope scope = resolve_scope(resource, param);
-
             auto &[highlight, param_kp] = res.value();
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
@@ -99,10 +93,9 @@ eval_result shi_detector::eval_array(const unary_argument<object_view> &resource
                                         .key_path = param_kp}},
                     .highlights = {std::move(highlight)},
                     .operator_name = "shi_detector",
-                    .operator_value = {},
-                    .scope = scope};
+                    .operator_value = {}};
 
-            return eval_result::match(scope);
+            return true;
         }
     }
 
@@ -116,7 +109,7 @@ shi_detector::shi_detector(std::vector<condition_parameter> args)
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-eval_result shi_detector::eval_impl(const unary_argument<object_view> &resource,
+bool shi_detector::eval_impl(const unary_argument<object_view> &resource,
     const variadic_argument<object_view> &params, condition_cache &cache,
     const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {

@@ -31,11 +31,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     processor_cache cache;
     ddwaf::timer deadline{2s};
 
-    auto [output, attr] =
-        gen.eval_impl({{.address = {}, .key_path = {}, .scope = {}, .value = cookies}},
-            {{.address = {}, .key_path = {}, .scope = {}, .value = buffer.get<std::string_view>()}},
-            {{.address = {}, .key_path = {}, .scope = {}, .value = buffer.get<std::string_view>()}},
-            cache, memory::get_default_resource(), deadline);
+    auto output = gen.eval_impl({{.address = {}, .key_path = {}, .value = cookies}},
+        {{.address = {}, .key_path = {}, .value = buffer.get<std::string_view>()}},
+        {{.address = {}, .key_path = {}, .value = buffer.get<std::string_view>()}}, cache,
+        memory::get_default_resource(), deadline);
 
     return 0;
 }

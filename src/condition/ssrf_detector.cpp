@@ -28,7 +28,6 @@
 #include "matcher/ip_match.hpp"
 #include "object.hpp"
 #include "uri_utils.hpp"
-#include "utils.hpp"
 
 using namespace std::literals;
 
@@ -292,7 +291,7 @@ ssrf_detector::ssrf_detector(std::vector<condition_parameter> args, const ssrf_o
       forbidden_domains_(std::move(forbidden_domains))
 {}
 
-eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri,
+bool ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri,
     const variadic_argument<object_view> &params, condition_cache &cache,
     const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
@@ -315,18 +314,15 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
                 {.name = "params"sv, .resolved = {}, .address = {}, .key_path = {}}},
             .highlights = {decomposed->scheme_and_authority},
             .operator_name = "ssrf_detector",
-            .operator_value = {},
-            .scope = uri.scope};
+            .operator_value = {}};
 
-        return {.outcome = true, .scope = uri.scope};
+        return true;
     }
 
     for (const auto &param : params) {
         auto res = ssrf_impl(*decomposed, param.value, objects_excluded, opts_,
             *forbidden_ip_matcher_, allowed_schemes_, forbidden_domains_, deadline);
         if (res.has_value()) {
-            const evaluation_scope scope = resolve_scope(uri, param);
-
             auto &[highlight, param_kp] = res.value();
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
@@ -341,10 +337,9 @@ eval_result ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri
                                                   .key_path = param_kp}},
                 .highlights = {std::move(highlight)},
                 .operator_name = "ssrf_detector",
-                .operator_value = {},
-                .scope = scope};
+                .operator_value = {}};
 
-            return eval_result::match(scope);
+            return true;
         }
     }
 

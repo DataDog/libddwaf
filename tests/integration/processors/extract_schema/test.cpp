@@ -960,7 +960,9 @@ TEST(TestExtractSchemaIntegration, ProcessorSubcontextExpression)
             ddwaf_object_insert_key(&persistent, STRL("server.request.query"), alloc),
             STRL("value"), alloc);
         ASSERT_EQ(ddwaf_context_eval(context, &persistent, alloc, nullptr, LONG_TIME), DDWAF_OK);
+    }
 
+    {
         ddwaf_object ephemeral;
         ddwaf_object_set_map(&ephemeral, 1, alloc);
 
@@ -1033,10 +1035,11 @@ TEST(TestExtractSchemaIntegration, ProcessorSubcontextExpression)
                                    }}}}});
 
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
-        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 2);
 
         auto schema = test::object_to_json(*attributes);
-        EXPECT_STR(schema, R"({"server.request.body.schema":[8]})");
+        EXPECT_STR(
+            schema, R"({"server.request.body.schema":[8],"server.request.query.schema":[8]})");
 
         ddwaf_object_destroy(&out, alloc);
         ddwaf_subcontext_destroy(subctx);

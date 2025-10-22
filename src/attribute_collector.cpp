@@ -20,16 +20,23 @@ namespace ddwaf {
 
 bool attribute_collector::insert(std::string_view key, owned_object &&object)
 {
-    if (inserted_or_pending_attributes_.contains(key)) {
+    if (inserted_.contains(key)) {
         return false;
     }
-    return insert_helper(key, std::move(object));
+
+    if (pending_.contains(key)) {
+        // If the attribute was pending, it no longer is
+        pending_.erase(key);
+    }
+
+    insert_helper(key, std::move(object));
+    return true;
 }
 
 bool attribute_collector::collect(const object_store &store, target_index input_target,
     std::span<const std::string> input_key_path, std::string_view attribute_key)
 {
-    if (inserted_or_pending_attributes_.contains(attribute_key)) {
+    if (inserted_.contains(attribute_key) || pending_.contains(attribute_key)) {
         DDWAF_DEBUG("Not collecting duplicate attribute: {}", attribute_key);
         return false;
     }
@@ -65,7 +72,7 @@ attribute_collector::collection_state attribute_collector::collect_helper(const 
     target_index input_target, std::span<const std::string> input_key_path,
     std::string_view attribute_key)
 {
-    auto [object, attr] = store.get_target(input_target);
+    auto object = store.get_target(input_target);
     if (!object.has_value()) {
         return collection_state::unavailable;
     }
@@ -92,12 +99,11 @@ attribute_collector::collection_state attribute_collector::collect_helper(const 
     return collection_state::failed;
 }
 
-bool attribute_collector::insert_helper(std::string_view key, owned_object &&object)
+void attribute_collector::insert_helper(std::string_view key, owned_object &&object)
 {
     attributes_.emplace(key, std::move(object));
     DDWAF_DEBUG("Collected attribute: {}", key);
-    inserted_or_pending_attributes_.insert(key);
-    return true;
+    inserted_.insert(key);
 }
 
 } // namespace ddwaf

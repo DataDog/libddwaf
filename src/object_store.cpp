@@ -11,27 +11,20 @@
 #include "object.hpp"
 #include "object_store.hpp"
 #include "target_address.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
-bool object_store::insert(owned_object &&input, evaluation_scope scope)
+bool object_store::insert(owned_object &&input)
 {
-    object_view view;
-    if (scope.is_subcontext()) {
-        view = subcontext_objects_.emplace_back(std::move(input));
-    } else {
-        view = input_objects_.emplace_back(std::move(input));
-    }
-
+    const object_view view = input_objects_.emplace_back(std::move(input));
     if (!view.is_map()) {
         return false;
     }
 
-    return insert(view, scope);
+    return insert(view);
 }
 
-bool object_store::insert(map_view input, evaluation_scope scope)
+bool object_store::insert(map_view input)
 {
     const auto size = input.size();
     if (size == 0) {
@@ -39,13 +32,8 @@ bool object_store::insert(map_view input, evaluation_scope scope)
         return true;
     }
 
-    objects_.reserve(objects_.size() + size);
-
+    targets_.reserve(targets_.size() + size);
     latest_batch_.reserve(latest_batch_.size() + size);
-
-    if (scope.is_subcontext()) {
-        subcontext_targets_.reserve(size);
-    }
 
     for (std::size_t i = 0; i < size; ++i) {
         auto [key_obj, value] = input.at(i);
@@ -55,51 +43,28 @@ bool object_store::insert(map_view input, evaluation_scope scope)
 
         auto key = key_obj.as<std::string_view>();
         auto target = get_target_index(key);
-        insert_target_helper(target, key, value, scope);
+        insert_target_helper(target, key, value);
     }
 
     return true;
 }
 
-bool object_store::insert(
-    target_index target, std::string_view key, owned_object &&input, evaluation_scope scope)
+bool object_store::insert(target_index target, std::string_view key, owned_object &&input)
 {
-    object_view view;
-    if (scope.is_subcontext()) {
-        view = subcontext_objects_.emplace_back(std::move(input));
-    } else {
-        view = input_objects_.emplace_back(std::move(input));
-    }
+    const object_view view = input_objects_.emplace_back(std::move(input));
 
-    return insert_target_helper(target, key, view, scope);
+    return insert_target_helper(target, key, view);
 }
 
-bool object_store::insert_target_helper(
-    target_index target, std::string_view key, object_view view, evaluation_scope scope)
+bool object_store::insert_target_helper(target_index target, std::string_view key, object_view view)
 {
-    if (objects_.contains(target)) {
-        if (scope.is_subcontext() && !subcontext_targets_.contains(target)) {
-            DDWAF_WARN("Failed to replace non-subcontext target '{}' with a subcontext one", key);
-            return false;
-        }
-
-        if (scope.is_context() && subcontext_targets_.contains(target)) {
-            DDWAF_WARN("Failed to replace subcontext target '{}' with a non-subcontext one", key);
-            return false;
-        }
-
-        DDWAF_DEBUG("Replacing {} target '{}' in object store",
-            scope.is_subcontext() ? "subcontext" : "context", key);
+    if (targets_.contains(target)) {
+        DDWAF_DEBUG("Replacing target '{}' in object store", key);
     } else {
-        DDWAF_DEBUG("Inserting {} target '{}' into object store",
-            scope.is_subcontext() ? "subcontext" : "context", key);
+        DDWAF_DEBUG("Inserting target '{}' into object store", key);
     }
 
-    if (scope.is_subcontext()) {
-        subcontext_targets_.emplace(target);
-    }
-
-    objects_[target] = {view, scope};
+    targets_[target] = view;
     latest_batch_.emplace(target);
 
     return true;

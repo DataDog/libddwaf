@@ -33,7 +33,7 @@ namespace {
 // This function adds the waf.context.event "virtual" address, specifically
 // meant to be used to tryigger post-processors when there has been an event
 // during the lifecycle of the context.
-void set_context_event_address(object_store &store, evaluation_scope scope)
+void set_context_event_address(object_store &store)
 {
     static const std::string_view event_addr = "waf.context.event";
     static auto event_addr_idx = get_target_index(event_addr);
@@ -42,7 +42,7 @@ void set_context_event_address(object_store &store, evaluation_scope scope)
         return;
     }
 
-    store.insert(event_addr_idx, event_addr, owned_object{true}, scope);
+    store.insert(event_addr_idx, event_addr, owned_object{true});
 }
 
 } // namespace
@@ -85,7 +85,7 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
             if (should_eval_rules) {
                 eval_rules(policy, results, deadline);
                 if (!results.empty()) {
-                    set_context_event_address(store_, current_scope_);
+                    set_context_event_address(store_);
                 }
             }
         }
@@ -113,13 +113,13 @@ void evaluation_engine::eval_preprocessors(timer &deadline)
             throw timeout_exception();
         }
 
-        auto it = processor_cache_.find(preproc.get());
-        if (it == processor_cache_.end()) {
-            auto [new_it, res] = processor_cache_.emplace(preproc.get(), processor_cache{});
+        auto it = cache_.processors.find(preproc.get());
+        if (it == cache_.processors.end()) {
+            auto [new_it, res] = cache_.processors.emplace(preproc.get(), processor_cache{});
             it = new_it;
         }
 
-        preproc->eval(store_, collector_, it->second, output_alloc_, current_scope_, deadline);
+        preproc->eval(store_, collector_, it->second, output_alloc_, deadline);
     }
 }
 
@@ -133,13 +133,13 @@ void evaluation_engine::eval_postprocessors(timer &deadline)
             throw timeout_exception();
         }
 
-        auto it = processor_cache_.find(postproc.get());
-        if (it == processor_cache_.end()) {
-            auto [new_it, res] = processor_cache_.emplace(postproc.get(), processor_cache{});
+        auto it = cache_.processors.find(postproc.get());
+        if (it == cache_.processors.end()) {
+            auto [new_it, res] = cache_.processors.emplace(postproc.get(), processor_cache{});
             it = new_it;
         }
 
-        postproc->eval(store_, collector_, it->second, output_alloc_, current_scope_, deadline);
+        postproc->eval(store_, collector_, it->second, output_alloc_, deadline);
     }
 }
 
@@ -153,19 +153,17 @@ exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
             throw timeout_exception();
         }
 
-        auto it = rule_filter_cache_.find(&filter);
-        if (it == rule_filter_cache_.end()) {
-            auto [new_it, res] = rule_filter_cache_.emplace(&filter, rule_filter::cache_type{});
+        auto it = cache_.rule_filters.find(&filter);
+        if (it == cache_.rule_filters.end()) {
+            auto [new_it, res] = cache_.rule_filters.emplace(&filter, rule_filter::cache_type{});
             it = new_it;
         }
 
         rule_filter::cache_type &cache = it->second;
-        auto exclusion =
-            filter.match(store_, cache, *ruleset_->exclusion_matchers, current_scope_, deadline);
+        auto exclusion = filter.match(store_, cache, *ruleset_->exclusion_matchers, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
-                exclusions_.add_rule_exclusion(
-                    rule, exclusion->mode, exclusion->action, exclusion->scope);
+                cache_.exclusions.add_rule_exclusion(rule, exclusion->mode, exclusion->action);
             }
         }
     }
@@ -178,23 +176,22 @@ exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
             throw timeout_exception();
         }
 
-        auto it = input_filter_cache_.find(&filter);
-        if (it == input_filter_cache_.end()) {
-            auto [new_it, res] = input_filter_cache_.emplace(&filter, input_filter::cache_type{});
+        auto it = cache_.input_filters.find(&filter);
+        if (it == cache_.input_filters.end()) {
+            auto [new_it, res] = cache_.input_filters.emplace(&filter, input_filter::cache_type{});
             it = new_it;
         }
 
         input_filter::cache_type &cache = it->second;
-        auto exclusion =
-            filter.match(store_, cache, *ruleset_->exclusion_matchers, current_scope_, deadline);
+        auto exclusion = filter.match(store_, cache, *ruleset_->exclusion_matchers, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
-                exclusions_.add_input_exclusion(rule, exclusion->objects);
+                cache_.exclusions.add_input_exclusion(rule, exclusion->objects);
             }
         }
     }
 
-    return exclusions_;
+    return cache_.exclusions;
 }
 
 void evaluation_engine::eval_rules(
@@ -202,10 +199,9 @@ void evaluation_engine::eval_rules(
 {
     for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
         const auto &mod = ruleset_->rule_modules[i];
-        auto &cache = rule_module_cache_[i];
+        auto &cache = cache_.rule_modules[i];
 
-        auto verdict = mod.eval(
-            results, store_, cache, policy, *ruleset_->rule_matchers, current_scope_, deadline);
+        auto verdict = mod.eval(results, store_, cache, policy, *ruleset_->rule_matchers, deadline);
         if (verdict == rule_module::verdict_type::block) {
             break;
         }

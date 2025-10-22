@@ -10,24 +10,7 @@
 
 namespace ddwaf {
 
-class timeout_exception : public std::exception {
-public:
-    timeout_exception() : std::exception({}) {}
-    timeout_exception(timeout_exception &&) = default;
-    timeout_exception(const timeout_exception &) = default;
-    timeout_exception &operator=(timeout_exception &&) = default;
-    timeout_exception &operator=(const timeout_exception &) = default;
-    ~timeout_exception() override = default;
-};
-
-class incomplete_ruleset : public std::exception {
-public:
-    incomplete_ruleset() : std::exception({}) {}
-    incomplete_ruleset(incomplete_ruleset &&) = default;
-    incomplete_ruleset(const incomplete_ruleset &) = default;
-    incomplete_ruleset &operator=(incomplete_ruleset &&) = default;
-    incomplete_ruleset &operator=(const incomplete_ruleset &) = default;
-    ~incomplete_ruleset() override = default;
-};
+class timeout_exception : public std::exception {};
+class incomplete_ruleset : public std::exception {};
 
 } // namespace ddwaf

@@ -520,7 +520,7 @@ sqli_detector::sqli_detector(std::vector<condition_parameter> args)
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-[[nodiscard]] eval_result sqli_detector::eval_impl(const unary_argument<std::string_view> &sql,
+[[nodiscard]] bool sqli_detector::eval_impl(const unary_argument<std::string_view> &sql,
     const variadic_argument<object_view> &params, const unary_argument<std::string_view> &db_type,
     condition_cache &cache, const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
@@ -532,8 +532,6 @@ sqli_detector::sqli_detector(std::vector<condition_parameter> args)
         auto res = internal::sqli_impl(
             sql.value, resource_tokens, param.value, dialect, objects_excluded, deadline);
         if (std::holds_alternative<internal::matched_param>(res)) {
-            const evaluation_scope scope = resolve_scope(sql, param);
-
             auto stripped_stmt = internal::strip_literals(sql.value, resource_tokens);
 
             auto &[highlight, param_kp] = std::get<internal::matched_param>(res);
@@ -554,10 +552,9 @@ sqli_detector::sqli_detector(std::vector<condition_parameter> args)
                                                   .key_path = {}}},
                 .highlights = {std::move(highlight)},
                 .operator_name = "sqli_detector",
-                .operator_value = {},
-                .scope = scope};
+                .operator_value = {}};
 
-            return eval_result::match(scope);
+            return true;
         }
 
         if (std::holds_alternative<internal::sqli_error>(res)) {

@@ -26,30 +26,29 @@ TEST(TestExistsCondition, AddressAvailable)
     auto root = object_builder::map({{"server.request.uri_raw", owned_object{}}});
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome);
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestExistsCondition, KeyPathAvailable)
 {
-    exists_condition cond{{{{{{"server.request.uri_raw", get_target_index("server.request.uri_raw"),
-        {"path", "to", "object"}}}}}}};
+    exists_condition cond{{{{{.name = "server.request.uri_raw",
+        .index = get_target_index("server.request.uri_raw"),
+        .key_path = {"path", "to", "object"}}}}}};
 
     auto root = object_builder::map({{"server.request.uri_raw",
         object_builder::map({{"path",
             object_builder::map({{"to", object_builder::map({{"object", owned_object{}}})}})}})}});
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome);
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestExistsCondition, AddressNotAvaialble)
@@ -59,35 +58,35 @@ TEST(TestExistsCondition, AddressNotAvaialble)
     auto root = object_builder::map({{"server.request.query", owned_object{}}});
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_FALSE(res.outcome);
+    ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestExistsCondition, KeyPathNotAvailable)
 {
-    exists_condition cond{{{{{{"server.request.uri_raw", get_target_index("server.request.uri_raw"),
-        {"path", "to", "object"}}}}}}};
+    exists_condition cond{{{{{.name = "server.request.uri_raw",
+        .index = get_target_index("server.request.uri_raw"),
+        .key_path = {"path", "to", "object"}}}}}};
 
     auto root = object_builder::map({{"server.request.uri_raw",
         object_builder::map({{"path", object_builder::map({{"to", owned_object{}}})}})}});
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_FALSE(res.outcome);
+    ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestExistsCondition, KeyPathAvailableButExcluded)
 {
-    exists_condition cond{{{{{{"server.request.uri_raw", get_target_index("server.request.uri_raw"),
-        {"path", "to", "object"}}}}}}};
+    exists_condition cond{{{{{.name = "server.request.uri_raw",
+        .index = get_target_index("server.request.uri_raw"),
+        .key_path = {"path", "to", "object"}}}}}};
 
     auto root = object_builder::map({{"server.request.uri_raw",
         object_builder::map({{"path",
@@ -95,19 +94,15 @@ TEST(TestExistsCondition, KeyPathAvailableButExcluded)
 
     std::unordered_set<object_cache_key> excluded = {root.at(0)};
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
 
-    object_set_ref excluded_ref;
-    excluded_ref.context = excluded;
-
     // While the key path is present, since part of the path was excluded
     // the evaluation fails to determine the presence of the full key path,
     // for that reason, no match is generated.
-    auto res = cond.eval(cache, store, excluded_ref, {}, deadline);
-    ASSERT_FALSE(res.outcome);
+    ASSERT_FALSE(cond.eval(cache, store, excluded, {}, deadline));
 }
 
 TEST(TestExistsCondition, MultipleAddresses)
@@ -119,12 +114,11 @@ TEST(TestExistsCondition, MultipleAddresses)
         auto root = object_builder::map({{address, owned_object{}}});
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_EQ(res.outcome, expected);
+        ASSERT_EQ(cond.eval(cache, store, {}, {}, deadline), expected);
     };
 
     validate_address("usr.id");
@@ -136,10 +130,13 @@ TEST(TestExistsCondition, MultipleAddresses)
 
 TEST(TestExistsCondition, MultipleAddressesAndKeyPaths)
 {
-    exists_condition cond{{{{{"server.request.uri_raw", get_target_index("server.request.uri_raw"),
-                                 {"path", "to", "object"}},
-        {"usr.id", get_target_index("usr.id")},
-        {"server.request.body", get_target_index("server.request.body"), {"key"}}}}}};
+    exists_condition cond{{{{{.name = "server.request.uri_raw",
+                                 .index = get_target_index("server.request.uri_raw"),
+                                 .key_path = {"path", "to", "object"}},
+        {.name = "usr.id", .index = get_target_index("usr.id")},
+        {.name = "server.request.body",
+            .index = get_target_index("server.request.body"),
+            .key_path = {"key"}}}}}};
 
     auto validate_address = [&](const std::string &address, const std::vector<std::string> &kp,
                                 bool expected = true) {
@@ -151,12 +148,11 @@ TEST(TestExistsCondition, MultipleAddressesAndKeyPaths)
         }
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_EQ(res.outcome, expected);
+        ASSERT_EQ(cond.eval(cache, store, {}, {}, deadline), expected);
     };
 
     validate_address("usr.id", {});
@@ -173,42 +169,43 @@ TEST(TestExistsCondition, MultipleAddressesAndKeyPaths)
 
 TEST(TestNegatedExistsCondition, KeyPathAvailable)
 {
-    negated_exists_condition cond{{{{{{"server.request.uri_raw",
-        get_target_index("server.request.uri_raw"), {"path", "to", "object"}}}}}}};
+    negated_exists_condition cond{{{{{.name = "server.request.uri_raw",
+        .index = get_target_index("server.request.uri_raw"),
+        .key_path = {"path", "to", "object"}}}}}};
 
     auto root = object_builder::map({{"server.request.uri_raw",
         object_builder::map({{"path",
             object_builder::map({{"to", object_builder::map({{"object", owned_object{}}})}})}})}});
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_FALSE(res.outcome);
+    ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestNegatedExistsCondition, KeyPathNotAvailable)
 {
-    negated_exists_condition cond{{{{{{"server.request.uri_raw",
-        get_target_index("server.request.uri_raw"), {"path", "to", "object"}}}}}}};
+    negated_exists_condition cond{{{{{.name = "server.request.uri_raw",
+        .index = get_target_index("server.request.uri_raw"),
+        .key_path = {"path", "to", "object"}}}}}};
 
     auto root = object_builder::map({{"server.request.uri_raw",
         object_builder::map({{"path", object_builder::map({{"to", owned_object{}}})}})}});
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome);
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestNegatedExistsCondition, KeyPathAvailableButExcluded)
 {
-    negated_exists_condition cond{{{{{{"server.request.uri_raw",
-        get_target_index("server.request.uri_raw"), {"path", "to", "object"}}}}}}};
+    negated_exists_condition cond{{{{{.name = "server.request.uri_raw",
+        .index = get_target_index("server.request.uri_raw"),
+        .key_path = {"path", "to", "object"}}}}}};
 
     auto root = object_builder::map({{"server.request.uri_raw",
         object_builder::map({{"path",
@@ -217,19 +214,15 @@ TEST(TestNegatedExistsCondition, KeyPathAvailableButExcluded)
     std::unordered_set<object_cache_key> excluded = {root.at(0)};
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
 
-    object_set_ref excluded_ref;
-    excluded_ref.context = excluded;
-
     // While the key path is not present, since part of the path was excluded
     // the evaluation fails to determine the presence of the full key path,
     // for that reason, no match is generated.
-    auto res = cond.eval(cache, store, excluded_ref, {}, deadline);
-    ASSERT_FALSE(res.outcome);
+    ASSERT_FALSE(cond.eval(cache, store, excluded, {}, deadline));
 }
 
 } // namespace

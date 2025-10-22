@@ -20,8 +20,7 @@ public:
               std::move(id), std::move(expr), std::move(mappings), evaluate, output)
     {}
 
-    std::pair<owned_object, evaluation_scope> eval_impl(
-        const unary_argument<std::string_view> &input, processor_cache &cache,
+    owned_object eval_impl(const unary_argument<std::string_view> &input, processor_cache &cache,
         nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const;
 };
 

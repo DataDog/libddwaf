@@ -49,10 +49,9 @@ TEST(TestUriParseProcessor, QueryParameters)
     for (auto &[url, result] : samples) {
         ddwaf::timer deadline{2s};
         processor_cache cache;
-        auto [output, attr] = gen.eval_impl(
-            {.address = {}, .key_path = {}, .scope = {}, .value = url}, cache, alloc, deadline);
+        auto output =
+            gen.eval_impl({.address = {}, .key_path = {}, .value = url}, cache, alloc, deadline);
         EXPECT_TRUE(output.is_map());
-        EXPECT_TRUE(attr.is_context());
 
         auto query = object_view{output}.find("query");
         EXPECT_JSON(query.ref(), result);
@@ -78,35 +77,12 @@ TEST(TestUriParseProcessor, MixedUrls)
     for (auto &[url, result] : samples) {
         ddwaf::timer deadline{2s};
         processor_cache cache;
-        auto [output, attr] = gen.eval_impl(
-            {.address = {}, .key_path = {}, .scope = {}, .value = url}, cache, alloc, deadline);
+        auto output =
+            gen.eval_impl({.address = {}, .key_path = {}, .value = url}, cache, alloc, deadline);
         EXPECT_TRUE(output.is_map());
-        EXPECT_TRUE(attr.is_context());
 
         EXPECT_JSON(output.ref(), result);
     }
-}
-
-TEST(TestUriParseProcessor, Subcontext)
-{
-    auto *alloc = memory::get_default_resource();
-
-    std::string_view url =
-        "https://user@test.com:222/"
-        "path?query=value1&query=value2&flag&emptyvalue=&array[]=1&array[]=2&normal=value#frag";
-
-    uri_parse_processor gen{"id", {}, {}, false, true};
-
-    ddwaf::timer deadline{2s};
-    processor_cache cache;
-    auto [output, attr] = gen.eval_impl(
-        {.address = {}, .key_path = {}, .scope = evaluation_scope::subcontext(), .value = url},
-        cache, alloc, deadline);
-    EXPECT_TRUE(output.is_map());
-    EXPECT_TRUE(attr.is_subcontext());
-
-    EXPECT_JSON(output.ref(),
-        R"({"scheme":"https","userinfo":"user","host":"test.com","port":222,"path":"/path","query":{"normal":"value","array":["1","2"],"emptyvalue":"","flag":true,"query":["value1","value2"]},"fragment":"frag"})");
 }
 
 TEST(TestUriParseProcessor, Malformed)
@@ -120,8 +96,8 @@ TEST(TestUriParseProcessor, Malformed)
     for (auto &url : samples) {
         ddwaf::timer deadline{2s};
         processor_cache cache;
-        auto [output, attr] = gen.eval_impl(
-            {.address = {}, .key_path = {}, .scope = {}, .value = url}, cache, alloc, deadline);
+        auto output =
+            gen.eval_impl({.address = {}, .key_path = {}, .value = url}, cache, alloc, deadline);
         EXPECT_TRUE(output.is_invalid());
     }
 }

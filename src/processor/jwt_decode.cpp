@@ -106,9 +106,9 @@ std::string_view find_token(
 } // namespace
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-std::pair<owned_object, evaluation_scope> jwt_decode::eval_impl(
-    const unary_argument<object_view> &input, processor_cache & /*cache*/,
-    nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer & /*deadline*/) const
+owned_object jwt_decode::eval_impl(const unary_argument<object_view> &input,
+    processor_cache & /*cache*/, nonnull_ptr<memory::memory_resource> alloc,
+    ddwaf::timer & /*deadline*/) const
 {
     std::string_view token = find_token(input.value, input.key_path);
     if (token.empty()) {
@@ -141,7 +141,7 @@ std::pair<owned_object, evaluation_scope> jwt_decode::eval_impl(
         {"payload", decode_and_parse(jwt.payload, alloc)},
         {"signature", object_builder::map({{"available", !jwt.signature.empty()}}, alloc)}});
 
-    return {std::move(output), input.scope};
+    return output;
 }
 
 } // namespace ddwaf

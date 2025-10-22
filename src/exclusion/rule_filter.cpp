@@ -18,7 +18,6 @@
 #include "matcher/base.hpp"
 #include "object_store.hpp"
 #include "rule.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -39,21 +38,20 @@ rule_filter::rule_filter(std::string id, std::shared_ptr<expression> expr,
 }
 
 std::optional<excluded_set> rule_filter::match(const object_store &store, cache_type &cache,
-    const matcher_mapper &dynamic_matchers, evaluation_scope scope, timer &deadline) const
+    const matcher_mapper &dynamic_matchers, timer &deadline) const
 {
     DDWAF_DEBUG("Evaluating rule filter '{}'", id_);
 
     // Don't return a match again if we already did
-    if (expression::get_result(cache, scope)) {
+    if (expression::get_result(cache)) {
         return std::nullopt;
     }
 
-    auto res = expr_->eval(cache, store, {}, dynamic_matchers, scope, deadline);
-    if (!res.outcome) {
+    if (!expr_->eval(cache, store, {}, dynamic_matchers, deadline)) {
         return std::nullopt;
     }
 
-    return {{.rules = rule_targets_, .scope = res.scope, .mode = mode_, .action = action_}};
+    return {{.rules = rule_targets_, .mode = mode_, .action = action_}};
 }
 
 } // namespace ddwaf

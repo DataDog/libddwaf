@@ -25,12 +25,11 @@ TEST(TestShiDetectorArray, InvalidType)
         {{"server.sys.shell.cmd", object_builder::map()}, {"server.request.query", "whatever"}});
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_FALSE(res.outcome);
+    ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestShiDetectorArray, EmptyResource)
@@ -41,12 +40,11 @@ TEST(TestShiDetectorArray, EmptyResource)
         {{"server.sys.shell.cmd", object_builder::array()}, {"server.request.query", "whatever"}});
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_FALSE(res.outcome);
+    ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestShiDetectorArray, InvalidTypeWithinArray)
@@ -57,13 +55,11 @@ TEST(TestShiDetectorArray, InvalidTypeWithinArray)
                                      "cat /etc/passwd"})}});
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
@@ -115,12 +111,11 @@ TEST(TestShiDetectorArray, NoMatchAndFalsePositives)
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_FALSE(res.outcome) << param;
+        ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
     }
 }
 
@@ -159,13 +154,11 @@ TEST(TestShiDetectorArray, ExecutablesAndRedirections)
         }
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome) << param;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
@@ -214,12 +207,11 @@ TEST(TestShiDetectorArray, OverlappingInjections)
         }
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_FALSE(res.outcome) << param;
+        ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
     }
 }
 
@@ -254,13 +246,11 @@ TEST(TestShiDetectorArray, InjectionsWithinCommandSubstitution)
         }
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome) << param;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
@@ -299,13 +289,11 @@ TEST(TestShiDetectorArray, InjectionsWithinProcessSubstitution)
         }
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome) << param;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
@@ -350,13 +338,11 @@ TEST(TestShiDetectorArray, OffByOnePayloadsMatch)
         }
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome) << param;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");

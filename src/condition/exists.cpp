@@ -18,7 +18,6 @@
 #include "exclusion/common.hpp"
 #include "object.hpp"
 #include "object_type.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -91,7 +90,7 @@ search_outcome exists(object_view root,
 } // namespace
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-[[nodiscard]] eval_result exists_condition::eval_impl(const variadic_argument<object_view> &inputs,
+[[nodiscard]] bool exists_condition::eval_impl(const variadic_argument<object_view> &inputs,
     condition_cache &cache, const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     for (const auto &input : inputs) {
@@ -109,24 +108,23 @@ search_outcome exists(object_view root,
                                 .key_path = convert_key_path(input.key_path)}},
                 .highlights = {},
                 .operator_name = "exists",
-                .operator_value = {},
-                .scope = input.scope}};
-            return {.outcome = true, .scope = input.scope};
+                .operator_value = {}}};
+            return true;
         }
     }
-    return eval_result::no_match();
+    return false;
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-[[nodiscard]] eval_result negated_exists_condition::eval_impl(
-    const unary_argument<object_view> &input, condition_cache &cache,
-    const object_set_ref &objects_excluded, ddwaf::timer & /*deadline*/) const
+[[nodiscard]] bool negated_exists_condition::eval_impl(const unary_argument<object_view> &input,
+    condition_cache &cache, const object_set_ref &objects_excluded,
+    ddwaf::timer & /*deadline*/) const
 {
     // We need to make sure the key path hasn't been found. If the result is
     // unknown, we can't guarantee that the key path isn't actually present in
     // the data set
     if (exists(input.value, input.key_path, objects_excluded) != search_outcome::not_found) {
-        return eval_result::no_match();
+        return false;
     }
 
     cache.match = {{.args = {{.name = "input",
@@ -135,9 +133,8 @@ search_outcome exists(object_view root,
                         .key_path = convert_key_path(input.key_path)}},
         .highlights = {},
         .operator_name = "!exists",
-        .operator_value = {},
-        .scope = input.scope}};
-    return {.outcome = true, .scope = input.scope};
+        .operator_value = {}}};
+    return true;
 }
 
 } // namespace ddwaf

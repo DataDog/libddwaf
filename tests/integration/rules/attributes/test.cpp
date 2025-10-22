@@ -541,7 +541,7 @@ TEST(TestRuleAttributesIntegration, AttributesAndBlockingRuleFilter)
     ddwaf_context_destroy(context1);
 }
 
-TEST(TestRuleAttributesIntegration, AttributesAndEphemeralMatches)
+TEST(TestRuleAttributesIntegration, AttributesAndSubcontextMatches)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
@@ -615,8 +615,7 @@ TEST(TestRuleAttributesIntegration, AttributesAndEphemeralMatches)
     }
 
     {
-        // The second time around there should be no match as the rules generates no
-        // events and the attributes have already been provided
+        // The second match should contain attributes
         ddwaf_object parameter;
         ddwaf_object_set_map(&parameter, 1, alloc);
         ddwaf_object_set_string_literal(
@@ -625,7 +624,8 @@ TEST(TestRuleAttributesIntegration, AttributesAndEphemeralMatches)
         auto *subctx = ddwaf_subcontext_init(context1);
 
         ddwaf_object result;
-        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &parameter, alloc, &result, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(
+            ddwaf_subcontext_eval(subctx, &parameter, alloc, &result, LONG_TIME), DDWAF_MATCH);
 
         EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
 
@@ -637,7 +637,7 @@ TEST(TestRuleAttributesIntegration, AttributesAndEphemeralMatches)
         const auto *attributes = ddwaf_object_find(&result, STRL("attributes"));
         EXPECT_NE(attributes, nullptr);
         EXPECT_EQ(ddwaf_object_get_type(attributes), DDWAF_OBJ_MAP);
-        EXPECT_EQ(ddwaf_object_get_size(attributes), 0);
+        EXPECT_EQ(ddwaf_object_get_size(attributes), 1);
 
         ddwaf_object_destroy(&result, alloc);
         ddwaf_subcontext_destroy(subctx);

@@ -851,7 +851,7 @@ TEST(TestContextIntegration, EphemeralNonPriorityAndPersistentPriority)
         ddwaf_subcontext subctx = ddwaf_subcontext_init(context);
 
         ddwaf_object ret;
-        EXPECT_EQ(ddwaf_context_eval(context, &persistent, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        EXPECT_EQ(ddwaf_subcontext_eval(subctx, &persistent, alloc, &ret, LONG_TIME), DDWAF_MATCH);
         EXPECT_EVENTS(ret, {.id = "2",
                                .name = "rule2",
                                .block_id = "*",

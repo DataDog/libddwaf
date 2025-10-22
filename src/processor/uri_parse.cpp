@@ -13,7 +13,6 @@
 #include "pointer.hpp"
 #include "processor/base.hpp"
 #include "uri_utils.hpp"
-#include "utils.hpp"
 
 #include <string_view>
 #include <unordered_map>
@@ -104,9 +103,9 @@ owned_object split_query_parameters(
 } // namespace
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-std::pair<owned_object, evaluation_scope> uri_parse_processor::eval_impl(
-    const unary_argument<std::string_view> &input, processor_cache & /*cache*/,
-    nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer & /*deadline*/) const
+owned_object uri_parse_processor::eval_impl(const unary_argument<std::string_view> &input,
+    processor_cache & /*cache*/, nonnull_ptr<memory::memory_resource> alloc,
+    ddwaf::timer & /*deadline*/) const
 {
     auto decomposed = uri_parse(input.value);
     if (!decomposed.has_value()) {
@@ -122,7 +121,7 @@ std::pair<owned_object, evaluation_scope> uri_parse_processor::eval_impl(
     output.emplace("query", split_query_parameters(*decomposed, alloc));
     output.emplace("fragment", decomposed->fragment);
 
-    return {std::move(output), input.scope};
+    return output;
 }
 
 } // namespace ddwaf

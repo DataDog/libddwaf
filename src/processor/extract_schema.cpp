@@ -27,7 +27,6 @@
 #include "processor/base.hpp"
 #include "processor/extract_schema.hpp"
 #include "scanner.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 namespace schema {
@@ -337,15 +336,15 @@ owned_object generate(object_view object, const std::set<const scanner *> &scann
 
 } // namespace schema
 
-std::pair<owned_object, evaluation_scope> extract_schema::eval_impl(
-    const unary_argument<object_view> &input, processor_cache & /*cache*/,
-    nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const
+owned_object extract_schema::eval_impl(const unary_argument<object_view> &input,
+    processor_cache & /*cache*/, nonnull_ptr<memory::memory_resource> alloc,
+    ddwaf::timer &deadline) const
 {
     if (!input.value.has_value()) {
         return {};
     }
 
-    return {schema::generate(input.value, scanners_, alloc, deadline), input.scope};
+    return {schema::generate(input.value, scanners_, alloc, deadline)};
 }
 
 } // namespace ddwaf

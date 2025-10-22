@@ -72,7 +72,7 @@ public:
     }
 
 protected:
-    [[nodiscard]] eval_result eval_impl(const unary_argument<std::string_view> &uri,
+    [[nodiscard]] bool eval_impl(const unary_argument<std::string_view> &uri,
         const variadic_argument<object_view> &params, condition_cache &cache,
         const object_set_ref &objects_excluded, ddwaf::timer &deadline) const;
 
