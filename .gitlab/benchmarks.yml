@@ -3,7 +3,7 @@ variables:
 
 benchmark-gcc:
   stage: benchmarks
-  when: on_success
+  rules: [when: never]
   tags: ["runner:apm-k8s-tweaked-metal"]
   image: $BASE_CI_IMAGE
   interruptible: true
@@ -35,7 +35,7 @@ benchmark-gcc:
 
 benchmark-clang:
   stage: benchmarks
-  when: on_success
+  rules: [when: never]
   tags: ["runner:apm-k8s-tweaked-metal"]
   image: $BASE_CI_IMAGE
   interruptible: true
