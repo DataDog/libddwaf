@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
 
 #include "common/gtest_utils.hpp"

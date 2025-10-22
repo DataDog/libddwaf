@@ -32,6 +32,7 @@
 #include "platform.hpp"
 #include "tokenizer/shell.hpp"
 #include "transformer/lowercase.hpp"
+#include "utils.hpp"
 
 using namespace std::literals;
 

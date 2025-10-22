@@ -4,10 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "clock.hpp"
@@ -15,6 +17,7 @@
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
+#include "object.hpp"
 #include "tokenizer/shell.hpp"
 
 namespace ddwaf {

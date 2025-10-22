@@ -6,11 +6,17 @@
 
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <re2/re2.h>
+#include <string>
+#include <string_view>
+#include <utility>
 
 #include "checksum/base.hpp"
+#include "dynamic_string.hpp"
 #include "matcher/base.hpp"
+#include "object_type.hpp"
 
 namespace ddwaf::matcher {
 

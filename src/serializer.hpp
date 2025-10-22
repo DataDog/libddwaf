@@ -8,10 +8,15 @@
 
 #include "action_mapper.hpp"
 #include "attribute_collector.hpp"
+#include "clock.hpp"
 #include "memory_resource.hpp"
 #include "obfuscator.hpp"
 #include "object.hpp"
+#include "object_store.hpp"
+#include "pointer.hpp"
 #include "rule.hpp"
+#include <utility>
+#include <vector>
 
 namespace ddwaf {
 

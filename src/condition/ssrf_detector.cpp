@@ -28,6 +28,7 @@
 #include "matcher/ip_match.hpp"
 #include "object.hpp"
 #include "uri_utils.hpp"
+#include "utils.hpp"
 
 using namespace std::literals;
 

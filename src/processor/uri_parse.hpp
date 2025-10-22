@@ -6,7 +6,19 @@
 
 #pragma once
 
+#include "argument_retriever.hpp"
+#include "clock.hpp"
+#include "expression.hpp"
+#include "memory_resource.hpp"
+#include "object.hpp"
+#include "pointer.hpp"
 #include "processor/base.hpp"
+#include <array>
+#include <memory>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace ddwaf {
 

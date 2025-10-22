@@ -6,9 +6,12 @@
 
 #pragma once
 
-#include "configuration/common/common.hpp"
+#include "condition/base.hpp"
 #include "configuration/common/raw_configuration.hpp"
 #include "expression.hpp"
+#include "transformer/base.hpp"
+#include <memory>
+#include <vector>
 
 namespace ddwaf {
 

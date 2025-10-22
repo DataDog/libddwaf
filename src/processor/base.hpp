@@ -6,17 +6,34 @@
 
 #pragma once
 
+#include <array>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
+#include <tuple>
+#include <type_traits>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <variant>
 #include <vector>
 
 #include "argument_retriever.hpp"
 #include "attribute_collector.hpp"
+#include "clock.hpp"
+#include "condition/base.hpp"
+#include "dynamic_string.hpp"
 #include "exception.hpp"
 #include "expression.hpp"
 #include "log.hpp"
 #include "memory_resource.hpp"
+#include "object.hpp"
 #include "object_store.hpp"
+#include "pointer.hpp"
+#include "target_address.hpp"
+#include "traits.hpp"
 
 namespace ddwaf {
 

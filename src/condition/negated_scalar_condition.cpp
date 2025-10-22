@@ -25,6 +25,7 @@
 #include "object_store.hpp"
 #include "transformer/base.hpp"
 #include "transformer/manager.hpp"
+#include "utils.hpp"
 
 using namespace std::literals;
 

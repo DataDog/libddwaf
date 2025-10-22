@@ -6,10 +6,16 @@
 
 #pragma once
 
+#include "exclusion/common.hpp"
 #include "iterator.hpp"
 #include "object.hpp"
 
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
 #include <utility>
+#include <variant>
+#include <vector>
 
 namespace ddwaf {
 

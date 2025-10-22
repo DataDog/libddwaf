@@ -6,8 +6,10 @@
 
 #pragma once
 
+#include <optional>
 #include <span>
 
+#include "cow_string.hpp"
 #include "object.hpp"
 #include "transformer/base.hpp"
 

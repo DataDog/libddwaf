@@ -7,6 +7,8 @@
 #pragma once
 
 #include "cow_string.hpp"
+#include <cstddef>
+#include <cstdint>
 
 namespace ddwaf::utf8 {
 

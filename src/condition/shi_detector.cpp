@@ -20,6 +20,7 @@
 #include "object.hpp"
 #include "object_type.hpp"
 #include "tokenizer/shell.hpp"
+#include "utils.hpp"
 
 using namespace std::literals;
 
