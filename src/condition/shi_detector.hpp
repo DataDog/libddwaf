@@ -18,15 +18,15 @@ public:
     explicit shi_detector(std::vector<condition_parameter> args);
 
 protected:
-    [[nodiscard]] eval_result eval_impl(const unary_argument<object_view> &resource,
+    [[nodiscard]] bool eval_impl(const unary_argument<object_view> &resource,
         const variadic_argument<object_view> &params, condition_cache &cache,
         const object_set_ref &objects_excluded, ddwaf::timer &deadline) const;
 
-    [[nodiscard]] static eval_result eval_string(const unary_argument<object_view> &resource,
+    [[nodiscard]] static bool eval_string(const unary_argument<object_view> &resource,
         const variadic_argument<object_view> &params, condition_cache &cache,
         const object_set_ref &objects_excluded, ddwaf::timer &deadline);
 
-    [[nodiscard]] static eval_result eval_array(const unary_argument<object_view> &resource,
+    [[nodiscard]] static bool eval_array(const unary_argument<object_view> &resource,
         const variadic_argument<object_view> &params, condition_cache &cache,
         const object_set_ref &objects_excluded, ddwaf::timer &deadline);
 

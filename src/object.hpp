@@ -1276,7 +1276,7 @@ public:
     object_cache_key() = default;
     // NOLINTBEGIN(google-explicit-constructor,hicpp-explicit-conversions)
     object_cache_key(object_view view) : ptr_(static_cast<const void *>(view.ptr())) {}
-    object_cache_key(owned_object obj) : ptr_(static_cast<const void *>(obj.ptr())) {}
+    object_cache_key(const owned_object &obj) : ptr_(static_cast<const void *>(obj.ptr())) {}
     object_cache_key(borrowed_object obj) : ptr_(static_cast<const void *>(obj.ptr())) {}
     // NOLINTEND(google-explicit-constructor,hicpp-explicit-conversions)
 

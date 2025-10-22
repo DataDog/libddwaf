@@ -25,7 +25,6 @@
 #include "object_store.hpp"
 #include "transformer/base.hpp"
 #include "transformer/manager.hpp"
-#include "utils.hpp"
 
 using namespace std::literals;
 
@@ -118,7 +117,7 @@ const matcher::base *get_matcher(const std::unique_ptr<matcher::base> &matcher,
 
 } // namespace
 
-eval_result negated_scalar_condition::eval(condition_cache &cache, const object_store &store,
+bool negated_scalar_condition::eval(condition_cache &cache, const object_store &store,
     const object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
@@ -132,21 +131,19 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
     }
 
     if (cache.targets.size() != 1) {
-        cache.targets.assign(
-            1, condition_cache::cache_entry{.object = {}, .scope = evaluation_scope::context()});
+        cache.targets.assign(1, object_cache_key{});
     }
 
-    auto [object, scope] = store.get_target(target_.index);
-    if (!object.has_value() ||
-        (object == cache.targets[0].object && scope == cache.targets[0].scope)) {
+    auto object = store.get_target(target_.index);
+    if (!object.has_value() || object == cache.targets[0]) {
         return {};
     }
 
-    cache.targets[0] = {.object = object, .scope = scope};
+    cache.targets[0] = object;
 
     auto target_object = object.find_key_path(target_.key_path, objects_excluded);
     if (!target_object.has_value()) {
-        return eval_result::no_match();
+        return false;
     }
 
     // The goal is to determine if the object can be evaluated and if there's a match
@@ -158,7 +155,7 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
         // If the object within the key path is not a map, we consider this an
         // object which can't be evaluated
         if (!target_object.is_map()) {
-            return eval_result::no_match();
+            return false;
         }
 
         key_iterator it(target_object, {}, objects_excluded);
@@ -171,9 +168,8 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
                                 .key_path = {target_.key_path.begin(), target_.key_path.end()}}},
                 .highlights = {},
                 .operator_name = matcher->negated_name(),
-                .operator_value = matcher->to_string(),
-                .scope = scope}};
-            return eval_result::match(scope);
+                .operator_value = matcher->to_string()}};
+            return true;
         }
     } else {
         value_iterator it(target_object, {}, objects_excluded);
@@ -200,13 +196,12 @@ eval_result negated_scalar_condition::eval(condition_cache &cache, const object_
                                 .key_path = {target_.key_path.begin(), target_.key_path.end()}}},
                 .highlights = std::move(highlights),
                 .operator_name = matcher->negated_name(),
-                .operator_value = matcher->to_string(),
-                .scope = scope}};
-            return eval_result::match(scope);
+                .operator_value = matcher->to_string()}};
+            return true;
         }
     }
 
-    return eval_result::no_match();
+    return false;
 }
 
 } // namespace ddwaf

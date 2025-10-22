@@ -41,12 +41,11 @@ TEST(TestCmdiDetector, InvalidType)
         {{"server.sys.exec.cmd", object_builder::map()}, {"server.request.query", "whatever"}});
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_FALSE(res.outcome);
+    ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestCmdiDetector, EmptyResource)
@@ -57,12 +56,11 @@ TEST(TestCmdiDetector, EmptyResource)
         {{"server.sys.exec.cmd", object_builder::array()}, {"server.request.query", "whatever"}});
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_FALSE(res.outcome);
+    ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestCmdiDetector, NoInjection)
@@ -102,17 +100,14 @@ TEST(TestCmdiDetector, NoInjection)
 
         auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
-        std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_FALSE(res.outcome) << param;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
     }
 }
 
@@ -142,17 +137,14 @@ TEST(TestCmdiDetector, NoExecutableInjection)
 
         auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
-        std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_FALSE(res.outcome) << param;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
     }
 }
 
@@ -199,17 +191,14 @@ TEST(TestCmdiDetector, NoShellInjection)
 
         auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
-        std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_FALSE(res.outcome) << resource_str;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
     }
 }
 
@@ -239,13 +228,11 @@ TEST(TestCmdiDetector, ExecutableInjectionLinux)
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome) << param;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -289,13 +276,11 @@ TEST(TestCmdiDetector, ExecutableInjectionWindows)
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome) << param;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -334,13 +319,11 @@ TEST(TestCmdiDetector, ExecutableWithSpacesInjection)
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome) << param;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -562,13 +545,11 @@ TEST(TestCmdiDetector, LinuxShellInjection)
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome) << resource_str;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -651,13 +632,11 @@ TEST(TestCmdiDetector, WindowsShellInjection)
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome) << resource_str;
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -690,13 +669,11 @@ TEST(TestCmdiDetector, ExecutableInjectionMultipleArguments)
     for (const auto &[key, value] : params) { map.emplace(key, value); }
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome) << resource[0];
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
@@ -718,8 +695,6 @@ TEST(TestCmdiDetector, EmptyExecutable)
     std::unordered_map<std::string, std::string> params{
         {"halt", "bin"}, {"-h", "usr"}, {"executable", "/usr/bin/halt"}};
 
-    std::string resource_str = generate_resource_string(resource);
-
     auto root = object_builder::map();
     auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
 
@@ -729,13 +704,11 @@ TEST(TestCmdiDetector, EmptyExecutable)
     for (const auto &[key, value] : params) { map.emplace(key, value); }
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_FALSE(res.outcome) << resource[0];
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestCmdiDetector, ShellInjectionMultipleArguments)
@@ -757,13 +730,11 @@ TEST(TestCmdiDetector, ShellInjectionMultipleArguments)
     for (const auto &[key, value] : params) { map.emplace(key, value); }
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome) << resource[0];
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");

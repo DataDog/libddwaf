@@ -38,13 +38,11 @@ TEST(TestLFIDetector, MatchBasicUnix)
             object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        EXPECT_TRUE(res.outcome);
-        EXPECT_TRUE(res.scope.is_context());
+        EXPECT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
@@ -102,13 +100,11 @@ TEST(TestLFIDetector, MatchBasicWindows)
             object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        EXPECT_TRUE(res.outcome) << path;
-        EXPECT_TRUE(res.scope.is_context());
+        EXPECT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
         EXPECT_TRUE(cache.match);
         EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
@@ -132,13 +128,11 @@ TEST(TestLFIDetector, MatchWithKeyPath)
         server.request.query: {array: [ {map: ../etc/passwd}]}})");
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    EXPECT_TRUE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    EXPECT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
@@ -152,57 +146,26 @@ TEST(TestLFIDetector, MatchWithKeyPath)
     EXPECT_STR(cache.match->highlights[0], "../etc/passwd");
 }
 
-TEST(TestLFIDetector, PartiallySubcontextMatch)
+TEST(TestLFIDetector, PartialSubcontextMatch)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
-    object_store store;
-
+    object_store ctx_store;
     {
         auto root =
             object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"}});
-        store.insert(std::move(root), evaluation_scope::context());
+        ctx_store.insert(std::move(root));
     }
 
+    auto sctx_store = object_store::from_upstream_store(ctx_store);
     {
         auto root = object_builder::map({{"server.request.query", "../../../etc/passwd"}});
-        store.insert(std::move(root), evaluation_scope::subcontext());
+        sctx_store.insert(std::move(root));
     }
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    EXPECT_TRUE(res.outcome);
-    EXPECT_TRUE(res.scope.is_subcontext());
-
-    EXPECT_TRUE(cache.match);
-    EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
-    EXPECT_STR(cache.match->args[0].resolved, "/var/www/html/../../../etc/passwd");
-    EXPECT_TRUE(cache.match->args[0].key_path.empty());
-
-    EXPECT_STRV(cache.match->args[1].address, "server.request.query");
-    EXPECT_STR(cache.match->args[1].resolved, "../../../etc/passwd");
-    EXPECT_TRUE(cache.match->args[1].key_path.empty());
-
-    EXPECT_STR(cache.match->highlights[0], "../../../etc/passwd");
-}
-
-TEST(TestLFIDetector, SubcontextMatch)
-{
-    lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
-
-    object_store store;
-
-    auto root = object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
-        {"server.request.query", "../../../etc/passwd"}});
-
-    store.insert(std::move(root), evaluation_scope::subcontext());
-
-    ddwaf::timer deadline{2s};
-    condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    EXPECT_TRUE(res.outcome);
-    EXPECT_TRUE(res.scope.is_subcontext());
+    EXPECT_TRUE(cond.eval(cache, sctx_store, {}, {}, deadline));
 
     EXPECT_TRUE(cache.match);
     EXPECT_STRV(cache.match->args[0].address, "server.io.fs.file");
@@ -235,13 +198,11 @@ TEST(TestLFIDetector, NoMatchUnix)
             object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        EXPECT_FALSE(res.outcome) << path;
-        EXPECT_TRUE(res.scope.is_context()) << path;
+        EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
         EXPECT_FALSE(cache.match);
     }
 }
@@ -274,13 +235,11 @@ TEST(TestLFIDetector, NoMatchWindows)
             object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        EXPECT_FALSE(res.outcome) << path;
-        EXPECT_TRUE(res.scope.is_context()) << path;
+        EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
         EXPECT_FALSE(cache.match);
     }
 }
@@ -295,17 +254,14 @@ TEST(TestLFIDetector, NoMatchExcludedPath)
     auto params_map = root.emplace(
         "server.request.query", object_builder::map({{"endpoint", "../../../etc/passwd"}}));
 
-    std::unordered_set<object_cache_key> context{params_map.at(0)};
-    object_set_ref exclusion{.context = context, .subcontext = {}};
+    std::unordered_set<object_cache_key> exclusion{params_map.at(0)};
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, exclusion, {}, deadline);
-    EXPECT_FALSE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    EXPECT_FALSE(cond.eval(cache, store, exclusion, {}, deadline));
     EXPECT_FALSE(cache.match);
 }
 
@@ -316,17 +272,14 @@ TEST(TestLFIDetector, NoMatchExcludedAddress)
     auto root = object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
         {"server.request.query", object_builder::map({{"endpoint", "../../../etc/passwd"}})}});
 
-    std::unordered_set<object_cache_key> context{root.at(1)};
-    object_set_ref exclusion{.context = context, .subcontext = {}};
+    std::unordered_set<object_cache_key> exclusion{root.at(1)};
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, exclusion, {}, deadline);
-    EXPECT_FALSE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    EXPECT_FALSE(cond.eval(cache, store, exclusion, {}, deadline));
     EXPECT_FALSE(cache.match);
 }
 
@@ -337,17 +290,14 @@ TEST(TestLFIDetector, Timeout)
     auto root = object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
         {"server.request.query", object_builder::map({{"endpoint", "../../../etc/passwd"}})}});
 
-    std::unordered_set<object_cache_key> context{root.at(1)};
-    object_set_ref exclusion{.context = context, .subcontext = {}};
+    std::unordered_set<object_cache_key> exclusion{root.at(1)};
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, exclusion, {}, deadline);
-    EXPECT_FALSE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    EXPECT_FALSE(cond.eval(cache, store, exclusion, {}, deadline));
     EXPECT_FALSE(cache.match);
 }
 
@@ -359,16 +309,12 @@ TEST(TestLFIDetector, NoParams)
         {"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
     });
 
-    object_set_ref exclusion{.context = {}, .subcontext = {}};
-
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, exclusion, {}, deadline);
-    EXPECT_FALSE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
     EXPECT_FALSE(cache.match);
 }
 

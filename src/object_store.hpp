@@ -6,86 +6,68 @@
 
 #pragma once
 
-#include <unordered_set>
-
 #include "context_allocator.hpp"
 #include "object.hpp"
 #include "target_address.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
 class object_store {
 public:
     object_store() = default;
+
     ~object_store() = default;
-    object_store(const object_store &) = default;
+    object_store(const object_store &other) = delete;
     object_store(object_store &&) = default;
-    object_store &operator=(const object_store &) = delete;
-    object_store &operator=(object_store &&) = delete;
+    object_store &operator=(const object_store &other) = delete;
+    object_store &operator=(object_store &&) = default;
 
-    bool insert(owned_object &&input, evaluation_scope scope);
+    bool insert(owned_object &&input);
+    bool insert(map_view input);
+    bool insert(target_index target, std::string_view key, owned_object &&input);
 
-    // This function doesn't clear the latest batch
-    bool insert(
-        target_index target, std::string_view key, owned_object &&input, evaluation_scope scope);
-
-    // Used for testing
-    bool insert(map_view input, evaluation_scope scope);
-
-    std::pair<object_view, evaluation_scope> get_target(target_index target) const
+    [[nodiscard]] object_view get_target(target_index target) const
     {
-        auto it = objects_.find(target);
-        if (it != objects_.end()) {
-            return {it->second.first, it->second.second};
+        auto it = targets_.find(target);
+        if (it != targets_.end()) {
+            return it->second;
         }
-        return {nullptr, evaluation_scope::context()};
+        return nullptr;
     }
 
     // Used for testing
-    std::pair<object_view, evaluation_scope> get_target(std::string_view name) const
+    [[nodiscard]] object_view get_target(std::string_view name) const
     {
         return get_target(get_target_index(name));
     }
 
-    bool has_target(target_index target) const { return objects_.contains(target); }
-
-    bool is_new_target(const target_index target) const { return latest_batch_.contains(target); }
-
-    bool has_new_targets() const { return !latest_batch_.empty(); }
-
-    bool empty() const { return objects_.empty(); }
-
+    [[nodiscard]] bool has_target(target_index target) const { return targets_.contains(target); }
+    [[nodiscard]] bool is_new_target(const target_index target) const
+    {
+        return latest_batch_.contains(target);
+    }
+    [[nodiscard]] bool has_new_targets() const { return !latest_batch_.empty(); }
+    [[nodiscard]] bool empty() const { return targets_.empty(); }
     void clear_last_batch() { latest_batch_.clear(); }
 
-    void clear_subcontext_objects()
+    // An object store created from an upstream store assumes that the original
+    // store retains ownership and will outlive this store, therefore only the
+    // targets are copied.
+    static object_store from_upstream_store(const object_store &upstream)
     {
-        // Clear any subcontext targets
-        for (auto target : subcontext_targets_) {
-            auto it = objects_.find(target);
-            if (it != objects_.end()) {
-                objects_.erase(it);
-            }
-        }
-        subcontext_targets_.clear();
-
-        // Free subcontext objects and targets
-        subcontext_objects_.clear();
+        object_store store;
+        store.latest_batch_ = upstream.latest_batch_;
+        store.targets_ = upstream.targets_;
+        return store;
     }
 
-protected:
-    bool insert_target_helper(
-        target_index target, std::string_view key, object_view view, evaluation_scope scope);
+private:
+    bool insert_target_helper(target_index target, std::string_view key, object_view view);
 
     memory::list<owned_object> input_objects_;
-    std::list<owned_object> subcontext_objects_;
-
-    std::unordered_set<target_index> subcontext_targets_;
 
     memory::unordered_set<target_index> latest_batch_;
-    memory::unordered_map<target_index, std::pair<object_view, evaluation_scope>> objects_;
-
-    friend class scoped_object_store;
+    memory::unordered_map<target_index, object_view> targets_;
 };
 
 } // namespace ddwaf

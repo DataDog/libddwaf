@@ -37,8 +37,7 @@ public:
     ~input_filter() = default;
 
     std::optional<excluded_set> match(const object_store &store, cache_type &cache,
-        const matcher_mapper &dynamic_matchers, evaluation_scope scope,
-        ddwaf::timer &deadline) const;
+        const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const;
 
     std::string_view get_id() { return id_; }
 

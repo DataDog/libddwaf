@@ -43,13 +43,11 @@ TEST(TestScalarCondition, NoMatch)
     auto root = object_builder::map({{"server.request.uri.raw", owned_object{}}});
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_FALSE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestScalarCondition, Timeout)
@@ -60,7 +58,7 @@ TEST(TestScalarCondition, Timeout)
     auto root = object_builder::map({{"server.request.uri.raw", owned_object{}}});
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
@@ -75,13 +73,11 @@ TEST(TestScalarCondition, SimpleMatch)
     auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestScalarCondition, CachedMatch)
@@ -96,20 +92,16 @@ TEST(TestScalarCondition, CachedMatch)
 
     {
         object_store store;
-        store.insert(root, evaluation_scope::context());
+        store.insert(root);
 
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome);
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
     }
 
     {
         object_store store;
-        store.insert(root, evaluation_scope::context());
+        store.insert(root);
 
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_FALSE(res.outcome);
-        EXPECT_TRUE(res.scope.is_context());
+        ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
     }
 }
 
@@ -125,46 +117,11 @@ TEST(TestScalarCondition, SimpleMatchOnKeys)
         {{"server.request.uri.raw", object_builder::map({{"hello", "hello"}})}});
 
     object_store store;
-    store.insert(std::move(root), evaluation_scope::context());
+    store.insert(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
-    auto res = cond.eval(cache, store, {}, {}, deadline);
-    ASSERT_TRUE(res.outcome);
-    EXPECT_TRUE(res.scope.is_context());
-}
-
-TEST(TestScalarCondition, SimpleSubcontextMatch)
-{
-    scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
-        {gen_variadic_param("server.request.uri.raw")}};
-
-    auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
-
-    object_store store;
-    {
-        defer cleanup{[&]() { store.clear_subcontext_objects(); }};
-
-        store.insert(root.clone(), evaluation_scope::subcontext());
-
-        ddwaf::timer deadline{2s};
-        condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome);
-        EXPECT_TRUE(res.scope.is_subcontext());
-    }
-
-    {
-        defer cleanup{[&]() { store.clear_subcontext_objects(); }};
-
-        store.insert(std::move(root), evaluation_scope::subcontext());
-
-        ddwaf::timer deadline{2s};
-        condition_cache cache;
-        auto res = cond.eval(cache, store, {}, {}, deadline);
-        ASSERT_TRUE(res.outcome);
-        EXPECT_TRUE(res.scope.is_subcontext());
-    }
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 } // namespace

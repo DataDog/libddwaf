@@ -52,14 +52,13 @@ void match_path_and_input(const std::vector<std::pair<std::string, ssrf_sample>>
             {"server.request.query", yaml_to_object<owned_object>(sample.yaml)}});
 
         object_store store;
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
         auto res = cond.eval(cache, store, {}, {}, deadline);
         if (match) {
-            ASSERT_TRUE(res.outcome) << path;
-            EXPECT_TRUE(res.scope.is_context());
+            ASSERT_TRUE(res) << path;
 
             EXPECT_TRUE(cache.match);
             if (cache.match) { // Silence linter
@@ -85,7 +84,7 @@ void match_path_and_input(const std::vector<std::pair<std::string, ssrf_sample>>
                 EXPECT_TRUE(cache.match->args[1].key_path == sample.key_path) << path;
             }
         } else {
-            EXPECT_FALSE(res.outcome) << path;
+            EXPECT_FALSE(res) << path;
             EXPECT_FALSE(cache.match);
         }
     }

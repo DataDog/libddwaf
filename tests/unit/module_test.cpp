@@ -48,15 +48,15 @@ TEST(TestModuleUngrouped, SingleRuleMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 1);
     }
@@ -64,11 +64,11 @@ TEST(TestModuleUngrouped, SingleRuleMatch)
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(root, evaluation_scope::context());
+        store.insert(root);
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        mod.eval(results, store, cache, {}, {}, {}, deadline);
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        mod.eval(results, store, cache, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::none);
         EXPECT_EQ(results.size(), 0);
     }
@@ -113,15 +113,15 @@ TEST(TestModuleUngrouped, MultipleMonitoringRuleMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 2);
         EXPECT_TRUE(contains(results, "id1"));
@@ -131,11 +131,11 @@ TEST(TestModuleUngrouped, MultipleMonitoringRuleMatch)
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(root, evaluation_scope::context());
+        store.insert(root);
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        mod.eval(results, store, cache, {}, {}, {}, deadline);
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        mod.eval(results, store, cache, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::none);
         EXPECT_EQ(results.size(), 0);
     }
@@ -181,15 +181,15 @@ TEST(TestModuleUngrouped, BlockingRuleMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id2"));
@@ -238,15 +238,15 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id1"));
@@ -255,11 +255,11 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
     // Check that we can still match the blocking rule
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.2"}});
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
     }
@@ -308,15 +308,15 @@ TEST(TestModuleUngrouped, BlockingRuleMatchBasePrecedence)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id2"));
@@ -368,15 +368,15 @@ TEST(TestModuleUngrouped, BlockingRuleMatchUserPrecedence)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id1"));
@@ -407,15 +407,15 @@ TEST(TestModuleUngrouped, NonExpiringModule)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline{0s};
-        mod.eval(results, store, cache, {}, {}, {}, deadline);
+        mod.eval(results, store, cache, {}, {}, deadline);
 
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id"));
@@ -444,16 +444,15 @@ TEST(TestModuleUngrouped, ExpiringModule)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline{0s};
-        EXPECT_THROW(
-            mod.eval(results, store, cache, {}, {}, {}, deadline), ddwaf::timeout_exception);
+        EXPECT_THROW(mod.eval(results, store, cache, {}, {}, deadline), ddwaf::timeout_exception);
     }
 }
 
@@ -483,15 +482,15 @@ TEST(TestModuleUngrouped, DisabledRules)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::none);
     }
 }
@@ -535,15 +534,15 @@ TEST(TestModuleGrouped, MultipleGroupsMonitoringRuleMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 2);
         EXPECT_TRUE(contains(results, "id1"));
@@ -591,15 +590,15 @@ TEST(TestModuleGrouped, MultipleGroupsBlockingRuleMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id2"));
@@ -646,15 +645,15 @@ TEST(TestModuleGrouped, SingleGroupBlockingRuleMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id2"));
@@ -700,15 +699,15 @@ TEST(TestModuleGrouped, SingleGroupMonitoringRuleMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id1"));
@@ -755,15 +754,15 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupMonitoringUserMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id2"));
@@ -810,15 +809,15 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupMonitoringBaseMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id1"));
@@ -866,15 +865,15 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingBaseMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id1"));
@@ -922,15 +921,15 @@ TEST(TestModuleGrouped, UserPrecedenceSingleGroupBlockingUserMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id2"));
@@ -978,15 +977,15 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingBaseMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id1"));
@@ -1034,15 +1033,15 @@ TEST(TestModuleGrouped, BasePrecedenceSingleGroupBlockingUserMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id2"));
@@ -1089,15 +1088,15 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsMonitoringMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 2);
         EXPECT_TRUE(contains(results, "id1"));
@@ -1145,15 +1144,15 @@ TEST(TestModuleGrouped, UserPrecedenceMultipleGroupsBlockingMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id2"));
@@ -1200,15 +1199,15 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsMonitoringMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 2);
         EXPECT_TRUE(contains(results, "id1"));
@@ -1256,15 +1255,15 @@ TEST(TestModuleGrouped, BasePrecedenceMultipleGroupsBlockingMatch)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id1"));
@@ -1401,14 +1400,14 @@ TEST(TestModuleGrouped, MultipleGroupsRulesAndMatches)
         rule_module_cache cache;
         mod.init_cache(cache);
 
-        ddwaf::object_store store;
+        object_store store;
 
         auto root = object_builder::map({{"http.client_ip", "192.168.0.2"}});
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 4);
         EXPECT_TRUE(contains(results, "id2"));
@@ -1503,15 +1502,15 @@ TEST(TestModuleGrouped, MultipleGroupsSingleMatchPerGroup)
         rule_module_cache cache;
         mod.init_cache(cache);
 
-        ddwaf::object_store store;
+        object_store store;
 
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
         EXPECT_EQ(results.size(), 3);
 
@@ -1606,15 +1605,15 @@ TEST(TestModuleGrouped, MultipleGroupsOnlyBlockingMatch)
         rule_module_cache cache;
         mod.init_cache(cache);
 
-        ddwaf::object_store store;
+        object_store store;
 
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::block);
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id3"));
@@ -1647,15 +1646,15 @@ TEST(TestModuleGrouped, DisabledRules)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
-        auto verdict = mod.eval(results, store, cache, {}, {}, {}, deadline);
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
         EXPECT_EQ(verdict, rule_module::verdict_type::none);
     }
 }
@@ -1682,15 +1681,15 @@ TEST(TestModuleGrouped, NonExpiringModule)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline{0s};
-        mod.eval(results, store, cache, {}, {}, {}, deadline);
+        mod.eval(results, store, cache, {}, {}, deadline);
 
         EXPECT_EQ(results.size(), 1);
         EXPECT_TRUE(contains(results, "id"));
@@ -1719,16 +1718,15 @@ TEST(TestModuleGrouped, ExpiringModule)
     rule_module_cache cache;
     mod.init_cache(cache);
 
-    ddwaf::object_store store;
+    object_store store;
     {
         auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
 
-        store.insert(std::move(root), evaluation_scope::context());
+        store.insert(std::move(root));
 
         std::vector<rule_result> results;
         ddwaf::timer deadline{0s};
-        EXPECT_THROW(
-            mod.eval(results, store, cache, {}, {}, {}, deadline), ddwaf::timeout_exception);
+        EXPECT_THROW(mod.eval(results, store, cache, {}, {}, deadline), ddwaf::timeout_exception);
     }
 }
 

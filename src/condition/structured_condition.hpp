@@ -18,7 +18,7 @@ namespace ddwaf {
 
 template <typename Class, typename... Args>
 function_traits<Class::param_names.size(), Class, Args...> make_eval_traits(
-    eval_result (Class::*)(Args...) const);
+    bool (Class::*)(Args...) const);
 
 template <typename Self> class base_impl : public base_condition {
 public:
@@ -29,7 +29,7 @@ public:
     base_impl(base_impl &&) noexcept = default;
     base_impl &operator=(base_impl &&) noexcept = default;
 
-    [[nodiscard]] eval_result eval(condition_cache &cache, const object_store &store,
+    [[nodiscard]] bool eval(condition_cache &cache, const object_store &store,
         const object_set_ref &objects_excluded, const matcher_mapper & /*unused*/,
         ddwaf::timer &deadline) const override
     {
@@ -81,14 +81,6 @@ public:
     }
 
 protected:
-    template <typename T, typename... Ts>
-    static evaluation_scope resolve_scope(const T &first, Ts... rest)
-    {
-        evaluation_scope result = first.scope;
-        ((result = result.has_lower_precedence_than(rest.scope) ? result : rest.scope), ...);
-        return result;
-    }
-
     template <size_t I, size_t... Is, typename Args>
     bool resolve_arguments(const object_store &store, const object_set_ref &objects_excluded,
         Args &args, std::index_sequence<I, Is...> /*unused*/) const

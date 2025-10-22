@@ -183,12 +183,12 @@ TEST(TestKeyIterator, TestMapMultipleNullAndInvalid)
         }
 
         {
-            auto index = std::to_string(i * 3 + 1);
+            auto index = std::to_string((i * 3) + 1);
             object.emplace("key" + index, owned_object::make_null());
         }
 
         {
-            auto index = std::to_string(i * 3 + 2);
+            auto index = std::to_string((i * 3) + 2);
             object.emplace("key" + index, owned_object{});
         }
     }
@@ -212,7 +212,7 @@ TEST(TestKeyIterator, TestMapMultipleNullAndInvalid)
         ++it;
 
         {
-            auto index = std::to_string(i * 3 + 1);
+            auto index = std::to_string((i * 3) + 1);
             std::string key = "key" + index;
 
             EXPECT_TRUE((bool)it);
@@ -225,7 +225,7 @@ TEST(TestKeyIterator, TestMapMultipleNullAndInvalid)
         ++it;
 
         {
-            auto index = std::to_string(i * 3 + 2);
+            auto index = std::to_string((i * 3) + 2);
             std::string key = "key" + index;
 
             EXPECT_TRUE((bool)it);
@@ -586,7 +586,7 @@ TEST(TestKeyIterator, TestExcludeSingleObject)
 
     std::unordered_set<object_cache_key> persistent{object.at(0)};
 
-    object_set_ref exclude{persistent, {}};
+    object_set_ref exclude{persistent};
     ddwaf::key_iterator it(object, {}, exclude);
 
     EXPECT_FALSE(it);
@@ -600,7 +600,7 @@ TEST(TestKeyIterator, TestExcludeMultipleObjects)
         root.emplace("other", object_builder::map({{"hello_key", "hello"}, {"bye_key", "bye"}}));
 
     std::unordered_set<object_cache_key> persistent{root.at(0), map.at(1)};
-    object_set_ref exclude{persistent, {}};
+    object_set_ref exclude{persistent};
     ddwaf::key_iterator it(root, {}, exclude);
 
     EXPECT_TRUE(it);
@@ -630,7 +630,7 @@ TEST(TestKeyIterator, TestExcludeObjectInKeyPath)
     child.emplace("child", "value");
 
     std::unordered_set<object_cache_key> persistent{child.at(0)};
-    object_set_ref exclude{persistent, {}};
+    object_set_ref exclude{persistent};
     std::vector<std::string> key_path{"parent", "child"};
     ddwaf::key_iterator it(root, key_path, exclude);
 
@@ -642,7 +642,7 @@ TEST(TestKeyIterator, TestExcludeRootOfKeyPath)
     auto root = object_builder::map({{"parent", object_builder::map({{"child", "value"}})}});
 
     std::unordered_set<object_cache_key> persistent{root.at(0)};
-    object_set_ref exclude{persistent, {}};
+    object_set_ref exclude{persistent};
     std::vector<std::string> key_path{"parent", "child"};
     ddwaf::key_iterator it(root, key_path, exclude);
 

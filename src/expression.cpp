@@ -12,51 +12,40 @@
 #include "expression.hpp"
 #include "matcher/base.hpp"
 #include "object_store.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
-eval_result expression::eval(cache_type &cache, const object_store &store,
+bool expression::eval(cache_type &cache, const object_store &store,
     const object_set_ref &objects_excluded, const matcher_mapper &dynamic_matchers,
-    evaluation_scope scope, ddwaf::timer &deadline) const
+    ddwaf::timer &deadline) const
 {
     if (conditions_.empty()) {
-        // Since there's no conditions, we use the default (context) scope
-        return {.outcome = true, .scope = evaluation_scope::context()};
+        return true;
     }
 
-    if (expression::get_result(cache, scope)) {
-        return {.outcome = true, .scope = scope};
+    if (expression::get_result(cache)) {
+        return true;
     }
 
     if (cache.conditions.size() < conditions_.size()) {
         cache.conditions.assign(conditions_.size(), condition_cache{});
     }
 
-    evaluation_scope final_scope;
     for (unsigned i = 0; i < conditions_.size(); ++i) {
         const auto &cond = conditions_[i];
         auto &cond_cache = cache.conditions[i];
 
-        if (cond_cache.match.has_value() &&
-            cond_cache.match->scope.has_higher_precedence_or_is_equal_to(scope)) {
+        if (cond_cache.match.has_value()) {
             continue;
         }
 
-        auto [res, cond_eval_scope] =
-            cond->eval(cond_cache, store, objects_excluded, dynamic_matchers, deadline);
-        if (!res) {
-            return {.outcome = false, .scope = evaluation_scope::context()};
-        }
-
-        if (cond_eval_scope.is_subcontext()) {
-            final_scope = cond_eval_scope;
+        if (!cond->eval(cond_cache, store, objects_excluded, dynamic_matchers, deadline)) {
+            return false;
         }
     }
     cache.result = true;
-    cache.scope = final_scope;
 
-    return {.outcome = true, .scope = final_scope};
+    return true;
 }
 
 } // namespace ddwaf

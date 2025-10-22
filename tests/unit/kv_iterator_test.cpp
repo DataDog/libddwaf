@@ -98,7 +98,7 @@ TEST(TestKVIterator, TestArrayMultipleItems)
     for (unsigned i = 0; i < 50; i++) { object.emplace_back(std::to_string(i)); }
 
     std::unordered_set<object_cache_key> persistent;
-    object_set_ref exclude{persistent, {}};
+    object_set_ref exclude{persistent};
     ddwaf::kv_iterator it(object, {}, exclude);
 
     unsigned index = 0;
@@ -128,7 +128,7 @@ TEST(TestKVIterator, TestArrayMultipleNullAndInvalid)
     EXPECT_EQ(object.size(), 75);
 
     std::unordered_set<object_cache_key> persistent;
-    object_set_ref exclude{persistent, {}};
+    object_set_ref exclude{persistent};
     ddwaf::kv_iterator it(object, {}, exclude);
 
     // Null and invalid objects should be skipped
@@ -156,7 +156,7 @@ TEST(TestKVIterator, TestDeepArray)
     }
 
     std::unordered_set<object_cache_key> persistent;
-    object_set_ref exclude{persistent, {}};
+    object_set_ref exclude{persistent};
     ddwaf::kv_iterator it(object, {}, exclude);
     for (unsigned i = 0; i < 10; i++) {
         auto index = std::to_string(i);
@@ -735,7 +735,7 @@ TEST(TestKVIterator, TestExcludeSingleObject)
 
     std::unordered_set<object_cache_key> persistent{object.at(0)};
 
-    object_set_ref exclude{persistent, {}};
+    object_set_ref exclude{persistent};
     ddwaf::kv_iterator it(object, {}, exclude);
 
     EXPECT_FALSE(it);
@@ -749,7 +749,7 @@ TEST(TestKVIterator, TestExcludeMultipleObjects)
         root.emplace("other", object_builder::map({{"hello_key", "hello"}, {"bye_key", "bye"}}));
 
     std::unordered_set<object_cache_key> persistent{root.at(0), map.at(1)};
-    object_set_ref exclude{persistent, {}};
+    object_set_ref exclude{persistent};
     ddwaf::kv_iterator it(root, {}, exclude);
 
     EXPECT_TRUE(it);
@@ -786,7 +786,7 @@ TEST(TestKVIterator, TestExcludeObjectInKeyPath)
     child.emplace("child", "value");
 
     std::unordered_set<object_cache_key> persistent{child.at(0)};
-    object_set_ref exclude{persistent, {}};
+    object_set_ref exclude{persistent};
     std::vector<std::string> key_path{"parent", "child"};
     ddwaf::kv_iterator it(root, key_path, exclude);
 
@@ -798,7 +798,7 @@ TEST(TestKVIterator, TestExcludeRootOfKeyPath)
     auto root = object_builder::map({{"parent", object_builder::map({{"child", "value"}})}});
 
     std::unordered_set<object_cache_key> persistent{root.at(0)};
-    object_set_ref exclude{persistent, {}};
+    object_set_ref exclude{persistent};
     std::vector<std::string> key_path{"parent", "child"};
     ddwaf::kv_iterator it(root, key_path, exclude);
 

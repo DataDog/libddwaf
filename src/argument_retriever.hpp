@@ -25,7 +25,6 @@ template <typename T> struct unary_argument {
     // by either the condition (condition_target) or the processor (processor_target).
     std::string_view address{};
     std::span<const std::string> key_path;
-    evaluation_scope scope{evaluation_scope::context()};
     T value;
 };
 
@@ -71,7 +70,7 @@ template <typename T> struct argument_retriever<unary_argument<T>> : default_arg
     static std::optional<unary_argument<T>> retrieve(
         const object_store &store, const object_set_ref &objects_excluded, const TargetType &target)
     {
-        auto [object, scope] = store.get_target(target.index);
+        auto object = store.get_target(target.index);
         if (!object.has_value() || objects_excluded.contains(object)) {
             return std::nullopt;
         }
@@ -81,7 +80,7 @@ template <typename T> struct argument_retriever<unary_argument<T>> : default_arg
             return std::nullopt;
         }
 
-        return unary_argument<T>{target.name, target.key_path, scope, std::move(converted.value())};
+        return unary_argument<T>{target.name, target.key_path, std::move(converted.value())};
     }
 };
 
