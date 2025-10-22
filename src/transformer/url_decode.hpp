@@ -6,7 +6,9 @@
 
 #pragma once
 
+#include "cow_string.hpp"
 #include "transformer/base.hpp"
+#include <string_view>
 
 namespace ddwaf::transformer {
 

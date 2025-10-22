@@ -6,15 +6,17 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
+#include <variant>
 #include <vector>
 
-#include "configuration/common/parser_exception.hpp"
 #include "object.hpp"
 #include "semver.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 

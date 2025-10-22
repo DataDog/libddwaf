@@ -6,11 +6,16 @@
 
 #pragma once
 
+#include <cstdint>
+#include <cstdlib>
+#include <string>
 #include <string_view>
 #include <type_traits>
 #include <utility>
 
+#include "dynamic_string.hpp"
 #include "matcher/base.hpp"
+#include "object_type.hpp"
 
 namespace ddwaf::matcher {
 

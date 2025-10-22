@@ -6,13 +6,22 @@
 
 #pragma once
 
+#include <array>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <radixlib.h>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <utility>
 #include <vector>
 
+#include "dynamic_string.hpp"
 #include "indexed_multivector.hpp"
 #include "ip_utils.hpp"
 #include "matcher/base.hpp"
+#include "object_type.hpp"
 
 namespace ddwaf::matcher {
 

@@ -7,6 +7,13 @@
 #pragma once
 
 #include "configuration/common/configuration.hpp"
+#include "obfuscator.hpp"
+#include "rule.hpp"
+#include "scanner.hpp"
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace ddwaf {
 

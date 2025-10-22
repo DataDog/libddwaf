@@ -6,11 +6,14 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <fmt/format.h>
 #include <stdexcept>
+#include <string>
 #include <string_view>
-#include <variant>
 
+#include "fmt/core.h"
 #include "utils.hpp"
 
 namespace ddwaf {

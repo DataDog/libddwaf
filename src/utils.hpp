@@ -6,8 +6,10 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <charconv>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <iomanip>

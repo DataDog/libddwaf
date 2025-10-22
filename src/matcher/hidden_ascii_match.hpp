@@ -6,7 +6,11 @@
 
 #pragma once
 
+#include "dynamic_string.hpp"
 #include "matcher/base.hpp"
+#include "object_type.hpp"
+#include <string_view>
+#include <utility>
 
 namespace ddwaf::matcher {
 

@@ -8,6 +8,8 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstddef>
+#include <cstdint>
 
 #if defined __has_builtin
 #  if __has_builtin(__builtin_add_overflow)

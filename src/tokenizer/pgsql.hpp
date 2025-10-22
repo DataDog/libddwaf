@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <re2/re2.h>
 #include <string_view>
+#include <unordered_set>
 #include <vector>
 
 #include "tokenizer/sql_base.hpp"

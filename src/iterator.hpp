@@ -6,14 +6,18 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <span>
 #include <string>
+#include <string_view>
+#include <utility>
+#include <variant>
 #include <vector>
 
 #include "exclusion/common.hpp"
 #include "object.hpp"
 #include "object_type.hpp"
-#include "utils.hpp"
 
 // Eventually object will be a class rather than a namespace
 namespace ddwaf {
