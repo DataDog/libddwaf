@@ -713,4 +713,44 @@ TEST(TestValueIterator, TestExcludeRootOfKeyPath)
 
     EXPECT_FALSE(it);
 }
+
+TEST(TestValueIterator, TestNegativeIndexInPath)
+{
+    auto object = object_builder::map(
+        {{"root", object_builder::map({{"arr", object_builder::array({"a", "b", "c"})}})}});
+
+    std::unordered_set<object_cache_key> context;
+    object_set_ref exclude{context};
+
+    std::vector<std::variant<std::string, int64_t>> key_path{"root", "arr", -1};
+    ddwaf::value_iterator it(object, key_path, exclude);
+
+    EXPECT_TRUE(it);
+    EXPECT_STR((*it).as<std::string_view>(), "c");
+
+    auto it_path = it.get_current_path();
+    std::vector<std::variant<std::string_view, int64_t>> expected_path = {"root", "arr", -1};
+    EXPECT_EQ(it_path, expected_path);
+    EXPECT_FALSE(++it);
+}
+
+TEST(TestValueIterator, TestPositiveIndexInPath)
+{
+    auto object = object_builder::map(
+        {{"root", object_builder::map({{"arr", object_builder::array({"a", "b", "c"})}})}});
+
+    std::unordered_set<object_cache_key> context;
+    object_set_ref exclude{context};
+
+    std::vector<std::variant<std::string, int64_t>> key_path{"root", "arr", 1};
+    ddwaf::value_iterator it(object, key_path, exclude);
+
+    EXPECT_TRUE(it);
+    EXPECT_STR((*it).as<std::string_view>(), "b");
+
+    auto it_path = it.get_current_path();
+    std::vector<std::variant<std::string_view, int64_t>> expected_path = {"root", "arr", 1};
+    EXPECT_EQ(it_path, expected_path);
+    EXPECT_FALSE(++it);
+}
 } // namespace
