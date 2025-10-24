@@ -119,6 +119,8 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
         result_object, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
                                               {"type", "auto"}, {"block_id", "*"}}},
                            {"monitor_request", {}}});
+
+    std::cout << test::object_to_json(result_object.ref()) << '\n';
 }
 
 TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
@@ -669,6 +671,8 @@ TEST(TestEventSerializer, SerializeMultiArgMatchWithKeyPaths)
     result_serializer serializer(nullptr, action_definitions);
 
     std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"}};
+    std::vector<std::string> actions;
+    std::vector<rule_attribute> attributes;
 
     rule_result result{
         .event = rule_event{.rule{
@@ -688,8 +692,8 @@ TEST(TestEventSerializer, SerializeMultiArgMatchWithKeyPaths)
                 .operator_name = "op",
                 .operator_value = "val"}}},
         .action_override = {},
-        .actions = {},
-        .attributes = {},
+        .actions = actions,
+        .attributes = attributes,
     };
 
     std::vector<rule_result> results{result};
@@ -710,6 +714,8 @@ TEST(TestEventSerializer, SerializeMultiArgMatchWithKeyPaths)
                 .args = {
                     {.name = "first", .value = "v1"sv, .address = "addr1", .path = {"root", "k"}},
                     {.name = "second", .value = "v2"sv, .address = "addr2", .path = {"arr"}}}}}});
+
+    std::cout << test::object_to_json(result_object.ref()) << '\n';
 }
 
 } // namespace
