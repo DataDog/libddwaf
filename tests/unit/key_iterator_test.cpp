@@ -585,6 +585,50 @@ TEST(TestKeyIterator, TestContainerMixInvalidPath)
     }
 }
 
+TEST(TestKeyIterator, TestNegativeIndexInPath)
+{
+    auto object = yaml_to_object<owned_object>(R"(
+        {
+            root: {
+                key0: [value0_0, value0_1, { key0_0: value0_2 }, value0_3],
+                key1: value1_0,
+                key2: {
+                    key2_0: value2_0,
+                    key2_1: value2_1,
+                    key2_2: [value2_2, value2_3]
+                }
+            }
+        }
+    )");
+
+    object_set_ref exclude;
+    std::vector<std::variant<std::string, int64_t>> key_path{"root", "key2", "key2_2", -1};
+    ddwaf::key_iterator it(object, key_path, exclude);
+    EXPECT_FALSE((bool)it);
+}
+
+TEST(TestKeyIterator, TestIntInPathSucceeds)
+{
+    auto object = yaml_to_object<owned_object>(R"(
+        {
+            root: {
+                key0: [value0_0, value0_1, { key0_0: value0_2 }, value0_3 ]
+            }
+        }
+    )");
+
+    object_set_ref exclude;
+    std::vector<std::variant<std::string, int64_t>> key_path{"root", "key0", 2};
+    ddwaf::key_iterator it(object, key_path, exclude);
+    EXPECT_TRUE((bool)it);
+    EXPECT_STR((*it).as<std::string_view>(), "key0_0");
+
+    auto it_path = it.get_current_path();
+    std::vector<std::variant<std::string_view, int64_t>> expected_path = {
+        "root", "key0", 2, "key0_0"};
+    EXPECT_EQ(it_path, expected_path);
+}
+
 TEST(TestKeyIterator, TestExcludeSingleObject)
 {
     auto object = object_builder::map({{"key", "value"}});

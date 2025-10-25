@@ -119,6 +119,8 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
         result_object, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
                                               {"type", "auto"}, {"block_id", "*"}}},
                            {"monitor_request", {}}});
+
+    std::cout << test::object_to_json(result_object.ref()) << '\n';
 }
 
 TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
@@ -661,6 +663,59 @@ TEST(TestEventSerializer, StackTraceAction)
         EXPECT_TRUE(it->second.contains("stack_id"));
         EXPECT_EQ(std::get<std::string>(it->second.at("stack_id")), stack_id);
     }
+}
+
+TEST(TestEventSerializer, SerializeMultiArgMatchWithKeyPaths)
+{
+    auto action_definitions = action_mapper_builder().build();
+    result_serializer serializer(nullptr, action_definitions);
+
+    std::unordered_map<std::string, std::string> tags{{"type", "test"}, {"category", "none"}};
+    std::vector<std::string> actions;
+    std::vector<rule_attribute> attributes;
+
+    rule_result result{
+        .event = rule_event{.rule{
+                                .id = "rule-multi",
+                                .name = "multi-arg",
+                                .tags = tags,
+                            },
+            .matches = {{.args = {{.name = "first",
+                                      .resolved = "v1"sv,
+                                      .address = "addr1",
+                                      .key_path = {"root", "k"}},
+                             {.name = "second",
+                                 .resolved = "v2"sv,
+                                 .address = "addr2",
+                                 .key_path = {"arr"}}},
+                .highlights = {"v1"sv},
+                .operator_name = "op",
+                .operator_value = "val"}}},
+        .action_override = {},
+        .actions = actions,
+        .attributes = attributes,
+    };
+
+    std::vector<rule_result> results{result};
+    object_store store;
+    attribute_collector collector;
+
+    ddwaf::timer deadline{2s};
+    auto [result_object, output] = serializer.initialise_result_object();
+    serializer.serialize(store, results, collector, deadline, output);
+
+    EXPECT_EVENTS(result_object,
+        {.id = "rule-multi",
+            .name = "multi-arg",
+            .tags = {{"type", "test"}, {"category", "none"}},
+            .matches = {{.op = "op",
+                .op_value = "val",
+                .highlight = "v1"sv,
+                .args = {
+                    {.name = "first", .value = "v1"sv, .address = "addr1", .path = {"root", "k"}},
+                    {.name = "second", .value = "v2"sv, .address = "addr2", .path = {"arr"}}}}}});
+
+    std::cout << test::object_to_json(result_object.ref()) << '\n';
 }
 
 } // namespace
