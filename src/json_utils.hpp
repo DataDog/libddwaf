@@ -10,6 +10,7 @@
 
 #include "memory_resource.hpp"
 #include "object.hpp"
+#include "pointer.hpp"
 
 namespace ddwaf {
 

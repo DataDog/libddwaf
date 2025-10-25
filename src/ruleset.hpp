@@ -6,8 +6,12 @@
 
 #pragma once
 
+#include <array>
 #include <memory>
+#include <string>
+#include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -15,11 +19,14 @@
 #include "builder/module_builder.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
+#include "matcher/base.hpp"
 #include "module.hpp"
+#include "module_category.hpp"
 #include "obfuscator.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
 #include "scanner.hpp"
+#include "target_address.hpp"
 
 namespace ddwaf {
 

@@ -8,11 +8,17 @@
 
 #include <memory>
 #include <utility>
+#include <vector>
 
+#include "clock.hpp"
 #include "context_allocator.hpp"
 #include "evaluation_engine.hpp"
+#include "exclusion/common.hpp"
 #include "memory_resource.hpp"
+#include "object.hpp"
+#include "object_store.hpp"
 #include "pointer.hpp"
+#include "rule.hpp"
 #include "ruleset.hpp"
 
 namespace ddwaf {

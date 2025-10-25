@@ -9,6 +9,7 @@
 #include <compare> // IWYU pragma: keep
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <type_traits>
 
 namespace ddwaf {

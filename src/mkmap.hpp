@@ -7,9 +7,12 @@
 #pragma once
 
 #include <algorithm>
+#include <functional>
 #include <iterator>
 #include <set>
+#include <type_traits>
 #include <unordered_map>
+#include <utility>
 
 #include "traits.hpp"
 

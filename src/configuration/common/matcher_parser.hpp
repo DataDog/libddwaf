@@ -8,10 +8,11 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
 
+#include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
-#include "exception.hpp"
 #include "matcher/base.hpp"
 #include "matcher/equals.hpp"
 #include "matcher/exact_match.hpp"

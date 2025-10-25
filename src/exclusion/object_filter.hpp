@@ -6,22 +6,25 @@
 
 #pragma once
 
-#include <algorithm>
+#include <cstdint>
 #include <functional>
-#include <map>
+#include <optional>
 #include <ostream>
 #include <set>
-#include <stack>
+#include <string>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
-#include <unordered_set>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "clock.hpp"
 #include "context_allocator.hpp"
 #include "exclusion/common.hpp"
-#include "log.hpp"
+#include "object.hpp"
 #include "object_store.hpp"
+#include "target_address.hpp"
 
 namespace ddwaf {
 

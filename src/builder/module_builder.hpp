@@ -9,6 +9,9 @@
 #include "module.hpp"
 #include "module_category.hpp"
 #include "rule.hpp"
+#include <array>
+#include <string_view>
+#include <vector>
 
 namespace ddwaf {
 

@@ -9,6 +9,7 @@
 #include "context_allocator.hpp"
 #include "object.hpp"
 #include "target_address.hpp"
+#include <string_view>
 
 namespace ddwaf {
 

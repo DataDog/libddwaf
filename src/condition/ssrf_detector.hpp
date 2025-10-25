@@ -12,7 +12,7 @@
 #include "condition/structured_condition.hpp"
 #include "exclusion/common.hpp"
 #include "matcher/ip_match.hpp"
-#include "utils.hpp"
+#include "object.hpp"
 #include <array>
 #include <memory>
 #include <string>

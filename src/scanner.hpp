@@ -6,12 +6,16 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 
 #include "log.hpp"
 #include "matcher/base.hpp"
+#include "object.hpp"
+#include "object_type.hpp"
 
 namespace ddwaf {
 class scanner {

@@ -6,7 +6,19 @@
 
 #pragma once
 
+#include "clock.hpp"
 #include "condition/base.hpp"
+#include "exclusion/common.hpp"
+#include "matcher/base.hpp"
+#include "object_store.hpp"
+#include "target_address.hpp"
+#include <array>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace ddwaf {
 

@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
 
 #include "common/gtest_utils.hpp"
@@ -371,6 +372,14 @@ TEST(TestParameter, ToStringViewSet)
         raw_configuration param{root};
         EXPECT_THROW(param.operator raw_configuration::string_set(), bad_cast);
     }
+}
+
+TEST(TestParameter, ToKeyPathVectorEmpty)
+{
+    auto root = owned_object::make_array();
+    auto vec =
+        static_cast<std::vector<std::variant<std::string, int64_t>>>(raw_configuration(root));
+    EXPECT_TRUE(vec.empty());
 }
 
 TEST(TestParameter, ToSemanticVersion)

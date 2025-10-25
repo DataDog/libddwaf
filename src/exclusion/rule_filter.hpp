@@ -6,12 +6,21 @@
 
 #pragma once
 
+#include <memory>
+#include <optional>
 #include <set>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "clock.hpp"
 #include "exclusion/common.hpp"
+#include "expression.hpp"
+#include "matcher/base.hpp"
 #include "object_store.hpp"
 #include "rule.hpp"
+#include "target_address.hpp"
 
 namespace ddwaf {
 

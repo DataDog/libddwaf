@@ -6,9 +6,12 @@
 #pragma once
 
 #include <memory>
+#include <utility>
+#include <vector>
 
 #include "context.hpp"
 #include "memory_resource.hpp"
+#include "pointer.hpp"
 #include "ruleset.hpp"
 
 namespace ddwaf {

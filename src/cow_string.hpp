@@ -6,10 +6,11 @@
 
 #pragma once
 
-#include <cstdlib>
+#include <cstdint>
 #include <cstring>
 #include <stdexcept>
 #include <string_view>
+#include <utility>
 
 #include "dynamic_string.hpp"
 #include "memory_resource.hpp"

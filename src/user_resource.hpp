@@ -7,6 +7,9 @@
 #pragma once
 
 #include "memory_resource.hpp"
+#include <cstddef>
+#include <stdexcept>
+#include <typeinfo>
 
 namespace ddwaf::memory {
 

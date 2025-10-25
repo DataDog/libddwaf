@@ -28,7 +28,7 @@ TEST(TestJwtDecoder, Basic)
 
     jwt_decode gen{"id", {}, {}, false, true};
 
-    std::vector<std::string> key_path{"authorization"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
@@ -57,7 +57,7 @@ TEST(TestJwtDecoder, KeyPathLeadsToSingleValueArray)
 
     jwt_decode gen{"id", {}, {}, false, true};
 
-    std::vector<std::string> key_path{"authorization"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
@@ -87,7 +87,7 @@ TEST(TestJwtDecoder, KeyPathLeadsToValidMultiValueArray)
 
     jwt_decode gen{"id", {}, {}, false, true};
 
-    std::vector<std::string> key_path{"authorization"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
@@ -118,7 +118,7 @@ TEST(TestJwtDecoder, KeyPathLeadsToInvalidMultiValueArray)
 
     jwt_decode gen{"id", {}, {}, false, true};
 
-    std::vector<std::string> key_path{"authorization"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
@@ -143,7 +143,7 @@ TEST(TestJwtDecoder, MissingKeypath)
 
     jwt_decode gen{"id", {}, {}, false, true};
 
-    std::vector<std::string> key_path{"authorization"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
@@ -168,7 +168,7 @@ TEST(TestJwtDecoder, EmptyHeader)
 
     jwt_decode gen{"id", {}, {}, false, true};
 
-    std::vector<std::string> key_path{"authorization"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
@@ -195,7 +195,7 @@ TEST(TestJwtDecoder, EmptyPayload)
 
     jwt_decode gen{"id", {}, {}, false, true};
 
-    std::vector<std::string> key_path{"authorization"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
@@ -221,7 +221,7 @@ TEST(TestJwtDecoder, LargePayloadBeyondLimit)
 
     jwt_decode gen{"id", {}, {}, false, true};
 
-    std::vector<std::string> key_path{"authorization"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
@@ -245,7 +245,7 @@ TEST(TestJwtDecoder, NoSignature)
 
     jwt_decode gen{"id", {}, {}, false, true};
 
-    std::vector<std::string> key_path{"authorization"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
@@ -266,7 +266,7 @@ TEST(TestJwtDecoder, NoPayloadNoSignatureMissingDelim)
 
     jwt_decode gen{"id", {}, {}, false, true};
 
-    std::vector<std::string> key_path{"authorization"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
@@ -283,7 +283,7 @@ TEST(TestJwtDecoder, NoPayloadNoSignatureMissingAllDelim)
         object_builder::map({{"authorization", "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9"}});
     jwt_decode gen{"id", {}, {}, false, true};
 
-    std::vector<std::string> key_path{"authorization"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;
@@ -304,7 +304,7 @@ TEST(TestJwtDecoder, NoSignatureNoDelim)
 
     jwt_decode gen{"id", {}, {}, false, true};
 
-    std::vector<std::string> key_path{"authorization"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"authorization"};
 
     ddwaf::timer deadline{2s};
     processor_cache cache;

@@ -6,11 +6,16 @@
 
 #pragma once
 
+#include <cstdint>
 #include <span>
+#include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
+#include <utility>
 
 #include "memory_resource.hpp"
+#include "object.hpp"
 #include "object_store.hpp"
 #include "pointer.hpp"
 #include "target_address.hpp"

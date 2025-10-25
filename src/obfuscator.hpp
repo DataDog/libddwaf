@@ -11,6 +11,7 @@
 #include <string_view>
 
 #include "condition/base.hpp"
+#include "dynamic_string.hpp"
 
 namespace ddwaf {
 

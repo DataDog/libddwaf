@@ -6,9 +6,17 @@
 
 #pragma once
 
+#include "clock.hpp"
 #include "context_allocator.hpp"
+#include "exclusion/common.hpp"
+#include "matcher/base.hpp"
+#include "object_store.hpp"
 #include "rule.hpp"
 
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 namespace ddwaf {

@@ -6,11 +6,13 @@
 
 #pragma once
 
-#include <cstdlib>
+#include <algorithm>
+#include <cstdint>
 #include <cstring>
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <limits>
+#include <new>
 #include <string>
 #include <string_view>
 

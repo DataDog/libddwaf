@@ -6,8 +6,10 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <charconv>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <iomanip>
@@ -15,6 +17,7 @@
 #include <limits>
 #include <optional>
 #include <ostream>
+#include <span>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -225,4 +228,21 @@ inline bool string_iequals(std::string_view left, std::string_view right)
            std::equal(left.begin(), left.end(), right.begin(),
                [](char l, char r) { return tolower(l) == tolower(r); });
 }
+
+inline std::vector<std::variant<std::string_view, int64_t>> convert_key_path(
+    std::span<const std::variant<std::string, int64_t>> key_path)
+{
+    std::vector<std::variant<std::string_view, int64_t>> result;
+    result.reserve(key_path.size());
+
+    for (const auto &key : key_path) {
+        if (std::holds_alternative<std::string>(key)) {
+            result.emplace_back(std::get<std::string>(key));
+        } else {
+            result.emplace_back(std::get<int64_t>(key));
+        }
+    }
+    return result;
+}
+
 } // namespace ddwaf

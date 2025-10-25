@@ -6,12 +6,17 @@
 
 #pragma once
 
+#include <cstdint>
+#include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
+#include "dynamic_string.hpp"
 #include "indexed_multivector.hpp"
 #include "matcher/base.hpp"
+#include "object_type.hpp"
 
 namespace ddwaf::matcher {
 

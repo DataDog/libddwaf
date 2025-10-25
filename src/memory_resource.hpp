@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <cstddef>
+#include <new>
 #include <version>
 
 #if defined(__cpp_lib_memory_resource)

@@ -6,7 +6,11 @@
 
 #pragma once
 
-#include <fmt/core.h>
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
+
+#include <fmt/core.h> // IWYU pragma: keep
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 constexpr const char *base_name(const char *path)

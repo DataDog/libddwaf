@@ -4,10 +4,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-#include <cstdlib>
-#include <cstring>
+#include <array>
+#include <memory>
+#include <string>
 #include <string_view>
+#include <utility>
+#include <vector>
 
+#include "argument_retriever.hpp"
+#include "clock.hpp"
+#include "expression.hpp"
+#include "memory_resource.hpp"
+#include "object.hpp"
+#include "pointer.hpp"
 #include "processor/base.hpp"
 
 namespace ddwaf {

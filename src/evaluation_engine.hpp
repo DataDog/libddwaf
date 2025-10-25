@@ -6,15 +6,27 @@
 
 #pragma once
 
+#include <array>
+#include <cstddef>
 #include <memory>
+#include <utility>
+#include <vector>
 
 #include "attribute_collector.hpp"
+#include "clock.hpp"
+#include "context_allocator.hpp"
 #include "exclusion/common.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
+#include "log.hpp"
 #include "memory_resource.hpp"
+#include "module.hpp"
+#include "module_category.hpp"
+#include "object.hpp"
+#include "object_store.hpp"
 #include "pointer.hpp"
 #include "processor/base.hpp"
+#include "rule.hpp"
 #include "ruleset.hpp"
 
 namespace ddwaf {

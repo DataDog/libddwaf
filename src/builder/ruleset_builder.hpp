@@ -7,11 +7,19 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
+#include "action_mapper.hpp"
 #include "configuration/common/configuration.hpp"
+#include "exclusion/input_filter.hpp"
+#include "exclusion/rule_filter.hpp"
 #include "indexer.hpp"
+#include "matcher/base.hpp"
+#include "obfuscator.hpp"
+#include "processor/base.hpp"
 #include "rule.hpp"
 #include "ruleset.hpp"
+#include "scanner.hpp"
 
 namespace ddwaf {
 

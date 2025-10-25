@@ -4,10 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "clock.hpp"
@@ -15,13 +17,14 @@
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
+#include "object.hpp"
 #include "tokenizer/shell.hpp"
 
 namespace ddwaf {
 
 struct shi_result {
     std::string value;
-    std::vector<std::string> key_path;
+    std::vector<std::variant<std::string_view, int64_t>> key_path;
 };
 
 struct shell_argument_array {

@@ -50,7 +50,13 @@ owned_object serialize_match(condition_match &match, nonnull_ptr<memory::memory_
 
         auto key_path =
             param.emplace("key_path", owned_object::make_array(arg.key_path.size(), alloc));
-        for (const auto &key : arg.key_path) { key_path.emplace_back(key); }
+        for (const auto &key : arg.key_path) {
+            if (std::holds_alternative<std::string_view>(key)) {
+                key_path.emplace_back(std::get<std::string_view>(key));
+            } else {
+                key_path.emplace_back(std::get<int64_t>(key));
+            }
+        }
 
         auto highlight_arr =
             param.emplace("highlight", owned_object::make_array(match.highlights.size(), alloc));
@@ -68,7 +74,13 @@ owned_object serialize_match(condition_match &match, nonnull_ptr<memory::memory_
 
             auto key_path =
                 argument.emplace("key_path", owned_object::make_array(arg.key_path.size(), alloc));
-            for (const auto &key : arg.key_path) { key_path.emplace_back(key); }
+            for (const auto &key : arg.key_path) {
+                if (std::holds_alternative<std::string_view>(key)) {
+                    key_path.emplace_back(std::get<std::string_view>(key));
+                } else {
+                    key_path.emplace_back(std::get<int64_t>(key));
+                }
+            }
         }
 
         auto highlight_arr =

@@ -6,13 +6,11 @@
 
 #pragma once
 
-#include "utils.hpp"
-
-#include <compare>
+#include <cstddef>
+#include <functional>
 #include <string>
 #include <string_view>
-#include <type_traits>
-#include <unordered_map>
+#include <utility>
 
 namespace ddwaf {
 

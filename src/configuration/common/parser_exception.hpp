@@ -6,11 +6,13 @@
 
 #pragma once
 
-#include <stdexcept>
+#include <cstdint>
+#include <exception>
 #include <string>
+#include <string_view>
 #include <utility>
 
-#include "fmt/format.h"
+#include "fmt/core.h"
 
 namespace ddwaf {
 enum class parser_error_severity : uint8_t { warning, error };

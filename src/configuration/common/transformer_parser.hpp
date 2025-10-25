@@ -9,6 +9,9 @@
 #include "condition/base.hpp"
 #include "configuration/common/raw_configuration.hpp"
 #include "transformer/base.hpp"
+#include <optional>
+#include <string_view>
+#include <vector>
 
 namespace ddwaf {
 

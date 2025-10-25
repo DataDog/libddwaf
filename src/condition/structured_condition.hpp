@@ -6,13 +6,23 @@
 
 #pragma once
 
+#include <array>
+#include <cstddef>
+#include <optional>
 #include <string>
+#include <tuple>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "argument_retriever.hpp"
+#include "clock.hpp"
 #include "condition/base.hpp"
+#include "exclusion/common.hpp"
+#include "matcher/base.hpp"
+#include "object_store.hpp"
+#include "target_address.hpp"
 #include "traits.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 

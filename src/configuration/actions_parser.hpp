@@ -6,11 +6,6 @@
 
 #pragma once
 
-#include <memory>
-
-#include "action_mapper.hpp"
-#include "configuration/common/common.hpp"
-#include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"
 #include "configuration/common/raw_configuration.hpp"
 #include "ruleset_info.hpp"

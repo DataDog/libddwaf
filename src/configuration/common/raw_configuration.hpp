@@ -6,15 +6,17 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
+#include <variant>
 #include <vector>
 
-#include "configuration/common/parser_exception.hpp"
 #include "object.hpp"
 #include "semver.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -44,6 +46,7 @@ public:
     explicit operator double() const;
     explicit operator bool() const;
     explicit operator std::vector<std::string>() const;
+    explicit operator std::vector<std::variant<std::string, int64_t>>() const;
     explicit operator std::vector<std::string_view>() const;
     explicit operator std::unordered_map<std::string, std::string>() const;
     explicit operator std::unordered_map<std::string,
@@ -83,6 +86,10 @@ template <> struct raw_configuration_traits<raw_configuration::string_set> {
 
 template <> struct raw_configuration_traits<std::vector<std::string>> {
     static const char *name() { return "std::vector<std::string>"; }
+};
+
+template <> struct raw_configuration_traits<std::vector<std::variant<std::string, int64_t>>> {
+    static const char *name() { return "std::vector<std::variant<std::string, int64_t>>"; }
 };
 
 template <> struct raw_configuration_traits<std::vector<std::string_view>> {

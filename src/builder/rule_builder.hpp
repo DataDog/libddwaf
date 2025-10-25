@@ -8,9 +8,12 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include "action_mapper.hpp"
 #include "configuration/common/configuration.hpp"
 #include "rule.hpp"
 

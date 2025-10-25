@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <cstdlib>
-#include <cstring>
 #include <string_view>
 
 namespace ddwaf {

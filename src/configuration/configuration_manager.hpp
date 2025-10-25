@@ -7,7 +7,10 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "configuration/common/configuration.hpp"
 #include "configuration/common/configuration_collector.hpp"

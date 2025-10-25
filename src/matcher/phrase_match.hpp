@@ -7,10 +7,15 @@
 #pragma once
 
 #include <ac.h>
+#include <cstdint>
 #include <memory>
+#include <string_view>
+#include <utility>
 #include <vector>
 
+#include "dynamic_string.hpp"
 #include "matcher/base.hpp"
+#include "object_type.hpp"
 
 namespace ddwaf::matcher {
 

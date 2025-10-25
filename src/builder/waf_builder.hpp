@@ -7,10 +7,16 @@
 #pragma once
 
 #include <memory>
+#include <string>
+#include <string_view>
 #include <utility>
+#include <vector>
 
 #include "builder/ruleset_builder.hpp"
+#include "configuration/common/raw_configuration.hpp"
 #include "configuration/configuration_manager.hpp"
+#include "re2.h"
+#include "ruleset_info.hpp"
 #include "waf.hpp"
 
 namespace ddwaf {

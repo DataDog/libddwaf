@@ -6,7 +6,12 @@
 
 #pragma once
 
+#include <charconv>
+#include <cstdint>
+#include <stdexcept>
 #include <string>
+#include <string_view>
+#include <system_error>
 
 #include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"

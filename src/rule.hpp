@@ -6,18 +6,26 @@
 
 #pragma once
 
+#include <cstdint>
+#include <functional>
 #include <memory>
+#include <optional>
+#include <stdexcept>
 #include <string>
+#include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <variant>
 #include <vector>
 
 #include "clock.hpp"
+#include "condition/base.hpp"
 #include "exclusion/common.hpp"
 #include "expression.hpp"
 #include "matcher/base.hpp"
 #include "module_category.hpp"
 #include "object_store.hpp"
+#include "target_address.hpp"
 
 namespace ddwaf {
 

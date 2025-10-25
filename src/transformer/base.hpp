@@ -6,8 +6,7 @@
 
 #pragma once
 
-#include <cstdlib>
-#include <cstring>
+#include <cstdint>
 #include <string_view>
 
 #include "cow_string.hpp"

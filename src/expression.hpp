@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -18,7 +19,7 @@
 #include "exclusion/common.hpp"
 #include "matcher/base.hpp"
 #include "object_store.hpp"
-#include "utils.hpp"
+#include "target_address.hpp"
 
 namespace ddwaf {
 

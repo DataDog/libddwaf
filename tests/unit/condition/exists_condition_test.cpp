@@ -82,6 +82,23 @@ TEST(TestExistsCondition, KeyPathNotAvailable)
     ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
 }
 
+TEST(TestExistsCondition, KeyPathIndexOnNonArray)
+{
+    exists_condition cond{{{{{.name = "server.request.uri_raw",
+        .index = get_target_index("server.request.uri_raw"),
+        .key_path = {0}}}}}};
+
+    auto root = object_builder::map(
+        {{"server.request.uri_raw", object_builder::map({{"path", owned_object{}}})}});
+
+    object_store store;
+    store.insert(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+}
+
 TEST(TestExistsCondition, KeyPathAvailableButExcluded)
 {
     exists_condition cond{{{{{.name = "server.request.uri_raw",
