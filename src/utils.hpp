@@ -236,11 +236,7 @@ inline std::vector<std::variant<std::string_view, int64_t>> convert_key_path(
     result.reserve(key_path.size());
 
     for (const auto &key : key_path) {
-        if (std::holds_alternative<std::string>(key)) {
-            result.emplace_back(std::get<std::string>(key));
-        } else {
-            result.emplace_back(std::get<int64_t>(key));
-        }
+        std::visit([&result](auto &&k) { result.emplace_back(k); }, key);
     }
     return result;
 }

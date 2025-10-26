@@ -82,6 +82,40 @@ TEST(TestExistsCondition, KeyPathNotAvailable)
     ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
 }
 
+TEST(TestExistsCondition, KeyPathPositiveIndexOnArray)
+{
+    exists_condition cond{{{{{.name = "server.request.uri_raw",
+        .index = get_target_index("server.request.uri_raw"),
+        .key_path = {"path", 0}}}}}};
+
+    auto root = object_builder::map({{"server.request.uri_raw",
+        object_builder::map({{"path", object_builder::array({"item"})}})}});
+
+    object_store store;
+    store.insert(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+}
+
+TEST(TestExistsCondition, KeyPathNegativeIndexOnArray)
+{
+    exists_condition cond{{{{{.name = "server.request.uri_raw",
+        .index = get_target_index("server.request.uri_raw"),
+        .key_path = {"path", -1}}}}}};
+
+    auto root = object_builder::map({{"server.request.uri_raw",
+        object_builder::map({{"path", object_builder::array({"item"})}})}});
+
+    object_store store;
+    store.insert(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+}
+
 TEST(TestExistsCondition, KeyPathIndexOnNonArray)
 {
     exists_condition cond{{{{{.name = "server.request.uri_raw",
@@ -200,6 +234,74 @@ TEST(TestNegatedExistsCondition, KeyPathAvailable)
     ddwaf::timer deadline{2s};
     condition_cache cache;
     ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+}
+
+TEST(TestNegativeExistsCondition, KeyPathAvailablePositiveIndexOnArray)
+{
+    negated_exists_condition cond{{{{{.name = "server.request.uri_raw",
+        .index = get_target_index("server.request.uri_raw"),
+        .key_path = {"path", 0}}}}}};
+
+    auto root = object_builder::map({{"server.request.uri_raw",
+        object_builder::map({{"path", object_builder::array({"item"})}})}});
+
+    object_store store;
+    store.insert(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+}
+
+TEST(TestNegativeExistsCondition, KeyPathAvailableNegativeIndexOnArray)
+{
+    negated_exists_condition cond{{{{{.name = "server.request.uri_raw",
+        .index = get_target_index("server.request.uri_raw"),
+        .key_path = {"path", -1}}}}}};
+
+    auto root = object_builder::map({{"server.request.uri_raw",
+        object_builder::map({{"path", object_builder::array({"item"})}})}});
+
+    object_store store;
+    store.insert(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+}
+
+TEST(TestNegativeExistsCondition, KeyPathUnvailablePositiveIndexOnArray)
+{
+    negated_exists_condition cond{{{{{.name = "server.request.uri_raw",
+        .index = get_target_index("server.request.uri_raw"),
+        .key_path = {"path", 0}}}}}};
+
+    auto root = object_builder::map(
+        {{"server.request.uri_raw", object_builder::map({{"path", object_builder::array({})}})}});
+
+    object_store store;
+    store.insert(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+}
+
+TEST(TestNegativeExistsCondition, KeyPathUnvailableNegativeIndexOnArray)
+{
+    negated_exists_condition cond{{{{{.name = "server.request.uri_raw",
+        .index = get_target_index("server.request.uri_raw"),
+        .key_path = {"path", -1}}}}}};
+
+    auto root = object_builder::map(
+        {{"server.request.uri_raw", object_builder::map({{"path", object_builder::array({})}})}});
+
+    object_store store;
+    store.insert(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
 }
 
 TEST(TestNegatedExistsCondition, KeyPathNotAvailable)
