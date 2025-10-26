@@ -86,7 +86,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathScalar)
     store.insert(std::move(input));
 
     attribute_collector collector;
-    std::vector<std::string> key_path{"first", "second"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"first", "second"};
     EXPECT_TRUE(
         collector.collect(store, get_target_index("input_address"), key_path, "output_address"));
     auto attributes = collector.get_available_attributes_and_reset();
@@ -111,7 +111,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathSingleValueArray)
     store.insert(std::move(input));
 
     attribute_collector collector;
-    std::vector<std::string> key_path{"first", "second"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"first", "second"};
     EXPECT_TRUE(
         collector.collect(store, get_target_index("input_address"), key_path, "output_address"));
     auto attributes = collector.get_available_attributes_and_reset();
@@ -137,7 +137,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathMultiValueArray)
     store.insert(std::move(input));
 
     attribute_collector collector;
-    std::vector<std::string> key_path{"first", "second"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"first", "second"};
     EXPECT_TRUE(
         collector.collect(store, get_target_index("input_address"), key_path, "output_address"));
     auto attributes = collector.get_available_attributes_and_reset();
@@ -161,7 +161,7 @@ TEST(TestAttributeCollector, CollectUnavailableKeyPath)
     store.insert(std::move(input));
 
     attribute_collector collector;
-    std::vector<std::string> key_path{"first", "second"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"first", "second"};
     EXPECT_FALSE(
         collector.collect(store, get_target_index("input_address"), key_path, "output_address"));
     auto attributes = collector.get_available_attributes_and_reset();
@@ -179,7 +179,7 @@ TEST(TestAttributeCollector, CollectPendingKeyPathScalar)
     object_store store;
 
     attribute_collector collector;
-    std::vector<std::string> key_path{"first", "second"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"first", "second"};
     EXPECT_TRUE(
         collector.collect(store, get_target_index("input_address"), key_path, "output_address"));
     auto attributes = collector.get_available_attributes_and_reset();
@@ -208,7 +208,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathInvalidValue)
     store.insert(std::move(input));
 
     attribute_collector collector;
-    std::vector<std::string> key_path{"first", "second"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"first", "second"};
     EXPECT_FALSE(
         collector.collect(store, get_target_index("input_address"), key_path, "output_address"));
     auto attributes = collector.get_available_attributes_and_reset();

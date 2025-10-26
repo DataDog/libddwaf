@@ -119,8 +119,6 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
         result_object, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
                                               {"type", "auto"}, {"block_id", "*"}}},
                            {"monitor_request", {}}});
-
-    std::cout << test::object_to_json(result_object.ref()) << '\n';
 }
 
 TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
@@ -714,8 +712,6 @@ TEST(TestEventSerializer, SerializeMultiArgMatchWithKeyPaths)
                 .args = {
                     {.name = "first", .value = "v1"sv, .address = "addr1", .path = {"root", "k"}},
                     {.name = "second", .value = "v2"sv, .address = "addr2", .path = {"arr"}}}}}});
-
-    std::cout << test::object_to_json(result_object.ref()) << '\n';
 }
 
 } // namespace

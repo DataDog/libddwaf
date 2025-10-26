@@ -4,11 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2025 Datadog, Inc.
 
+#include <cstdint>
 #include <span>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 
 #include "attribute_collector.hpp"
 #include "log.hpp"
@@ -34,7 +36,8 @@ bool attribute_collector::insert(std::string_view key, owned_object &&object)
 }
 
 bool attribute_collector::collect(const object_store &store, target_index input_target,
-    std::span<const std::string> input_key_path, std::string_view attribute_key)
+    std::span<const std::variant<std::string, int64_t>> input_key_path,
+    std::string_view attribute_key)
 {
     if (inserted_.contains(attribute_key) || pending_.contains(attribute_key)) {
         DDWAF_DEBUG("Not collecting duplicate attribute: {}", attribute_key);
@@ -69,7 +72,7 @@ void attribute_collector::collect_pending(const object_store &store)
 }
 
 attribute_collector::collection_state attribute_collector::collect_helper(const object_store &store,
-    target_index input_target, std::span<const std::string> input_key_path,
+    target_index input_target, std::span<const std::variant<std::string, int64_t>> input_key_path,
     std::string_view attribute_key)
 {
     auto object = store.get_target(input_target);

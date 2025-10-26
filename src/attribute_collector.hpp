@@ -56,7 +56,8 @@ public:
     bool insert(std::string_view key, owned_object &&object);
 
     bool collect(const object_store &store, target_index input_target,
-        std::span<const std::string> input_key_path, std::string_view attribute_key);
+        std::span<const std::variant<std::string, int64_t>> input_key_path,
+        std::string_view attribute_key);
 
     void collect_pending(const object_store &store);
 
@@ -87,7 +88,8 @@ protected:
     enum class collection_state : uint8_t { success, unavailable, failed };
 
     collection_state collect_helper(const object_store &store, target_index input_target,
-        std::span<const std::string> input_key_path, std::string_view attribute_key);
+        std::span<const std::variant<std::string, int64_t>> input_key_path,
+        std::string_view attribute_key);
     void insert_helper(std::string_view key, owned_object &&object);
 
     // The views and spans used here are owned by rules and processors, these
@@ -95,7 +97,8 @@ protected:
     // the context, therefore it's safe to use them..
     // In this pair, the target_index represents the required address and the
     // string span represents the key path.
-    using target_type = std::pair<target_index, std::span<const std::string>>;
+    using target_type =
+        std::pair<target_index, std::span<const std::variant<std::string, int64_t>>>;
     std::unordered_map<std::string_view, target_type> pending_;
 
     std::unordered_set<std::string_view> inserted_;
