@@ -6,8 +6,7 @@
 
 #pragma once
 
-#include <fmt/format.h>
-#include <re2/re2.h>
+#include <cstddef>
 #include <string_view>
 #include <unordered_set>
 #include <vector>

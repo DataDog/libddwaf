@@ -13,13 +13,21 @@
 #include "traits.hpp"
 #include "utils.hpp"
 
+#include <array>
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <deque>
+#include <functional>
 #include <initializer_list>
+#include <limits>
 #include <span>
 #include <stdexcept>
+#include <string>
+#include <string_view>
 #include <type_traits>
+#include <utility>
 #include <variant>
 
 namespace ddwaf {
@@ -1059,7 +1067,7 @@ template <typename T>
 // in the object_converter header
 template <typename Derived>
 template <typename T>
-[[nodiscard]] T readable_object<Derived>::convert() const
+[[nodiscard]] [[nodiscard]] T readable_object<Derived>::convert() const
 {
     return object_converter<T>{object_ref()}();
 }

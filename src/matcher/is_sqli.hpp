@@ -6,9 +6,12 @@
 
 #pragma once
 
-#include <libinjection.h>
+#include <string_view>
+#include <utility>
 
+#include "dynamic_string.hpp"
 #include "matcher/base.hpp"
+#include "object_type.hpp"
 
 namespace ddwaf::matcher {
 

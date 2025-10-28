@@ -6,9 +6,12 @@
 
 #pragma once
 
+#include <cstdint>
+#include <functional>
 #include <map>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include "configuration/common/parser_exception.hpp"
 #include "object.hpp"

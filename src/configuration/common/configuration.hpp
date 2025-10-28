@@ -8,16 +8,24 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
+#include <type_traits>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "action_mapper.hpp"
+#include "exclusion/common.hpp"
 #include "exclusion/object_filter.hpp"
+#include "expression.hpp"
 #include "indexed_multivector.hpp"
 #include "obfuscator.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
 #include "scanner.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 

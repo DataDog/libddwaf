@@ -6,13 +6,16 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 
 #include "dynamic_string.hpp"
 #include "object.hpp"
+#include "object_type.hpp"
 
 namespace ddwaf {
 namespace matcher {

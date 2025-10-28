@@ -6,10 +6,11 @@
 
 #pragma once
 
+#include "fmt/core.h"
 #include "tokenizer/base.hpp"
+#include <cstdint>
 #include <fmt/format.h>
 #include <ostream>
-#include <re2/re2.h>
 #include <string_view>
 #include <unordered_set>
 #include <vector>

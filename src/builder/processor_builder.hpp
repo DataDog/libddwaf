@@ -7,10 +7,14 @@
 #pragma once
 
 #include <memory>
+#include <string>
+#include <string_view>
+#include <utility>
 
 #include "configuration/common/configuration.hpp"
 #include "indexer.hpp"
 #include "processor/base.hpp"
+#include "scanner.hpp"
 
 namespace ddwaf {
 

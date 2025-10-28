@@ -7,6 +7,8 @@
 #pragma once
 
 #include "configuration/common/configuration.hpp"
+#include "matcher/base.hpp"
+#include <memory>
 
 namespace ddwaf {
 

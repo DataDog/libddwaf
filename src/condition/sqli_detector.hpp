@@ -6,8 +6,20 @@
 
 #pragma once
 
+#include "argument_retriever.hpp"
+#include "clock.hpp"
+#include "condition/base.hpp"
 #include "condition/structured_condition.hpp"
+#include "exclusion/common.hpp"
+#include "object.hpp"
 #include "tokenizer/sql_base.hpp"
+#include <array>
+#include <cstddef>
+#include <span>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace ddwaf {
 
