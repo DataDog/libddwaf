@@ -124,7 +124,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
 
     EXPECT_ACTIONS(
         result_object, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                              {"type", "auto"}, {"block_id", "*"}}},
+                                              {"type", "auto"}, {"security_response_id", "*"}}},
                            {"monitor_request", {}}});
 
     ddwaf_object_free(&result_object);
@@ -231,7 +231,7 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
 
     EXPECT_ACTIONS(
         result_object, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                              {"type", "auto"}, {"block_id", "*"}}},
+                                              {"type", "auto"}, {"security_response_id", "*"}}},
                            {"monitor_request", {}}});
 
     ddwaf_object_free(&result_object);
@@ -365,7 +365,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
 
     EXPECT_ACTIONS(
         result_object, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                              {"type", "auto"}, {"block_id", "*"}}},
+                                              {"type", "auto"}, {"security_response_id", "*"}}},
                            {"monitor_request", {}}, {"unknown", {}}});
 
     ddwaf_object_free(&result_object);

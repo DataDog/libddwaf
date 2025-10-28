@@ -582,7 +582,7 @@ TEST(TestWafIntegration, UpdateActionsByID)
         EXPECT_ACTIONS(result1, {});
         EXPECT_ACTIONS(
             result2, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                            {"type", "auto"}, {"block_id", "*"}}}});
+                                            {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_free(&result1);
         ddwaf_object_free(&result2);
@@ -658,10 +658,10 @@ TEST(TestWafIntegration, UpdateActionsByID)
 
         EXPECT_ACTIONS(
             result2, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                            {"type", "auto"}, {"block_id", "*"}}}});
+                                            {"type", "auto"}, {"security_response_id", "*"}}}});
         EXPECT_ACTIONS(result3,
-            {{"redirect_request",
-                {{"status_code", 303ULL}, {"location", "http://google.com"}, {"block_id", "*"}}}});
+            {{"redirect_request", {{"status_code", 303ULL}, {"location", "http://google.com"},
+                                      {"security_response_id", "*"}}}});
 
         ddwaf_object_free(&result2);
         ddwaf_object_free(&result3);
@@ -737,7 +737,7 @@ TEST(TestWafIntegration, UpdateActionsByTags)
         EXPECT_ACTIONS(result1, {});
         EXPECT_ACTIONS(
             result2, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                            {"type", "auto"}, {"block_id", "*"}}}});
+                                            {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_free(&result1);
         ddwaf_object_free(&result2);
@@ -1204,7 +1204,7 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
         EXPECT_ACTIONS(result1, {});
         EXPECT_ACTIONS(
             result2, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                            {"type", "auto"}, {"block_id", "*"}}}});
+                                            {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_free(&result1);
         ddwaf_object_free(&result2);
@@ -1268,7 +1268,7 @@ TEST(TestWafIntegration, UpdateOverrideByIDAndTag)
 
         EXPECT_ACTIONS(
             result2, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                            {"type", "auto"}, {"block_id", "*"}}}});
+                                            {"type", "auto"}, {"security_response_id", "*"}}}});
         EXPECT_ACTIONS(result3, {});
 
         ddwaf_object_free(&result2);
@@ -1826,7 +1826,7 @@ TEST(TestWafIntegration, UpdateEverything)
         EXPECT_ACTIONS(result2, {});
         EXPECT_ACTIONS(
             result3, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                            {"type", "auto"}, {"block_id", "*"}}}});
+                                            {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_free(&result2);
         ddwaf_object_free(&result3);
@@ -1894,7 +1894,7 @@ TEST(TestWafIntegration, UpdateEverything)
         EXPECT_ACTIONS(result3, {});
         EXPECT_ACTIONS(
             result4, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                            {"type", "auto"}, {"block_id", "*"}}}});
+                                            {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_free(&result3);
         ddwaf_object_free(&result4);
@@ -1956,10 +1956,10 @@ TEST(TestWafIntegration, UpdateEverything)
 
         EXPECT_ACTIONS(
             result4, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                            {"type", "auto"}, {"block_id", "*"}}}});
+                                            {"type", "auto"}, {"security_response_id", "*"}}}});
         EXPECT_ACTIONS(
             result5, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                            {"type", "auto"}, {"block_id", "*"}}}});
+                                            {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_free(&result4);
         ddwaf_object_free(&result5);
@@ -2010,7 +2010,7 @@ TEST(TestWafIntegration, UpdateEverything)
 
         EXPECT_ACTIONS(
             result4, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                            {"type", "auto"}, {"block_id", "*"}}}});
+                                            {"type", "auto"}, {"security_response_id", "*"}}}});
         EXPECT_ACTIONS(result5, {});
 
         ddwaf_object_free(&result4);
@@ -2058,7 +2058,7 @@ TEST(TestWafIntegration, UpdateEverything)
         EXPECT_ACTIONS(result5, {});
         EXPECT_ACTIONS(
             result6, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                            {"type", "auto"}, {"block_id", "*"}}}});
+                                            {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_free(&result5);
         ddwaf_object_free(&result6);
@@ -2089,10 +2089,10 @@ TEST(TestWafIntegration, UpdateEverything)
 
         EXPECT_ACTIONS(
             result5, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                            {"type", "auto"}, {"block_id", "*"}}}});
+                                            {"type", "auto"}, {"security_response_id", "*"}}}});
         EXPECT_ACTIONS(
             result6, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                            {"type", "auto"}, {"block_id", "*"}}}});
+                                            {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_free(&result5);
         ddwaf_object_free(&result6);
@@ -2147,7 +2147,7 @@ TEST(TestWafIntegration, UpdateEverything)
         EXPECT_ACTIONS(result6, {});
         EXPECT_ACTIONS(
             result7, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                            {"type", "auto"}, {"block_id", "*"}}}});
+                                            {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_free(&result6);
         ddwaf_object_free(&result7);
@@ -2186,7 +2186,7 @@ TEST(TestWafIntegration, UpdateEverything)
 
         EXPECT_ACTIONS(
             result7, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                            {"type", "auto"}, {"block_id", "*"}}}});
+                                            {"type", "auto"}, {"security_response_id", "*"}}}});
         EXPECT_ACTIONS(result8, {});
 
         ddwaf_object_free(&result7);
@@ -2218,7 +2218,7 @@ TEST(TestWafIntegration, UpdateEverything)
 
         EXPECT_ACTIONS(
             result7, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                            {"type", "auto"}, {"block_id", "*"}}}});
+                                            {"type", "auto"}, {"security_response_id", "*"}}}});
         EXPECT_ACTIONS(result8, {});
 
         ddwaf_object_free(&result7);

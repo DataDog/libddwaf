@@ -50,7 +50,7 @@ TEST(TestActionsIntegration, DefaultActions)
 
         EXPECT_ACTIONS(
             res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+                                        {"type", "auto"}, {"security_response_id", "*"}}}});
         ddwaf_object_free(&res);
     }
 
@@ -195,7 +195,7 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
 
         EXPECT_ACTIONS(
             res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+                                        {"type", "auto"}, {"security_response_id", "*"}}}});
         ddwaf_object_free(&res);
 
         ddwaf_context_destroy(context);
@@ -236,9 +236,9 @@ TEST(TestActionsIntegration, OverrideDefaultAction)
                                        .address = "value",
                                    }}}}});
 
-        EXPECT_ACTIONS(res,
-            {{"redirect_request",
-                {{"location", "http://google.com"}, {"status_code", 303ULL}, {"block_id", "*"}}}});
+        EXPECT_ACTIONS(
+            res, {{"redirect_request", {{"location", "http://google.com"}, {"status_code", 303ULL},
+                                           {"security_response_id", "*"}}}});
         ddwaf_object_free(&res);
 
         ddwaf_context_destroy(context);
@@ -368,7 +368,7 @@ TEST(TestActionsIntegration, EmptyOrInvalidActions)
                                }}}}});
 
     EXPECT_ACTIONS(res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                               {"type", "auto"}, {"block_id", "*"}}}});
+                                               {"type", "auto"}, {"security_response_id", "*"}}}});
     ddwaf_object_free(&res);
 
     ddwaf_context_destroy(context);
@@ -455,7 +455,7 @@ TEST(TestActionsIntegration, PreventBlockIDInjectionOnBlock)
 
         EXPECT_ACTIONS(
             res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+                                        {"type", "auto"}, {"security_response_id", "*"}}}});
         ddwaf_object_free(&res);
 
         ddwaf_context_destroy(context);
@@ -465,7 +465,7 @@ TEST(TestActionsIntegration, PreventBlockIDInjectionOnBlock)
         ddwaf_destroy(handle);
 
         auto actions = yaml_to_object(
-            R"({actions: [{id: block, type: block_request, parameters: {status_code: 404, "block_id": "this is an injected ID", "display_id": true}}]})");
+            R"({actions: [{id: block, type: block_request, parameters: {status_code: 404, "security_response_id": "this is an injected ID", "display_id": true}}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("actions"), &actions, nullptr);
         ddwaf_object_free(&actions);
     }
@@ -496,9 +496,10 @@ TEST(TestActionsIntegration, PreventBlockIDInjectionOnBlock)
                                        .address = "value",
                                    }}}}});
 
-        EXPECT_ACTIONS(res,
-            {{"block_request", {{"status_code", 404ULL}, {"grpc_status_code", 10ULL},
-                                   {"type", "auto"}, {"block_id", "*"}, {"display_id", true}}}});
+        EXPECT_ACTIONS(
+            res, {{"block_request",
+                     {{"status_code", 404ULL}, {"grpc_status_code", 10ULL}, {"type", "auto"},
+                         {"security_response_id", "*"}, {"display_id", true}}}});
 
         const auto *actions = ddwaf_object_find(&res, STRL("actions"));
         ASSERT_NE(actions, nullptr);
@@ -506,7 +507,7 @@ TEST(TestActionsIntegration, PreventBlockIDInjectionOnBlock)
         const auto *block_params = ddwaf_object_find(actions, STRL("block_request"));
         ASSERT_NE(block_params, nullptr);
 
-        const auto *block_id = ddwaf_object_find(block_params, STRL("block_id"));
+        const auto *block_id = ddwaf_object_find(block_params, STRL("security_response_id"));
         ASSERT_NE(block_id, nullptr);
 
         std::regex uuid_regex{"^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-1b[a-f0-9]{2}-[a-f0-9]{12}$",
@@ -564,7 +565,7 @@ TEST(TestActionsIntegration, PreventBlockIDInjectionOnRedirect)
 
         EXPECT_ACTIONS(
             res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+                                        {"type", "auto"}, {"security_response_id", "*"}}}});
         ddwaf_object_free(&res);
 
         ddwaf_context_destroy(context);
@@ -574,7 +575,7 @@ TEST(TestActionsIntegration, PreventBlockIDInjectionOnRedirect)
         ddwaf_destroy(handle);
 
         auto actions = yaml_to_object(
-            R"({actions: [{id: block, type: redirect_request, parameters: {status_code: 303, "location": "http://google.com", "block_id": "this is an injected ID", "display_id": true}}]})");
+            R"({actions: [{id: block, type: redirect_request, parameters: {status_code: 303, "location": "http://google.com", "security_response_id": "this is an injected ID", "display_id": true}}]})");
         ddwaf_builder_add_or_update_config(builder, LSTRARG("actions"), &actions, nullptr);
         ddwaf_object_free(&actions);
     }
@@ -607,7 +608,7 @@ TEST(TestActionsIntegration, PreventBlockIDInjectionOnRedirect)
 
         EXPECT_ACTIONS(
             res, {{"redirect_request", {{"location", "http://google.com"}, {"status_code", 303ULL},
-                                           {"block_id", "*"}, {"display_id", true}}}});
+                                           {"security_response_id", "*"}, {"display_id", true}}}});
 
         const auto *actions = ddwaf_object_find(&res, STRL("actions"));
         ASSERT_NE(actions, nullptr);
@@ -615,7 +616,7 @@ TEST(TestActionsIntegration, PreventBlockIDInjectionOnRedirect)
         const auto *block_params = ddwaf_object_find(actions, STRL("redirect_request"));
         ASSERT_NE(block_params, nullptr);
 
-        const auto *block_id = ddwaf_object_find(block_params, STRL("block_id"));
+        const auto *block_id = ddwaf_object_find(block_params, STRL("security_response_id"));
         ASSERT_NE(block_id, nullptr);
 
         std::regex uuid_regex{"^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-1b[a-f0-9]{2}-[a-f0-9]{12}$",
