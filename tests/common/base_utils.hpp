@@ -63,7 +63,8 @@ public:
 
     void add_argument() { arguments_.emplace_back(); }
 
-    void add_target(const std::string &name, std::vector<std::string> key_path = {},
+    void add_target(const std::string &name,
+        std::vector<std::variant<std::string, int64_t>> key_path = {},
         std::vector<transformer_id> transformers = {}, data_source source = data_source::values)
     {
         auto &argument = arguments_.back();

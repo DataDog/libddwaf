@@ -451,6 +451,20 @@ TEST(TestObjectView, StringInequality)
     EXPECT_FALSE(view != "something"sv);
 }
 
+TEST(TestObjectView, StringComparisonEdgeCases)
+{
+    // Default (no value) view comparisons to string
+    object_view empty_view;
+    EXPECT_FALSE(empty_view == "anything"sv);
+    EXPECT_FALSE(empty_view != "anything"sv);
+
+    // Non-string object compared to string
+    owned_object boolean_obj{true};
+    object_view bool_view{boolean_obj};
+    EXPECT_FALSE(bool_view == "true"sv);
+    EXPECT_TRUE(bool_view != "true"sv);
+}
+
 TEST(TestObjectView, BooleanObjectStringConversion)
 {
     {
@@ -500,6 +514,29 @@ TEST(TestObjectView, StringtObjectStringConversion)
     EXPECT_STR(converted, "this is a string");
 }
 
+TEST(TestObjectView, LiteralAndLongStringHandling)
+{
+    // Literal string keeps pointer, size path for literal_string
+    constexpr const char literal[] = "literal-const-string";
+    auto lit_obj = owned_object::make_string_literal(literal, sizeof(literal) - 1);
+    object_view lit_view{lit_obj};
+    ASSERT_TRUE(lit_view.is_string());
+    EXPECT_EQ(lit_view.type(), object_type::literal_string);
+    EXPECT_EQ(lit_view.size(), sizeof(literal) - 1);
+    EXPECT_STREQ(lit_view.as<const char *>(), literal);
+    EXPECT_EQ(lit_view.data(), literal);
+
+    // Long string uses heap path (object_type::string), pointer differs from source buffer
+    const std::string long_src(40, 'x');
+    auto long_obj = owned_object::make_string(std::string_view{long_src});
+    object_view long_view{long_obj};
+    ASSERT_TRUE(long_view.is_string());
+    EXPECT_EQ(long_view.type(), object_type::string);
+    EXPECT_EQ(long_view.size(), long_src.size());
+    EXPECT_EQ(long_view.as<std::string_view>(), std::string_view{long_src});
+    EXPECT_NE(long_view.data(), long_src.data());
+}
+
 TEST(TestObjectView, AsOrDefault)
 {
     owned_object original;
@@ -510,6 +547,17 @@ TEST(TestObjectView, AsOrDefault)
     EXPECT_EQ(view.as_or_default<uint64_t>(0), 0);
     EXPECT_EQ(view.as_or_default<int64_t>(0), 0);
     EXPECT_EQ(view.as_or_default<bool>(false), false);
+}
+
+TEST(TestObjectView, AsOrDefaultReturnsActual)
+{
+    owned_object original_true = owned_object::make_boolean(true);
+    object_view view_true{original_true};
+    EXPECT_TRUE(view_true.as_or_default<bool>(false));
+
+    auto str_obj = owned_object::make_string_literal("abc", 3);
+    object_view str_view{str_obj};
+    EXPECT_EQ(str_view.as_or_default<std::string_view>(""), std::string_view{"abc"});
 }
 
 TEST(TestObjectView, KeyPathAccess)
@@ -525,42 +573,235 @@ TEST(TestObjectView, KeyPathAccess)
     EXPECT_FALSE(view.empty());
 
     {
-        std::vector<std::string> key_path{"1"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"1"};
         EXPECT_TRUE(view.find_key_path(key_path).is_map());
     }
 
     {
-        std::vector<std::string> key_path{"1", "1.2"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"1", "1.2"};
         EXPECT_EQ(view.find_key_path(key_path).as<int64_t>(), 111);
     }
 
     {
-        std::vector<std::string> key_path{"1", "1.3"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"1", "1.3"};
         EXPECT_EQ(view.find_key_path(key_path).as<int64_t>(), 123);
     }
 
     {
-        std::vector<std::string> key_path{"2"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"2"};
         EXPECT_TRUE(view.find_key_path(key_path).is_map());
     }
 
     {
-        std::vector<std::string> key_path{"2", "2.1"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"2", "2.1"};
         EXPECT_TRUE(view.find_key_path(key_path).is_map());
     }
     {
-        std::vector<std::string> key_path{"2", "2.1", "2.1.1"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"2", "2.1", "2.1.1"};
         EXPECT_EQ(view.find_key_path(key_path).as<int64_t>(), 9);
     }
 
     {
-        std::vector<std::string> key_path{"3", "3.1"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"3", "3.1"};
         EXPECT_FALSE(view.find_key_path(key_path).has_value());
     }
 
     {
-        std::vector<std::string> key_path{"1", "key"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"4"};
         EXPECT_FALSE(view.find_key_path(key_path).has_value());
+    }
+
+    {
+        std::vector<std::variant<std::string, int64_t>> key_path{"1", "key"};
+        EXPECT_FALSE(view.find_key_path(key_path).has_value());
+    }
+
+    {
+        std::vector<std::variant<std::string, int64_t>> key_path{0};
+        EXPECT_FALSE(view.find_key_path(key_path).has_value());
+    }
+
+    {
+        std::vector<std::variant<std::string, int64_t>> key_path{"3", "3.1", "3.1.1"};
+        EXPECT_FALSE(view.find_key_path(key_path).has_value());
+    }
+}
+
+TEST(TestObjectView, FindKeyPathEmptyAndExcluded)
+{
+    // Build a nested structure: { "a": { "b": ["x","y"] } }
+    auto root_obj = object_builder::map({
+        {"a", object_builder::map({{"b", object_builder::array({"x", "y"})}})},
+    });
+    object_view root{root_obj};
+
+    // Empty path should return the root
+    std::vector<std::variant<std::string, int64_t>> empty_path;
+    auto self = root.find_key_path(empty_path);
+    EXPECT_TRUE(self.has_value());
+    EXPECT_EQ(self.ptr(), root.ptr());
+
+    // Excluding the root should immediately short-circuit
+    std::unordered_set<object_cache_key> excluded_root{object_cache_key{root}};
+    object_set_ref exclude_root{excluded_root};
+    auto none1 = root.find_key_path(empty_path, exclude_root);
+    EXPECT_FALSE(none1.has_value());
+
+    // Excluding an intermediate node should short-circuit during traversal
+    std::vector<std::variant<std::string, int64_t>> path_to_b{"a", "b"};
+    auto b_node = root.find_key_path(path_to_b);
+    ASSERT_TRUE(b_node.has_value());
+
+    std::unordered_set<object_cache_key> excluded_mid{object_cache_key{b_node}};
+    object_set_ref exclude_mid{excluded_mid};
+    // Attempt to traverse into excluded node
+    std::vector<std::variant<std::string, int64_t>> path_to_elem{"a", "b", 1};
+    auto none2 = root.find_key_path(path_to_elem, exclude_mid);
+    EXPECT_FALSE(none2.has_value());
+}
+
+TEST(TestObjectView, FindKeyPathVariantNegativeIndex)
+{
+    {
+        auto root = object_builder::map({{"arr", object_builder::array({"x", "y", "z"})}});
+        object_view view(root);
+
+        std::vector<std::variant<std::string, int64_t>> key_path{"arr", -1};
+        auto child = view.find_key_path(key_path);
+        EXPECT_TRUE(child.is_string());
+        EXPECT_STR(child.as<std::string_view>(), "z");
+    }
+
+    {
+        auto root = object_builder::array({"x", "y", "z"});
+        object_view view(root);
+
+        std::vector<std::variant<std::string, int64_t>> key_path{-1};
+        auto child = view.find_key_path(key_path);
+        EXPECT_TRUE(child.is_string());
+        EXPECT_STR(child.as<std::string_view>(), "z");
+    }
+}
+
+TEST(TestObjectView, FindKeyPathVariantNegativeIndexOutOfBounds)
+{
+    {
+        auto root = object_builder::map({{"arr", object_builder::array({"x", "y", "z"})}});
+        object_view view(root);
+
+        std::vector<std::variant<std::string, int64_t>> key_path{"arr", -4};
+        auto child = view.find_key_path(key_path);
+        EXPECT_FALSE(child.has_value());
+    }
+
+    {
+        auto root = object_builder::array({"x", "y", "z"});
+        object_view view(root);
+
+        std::vector<std::variant<std::string, int64_t>> key_path{-4};
+        auto child = view.find_key_path(key_path);
+        EXPECT_FALSE(child.has_value());
+    }
+}
+
+TEST(TestObjectView, FindKeyPathVariantNegativeIndexWithExclusion)
+{
+    {
+        auto root = object_builder::map({{"arr", object_builder::array({"x", "y", "z"})}});
+        object_view view(root);
+
+        std::unordered_set<object_cache_key> excluded;
+        object_set_ref exclude{excluded};
+
+        std::vector<std::variant<std::string, int64_t>> key_path{"arr", -2};
+        auto child = view.find_key_path(key_path, exclude);
+        EXPECT_TRUE(child.is_string());
+        EXPECT_STR(child.as<std::string_view>(), "y");
+    }
+
+    {
+        auto root = object_builder::array({"x", "y", "z"});
+        object_view view(root);
+
+        std::unordered_set<object_cache_key> excluded;
+        object_set_ref exclude{excluded};
+
+        std::vector<std::variant<std::string, int64_t>> key_path{-2};
+        auto child = view.find_key_path(key_path, exclude);
+        EXPECT_TRUE(child.is_string());
+        EXPECT_STR(child.as<std::string_view>(), "y");
+    }
+}
+
+TEST(TestObjectView, FindKeyPathVariantPositiveIndex)
+{
+    {
+        auto root = object_builder::map({{"arr", object_builder::array({"x", "y", "z"})}});
+        object_view view(root);
+
+        std::vector<std::variant<std::string, int64_t>> key_path{"arr", 1};
+        auto child = view.find_key_path(key_path);
+        EXPECT_TRUE(child.is_string());
+        EXPECT_STR(child.as<std::string_view>(), "y");
+    }
+
+    {
+        auto root = object_builder::array({"x", "y", "z"});
+        object_view view(root);
+
+        std::vector<std::variant<std::string, int64_t>> key_path{1};
+        auto child = view.find_key_path(key_path);
+        EXPECT_TRUE(child.is_string());
+        EXPECT_STR(child.as<std::string_view>(), "y");
+    }
+}
+
+TEST(TestObjectView, FindKeyPathVariantPositiveIndexOutOfBounds)
+{
+    {
+        auto root = object_builder::map({{"arr", object_builder::array({"x", "y", "z"})}});
+        object_view view(root);
+
+        std::vector<std::variant<std::string, int64_t>> key_path{"arr", 3};
+        auto child = view.find_key_path(key_path);
+        EXPECT_FALSE(child.has_value());
+    }
+    {
+        auto root = object_builder::array({"x", "y", "z"});
+        object_view view(root);
+
+        std::vector<std::variant<std::string, int64_t>> key_path{3};
+        auto child = view.find_key_path(key_path);
+        EXPECT_FALSE(child.has_value());
+    }
+}
+
+TEST(TestObjectView, FindKeyPathVariantPositiveIndexWithExclusion)
+{
+    {
+        auto root = object_builder::map({{"arr", object_builder::array({"x", "y", "z"})}});
+        object_view view(root);
+
+        std::unordered_set<object_cache_key> excluded;
+        object_set_ref exclude{excluded};
+
+        std::vector<std::variant<std::string, int64_t>> key_path{"arr", 0};
+        auto child = view.find_key_path(key_path, exclude);
+        EXPECT_TRUE(child.is_string());
+        EXPECT_STR(child.as<std::string_view>(), "x");
+    }
+
+    {
+        auto root = object_builder::array({"x", "y", "z"});
+        object_view view(root);
+
+        std::unordered_set<object_cache_key> excluded;
+        object_set_ref exclude{excluded};
+
+        std::vector<std::variant<std::string, int64_t>> key_path{0};
+        auto child = view.find_key_path(key_path, exclude);
+        EXPECT_TRUE(child.is_string());
+        EXPECT_STR(child.as<std::string_view>(), "x");
     }
 }
 
@@ -888,58 +1129,6 @@ TEST(TestMapView, IteratorAccess)
             EXPECT_EQ(key.as<std::string_view>(), expected_key);
             EXPECT_EQ(value.as<std::string_view>(), expected_value);
         }
-    }
-}
-
-TEST(TestMapView, KeyPathAccess)
-{
-    auto root = object_builder::map({
-        {"1", object_builder::map({{"1.2", 111}, {"1.3", 123}})},
-        {"2", object_builder::map({{"2.1", object_builder::map({{"2.1.1", 9}})}})},
-        {"3", object_builder::array({"3.1"})},
-    });
-
-    map_view view(root);
-    EXPECT_EQ(view.size(), 3);
-    EXPECT_FALSE(view.empty());
-
-    {
-        std::vector<std::string> key_path{"1"};
-        EXPECT_TRUE(view.find_key_path(key_path).is_map());
-    }
-
-    {
-        std::vector<std::string> key_path{"1", "1.2"};
-        EXPECT_EQ(view.find_key_path(key_path).as<int64_t>(), 111);
-    }
-
-    {
-        std::vector<std::string> key_path{"1", "1.3"};
-        EXPECT_EQ(view.find_key_path(key_path).as<int64_t>(), 123);
-    }
-
-    {
-        std::vector<std::string> key_path{"2"};
-        EXPECT_TRUE(view.find_key_path(key_path).is_map());
-    }
-
-    {
-        std::vector<std::string> key_path{"2", "2.1"};
-        EXPECT_TRUE(view.find_key_path(key_path).is_map());
-    }
-    {
-        std::vector<std::string> key_path{"2", "2.1", "2.1.1"};
-        EXPECT_EQ(view.find_key_path(key_path).as<int64_t>(), 9);
-    }
-
-    {
-        std::vector<std::string> key_path{"3", "3.1"};
-        EXPECT_FALSE(view.find_key_path(key_path).has_value());
-    }
-
-    {
-        std::vector<std::string> key_path{"1", "key"};
-        EXPECT_FALSE(view.find_key_path(key_path).has_value());
     }
 }
 

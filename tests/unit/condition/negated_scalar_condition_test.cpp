@@ -270,7 +270,7 @@ TEST(TestNegatedScalarCondition, ExcludedIntermediateObject)
             object_builder::map({{"to", object_builder::map({{"object",
                                             object_builder::array({"bye", "greetings"})}})}})}})}});
 
-    std::vector<std::string> kp{"server.request.uri.raw", "path", "to"};
+    std::vector<std::variant<std::string, int64_t>> kp{"server.request.uri.raw", "path", "to"};
 
     std::unordered_set<object_cache_key> excluded_objects;
     excluded_objects.emplace(object_view{root}.find_key_path(kp).at_value(0));
@@ -296,7 +296,8 @@ TEST(TestNegatedScalarCondition, ExcludedFinalObject)
             object_builder::map(
                 {{"to", object_builder::map({{"object", object_builder::array({"bye"})}})}})}})}});
 
-    std::vector<std::string> kp{"server.request.uri.raw", "path", "to", "object"};
+    std::vector<std::variant<std::string, int64_t>> kp{
+        "server.request.uri.raw", "path", "to", "object"};
 
     std::unordered_set<object_cache_key> excluded_objects;
     excluded_objects.emplace(object_view{root}.find_key_path(kp).at_value(0));

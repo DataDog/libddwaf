@@ -68,7 +68,7 @@ struct rule_attribute {
     struct input_target {
         std::string name;
         target_index index; // NOLINT(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
-        std::vector<std::string> key_path;
+        std::vector<std::variant<std::string, int64_t>> key_path;
     };
     std::variant<input_target, std::string, uint64_t, int64_t, double, bool> value_or_target;
     std::string key;

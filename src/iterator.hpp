@@ -35,7 +35,7 @@ public:
     bool operator++();
 
     [[nodiscard]] explicit operator bool() const { return current_.second.has_value(); }
-    [[nodiscard]] std::vector<std::string> get_current_path() const;
+    [[nodiscard]] std::vector<std::variant<std::string_view, int64_t>> get_current_path() const;
 
 protected:
     static constexpr std::size_t initial_stack_size = 32;
@@ -44,7 +44,7 @@ protected:
     // since the iterator doesn't keep track of the root object provided,
     // but only the beginning of the key path, we keep this here so that we
     // can later provide the accurate full key path.
-    std::vector<std::string> path_;
+    std::vector<std::variant<std::string_view, int64_t>> path_;
 
     std::vector<std::pair<object_view, std::size_t>> stack_;
     std::pair<object_view, object_view> current_;
@@ -59,8 +59,8 @@ private:
 
 class value_iterator : public iterator_base<value_iterator> {
 public:
-    explicit value_iterator(
-        object_view obj, std::span<const std::string> path, const object_set_ref &exclude);
+    explicit value_iterator(object_view obj,
+        std::span<const std::variant<std::string, int64_t>> path, const object_set_ref &exclude);
 
     ~value_iterator() = default;
 
@@ -78,8 +78,10 @@ public:
     }
 
 protected:
-    void initialise_cursor(object_view obj, std::span<const std::string> path);
-    void initialise_cursor_with_path(object_view obj, std::span<const std::string> path);
+    void initialise_cursor(
+        object_view obj, std::span<const std::variant<std::string, int64_t>> path);
+    void initialise_cursor_with_path(
+        object_view obj, std::span<const std::variant<std::string, int64_t>> path);
 
     void set_cursor_to_next_object();
 
@@ -88,8 +90,8 @@ protected:
 
 class key_iterator : public iterator_base<key_iterator> {
 public:
-    explicit key_iterator(
-        object_view obj, std::span<const std::string> path, const object_set_ref &exclude);
+    explicit key_iterator(object_view obj, std::span<const std::variant<std::string, int64_t>> path,
+        const object_set_ref &exclude);
 
     ~key_iterator() = default;
 
@@ -113,8 +115,10 @@ public:
     }
 
 protected:
-    void initialise_cursor(object_view obj, std::span<const std::string> path);
-    void initialise_cursor_with_path(object_view obj, std::span<const std::string> path);
+    void initialise_cursor(
+        object_view obj, std::span<const std::variant<std::string, int64_t>> path);
+    void initialise_cursor_with_path(
+        object_view obj, std::span<const std::variant<std::string, int64_t>> path);
 
     void set_cursor_to_next_object();
 
@@ -123,8 +127,8 @@ protected:
 
 class kv_iterator : public iterator_base<kv_iterator> {
 public:
-    explicit kv_iterator(
-        object_view obj, std::span<const std::string> path, const object_set_ref &exclude);
+    explicit kv_iterator(object_view obj, std::span<const std::variant<std::string, int64_t>> path,
+        const object_set_ref &exclude);
 
     ~kv_iterator() = default;
 
@@ -163,8 +167,10 @@ public:
     }
 
 protected:
-    void initialise_cursor(object_view obj, std::span<const std::string> path);
-    void initialise_cursor_with_path(object_view obj, std::span<const std::string> path);
+    void initialise_cursor(
+        object_view obj, std::span<const std::variant<std::string, int64_t>> path);
+    void initialise_cursor_with_path(
+        object_view obj, std::span<const std::variant<std::string, int64_t>> path);
 
     void set_cursor_to_next_object();
 

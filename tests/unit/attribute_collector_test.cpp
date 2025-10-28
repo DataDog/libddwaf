@@ -86,7 +86,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathScalar)
     store.insert(std::move(input));
 
     attribute_collector collector;
-    std::vector<std::string> key_path{"first", "second"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"first", "second"};
     EXPECT_TRUE(
         collector.collect(store, get_target_index("input_address"), key_path, "output_address"));
     auto attributes = collector.get_available_attributes_and_reset();
@@ -111,7 +111,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathSingleValueArray)
     store.insert(std::move(input));
 
     attribute_collector collector;
-    std::vector<std::string> key_path{"first", "second"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"first", "second"};
     EXPECT_TRUE(
         collector.collect(store, get_target_index("input_address"), key_path, "output_address"));
     auto attributes = collector.get_available_attributes_and_reset();
@@ -137,7 +137,59 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathMultiValueArray)
     store.insert(std::move(input));
 
     attribute_collector collector;
-    std::vector<std::string> key_path{"first", "second"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"first", "second"};
+    EXPECT_TRUE(
+        collector.collect(store, get_target_index("input_address"), key_path, "output_address"));
+    auto attributes = collector.get_available_attributes_and_reset();
+
+    EXPECT_FALSE(collector.has_pending_attributes());
+
+    EXPECT_EQ(attributes.size(), 1);
+
+    const auto obtained = attributes.at(0);
+    EXPECT_TRUE(obtained.is_string());
+    EXPECT_STRV(obtained.as<std::string_view>(), expected);
+}
+
+TEST(TestAttributeCollector, CollectAvailableKeyPathWithinArrayPositiveIndex)
+{
+    std::string_view expected = "value1";
+    auto input = object_builder::map(
+        {{"input_address", object_builder::map({{"first",
+                               object_builder::map({{"second",
+                                   object_builder::array({"value0", expected, "value2"})}})}})}});
+
+    object_store store;
+    store.insert(std::move(input));
+
+    attribute_collector collector;
+    std::vector<std::variant<std::string, int64_t>> key_path{"first", "second", 1};
+    EXPECT_TRUE(
+        collector.collect(store, get_target_index("input_address"), key_path, "output_address"));
+    auto attributes = collector.get_available_attributes_and_reset();
+
+    EXPECT_FALSE(collector.has_pending_attributes());
+
+    EXPECT_EQ(attributes.size(), 1);
+
+    const auto obtained = attributes.at(0);
+    EXPECT_TRUE(obtained.is_string());
+    EXPECT_STRV(obtained.as<std::string_view>(), expected);
+}
+
+TEST(TestAttributeCollector, CollectAvailableKeyPathWithinArrayNegativeIndex)
+{
+    std::string_view expected = "value1";
+    auto input = object_builder::map(
+        {{"input_address", object_builder::map({{"first",
+                               object_builder::map({{"second",
+                                   object_builder::array({"value0", expected, "value2"})}})}})}});
+
+    object_store store;
+    store.insert(std::move(input));
+
+    attribute_collector collector;
+    std::vector<std::variant<std::string, int64_t>> key_path{"first", "second", -2};
     EXPECT_TRUE(
         collector.collect(store, get_target_index("input_address"), key_path, "output_address"));
     auto attributes = collector.get_available_attributes_and_reset();
@@ -161,7 +213,7 @@ TEST(TestAttributeCollector, CollectUnavailableKeyPath)
     store.insert(std::move(input));
 
     attribute_collector collector;
-    std::vector<std::string> key_path{"first", "second"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"first", "second"};
     EXPECT_FALSE(
         collector.collect(store, get_target_index("input_address"), key_path, "output_address"));
     auto attributes = collector.get_available_attributes_and_reset();
@@ -179,7 +231,7 @@ TEST(TestAttributeCollector, CollectPendingKeyPathScalar)
     object_store store;
 
     attribute_collector collector;
-    std::vector<std::string> key_path{"first", "second"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"first", "second"};
     EXPECT_TRUE(
         collector.collect(store, get_target_index("input_address"), key_path, "output_address"));
     auto attributes = collector.get_available_attributes_and_reset();
@@ -208,7 +260,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathInvalidValue)
     store.insert(std::move(input));
 
     attribute_collector collector;
-    std::vector<std::string> key_path{"first", "second"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"first", "second"};
     EXPECT_FALSE(
         collector.collect(store, get_target_index("input_address"), key_path, "output_address"));
     auto attributes = collector.get_available_attributes_and_reset();
@@ -377,6 +429,80 @@ TEST(TestAttributeCollector, CollectUnavailableScalarFromMultiValueArray)
 
     // The attribute should be in the pending queue
     EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
+    EXPECT_TRUE(collector.has_pending_attributes());
+
+    collector.collect_pending(store);
+    EXPECT_TRUE(collector.has_pending_attributes());
+
+    auto attributes = collector.get_available_attributes_and_reset();
+    EXPECT_EQ(attributes.size(), 0);
+
+    // After adding the attribute, collect_pending should extract, copy and return
+    // the expected attribute
+    std::string_view expected = "value0";
+    auto input = object_builder::map(
+        {{"input_address", object_builder::array({expected, "value1", "value2"})}});
+
+    store.insert(std::move(input));
+    collector.collect_pending(store);
+    EXPECT_FALSE(collector.has_pending_attributes());
+
+    attributes = collector.get_available_attributes_and_reset();
+
+    EXPECT_FALSE(collector.has_pending_attributes());
+
+    EXPECT_EQ(attributes.size(), 1);
+
+    const auto obtained = attributes.at(0);
+    EXPECT_TRUE(obtained.is_string());
+    EXPECT_STRV(obtained.as<std::string_view>(), expected);
+}
+
+TEST(TestAttributeCollector, CollectUnavailableKeyPathFromWithinArrayPositiveIndex)
+{
+    object_store store;
+    attribute_collector collector;
+
+    // The attribute should be in the pending queue
+    std::vector<std::variant<std::string, int64_t>> kp{0};
+    EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), kp, "output_address"));
+    EXPECT_TRUE(collector.has_pending_attributes());
+
+    collector.collect_pending(store);
+    EXPECT_TRUE(collector.has_pending_attributes());
+
+    auto attributes = collector.get_available_attributes_and_reset();
+    EXPECT_EQ(attributes.size(), 0);
+
+    // After adding the attribute, collect_pending should extract, copy and return
+    // the expected attribute
+    std::string_view expected = "value0";
+    auto input = object_builder::map(
+        {{"input_address", object_builder::array({expected, "value1", "value2"})}});
+
+    store.insert(std::move(input));
+    collector.collect_pending(store);
+    EXPECT_FALSE(collector.has_pending_attributes());
+
+    attributes = collector.get_available_attributes_and_reset();
+
+    EXPECT_FALSE(collector.has_pending_attributes());
+
+    EXPECT_EQ(attributes.size(), 1);
+
+    const auto obtained = attributes.at(0);
+    EXPECT_TRUE(obtained.is_string());
+    EXPECT_STRV(obtained.as<std::string_view>(), expected);
+}
+
+TEST(TestAttributeCollector, CollectUnavailableKeyPathFromWithinArrayNegativeIndex)
+{
+    object_store store;
+    attribute_collector collector;
+
+    // The attribute should be in the pending queue
+    std::vector<std::variant<std::string, int64_t>> kp{-3};
+    EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), kp, "output_address"));
     EXPECT_TRUE(collector.has_pending_attributes());
 
     collector.collect_pending(store);
