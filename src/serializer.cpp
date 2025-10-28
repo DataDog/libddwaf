@@ -287,7 +287,7 @@ void serialize_event(rule_event &event, const match_obfuscator &obfuscator,
     ddwaf_object_map_add(&root_map, "rule", &rule_map);
     ddwaf_object_map_add(&root_map, "rule_matches", &match_array);
     if (requires_block_id) {
-        ddwaf_object_map_add(&root_map, "block_id", to_object(tmp, actions.block_id));
+        ddwaf_object_map_add(&root_map, "security_response_id", to_object(tmp, actions.block_id));
     }
     if (requires_stack_id) {
         ddwaf_object_map_add(&root_map, "stack_id", to_object(tmp, actions.stack_id));
@@ -330,7 +330,8 @@ void serialize_action(std::string_view id, ddwaf_object &action_map, const actio
             ddwaf_object_map_addl(&param_map, k.data(), k.size(), &value);
         }
         if (is_blocking_action(type)) {
-            ddwaf_object_map_addl(&param_map, STRL("block_id"), to_object(tmp, actions.block_id));
+            ddwaf_object_map_addl(
+                &param_map, STRL("security_response_id"), to_object(tmp, actions.block_id));
         }
     } else {
         ddwaf_object_map_addl(&param_map, STRL("stack_id"), to_object(tmp, actions.stack_id));
