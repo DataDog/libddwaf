@@ -1,5 +1,8 @@
 # Upgrading libddwaf
 
+## Upgrading from `1.29.x` to `1.30.0`
+This new version introduces no new features, however the recently introduced `block_id` action parameter has been renamed to `security_response_id` for consistency.
+
 ## Upgrading from `1.27.x` to `1.28.0`
 
 This new version of `libddwaf` introduces no breaking changes to the API / ABI , however it does change the returned type of the following actions parameters:

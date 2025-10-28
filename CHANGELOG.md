@@ -1,5 +1,13 @@
 # libddwaf release
 
+## v1.30.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+This release introduces no new features, however the recently introduced `block_id` action parameter has been renamed to `security_response_id` for consistency.
+
+### Release changelog
+
+#### Changes
+- `Rename block_id to security_response_id ([#468](https://github.com/DataDog/libddwaf/pull/468))
+
 ## v1.29.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 ### New Features
