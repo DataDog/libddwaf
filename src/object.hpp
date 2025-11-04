@@ -226,18 +226,20 @@ public:
     //   - When using at, the accessed indexed is within bounds (using size*())
     //   - When using as, the accessed field matches the underlying object type (using is*())
 
-    [[nodiscard]] std::size_t size() const noexcept
+    template <typename SizeType = std::size_t>
+    [[nodiscard]] SizeType size() const noexcept
+        requires std::is_integral_v<SizeType> && (sizeof(SizeType) >= 4)
     {
         const auto t = type();
         if (t == object_type::small_string) {
-            return static_cast<std::size_t>(object_ref().via.sstr.size);
+            return static_cast<SizeType>(object_ref().via.sstr.size);
         }
 
         if (t == object_type::string || t == object_type::literal_string) {
-            return static_cast<std::size_t>(object_ref().via.str.size);
+            return static_cast<SizeType>(object_ref().via.str.size);
         }
         // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
-        return static_cast<std::size_t>(object_ref().via.array.size);
+        return static_cast<SizeType>(object_ref().via.array.size);
     }
 
     [[nodiscard]] bool empty() const noexcept { return size() == 0; }
@@ -537,14 +539,12 @@ public:
                             return {};
                         }
 
-                        if (expected_key >= 0 &&
-                            root.size() > static_cast<std::size_t>(expected_key)) {
+                        if (expected_key >= 0 && root.size<int64_t>() > expected_key) {
                             return root.at_value(expected_key);
                         }
 
-                        if (expected_key < 0 &&
-                            root.size() >= static_cast<std::size_t>(-expected_key)) {
-                            return root.at_value(root.size() + expected_key);
+                        if (expected_key < 0 && (root.size<int64_t>() + expected_key) >= 0) {
+                            return root.at_value(root.size<int64_t>() + expected_key);
                         }
                     }
                     return {};

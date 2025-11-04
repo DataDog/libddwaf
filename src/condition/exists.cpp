@@ -34,12 +34,12 @@ object_view get_key(object_view root, const std::variant<std::string, int64_t> &
 
     if (root.is_array() && std::holds_alternative<int64_t>(key)) {
         auto index = std::get<int64_t>(key);
-        if (index >= 0 && root.size() > static_cast<uint64_t>(index)) {
+        if (index >= 0 && root.size<int64_t>() > index) {
             return root.at_value(index);
         }
 
-        if (index < 0 && root.size() >= static_cast<uint64_t>(-index)) {
-            return root.at_value(root.size() + index);
+        if (index < 0 && root.size<int64_t>() + index >= 0) {
+            return root.at_value(root.size<int64_t>() + index);
         }
     }
 
@@ -55,8 +55,6 @@ search_outcome exists(object_view root,
     }
 
     auto it = key_path.begin();
-
-    // Since there's a key path, the object must be a map
     if (std::holds_alternative<std::string>(*it) && root.type() != object_type::map) {
         return search_outcome::not_found;
     }

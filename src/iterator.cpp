@@ -143,12 +143,11 @@ void value_iterator::initialise_cursor_with_path(
             }
         } else if (parent.is_array() && std::holds_alternative<int64_t>(key)) {
             const auto expected_index = std::get<int64_t>(key);
-            if (expected_index >= 0 && parent.size() > static_cast<std::size_t>(expected_index)) {
+            if (expected_index >= 0 && parent.size<int64_t>() > expected_index) {
                 child = parent.at(expected_index);
                 index = expected_index;
-            } else if (expected_index < 0 &&
-                       parent.size() >= static_cast<std::size_t>(-expected_index)) {
-                index = parent.size() + expected_index;
+            } else if (expected_index < 0 && (parent.size<int64_t>() + expected_index) >= 0) {
+                index = parent.size<int64_t>() + expected_index;
                 child = parent.at(index);
             }
         }
@@ -288,11 +287,10 @@ void key_iterator::initialise_cursor_with_path(
             }
         } else if (parent.is_array() && std::holds_alternative<int64_t>(key)) {
             const auto expected_index = std::get<int64_t>(key);
-            if (expected_index >= 0 && parent.size() > static_cast<std::size_t>(expected_index)) {
+            if (expected_index >= 0 && parent.size<int64_t>() > expected_index) {
                 child = parent.at(expected_index);
-            } else if (expected_index < 0 &&
-                       parent.size() >= static_cast<std::size_t>(-expected_index)) {
-                child = parent.at(parent.size() + expected_index);
+            } else if (expected_index < 0 && (parent.size<int64_t>() + expected_index) >= 0) {
+                child = parent.at(parent.size<int64_t>() + expected_index);
             }
         }
 
@@ -434,11 +432,10 @@ void kv_iterator::initialise_cursor_with_path(
             }
         } else if (parent.is_array() && std::holds_alternative<int64_t>(key)) {
             const auto expected_index = std::get<int64_t>(key);
-            if (expected_index >= 0 && parent.size() > static_cast<std::size_t>(expected_index)) {
+            if (expected_index >= 0 && parent.size<int64_t>() > expected_index) {
                 child = parent.at(expected_index);
-            } else if (expected_index < 0 &&
-                       parent.size() >= static_cast<std::size_t>(-expected_index)) {
-                child = parent.at(parent.size() + expected_index);
+            } else if (expected_index < 0 && (parent.size<int64_t>() + expected_index) >= 0) {
+                child = parent.at(parent.size<int64_t>() + expected_index);
             }
         }
 
