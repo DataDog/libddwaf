@@ -969,7 +969,11 @@ public:
             owned_object obj{{.via{.sstr{.type = object_type::small_string,
                 .size = static_cast<uint8_t>(len),
                 .data = {}}}}};
-            memcpy(obj.obj_.via.sstr.data.data(), str, len);
+
+            if (str != nullptr && len > 0) {
+                memcpy(obj.obj_.via.sstr.data.data(), str, len);
+            }
+
             return obj;
         }
 
