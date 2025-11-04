@@ -33,9 +33,16 @@ TEST(TestObjectIntegration, TestCreateInvalid)
 
 TEST(TestObjectIntegration, TestInvalidString)
 {
+    ddwaf_object object;
+    EXPECT_EQ(ddwaf_object_set_string_nocopy(&object, nullptr, 0), nullptr);
+    EXPECT_EQ(ddwaf_object_set_string_literal(&object, nullptr, 0), nullptr);
+}
+
+TEST(TestObjectIntegration, TestEmptyString)
+{
     auto *alloc = ddwaf_get_default_allocator();
     ddwaf_object object;
-    EXPECT_EQ(ddwaf_object_set_string(&object, nullptr, 0, alloc), nullptr);
+    EXPECT_EQ(ddwaf_object_set_string(&object, nullptr, 0, alloc), &object);
 }
 
 TEST(TestObjectIntegration, TestString)
